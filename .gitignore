@@ -1,0 +1,15 @@
+.DS_Store
+/node_modules/
+
+# React Router
+/.react-router/
+/build/
+
+# Environment variables
+.env.local
+# Whitelist template — commit cho dev mới biết cần env vars gì
+Note
+
+# AI tool — local-only overrides (settings cá nhân của dev, không share team)
+.claude/settings.local.json
+.codex/config.local.toml

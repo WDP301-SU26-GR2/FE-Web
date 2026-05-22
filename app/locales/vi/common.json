@@ -1,0 +1,14 @@
+{
+  "appName": "Mangaka",
+  "language": "Ngôn ngữ",
+  "theme": "Giao diện",
+  "light": "Sáng",
+  "dark": "Tối",
+  "switchToLight": "Chuyển sang giao diện sáng",
+  "switchToDark": "Chuyển sang giao diện tối",
+  "loading": "Đang tải...",
+  "errors": {
+    "unknown": "Đã xảy ra lỗi không xác định.",
+    "notFound": "Không tìm thấy trang yêu cầu."
+  }
+}

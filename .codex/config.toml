@@ -1,0 +1,37 @@
+# Codex CLI config — mangaka-web
+# Doc: https://github.com/openai/codex
+#
+# Codex tu dong doc AGENTS.md o root. File nay them config CLI-specific.
+
+[project]
+name = "mangaka-web"
+
+# Approval mode: yeu cau confirm voi action ghi file / chay command nguy hiem.
+# Cac gia tri: "untrusted" | "on-failure" | "on-request" | "never"
+approval_policy = "on-request"
+
+# Sandbox de Codex chay command trong moi truong gioi han.
+# "workspace-write" cho phep ghi trong thu muc repo, khong cho ghi he thong.
+sandbox_mode = "workspace-write"
+
+[[allowed_commands]]
+pattern = "^npm (run )?(dev|build|start|start:csr|typecheck|lint|lint:fix|prettier|prettier:fix|orval|orval:watch|install|ci)$"
+
+[[allowed_commands]]
+pattern = "^git (status|diff|log|branch|show)( .*)?$"
+
+[[denied_paths]]
+path = "app/api/model"
+reason = "Orval generated — KHONG sua tay"
+
+[[denied_paths]]
+path = "app/api/operations"
+reason = "Orval generated — KHONG sua tay"
+
+[[denied_paths]]
+path = "tailwind.config.js"
+reason = "Tailwind v4 dung CSS-first config, KHONG tao file nay"
+
+[[denied_paths]]
+path = "tailwind.config.ts"
+reason = "Tailwind v4 dung CSS-first config, KHONG tao file nay"

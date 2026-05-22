@@ -1,0 +1,71 @@
+/* ===================================================================
+   THEME TOKENS  —  chỉnh màu chủ đạo TẠI ĐÂY và CHỈ TẠI ĐÂY.
+
+   Quy tắc cho component:
+   - Luôn dùng class semantic (bg-background, text-primary, border-border…)
+   - Tuyệt đối không hard-code màu (bg-orange-500, text-gray-700…)
+   Khi đổi màu chủ đạo (vd cam → xanh lá) chỉ sửa các biến --color-*
+   trong khối :root (light) và .dark (dark) — không động vào component.
+   =================================================================== */
+
+:root {
+  /* --- Light theme (white + orange) --- */
+  --color-background: #ffffff;
+  --color-foreground: #1a1a1a;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1a1a;
+
+  --color-muted: #f5f5f4;
+  --color-muted-foreground: #57534e;
+
+  --color-border: #e7e5e4;
+  --color-input: #e7e5e4;
+  --color-ring: #f97316;
+
+  --color-primary: #f97316;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #fff7ed;
+  --color-secondary-foreground: #9a3412;
+
+  --color-accent: #fed7aa;
+  --color-accent-foreground: #7c2d12;
+
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+
+  /* Radius tokens — đổi 1 chỗ, áp cho mọi component qua rounded-* */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+.dark {
+  /* --- Dark theme (dark blue / navy) --- */
+  --color-background: #0b1220;
+  --color-foreground: #e2e8f0;
+
+  --color-card: #111a2e;
+  --color-card-foreground: #e2e8f0;
+
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+
+  --color-border: #1e293b;
+  --color-input: #1e293b;
+  --color-ring: #38bdf8;
+
+  --color-primary: #38bdf8;
+  --color-primary-foreground: #0b1220;
+
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #e2e8f0;
+
+  --color-accent: #1e3a8a;
+  --color-accent-foreground: #dbeafe;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+}

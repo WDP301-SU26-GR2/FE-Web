@@ -1,0 +1,14 @@
+{
+  "appName": "Mangaka",
+  "language": "Language",
+  "theme": "Theme",
+  "light": "Light",
+  "dark": "Dark",
+  "switchToLight": "Switch to light mode",
+  "switchToDark": "Switch to dark mode",
+  "loading": "Loading...",
+  "errors": {
+    "unknown": "An unexpected error occurred.",
+    "notFound": "The requested page could not be found."
+  }
+}
