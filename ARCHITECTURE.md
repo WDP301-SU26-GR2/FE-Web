@@ -4,6 +4,8 @@
 >
 > Tài liệu liên quan: [`AGENTS.md`](./AGENTS.md) (chi tiết quy ước & API), [`README.md`](./README.md) (setup & scripts).
 
+> **System architecture diagram tổng:** Xem bộ 11 diagram (C4 × 4 + ER + Sequence × 5) tại [`../Docs/Architecture-Diagrams/README.md`](../Docs/Architecture-Diagrams/README.md). File master: `Docs/Architecture-Diagrams/mangaka-architecture.drawio`. Mở nhanh gallery: `../Docs/Architecture-Diagrams/exports/gallery.html`.
+
 ---
 
 ## 1. Tại sao phải tách như vậy?
