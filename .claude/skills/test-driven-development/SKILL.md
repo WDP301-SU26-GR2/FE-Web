@@ -29,18 +29,18 @@ description: Use when adding new logic that has clear input/output (utilities, h
 
 ```ts
 // app/shared/lib/__tests__/cn.test.ts
-import { describe, it, expect } from "vitest";
-import { cn } from "../cn";
+import { describe, it, expect } from 'vitest'
+import { cn } from '../cn'
 
-describe("cn", () => {
-  it("merges conflicting tailwind classes, later wins", () => {
-    expect(cn("p-4 bg-red-500", "p-2")).toBe("bg-red-500 p-2");
-  });
-  
-  it("handles falsy values", () => {
-    expect(cn("p-4", false, null, undefined, "m-2")).toBe("p-4 m-2");
-  });
-});
+describe('cn', () => {
+  it('merges conflicting tailwind classes, later wins', () => {
+    expect(cn('p-4 bg-red-500', 'p-2')).toBe('bg-red-500 p-2')
+  })
+
+  it('handles falsy values', () => {
+    expect(cn('p-4', false, null, undefined, 'm-2')).toBe('p-4 m-2')
+  })
+})
 ```
 
 Chạy test → **FAIL** (chưa implement hoặc impl chưa đúng).
@@ -76,6 +76,7 @@ Không over-engineer. Code "ugly" để pass test → ok ở bước này.
 ## Khi setup Vitest
 
 Đề xuất với user khi cần:
+
 - `vitest` + `@testing-library/react` + `@testing-library/jest-dom` + `jsdom`.
 - Folder convention: `__tests__/` cạnh source, hoặc `<file>.test.ts` cùng cấp.
 - Script `npm run test`, `test:watch`, `test:coverage`.

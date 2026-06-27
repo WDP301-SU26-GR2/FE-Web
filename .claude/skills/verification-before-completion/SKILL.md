@@ -19,16 +19,20 @@ description: Use BEFORE reporting a task as "done" / "completed" / "finished". N
 ## Levels of verification
 
 ### Level 1 — Static (BẮT BUỘC, ít nhất phải làm)
+
 ```bash
 pnpm typecheck      # type pass
 pnpm lint           # no lint error
 ```
+
 **Chưa đủ để báo done**. Đây là bare minimum.
 
 ### Level 2 — Real app run (DEFAULT cho mọi UI change)
+
 ```bash
 pnpm dev
 ```
+
 - Mở browser http://localhost:5173
 - Navigate tới URL feature thay đổi
 - Click qua golden path
@@ -36,6 +40,7 @@ pnpm dev
 - Test ít nhất 1 edge case: empty / loading / error
 
 ### Level 3 — Cross-cutting (cho feature lớn)
+
 - Mobile viewport (DevTools 375px)
 - Dark mode toggle
 - Switch EN ↔ VI
@@ -73,6 +78,7 @@ Trả lời được CẢ 5 mới được nói "done". Nếu 1 cái "no" → ti
 ## Trust but verify (cho subagent)
 
 Khi subagent report "đã làm xong X":
+
 - KHÔNG tin lời nói. Đọc diff thật bằng Read tool.
 - Run app, test thật.
 - Subagent có thể đã hallucinate hoặc làm 80% đúng + 20% sai.

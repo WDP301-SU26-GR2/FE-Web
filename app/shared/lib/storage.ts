@@ -5,27 +5,27 @@
  */
 
 export function readStorage(key: string): string | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null
   try {
-    return window.localStorage.getItem(key);
+    return window.localStorage.getItem(key)
   } catch {
-    return null;
+    return null
   }
 }
 
 export function writeStorage(key: string, value: string): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return
   try {
-    window.localStorage.setItem(key, value);
+    window.localStorage.setItem(key, value)
   } catch {
     /* ignore quota / privacy mode errors */
   }
 }
 
 export function removeStorage(key: string): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return
   try {
-    window.localStorage.removeItem(key);
+    window.localStorage.removeItem(key)
   } catch {
     /* ignore */
   }

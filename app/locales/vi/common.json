@@ -7,6 +7,9 @@
   "switchToLight": "Chuyển sang giao diện sáng",
   "switchToDark": "Chuyển sang giao diện tối",
   "loading": "Đang tải...",
+  "splashLoading": "Đang khởi động...",
+  "login": "Đăng nhập",
+  "register": "Đăng ký",
   "errors": {
     "unknown": "Đã xảy ra lỗi không xác định.",
     "notFound": "Không tìm thấy trang yêu cầu."

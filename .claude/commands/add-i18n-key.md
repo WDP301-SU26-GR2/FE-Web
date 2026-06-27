@@ -18,6 +18,7 @@ Thêm key i18n mới. Input dạng: `$ARGUMENTS`.
 ## Verify
 
 Sau khi thêm:
+
 - Đọc lại 2 file để xác nhận parity (cùng tập key).
 - Báo: "Đã thêm `<namespace>:<key.path>` vào EN/VI."
 

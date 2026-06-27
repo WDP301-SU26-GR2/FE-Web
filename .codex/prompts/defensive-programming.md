@@ -21,6 +21,7 @@ Cach: zod schema, type guard, runtime check + early return / throw clear message
 ## Vi du
 
 ### Over-defensive (noise)
+
 ```tsx
 export function MangaCard({ manga }: { manga: Manga }) {
   if (!manga) return null;                    // TS dam bao
@@ -33,15 +34,16 @@ export function MangaCard({ manga }: { manga: Manga }) {
 ```
 
 ### Dung
+
 ```tsx
 export function MangaCard({ manga }: { manga: Manga }) {
-  return <article>{manga.title}</article>;
+  return <article>{manga.title}</article>
 }
 
 async function fetchMangas(): Promise<Manga[]> {
-  const res = await fetch("/api/mangas");
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return MangaListSchema.parse(await res.json()).items;  // <- validate O DAY
+  const res = await fetch('/api/mangas')
+  if (!res.ok) throw new Error(`Failed: ${res.status}`)
+  return MangaListSchema.parse(await res.json()).items // <- validate O DAY
 }
 ```
 

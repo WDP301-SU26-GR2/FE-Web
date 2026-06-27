@@ -37,10 +37,7 @@ function hydrateApp() {
 
 if (env.ENABLE_MOCK) {
   // Không để MSW chặn hydrate vô hạn (một số môi trường có thể làm worker.start treo).
-  Promise.race([
-    prepare(),
-    new Promise<void>((resolve) => setTimeout(resolve, 1500))
-  ]).finally(hydrateApp)
+  Promise.race([prepare(), new Promise<void>((resolve) => setTimeout(resolve, 1500))]).finally(hydrateApp)
 } else {
   hydrateApp()
 }

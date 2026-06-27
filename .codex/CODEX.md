@@ -11,35 +11,36 @@ CODEX.md nay chi liet ke Codex-specific tooling. Khong lap lai quy uoc tu AGENTS
 
 ## 1) Reusable prompts (`.codex/prompts/`)
 
-| Prompt                      | Tac dung                                                |
-| --------------------------- | ------------------------------------------------------- |
-| `new-feature.md`            | Scaffold feature moi (folder + i18n + barrel)           |
-| `pre-commit-check.md`       | Typecheck + lint + prettier + i18n parity + arch guard  |
-| `code-review.md`            | Review diff theo checklist mangaka-web                  |
-| `brainstorming.md`          | Truoc khi code task mo ho — options + tradeoff          |
-| `writing-plans.md`          | Truoc khi implement non-trivial (>=3 file)              |
-| `root-cause-analysis.md`    | Debug bug — 5 Whys, khong patch trieu chung             |
-| `finishing-a-branch.md`     | Truoc khi tao PR / merge                                |
-| `debugging-hydration.md`    | Hydration mismatch / FOUC / SSR vs client lech          |
-| `accessibility-audit.md`    | Khi them UI interactive — keyboard/ARIA/contrast        |
-| `defensive-programming.md`  | Validate boundary, trust internal                       |
-| `subagent-driven-development.md` | Khi nao spawn agent vs inline                      |
-| `test-driven-development.md`| Red-Green-Refactor cho logic input/output ro            |
-| `using-git-worktrees.md`    | Multi-branch parallel work                              |
-| `skill-discovery.md`        | Meta — scan resource co san dau task                    |
+| Prompt                              | Tac dung                                                 |
+| ----------------------------------- | -------------------------------------------------------- |
+| `new-feature.md`                    | Scaffold feature moi (folder + i18n + barrel)            |
+| `pre-commit-check.md`               | Typecheck + lint + prettier + i18n parity + arch guard   |
+| `code-review.md`                    | Review diff theo checklist mangaka-web                   |
+| `brainstorming.md`                  | Truoc khi code task mo ho — options + tradeoff           |
+| `writing-plans.md`                  | Truoc khi implement non-trivial (>=3 file)               |
+| `root-cause-analysis.md`            | Debug bug — 5 Whys, khong patch trieu chung              |
+| `finishing-a-branch.md`             | Truoc khi tao PR / merge                                 |
+| `debugging-hydration.md`            | Hydration mismatch / FOUC / SSR vs client lech           |
+| `accessibility-audit.md`            | Khi them UI interactive — keyboard/ARIA/contrast         |
+| `defensive-programming.md`          | Validate boundary, trust internal                        |
+| `subagent-driven-development.md`    | Khi nao spawn agent vs inline                            |
+| `test-driven-development.md`        | Red-Green-Refactor cho logic input/output ro             |
+| `using-git-worktrees.md`            | Multi-branch parallel work                               |
+| `skill-discovery.md`                | Meta — scan resource co san dau task                     |
 | `verification-before-completion.md` | TRUOC khi bao done — verify that su, khong chi typecheck |
-| `condition-based-waiting.md`| Polling dieu kien that thay vi `sleep` mu               |
-| `requesting-code-review.md` | Self-review + goi code-review.md sau khi xong           |
-| `add-i18n-key.md`           | Them key vao ca EN va VI, giu parity                    |
-| `add-route.md`              | Tao route thin + dang ky vao routes.ts                  |
-| `add-mock-endpoint.md`      | Tao MSW handler + Faker factory                         |
-| `add-ui-primitive.md`       | Tao headless component trong shared/ui                  |
+| `condition-based-waiting.md`        | Polling dieu kien that thay vi `sleep` mu                |
+| `requesting-code-review.md`         | Self-review + goi code-review.md sau khi xong            |
+| `add-i18n-key.md`                   | Them key vao ca EN va VI, giu parity                     |
+| `add-route.md`                      | Tao route thin + dang ky vao routes.ts                   |
+| `add-mock-endpoint.md`              | Tao MSW handler + Faker factory                          |
+| `add-ui-primitive.md`               | Tao headless component trong shared/ui                   |
 
 Su dung: copy noi dung prompt + paste vao Codex hoac dung `@.codex/prompts/<name>.md`.
 
 ## 2) Config (`.codex/config.toml`)
 
 Da pre-config:
+
 - `approval_policy = "on-request"` — Codex hoi truoc khi chay command lon.
 - `sandbox_mode = "workspace-write"` — chi ghi trong workspace, khong dung he thong.
 - Allowed commands: `npm run *`, `git status/diff/log/branch/show`.

@@ -18,6 +18,7 @@ app/features/$ARGUMENTS/
 ```
 
 Quy ước:
+
 - File component `kebab-case.tsx`, React component `PascalCase`.
 - `index.ts` chỉ export public API (vd `export { XxxPage } from "./xxx-page"`).
 - Component dùng class **semantic** (`bg-card`, `text-foreground`...), KHÔNG hex color.
@@ -34,6 +35,7 @@ Quy ước:
 ## Bước 3 — KHÔNG tự đăng ký route
 
 Dừng lại và hỏi user URL muốn mount feature (vd `/mangas`, `/manga/:id`). Sau khi user xác nhận, mới:
+
 - Tạo `app/routes/<url>.tsx` thin wrapper import từ `~/features/$ARGUMENTS`.
 - Thêm vào `app/routes.ts`.
 

@@ -1,7 +1,10 @@
 {
-  "title": "Welcome to Mangaka",
-  "subtitle": "Publish and share manga — built with React Router 7",
-  "whatsNext": "What's next?",
-  "docs": "React Router Docs",
-  "discord": "Join Discord"
+  "heroTitle": "Professional Manga Production Ecosystem",
+  "heroSubtitle": "A comprehensive platform for Vietnamese mangaka to create, publish and manage their manga works professionally.",
+  "ctaStart": "Get Started",
+  "ctaLogin": "Login",
+  "footerTerms": "Terms of Service",
+  "footerPrivacy": "Privacy Policy",
+  "footerContact": "Contact Support",
+  "footerDocs": "Documentation"
 }

@@ -7,6 +7,7 @@ Frontend của dự án **Mangaka** — nền tảng đăng và xuất bản tru
 > **AI agent / cần chi tiết quy ước?** Đọc [`AGENTS.md`](./AGENTS.md) — tài liệu chi tiết về kiến trúc, quy ước, recipe và DO/DON'T.
 >
 > **Chuẩn AI theo tool:**
+>
 > - Claude: [`./.claude/CLAUDE.md`](./.claude/CLAUDE.md)
 > - Codex: [`./.codex/CODEX.md`](./.codex/CODEX.md)
 
@@ -51,19 +52,19 @@ Mở `http://localhost:5173`.
 
 ### Scripts
 
-| Lệnh                | Mục đích                                       |
-| ------------------- | ---------------------------------------------- |
-| `pnpm dev`          | Dev server (HMR)                               |
-| `pnpm build`        | Build production (SSR)                         |
-| `pnpm start`        | Chạy server bundle production                  |
-| `pnpm start:csr`    | Preview SPA (vite preview)                     |
-| `pnpm typecheck`    | `react-router typegen && tsc`                  |
-| `pnpm lint`         | ESLint                                         |
-| `pnpm lint:fix`     | ESLint auto-fix                                |
-| `pnpm prettier`     | Kiểm tra format                                |
-| `pnpm prettier:fix` | Format code                                    |
-| `pnpm orval`        | Codegen từ swagger → types + services + MSW    |
-| `pnpm orval:watch`  | Codegen tự động khi swagger.json thay đổi      |
+| Lệnh                | Mục đích                                    |
+| ------------------- | ------------------------------------------- |
+| `pnpm dev`          | Dev server (HMR)                            |
+| `pnpm build`        | Build production (SSR)                      |
+| `pnpm start`        | Chạy server bundle production               |
+| `pnpm start:csr`    | Preview SPA (vite preview)                  |
+| `pnpm typecheck`    | `react-router typegen && tsc`               |
+| `pnpm lint`         | ESLint                                      |
+| `pnpm lint:fix`     | ESLint auto-fix                             |
+| `pnpm prettier`     | Kiểm tra format                             |
+| `pnpm prettier:fix` | Format code                                 |
+| `pnpm orval`        | Codegen từ swagger → types + services + MSW |
+| `pnpm orval:watch`  | Codegen tự động khi swagger.json thay đổi   |
 
 ---
 
@@ -118,13 +119,13 @@ Mở [`app/styles/theme.css`](./app/styles/theme.css) — sửa biến `--color-
 
 ```css
 :root {
-  --color-primary: #f97316;          /* đổi cam → màu khác */
+  --color-primary: #f97316; /* đổi cam → màu khác */
   --color-primary-foreground: #fff;
   /* ... */
 }
 
 .dark {
-  --color-primary: #38bdf8;          /* đổi sky → màu khác */
+  --color-primary: #38bdf8; /* đổi sky → màu khác */
   --color-primary-foreground: #0b1220;
   /* ... */
 }
@@ -135,18 +136,21 @@ Mở [`app/styles/theme.css`](./app/styles/theme.css) — sửa biến `--color-
 ## Thêm bản dịch / ngôn ngữ
 
 ### Thêm key mới
+
 1. Thêm key vào **cả 2** file: `app/locales/en/<namespace>.json` và `app/locales/vi/<namespace>.json`.
 2. Dùng:
    ```tsx
-   const { t } = useTranslation("welcome"); // namespace
-   t("title");
+   const { t } = useTranslation('welcome') // namespace
+   t('title')
    ```
 
 ### Thêm namespace mới (vd `auth`)
+
 1. Tạo `app/locales/{en,vi}/auth.json`.
 2. Sửa [`app/shared/lib/i18n/resources.ts`](./app/shared/lib/i18n/resources.ts) — thêm import + entry vào `resources` + thêm `"auth"` vào `NAMESPACES`.
 
 ### Thêm ngôn ngữ mới (vd `ja`)
+
 1. Tạo `app/locales/ja/{common,welcome,...}.json` đầy đủ key.
 2. Trong `resources.ts`: thêm `ja: { ... }` vào `resources` và `"ja"` vào `SUPPORTED_LANGUAGES`.
 3. Cập nhật `LABEL` trong [`language-switcher.tsx`](./app/shared/components/language-switcher.tsx).
@@ -192,21 +196,21 @@ Chi tiết kèm code mẫu: xem [`AGENTS.md`](./AGENTS.md) §12.
 ## Sử dụng theme & i18n trong code
 
 ```tsx
-import { useTranslation } from "react-i18next";
-import { useTheme } from "~/providers/theme-provider";
-import { Button } from "~/shared/ui";
-import { cn } from "~/shared/lib/cn";
+import { useTranslation } from 'react-i18next'
+import { useTheme } from '~/providers/theme-provider'
+import { Button } from '~/shared/ui'
+import { cn } from '~/shared/lib/cn'
 
 export function Example() {
-  const { t } = useTranslation("common");
-  const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation('common')
+  const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className={cn("rounded-lg bg-card p-4 text-card-foreground")}>
-      <p className="text-muted-foreground">{t("appName")}</p>
-      <Button onClick={toggleTheme}>{theme === "dark" ? t("light") : t("dark")}</Button>
+    <div className={cn('rounded-lg bg-card p-4 text-card-foreground')}>
+      <p className='text-muted-foreground'>{t('appName')}</p>
+      <Button onClick={toggleTheme}>{theme === 'dark' ? t('light') : t('dark')}</Button>
     </div>
-  );
+  )
 }
 ```
 
@@ -244,17 +248,18 @@ build/
 
 Repo đã setup pre-config cho 3 AI tool phổ biến — onboarding xong là dev có thể dùng ngay:
 
-| Thư mục       | Cho tool        | Có gì                                                                  |
-| ------------- | --------------- | ---------------------------------------------------------------------- |
-| `.claude/`    | Claude Code     | 11 skills (auto-invoke) + 6 slash commands + 2 subagents + permissions |
-| `.codex/`     | OpenAI Codex CLI| 14 reference prompts + config.toml (approval policy + denied paths)    |
-| `.kiro/`      | AWS Kiro / Q    | 4 steering files (product, tech, structure, rules) — `inclusion: always` |
+| Thư mục    | Cho tool         | Có gì                                                                    |
+| ---------- | ---------------- | ------------------------------------------------------------------------ |
+| `.claude/` | Claude Code      | 11 skills (auto-invoke) + 6 slash commands + 2 subagents + permissions   |
+| `.codex/`  | OpenAI Codex CLI | 14 reference prompts + config.toml (approval policy + denied paths)      |
+| `.kiro/`   | AWS Kiro / Q     | 4 steering files (product, tech, structure, rules) — `inclusion: always` |
 
 **Single source of truth**: `AGENTS.md` ở root — universal, mọi AI tool đều đọc (Codex, Cursor, Cline, Aider, Continue, Kiro). `CLAUDE.md`/`CODEX.md` chỉ là thin pointer + tool-specific.
 
 **Cho dev mới**: chỉ cần mở repo bằng Claude Code / Codex CLI / Kiro — AI tự load context đúng quy ước, không cần dán manual.
 
 **Khi nào dùng slash command** (Claude Code):
+
 - `/new-feature <name>` — scaffold đúng FSD-lite
 - `/add-route <url> <feature>` — đăng ký route thin
 - `/add-i18n-key <ns>.<k> "EN" "VI"` — thêm key giữ parity
@@ -263,6 +268,7 @@ Repo đã setup pre-config cho 3 AI tool phổ biến — onboarding xong là de
 - `/pre-commit-check` — gate quality trước commit
 
 **Khi nào gọi subagent** (Claude Code):
+
 - `@code-reviewer review branch` — full checklist mangaka-web
 - `@i18n-checker` — audit parity EN/VI, key thiếu
 

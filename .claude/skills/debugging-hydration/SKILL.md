@@ -17,40 +17,52 @@ mangaka-web chạy **SSR mặc định** (`react-router.config.ts`: `ssr: true`)
 ## Nguyên nhân thường gặp trong repo này
 
 ### 1. Truy cập `window` / `localStorage` trong render
+
 Server không có `window`. Nếu component render dùng:
+
 ```tsx
-const theme = localStorage.getItem("theme"); // ❌ throw on SSR
+const theme = localStorage.getItem('theme') // ❌ throw on SSR
 ```
+
 → Server render fallback, client render khác → mismatch.
 
 **Fix**: bọc trong `useEffect` (mount-then-state pattern, xem [theme-provider.tsx](app/providers/theme-provider.tsx)) hoặc dùng `~/shared/lib/storage` (đã guard `typeof window`).
 
 ### 2. Render time-dependent value
+
 ```tsx
 <p>{new Date().toLocaleString()}</p> // ❌ server time ≠ client time
 <p>{Math.random()}</p>              // ❌
 ```
+
 **Fix**: render placeholder server-side, update trong `useEffect`. Hoặc dùng `suppressHydrationWarning` nếu chủ ý.
 
 ### 3. Render khác theo `prefers-color-scheme` hay locale browser
+
 Server không biết browser preference. Nếu component render khác theo `matchMedia` → mismatch.
 
 **Fix**: pattern đã có trong repo — `themeInitScript` inject vào `<head>` áp class `dark` **trước hydrate**. React hydrate sau đó thấy class đã đúng.
 
 ### 4. i18n đổi language client-side trước hydrate
+
 `I18nProvider` detect language trong `useEffect`. Lần render server dùng `FALLBACK_LANGUAGE` (vi). Nếu user chọn EN, client mount đổi → render khác → mismatch.
 
 **Fix hiện tại**: chấp nhận lần render đầu là VI, sau effect mới đổi. Để render đúng từ server: lưu language trong **cookie** + đọc trong route loader (xem AGENTS.md §5.6).
 
 ### 5. Conditional render dựa trên `typeof window`
+
 ```tsx
-{typeof window !== "undefined" && <ClientOnlyThing />}
+{
+  typeof window !== 'undefined' && <ClientOnlyThing />
+}
 ```
+
 → Server không render, client render. Mismatch.
 
 **Fix**: dùng pattern `const [mounted, setMounted] = useState(false); useEffect(() => setMounted(true), [])` rồi `{mounted && <ClientOnlyThing />}`. Hoặc dynamic import với `ssr: false`.
 
 ### 6. HTML invalid (browser auto-fix)
+
 `<p><div>...</div></p>` — browser tự đóng `<p>` trước `<div>` → DOM khác HTML string. → Hydration mismatch.
 
 **Fix**: validate semantic HTML. Không nest block-level trong inline.

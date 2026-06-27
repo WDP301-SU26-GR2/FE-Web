@@ -13,34 +13,34 @@ Trước khi bắt tay vào task, scan resources có sẵn trong repo. Đừng t
 
 Đọc frontmatter `description` trong mỗi `SKILL.md`. Skill kích hoạt khi description khớp với intent task.
 
-| Skill                        | Khi nào dùng                                |
-| ---------------------------- | ------------------------------------------- |
-| `brainstorming`              | Task mơ hồ, cần explore option              |
-| `writing-plans`              | Non-trivial work (≥3 file)                  |
-| `root-cause-analysis`        | Debug bug, error, test fail                 |
-| `defensive-programming`      | Cân nhắc validate ở đâu                     |
-| `subagent-driven-development`| Cân nhắc spawn agent vs inline              |
-| `test-driven-development`    | Viết logic có input/output rõ ràng          |
-| `using-git-worktrees`        | Multi-branch parallel work                  |
-| `finishing-a-branch`         | Trước khi mở PR / merge                     |
+| Skill                         | Khi nào dùng                       |
+| ----------------------------- | ---------------------------------- |
+| `brainstorming`               | Task mơ hồ, cần explore option     |
+| `writing-plans`               | Non-trivial work (≥3 file)         |
+| `root-cause-analysis`         | Debug bug, error, test fail        |
+| `defensive-programming`       | Cân nhắc validate ở đâu            |
+| `subagent-driven-development` | Cân nhắc spawn agent vs inline     |
+| `test-driven-development`     | Viết logic có input/output rõ ràng |
+| `using-git-worktrees`         | Multi-branch parallel work         |
+| `finishing-a-branch`          | Trước khi mở PR / merge            |
 
 ### `.claude/commands/` — slash commands (dev gõ thủ công)
 
-| Command                  | Khi nào dùng                              |
-| ------------------------ | ----------------------------------------- |
-| `/new-feature`           | Scaffold feature mới                      |
-| `/add-route`             | Thêm route vào RR7                        |
-| `/add-i18n-key`          | Thêm key giữ parity EN/VI                 |
-| `/add-mock-endpoint`     | Tạo MSW handler + Faker factory           |
-| `/add-ui-primitive`      | Tạo headless component trong shared/ui    |
-| `/pre-commit-check`      | Gate quality trước commit                 |
+| Command              | Khi nào dùng                           |
+| -------------------- | -------------------------------------- |
+| `/new-feature`       | Scaffold feature mới                   |
+| `/add-route`         | Thêm route vào RR7                     |
+| `/add-i18n-key`      | Thêm key giữ parity EN/VI              |
+| `/add-mock-endpoint` | Tạo MSW handler + Faker factory        |
+| `/add-ui-primitive`  | Tạo headless component trong shared/ui |
+| `/pre-commit-check`  | Gate quality trước commit              |
 
 ### `.claude/agents/` — subagents (gọi qua @mention)
 
-| Agent           | Khi nào dùng                              |
-| --------------- | ----------------------------------------- |
-| `code-reviewer` | Review diff / PR theo checklist repo      |
-| `i18n-checker`  | Audit parity locale, key thiếu            |
+| Agent           | Khi nào dùng                         |
+| --------------- | ------------------------------------ |
+| `code-reviewer` | Review diff / PR theo checklist repo |
+| `i18n-checker`  | Audit parity locale, key thiếu       |
 
 ### Docs (canonical knowledge)
 

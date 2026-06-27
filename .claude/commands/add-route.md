@@ -16,18 +16,15 @@ argument-hint: <url-path> <feature-name>
 Tạo `app/routes/<url-path>.tsx` **THIN** (chỉ compose, không có business logic):
 
 ```tsx
-import { XxxPage } from "~/features/<feature-name>";
-import type { Route } from "./+types/<url-path>";
+import { XxxPage } from '~/features/<feature-name>'
+import type { Route } from './+types/<url-path>'
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "<Title> - Mangaka" },
-    { name: "description", content: "<desc>" },
-  ];
+  return [{ title: '<Title> - Mangaka' }, { name: 'description', content: '<desc>' }]
 }
 
 export default function <UrlPathPascal>() {
-  return <XxxPage />;
+  return <XxxPage />
 }
 ```
 

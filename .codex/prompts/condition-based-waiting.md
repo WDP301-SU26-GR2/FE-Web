@@ -22,12 +22,14 @@ Hoac: `wait-on http://localhost:5173`.
 ## Use cases mangaka-web
 
 1. **Doi dev server start**:
+
    ```bash
    pnpm dev &
    until curl -sf http://localhost:5173 > /dev/null; do sleep 0.3; done
    ```
 
 2. **Doi build xong**:
+
    ```bash
    pnpm build & BUILD_PID=$!
    wait $BUILD_PID

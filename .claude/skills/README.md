@@ -8,29 +8,29 @@
 
 Các skill này là **workflow patterns** không phụ thuộc tech stack. Copy nguyên thư mục sang repo khác, chỉ cần search & replace `mangaka-web` → `<your-repo>`:
 
-| Skill                              | Mô tả                                       |
-| ---------------------------------- | ------------------------------------------- |
-| `skill-discovery`                  | Meta — scan tools có sẵn trước task         |
-| `brainstorming`                    | Explore options trước khi code              |
-| `writing-plans`                    | Plan structured cho task ≥3 file            |
-| `root-cause-analysis`              | 5 Whys, không patch triệu chứng             |
-| `defensive-programming`            | Validate boundary, trust internal           |
-| `subagent-driven-development`      | Khi nào spawn Agent vs inline               |
-| `test-driven-development`          | Red-Green-Refactor                          |
-| `using-git-worktrees`              | Multi-branch parallel work                  |
-| `finishing-a-branch`               | Gate trước PR / merge                       |
-| `verification-before-completion`   | Verify thật trước khi báo done              |
-| `condition-based-waiting`          | Polling điều kiện thực, không `sleep` mù    |
-| `requesting-code-review`           | Self-review + spawn reviewer                |
+| Skill                            | Mô tả                                    |
+| -------------------------------- | ---------------------------------------- |
+| `skill-discovery`                | Meta — scan tools có sẵn trước task      |
+| `brainstorming`                  | Explore options trước khi code           |
+| `writing-plans`                  | Plan structured cho task ≥3 file         |
+| `root-cause-analysis`            | 5 Whys, không patch triệu chứng          |
+| `defensive-programming`          | Validate boundary, trust internal        |
+| `subagent-driven-development`    | Khi nào spawn Agent vs inline            |
+| `test-driven-development`        | Red-Green-Refactor                       |
+| `using-git-worktrees`            | Multi-branch parallel work               |
+| `finishing-a-branch`             | Gate trước PR / merge                    |
+| `verification-before-completion` | Verify thật trước khi báo done           |
+| `condition-based-waiting`        | Polling điều kiện thực, không `sleep` mù |
+| `requesting-code-review`         | Self-review + spawn reviewer             |
 
 ### 🎯 Project-specific (2 skills) — đặc thù mangaka-web stack
 
 Reference tới file/pattern cụ thể của repo (`react-router.config.ts`, `theme.css`, `i18n-provider.tsx`...). Khi copy sang repo khác cần điều chỉnh ví dụ:
 
-| Skill                  | Phụ thuộc                                          |
-| ---------------------- | -------------------------------------------------- |
-| `debugging-hydration`  | SSR mode của React Router 7, themeInitScript, i18n |
-| `accessibility-audit`  | Pattern token-driven theme, language-switcher      |
+| Skill                 | Phụ thuộc                                          |
+| --------------------- | -------------------------------------------------- |
+| `debugging-hydration` | SSR mode của React Router 7, themeInitScript, i18n |
+| `accessibility-audit` | Pattern token-driven theme, language-switcher      |
 
 ## Cách tái sử dụng skills cho repo khác
 

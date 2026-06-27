@@ -1,56 +1,69 @@
 import { defineConfig } from 'orval'
 
-/**
- * Orval — codegen từ OpenAPI spec.
- *
- * Cách dùng:
- *   1. Khi BE cung cấp swagger URL / file:
- *      - Sửa `input.target` bên dưới thành URL hoặc path file.
- *   2. Chạy: npm run orval
- *   3. Orval sẽ generate vào:
- *      - app/api/model/        → TypeScript types/interfaces
- *      - app/api/operations/   → fetch functions (dùng trong RR7 loaders / client hooks)
- *      - app/mocks/handlers/generated/  → MSW handlers với Faker data
- *   4. Import generated handlers vào app/mocks/handlers/index.ts,
- *      rồi xoá / comment handler viết tay tương ứng.
- *
- * ⚠️  KHÔNG viết code tay trong app/api/model/ và app/api/operations/
- *     vì `clean: true` sẽ XÓA SẠCH rồi tạo lại mỗi lần chạy orval.
- */
+// Orval config - generate types and fetch functions from OpenAPI spec.
+//
+// Run: npm run orval
+// Output:
+//   - app/api/model/<tag>/          -> TypeScript types, split by tag (auth, series, ...)
+//   - app/api/operations/<tag>/     -> fetch functions, split by tag
+//   - app/api/operations/<tag>/<tag>.msw.ts -> MSW mock handlers
+//   - app/api/model/index.ts        -> barrel over per-tag sub-folders
+//
+// Hooks (run in order after each generation):
+//   1. fix-generated-types.mjs        -> adds @ts-ignore to suppress HeadersInit strict error
+//   2. organize-models-by-tag.mjs     -> splits flat model/ into per-tag sub-folders
+//   3. recreate-operations-index.mjs  -> recreates operations barrel after Orval wipes it
+//
+// IMPORTANT: Do NOT edit app/api/model/ or app/api/operations/ manually.
+// clean: true wipes them on every run. Only edit app/api/mutator/custom-fetch.ts.
 export default defineConfig({
   backendApi: {
     output: {
-      mode: 'tags-split', // tách file theo tags trong OpenAPI
-      target: 'app/api/operations', // fetch functions
-      schemas: 'app/api/model', // TypeScript types
-      client: 'fetch', // plain fetch — hoạt động với RR7 loader
-      clean: true, // xoá sạch output trước khi generate lại
-      indexFiles: true, // tạo barrel index.ts
+      mode: 'tags-split',
+      target: 'app/api/operations',
+      schemas: 'app/api/model',
+      client: 'fetch',
+      clean: true,
+      indexFiles: true,
       mock: {
         type: 'msw',
         indexMockFiles: true,
-        useExamples: true // dùng examples từ OpenAPI nếu có
+        useExamples: true,
       },
       override: {
-        mock: {
-          required: true // mock cả optional fields
-        },
-        useNamedParameters: true, // object params thay vì positional
         mutator: {
-          // Custom fetch wrapper — inject base URL, auth headers, v.v.
-          // Tạo file này trước khi chạy orval (xem hướng dẫn trong file).
           path: './app/api/mutator/custom-fetch.ts',
-          name: 'customFetch'
-        }
-      }
+          name: 'customFetch',
+        },
+        mock: {
+          required: true,
+        },
+        useNamedParameters: true,
+      },
     },
     input: {
-      // ─── Thay bằng URL swagger thực khi BE có ────────────────────────────
-      // target: "https://api.mangaka.example.com/swagger/v1/swagger.json",
-      // ─── Hoặc dùng file local (download swagger.json từ BE) ─────────────
-      // target: "./swagger.json",
-      // ─────────────────────────────────────────────────────────────────────
-      target: './swagger.json' // placeholder — đổi khi có swagger
-    }
-  }
+      // ─── Dùng swagger local (cache từ BE) ────────────────────────────────
+      // Ưu tiên local để orval chạy ổn định, không phụ thuộc mạng.
+      // Khi BE update swagger, chạy: npm run orval:fetch
+      // (script sẽ download về swagger.json rồi orval tự generate).
+      target: './swagger.json'
+    },
+    hooks: {
+      afterAllFilesWrite: [
+        // Run FIRST so files exist at their final locations before being
+        // moved into per-tag sub-folders by the next hook.
+        {
+          command: 'node scripts/fix-generated-types.mjs',
+        },
+        // Organize flat model/ into per-tag sub-folders (e.g. model/auth/).
+        {
+          command: 'node scripts/organize-models-by-tag.mjs',
+        },
+        // Recreate operations barrel after Orval wipes it.
+        {
+          command: 'node scripts/recreate-operations-index.mjs',
+        },
+      ],
+    },
+  },
 })

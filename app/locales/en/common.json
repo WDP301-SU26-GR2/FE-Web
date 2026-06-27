@@ -7,6 +7,9 @@
   "switchToLight": "Switch to light mode",
   "switchToDark": "Switch to dark mode",
   "loading": "Loading...",
+  "splashLoading": "Starting up...",
+  "login": "Login",
+  "register": "Register",
   "errors": {
     "unknown": "An unexpected error occurred.",
     "notFound": "The requested page could not be found."

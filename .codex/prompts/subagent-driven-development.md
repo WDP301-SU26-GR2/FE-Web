@@ -21,11 +21,13 @@ Subagent chay trong context window rieng — main chi nhan tom tat.
 Agent KHONG co context conversation. Prompt phai du:
 
 ### Bad
+
 ```
 Review changes based on what we discussed.
 ```
 
 ### Good
+
 ```
 Review diff main..HEAD trong repo mangaka-web.
 Context: vua them /mangas route. Check:
@@ -43,6 +45,7 @@ Report:
 ## Parallel spawn
 
 Trong 1 message, goi nhieu Agent tool song song. Vd:
+
 - Agent 1: audit i18n parity
 - Agent 2: grep hex color
 - Agent 3: check route thinness

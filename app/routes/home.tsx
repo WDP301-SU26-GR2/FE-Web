@@ -1,14 +1,78 @@
-import { WelcomePage } from "~/features/welcome";
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
-import type { Route } from "./+types/home";
+import { useAuth } from '~/features/auth/context/auth-context'
+import { WelcomePage } from '~/features/welcome'
+
+import type { Route } from './+types/home'
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Mangaka" },
-    { name: "description", content: "Welcome to Mangaka" },
-  ];
+  return [{ title: 'Mangaka' }, { name: 'description', content: 'Welcome to Mangaka' }]
+}
+
+/** Role → dashboard path mapping */
+const ROLE_DASHBOARD_MAP: Record<string, string> = {
+  MANGAKA: '/dashboard/mangaka',
+  ASSISTANT: '/dashboard/assistant',
+  EDITOR: '/dashboard/editor',
+  BOARD: '/dashboard/board',
+  SUPER_ADMIN: '/dashboard/admin'
+}
+
+function SplashScreen() {
+  const { t } = useTranslation('common')
+
+  return (
+    <main className='flex min-h-screen items-center justify-center bg-background'>
+      <div className='flex flex-col items-center gap-4'>
+        {/* Logo / App name */}
+        <h1 className='text-3xl font-bold tracking-tight text-foreground'>{t('appName')}</h1>
+
+        {/* Animated spinner */}
+        <div className='relative h-10 w-10'>
+          <div className='absolute inset-0 animate-spin rounded-full border-[3px] border-border border-t-primary' />
+        </div>
+
+        <p className='text-sm text-muted-foreground'>{t('splashLoading')}</p>
+      </div>
+    </main>
+  )
 }
 
 export default function Home() {
-  return <WelcomePage />;
+  const { status, session } = useAuth()
+  const navigate = useNavigate()
+  const { t } = useTranslation('common')
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+
+    const role = session?.user?.role?.toUpperCase()
+    const dashboardPath = role ? ROLE_DASHBOARD_MAP[role] : null
+
+    if (dashboardPath) {
+      navigate(dashboardPath, { replace: true })
+    } else {
+      // Role unknown / unmapped — fall back to login.
+      navigate('/login', { replace: true })
+    }
+  }, [status, session, navigate])
+
+  // Hydrating from SSR — show splash to avoid flash of wrong content.
+  if (status === 'idle') {
+    return <SplashScreen />
+  }
+
+  // No valid session → show landing page.
+  if (status === 'unauthenticated' || !session) {
+    return <WelcomePage />
+  }
+
+  // Authenticated — just render nothing while redirect happens.
+  return (
+    <main className='flex min-h-screen items-center justify-center bg-background'>
+      <p className='text-muted-foreground'>{t('splashLoading')}</p>
+    </main>
+  )
 }
