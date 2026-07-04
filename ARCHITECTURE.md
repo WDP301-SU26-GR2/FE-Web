@@ -40,19 +40,19 @@ Sau 3 tháng:
 
 Hãy xem dự án như **một toà nhà**:
 
-| Thư mục              | Vai trò trong toà nhà                                    | Trong code                                   |
-| -------------------- | -------------------------------------------------------- | -------------------------------------------- |
-| `routes/`            | **Cửa ra vào** — dẫn khách tới phòng nào                 | URL → page nào                               |
-| `features/`          | **Các phòng chức năng** — phòng ngủ, bếp, phòng tắm...   | Auth, Manga, Chapter, Profile, Payment...    |
-| `shared/ui/`         | **Đồ nội thất tiêu chuẩn** — ghế, bàn ai cũng dùng được  | Button, Input, Card (generic)                |
-| `shared/components/` | **Đồ đã ráp** — bộ bàn ăn = bàn + ghế gắn liền           | ThemeToggle, LanguageSwitcher (đã ráp)       |
-| `shared/lib/`        | **Dụng cụ** — kéo, búa, thước                            | `cn()`, `storage`, i18n init                 |
-| `shared/config/`     | **Bảng địa chỉ, danh bạ**                                | `SITE.name`, `STORAGE_KEYS`, env vars        |
-| `providers/`         | **Hệ thống điện/nước cấp toàn nhà**                      | Theme, i18n, sau này: Auth, Toast, Query     |
-| `styles/`            | **Bảng màu sơn** của cả toà nhà                          | `theme.css` — đổi 1 chỗ áp cả nhà            |
-| `locales/`           | **Bảng song ngữ** dán mọi nơi                            | `en/`, `vi/` — dịch theo namespace           |
-| `api/`               | **Đường ống ra ngoài** (do Orval đúc sẵn từ swagger)     | `model/` types, `operations/` fetch fns      |
-| `mocks/`             | **Bếp giả** — nấu data fake khi BE chưa sẵn sàng         | MSW handlers + Faker factories (dev only)    |
+| Thư mục              | Vai trò trong toà nhà                                   | Trong code                                |
+| -------------------- | ------------------------------------------------------- | ----------------------------------------- |
+| `routes/`            | **Cửa ra vào** — dẫn khách tới phòng nào                | URL → page nào                            |
+| `features/`          | **Các phòng chức năng** — phòng ngủ, bếp, phòng tắm...  | Auth, Manga, Chapter, Profile, Payment... |
+| `shared/ui/`         | **Đồ nội thất tiêu chuẩn** — ghế, bàn ai cũng dùng được | Button, Input, Card (generic)             |
+| `shared/components/` | **Đồ đã ráp** — bộ bàn ăn = bàn + ghế gắn liền          | ThemeToggle, LanguageSwitcher (đã ráp)    |
+| `shared/lib/`        | **Dụng cụ** — kéo, búa, thước                           | `cn()`, `storage`, i18n init              |
+| `shared/config/`     | **Bảng địa chỉ, danh bạ**                               | `SITE.name`, `STORAGE_KEYS`, env vars     |
+| `providers/`         | **Hệ thống điện/nước cấp toàn nhà**                     | Theme, i18n, sau này: Auth, Toast, Query  |
+| `styles/`            | **Bảng màu sơn** của cả toà nhà                         | `theme.css` — đổi 1 chỗ áp cả nhà         |
+| `locales/`           | **Bảng song ngữ** dán mọi nơi                           | `en/`, `vi/` — dịch theo namespace        |
+| `api/`               | **Đường ống ra ngoài** (do Orval đúc sẵn từ swagger)    | `model/` types, `operations/` fetch fns   |
+| `mocks/`             | **Bếp giả** — nấu data fake khi BE chưa sẵn sàng        | MSW handlers + Faker factories (dev only) |
 
 ### Quy tắc vàng — ai được dùng ai?
 
@@ -111,27 +111,27 @@ app/features/manga/
 
 ```ts
 export type Manga = {
-  id: string;
-  title: string;
-  description: string;
-  coverUrl: string;
-  author: string;
-};
+  id: string
+  title: string
+  description: string
+  coverUrl: string
+  author: string
+}
 ```
 
 **`features/manga/api/manga-api.ts`** — gọi API:
 
 ```ts
-import type { Manga } from "../types";
+import type { Manga } from '../types'
 
 // `fetch` đi qua MSW khi VITE_ENABLE_MOCK=true → trả về data fake từ
 // app/mocks/handlers/. Khi BE có swagger thật, KHÔNG viết tay nữa —
 // chuyển sang dùng generated function `getMangas()` từ `~/api/operations`.
 export async function fetchMangas(): Promise<Manga[]> {
-  const res = await fetch("/api/mangas");
-  if (!res.ok) throw new Error("Failed to fetch mangas");
-  const body = (await res.json()) as { items: Manga[] };
-  return body.items;
+  const res = await fetch('/api/mangas')
+  if (!res.ok) throw new Error('Failed to fetch mangas')
+  const body = (await res.json()) as { items: Manga[] }
+  return body.items
 }
 ```
 
@@ -140,87 +140,91 @@ export async function fetchMangas(): Promise<Manga[]> {
 **`features/manga/hooks/use-mangas.ts`** — hook tái sử dụng:
 
 ```ts
-import { useEffect, useState } from "react";
-import type { Manga } from "../types";
-import { fetchMangas } from "../api/manga-api";
+import { useEffect, useState } from 'react'
+import type { Manga } from '../types'
+import { fetchMangas } from '../api/manga-api'
 
 export function useMangas() {
-  const [mangas, setMangas] = useState<Manga[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [mangas, setMangas] = useState<Manga[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchMangas().then((data) => {
-      setMangas(data);
-      setLoading(false);
-    });
-  }, []);
+      setMangas(data)
+      setLoading(false)
+    })
+  }, [])
 
-  return { mangas, loading };
+  return { mangas, loading }
 }
 ```
 
 **`features/manga/components/manga-card.tsx`** — UI từng item:
 
 ```tsx
-import { useTranslation } from "react-i18next";
-import { Button } from "~/shared/ui";
-import type { Manga } from "../types";
+import { useTranslation } from 'react-i18next'
+import { Button } from '~/shared/ui'
+import type { Manga } from '../types'
 
 export function MangaCard({ manga }: { manga: Manga }) {
-  const { t } = useTranslation("manga");
+  const { t } = useTranslation('manga')
   return (
-    <article className="rounded-lg border border-border bg-card p-4">
-      <img src={manga.coverUrl} alt={manga.title} className="rounded" />
-      <h3 className="mt-2 font-semibold text-card-foreground">{manga.title}</h3>
-      <p className="text-muted-foreground">{manga.description}</p>
-      <Button variant="primary" className="mt-3">{t("read")}</Button>
+    <article className='rounded-lg border border-border bg-card p-4'>
+      <img src={manga.coverUrl} alt={manga.title} className='rounded' />
+      <h3 className='mt-2 font-semibold text-card-foreground'>{manga.title}</h3>
+      <p className='text-muted-foreground'>{manga.description}</p>
+      <Button variant='primary' className='mt-3'>
+        {t('read')}
+      </Button>
     </article>
-  );
+  )
 }
 ```
 
 **`features/manga/components/manga-list.tsx`**:
 
 ```tsx
-import { useTranslation } from "react-i18next";
-import { useMangas } from "../hooks/use-mangas";
-import { MangaCard } from "./manga-card";
+import { useTranslation } from 'react-i18next'
+import { useMangas } from '../hooks/use-mangas'
+import { MangaCard } from './manga-card'
 
 export function MangaList() {
-  const { t } = useTranslation("common");
-  const { mangas, loading } = useMangas();
+  const { t } = useTranslation('common')
+  const { mangas, loading } = useMangas()
 
-  if (loading) return <p>{t("loading")}</p>;
+  if (loading) return <p>{t('loading')}</p>
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-      {mangas.map((m) => <MangaCard key={m.id} manga={m} />)}
+    <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+      {mangas.map((m) => (
+        <MangaCard key={m.id} manga={m} />
+      ))}
     </div>
-  );
+  )
 }
 ```
 
 **`features/manga/manga-page.tsx`** — ráp tất cả:
 
 ```tsx
-import { useTranslation } from "react-i18next";
-import { MangaList } from "./components/manga-list";
+import { useTranslation } from 'react-i18next'
+import { MangaList } from './components/manga-list'
 
 export function MangaPage() {
-  const { t } = useTranslation("manga");
+  const { t } = useTranslation('manga')
   return (
-    <main className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+    <main className='container mx-auto p-6'>
+      <h1 className='text-2xl font-bold text-foreground'>{t('title')}</h1>
       <MangaList />
     </main>
-  );
+  )
 }
 ```
 
 **`features/manga/index.ts`** — public API (chỉ export cái nào bên ngoài được dùng):
 
 ```ts
-export { MangaPage } from "./manga-page";
-export type { Manga } from "./types";
+export { MangaPage } from './manga-page'
+export type { Manga } from './types'
 ```
 
 ### Bước 3 — Thêm bản dịch
@@ -246,16 +250,16 @@ export type { Manga } from "./types";
 Đăng ký namespace trong `app/shared/lib/i18n/resources.ts`:
 
 ```ts
-import enManga from "~/locales/en/manga.json";
-import viManga from "~/locales/vi/manga.json";
+import enManga from '~/locales/en/manga.json'
+import viManga from '~/locales/vi/manga.json'
 
-export const NAMESPACES = ["common", "welcome", "manga"] as const;
+export const NAMESPACES = ['common', 'welcome', 'manga'] as const
 //                                              ^^^^^^^ thêm
 
 export const resources = {
   en: { common: enCommon, welcome: enWelcome, manga: enManga },
-  vi: { common: viCommon, welcome: viWelcome, manga: viManga },
-};
+  vi: { common: viCommon, welcome: viWelcome, manga: viManga }
+}
 ```
 
 ### Bước 4 — Mount vào URL
@@ -263,27 +267,27 @@ export const resources = {
 `app/routes/mangas.tsx` (route thin — chỉ wrap feature):
 
 ```tsx
-import { MangaPage } from "~/features/manga";
-import type { Route } from "./+types/mangas";
+import { MangaPage } from '~/features/manga'
+import type { Route } from './+types/mangas'
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Truyện tranh - Mangaka" }];
+  return [{ title: 'Truyện tranh - Mangaka' }]
 }
 
 export default function Mangas() {
-  return <MangaPage />;
+  return <MangaPage />
 }
 ```
 
 Đăng ký vào `app/routes.ts`:
 
 ```ts
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, route } from '@react-router/dev/routes'
 
 export default [
-  index("routes/home.tsx"),
-  route("mangas", "routes/mangas.tsx"),    // ← thêm dòng này
-] satisfies RouteConfig;
+  index('routes/home.tsx'),
+  route('mangas', 'routes/mangas.tsx') // ← thêm dòng này
+] satisfies RouteConfig
 ```
 
 **Xong!** URL `/mangas` đã chạy. Tất cả code manga gói gọn trong `features/manga/`. Muốn xoá feature → xoá nguyên thư mục đó + 1 dòng trong `routes.ts` + 2 file json. Không ảnh hưởng feature khác.
@@ -302,34 +306,34 @@ Sau này `features/manga` cũng cần show avatar tác giả → **lúc đó** k
 
 ### Phân biệt `shared/ui/` vs `shared/components/`
 
-| `shared/ui/`                          | `shared/components/`                           |
-| ------------------------------------- | ---------------------------------------------- |
-| Generic, headless, không có business  | Có business meaning, đã ráp                    |
-| `Button`, `Input`, `Card`, `Dialog`   | `ThemeToggle`, `LanguageSwitcher`, `AppHeader` |
-| Có thể copy sang dự án khác           | Chỉ làm việc trong dự án này                   |
-| Phụ thuộc: chỉ Tailwind + `cn()`      | Phụ thuộc: provider, hook, config của app      |
+| `shared/ui/`                         | `shared/components/`                           |
+| ------------------------------------ | ---------------------------------------------- |
+| Generic, headless, không có business | Có business meaning, đã ráp                    |
+| `Button`, `Input`, `Card`, `Dialog`  | `ThemeToggle`, `LanguageSwitcher`, `AppHeader` |
+| Có thể copy sang dự án khác          | Chỉ làm việc trong dự án này                   |
+| Phụ thuộc: chỉ Tailwind + `cn()`     | Phụ thuộc: provider, hook, config của app      |
 
 ---
 
 ## 5. Ví dụ ngắn: dùng `cn()` để merge class
 
 ```tsx
-import { cn } from "~/shared/lib/cn";
+import { cn } from '~/shared/lib/cn'
 
 function Card({ className, isActive }: { className?: string; isActive: boolean }) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-border p-4",   // base
-        isActive && "ring-2 ring-ring",          // conditional
-        className                                  // override từ ngoài
+        'rounded-lg border border-border p-4', // base
+        isActive && 'ring-2 ring-ring', // conditional
+        className // override từ ngoài
       )}
     />
-  );
+  )
 }
 
 // Dùng:
-<Card className="bg-primary" isActive />
+;<Card className='bg-primary' isActive />
 // → tailwind-merge tự loại class trùng, giữ class sau (override class trước)
 ```
 
@@ -361,9 +365,9 @@ component nhận response như API thật
 **Bước 1** — factory `app/mocks/factories/chapter.factory.ts`:
 
 ```ts
-import { faker } from "@faker-js/faker";
+import { faker } from '@faker-js/faker'
 
-export type Chapter = { id: string; mangaId: string; title: string; pageCount: number };
+export type Chapter = { id: string; mangaId: string; title: string; pageCount: number }
 
 export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
   return {
@@ -371,30 +375,28 @@ export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
     mangaId: faker.string.uuid(),
     title: faker.lorem.words(4),
     pageCount: faker.number.int({ min: 10, max: 60 }),
-    ...overrides,
-  };
+    ...overrides
+  }
 }
 ```
 
 **Bước 2** — handler `app/mocks/handlers/chapter.handler.ts`:
 
 ```ts
-import { http, HttpResponse } from "msw";
-import { createChapter } from "../factories/chapter.factory";
+import { http, HttpResponse } from 'msw'
+import { createChapter } from '../factories/chapter.factory'
 
 export const chapterHandlers = [
-  http.get("/api/mangas/:mangaId/chapters", () =>
-    HttpResponse.json(Array.from({ length: 10 }, () => createChapter())),
-  ),
-];
+  http.get('/api/mangas/:mangaId/chapters', () => HttpResponse.json(Array.from({ length: 10 }, () => createChapter())))
+]
 ```
 
 **Bước 3** — đăng ký vào `app/mocks/handlers/index.ts`:
 
 ```ts
-import { chapterHandlers } from "./chapter.handler";
+import { chapterHandlers } from './chapter.handler'
 
-export const handlers = [...exampleHandlers, ...chapterHandlers];
+export const handlers = [...exampleHandlers, ...chapterHandlers]
 ```
 
 Restart dev server → `fetch("/api/mangas/abc/chapters")` đã trả data fake.
@@ -414,10 +416,10 @@ Switch sang Orval:
 
 ```ts
 // route loader (preferred)
-import { getMangas } from "~/api/operations";
+import { getMangas } from '~/api/operations'
 
 export async function loader() {
-  return { mangas: await getMangas() };
+  return { mangas: await getMangas() }
 }
 ```
 
@@ -438,21 +440,21 @@ Khi tắt, code MSW bị **tree-shake** khỏi production bundle (dynamic import
 
 ## 7. Cheatsheet — khi cần làm X, mở file nào?
 
-| Việc cần làm                            | Mở file                                                   |
-| --------------------------------------- | --------------------------------------------------------- |
-| Đổi màu chủ đạo                         | `app/styles/theme.css`                                    |
-| Thêm key dịch                           | `app/locales/{en,vi}/<namespace>.json`                    |
-| Thêm namespace mới                      | `app/shared/lib/i18n/resources.ts`                        |
-| Thêm trang mới                          | `app/routes/<name>.tsx` + `app/routes.ts`                 |
-| Thêm feature mới                        | tạo `app/features/<name>/` (xem mục 3)                    |
-| Thêm UI primitive (Button, Input...)    | `app/shared/ui/`                                          |
-| Thêm provider mới (Toast, Query...)     | `app/providers/` + ráp vào `app-providers.tsx`            |
-| Thêm env var                            | `.env.local` (+ `.env.example`) + `app/shared/config/env.ts` |
-| Thêm hằng số toàn app                   | `app/shared/config/site.ts`                               |
-| Thêm helper thuần (date format, ...)    | `app/shared/lib/<topic>.ts`                               |
-| Thêm mock endpoint                      | `app/mocks/factories/` + `app/mocks/handlers/` (xem mục 6)|
-| Bật / tắt mock                          | `.env.local` → `VITE_ENABLE_MOCK`                         |
-| Codegen từ swagger                      | đặt `swagger.json` + `npm run orval`                      |
+| Việc cần làm                         | Mở file                                                      |
+| ------------------------------------ | ------------------------------------------------------------ |
+| Đổi màu chủ đạo                      | `app/styles/theme.css`                                       |
+| Thêm key dịch                        | `app/locales/{en,vi}/<namespace>.json`                       |
+| Thêm namespace mới                   | `app/shared/lib/i18n/resources.ts`                           |
+| Thêm trang mới                       | `app/routes/<name>.tsx` + `app/routes.ts`                    |
+| Thêm feature mới                     | tạo `app/features/<name>/` (xem mục 3)                       |
+| Thêm UI primitive (Button, Input...) | `app/shared/ui/`                                             |
+| Thêm provider mới (Toast, Query...)  | `app/providers/` + ráp vào `app-providers.tsx`               |
+| Thêm env var                         | `.env.local` (+ `.env.example`) + `app/shared/config/env.ts` |
+| Thêm hằng số toàn app                | `app/shared/config/site.ts`                                  |
+| Thêm helper thuần (date format, ...) | `app/shared/lib/<topic>.ts`                                  |
+| Thêm mock endpoint                   | `app/mocks/factories/` + `app/mocks/handlers/` (xem mục 6)   |
+| Bật / tắt mock                       | `.env.local` → `VITE_ENABLE_MOCK`                            |
+| Codegen từ swagger                   | đặt `swagger.json` + `npm run orval`                         |
 
 ---
 

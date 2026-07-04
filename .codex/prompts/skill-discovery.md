@@ -6,29 +6,29 @@ Truoc khi bat dau task, scan resource co san trong mangaka-web. Dung tu nghi ra 
 
 ### `.codex/prompts/` — reference prompts (manual reference)
 
-| Prompt                          | Khi nao dung                              |
-| ------------------------------- | ----------------------------------------- |
-| `brainstorming.md`              | Task mo ho, can explore options           |
-| `writing-plans.md`              | Non-trivial work (>=3 file)               |
-| `root-cause-analysis.md`        | Debug bug, error, test fail               |
-| `defensive-programming.md`      | Can nhac validate o dau                   |
-| `subagent-driven-development.md`| Can nhac spawn vs inline                  |
-| `test-driven-development.md`    | Viet logic co input/output ro             |
-| `using-git-worktrees.md`        | Multi-branch parallel                     |
-| `finishing-a-branch.md`         | Truoc khi mo PR / merge                   |
-| `debugging-hydration.md`        | Hydration mismatch / FOUC                 |
-| `accessibility-audit.md`        | Khi them UI interactive                   |
-| `new-feature.md`                | Scaffold feature moi                      |
-| `pre-commit-check.md`           | Gate quality truoc commit                 |
-| `code-review.md`                | Review diff theo checklist                |
+| Prompt                           | Khi nao dung                    |
+| -------------------------------- | ------------------------------- |
+| `brainstorming.md`               | Task mo ho, can explore options |
+| `writing-plans.md`               | Non-trivial work (>=3 file)     |
+| `root-cause-analysis.md`         | Debug bug, error, test fail     |
+| `defensive-programming.md`       | Can nhac validate o dau         |
+| `subagent-driven-development.md` | Can nhac spawn vs inline        |
+| `test-driven-development.md`     | Viet logic co input/output ro   |
+| `using-git-worktrees.md`         | Multi-branch parallel           |
+| `finishing-a-branch.md`          | Truoc khi mo PR / merge         |
+| `debugging-hydration.md`         | Hydration mismatch / FOUC       |
+| `accessibility-audit.md`         | Khi them UI interactive         |
+| `new-feature.md`                 | Scaffold feature moi            |
+| `pre-commit-check.md`            | Gate quality truoc commit       |
+| `code-review.md`                 | Review diff theo checklist      |
 
 ### Docs (canonical)
 
-| File              | Noi dung                                    |
-| ----------------- | ------------------------------------------- |
+| File              | Noi dung                                      |
+| ----------------- | --------------------------------------------- |
 | `AGENTS.md`       | Architecture + conventions (doc khi nghi ngo) |
-| `ARCHITECTURE.md` | Onboarding + vi du them feature             |
-| `README.md`       | Setup + scripts                             |
+| `ARCHITECTURE.md` | Onboarding + vi du them feature               |
+| `README.md`       | Setup + scripts                               |
 
 ## Workflow khi nhan task moi
 

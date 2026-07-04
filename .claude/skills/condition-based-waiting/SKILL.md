@@ -16,6 +16,7 @@ curl localhost:5173         # may fail because still booting
 ```
 
 Vấn đề:
+
 - 5s là **đoán**. Máy chậm → fail. Máy nhanh → phí 4s.
 - Không deterministic, gây flaky test/script.
 - Khi server thực sự bị treo → script vẫn tiếp tục, sai hoàn toàn.
@@ -35,6 +36,7 @@ done
 ```
 
 Hoặc dùng `until` loop (clearer):
+
 ```bash
 until curl -sf http://localhost:5173 > /dev/null; do
   sleep 0.5
@@ -46,6 +48,7 @@ Hoặc dùng tool sẵn: `wait-on http://localhost:5173`.
 ## Use cases mangaka-web
 
 ### 1. Đợi dev server start
+
 ```bash
 pnpm dev &
 until curl -sf http://localhost:5173 > /dev/null; do sleep 0.3; done
@@ -53,9 +56,11 @@ until curl -sf http://localhost:5173 > /dev/null; do sleep 0.3; done
 ```
 
 ### 2. Đợi MSW worker register (sau pnpm dev)
+
 Mock worker register vào browser bất đồng bộ. E2e wait `window.__MSW_READY__` flag (custom set in entry.client.tsx).
 
 ### 3. Đợi build xong
+
 ```bash
 pnpm build &
 BUILD_PID=$!
@@ -64,6 +69,7 @@ wait $BUILD_PID                   # đợi đến khi process kết thúc
 ```
 
 ### 4. Đợi file generated (Orval watch mode)
+
 ```bash
 pnpm orval:watch &
 until [ -f app/api/operations/index.ts ]; do sleep 0.5; done
@@ -87,6 +93,7 @@ until [ -f app/api/operations/index.ts ]; do sleep 0.5; done
 ## Tool harness notes
 
 Khi dùng Claude Code / Codex tool với `run_in_background`:
+
 - Harness tự notify khi process complete.
 - KHÔNG sleep + poll trong khi đó — phí token, race condition.
 - Chỉ poll khi tracking **external state** harness không thấy (vd CI run remote, deploy queue).

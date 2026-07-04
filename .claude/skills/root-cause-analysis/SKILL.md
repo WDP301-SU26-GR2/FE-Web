@@ -25,25 +25,31 @@ Hỏi "tại sao?" ít nhất 5 lần đến khi chạm root cause.
 ## Process
 
 ### 1. Reproduce
+
 Trước khi sửa: confirm reproduce được. Nếu không reproduce được → hỏi user step cụ thể.
 
 ### 2. Read error carefully
+
 - Đọc **toàn bộ** stack trace, không chỉ dòng đầu.
 - Note: file path, line, message, expected vs actual.
 - Hydration mismatch? → so sánh server HTML và client render đầu.
 
 ### 3. Form hypothesis
+
 Đoán nguyên nhân **trước khi đọc code**. Viết ra: "Tui đoán là X vì Y."
 
 ### 4. Verify with code/logs
+
 Đọc code/git log/log để confirm hypothesis. Nếu sai → form hypothesis mới, không đoán mò.
 
 ### 5. Identify root vs symptom
+
 - **Symptom**: cái user thấy ("nút không click được").
 - **Root**: cái thực sự sai ("event handler bind sai context").
 - Phân biệt rõ. Fix root, không fix symptom.
 
 ### 6. Fix + verify fix doesn't introduce regression
+
 - Sau khi fix, suy nghĩ: thay đổi này có ảnh hưởng path nào khác không?
 - Run typecheck + manual test golden path.
 

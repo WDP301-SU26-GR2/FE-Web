@@ -5,6 +5,7 @@
 ## TDD ap dung cho
 
 ### Hop
+
 - Pure function / util (cn, format, slugify)
 - Custom hook co logic (useDebounce, useFetch)
 - Zod schema / validator
@@ -12,6 +13,7 @@
 - API mutator / fetch wrapper
 
 ### Khong hop
+
 - UI render thuan (snapshot gay khi doi class)
 - CSS / styling
 - Integration BE that (dung MSW + e2e)
@@ -19,19 +21,22 @@
 ## Red -> Green -> Refactor
 
 ### 1. RED — viet test FAIL truoc
-```ts
-import { describe, it, expect } from "vitest";
-import { cn } from "../cn";
 
-describe("cn", () => {
-  it("merges conflicting tailwind classes, later wins", () => {
-    expect(cn("p-4 bg-red-500", "p-2")).toBe("bg-red-500 p-2");
-  });
-});
+```ts
+import { describe, it, expect } from 'vitest'
+import { cn } from '../cn'
+
+describe('cn', () => {
+  it('merges conflicting tailwind classes, later wins', () => {
+    expect(cn('p-4 bg-red-500', 'p-2')).toBe('bg-red-500 p-2')
+  })
+})
 ```
+
 Chay test -> FAIL.
 
 ### 2. GREEN — code don gian nhat de pass
+
 Khong over-engineer. Ugly de pass -> ok.
 
 ### 3. REFACTOR — clean up, van pass

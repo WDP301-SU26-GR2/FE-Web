@@ -7,12 +7,13 @@ Su dung khi debug bug, error, test fail. **KHONG patch trieu chung** — tim goc
 Hoi "tai sao?" >=5 lan den khi cham root cause.
 
 Vi du:
+
 1. Why theme reset? -> localStorage tra null.
 2. Why null? -> writeStorage khong duoc goi.
 3. Why khong goi? -> useEffect deps sai.
 4. Why sai? -> hydrated state khong toggle.
 5. Why? -> import circular.
--> Root: import circular. Fix import, KHONG va theme logic.
+   -> Root: import circular. Fix import, KHONG va theme logic.
 
 ## Process
 

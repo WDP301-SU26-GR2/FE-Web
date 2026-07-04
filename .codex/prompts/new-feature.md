@@ -3,11 +3,13 @@
 Su dung khi can scaffold feature moi cho `mangaka-web` (FSD-lite).
 
 ## Input
+
 - Feature name (kebab-case, vd `manga`, `auth`, `chapter-reader`).
 
 ## Steps
 
 1. Tao cau truc:
+
    ```
    app/features/<name>/
    ├── components/
@@ -31,6 +33,7 @@ Su dung khi can scaffold feature moi cho `mangaka-web` (FSD-lite).
 4. Chay `npm run typecheck` sau khi xong.
 
 ## Constraints
+
 - Khong import tu feature khac (cross-feature). Can share -> shared/.
 - Khong hardcode chuoi -> dung useTranslation.
 - Khong hex color -> chi class semantic.

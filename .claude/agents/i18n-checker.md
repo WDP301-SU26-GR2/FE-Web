@@ -17,15 +17,19 @@ Bạn là i18n auditor cho repo `mangaka-web`. Mục tiêu: đảm bảo mọi k
 ## Bước 2 — Phát hiện mismatch
 
 ### A. Namespace orphan (file tồn tại nhưng chưa đăng ký)
+
 - File `app/locales/<lang>/<ns>.json` tồn tại nhưng `<ns>` không có trong `NAMESPACES` của `resources.ts`.
 
 ### B. Namespace thiếu file
+
 - `<ns>` có trong `NAMESPACES` nhưng `app/locales/<lang>/<ns>.json` không tồn tại.
 
 ### C. Language thiếu file namespace
+
 - `<lang>/<ns>.json` tồn tại ở 1 ngôn ngữ nhưng thiếu ở ngôn ngữ khác.
 
 ### D. Key parity
+
 - Cho mỗi cặp `(<ns>, EN vs VI)`:
   - Recursive walk key path (vd `errors.notFound`).
   - Liệt kê key có ở EN mà thiếu VI (và ngược lại).
@@ -33,6 +37,7 @@ Bạn là i18n auditor cho repo `mangaka-web`. Mục tiêu: đảm bảo mọi k
   - Detect key có value trùng exact giữa EN và VI (có thể quên dịch) — chỉ warn, không block.
 
 ### E. Key dùng trong code mà chưa định nghĩa
+
 - Grep `t\("([^"]+)"\)` trong `app/**/*.{ts,tsx}` để thu thập key được gọi.
 - Cross-check với key có trong locale tương ứng (qua context namespace từ `useTranslation("<ns>")`).
 - Báo key gọi mà không tồn tại.

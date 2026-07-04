@@ -14,22 +14,22 @@ CLAUDE.md này chỉ liệt kê **Claude-specific tooling**. Không lặp lại 
 
 Auto-discovered & auto-invoked dựa trên `description` trong frontmatter. AI tự kích hoạt khi intent task khớp.
 
-| Skill                          | Khi nào kích hoạt                                |
-| ------------------------------ | ------------------------------------------------ |
-| `skill-discovery`              | Đầu mỗi task — scan resource có sẵn (meta)       |
-| `brainstorming`                | Task mơ hồ, cần explore options                  |
-| `writing-plans`                | Non-trivial work (≥3 file, feature mới)          |
-| `root-cause-analysis`          | Debug bug, error, test fail                      |
-| `defensive-programming`        | Cân nhắc validate ở đâu                          |
-| `subagent-driven-development`  | Cân nhắc spawn agent vs inline                   |
-| `test-driven-development`      | Viết logic có input/output rõ                    |
-| `using-git-worktrees`          | Multi-branch parallel work                       |
-| `finishing-a-branch`           | Trước khi mở PR / merge                          |
-| `debugging-hydration`          | Hydration mismatch / FOUC / SSR vs client lệch   |
-| `accessibility-audit`          | Khi thêm UI interactive — keyboard/ARIA/contrast |
+| Skill                            | Khi nào kích hoạt                                          |
+| -------------------------------- | ---------------------------------------------------------- |
+| `skill-discovery`                | Đầu mỗi task — scan resource có sẵn (meta)                 |
+| `brainstorming`                  | Task mơ hồ, cần explore options                            |
+| `writing-plans`                  | Non-trivial work (≥3 file, feature mới)                    |
+| `root-cause-analysis`            | Debug bug, error, test fail                                |
+| `defensive-programming`          | Cân nhắc validate ở đâu                                    |
+| `subagent-driven-development`    | Cân nhắc spawn agent vs inline                             |
+| `test-driven-development`        | Viết logic có input/output rõ                              |
+| `using-git-worktrees`            | Multi-branch parallel work                                 |
+| `finishing-a-branch`             | Trước khi mở PR / merge                                    |
+| `debugging-hydration`            | Hydration mismatch / FOUC / SSR vs client lệch             |
+| `accessibility-audit`            | Khi thêm UI interactive — keyboard/ARIA/contrast           |
 | `verification-before-completion` | TRƯỚC khi báo done — phải verify thật, không chỉ typecheck |
-| `condition-based-waiting`      | Polling điều kiện thực thay vì `sleep` mù        |
-| `requesting-code-review`       | Self-review + spawn @code-reviewer sau khi xong  |
+| `condition-based-waiting`        | Polling điều kiện thực thay vì `sleep` mù                  |
+| `requesting-code-review`         | Self-review + spawn @code-reviewer sau khi xong            |
 
 Manual trigger nếu cần: nói "use the brainstorming skill" hoặc gõ `/<skill-name>`.
 
@@ -39,27 +39,28 @@ Manual trigger nếu cần: nói "use the brainstorming skill" hoặc gõ `/<ski
 
 Dev gõ slash command để scaffold đúng quy ước, không cần nhớ chi tiết:
 
-| Command                       | Tác dụng                                                     |
-| ----------------------------- | ------------------------------------------------------------ |
-| `/new-feature <name>`         | Scaffold feature mới đúng FSD-lite (folder + i18n namespace) |
-| `/add-route <url> <feature>`  | Tạo route thin + đăng ký vào `app/routes.ts`                 |
-| `/add-i18n-key <ns>.<k> "EN" "VI"` | Thêm key vào cả 2 locale, giữ parity                    |
-| `/add-mock-endpoint <method> <url> <factory>` | Tạo factory Faker + handler MSW           |
-| `/add-ui-primitive <Name>`    | Tạo UI primitive headless trong `shared/ui/`                 |
-| `/pre-commit-check`           | Typecheck + lint + prettier + i18n parity + arch guard       |
+| Command                                       | Tác dụng                                                     |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| `/new-feature <name>`                         | Scaffold feature mới đúng FSD-lite (folder + i18n namespace) |
+| `/add-route <url> <feature>`                  | Tạo route thin + đăng ký vào `app/routes.ts`                 |
+| `/add-i18n-key <ns>.<k> "EN" "VI"`            | Thêm key vào cả 2 locale, giữ parity                         |
+| `/add-mock-endpoint <method> <url> <factory>` | Tạo factory Faker + handler MSW                              |
+| `/add-ui-primitive <Name>`                    | Tạo UI primitive headless trong `shared/ui/`                 |
+| `/pre-commit-check`                           | Typecheck + lint + prettier + i18n parity + arch guard       |
 
 ## 3) Subagents (`.claude/agents/`)
 
-| Agent           | Dùng khi                                                  |
-| --------------- | --------------------------------------------------------- |
+| Agent           | Dùng khi                                                             |
+| --------------- | -------------------------------------------------------------------- |
 | `code-reviewer` | Review diff / PR theo full checklist (architecture/i18n/styling/TS). |
-| `i18n-checker`  | Audit parity EN↔VI, key thiếu, namespace chưa đăng ký.    |
+| `i18n-checker`  | Audit parity EN↔VI, key thiếu, namespace chưa đăng ký.               |
 
 Gọi qua: "review this branch with @code-reviewer" hoặc "@i18n-checker".
 
 ## 4) Permissions & guardrails (`.claude/settings.json`)
 
 Đã pre-config:
+
 - ✅ Allow: tất cả `npm run *`, `git status/diff/log/branch/show`, Read/Glob/Grep.
 - ❌ Deny: Edit/Write vào `app/api/{model,operations}` (Orval generated), `tailwind.config.*`, `git commit/push`, `npm install react-router-dom*`.
 - Dev có thể override local trong `.claude/settings.local.json` (đã được gitignore).

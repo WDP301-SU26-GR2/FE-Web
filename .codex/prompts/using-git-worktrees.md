@@ -3,6 +3,7 @@
 Moi branch = 1 folder rieng, share .git chung. Tranh stash/restash khi switch.
 
 ## Tao
+
 ```bash
 git worktree add ../mangaka-web-hotfix main
 # tao folder ../mangaka-web-hotfix checkout main
@@ -12,6 +13,7 @@ git worktree add ../mangaka-web-experiment -b experiment/new-theme
 ```
 
 ## List & remove
+
 ```bash
 git worktree list
 git worktree remove ../mangaka-web-experiment

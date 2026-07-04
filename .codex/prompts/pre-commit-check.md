@@ -19,6 +19,7 @@ Su dung truoc khi commit / merge branch.
 ## Output
 
 Format:
+
 ```
 [ok|warn|fail] typecheck
 [ok|warn|fail] lint

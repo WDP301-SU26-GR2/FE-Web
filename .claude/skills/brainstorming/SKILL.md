@@ -18,6 +18,7 @@ Liệt kê assumption bạn đang giả định (vd "tui đoán bạn muốn rou
 ## 3. Generate 2-3 options
 
 Đưa ra **vài approach khác nhau** kèm tradeoff:
+
 - Option A: <cách 1> — pros / cons
 - Option B: <cách 2> — pros / cons
 - (Optional) Option C: ...
@@ -27,6 +28,7 @@ Không cần exhaustive. 2-3 option đủ. Nêu rõ recommendation đi kèm "vì
 ## 4. Surface edge cases
 
 Liệt kê edge case dễ quên:
+
 - Empty state? Loading? Error?
 - SSR vs CSR khác biệt?
 - Mobile / dark mode?

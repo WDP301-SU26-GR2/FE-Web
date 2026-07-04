@@ -1,7 +1,10 @@
 {
-  "title": "Chào mừng đến với Mangaka",
-  "subtitle": "Nền tảng đăng truyện tranh cho tác giả — xây dựng trên React Router 7",
-  "whatsNext": "Tiếp theo là gì?",
-  "docs": "Tài liệu React Router",
-  "discord": "Tham gia Discord"
+  "heroTitle": "Hệ sinh thái sản xuất Manga chuyên nghiệp",
+  "heroSubtitle": "Nền tảng toàn diện giúp các mangaka Việt Nam tạo, xuất bản và quản lý tác phẩm manga của mình một cách chuyên nghiệp.",
+  "ctaStart": "Bắt đầu",
+  "ctaLogin": "Đăng nhập",
+  "footerTerms": "Điều khoản",
+  "footerPrivacy": "Quyền riêng tư",
+  "footerContact": "Hỗ trợ",
+  "footerDocs": "Tài liệu"
 }

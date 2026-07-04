@@ -43,6 +43,7 @@ Su dung TRUOC khi implement non-trivial (>=3 file, feature moi, refactor).
 ## Mid-task deviation
 
 Neu phat hien plan sai giua chung:
+
 1. STOP code.
 2. Bao user: "Plan cu khong work vi X. De xuat Y."
 3. Cho confirm.

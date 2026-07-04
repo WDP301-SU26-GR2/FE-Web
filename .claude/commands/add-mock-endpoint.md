@@ -14,23 +14,23 @@ File: `app/mocks/factories/<factory-name>.factory.ts`.
 Nếu chưa tồn tại, tạo theo template:
 
 ```ts
-import { faker } from "@faker-js/faker";
+import { faker } from '@faker-js/faker'
 
 export type Xxx = {
-  id: string;
+  id: string
   // ... fields
-};
+}
 
 export function createXxx(overrides: Partial<Xxx> = {}): Xxx {
   return {
     id: faker.string.uuid(),
     // ...
-    ...overrides,
-  };
+    ...overrides
+  }
 }
 
 export function createXxxList(count = 10, overrides: Partial<Xxx> = {}): Xxx[] {
-  return Array.from({ length: count }, () => createXxx(overrides));
+  return Array.from({ length: count }, () => createXxx(overrides))
 }
 ```
 

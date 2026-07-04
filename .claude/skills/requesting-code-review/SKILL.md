@@ -32,6 +32,7 @@ Focus đặc biệt vào: i18n parity, dependency boundary, hex color.
 ```
 
 Subagent có:
+
 - Fresh context (không bias bởi bạn vừa code).
 - System prompt chuyên review mangaka-web (checklist architecture/i18n/styling/TS).
 - Tools đủ để grep, read, run check.
@@ -56,13 +57,16 @@ Subagent có:
 Reviewer report 3 levels:
 
 ### 🔴 Blocker
+
 **Fix ngay**. Đừng "sẽ fix sau" — sau không bao giờ tới.
 
 ### 🟡 Warning
+
 - Hỏi user: "Reviewer report X warning. Fix luôn hay defer?" — không tự quyết.
 - Nếu defer → tạo TODO + ticket, không silent ignore.
 
 ### 🟢 Nice-to-have
+
 - Cân nhắc cost/benefit. Nếu nhanh thì fix; nếu không thì document.
 
 ## Anti-pattern

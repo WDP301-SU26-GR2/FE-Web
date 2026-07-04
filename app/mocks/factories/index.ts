@@ -1,2 +1,2 @@
-export * from "./manga.factory";
-export * from "./user.factory";
+export * from './manga.factory'
+export * from './user.factory'

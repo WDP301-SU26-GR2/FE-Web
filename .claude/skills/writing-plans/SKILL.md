@@ -13,9 +13,11 @@ Khi task chạm ≥3 file hoặc tạo feature mới: **viết plan trước, co
 ## Plan: <ten task>
 
 ### Mục tiêu
+
 1 câu mô tả outcome user-facing.
 
 ### Files affected
+
 - `app/features/manga/manga-page.tsx` — CREATE — entry page
 - `app/features/manga/components/manga-list.tsx` — CREATE — grid
 - `app/routes/mangas.tsx` — CREATE — thin route wrapper
@@ -24,18 +26,21 @@ Khi task chạm ≥3 file hoặc tạo feature mới: **viết plan trước, co
 - `app/shared/lib/i18n/resources.ts` — EDIT — đăng ký namespace
 
 ### Behavior
+
 - URL `/mangas` render grid 3 cột, fetch từ `/api/mangas` (mock đang trả 10 items).
 - Mỗi card click → `/mangas/:id` (chưa làm, ra task sau).
 - Loading state dùng key `common.loading`.
 - Empty state nếu items.length = 0.
 
 ### Verification
+
 - `npm run typecheck` clean.
 - Mở `http://localhost:5173/mangas` thấy grid.
 - Toggle dark mode không vỡ.
 - Switch EN ↔ VI hoạt động.
 
 ### Out of scope (làm sau)
+
 - Detail page `/mangas/:id`.
 - Search / filter.
 - Pagination.
@@ -58,6 +63,7 @@ Khi task chạm ≥3 file hoặc tạo feature mới: **viết plan trước, co
 ## Plan thay đổi mid-task
 
 Nếu trong lúc implement phát hiện plan sai (vd cần thêm file ngoài plan, hoặc cách tiếp cận không work):
+
 1. **STOP code.**
 2. Báo user: "Plan cũ không work vì X. Đề xuất Y."
 3. Chờ confirm trước khi tiếp tục.

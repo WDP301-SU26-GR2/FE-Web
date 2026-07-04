@@ -44,13 +44,16 @@ Focus: i18n parity, dependency boundary, hex color.
 ## Handle review feedback
 
 ### Blocker
+
 Fix ngay. Khong "se fix sau".
 
 ### Warning
+
 - Hoi user: "Reviewer report X warning. Fix luon hay defer?"
 - Defer -> tao TODO + ticket, khong silent ignore.
 
 ### Nice-to-have
+
 - Can nhac cost/benefit.
 
 ## Anti-pattern
@@ -63,6 +66,7 @@ Fix ngay. Khong "se fix sau".
 ## Tu review subagent output
 
 Reviewer cung co the sai (false positive). Doc ky:
+
 1. Neu reviewer hieu sai context -> push back: "Da flag X nhung that ra Y vi Z. Co can fix?"
 2. User chot cuoi cung.
 

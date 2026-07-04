@@ -5,16 +5,20 @@ TRUOC khi bao "done" / "completed", PHAI verify thuc te. Typecheck pass != featu
 ## Levels
 
 ### Level 1 — Static (bare minimum)
+
 ```bash
 pnpm typecheck
 pnpm lint
 ```
+
 Chua du de bao done.
 
 ### Level 2 — Real app (DEFAULT cho UI change)
+
 ```bash
 pnpm dev
 ```
+
 - Mo browser localhost:5173
 - Navigate URL feature thay doi
 - Click golden path
@@ -22,6 +26,7 @@ pnpm dev
 - Test 1 edge case: empty/loading/error
 
 ### Level 3 — Cross-cutting (feature lon)
+
 - Mobile viewport (375px)
 - Dark/light toggle
 - EN/VI switch
@@ -31,6 +36,7 @@ pnpm dev
 ## Verify checklist
 
 Cuoi task, tra loi 5 cau:
+
 1. Typecheck pass?
 2. Lint clean?
 3. App chay duoc?

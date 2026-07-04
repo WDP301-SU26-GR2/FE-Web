@@ -49,15 +49,15 @@ export function MangaCard({ manga }: { manga: Manga }) {
 
 ```tsx
 export function MangaCard({ manga }: { manga: Manga }) {
-  return <article>{manga.title}</article>;
+  return <article>{manga.title}</article>
 }
 
 // Validate ở boundary — nơi fetch:
 async function fetchMangas(): Promise<Manga[]> {
-  const res = await fetch("/api/mangas");
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  const body = await res.json();
-  return MangaListSchema.parse(body).items;   // ← validate Ở ĐÂY
+  const res = await fetch('/api/mangas')
+  if (!res.ok) throw new Error(`Failed: ${res.status}`)
+  const body = await res.json()
+  return MangaListSchema.parse(body).items // ← validate Ở ĐÂY
 }
 ```
 

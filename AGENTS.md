@@ -16,19 +16,20 @@
 
 ## 2. Stack & phiên bản
 
-| Lớp                | Công nghệ                          | Phiên bản  |
-| ------------------ | ---------------------------------- | ---------- |
-| Framework          | React Router 7 (SSR mặc định)      | `7.14.0`   |
-| UI Runtime         | React + React DOM                  | `^19.2.4`  |
-| Ngôn ngữ           | TypeScript (strict)                | `^5.9.3`   |
-| Build / Dev server | Vite                               | `^8.0.3`   |
-| CSS                | Tailwind CSS v4 (CSS-first config) | `^4.2.2`   |
-| i18n               | i18next + react-i18next            | mới nhất   |
-| Class merge util   | clsx + tailwind-merge (`cn()`)     | mới nhất   |
-| Mock API           | MSW + @faker-js/faker              | mới nhất   |
-| API codegen        | Orval (chạy khi BE có swagger)     | mới nhất   |
+| Lớp                | Công nghệ                          | Phiên bản |
+| ------------------ | ---------------------------------- | --------- |
+| Framework          | React Router 7 (SSR mặc định)      | `7.14.0`  |
+| UI Runtime         | React + React DOM                  | `^19.2.4` |
+| Ngôn ngữ           | TypeScript (strict)                | `^5.9.3`  |
+| Build / Dev server | Vite                               | `^8.0.3`  |
+| CSS                | Tailwind CSS v4 (CSS-first config) | `^4.2.2`  |
+| i18n               | i18next + react-i18next            | mới nhất  |
+| Class merge util   | clsx + tailwind-merge (`cn()`)     | mới nhất  |
+| Mock API           | MSW + @faker-js/faker              | mới nhất  |
+| API codegen        | Orval (chạy khi BE có swagger)     | mới nhất  |
 
 > **Lưu ý quan trọng:**
+>
 > - Tailwind **v4** dùng cấu hình CSS-first, KHÔNG có `tailwind.config.js`. Token nằm trong `app/styles/theme.css`, đăng ký qua `@theme inline` ở `app/styles/app.css`.
 > - Dùng `react-router` v7, **không** dùng `react-router-dom`.
 > - Path alias `~/*` → `./app/*` (xem `tsconfig.json`).
@@ -139,22 +140,22 @@ routes ─┬─► features ─┐
 
 ### 3.2 Path alias
 
-| Alias                     | Trỏ đến                            |
-| ------------------------- | ---------------------------------- |
-| `~/features/<x>`          | feature module (qua `index.ts`)    |
-| `~/shared/ui`             | UI primitives                      |
-| `~/shared/components`     | App-level shared components        |
-| `~/shared/lib/cn`         | className helper                   |
-| `~/shared/lib/storage`    | localStorage helper                |
-| `~/shared/lib/i18n`       | i18n core                          |
-| `~/shared/config/site`    | SITE, STORAGE_KEYS                 |
-| `~/shared/config/env`     | env vars                           |
-| `~/providers/app-providers` | AppProviders + themeInitScript    |
-| `~/providers/theme-provider` | ThemeProvider, useTheme         |
-| `~/api/operations`           | Orval-generated fetch functions |
-| `~/api/model`                | Orval-generated TypeScript types|
-| `~/mocks/handlers`           | MSW handler barrel (dev only)   |
-| `~/mocks/factories`          | Faker data factories (dev only) |
+| Alias                        | Trỏ đến                          |
+| ---------------------------- | -------------------------------- |
+| `~/features/<x>`             | feature module (qua `index.ts`)  |
+| `~/shared/ui`                | UI primitives                    |
+| `~/shared/components`        | App-level shared components      |
+| `~/shared/lib/cn`            | className helper                 |
+| `~/shared/lib/storage`       | localStorage helper              |
+| `~/shared/lib/i18n`          | i18n core                        |
+| `~/shared/config/site`       | SITE, STORAGE_KEYS               |
+| `~/shared/config/env`        | env vars                         |
+| `~/providers/app-providers`  | AppProviders + themeInitScript   |
+| `~/providers/theme-provider` | ThemeProvider, useTheme          |
+| `~/api/operations`           | Orval-generated fetch functions  |
+| `~/api/model`                | Orval-generated TS types (per-tag: `~/api/model/<tag>`) |
+| `~/mocks/handlers`           | MSW handler barrel (dev only)    |
+| `~/mocks/factories`          | Faker data factories (dev only)  |
 
 Ưu tiên dùng alias `~/...` thay vì relative dài.
 
@@ -163,53 +164,61 @@ routes ─┬─► features ─┐
 ## 4. Hệ thống Theme (Dark / Light)
 
 ### 4.1 Triết lý — token-driven
+
 - Mọi màu được khai báo dưới dạng **CSS variable** trong `app/styles/theme.css`.
 - Component dùng class **semantic** (`bg-primary`, `text-foreground`, `border-border`...). **TUYỆT ĐỐI** không hard-code màu (`bg-orange-500`, `text-gray-700`).
 - Khi đổi màu chủ đạo (vd: cam → xanh lá), **chỉ sửa các biến `--color-*` trong `theme.css`**. Không động vào component.
 
 ### 4.2 Token hiện tại
 
-| Token                          | Light (white + orange) | Dark (navy + sky)  |
-| ------------------------------ | ---------------------- | ------------------ |
-| `--color-background`           | `#ffffff`              | `#0b1220`          |
-| `--color-foreground`           | `#1a1a1a`              | `#e2e8f0`          |
-| `--color-primary`              | `#f97316` orange-500   | `#38bdf8` sky-400  |
-| `--color-primary-foreground`   | `#ffffff`              | `#0b1220`          |
-| `--color-card` / `…-foreground`| white / `#1a1a1a`      | `#111a2e` / `#e2e8f0` |
-| `--color-muted` / `…-foreground`| `#f5f5f4` / `#57534e` | `#1e293b` / `#94a3b8` |
-| `--color-secondary` / `…-foreground`| `#fff7ed` / `#9a3412` | `#1e293b` / `#e2e8f0` |
-| `--color-border`               | `#e7e5e4`              | `#1e293b`          |
-| `--color-input`                | `#e7e5e4`              | `#1e293b`          |
-| `--color-ring`                 | `#f97316`              | `#38bdf8`          |
-| `--color-accent` / `…-foreground`| `#fed7aa` / `#7c2d12` | `#1e3a8a` / `#dbeafe` |
-| `--color-destructive` / `…-foreground` | `#dc2626` / `#fff` | `#ef4444` / `#fff` |
+| Token                                  | Light (white + orange) | Dark (navy + sky)     |
+| -------------------------------------- | ---------------------- | --------------------- |
+| `--color-background`                   | `#ffffff`              | `#0b1220`             |
+| `--color-foreground`                   | `#1a1a1a`              | `#e2e8f0`             |
+| `--color-primary`                      | `#f97316` orange-500   | `#38bdf8` sky-400     |
+| `--color-primary-foreground`           | `#ffffff`              | `#0b1220`             |
+| `--color-card` / `…-foreground`        | white / `#1a1a1a`      | `#111a2e` / `#e2e8f0` |
+| `--color-muted` / `…-foreground`       | `#f5f5f4` / `#57534e`  | `#1e293b` / `#94a3b8` |
+| `--color-secondary` / `…-foreground`   | `#fff7ed` / `#9a3412`  | `#1e293b` / `#e2e8f0` |
+| `--color-border`                       | `#e7e5e4`              | `#1e293b`             |
+| `--color-input`                        | `#e7e5e4`              | `#1e293b`             |
+| `--color-ring`                         | `#f97316`              | `#38bdf8`             |
+| `--color-accent` / `…-foreground`      | `#fed7aa` / `#7c2d12`  | `#1e3a8a` / `#dbeafe` |
+| `--color-destructive` / `…-foreground` | `#dc2626` / `#fff`     | `#ef4444` / `#fff`    |
 
 Radius tokens: `--radius-sm/md/lg/xl` (sửa cùng chỗ trong `theme.css`).
 
 ### 4.3 Class Tailwind tự sinh
+
 Sau `@theme inline { ... }` ở `app/styles/app.css`, có sẵn:
 `bg-background`, `text-foreground`, `bg-primary`, `text-primary-foreground`, `bg-card`, `text-card-foreground`, `bg-muted`, `text-muted-foreground`, `bg-secondary`, `text-secondary-foreground`, `border-border`, `border-input`, `ring-ring`, `bg-accent`, `text-accent-foreground`, `bg-destructive`, `text-destructive-foreground`, `rounded-sm/md/lg/xl`.
 
 ### 4.4 Bật dark mode
+
 Class `dark` được toggle trên `<html>`. Variant đã cấu hình:
+
 ```css
 @custom-variant dark (&:where(.dark, .dark *));
 ```
+
 → `dark:hidden`, `dark:block`... áp khi `<html>` có class `dark`.
 
 ### 4.5 API React
-```tsx
-import { useTheme } from "~/providers/theme-provider";
 
-const { theme, setTheme, toggleTheme } = useTheme();
+```tsx
+import { useTheme } from '~/providers/theme-provider'
+
+const { theme, setTheme, toggleTheme } = useTheme()
 // theme: "light" | "dark"
 ```
+
 - `ThemeProvider` được gắn 1 lần tại `app/providers/app-providers.tsx`. **KHÔNG** gắn lại ở component con.
 - `themeInitScript` được inject `<script>` trong `<head>` (tại `root.tsx`) để áp class `dark` **trước khi** React hydrate → tránh flash màu sai (FOUC).
 - State persist trong `localStorage` key `STORAGE_KEYS.theme` = `"mangaka-theme"`.
 - Khi chưa có giá trị lưu, fallback theo `prefers-color-scheme` của OS.
 
 ### 4.6 Đổi màu chủ đạo về sau
+
 1. Mở `app/styles/theme.css`.
 2. Sửa `--color-primary`, `--color-ring`, `--color-accent`, ... bên trong `:root` (light) và `.dark` (dark).
 3. **Không cần đụng vào file component nào khác.**
@@ -219,12 +228,15 @@ const { theme, setTheme, toggleTheme } = useTheme();
 ## 5. Hệ thống i18n (EN / VI)
 
 ### 5.1 Thư viện
+
 - `i18next` — core
 - `react-i18next` — React binding (`useTranslation`, `Trans`)
 - Custom detector logic trong `app/providers/i18n-provider.tsx` đọc localStorage → navigator.languages → fallback
 
 ### 5.2 Cấu hình
+
 File `app/shared/lib/i18n/index.ts`:
+
 - `fallbackLng: "vi"` (mặc định tiếng Việt)
 - `supportedLngs: ["en", "vi"]`
 - Detector order: `localStorage` → `navigator`
@@ -233,6 +245,7 @@ File `app/shared/lib/i18n/index.ts`:
 - Namespaces hiện có: `["common", "welcome"]`
 
 ### 5.3 Cấu trúc locale (theo namespace)
+
 Mỗi feature 1 namespace, mỗi namespace 1 file. Tránh đè key giữa feature và sẵn sàng cho lazy-load sau này.
 
 ```
@@ -246,28 +259,31 @@ app/locales/
 ```
 
 **Quy tắc khi thêm key:**
+
 - Key phải có **trong CẢ hai** file EN và VI.
 - Tổ chức theo feature: `auth.json`, `manga.json`, ...
 - Không nhúng HTML thô vào value — dùng `<Trans>` nếu cần.
 - Tránh ghép chuỗi (`"Hello " + name`). Dùng interpolation: `t("greet", { name })` với value `"Xin chào {{name}}"`.
 
 ### 5.4 Sử dụng trong component
+
 ```tsx
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next'
 
 // Mặc định dùng namespace "common"
-const { t, i18n } = useTranslation();
-t("appName");
+const { t, i18n } = useTranslation()
+t('appName')
 
 // Hoặc chỉ định namespace:
-const { t } = useTranslation("welcome");
-t("title");
+const { t } = useTranslation('welcome')
+t('title')
 
 // Đổi ngôn ngữ:
-i18n.changeLanguage("en");
+i18n.changeLanguage('en')
 ```
 
 ### 5.5 Thêm namespace mới (vd `auth`)
+
 1. Tạo `app/locales/en/auth.json` và `app/locales/vi/auth.json`.
 2. Mở `app/shared/lib/i18n/resources.ts`:
    - Thêm `import enAuth from "~/locales/en/auth.json"` (và VI).
@@ -276,6 +292,7 @@ i18n.changeLanguage("en");
 3. Dùng: `useTranslation("auth")`.
 
 ### 5.6 Lưu ý SSR / Hydration
+
 - App đang chạy **SSR** (`react-router.config.ts`: `ssr: true`).
 - `I18nProvider` (`app/providers/i18n-provider.tsx`) render `I18nextProvider` ngay từ lần đầu nhưng việc **detect & đổi ngôn ngữ** chỉ chạy trong `useEffect` (client) để tránh hydration mismatch khi đọc localStorage. Lần render server dùng `FALLBACK_LANGUAGE` (vi).
 - Nếu cần render đúng ngôn ngữ ngay từ HTML server: chuyển sang lưu language trong **cookie** và đọc trong `loader` của route → truyền xuống provider.
@@ -285,14 +302,16 @@ i18n.changeLanguage("en");
 ## 6. Routing (React Router 7)
 
 - Khai báo route: `app/routes.ts` (KHÔNG dùng folder convention auto-discovery).
+
   ```ts
-  import { type RouteConfig, index, route } from "@react-router/dev/routes";
+  import { type RouteConfig, index, route } from '@react-router/dev/routes'
 
   export default [
-    index("routes/home.tsx"),
+    index('routes/home.tsx')
     // route("manga", "routes/manga.tsx"),
-  ] satisfies RouteConfig;
+  ] satisfies RouteConfig
   ```
+
 - Khi thêm route mới:
   1. Tạo file `app/routes/<name>.tsx` — **giữ thin**, chỉ compose `feature` tương ứng.
   2. Khai báo trong `app/routes.ts` qua helpers `index`, `route`, `layout`, `prefix`.
@@ -304,17 +323,20 @@ i18n.changeLanguage("en");
 ## 7. Quy ước code
 
 ### 7.1 TypeScript
+
 - `strict: true`. Tránh `any`. Thích `unknown` + narrow.
 - `verbatimModuleSyntax: true` → import type phải có từ khoá `type`: `import type { Foo } from "..."`.
 - Dùng `as const` + `satisfies` cho object cấu hình.
 - Path alias `~/*` → `./app/*`.
 
 ### 7.2 Component
+
 - Function declaration + named export. Default export chỉ ở entry route.
 - Props interface cùng file, tên `XxxProps`.
 - Một component / một file. Khi file > ~150 dòng cân nhắc tách.
 
 ### 7.3 Tổ chức code (ranh giới)
+
 - **Khi một component chỉ một feature dùng** → đặt trong `app/features/<feature>/components/`.
 - **Khi cần dùng ở 2+ feature** → kéo lên `app/shared/components/` (đã ráp, có business meaning) hoặc `app/shared/ui/` (primitive headless).
 - **Helper function** thuần → `app/shared/lib/<topic>.ts`.
@@ -322,16 +344,18 @@ i18n.changeLanguage("en");
 - **Provider cấp app** → `app/providers/`. Compose vào `app-providers.tsx`.
 
 ### 7.4 Styling
+
 - **Luôn** dùng Tailwind utility + token semantic.
 - Không viết CSS module trừ khi bất khả kháng.
 - Dùng `cn()` từ `~/shared/lib/cn` để gộp class composable:
   ```tsx
-  import { cn } from "~/shared/lib/cn";
-  <div className={cn("p-4", isActive && "bg-primary", className)} />
+  import { cn } from '~/shared/lib/cn'
+  ;<div className={cn('p-4', isActive && 'bg-primary', className)} />
   ```
-- Dark mode **không cần viết `dark:` cho mỗi màu** — token tự đổi theo class `dark`. Chỉ dùng `dark:` cho thay đổi *layout/visibility* (vd `dark:hidden`).
+- Dark mode **không cần viết `dark:` cho mỗi màu** — token tự đổi theo class `dark`. Chỉ dùng `dark:` cho thay đổi _layout/visibility_ (vd `dark:hidden`).
 
 ### 7.5 File & naming
+
 - File component: `kebab-case.tsx` (vd `welcome-header.tsx`).
 - Tên React component: `PascalCase` (vd `WelcomeHeader`).
 - Hook custom: `useXxx`, file `use-xxx.ts`.
@@ -339,6 +363,7 @@ i18n.changeLanguage("en");
 - Mỗi feature có `index.ts` làm **public API barrel** — nơi khác chỉ import qua barrel: `import { WelcomePage } from "~/features/welcome"`.
 
 ### 7.6 Lint / Format / Typecheck
+
 ```bash
 npm run typecheck    # react-router typegen + tsc
 npm run lint         # ESLint flat config
@@ -386,6 +411,7 @@ Theo thứ tự ưu tiên:
 ## 10. DO / DON'T
 
 ### ✅ DO
+
 - Dùng class semantic (`bg-primary`, `text-foreground`...) cho **mọi màu**. Khi thiếu token, **mở rộng `app/styles/theme.css` trước**, rồi dùng class mới.
 - Thêm string **vào CẢ EN và VI** cùng lúc, đúng namespace.
 - Đặt component chỉ-1-feature-dùng trong `app/features/<feature>/components/`. Kéo lên `shared/` chỉ khi 2+ feature dùng.
@@ -396,6 +422,7 @@ Theo thứ tự ưu tiên:
 - Chạy `npm run typecheck` trước khi báo done.
 
 ### ❌ DON'T
+
 - **Không** tạo `tailwind.config.js` / `tailwind.config.ts` — Tailwind v4 không cần.
 - **Không** cài `react-router-dom` (cũ).
 - **Không** hard-code màu hex / class kiểu `bg-orange-500` trong component. Sai quy ước → phá tính năng switch theme.
@@ -414,6 +441,7 @@ Theo thứ tự ưu tiên:
 ## 11. Recipe — việc thường gặp
 
 ### Thêm 1 feature mới (vd `auth`)
+
 1. Tạo cấu trúc:
    ```
    app/features/auth/
@@ -430,11 +458,13 @@ Theo thứ tự ưu tiên:
 4. Đăng ký trong `app/routes.ts`: `route("login", "routes/login.tsx")`.
 
 ### Thêm 1 trang đơn (vd `/about`)
+
 1. `app/routes/about.tsx` viết component (hoặc compose feature).
 2. Khai báo trong `app/routes.ts`.
 3. Thêm key dịch nếu có chữ.
 
 ### Thêm 1 ngôn ngữ mới (vd `ja`)
+
 1. Tạo `app/locales/ja/{common,welcome}.json` đầy đủ key giống en/vi.
 2. Sửa `app/shared/lib/i18n/resources.ts`:
    - `import jaCommon from "~/locales/ja/common.json"` (và các namespace khác).
@@ -443,11 +473,13 @@ Theo thứ tự ưu tiên:
 3. `LanguageSwitcher` map qua `SUPPORTED_LANGUAGES` — chỉ cần cập nhật `LABEL`.
 
 ### Đổi màu chủ đạo (vd light = trắng/xanh lá, dark = đen/tím)
+
 1. Mở `app/styles/theme.css`.
 2. Sửa `--color-primary`, `--color-primary-foreground`, `--color-ring`, `--color-accent` (và token liên quan) trong `:root` và `.dark`.
 3. Không cần đổi gì trong component nếu component đã tuân thủ dùng token.
 
 ### Thêm 1 UI primitive (vd `Input`)
+
 1. Tạo `app/shared/ui/input.tsx`, theo pattern của `button.tsx`:
    - `forwardRef`, props extends HTML element props, nhận `className` để compose qua `cn()`.
    - Variant/size mappings.
@@ -455,15 +487,18 @@ Theo thứ tự ưu tiên:
 3. Chỉ dùng class semantic — không hex.
 
 ### Thêm Provider cấp app mới (vd Toast / QueryClient)
+
 1. Tạo `app/providers/<name>-provider.tsx`.
 2. Bọc trong `app/providers/app-providers.tsx` đúng vị trí (tuỳ thuộc vào provider khác hay không).
 3. **Không** gắn provider trực tiếp ở route con.
 
 ### Truy cập env var
+
 ```ts
-import { env } from "~/shared/config/env";
-fetch(`${env.API_URL}/mangas`);
+import { env } from '~/shared/config/env'
+fetch(`${env.API_URL}/mangas`)
 ```
+
 Khi thêm biến: thêm vào `.env.local` với prefix `VITE_`, khai báo trong `interface ImportMetaEnv` ở `env.ts`, expose qua object `env`.
 
 ---
@@ -494,9 +529,9 @@ VITE_ENABLE_MOCK=false  # tắt mock, gọi API thật (cần VITE_API_URL)
 1. Thêm factory vào `app/mocks/factories/<feature>.factory.ts`:
 
 ```ts
-import { faker } from "@faker-js/faker";
+import { faker } from '@faker-js/faker'
 
-export type Chapter = { id: string; mangaId: string; title: string; pageCount: number };
+export type Chapter = { id: string; mangaId: string; title: string; pageCount: number }
 
 export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
   return {
@@ -504,33 +539,31 @@ export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
     mangaId: faker.string.uuid(),
     title: faker.lorem.words(4),
     pageCount: faker.number.int({ min: 10, max: 60 }),
-    ...overrides,
-  };
+    ...overrides
+  }
 }
 ```
 
 2. Thêm handler vào `app/mocks/handlers/<feature>.handler.ts`:
 
 ```ts
-import { http, HttpResponse } from "msw";
-import { createChapter } from "../factories/chapter.factory";
+import { http, HttpResponse } from 'msw'
+import { createChapter } from '../factories/chapter.factory'
 
 export const chapterHandlers = [
-  http.get("/api/mangas/:mangaId/chapters", () =>
-    HttpResponse.json(Array.from({ length: 10 }, () => createChapter())),
-  ),
-];
+  http.get('/api/mangas/:mangaId/chapters', () => HttpResponse.json(Array.from({ length: 10 }, () => createChapter())))
+]
 ```
 
 3. Đăng ký vào `app/mocks/handlers/index.ts`:
 
 ```ts
-import { chapterHandlers } from "./chapter.handler";
+import { chapterHandlers } from './chapter.handler'
 
 export const handlers = [
   ...exampleHandlers,
-  ...chapterHandlers,   // thêm dòng này
-];
+  ...chapterHandlers // thêm dòng này
+]
 ```
 
 ### 12.4 Khi BE có swagger — dùng Orval
@@ -538,19 +571,19 @@ export const handlers = [
 1. Đặt file swagger: `./swagger.json` (hoặc cập nhật URL trong `orval.config.ts`).
 2. Chạy: `npm run orval`
 3. Orval generate vào:
-   - `app/api/model/` — TypeScript types
-   - `app/api/operations/` — fetch functions
-   - `app/api/operations/**/*.msw.ts` — MSW handlers tự động
+   - `app/api/model/<tag>/` — TypeScript types, **chia theo tag** (auth, series, ...). Post-hook `organize-models-by-tag.mjs` tự tách từ flat ra folder.
+   - `app/api/operations/<tag>/` — fetch functions, đã chia sẵn theo tag
+   - `app/api/operations/<tag>/<tag>.msw.ts` — MSW handlers tự động
 4. Import generated handlers vào `app/mocks/handlers/index.ts`, xoá handler viết tay tương ứng.
 5. Dùng generated fetch functions trong route loader:
 
 ```ts
 // app/routes/manga.tsx
-import { getMangas } from "~/api/operations";
+import { getMangas } from '~/api/operations'
 
 export async function loader() {
-  const mangas = await getMangas();
-  return { mangas };
+  const mangas = await getMangas()
+  return { mangas }
 }
 ```
 
@@ -558,7 +591,7 @@ export async function loader() {
 
 - **KHÔNG** viết code tay trong `app/api/model/` và `app/api/operations/` — orval xoá sạch khi chạy lại.
 - **CHỈ** viết tay trong `app/api/mutator/custom-fetch.ts` (đây là wrapper, không bị orval xoá).
-- Factory trong `app/mocks/factories/` sẽ dùng types từ `app/api/model/` sau khi orval chạy.
+- Factory trong `app/mocks/factories/` sẽ dùng types từ `app/api/model/<tag>/` (khuyến nghị import từ tag folder cụ thể, không dùng root barrel).
 
 ---
 
