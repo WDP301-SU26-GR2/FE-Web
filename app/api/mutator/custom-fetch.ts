@@ -1,164 +1,152 @@
+import type { AxiosRequestConfig } from 'axios'
+
 import { STORAGE_KEYS } from '~/shared/config/site'
-import { env } from '~/shared/config/env'
-import { readStorage, writeStorage, removeStorage } from '~/shared/lib/storage'
+import { removeStorage } from '~/shared/lib/storage'
+import { httpClient } from './axios-client'
 
-/** Raw error shape thrown by this mutator. */
-export type FetchError = Error & {
-  status: number
-  /** Parsed BE error body — follows { message: string, errors?: [] } */
-  data: { message: string; errors?: Array<{ message: string; path?: string }> }
-}
-
-/** True when the BE returned an error (non-2xx). */
-export function isFetchError(err: unknown): err is FetchError {
-  return (
-    err instanceof Error &&
-    typeof (err as FetchError).status === 'number' &&
-    typeof (err as FetchError).data?.message === 'string'
-  )
-}
-
-async function doRefreshToken(): Promise<boolean> {
-  const refreshToken = readStorage(STORAGE_KEYS.refreshToken)
-  if (!refreshToken) return false
-
-  try {
-    const base =
-      env.API_URL ||
-      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')
-    const res = await fetch(new URL('/auth/refresh-token', base).toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ refreshToken })
-    })
-
-    if (!res.ok) {
-      removeStorage(STORAGE_KEYS.accessToken)
-      removeStorage(STORAGE_KEYS.refreshToken)
-      return false
-    }
-
-    const json = await res.json()
-    // Refresh trả { success, message, data: { accessToken, refreshToken } }
-    const payload = json?.data
-    if (!payload?.accessToken) return false
-
-    writeStorage(STORAGE_KEYS.accessToken, payload.accessToken)
-    writeStorage(STORAGE_KEYS.refreshToken, payload.refreshToken)
-    return true
-  } catch {
-    return false
-  }
-}
+export { isFetchError, type FetchError } from './axios-client'
 
 /**
  * Custom fetch mutator — Orval v7 calls this instead of raw fetch.
+ *
+ * This is a thin **adapter**: it keeps the fetch-like signature
+ * `(url, options) => Promise<T>` that Orval expects, but the actual
+ * HTTP work is delegated to the shared Axios client (see ./axios-client.ts).
  *
  * BE response envelope: { success: true, message: "Success", data: <payload> }
  *   → unwrap: return { data: payload }
  * BE error:           { success: false, message: string, errors?: [] }
  *   → throw FetchError
  *
- * Responsibilities:
+ * Responsibilities (delegated to the axios client + interceptors):
  *   - Attach base URL (env.API_URL).
  *   - Inject `Authorization: Bearer <token>` from localStorage.
  *   - Unwrap BE envelope: { success, data } → { data } for Orval consumers.
  *   - Throw typed `FetchError` on non-OK / { success: false } responses.
  *   - Retry once on 401 by refreshing the token.
  *   - Handle 204 No Content.
+ *
+ * Locally, this adapter still:
+ *   - Normalizes Orval's `options` (Headers, Array, Object) into Axios config.
+ *   - Maps `options.params` → axios `params`.
+ *   - Maps `options.data` / `options.body` → axios `data` (JSON.stringify for objects).
+ *   - Converts non-2xx Axios errors into the project's `FetchError` shape.
  */
-export async function customFetch<T>(
-  url: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options?: any
-): Promise<T> {
-  const base =
-    env.API_URL ||
-    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')
-
-  const fullUrl = new URL(url, base)
-
-  // Handle query params
-  const params = options?.params
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        fullUrl.searchParams.append(key, String(value))
-      }
-    })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function customFetch<T>(url: string, options?: any): Promise<T> {
+  const config: AxiosRequestConfig = {
+    url,
+    method: (options?.method ?? 'GET').toUpperCase()
   }
 
-  // Build headers
+  // Query params — axios handles serialization for us.
+  if (options?.params) {
+    config.params = options.params
+  }
+
+  // Headers — Orval may pass Headers, Array, or plain object. We only keep
+  // headers the caller explicitly set; auth + content-type are added by the
+  // axios interceptors / defaults so we don't double-set them here.
   const incomingHeaders = options?.headers
-  let finalHeaders: Record<string, string> = {}
-
-  if (incomingHeaders instanceof Headers) {
-    incomingHeaders.forEach((value, key) => {
-      finalHeaders[key] = value
-    })
-  } else if (Array.isArray(incomingHeaders)) {
-    finalHeaders = Object.fromEntries(incomingHeaders)
-  } else if (incomingHeaders) {
-    finalHeaders = { ...incomingHeaders }
-  }
-
-  finalHeaders['Content-Type'] = 'application/json'
-  finalHeaders.Accept = 'application/json'
-
-  // Inject Bearer token
-  const token = readStorage(STORAGE_KEYS.accessToken)
-  if (token && !finalHeaders['Authorization']) {
-    finalHeaders['Authorization'] = `Bearer ${token}`
-  }
-
-  const fetchOptions: RequestInit = {
-    method: (options?.method ?? 'GET').toUpperCase(),
-    headers: finalHeaders,
-    body: options?.body ?? (options?.data !== undefined ? JSON.stringify(options.data) : undefined),
-    signal: options?.signal
-  }
-
-  const performFetch = async (): Promise<Response> => fetch(fullUrl.toString(), fetchOptions)
-
-  let res = await performFetch()
-
-  // ── 401 → retry once with refreshed token ─────────────────────────────────
-  if (res.status === 401) {
-    const refreshed = await doRefreshToken()
-    if (refreshed) {
-      const newToken = readStorage(STORAGE_KEYS.accessToken)
-      if (newToken) {
-        fetchOptions.headers = { ...fetchOptions.headers, Authorization: `Bearer ${newToken}` }
+  if (incomingHeaders) {
+    config.headers = {}
+    if (incomingHeaders instanceof Headers) {
+      incomingHeaders.forEach((value, key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(config.headers as any)[key] = value
+      })
+    } else if (Array.isArray(incomingHeaders)) {
+      for (const [key, value] of incomingHeaders) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(config.headers as any)[key] = value
       }
-      res = await performFetch()
+    } else {
+      config.headers = { ...incomingHeaders }
     }
   }
 
-  // ── Parse raw body ───────────────────────────────────────────────────────
-  const raw = res.status === 204 ? null : await res.json().catch(() => null)
-
-  // ── Non-2xx or { success: false } → throw error ─────────────────────────
-  if (!res.ok || raw?.success === false) {
-    let errorBody: { message: string; errors?: Array<{ message: string; path?: string }> } = {
-      message: res.statusText || 'API error'
-    }
-
-    if (raw?.message && typeof raw.message === 'string') {
-      errorBody = { message: raw.message, errors: raw.errors }
-    }
-
-    throw Object.assign(new Error(errorBody.message), {
-      status: res.status,
-      data: errorBody
-    }) as FetchError
+  // Body — Orval passes either `body` (raw) or `data` (payload to stringify).
+  if (options?.body !== undefined) {
+    config.data = options.body
+  } else if (options?.data !== undefined) {
+    config.data =
+      typeof options.data === 'string' ? options.data : JSON.stringify(options.data)
   }
 
-  // ── 204 ─────────────────────────────────────────────────────────────────
-  if (res.status === 204) return { data: undefined, status: 204 } as T
+  if (options?.signal) {
+    config.signal = options.signal
+  }
 
-  // ── Success: unwrap envelope { success, data } → { data } ────────────────
-  // raw = { success: true, message: "Success", data: <payload> }
-  const payload = raw?.data
+  try {
+    const res = await httpClient.request(config)
+    const status = res.status
+    const raw = res.data
 
-  return { data: payload, status: res.status } as T
+    // ── 204 No Content ─────────────────────────────────────────────────
+    if (status === 204) {
+      return { data: undefined, status } as T
+    }
+
+    // ── BE envelope: { success, message, data } ────────────────────────
+    // Contract: every 2xx response from the BE is wrapped. Orval-generated
+    // types declare `data: <payload>` directly, so we MUST strip one layer.
+    //
+    //   BE:    { success: true, message: "Success", data: <payload> }
+    //   FE:    { data: <payload>, status: 201 }
+    //
+    // Some endpoints return `data: null` (e.g. delete) — caller should still
+    // receive { data: null, status }.
+    if (raw && typeof raw === 'object' && 'success' in raw) {
+      if (raw.success === false) {
+        // BE returned 2xx but flagged the call as a failure — surface as
+        // FetchError so call sites can use extractApiErrorMessage.
+        throw normalizeAxiosError({
+          response: { status, data: raw },
+          message: raw.message || 'API error'
+        })
+      }
+      return { data: raw.data, status } as T
+    }
+
+    // Fallback: response doesn't follow the envelope contract. Pass raw
+    // through so callers that expect a non-wrapped payload still work.
+    return { data: raw, status } as T
+  } catch (err) {
+    throw normalizeAxiosError(err)
+  }
+}
+
+/**
+ * Convert an Axios error into the project's `FetchError` shape so existing
+ * call sites (`isFetchError`, `extractApiErrorMessage`, ...) keep working.
+ *
+ * Also clears the stored tokens when the BE explicitly invalidates the
+ * session (401 with no refresh-token recovery).
+ */
+function normalizeAxiosError(err: unknown): Error {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const axiosErr = err as any
+  const status: number = axiosErr?.response?.status ?? 0
+  const raw = axiosErr?.response?.data
+
+  let errorBody: { message: string; errors?: Array<{ message: string; path?: string }> } = {
+    message: axiosErr?.message || 'API error'
+  }
+
+  if (raw && typeof raw === 'object' && typeof raw.message === 'string') {
+    errorBody = { message: raw.message, errors: raw.errors }
+  }
+
+  if (status === 401) {
+    removeStorage(STORAGE_KEYS.accessToken)
+    removeStorage(STORAGE_KEYS.refreshToken)
+  }
+
+  const fetchError = Object.assign(new Error(errorBody.message), {
+    status,
+    data: errorBody
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as Error & { status: number; data: typeof errorBody }
+
+  return fetchError
 }

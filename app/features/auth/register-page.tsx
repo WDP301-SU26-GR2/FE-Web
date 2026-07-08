@@ -79,7 +79,7 @@ export function RegisterPage() {
     setValidationError('')
 
     if (!fullName.trim()) {
-      setValidationError(t('register.fullNameLabel') + ' is required.')
+      setValidationError(t('register.fieldRequired', { field: t('register.fullNameLabel') }))
       return
     }
     if (!email.trim()) {
@@ -87,7 +87,7 @@ export function RegisterPage() {
       return
     }
     if (!phone.trim()) {
-      setValidationError(t('register.phoneLabel') + ' is required.')
+      setValidationError(t('register.fieldRequired', { field: t('register.phoneLabel') }))
       return
     }
     if (!password) {
@@ -270,9 +270,7 @@ export function RegisterPage() {
                     <Pencil className='h-6 w-6' />
                   </div>
                   <h3 className='mt-4 text-lg font-bold'>{t('register.roleMangaka')}</h3>
-                  <p className='mt-1 text-xs text-muted-foreground leading-relaxed'>
-                    {t('register.roleMangakaDesc')}
-                  </p>
+                  <p className='mt-1 text-xs text-muted-foreground leading-relaxed'>{t('register.roleMangakaDesc')}</p>
                 </button>
 
                 {/* Assistant Role Card */}
@@ -381,7 +379,7 @@ export function RegisterPage() {
                         type='email'
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder='example@studio.com'
+                        placeholder={t('register.emailPlaceholder')}
                         disabled={isLoading}
                         className={cn(
                           'w-full rounded-lg border border-input bg-card/50 py-2.5 pl-10 pr-4 text-sm transition-all',
@@ -401,7 +399,7 @@ export function RegisterPage() {
                         type='tel'
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder='0901 234 567'
+                        placeholder={t('register.phonePlaceholder')}
                         disabled={isLoading}
                         className={cn(
                           'w-full rounded-lg border border-input bg-card/50 py-2.5 pl-10 pr-4 text-sm transition-all',
@@ -424,7 +422,7 @@ export function RegisterPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder='••••••••'
+                      placeholder={t('register.passwordPlaceholder')}
                       disabled={isLoading}
                       className={cn(
                         'w-full rounded-lg border border-input bg-card/50 py-2.5 pl-10 pr-12 text-sm transition-all',
@@ -444,19 +442,39 @@ export function RegisterPage() {
                   {/* Password requirements */}
                   <div className='mt-2.5 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-[11px] font-semibold text-muted-foreground'>
                     <div className='flex items-center gap-1.5'>
-                      <span className={cn('h-2 w-2 rounded-full transition-colors', passLength ? 'bg-emerald-500' : 'bg-border')} />
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full transition-colors',
+                          passLength ? 'bg-emerald-500' : 'bg-border'
+                        )}
+                      />
                       <span>{t('register.passwordRequirementLength')}</span>
                     </div>
                     <div className='flex items-center gap-1.5'>
-                      <span className={cn('h-2 w-2 rounded-full transition-colors', passUpper ? 'bg-emerald-500' : 'bg-border')} />
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full transition-colors',
+                          passUpper ? 'bg-emerald-500' : 'bg-border'
+                        )}
+                      />
                       <span>{t('register.passwordRequirementUpper')}</span>
                     </div>
                     <div className='flex items-center gap-1.5'>
-                      <span className={cn('h-2 w-2 rounded-full transition-colors', passLower ? 'bg-emerald-500' : 'bg-border')} />
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full transition-colors',
+                          passLower ? 'bg-emerald-500' : 'bg-border'
+                        )}
+                      />
                       <span>{t('register.passwordRequirementLower')}</span>
                     </div>
                     <div className='flex items-center gap-1.5'>
-                      <span className={cn('h-2 w-2 rounded-full transition-colors', passNumber ? 'bg-emerald-500' : 'bg-border')} />
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full transition-colors',
+                          passNumber ? 'bg-emerald-500' : 'bg-border'
+                        )}
+                      />
                       <span>{t('register.passwordRequirementNumber')}</span>
                     </div>
                   </div>
@@ -473,7 +491,7 @@ export function RegisterPage() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder='••••••••'
+                      placeholder={t('register.passwordPlaceholder')}
                       disabled={isLoading}
                       className={cn(
                         'w-full rounded-lg border border-input bg-card/50 py-2.5 pl-10 pr-12 text-sm transition-all',
@@ -556,7 +574,9 @@ export function RegisterPage() {
                     inputMode='numeric'
                     maxLength={1}
                     value={digit}
-                    ref={(el) => { otpRefs.current[index] = el }}
+                    ref={(el) => {
+                      otpRefs.current[index] = el
+                    }}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
                     disabled={isVerifying}
@@ -600,9 +620,7 @@ export function RegisterPage() {
                   disabled={resendCooldown > 0 || isSendingOtp}
                   className={cn(
                     'font-semibold hover:underline transition-colors',
-                    resendCooldown > 0
-                      ? 'text-muted-foreground/50 cursor-not-allowed'
-                      : 'text-primary cursor-pointer'
+                    resendCooldown > 0 ? 'text-muted-foreground/50 cursor-not-allowed' : 'text-primary cursor-pointer'
                   )}
                 >
                   {resendCooldown > 0
@@ -612,7 +630,10 @@ export function RegisterPage() {
 
                 <button
                   type='button'
-                  onClick={() => { setStep(2); setOtp(Array(6).fill('')) }}
+                  onClick={() => {
+                    setStep(2)
+                    setOtp(Array(6).fill(''))
+                  }}
                   className='flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors font-medium border border-border rounded-lg px-4 py-2 cursor-pointer bg-card/20'
                 >
                   <ArrowLeft className='h-3.5 w-3.5' />
@@ -628,9 +649,7 @@ export function RegisterPage() {
         </div>
 
         {/* Copyright */}
-        <p className='mt-8 text-center text-[11px] text-muted-foreground'>
-          © 2026 MangaStudio Pro Production Suite. All Rights Reserved.
-        </p>
+        <p className='mt-8 text-center text-[11px] text-muted-foreground'>{t('register.footerCopyright')}</p>
       </div>
     </div>
   )

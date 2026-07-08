@@ -5,14 +5,14 @@
  * Local files are exported directly. Types that belong to OTHER tags
  * but are used here are re-exported as named types for convenience.
  */
+export * from './addNamePageBodyDto'
+export * from './nameControllerAddPagePathParameters'
 export * from './nameControllerApprovePathParameters'
 export * from './nameControllerRequestRevisionPathParameters'
 export * from './nameControllerResubmitPathParameters'
-export * from './nameControllerSubmitPathParameters'
 export * from './nameControllerUpdatePagesPathParameters'
-export * from './nameResDtoOutput'
-export * from './nameResDtoOutputPagesItem'
 export * from './updateNamePagesBodyDto'
 export * from './updateNamePagesBodyDtoPagesItem'
-export type { ReasonBodyDto } from '../series/reasonBodyDto';
+export type { NameResDtoOutput } from '../series/nameResDtoOutput';
+export type { ReasonBodyDto } from '../chapters/reasonBodyDto';
 

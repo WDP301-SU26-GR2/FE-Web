@@ -38,5 +38,10 @@ export default defineConfig({
   },
   css: {
     devSourcemap: true
+  },
+  server: {
+    // Port FE đã được BE whitelist trong CORS allowlist (xem FE-API-Guide §13).
+    port: 3000,
+    strictPort: true
   }
 })

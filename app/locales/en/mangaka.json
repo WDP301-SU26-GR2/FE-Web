@@ -34,48 +34,340 @@
     "delete": "Delete",
     "showing": "Showing",
     "of": "of",
-    "seriesCount": "series"
+    "seriesCount": "series",
+    "actionsMenu": "Series actions",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "editNotImplemented": "Edit: not implemented yet",
+    "deleteNotImplemented": "Delete: not implemented yet",
+    "stats": {
+      "scopeNote": "Counts reflect the current page only, not your entire catalogue."
+    },
+    "empty": {
+      "title": "No series yet",
+      "description": "Create your first proposal to submit it to the editorial board."
+    },
+    "error": {
+      "loadFailed": "Failed to load your series. Please try again.",
+      "retry": "Retry"
+    },
+    "pagination": {
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "IN_REVIEW": "In review",
+      "READY_TO_PITCH": "Ready to pitch",
+      "PITCHED": "Pitched",
+      "SERIALIZED": "Serialized",
+      "HIATUS": "Hiatus",
+      "COMPLETING": "Completing",
+      "CANCELLING": "Cancelling",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "REJECTED": "Rejected",
+      "ABANDONED": "Abandoned",
+      "WITHDRAWN": "Withdrawn"
+    }
+  },
+  "seriesDetail": {
+    "title": "Series Detail",
+    "subtitle": "View proposal information and sample Name pages",
+    "back": "Back to My Series",
+    "loading": "Loading...",
+    "editProposal": "Edit Proposal",
+    "statusReason": "Reason",
+    "demographic": "Demographic",
+    "publicationType": "Cadence",
+    "editor": "Editor",
+    "editorAssigned": "Assigned",
+    "editorUnassigned": "Not yet assigned",
+    "inReviewQueue": "In review queue",
+    "createdAt": "Created at",
+    "reviewStartedAt": "Review started at",
+    "relationshipType": "Relationship to parent",
+    "enums": {
+      "genres": {
+        "ACTION": "Action",
+        "ADVENTURE": "Adventure",
+        "COMEDY": "Comedy",
+        "DRAMA": "Drama",
+        "FANTASY": "Fantasy",
+        "HORROR": "Horror",
+        "MYSTERY": "Mystery",
+        "ROMANCE": "Romance",
+        "SCI_FI": "Sci-Fi",
+        "SLICE_OF_LIFE": "Slice of Life",
+        "SPORTS": "Sports",
+        "SUPERNATURAL": "Supernatural",
+        "THRILLER": "Thriller",
+        "HISTORICAL": "Historical",
+        "ISEKAI": "Isekai",
+        "MECHA": "Mecha",
+        "PSYCHOLOGICAL": "Psychological"
+      },
+      "demographic": {
+        "SHONEN": "Shonen (young men)",
+        "SEINEN": "Seinen (adult men)",
+        "SHOJO": "Shojo (young women)",
+        "JOSEI": "Josei (adult women)",
+        "KODOMO": "Kodomo (children)"
+      },
+      "publicationType": {
+        "WEEKLY": "Weekly",
+        "MONTHLY": "Monthly",
+        "IRREGULAR": "Irregular"
+      },
+      "relationshipType": {
+        "SEQUEL": "Sequel",
+        "SPINOFF": "Spinoff",
+        "SIDE_STORY": "Side story",
+        "REBOOT": "Reboot"
+      }
+    },
+    "proposalStatus": {
+      "DRAFT": "Draft",
+      "PROPOSAL_REVIEW": "In review",
+      "PROPOSAL_REVISION": "Needs revision",
+      "PROPOSAL_APPROVED": "Proposal approved",
+      "PITCHED": "Pitched",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn by Mangaka"
+    },
+    "nameStatus": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "IN_REVIEW": "In review",
+      "REVISION": "Needs revision",
+      "APPROVED": "Approved"
+    },
+    "proposal": {
+      "title": "Proposal",
+      "empty": "This series has no proposal yet.",
+      "synopsis": "Synopsis",
+      "characterDesigns": "Character Designs",
+      "characterDesignAlt": "Character design {{n}}",
+      "estimatedLength": "Estimated length",
+      "chaptersCount": "{{count}} chapters",
+      "createdAt": "Proposal created at",
+      "nameId": "Sample Name"
+    },
+    "names": {
+      "title": "Names (Storyboards)",
+      "empty": "No Name pages yet.",
+      "count": "{{count}} name",
+      "alt": "Name page {{label}}",
+      "altShort": "Name page",
+      "sampleLabel": "Sample Name (Proposal)",
+      "chapterLabel": "Chapter {{n}}",
+      "versionLabel": "Version {{n}}"
+    },
+    "error": {
+      "loadFailed": "Failed to load series details. Please try again.",
+      "retry": "Retry"
+    },
+    "notFound": {
+      "title": "Series not found",
+      "description": "This series may have been removed or you do not have access.",
+      "back": "Back to My Series"
+    },
+    "submit": {
+      "button": "Submit series",
+      "dialogTitle": "Submit series for editorial review?",
+      "dialogDescription": "\"{{title}}\" will move into the review queue. After submitting you will not be able to edit the proposal until the Editor responds.",
+      "bullet1": "The proposal moves to In Review.",
+      "bullet2": "Your sample Name pages are sent to the Editor.",
+      "bullet3": "You cannot edit the proposal while it is under review.",
+      "cancel": "Cancel",
+      "confirm": "Submit series",
+      "submitting": "Submitting series...",
+      "success": "Series submitted for editorial review.",
+      "errorGeneric": "Failed to submit series. Please try again."
+    },
+    "editProposalNotImplemented": "Edit proposal: route not implemented yet",
+    "editProposal": {
+      "button": "Edit Proposal",
+      "title": "Edit Proposal",
+      "subtitle": "Update your proposal fields. Leave a field unchanged to keep its current value.",
+      "notEditableTitle": "Proposal is not editable",
+      "notEditableDescription": "This proposal can only be edited while the series is DRAFT or while the proposal is awaiting your revisions (PROPOSAL_REVISION).",
+      "sectionBasic": "Basic Information",
+      "sectionSynopsis": "Synopsis",
+      "sectionCharacters": "Character Designs",
+      "newCover": "New cover selected",
+      "keepCover": "Keep current cover",
+      "removeCover": "Remove cover",
+      "noChanges": "No changes to save yet.",
+      "saveChanges": "Save Changes",
+      "saving": "Saving...",
+      "removeExistingCharacter": "Remove existing character design",
+      "removeExistingCharacterConfirm": "Remove this character design? It will be deleted when you save.",
+      "markForRemoval": "Marked for removal",
+      "loading": "Loading proposal...",
+      "loadFailed": "Failed to load the proposal.",
+      "retry": "Retry",
+      "success": "Proposal updated.",
+      "errorGeneric": "Failed to update proposal. Please try again.",
+      "errorConflict": "This proposal can no longer be edited (status changed).",
+      "errorPermission": "You can only edit proposals you own.",
+      "unsavedChangesTitle": "Discard unsaved changes?",
+      "unsavedChangesDescription": "You have unsaved changes that will be lost if you leave this page.",
+      "unsavedChangesLeave": "Leave without saving",
+      "unsavedChangesStay": "Stay on page",
+      "back": "Back to series"
+    },
+    "publication": {
+      "title": "Publication",
+      "count": "{{count}} chapters",
+      "empty": "No chapters have been created yet.",
+      "emptyHint": "Click \"Create new chapter\" in the top-right to start the first chapter.",
+      "loading": "Loading chapters...",
+      "retry": "Retry",
+      "error": {
+        "loadFailed": "Failed to load the chapter list."
+      },
+      "onHold": "On hold",
+      "publishedAt": "Published {{date}}",
+      "pages": "{{count}} pages",
+      "chapterLabel": "Chapter {{n}}",
+      "noApprovedNameHint": "The series has no Name (Storyboard) approved by the Editor yet. At least one approved Name is required before creating a chapter.",
+      "createButton": "Create new chapter",
+      "createButtonTooltipNoApproved": "At least one approved Name is required to create a chapter",
+      "chapterStatus": {
+        "DRAFT": "Draft",
+        "IN_PRODUCTION": "In production",
+        "COMPLETED": "Completed",
+        "PUBLISHED": "Published"
+      },
+      "manuscriptStatus": {
+        "DRAFT": "Manuscript: Draft",
+        "IN_PRODUCTION": "Manuscript: In production",
+        "COMPOSITE_REVIEW": "Manuscript: Composite review",
+        "EDITOR_REVIEW": "Manuscript: Editor review",
+        "EDITOR_REVISION": "Manuscript: Needs revision",
+        "READY_FOR_PRINT": "Manuscript: Ready for print",
+        "AWAITING_CO_OWNER_APPROVAL": "Manuscript: Awaiting co-owner approval",
+        "PUBLISHED": "Manuscript: Published"
+      },
+      "manuscriptStatusTitle": "Manuscript status",
+      "create": {
+        "dialogTitle": "Create new chapter",
+        "dialogDescription": "The chapter will be created from an Editor-approved Name (Storyboard).",
+        "seriesLabel": "Series",
+        "nameLabel": "Name (Storyboard)",
+        "selectName": "Select a Name...",
+        "noApprovedNames": "No APPROVED Names",
+        "noApprovedNamesHint": "The series has no approved Names yet. The Editor needs to approve at least one Name first.",
+        "nameSampleLabel": "Sample Name (Proposal)",
+        "nameChapterLabel": "Chapter {{n}}",
+        "chapterNumberLabel": "Chapter number",
+        "titleLabel": "Title (optional)",
+        "titlePlaceholder": "E.g. A fresh start",
+        "cancel": "Cancel",
+        "confirm": "Create chapter",
+        "creating": "Creating...",
+        "success": "New chapter created.",
+        "errorGeneric": "Failed to create the chapter. Please try again.",
+        "errorNoName": "Please select a Name (Storyboard).",
+        "errorInvalidNumber": "Chapter number must be an integer ≥ 1."
+      }
+    }
+  },
+  "lightbox": {
+    "closePreview": "Close preview",
+    "loading": "Loading...",
+    "failedToLoad": "Failed to load image"
+  },
+  "upload": {
+    "errors": {
+      "putFailed": "Upload to R2 failed: {{status}} {{statusText}}"
+    }
   },
   "wizard": {
     "title": "Propose New Series",
     "subtitle": "Fill in the details to create a new series proposal for editorial review.",
     "step1": "Basic Information",
-    "step1Desc": "Title, synopsis, genre and content labels.",
-    "step2": "Story Summary",
-    "step2Desc": "Write the detailed story outline for your series.",
+    "step1Desc": "Title, cover image, genres, demographic and publication cadence.",
+    "step2": "Synopsis",
+    "step2Desc": "Write the story synopsis for your series (max 5000 characters).",
     "step3": "Character Design",
-    "step3Desc": "Upload design images for main characters.",
-    "step4": "Manuscript Drafts",
-    "step4Desc": "Upload manuscript draft images for the first pages.",
+    "step3Desc": "Upload design images for main characters (sent as object keys).",
+    "step4": "Sample Name Pages",
+    "step4Desc": "Upload sample Name (storyboard) pages for the first chapter.",
     "back": "Back",
     "next": "Next",
     "submit": "Submit Proposal",
     "exit": "Exit",
     "seriesTitle": "Series Title",
     "seriesTitlePlaceholder": "Enter your series title",
-    "altTitles": "Alternative Titles",
-    "altTitlesPlaceholder": "Other names for this series (comma separated)",
-    "author": "Author",
-    "authorPlaceholder": "Author name",
+    "coverImage": "Cover Image",
+    "uploadCoverTitle": "Upload series cover image",
+    "uploadCoverSubtitle": "Drag & drop or choose one image (PNG, JPG, WEBP)",
+    "genres": "Genres",
+    "genresHint": "Pick one or more. Must be from the fixed list.",
     "demographic": "Demographic",
-    "seriesType": "Series Type",
+    "demographicHint": "Primary audience segment the series targets (by age and gender).",
+    "publicationType": "Publication Type",
+    "estimatedLength": "Estimated number of chapters",
+    "estimatedLengthPlaceholder": "E.g. 50",
+    "estimatedLengthHint": "Approximate total chapters planned for the entire series (minimum 1).",
     "selectOption": "Select...",
-    "synopsis": "Synopsis",
-    "synopsisPlaceholder": "Write a short synopsis of the series content...",
-    "synopsisHint": "This synopsis will be displayed on the series info page.",
-    "tags": "Tags",
-    "tagsPlaceholder": "Action, Adventure, Fantasy...",
-    "summaryPlaceholder": "Start writing your detailed story outline here...",
+    "enums": {
+      "genres": {
+        "ACTION": "Action",
+        "ADVENTURE": "Adventure",
+        "COMEDY": "Comedy",
+        "DRAMA": "Drama",
+        "FANTASY": "Fantasy",
+        "HORROR": "Horror",
+        "MYSTERY": "Mystery",
+        "ROMANCE": "Romance",
+        "SCI_FI": "Sci-Fi",
+        "SLICE_OF_LIFE": "Slice of Life",
+        "SPORTS": "Sports",
+        "SUPERNATURAL": "Supernatural",
+        "THRILLER": "Thriller",
+        "HISTORICAL": "Historical",
+        "ISEKAI": "Isekai",
+        "MECHA": "Mecha",
+        "PSYCHOLOGICAL": "Psychological"
+      },
+      "demographic": {
+        "SHONEN": "Shonen (teen boys)",
+        "SEINEN": "Seinen (adult men)",
+        "SHOJO": "Shoujo (teen girls)",
+        "JOSEI": "Josei (adult women)",
+        "KODOMO": "Kodomo (children)"
+      },
+      "publicationType": {
+        "WEEKLY": "Weekly",
+        "MONTHLY": "Monthly",
+        "IRREGULAR": "Irregular"
+      }
+    },
+    "synopsisPlaceholder": "Start writing your story synopsis here (max 5000 characters)...",
     "wordCount": "{{count}} words",
-    "charCount": "{{count}} characters",
+    "charCount": "{{count}} / 5000 characters",
+    "uploadNamePageTitle": "Upload sample Name pages",
+    "uploadNamePageSubtitle": "Drag & drop or choose image files (PNG, JPG, WEBP)",
     "uploadCharacterTitle": "Upload Character Design Images",
     "uploadCharacterSubtitle": "Drag & drop or choose image files (PNG, JPG, WEBP)",
     "chooseImage": "Choose Image",
     "removeImage": "Remove image",
-    "uploadManuscriptTitle": "Upload Manuscript Drafts",
-    "uploadManuscriptSubtitle": "Drag & drop or choose image files (PNG, JPG, WEBP)",
-    "characterNamePlaceholder": "Character name",
-    "characterDescPlaceholder": "Character description...",
-    "pageTitlePlaceholder": "Page title..."
+    "characterDesignAlt": "Character design",
+    "pageTitlePlaceholder": "Page title...",
+    "errors": {
+      "unauthenticated": "You must be signed in to create a proposal.",
+      "submitFailed": "Failed to create proposal. Please try again."
+    },
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "alignLeft": "Align Left",
+      "alignCenter": "Align Center",
+      "alignRight": "Align Right"
+    }
   }
 }

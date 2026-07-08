@@ -3,8 +3,12 @@
   "heroSubtitle": "A comprehensive platform for Vietnamese mangaka to create, publish and manage their manga works professionally.",
   "ctaStart": "Get Started",
   "ctaLogin": "Login",
+  "whatsNext": "What's next?",
+  "docs": "React Router Docs",
+  "discord": "Join Discord",
   "footerTerms": "Terms of Service",
   "footerPrivacy": "Privacy Policy",
   "footerContact": "Contact Support",
-  "footerDocs": "Documentation"
+  "footerDocs": "Documentation",
+  "footerCopyright": "© {{year}} {{appName}}. All rights reserved."
 }

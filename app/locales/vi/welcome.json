@@ -3,8 +3,12 @@
   "heroSubtitle": "Nền tảng toàn diện giúp các mangaka Việt Nam tạo, xuất bản và quản lý tác phẩm manga của mình một cách chuyên nghiệp.",
   "ctaStart": "Bắt đầu",
   "ctaLogin": "Đăng nhập",
+  "whatsNext": "Tiếp theo?",
+  "docs": "Tài liệu React Router",
+  "discord": "Tham gia Discord",
   "footerTerms": "Điều khoản",
   "footerPrivacy": "Quyền riêng tư",
   "footerContact": "Hỗ trợ",
-  "footerDocs": "Tài liệu"
+  "footerDocs": "Tài liệu",
+  "footerCopyright": "© {{year}} {{appName}}. Bảo lưu mọi quyền."
 }

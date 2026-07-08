@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Upload, X, FileImage } from 'lucide-react'
-import type { ProposalFormData, ManuscriptPageEntry } from '../create-proposal-wizard'
+import type { ProposalFormData, NamePageEntry } from '../create-proposal-wizard'
 
 interface Props {
   form: ProposalFormData
@@ -12,16 +12,23 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
   const { t } = useTranslation('mangaka')
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // `namePages` maps to API `CreateProposalBodyDto.namePages`:
+  // [{ pageNumber: number, fileUrl: object key }] — see swagger.json.
+  // Actual R2 upload happens at submit time (see create-proposal-wizard).
   const handleFiles = (files: FileList | null) => {
     if (!files) return
-    const newEntries: ManuscriptPageEntry[] = Array.from(files)
+    const startIndex = form.namePages.length
+    const newEntries: NamePageEntry[] = Array.from(files)
       .filter((f) => f.type.startsWith('image/'))
-      .map((file) => ({
+      .map((file, idx) => ({
         id: `${Date.now()}-${file.name}`,
+        file,
         preview: URL.createObjectURL(file),
+        key: '',
+        pageNumber: startIndex + idx + 1,
         title: file.name.replace(/\.[^/.]+$/, '')
       }))
-    onChange('manuscripts', [...form.manuscripts, ...newEntries])
+    onChange('namePages', [...form.namePages, ...newEntries])
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -30,20 +37,20 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
   }
 
   const handleRemove = (id: string) => {
-    const removed = form.manuscripts.find((entry) => entry.id === id)
-    if (removed) URL.revokeObjectURL(removed.preview)
+    const removed = form.namePages.find((entry) => entry.id === id)
+    if (removed && removed.preview.startsWith('blob:')) {
+      URL.revokeObjectURL(removed.preview)
+    }
     onChange(
-      'manuscripts',
-      form.manuscripts.filter((entry) => entry.id !== id)
+      'namePages',
+      form.namePages.filter((entry) => entry.id !== id)
     )
   }
 
-  const updateEntry = (id: string, field: keyof ManuscriptPageEntry, value: string) => {
+  const updateEntry = (id: string, field: keyof NamePageEntry, value: string | number) => {
     onChange(
-      'manuscripts',
-      form.manuscripts.map((entry) =>
-        entry.id === id ? { ...entry, [field]: value } : entry
-      )
+      'namePages',
+      form.namePages.map((entry) => (entry.id === id ? { ...entry, [field]: value } : entry))
     )
   }
 
@@ -64,10 +71,8 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
         <div className='flex h-14 w-14 items-center justify-center rounded-full bg-primary/10'>
           <Upload className='h-6 w-6 text-primary' />
         </div>
-        <p className='mt-4 text-sm font-semibold'>{t('wizard.uploadManuscriptTitle')}</p>
-        <p className='mt-1 text-xs text-muted-foreground'>
-          {t('wizard.uploadManuscriptSubtitle')}
-        </p>
+        <p className='mt-4 text-sm font-semibold'>{t('wizard.uploadNamePageTitle')}</p>
+        <p className='mt-1 text-xs text-muted-foreground'>{t('wizard.uploadNamePageSubtitle')}</p>
         <button
           type='button'
           onClick={(e) => {
@@ -89,24 +94,20 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
         />
       </div>
 
-      {/* Manuscript Pages Grid */}
-      {form.manuscripts.length > 0 && (
+      {/* Name Pages Grid */}
+      {form.namePages.length > 0 && (
         <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
-          {form.manuscripts.map((entry, index) => (
+          {form.namePages.map((entry) => (
             <div
               key={entry.id}
               className='flex flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm'
             >
               {/* Image area with page number + delete */}
               <div className='relative aspect-[3/4] w-full overflow-hidden bg-muted'>
-                <img
-                  src={entry.preview}
-                  alt={entry.title}
-                  className='h-full w-full object-cover'
-                />
-                {/* Page number badge */}
+                <img src={entry.preview} alt={entry.title} className='h-full w-full object-cover' />
+                {/* Page number badge (matches API `pageNumber`) */}
                 <div className='absolute left-2 top-2 flex h-7 min-w-[2rem] items-center justify-center rounded-md bg-black/60 px-2 text-xs font-bold text-white'>
-                  {String(index + 1).padStart(2, '0')}
+                  {String(entry.pageNumber).padStart(2, '0')}
                 </div>
                 {/* Delete button */}
                 <button
@@ -118,7 +119,7 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
                 </button>
               </div>
 
-              {/* Page title */}
+              {/* Page title (UI only — not sent to API) */}
               <div className='p-2'>
                 <input
                   type='text'

@@ -18,39 +18,39 @@ export function LoginPage() {
   // (see useLogin). Keeps the form responsive without blocking submit.
   const [validationError, setValidationError] = useState('')
 
-/** Route map for each role after login. */
-const ROLE_DASHBOARD: Record<string, string> = {
-  MANGAKA: '/dashboard/mangaka',
-  ASSISTANT: '/dashboard/assistant',
-  EDITOR: '/dashboard/editor',
-  BOARD_MEMBER: '/dashboard/board',
-  SUPER_ADMIN: '/dashboard/admin'
-}
-
-const handleSubmit = async (e: FormEvent) => {
-  e.preventDefault()
-  setValidationError('')
-
-  if (!email) {
-    setValidationError(t('login.errorEmailRequired'))
-    return
-  }
-  if (!password) {
-    setValidationError(t('login.errorPasswordRequired'))
-    return
+  /** Route map for each role after login. */
+  const ROLE_DASHBOARD: Record<string, string> = {
+    MANGAKA: '/dashboard/mangaka',
+    ASSISTANT: '/dashboard/assistant',
+    EDITOR: '/dashboard/editor',
+    BOARD_MEMBER: '/dashboard/board',
+    SUPER_ADMIN: '/dashboard/admin'
   }
 
-  const result = await submit({ email, password })
-  if (!result) return
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setValidationError('')
 
-  if (result.mustChangePassword) {
-    navigate('/change-password')
-    return
+    if (!email) {
+      setValidationError(t('login.errorEmailRequired'))
+      return
+    }
+    if (!password) {
+      setValidationError(t('login.errorPasswordRequired'))
+      return
+    }
+
+    const result = await submit({ email, password })
+    if (!result) return
+
+    if (result.mustChangePassword) {
+      navigate('/change-password')
+      return
+    }
+
+    const target = ROLE_DASHBOARD[result.user.role] ?? '/dashboard/mangaka'
+    navigate(target)
   }
-
-  const target = ROLE_DASHBOARD[result.user.role] ?? '/dashboard/mangaka'
-  navigate(target)
-}
 
   return (
     <div className='flex min-h-screen w-screen bg-background text-foreground transition-colors duration-300'>
@@ -65,24 +65,26 @@ const handleSubmit = async (e: FormEvent) => {
             <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
               <Pencil className='h-5 w-5' />
             </div>
-            <span className='text-xl font-bold tracking-wider text-primary'>MangaStudio Pro</span>
+            <span className='text-xl font-bold tracking-wider text-primary'>{t('login.brand')}</span>
           </div>
-          <p className='mt-4 text-sm font-semibold tracking-wide text-primary/80'>
-            Kiến tạo thế giới, chinh phục độc giả.
-          </p>
+          <p className='mt-4 text-sm font-semibold tracking-wide text-primary/80'>{t('login.tagline')}</p>
         </div>
 
         {/* Left Features Info */}
         <div className='relative z-10 my-auto grid grid-cols-2 gap-4 max-w-md'>
           <div className='rounded-xl border border-border bg-card/60 p-5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5'>
             <Layers className='h-6 w-6 text-primary' />
-            <h3 className='mt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground'>Workspace</h3>
-            <p className='mt-1 text-sm font-semibold'>Quản lý Series</p>
+            <h3 className='mt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+              {t('login.featureWorkspace')}
+            </h3>
+            <p className='mt-1 text-sm font-semibold'>{t('login.featureWorkspaceDesc')}</p>
           </div>
           <div className='rounded-xl border border-border bg-card/60 p-5 backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5'>
             <Sparkles className='h-6 w-6 text-primary' />
-            <h3 className='mt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground'>AI Assist</h3>
-            <p className='mt-1 text-sm font-semibold'>Phân khung tự động</p>
+            <h3 className='mt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+              {t('login.featureAiAssist')}
+            </h3>
+            <p className='mt-1 text-sm font-semibold'>{t('login.featureAiAssistDesc')}</p>
           </div>
         </div>
 
@@ -90,7 +92,7 @@ const handleSubmit = async (e: FormEvent) => {
         <div className='relative z-10 mt-auto overflow-hidden rounded-xl border border-border/80 bg-background/50 shadow-2xl'>
           <img
             src='/login-tablet.png'
-            alt='Manga Studio Graphics Drawing Tablet'
+            alt={t('login.tabletAlt')}
             className='w-full object-cover max-h-[300px] opacity-85 transition-transform duration-500 hover:scale-105'
           />
         </div>
@@ -125,7 +127,7 @@ const handleSubmit = async (e: FormEvent) => {
                     type='email'
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder='example@studio.com'
+                    placeholder={t('login.emailPlaceholder')}
                     disabled={isSubmitting}
                     className={cn(
                       'w-full rounded-lg border border-input bg-card/50 py-3 pl-11 pr-4 text-sm transition-all',
@@ -152,7 +154,7 @@ const handleSubmit = async (e: FormEvent) => {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder='••••••••'
+                    placeholder={t('login.passwordPlaceholder')}
                     disabled={isSubmitting}
                     className={cn(
                       'w-full rounded-lg border border-input bg-card/50 py-3 pl-11 pr-12 text-sm transition-all',
@@ -231,7 +233,7 @@ const handleSubmit = async (e: FormEvent) => {
                     d='M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.1-4.26 1.1-3.1 0-5.73-2.66-6.64-5.46L1.5 16.1C3.4 19.95 7.37 23 12 23z'
                   />
                 </svg>
-                <span>Google</span>
+                <span>{t('login.googleButton')}</span>
               </button>
               <button
                 type='button'
@@ -239,7 +241,7 @@ const handleSubmit = async (e: FormEvent) => {
                 className='flex items-center justify-center gap-2 rounded-lg border border-border bg-card/40 py-2.5 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60'
               >
                 <ShieldCheck className='h-4 w-4 text-primary' />
-                <span>Publisher ID</span>
+                <span>{t('login.publisherIdButton')}</span>
               </button>
             </div>
 
@@ -262,7 +264,7 @@ const handleSubmit = async (e: FormEvent) => {
               {t('login.footerPrivacy')}
             </Link>
           </div>
-          <span>v2.4.0</span>
+          <span>{t('login.version')}</span>
         </div>
       </div>
     </div>

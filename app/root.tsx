@@ -1,4 +1,5 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { AppProviders, themeInitScript } from '~/providers/app-providers'
 import { SITE } from '~/shared/config/site'
@@ -48,13 +49,14 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = 'Oops!'
-  let details = 'An unexpected error occurred.'
+  const { t } = useTranslation('common')
+  let message = t('errorBoundary.title')
+  let details = t('errorBoundary.messageGeneric')
   let stack: string | undefined
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? '404' : 'Error'
-    details = error.status === 404 ? 'The requested page could not be found.' : error.statusText || details
+    message = error.status === 404 ? '404' : t('errorBoundary.title')
+    details = error.status === 404 ? t('errorBoundary.message404') : error.statusText || details
   } else if (import.meta.env.DEV && error instanceof Error) {
     details = error.message
     stack = error.stack
