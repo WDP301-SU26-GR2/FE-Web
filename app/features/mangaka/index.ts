@@ -1,7 +1,19 @@
-export { MangakaDashboard } from './mangaka-dashboard'
-export { MySeriesPage } from './my-series-page'
-export { MySeriesDetailPage } from './my-series-detail-page'
-export { EditProposalPage } from './edit-proposal-page'
-export { MyStudioPage } from './my-studio-page'
-export { AssistantDirectoryPage } from './assistant-directory-page'
-export { CreateProposalWizard } from './components/create-proposal-wizard'
+// Mangaka role — sub-features are organised by business function.
+// Each sub-module re-exports its public surface via its own barrel.
+export { MangakaDashboard } from './dashboard/mangaka-dashboard'
+
+// Series (proposals & series lifecycle)
+export { MySeriesPage } from './series/my-series-page'
+export { MySeriesDetailPage } from './series/my-series-detail-page'
+export { EditProposalPage } from './series/edit-proposal-page'
+export { CreateProposalWizard } from './series/components/create-proposal-wizard'
+
+// Chapters (publication)
+export { CreateChapterDialog } from './chapters/create-chapter-dialog'
+export { PublicationSection } from './chapters/publication-section'
+
+// Studio (signed image gallery)
+export { MyStudioPage } from './studio/my-studio-page'
+
+// Assistants (directory + invite + assignments)
+export { AssistantDirectoryPage } from './assistants/assistant-directory-page'

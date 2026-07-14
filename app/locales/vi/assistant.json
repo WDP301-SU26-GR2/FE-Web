@@ -218,12 +218,12 @@
     },
     "summary": {
       "unreadCount_one": "{{count}} chưa đọc",
-      "unreadCount_other": "{{count}} chưa đọc",
-      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
+      "unreadCount_other": "{{count}} chưa đọc"
     },
     "pagination": {
       "previousPage": "Trang trước",
-      "nextPage": "Trang sau"
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
     },
     "empty": {
       "title": "Đã đọc hết thông báo",
@@ -231,6 +231,8 @@
     },
     "error": {
       "loadFailed": "Không tải được thông báo. Vui lòng thử lại.",
+      "markReadFailed": "Không thể đánh dấu thông báo là đã đọc. Vui lòng thử lại.",
+      "markAllReadFailed": "Không thể đánh dấu tất cả thông báo là đã đọc. Vui lòng thử lại.",
       "retry": "Thử lại"
     },
     "success": {

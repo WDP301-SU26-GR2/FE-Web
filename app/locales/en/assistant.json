@@ -218,12 +218,12 @@
     },
     "summary": {
       "unreadCount_one": "{{count}} unread",
-      "unreadCount_other": "{{count}} unread",
-      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+      "unreadCount_other": "{{count}} unread"
     },
     "pagination": {
       "previousPage": "Previous page",
-      "nextPage": "Next page"
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
     },
     "empty": {
       "title": "You're all caught up",
@@ -231,6 +231,8 @@
     },
     "error": {
       "loadFailed": "Could not load notifications. Please try again.",
+      "markReadFailed": "Could not mark the notification as read. Please try again.",
+      "markAllReadFailed": "Could not mark all notifications as read. Please try again.",
       "retry": "Retry"
     },
     "success": {

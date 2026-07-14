@@ -5,7 +5,7 @@ import type {
   AssistantProfileResDtoOutput,
   MangakaProfileResDtoOutput
 } from '~/api/model/users'
-import { SignedImage } from '~/features/mangaka/components/signed-image'
+import { SignedImage } from '~/shared/components/signed-image'
 import { Button } from '~/shared/ui/button'
 import { cn } from '~/shared/lib/cn'
 

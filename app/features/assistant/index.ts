@@ -1,5 +1,6 @@
-export { AssistantDashboard } from './assistant-dashboard-page'
-export { AssistantTasksPage } from './assistant-tasks-page'
-export { AssistantStudioPage } from './assistant-studio-page'
-export { AssistantInvitesPage } from './assistant-invites-page'
-export { AssistantNotificationsPage } from './assistant-notifications-page'
+// Assistant role — sub-features are organised by business function.
+export { AssistantDashboard } from './dashboard/assistant-dashboard-page'
+export { AssistantTasksPage } from './tasks/assistant-tasks-page'
+export { AssistantInvitesPage } from './invites/assistant-invites-page'
+export { AssistantStudioPage } from './studio/assistant-studio-page'
+export { AssistantNotificationsPage } from './notifications/assistant-notifications-page'

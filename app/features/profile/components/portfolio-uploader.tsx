@@ -2,8 +2,8 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImagePlus, Loader2, X } from 'lucide-react'
 
-import { uploadToR2WithMessage } from '~/features/mangaka/api/upload'
-import { SignedImage } from '~/features/mangaka/components/signed-image'
+import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
+import { SignedImage } from '~/shared/components/signed-image'
 
 type PortfolioUploaderProps = {
   /** R2 keys the user already has stored. */
