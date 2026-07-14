@@ -25,10 +25,19 @@ import type { PaymentControllerGetPaymentsPaymentType } from './paymentControlle
 import type { PaymentControllerGetPaymentsPaymentSource } from './paymentControllerGetPaymentsPaymentSource';
 
 export type PaymentControllerGetPaymentsParams = {
+/**
+ * Trạng thái khoản chi: TRIGGERED (điều kiện đạt) | PENDING (chờ xử lý) → APPROVED (Board duyệt) → PAID (đã trả); MISSED/FAILED/CANCELLED = không chi trả. Values: TRIGGERED, MISSED, PENDING, APPROVED, PAID, FAILED, CANCELLED
+ */
 status?: PaymentControllerGetPaymentsStatus;
 receiverId?: string;
 seriesId?: string;
 contractId?: string;
+/**
+ * Loại khoản chi cho Mangaka: CONDITION_PAYOUT (đạt điều kiện) | REVENUE_SHARE (chia lợi nhuận định kỳ) | COMPENSATION (đền bù khi huỷ series) | CHAPTER_MILESTONE | RECURRING_CHAPTER | RANKING_MILESTONE | TIME_BOUND (các payout theo điều kiện) | TRANSFER (liên quan chuyển nhượng). Values: CONDITION_PAYOUT, REVENUE_SHARE, COMPENSATION, CHAPTER_MILESTONE, RECURRING_CHAPTER, RANKING_MILESTONE, TIME_BOUND, TRANSFER
+ */
 paymentType?: PaymentControllerGetPaymentsPaymentType;
+/**
+ * Nguồn phát sinh khoản chi: CONTRACT (hợp đồng gốc) | REPRINT (tái bản) | TRANSFER (chuyển nhượng) | TERMINATION (huỷ/kết thúc hợp đồng) | MANUAL (tạo thủ công). Values: CONTRACT, REPRINT, TRANSFER, TERMINATION, MANUAL
+ */
 paymentSource?: PaymentControllerGetPaymentsPaymentSource;
 };

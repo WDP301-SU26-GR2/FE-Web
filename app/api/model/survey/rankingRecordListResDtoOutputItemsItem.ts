@@ -20,6 +20,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { RankingRecordListResDtoOutputItemsItemRiskLevel } from './rankingRecordListResDtoOutputItemsItemRiskLevel';
 
 export type RankingRecordListResDtoOutputItemsItem = {
   seriesId: string;
@@ -42,5 +43,12 @@ export type RankingRecordListResDtoOutputItemsItem = {
    */
   rankChange: number | null;
   isAtRisk: boolean;
+  /** Mức nguy cơ của series theo kết quả ranking kỳ: NONE bình thường, LOW at-risk kỳ này, MEDIUM 3+ kỳ liên tiếp, SEVERE 5+ kỳ liên tiếp (feed Board). Values: NONE, LOW, MEDIUM, SEVERE */
+  riskLevel: RankingRecordListResDtoOutputItemsItemRiskLevel;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  consecutiveAtRiskCount: number;
   isReliable: boolean;
 };

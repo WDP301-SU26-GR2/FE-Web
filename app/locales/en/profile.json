@@ -1,0 +1,99 @@
+{
+  "role": {
+    "mangaka": "Mangaka",
+    "assistant": "Assistant"
+  },
+  "edit": "Edit",
+  "cancel": "Cancel",
+  "save": "Save changes",
+  "saving": "Saving...",
+  "saveSuccess": "Profile updated.",
+  "loadError": "Could not load profile: {{message}}",
+  "noProfileHint": "You haven't filled out your profile yet — click Edit to get started.",
+  "empty": "Not set",
+  "emptyPenName": "(No pen name yet)",
+  "recommendedBadge": "Recommended",
+  "reputation": "Reputation",
+  "ratingCount_one": "{{count}} rating",
+  "ratingCount_other": "{{count}} ratings",
+  "editTitle": "Edit profile — {{mode}}",
+  "sections": {
+    "genres": "Genres",
+    "specializations": "Specializations",
+    "availability": "Availability",
+    "availabilityStatus": "Status",
+    "experienceLevel": "Experience level",
+    "bio": "About me",
+    "portfolio": "Portfolio"
+  },
+  "fields": {
+    "penName": "Pen name",
+    "genres": "Genres you work with",
+    "specializations": "Specializations",
+    "experienceLevel": "Experience level",
+    "bio": "About me",
+    "portfolio": "Portfolio",
+    "availabilityStatus": "Availability status",
+    "availabilityFrom": "Available from",
+    "availabilityTo": "Available to"
+  },
+  "hints": {
+    "experienceLevel": "e.g. \"5 years\", \"10+ years\"",
+    "genres": "Pick one or more genres you work with.",
+    "specializations": "Pick one or more task types you can do.",
+    "portfolio": "Upload up to 6 images (PNG, JPEG, WebP, or PDF, ≤ 15MB each).",
+    "availabilityStatus": "Setting ON_LEAVE or UNAVAILABLE will put your pending tasks on hold."
+  },
+  "addPortfolio": "Add image",
+  "portfolioHint": "PNG, JPEG, WebP, or PDF — up to 15MB each.",
+  "portfolioSlotsLeft_one": "{{count}} slot left",
+  "portfolioSlotsLeft_other": "{{count}} slots left",
+  "portfolioAlt": "Portfolio item",
+  "removePortfolio": "Remove",
+  "uploading": "Uploading...",
+  "errors": {
+    "penNameRequired": "Pen name is required.",
+    "penNameTooLong": "Pen name must be 100 characters or fewer.",
+    "availabilityRangeInvalid": "Available-to must be after available-from.",
+    "saveGeneric": "Could not save your profile. Please try again.",
+    "loadGeneric": "Could not load your profile.",
+    "portfolioLimit": "You can upload up to {{max}} images.",
+    "portfolioType": "Only PNG, JPEG, WebP, or PDF files are allowed.",
+    "portfolioSize": "Each file must be {{max}}MB or smaller.",
+    "uploadGeneric": "Upload failed."
+  },
+  "genre": {
+    "ACTION": "Action",
+    "ADVENTURE": "Adventure",
+    "COMEDY": "Comedy",
+    "DRAMA": "Drama",
+    "FANTASY": "Fantasy",
+    "HORROR": "Horror",
+    "MYSTERY": "Mystery",
+    "ROMANCE": "Romance",
+    "SCI_FI": "Sci-Fi",
+    "SLICE_OF_LIFE": "Slice of Life",
+    "SPORTS": "Sports",
+    "SUPERNATURAL": "Supernatural",
+    "THRILLER": "Thriller",
+    "HISTORICAL": "Historical",
+    "ISEKAI": "Isekai",
+    "MECHA": "Mecha",
+    "PSYCHOLOGICAL": "Psychological"
+  },
+  "specialization": {
+    "BACKGROUND": "Backgrounds",
+    "SCREENTONE": "Screentones",
+    "EFFECT_LINES": "Effect lines",
+    "INKING": "Inking",
+    "COLORING": "Coloring",
+    "LETTERING": "Lettering"
+  },
+  "availability": {
+    "none": "Not specified",
+    "AVAILABLE": "Available",
+    "BUSY": "Busy",
+    "ON_LEAVE": "On leave",
+    "UNAVAILABLE": "Unavailable"
+  }
+}

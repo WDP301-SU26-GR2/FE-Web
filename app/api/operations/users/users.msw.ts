@@ -42,7 +42,9 @@ import type {
   AssistantDirectoryListResDtoOutput,
   AssistantProfileResDtoOutput,
   MangakaProfileResDtoOutput,
-  MessageResDtoOutput
+  MeResDtoOutput,
+  MessageResDtoOutput,
+  StaffProfileResDtoOutput
 } from '../../model/users';
 
 
@@ -70,6 +72,10 @@ export const getUsersControllerGetAdminStatsResponseMock = (overrideResponse: Pa
         [faker.string.alphanumeric(5)]: faker.number.float({min: undefined, max: undefined, fractionDigits: 2})
       }}, ...overrideResponse})
 
+export const getUsersControllerGetMeResponseMock = (overrideResponse: Partial< MeResDtoOutput > = {}): MeResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), phoneNumber: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['MANGAKA','ASSISTANT','EDITOR','BOARD_MEMBER','SUPER_ADMIN'] as const), status: faker.helpers.arrayElement(['INACTIVE','ACTIVE','BANNED','BLOCKED'] as const), emailVerified: faker.datatype.boolean(), mustChangePassword: faker.datatype.boolean(), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+
+export const getUsersControllerUpdateMeResponseMock = (overrideResponse: Partial< MeResDtoOutput > = {}): MeResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), phoneNumber: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['MANGAKA','ASSISTANT','EDITOR','BOARD_MEMBER','SUPER_ADMIN'] as const), status: faker.helpers.arrayElement(['INACTIVE','ACTIVE','BANNED','BLOCKED'] as const), emailVerified: faker.datatype.boolean(), mustChangePassword: faker.datatype.boolean(), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+
 export const getUsersControllerUpsertMangakaProfileResponseMock = (overrideResponse: Partial< MangakaProfileResDtoOutput > = {}): MangakaProfileResDtoOutput => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), penName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), genres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), experienceLevel: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), bio: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), portfolioFiles: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), reputationScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingAvg: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isRecommended: faker.datatype.boolean(), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hasProfile: faker.datatype.boolean(), ...overrideResponse})
 
 export const getUsersControllerGetMyMangakaProfileResponseMock = (overrideResponse: Partial< MangakaProfileResDtoOutput > = {}): MangakaProfileResDtoOutput => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), penName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), genres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), experienceLevel: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), bio: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), portfolioFiles: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), reputationScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingAvg: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isRecommended: faker.datatype.boolean(), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hasProfile: faker.datatype.boolean(), ...overrideResponse})
@@ -83,6 +89,12 @@ export const getUsersControllerGetMangakaProfileResponseMock = (overrideResponse
 export const getUsersControllerListAssistantsResponseMock = (overrideResponse: Partial< AssistantDirectoryListResDtoOutput > = {}): AssistantDirectoryListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), specializations: faker.helpers.arrayElements(['BACKGROUND','SCREENTONE','EFFECT_LINES','INKING','COLORING','LETTERING'] as const), experienceLevel: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), portfolioFiles: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), availabilityStatus: faker.helpers.arrayElement([faker.helpers.arrayElement(['AVAILABLE','BUSY','ON_LEAVE','UNAVAILABLE'] as const), null]), availabilityFrom: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), availabilityTo: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reputationScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingAvg: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isRecommended: faker.datatype.boolean()})), total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), limit: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), offset: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ...overrideResponse})
 
 export const getUsersControllerGetAssistantProfileResponseMock = (overrideResponse: Partial< AssistantProfileResDtoOutput > = {}): AssistantProfileResDtoOutput => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), specializations: faker.helpers.arrayElements(['BACKGROUND','SCREENTONE','EFFECT_LINES','INKING','COLORING','LETTERING'] as const), experienceLevel: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), portfolioFiles: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), availabilityStatus: faker.helpers.arrayElement([faker.helpers.arrayElement(['AVAILABLE','BUSY','ON_LEAVE','UNAVAILABLE'] as const), null]), availabilityFrom: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), availabilityTo: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reputationScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingAvg: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ratingCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isRecommended: faker.datatype.boolean(), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hasProfile: faker.datatype.boolean(), ...overrideResponse})
+
+export const getUsersControllerUpsertStaffProfileResponseMock = (overrideResponse: Partial< StaffProfileResDtoOutput > = {}): StaffProfileResDtoOutput => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['MANGAKA','ASSISTANT','EDITOR','BOARD_MEMBER','SUPER_ADMIN'] as const), specialtyGenres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), demographics: faker.helpers.arrayElements(['SHONEN','SEINEN','SHOJO','JOSEI','KODOMO'] as const), bio: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), yearsOfExperience: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hasProfile: faker.datatype.boolean(), ...overrideResponse})
+
+export const getUsersControllerGetMyStaffProfileResponseMock = (overrideResponse: Partial< StaffProfileResDtoOutput > = {}): StaffProfileResDtoOutput => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['MANGAKA','ASSISTANT','EDITOR','BOARD_MEMBER','SUPER_ADMIN'] as const), specialtyGenres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), demographics: faker.helpers.arrayElements(['SHONEN','SEINEN','SHOJO','JOSEI','KODOMO'] as const), bio: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), yearsOfExperience: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hasProfile: faker.datatype.boolean(), ...overrideResponse})
+
+export const getUsersControllerGetStaffProfileResponseMock = (overrideResponse: Partial< StaffProfileResDtoOutput > = {}): StaffProfileResDtoOutput => ({userId: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['MANGAKA','ASSISTANT','EDITOR','BOARD_MEMBER','SUPER_ADMIN'] as const), specialtyGenres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), demographics: faker.helpers.arrayElements(['SHONEN','SEINEN','SHOJO','JOSEI','KODOMO'] as const), bio: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), yearsOfExperience: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hasProfile: faker.datatype.boolean(), ...overrideResponse})
 
 
 export const getUsersControllerCreateUserMockHandler = (overrideResponse?: AdminCreateUserResDtoOutput | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<AdminCreateUserResDtoOutput> | AdminCreateUserResDtoOutput), options?: RequestHandlerOptions) => {
@@ -181,6 +193,30 @@ export const getUsersControllerGetAdminStatsMockHandler = (overrideResponse?: Ad
   }, options)
 }
 
+export const getUsersControllerGetMeMockHandler = (overrideResponse?: MeResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<MeResDtoOutput> | MeResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/me', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUsersControllerGetMeResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getUsersControllerUpdateMeMockHandler = (overrideResponse?: MeResDtoOutput | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<MeResDtoOutput> | MeResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.patch('*/me', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUsersControllerUpdateMeResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getUsersControllerUpsertMangakaProfileMockHandler = (overrideResponse?: MangakaProfileResDtoOutput | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<MangakaProfileResDtoOutput> | MangakaProfileResDtoOutput), options?: RequestHandlerOptions) => {
   return http.put('*/me/mangaka-profile', async (info) => {await delay(1000);
   
@@ -264,6 +300,42 @@ export const getUsersControllerGetAssistantProfileMockHandler = (overrideRespons
       })
   }, options)
 }
+
+export const getUsersControllerUpsertStaffProfileMockHandler = (overrideResponse?: StaffProfileResDtoOutput | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<StaffProfileResDtoOutput> | StaffProfileResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.put('*/me/staff-profile', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUsersControllerUpsertStaffProfileResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getUsersControllerGetMyStaffProfileMockHandler = (overrideResponse?: StaffProfileResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<StaffProfileResDtoOutput> | StaffProfileResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/me/staff-profile', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUsersControllerGetMyStaffProfileResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getUsersControllerGetStaffProfileMockHandler = (overrideResponse?: StaffProfileResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<StaffProfileResDtoOutput> | StaffProfileResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/staff/:userId', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUsersControllerGetStaffProfileResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
 export const getUsersMock = () => [
   getUsersControllerCreateUserMockHandler(),
   getUsersControllerListUsersMockHandler(),
@@ -273,11 +345,16 @@ export const getUsersMock = () => [
   getUsersControllerRestoreUserMockHandler(),
   getUsersControllerResetUserPasswordMockHandler(),
   getUsersControllerGetAdminStatsMockHandler(),
+  getUsersControllerGetMeMockHandler(),
+  getUsersControllerUpdateMeMockHandler(),
   getUsersControllerUpsertMangakaProfileMockHandler(),
   getUsersControllerGetMyMangakaProfileMockHandler(),
   getUsersControllerUpsertAssistantProfileMockHandler(),
   getUsersControllerGetMyAssistantProfileMockHandler(),
   getUsersControllerGetMangakaProfileMockHandler(),
   getUsersControllerListAssistantsMockHandler(),
-  getUsersControllerGetAssistantProfileMockHandler()
+  getUsersControllerGetAssistantProfileMockHandler(),
+  getUsersControllerUpsertStaffProfileMockHandler(),
+  getUsersControllerGetMyStaffProfileMockHandler(),
+  getUsersControllerGetStaffProfileMockHandler()
 ]

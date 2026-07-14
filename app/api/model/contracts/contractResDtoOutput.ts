@@ -21,11 +21,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { ContractResDtoOutputContractType } from './contractResDtoOutputContractType';
-import type { ContractResDtoOutputContractStart } from './contractResDtoOutputContractStart';
-import type { ContractResDtoOutputContractEnd } from './contractResDtoOutputContractEnd';
 import type { ContractResDtoOutputStatus } from './contractResDtoOutputStatus';
-import type { ContractResDtoOutputMangakaSignedAt } from './contractResDtoOutputMangakaSignedAt';
-import type { ContractResDtoOutputBoardSignedAt } from './contractResDtoOutputBoardSignedAt';
 
 export interface ContractResDtoOutput {
   id: string;
@@ -37,6 +33,7 @@ export interface ContractResDtoOutput {
   boardDecisionId: string | null;
   /** @nullable */
   sourceTransferRequestId?: string | null;
+  /** Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE */
   contractType: ContractResDtoOutputContractType;
   /** @nullable */
   valuationAmount: number | null;
@@ -46,14 +43,35 @@ export interface ContractResDtoOutput {
   mangakaOwnershipPct: number | null;
   /** @nullable */
   terminationClause: string | null;
-  /** @nullable */
-  contractStart: ContractResDtoOutputContractStart;
-  /** @nullable */
-  contractEnd: ContractResDtoOutputContractEnd;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  contractStart: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  contractEnd: string | null;
+  /** Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED | VOIDED. Values: DRAFT, MANGAKA_REVIEW, MANGAKA_APPROVED, BOARD_APPROVED, NEGOTIATION, MANGAKA_SIGNED, FULLY_EXECUTED, FULFILLED, TERMINATED, TERMINATED_BY_BREACH, EXPIRED, VOIDED */
   status: ContractResDtoOutputStatus;
-  /** @nullable */
-  mangakaSignedAt: ContractResDtoOutputMangakaSignedAt;
-  /** @nullable */
-  boardSignedAt: ContractResDtoOutputBoardSignedAt;
-  createdAt: unknown;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  mangakaSignedAt: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  boardSignedAt: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  createdAt: string;
 }

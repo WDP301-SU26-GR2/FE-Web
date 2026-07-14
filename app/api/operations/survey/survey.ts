@@ -21,6 +21,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type {
+  BoardRankingListResDtoOutput,
   CreateSurveyPeriodBodyDto,
   ImportSurveyDataBodyDto,
   MessageResDtoOutput,
@@ -28,15 +29,20 @@ import type {
   ReaderVoteBodyDto,
   ReaderVoteResDtoOutput,
   SurveyControllerFinalizeRankingPathParameters,
+  SurveyControllerGetBoardRankingParams,
   SurveyControllerGetRankingRecordsPathParameters,
+  SurveyControllerGetSeriesTrendParams,
   SurveyControllerGetSurveyPeriodByIdPathParameters,
   SurveyControllerGetSurveyPeriodSurveyDataPathParameters,
   SurveyControllerGetSurveyPeriodVotesPathParameters,
+  SurveyControllerGetVoteResultsParams,
   SurveyControllerUpdateSurveyPeriodStatusPathParameters,
   SurveyDataResDtoOutput,
   SurveyPeriodResDtoOutput,
   UpdateSurveyPeriodStatusBodyDto,
+  VoteContextResDtoOutput,
   VoteOtpRequestBodyDto,
+  VoteResultsResDtoOutput,
   VotingConfigBodyDto,
   VotingConfigResDtoOutput
 } from '../../model/survey';
@@ -51,15 +57,15 @@ export type surveyControllerRequestOtpResponse200 = {
   status: 200
 }
 
-export type surveyControllerRequestOtpResponse400 = {
+export type surveyControllerRequestOtpResponse429 = {
   data: void
-  status: 400
+  status: 429
 }
     
 export type surveyControllerRequestOtpResponseSuccess = (surveyControllerRequestOtpResponse200) & {
   headers: Headers;
 };
-export type surveyControllerRequestOtpResponseError = (surveyControllerRequestOtpResponse400) & {
+export type surveyControllerRequestOtpResponseError = (surveyControllerRequestOtpResponse429) & {
   headers: Headers;
 };
 
@@ -108,11 +114,21 @@ export type surveyControllerSubmitVoteResponse409 = {
   data: void
   status: 409
 }
+
+export type surveyControllerSubmitVoteResponse422 = {
+  data: void
+  status: 422
+}
+
+export type surveyControllerSubmitVoteResponse429 = {
+  data: void
+  status: 429
+}
     
 export type surveyControllerSubmitVoteResponseSuccess = (surveyControllerSubmitVoteResponse200) & {
   headers: Headers;
 };
-export type surveyControllerSubmitVoteResponseError = (surveyControllerSubmitVoteResponse400 | surveyControllerSubmitVoteResponse404 | surveyControllerSubmitVoteResponse409) & {
+export type surveyControllerSubmitVoteResponseError = (surveyControllerSubmitVoteResponse400 | surveyControllerSubmitVoteResponse404 | surveyControllerSubmitVoteResponse409 | surveyControllerSubmitVoteResponse422 | surveyControllerSubmitVoteResponse429) & {
   headers: Headers;
 };
 
@@ -135,6 +151,95 @@ export const surveyControllerSubmitVote = async (readerVoteBodyDto: ReaderVoteBo
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       readerVoteBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Public — kỳ bình chọn OPEN hiện tại + danh sách series SERIALIZED cho trang vote Guest
+ */
+export type surveyControllerGetVoteContextResponse200 = {
+  data: VoteContextResDtoOutput
+  status: 200
+}
+    
+export type surveyControllerGetVoteContextResponseSuccess = (surveyControllerGetVoteContextResponse200) & {
+  headers: Headers;
+};
+;
+
+export type surveyControllerGetVoteContextResponse = (surveyControllerGetVoteContextResponseSuccess)
+
+export const getSurveyControllerGetVoteContextUrl = () => {
+
+
+  
+
+  return `/vote/context`
+}
+
+export const surveyControllerGetVoteContext = async ( options?: RequestInit): Promise<surveyControllerGetVoteContextResponse> => {
+  
+  return customFetch<surveyControllerGetVoteContextResponse>(getSurveyControllerGetVoteContextUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Public — bảng xếp hạng của kỳ đã chốt (REFLECTED); ẩn tín hiệu biên tập nội bộ
+ */
+export type surveyControllerGetVoteResultsResponse200 = {
+  data: VoteResultsResDtoOutput
+  status: 200
+}
+
+export type surveyControllerGetVoteResultsResponse404 = {
+  data: void
+  status: 404
+}
+
+export type surveyControllerGetVoteResultsResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type surveyControllerGetVoteResultsResponseSuccess = (surveyControllerGetVoteResultsResponse200) & {
+  headers: Headers;
+};
+export type surveyControllerGetVoteResultsResponseError = (surveyControllerGetVoteResultsResponse404 | surveyControllerGetVoteResultsResponse409) & {
+  headers: Headers;
+};
+
+export type surveyControllerGetVoteResultsResponse = (surveyControllerGetVoteResultsResponseSuccess | surveyControllerGetVoteResultsResponseError)
+
+export const getSurveyControllerGetVoteResultsUrl = (params: SurveyControllerGetVoteResultsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/vote/results?${stringifiedParams}` : `/vote/results`
+}
+
+export const surveyControllerGetVoteResults = async (params: SurveyControllerGetVoteResultsParams, options?: RequestInit): Promise<surveyControllerGetVoteResultsResponse> => {
+  
+  return customFetch<surveyControllerGetVoteResultsResponse>(getSurveyControllerGetVoteResultsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -480,6 +585,109 @@ export const getSurveyControllerGetRankingRecordsUrl = ({ id }: SurveyController
 export const surveyControllerGetRankingRecords = async ({ id }: SurveyControllerGetRankingRecordsPathParameters, options?: RequestInit): Promise<surveyControllerGetRankingRecordsResponse> => {
   
   return customFetch<surveyControllerGetRankingRecordsResponse>(getSurveyControllerGetRankingRecordsUrl({ id }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary PB-04: bảng xếp hạng toàn tạp chí 1 kỳ (full, mọi role nội bộ)
+ */
+export type surveyControllerGetBoardRankingResponse200 = {
+  data: BoardRankingListResDtoOutput
+  status: 200
+}
+
+export type surveyControllerGetBoardRankingResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type surveyControllerGetBoardRankingResponseSuccess = (surveyControllerGetBoardRankingResponse200) & {
+  headers: Headers;
+};
+export type surveyControllerGetBoardRankingResponseError = (surveyControllerGetBoardRankingResponse404) & {
+  headers: Headers;
+};
+
+export type surveyControllerGetBoardRankingResponse = (surveyControllerGetBoardRankingResponseSuccess | surveyControllerGetBoardRankingResponseError)
+
+export const getSurveyControllerGetBoardRankingUrl = (params: SurveyControllerGetBoardRankingParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/rankings/board?${stringifiedParams}` : `/rankings/board`
+}
+
+export const surveyControllerGetBoardRanking = async (params: SurveyControllerGetBoardRankingParams, options?: RequestInit): Promise<surveyControllerGetBoardRankingResponse> => {
+  
+  return customFetch<surveyControllerGetBoardRankingResponse>(getSurveyControllerGetBoardRankingUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary PB-04: trend xếp hạng 1 series (scoped theo owner)
+ */
+export type surveyControllerGetSeriesTrendResponse200 = {
+  data: BoardRankingListResDtoOutput
+  status: 200
+}
+
+export type surveyControllerGetSeriesTrendResponse403 = {
+  data: void
+  status: 403
+}
+
+export type surveyControllerGetSeriesTrendResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type surveyControllerGetSeriesTrendResponseSuccess = (surveyControllerGetSeriesTrendResponse200) & {
+  headers: Headers;
+};
+export type surveyControllerGetSeriesTrendResponseError = (surveyControllerGetSeriesTrendResponse403 | surveyControllerGetSeriesTrendResponse404) & {
+  headers: Headers;
+};
+
+export type surveyControllerGetSeriesTrendResponse = (surveyControllerGetSeriesTrendResponseSuccess | surveyControllerGetSeriesTrendResponseError)
+
+export const getSurveyControllerGetSeriesTrendUrl = (params: SurveyControllerGetSeriesTrendParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/rankings?${stringifiedParams}` : `/rankings`
+}
+
+export const surveyControllerGetSeriesTrend = async (params: SurveyControllerGetSeriesTrendParams, options?: RequestInit): Promise<surveyControllerGetSeriesTrendResponse> => {
+  
+  return customFetch<surveyControllerGetSeriesTrendResponse>(getSurveyControllerGetSeriesTrendUrl(params),
   {      
     ...options,
     method: 'GET'

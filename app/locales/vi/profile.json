@@ -1,0 +1,99 @@
+{
+  "role": {
+    "mangaka": "Mangaka",
+    "assistant": "Trợ lý"
+  },
+  "edit": "Chỉnh sửa",
+  "cancel": "Huỷ",
+  "save": "Lưu thay đổi",
+  "saving": "Đang lưu...",
+  "saveSuccess": "Đã cập nhật hồ sơ.",
+  "loadError": "Không tải được hồ sơ: {{message}}",
+  "noProfileHint": "Bạn chưa điền hồ sơ — bấm Chỉnh sửa để bắt đầu.",
+  "empty": "Chưa cập nhật",
+  "emptyPenName": "(Chưa có bút danh)",
+  "recommendedBadge": "Được đề xuất",
+  "reputation": "Uy tín",
+  "ratingCount_one": "{{count}} đánh giá",
+  "ratingCount_other": "{{count}} đánh giá",
+  "editTitle": "Chỉnh sửa hồ sơ — {{mode}}",
+  "sections": {
+    "genres": "Thể loại",
+    "specializations": "Chuyên môn",
+    "availability": "Lịch rảnh",
+    "availabilityStatus": "Trạng thái",
+    "experienceLevel": "Kinh nghiệm",
+    "bio": "Giới thiệu",
+    "portfolio": "Portfolio"
+  },
+  "fields": {
+    "penName": "Bút danh",
+    "genres": "Thể loại bạn làm",
+    "specializations": "Chuyên môn",
+    "experienceLevel": "Kinh nghiệm",
+    "bio": "Giới thiệu",
+    "portfolio": "Portfolio",
+    "availabilityStatus": "Trạng thái rảnh",
+    "availabilityFrom": "Rảnh từ",
+    "availabilityTo": "Rảnh đến"
+  },
+  "hints": {
+    "experienceLevel": "vd \"5 năm\", \"10+ năm\"",
+    "genres": "Chọn 1 hoặc nhiều thể loại bạn làm.",
+    "specializations": "Chọn 1 hoặc nhiều loại công việc bạn nhận.",
+    "portfolio": "Upload tối đa 6 ảnh (PNG, JPEG, WebP hoặc PDF, mỗi ảnh ≤ 15MB).",
+    "availabilityStatus": "Đặt ON_LEAVE hoặc UNAVAILABLE sẽ tự đẩy các task đang chờ sang ON_HOLD."
+  },
+  "addPortfolio": "Thêm ảnh",
+  "portfolioHint": "PNG, JPEG, WebP hoặc PDF — tối đa 15MB mỗi ảnh.",
+  "portfolioSlotsLeft_one": "còn {{count}} ô",
+  "portfolioSlotsLeft_other": "còn {{count}} ô",
+  "portfolioAlt": "Ảnh portfolio",
+  "removePortfolio": "Xoá",
+  "uploading": "Đang tải lên...",
+  "errors": {
+    "penNameRequired": "Vui lòng nhập bút danh.",
+    "penNameTooLong": "Bút danh tối đa 100 ký tự.",
+    "availabilityRangeInvalid": "Thời điểm \"Rảnh đến\" phải sau \"Rảnh từ\".",
+    "saveGeneric": "Không thể lưu hồ sơ. Vui lòng thử lại.",
+    "loadGeneric": "Không tải được hồ sơ.",
+    "portfolioLimit": "Bạn chỉ được upload tối đa {{max}} ảnh.",
+    "portfolioType": "Chỉ chấp nhận file PNG, JPEG, WebP hoặc PDF.",
+    "portfolioSize": "Mỗi file phải nhỏ hơn hoặc bằng {{max}}MB.",
+    "uploadGeneric": "Upload thất bại."
+  },
+  "genre": {
+    "ACTION": "Hành động",
+    "ADVENTURE": "Phiêu lưu",
+    "COMEDY": "Hài",
+    "DRAMA": "Drama",
+    "FANTASY": "Giả tưởng",
+    "HORROR": "Kinh dị",
+    "MYSTERY": "Bí ẩn",
+    "ROMANCE": "Lãng mạn",
+    "SCI_FI": "Khoa học viễn tưởng",
+    "SLICE_OF_LIFE": "Đời thường",
+    "SPORTS": "Thể thao",
+    "SUPERNATURAL": "Siêu nhiên",
+    "THRILLER": "Giật gân",
+    "HISTORICAL": "Lịch sử",
+    "ISEKAI": "Isekai",
+    "MECHA": "Mecha",
+    "PSYCHOLOGICAL": "Tâm lý"
+  },
+  "specialization": {
+    "BACKGROUND": "Vẽ nền",
+    "SCREENTONE": "Dán tone bóng",
+    "EFFECT_LINES": "Đường hiệu ứng",
+    "INKING": "Tô mực",
+    "COLORING": "Tô màu",
+    "LETTERING": "Chèn chữ"
+  },
+  "availability": {
+    "none": "Không chọn",
+    "AVAILABLE": "Sẵn sàng",
+    "BUSY": "Đang bận",
+    "ON_LEAVE": "Nghỉ phép",
+    "UNAVAILABLE": "Tạm không nhận"
+  }
+}

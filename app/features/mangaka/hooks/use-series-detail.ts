@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { seriesControllerGetSeries, seriesControllerListNames } from '~/api/operations/series/series'
+import { seriesControllerGetSeries } from '~/api/operations/series/series'
+import { nameControllerList } from '~/api/operations/names/names'
 import type { SeriesResDtoOutput } from '~/api/model/series'
-import type { NameListResDtoOutput, NameListResDtoOutputItemsItem } from '~/api/model/series'
+import type { NameListResDtoOutput, NameListResDtoOutputItemsItem } from '~/api/model/names'
 import { isFetchError } from '~/api/mutator/custom-fetch'
 
 type UseSeriesDetailResult = {
@@ -49,7 +50,7 @@ export function useSeriesDetail(id: string): UseSeriesDetailResult {
       try {
         const [seriesRes, namesRes] = await Promise.all([
           seriesControllerGetSeries({ id: targetId }, { signal }),
-          seriesControllerListNames({ id: targetId }, { signal })
+          nameControllerList({ id: targetId }, undefined, { signal })
         ])
 
         if (signal.aborted) return

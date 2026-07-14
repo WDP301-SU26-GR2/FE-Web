@@ -29,6 +29,7 @@ export interface CreateContractBodyDto {
   mangakaId: string;
   /** @minLength 1 */
   boardDecisionId: string;
+  /** Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE */
   contractType: CreateContractBodyDtoContractType;
   /** @minimum 0 */
   valuationAmount: number;

@@ -23,7 +23,6 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { PaymentConditionListResDtoOutputDataItemConditionType } from './paymentConditionListResDtoOutputDataItemConditionType';
 import type { PaymentConditionListResDtoOutputDataItemThresholdConfig } from './paymentConditionListResDtoOutputDataItemThresholdConfig';
 import type { PaymentConditionListResDtoOutputDataItemStatus } from './paymentConditionListResDtoOutputDataItemStatus';
-import type { PaymentConditionListResDtoOutputDataItemAchievedAt } from './paymentConditionListResDtoOutputDataItemAchievedAt';
 
 export type PaymentConditionListResDtoOutputDataItem = {
   id: string;
@@ -36,9 +35,14 @@ export type PaymentConditionListResDtoOutputDataItem = {
   /** @nullable */
   payoutPct: number | null;
   isRecurring: boolean;
+  /** Trạng thái điều kiện giải ngân: PENDING (chờ đạt) | ACHIEVED (đã đạt) | PAID (đã chi) | CANCELLED (đã huỷ) | MISSED (hết hạn không đạt) | DISABLED (tạm dừng khi series HIATUS — BR-CONTRACT-07). Values: PENDING, ACHIEVED, PAID, CANCELLED, MISSED, DISABLED */
   status: PaymentConditionListResDtoOutputDataItemStatus;
   /** @nullable */
   lastTriggeredValue: number | null;
-  /** @nullable */
-  achievedAt: PaymentConditionListResDtoOutputDataItemAchievedAt;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  achievedAt: string | null;
 };

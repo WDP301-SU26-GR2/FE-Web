@@ -26,6 +26,7 @@ import type { ContractStatusProgressResDtoOutputBoardProgress } from './contract
 
 export interface ContractStatusProgressResDtoOutput {
   id: string;
+  /** Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED | VOIDED. Values: DRAFT, MANGAKA_REVIEW, MANGAKA_APPROVED, BOARD_APPROVED, NEGOTIATION, MANGAKA_SIGNED, FULLY_EXECUTED, FULFILLED, TERMINATED, TERMINATED_BY_BREACH, EXPIRED, VOIDED */
   status: ContractStatusProgressResDtoOutputStatus;
   mangaka: ContractStatusProgressResDtoOutputMangaka;
   boardProgress: ContractStatusProgressResDtoOutputBoardProgress;

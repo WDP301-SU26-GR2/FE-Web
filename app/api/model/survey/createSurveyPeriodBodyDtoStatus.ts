@@ -21,6 +21,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được). Values: DRAFT, OPEN, CLOSED, REFLECTED
+ */
 export type CreateSurveyPeriodBodyDtoStatus = typeof CreateSurveyPeriodBodyDtoStatus[keyof typeof CreateSurveyPeriodBodyDtoStatus];
 
 
@@ -29,4 +32,5 @@ export const CreateSurveyPeriodBodyDtoStatus = {
   DRAFT: 'DRAFT',
   OPEN: 'OPEN',
   CLOSED: 'CLOSED',
+  REFLECTED: 'REFLECTED',
 } as const;

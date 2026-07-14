@@ -22,6 +22,6 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
- * Cấu hình chia tỷ lệ sở hữu doanh thu mới
+ * Cấu hình chia tỷ lệ sở hữu doanh thu mới — tổng các giá trị PHẢI = 100 (%)
  */
-export type CreateTransferContractBodyDtoNewOwnershipSplit = {[key: string]: unknown};
+export type CreateTransferContractBodyDtoNewOwnershipSplit = {[key: string]: number};

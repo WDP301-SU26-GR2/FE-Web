@@ -21,7 +21,7 @@ import { exampleHandlers } from './example.handler'
 import {
   getAuthMock,
   getSeriesMock,
-  getSeriesNamesMock,
+  getNamesMock,
   getReviewsMock,
   getUploadsMock,
   getUsersMock,
@@ -31,7 +31,7 @@ export const handlers: RequestHandler[] = [
   // Orval generated (bật khi VITE_ENABLE_MOCK=true)
   ...getAuthMock(),
   ...getSeriesMock(),
-  ...getSeriesNamesMock(),
+  ...getNamesMock(),
   ...getReviewsMock(),
   ...getUploadsMock(),
   ...getUsersMock(),

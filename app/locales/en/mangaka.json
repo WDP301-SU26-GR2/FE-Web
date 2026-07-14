@@ -16,6 +16,128 @@
     "editorSupport": "Editor Support",
     "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Sync: {{time}} ago"
   },
+  "assistantDirectory": {
+    "title": "Assistant Directory",
+    "subtitle": "Browse and invite assistants to collaborate on your series.",
+    "filters": {
+      "specialization": "Specialization",
+      "all": "All",
+      "levelPlaceholder": "Filter by level (e.g. 3 years)"
+    },
+    "card": {
+      "recommended": "Recommended",
+      "reputationTitle": "Reputation score",
+      "reputation": "{{score}} rep",
+      "ratingTitle": "Average rating",
+      "rating": "{{avg}} ({{count}})",
+      "unnamedAssistant": "Unnamed assistant",
+      "activeAssignment": "Active hire",
+      "activeAssignmentTitle": "You already have an ACTIVE collaboration with this assistant",
+      "invite": "Invite to collaborate",
+      "inviteAriaLabel": "Invite {{name}} to collaborate",
+      "portfolioCount": "{{count}} portfolio",
+      "availableWindow": "Available {{from}} – {{to}}",
+      "availability": {
+        "AVAILABLE": "Available",
+        "BUSY": "Busy",
+        "ON_LEAVE": "On leave",
+        "UNAVAILABLE": "Not accepting"
+      },
+      "specialization": {
+        "BACKGROUND": "Background",
+        "SCREENTONE": "Screentone",
+        "EFFECT_LINES": "Effect lines",
+        "INKING": "Inking",
+        "COLORING": "Coloring",
+        "LETTERING": "Lettering"
+      }
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "empty": {
+      "title": "No assistants match your filters",
+      "description": "Try removing the specialization filter or adjusting your level keyword.",
+      "clearFilters": "Clear filters"
+    },
+    "error": {
+      "loadFailed": "Could not load the assistant directory. Please try again.",
+      "retry": "Retry"
+    },
+    "invite": {
+      "dialogTitle": "Invite {{name}} to collaborate",
+      "dialogDescription": "Send a collaboration invite — the assistant must accept before you can assign tasks. The hire window must be in the future and end after it starts.",
+      "close": "Close",
+      "seriesLabel": "Series (optional)",
+      "seriesNone": "No specific series",
+      "seriesHint": "BE does not validate series ownership for invites — this is metadata only.",
+      "hireStartLabel": "Hire start",
+      "hireEndLabel": "Hire end",
+      "taskTypesLabel": "Task types",
+      "taskTypesHint": "Select at least one specialization you intend to assign.",
+      "cancel": "Cancel",
+      "confirm": "Send invite",
+      "sending": "Sending...",
+      "success": "Collaboration invite sent.",
+      "errorGeneric": "Could not send the invite. Please try again.",
+      "errorDuplicate": "You already have an ACTIVE collaboration with this assistant — duplicates are not allowed.",
+      "errorInvalidHire": "Invalid hire window. Please pick valid start/end dates.",
+      "errorAssistantNotFound": "Assistant not found.",
+      "errorHireOrder": "Hire end must be after hire start.",
+      "errorHirePast": "Hire end must be in the future.",
+      "errorNoTaskType": "Please select at least one task type."
+    }
+  },
+  "myStudio": {
+    "title": "Studio",
+    "subtitle": "Track all assistants currently or previously hired for your series.",
+    "filters": {
+      "status": "Status",
+      "all": "All",
+      "activeNow": "Only active right now"
+    },
+    "card": {
+      "unnamedAssistant": "Assistant #{{id}}",
+      "hireWindow": "{{from}} – {{to}}",
+      "hireWindowNoEnd": "From {{from}}",
+      "seriesNone": "No series context",
+      "terminatedReason": "Reason: {{reason}}",
+      "noReason": "No reason recorded",
+      "ended": "Ended {{date}}",
+      "taskTypesTitle": "Assigned task types",
+      "activeNowBadge": "Active now",
+      "endedBadge": "Ended"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "COMPLETED": "Completed",
+      "TERMINATED": "Terminated"
+    },
+    "taskType": {
+      "BACKGROUND": "Background",
+      "SCREENTONE": "Screentone",
+      "EFFECT_LINES": "Effect lines",
+      "INKING": "Inking",
+      "COLORING": "Coloring",
+      "LETTERING": "Lettering"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "empty": {
+      "title": "No hires yet",
+      "description": "When an assistant accepts your invite, the relationship will show up here.",
+      "goToDirectory": "Browse assistant directory"
+    },
+    "error": {
+      "loadFailed": "Could not load your studio. Please try again.",
+      "retry": "Retry"
+    }
+  },
   "mySeries": {
     "title": "My Series",
     "subtitle": "Manage all your comic series",
@@ -231,9 +353,7 @@
       "publishedAt": "Published {{date}}",
       "pages": "{{count}} pages",
       "chapterLabel": "Chapter {{n}}",
-      "noApprovedNameHint": "The series has no Name (Storyboard) approved by the Editor yet. At least one approved Name is required before creating a chapter.",
       "createButton": "Create new chapter",
-      "createButtonTooltipNoApproved": "At least one approved Name is required to create a chapter",
       "chapterStatus": {
         "DRAFT": "Draft",
         "IN_PRODUCTION": "In production",
@@ -253,14 +373,8 @@
       "manuscriptStatusTitle": "Manuscript status",
       "create": {
         "dialogTitle": "Create new chapter",
-        "dialogDescription": "The chapter will be created from an Editor-approved Name (Storyboard).",
+        "dialogDescription": "A new chapter will be created for this series. The latest Editor-approved Name (Storyboard) will be auto-matched to seed the Manuscript and Schedule.",
         "seriesLabel": "Series",
-        "nameLabel": "Name (Storyboard)",
-        "selectName": "Select a Name...",
-        "noApprovedNames": "No APPROVED Names",
-        "noApprovedNamesHint": "The series has no approved Names yet. The Editor needs to approve at least one Name first.",
-        "nameSampleLabel": "Sample Name (Proposal)",
-        "nameChapterLabel": "Chapter {{n}}",
         "chapterNumberLabel": "Chapter number",
         "titleLabel": "Title (optional)",
         "titlePlaceholder": "E.g. A fresh start",
@@ -269,7 +383,6 @@
         "creating": "Creating...",
         "success": "New chapter created.",
         "errorGeneric": "Failed to create the chapter. Please try again.",
-        "errorNoName": "Please select a Name (Storyboard).",
         "errorInvalidNumber": "Chapter number must be an integer ≥ 1."
       }
     }

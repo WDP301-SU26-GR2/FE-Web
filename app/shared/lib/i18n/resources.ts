@@ -2,10 +2,14 @@ import enCommon from '~/locales/en/common.json'
 import enWelcome from '~/locales/en/welcome.json'
 import enAuth from '~/locales/en/auth.json'
 import enMangaka from '~/locales/en/mangaka.json'
+import enProfile from '~/locales/en/profile.json'
+import enAssistant from '~/locales/en/assistant.json'
 import viCommon from '~/locales/vi/common.json'
 import viWelcome from '~/locales/vi/welcome.json'
 import viAuth from '~/locales/vi/auth.json'
 import viMangaka from '~/locales/vi/mangaka.json'
+import viProfile from '~/locales/vi/profile.json'
+import viAssistant from '~/locales/vi/assistant.json'
 
 /**
  * Tập hợp tài nguyên i18n. Mỗi feature 1 namespace riêng để:
@@ -18,7 +22,7 @@ import viMangaka from '~/locales/vi/mangaka.json'
  *   3. Thêm tên namespace vào NAMESPACES
  */
 
-export const NAMESPACES = ['common', 'welcome', 'auth', 'mangaka'] as const
+export const NAMESPACES = ['common', 'welcome', 'auth', 'mangaka', 'profile', 'assistant'] as const
 export type Namespace = (typeof NAMESPACES)[number]
 
 export const DEFAULT_NAMESPACE: Namespace = 'common'
@@ -28,13 +32,17 @@ export const resources = {
     common: enCommon,
     welcome: enWelcome,
     auth: enAuth,
-    mangaka: enMangaka
+    mangaka: enMangaka,
+    profile: enProfile,
+    assistant: enAssistant
   },
   vi: {
     common: viCommon,
     welcome: viWelcome,
     auth: viAuth,
-    mangaka: viMangaka
+    mangaka: viMangaka,
+    profile: viProfile,
+    assistant: viAssistant
   }
 } as const
 

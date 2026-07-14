@@ -1,15 +1,13 @@
-﻿import { useTranslation } from 'react-i18next'
+﻿import { AssistantDashboard } from '~/features/assistant'
+import type { Route } from './+types/index'
 
-export function meta() {
-  return [{ title: 'Assistant Dashboard - MangaStudio Pro' }]
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: 'Assistant Dashboard - MangakaStudio Pro' },
+    { name: 'description', content: 'Bảng điều khiển dành cho trợ lý' }
+  ]
 }
 
 export default function DashboardAssistantRoute() {
-  const { t } = useTranslation('common')
-  return (
-    <div className='p-8 text-center text-muted-foreground'>
-      <h2 className='text-2xl font-bold text-foreground'>{t('dashboard.assistant')}</h2>
-      <p className='mt-2'>{t('dashboard.comingSoonAssistant')}</p>
-    </div>
-  )
+  return <AssistantDashboard />
 }

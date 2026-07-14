@@ -21,6 +21,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED
+ */
 export type BoardSessionResDtoOutputStatus = typeof BoardSessionResDtoOutputStatus[keyof typeof BoardSessionResDtoOutputStatus];
 
 

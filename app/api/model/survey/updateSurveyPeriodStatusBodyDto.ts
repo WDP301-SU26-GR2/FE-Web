@@ -23,5 +23,6 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { UpdateSurveyPeriodStatusBodyDtoStatus } from './updateSurveyPeriodStatusBodyDtoStatus';
 
 export interface UpdateSurveyPeriodStatusBodyDto {
+  /** Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được). Values: DRAFT, OPEN, CLOSED, REFLECTED */
   status: UpdateSurveyPeriodStatusBodyDtoStatus;
 }

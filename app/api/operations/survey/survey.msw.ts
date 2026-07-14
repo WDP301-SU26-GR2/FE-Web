@@ -34,11 +34,14 @@ import type {
 } from 'msw';
 
 import type {
+  BoardRankingListResDtoOutput,
   MessageResDtoOutput,
   RankingRecordListResDtoOutput,
   ReaderVoteResDtoOutput,
   SurveyDataResDtoOutput,
   SurveyPeriodResDtoOutput,
+  VoteContextResDtoOutput,
+  VoteResultsResDtoOutput,
   VotingConfigResDtoOutput
 } from '../../model/survey';
 
@@ -47,15 +50,19 @@ export const getSurveyControllerRequestOtpResponseMock = (overrideResponse: Part
 
 export const getSurveyControllerSubmitVoteResponseMock = (overrideResponse: Partial< MessageResDtoOutput > = {}): MessageResDtoOutput => ({message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
+export const getSurveyControllerGetVoteContextResponseMock = (overrideResponse: Partial< VoteContextResDtoOutput > = {}): VoteContextResDtoOutput => ({period: {id: faker.string.alpha({length: {min: 10, max: 20}}), issueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), reflectedIssueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), startDate: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), endDate: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])}, series: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), coverImage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), genres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), demographic: faker.helpers.arrayElement([faker.helpers.arrayElement(['SHONEN','SEINEN','SHOJO','JOSEI','KODOMO'] as const), null])})), maxSeriesPerVote: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ...overrideResponse})
+
+export const getSurveyControllerGetVoteResultsResponseMock = (overrideResponse: Partial< VoteResultsResDtoOutput > = {}): VoteResultsResDtoOutput => ({surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), issueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), results: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({rankPosition: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), seriesTitle: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null])})), ...overrideResponse})
+
 export const getSurveyControllerGetSurveyPeriodsResponseMock = (): SurveyPeriodResDtoOutput[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const)})))
 
 export const getSurveyControllerCreateSurveyPeriodResponseMock = (overrideResponse: Partial< SurveyPeriodResDtoOutput > = {}): SurveyPeriodResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const), ...overrideResponse})
 
 export const getSurveyControllerGetSurveyPeriodByIdResponseMock = (overrideResponse: Partial< SurveyPeriodResDtoOutput > = {}): SurveyPeriodResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const), ...overrideResponse})
 
-export const getSurveyControllerGetSurveyPeriodVotesResponseMock = (): ReaderVoteResDtoOutput[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), seriesIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), identityHash: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authMethod: faker.helpers.arrayElement([faker.helpers.arrayElement(['EMAIL_OTP','PHONE_OTP','CAPTCHA_ONLY'] as const), null]), ipHash: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), captchaScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), voteWeight: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isFlagged: faker.datatype.boolean(), votedAt: {}})))
+export const getSurveyControllerGetSurveyPeriodVotesResponseMock = (): ReaderVoteResDtoOutput[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), seriesIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), identityHash: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authMethod: faker.helpers.arrayElement([faker.helpers.arrayElement(['EMAIL_OTP','PHONE_OTP','CAPTCHA_ONLY'] as const), null]), ipHash: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), captchaScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), voteWeight: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isFlagged: faker.datatype.boolean(), votedAt: `${faker.date.past().toISOString().split('.')[0]}Z`})))
 
-export const getSurveyControllerGetSurveyPeriodSurveyDataResponseMock = (): SurveyDataResDtoOutput[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), importedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), surveyDate: {}, importedAt: {}, entries: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), voteCount: faker.number.int({min: -9007199254740991, max: 9007199254740991})}))})))
+export const getSurveyControllerGetSurveyPeriodSurveyDataResponseMock = (): SurveyDataResDtoOutput[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), importedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), surveyDate: faker.helpers.arrayElement([`${faker.date.past().toISOString().split('.')[0]}Z`, null]), importedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, entries: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), voteCount: faker.number.int({min: -9007199254740991, max: 9007199254740991})}))})))
 
 export const getSurveyControllerUpdateSurveyPeriodStatusResponseMock = (overrideResponse: Partial< SurveyPeriodResDtoOutput > = {}): SurveyPeriodResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const), ...overrideResponse})
 
@@ -63,11 +70,15 @@ export const getSurveyControllerImportSurveyDataResponseMock = (overrideResponse
 
 export const getSurveyControllerFinalizeRankingResponseMock = (overrideResponse: Partial< MessageResDtoOutput > = {}): MessageResDtoOutput => ({message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getSurveyControllerGetRankingRecordsResponseMock = (overrideResponse: Partial< RankingRecordListResDtoOutput > = {}): RankingRecordListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.string.alpha({length: {min: 10, max: 20}}), rankPosition: faker.number.int({min: -9007199254740991, max: 9007199254740991}), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), previousRank: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), isAtRisk: faker.datatype.boolean(), isReliable: faker.datatype.boolean()})), ...overrideResponse})
+export const getSurveyControllerGetRankingRecordsResponseMock = (overrideResponse: Partial< RankingRecordListResDtoOutput > = {}): RankingRecordListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.string.alpha({length: {min: 10, max: 20}}), rankPosition: faker.number.int({min: -9007199254740991, max: 9007199254740991}), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), previousRank: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), isAtRisk: faker.datatype.boolean(), riskLevel: faker.helpers.arrayElement(['NONE','LOW','MEDIUM','SEVERE'] as const), consecutiveAtRiskCount: faker.number.int({min: -9007199254740991, max: 9007199254740991}), isReliable: faker.datatype.boolean()})), ...overrideResponse})
 
-export const getSurveyControllerGetVotingConfigResponseMock = (overrideResponse: Partial< VotingConfigResDtoOutput > = {}): VotingConfigResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), authMode: faker.helpers.arrayElement(['OTP','CAPTCHA','HYBRID'] as const), maxSeriesPerVote: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpExpirySeconds: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpMaxAttempts: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ipRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), phoneRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), captchaThreshold: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), updatedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getSurveyControllerGetBoardRankingResponseMock = (overrideResponse: Partial< BoardRankingListResDtoOutput > = {}): BoardRankingListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.string.alpha({length: {min: 10, max: 20}}), rankPosition: faker.number.int({min: -9007199254740991, max: 9007199254740991}), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), previousRank: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), isAtRisk: faker.datatype.boolean(), riskLevel: faker.helpers.arrayElement(['NONE','LOW','MEDIUM','SEVERE'] as const), isReliable: faker.datatype.boolean(), recordedAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
 
-export const getSurveyControllerUpdateVotingConfigResponseMock = (overrideResponse: Partial< VotingConfigResDtoOutput > = {}): VotingConfigResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), authMode: faker.helpers.arrayElement(['OTP','CAPTCHA','HYBRID'] as const), maxSeriesPerVote: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpExpirySeconds: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpMaxAttempts: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ipRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), phoneRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), captchaThreshold: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), updatedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getSurveyControllerGetSeriesTrendResponseMock = (overrideResponse: Partial< BoardRankingListResDtoOutput > = {}): BoardRankingListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.string.alpha({length: {min: 10, max: 20}}), rankPosition: faker.number.int({min: -9007199254740991, max: 9007199254740991}), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), previousRank: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), isAtRisk: faker.datatype.boolean(), riskLevel: faker.helpers.arrayElement(['NONE','LOW','MEDIUM','SEVERE'] as const), isReliable: faker.datatype.boolean(), recordedAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
+
+export const getSurveyControllerGetVotingConfigResponseMock = (overrideResponse: Partial< VotingConfigResDtoOutput > = {}): VotingConfigResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), authMode: faker.helpers.arrayElement(['OTP','CAPTCHA','HYBRID'] as const), maxSeriesPerVote: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpExpirySeconds: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpMaxAttempts: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ipRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), phoneRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpCooldownSeconds: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ipVotesPerPeriod: faker.number.int({min: -9007199254740991, max: 9007199254740991}), captchaThreshold: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), updatedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+
+export const getSurveyControllerUpdateVotingConfigResponseMock = (overrideResponse: Partial< VotingConfigResDtoOutput > = {}): VotingConfigResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), authMode: faker.helpers.arrayElement(['OTP','CAPTCHA','HYBRID'] as const), maxSeriesPerVote: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpExpirySeconds: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpMaxAttempts: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ipRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), phoneRateLimit: faker.number.int({min: -9007199254740991, max: 9007199254740991}), otpCooldownSeconds: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ipVotesPerPeriod: faker.number.int({min: -9007199254740991, max: 9007199254740991}), captchaThreshold: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), updatedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
 
 export const getSurveyControllerRequestOtpMockHandler = (overrideResponse?: MessageResDtoOutput | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<MessageResDtoOutput> | MessageResDtoOutput), options?: RequestHandlerOptions) => {
@@ -88,6 +99,30 @@ export const getSurveyControllerSubmitVoteMockHandler = (overrideResponse?: Mess
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getSurveyControllerSubmitVoteResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getSurveyControllerGetVoteContextMockHandler = (overrideResponse?: VoteContextResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<VoteContextResDtoOutput> | VoteContextResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/vote/context', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSurveyControllerGetVoteContextResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getSurveyControllerGetVoteResultsMockHandler = (overrideResponse?: VoteResultsResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<VoteResultsResDtoOutput> | VoteResultsResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/vote/results', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSurveyControllerGetVoteResultsResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -202,6 +237,30 @@ export const getSurveyControllerGetRankingRecordsMockHandler = (overrideResponse
   }, options)
 }
 
+export const getSurveyControllerGetBoardRankingMockHandler = (overrideResponse?: BoardRankingListResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<BoardRankingListResDtoOutput> | BoardRankingListResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/rankings/board', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSurveyControllerGetBoardRankingResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getSurveyControllerGetSeriesTrendMockHandler = (overrideResponse?: BoardRankingListResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<BoardRankingListResDtoOutput> | BoardRankingListResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/rankings', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSurveyControllerGetSeriesTrendResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getSurveyControllerGetVotingConfigMockHandler = (overrideResponse?: VotingConfigResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<VotingConfigResDtoOutput> | VotingConfigResDtoOutput), options?: RequestHandlerOptions) => {
   return http.get('*/voting-config', async (info) => {await delay(1000);
   
@@ -228,6 +287,8 @@ export const getSurveyControllerUpdateVotingConfigMockHandler = (overrideRespons
 export const getSurveyMock = () => [
   getSurveyControllerRequestOtpMockHandler(),
   getSurveyControllerSubmitVoteMockHandler(),
+  getSurveyControllerGetVoteContextMockHandler(),
+  getSurveyControllerGetVoteResultsMockHandler(),
   getSurveyControllerGetSurveyPeriodsMockHandler(),
   getSurveyControllerCreateSurveyPeriodMockHandler(),
   getSurveyControllerGetSurveyPeriodByIdMockHandler(),
@@ -237,6 +298,8 @@ export const getSurveyMock = () => [
   getSurveyControllerImportSurveyDataMockHandler(),
   getSurveyControllerFinalizeRankingMockHandler(),
   getSurveyControllerGetRankingRecordsMockHandler(),
+  getSurveyControllerGetBoardRankingMockHandler(),
+  getSurveyControllerGetSeriesTrendMockHandler(),
   getSurveyControllerGetVotingConfigMockHandler(),
   getSurveyControllerUpdateVotingConfigMockHandler()
 ]

@@ -27,6 +27,7 @@ export interface CreateTransferRequestBodyDto {
   seriesId: string;
   /** @minLength 1 */
   planDescription: string;
+  /** Kiểu chuyển nhượng (chỉ có nghĩa khi HĐ gốc REVENUE_SHARE): FULL_TRANSFER (B mua trọn phần của A, A ra đi) | PARTIAL_TRANSFER (A giữ lại một phần → A thành co-owner, duyệt mỗi chapter mới — BR-TRANSFER-03). Values: FULL_TRANSFER, PARTIAL_TRANSFER */
   proposedType: CreateTransferRequestBodyDtoProposedType;
   /**
    * @minimum 0

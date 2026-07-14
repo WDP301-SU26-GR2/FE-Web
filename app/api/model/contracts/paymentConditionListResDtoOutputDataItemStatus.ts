@@ -21,6 +21,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Trạng thái điều kiện giải ngân: PENDING (chờ đạt) | ACHIEVED (đã đạt) | PAID (đã chi) | CANCELLED (đã huỷ) | MISSED (hết hạn không đạt) | DISABLED (tạm dừng khi series HIATUS — BR-CONTRACT-07). Values: PENDING, ACHIEVED, PAID, CANCELLED, MISSED, DISABLED
+ */
 export type PaymentConditionListResDtoOutputDataItemStatus = typeof PaymentConditionListResDtoOutputDataItemStatus[keyof typeof PaymentConditionListResDtoOutputDataItemStatus];
 
 

@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { EditorUpdateContractBodyDtoContractType } from './editorUpdateContractBodyDtoContractType';
 
 export interface EditorUpdateContractBodyDto {
+  /** Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE */
   contractType?: EditorUpdateContractBodyDtoContractType;
   /** @minimum 0 */
   valuationAmount?: number;

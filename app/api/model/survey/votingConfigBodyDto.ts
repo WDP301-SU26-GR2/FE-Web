@@ -51,6 +51,16 @@ export interface VotingConfigBodyDto {
   phoneRateLimit?: number;
   /**
    * @minimum 0
+   * @maximum 9007199254740991
+   */
+  otpCooldownSeconds?: number;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  ipVotesPerPeriod?: number;
+  /**
+   * @minimum 0
    * @maximum 1
    */
   captchaThreshold?: number;

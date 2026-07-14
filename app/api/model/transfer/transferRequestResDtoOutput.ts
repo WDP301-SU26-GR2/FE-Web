@@ -20,6 +20,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { TransferRequestResDtoOutputStatus } from './transferRequestResDtoOutputStatus';
 
 export interface TransferRequestResDtoOutput {
   id: string;
@@ -36,8 +37,13 @@ export interface TransferRequestResDtoOutput {
   planDescription?: string | null;
   /** @nullable */
   originalContractId?: string | null;
-  status: string;
+  /** Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD | REJECTED_BY_ORIGINAL_MANGAKA | REJECTED | CANCELLED. Values: SUBMITTED, UNDER_REVIEW, REJECTED_BY_BOARD, NEGOTIATING, REJECTED_BY_ORIGINAL_MANGAKA, PROPOSED, ACCEPTED, REJECTED, CANCELLED */
+  status: TransferRequestResDtoOutputStatus;
   /** @nullable */
   boardDecisionId?: string | null;
-  createdAt: unknown;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  createdAt: string;
 }

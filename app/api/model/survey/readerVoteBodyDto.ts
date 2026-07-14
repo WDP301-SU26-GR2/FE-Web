@@ -24,8 +24,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 export interface ReaderVoteBodyDto {
   /** @minLength 1 */
   surveyPeriodId: string;
-  /** @minLength 10 */
-  phoneNumber: string;
+  /**
+   * Email đã nhận OTP
+   * @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+   */
+  identity: string;
   /** @minLength 4 */
   otpCode: string;
   /**

@@ -5,9 +5,12 @@
  * Local files are exported directly. Types that belong to OTHER tags
  * but are used here are re-exported as named types for convenience.
  */
+export * from './boardResolveBodyDto'
+export * from './boardResolveBodyDtoDecision'
 export * from './counterDeadlineBodyDto'
 export * from './createDeadlineRequestBodyDto'
 export * from './deadlineControllerAgreePathParameters'
+export * from './deadlineControllerBoardResolvePathParameters'
 export * from './deadlineControllerCounterPathParameters'
 export * from './deadlineControllerFinalizePathParameters'
 export * from './deadlineControllerGetOnePathParameters'

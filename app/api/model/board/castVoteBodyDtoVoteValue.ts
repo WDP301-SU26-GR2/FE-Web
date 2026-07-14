@@ -21,6 +21,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN
+ */
 export type CastVoteBodyDtoVoteValue = typeof CastVoteBodyDtoVoteValue[keyof typeof CastVoteBodyDtoVoteValue];
 
 

@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, BookPlus, Loader2 } from 'lucide-react'
+import { BookPlus, Loader2 } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { Button } from '~/shared/ui'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/series'
 
 export type CreateChapterDialogProps = {
   /** Series the new chapter belongs to (prefilled, read-only). */
   seriesId: string
-  /** Names available on the series — dialog will only accept APPROVED ones. */
-  names: NameListResDtoOutputItemsItem[]
   /** Highest existing chapterNumber on the series — used as default next #. */
   nextChapterNumber: number
   isSubmitting: boolean
@@ -21,24 +18,20 @@ export type CreateChapterDialogProps = {
    * and false on failure (caller keeps dialog open with the toast already
    * fired inside the hook).
    */
-  onConfirm: (input: { nameId: string; chapterNumber: number; title?: string }) => Promise<boolean>
+  onConfirm: (input: { chapterNumber: number; title?: string }) => Promise<boolean>
 }
-
-const NAME_STATUS_APPROVED = 'APPROVED' as const
 
 /**
  * Dialog for "Create new chapter" inside the Publication section.
  *
  * - Body scroll is locked while open; Escape closes when not submitting.
- * - Name dropdown is filtered to APPROVED names only — BE enforces this
- *   (422 otherwise) so we gate the UI to avoid sending requests that
- *   will fail.
+ * - BE auto-matches the latest APPROVED Name of the series to seed the
+ *   Manuscript + Schedule, so FE no longer sends a nameId.
  * - chapterNumber defaults to `nextChapterNumber` (existing max + 1) and
  *   must be a positive integer ≥ 1.
  */
 export function CreateChapterDialog({
   seriesId,
-  names,
   nextChapterNumber,
   isSubmitting,
   open,
@@ -48,27 +41,20 @@ export function CreateChapterDialog({
   const { t } = useTranslation('mangaka')
   const cancelRef = useRef<HTMLButtonElement>(null)
 
-  const approvedNames = useMemo(() => names.filter((n) => n.status === NAME_STATUS_APPROVED), [names])
-
-  const [nameId, setNameId] = useState<string>('')
   const [chapterNumber, setChapterNumber] = useState<string>(String(nextChapterNumber))
   const [title, setTitle] = useState<string>('')
   const [formError, setFormError] = useState<string | null>(null)
 
   // Reset form whenever the dialog re-opens, picking up the latest
   // defaults (e.g. next chapter number after the previous create).
-  // Guard `if (!open) return` makes these intentional post-mount resets,
-  // not cascading updates — eslint flagged them as cascading renders
-  // when placed inline, so we wrap the whole body in the disable.
   useEffect(() => {
     if (!open) return
     /* eslint-disable react-hooks/set-state-in-effect */
-    setNameId(approvedNames[0]?.id ?? '')
     setChapterNumber(String(nextChapterNumber))
     setTitle('')
     setFormError(null)
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [open, approvedNames, nextChapterNumber])
+  }, [open, nextChapterNumber])
 
   useEffect(() => {
     if (!open) return
@@ -91,10 +77,6 @@ export function CreateChapterDialog({
     e.preventDefault()
     if (isSubmitting) return
 
-    if (!nameId) {
-      setFormError(t('seriesDetail.publication.create.errorNoName'))
-      return
-    }
     const num = Number(chapterNumber)
     if (!Number.isInteger(num) || num < 1) {
       setFormError(t('seriesDetail.publication.create.errorInvalidNumber'))
@@ -103,7 +85,6 @@ export function CreateChapterDialog({
     setFormError(null)
     const trimmedTitle = title.trim()
     const ok = await onConfirm({
-      nameId,
       chapterNumber: num,
       title: trimmedTitle.length > 0 ? trimmedTitle : undefined
     })
@@ -114,8 +95,6 @@ export function CreateChapterDialog({
       setTitle('')
     }
   }
-
-  const noApprovedNames = approvedNames.length === 0
 
   return (
     <div
@@ -156,50 +135,6 @@ export function CreateChapterDialog({
             <div className='rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-mono text-muted-foreground'>
               {seriesId}
             </div>
-          </div>
-
-          {/* Name (APPROVED only) */}
-          <div>
-            <label
-              htmlFor='create-chapter-name'
-              className='mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground'
-            >
-              {t('seriesDetail.publication.create.nameLabel')}
-            </label>
-            <select
-              id='create-chapter-name'
-              value={nameId}
-              onChange={(e) => setNameId(e.target.value)}
-              disabled={isSubmitting || noApprovedNames}
-              required
-              className={cn(
-                'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground',
-                'focus:outline-none focus:ring-2 focus:ring-ring',
-                'disabled:cursor-not-allowed disabled:opacity-60'
-              )}
-            >
-              {noApprovedNames && <option value=''>{t('seriesDetail.publication.create.noApprovedNames')}</option>}
-              {!noApprovedNames && !nameId && (
-                <option value=''>{t('seriesDetail.publication.create.selectName')}</option>
-              )}
-              {approvedNames.map((name) => {
-                const label =
-                  name.chapterNumber === null
-                    ? t('seriesDetail.publication.create.nameSampleLabel')
-                    : t('seriesDetail.publication.create.nameChapterLabel', { n: name.chapterNumber })
-                return (
-                  <option key={name.id} value={name.id}>
-                    {label} · v{name.version}
-                  </option>
-                )
-              })}
-            </select>
-            {noApprovedNames && (
-              <p className='mt-1.5 flex items-start gap-1 text-[11px] text-amber-600'>
-                <AlertCircle className='mt-0.5 h-3 w-3 shrink-0' />
-                <span>{t('seriesDetail.publication.create.noApprovedNamesHint')}</span>
-              </p>
-            )}
           </div>
 
           {/* chapterNumber */}
@@ -265,7 +200,7 @@ export function CreateChapterDialog({
           <Button ref={cancelRef} type='button' variant='outline' size='sm' disabled={isSubmitting} onClick={onCancel}>
             {t('seriesDetail.publication.create.cancel')}
           </Button>
-          <Button type='submit' variant='primary' size='sm' disabled={isSubmitting || noApprovedNames}>
+          <Button type='submit' variant='primary' size='sm' disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className='h-3.5 w-3.5 animate-spin' />

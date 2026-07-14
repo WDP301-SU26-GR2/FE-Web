@@ -20,12 +20,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
-import type { PaymentRecordResDtoOutputApprovedAt } from './paymentRecordResDtoOutputApprovedAt';
 import type { PaymentRecordResDtoOutputPaymentType } from './paymentRecordResDtoOutputPaymentType';
 import type { PaymentRecordResDtoOutputPaymentSource } from './paymentRecordResDtoOutputPaymentSource';
 import type { PaymentRecordResDtoOutputStatus } from './paymentRecordResDtoOutputStatus';
-import type { PaymentRecordResDtoOutputPaidAt } from './paymentRecordResDtoOutputPaidAt';
-import type { PaymentRecordResDtoOutputCancelledAt } from './paymentRecordResDtoOutputCancelledAt';
 
 export interface PaymentRecordResDtoOutput {
   id: string;
@@ -39,8 +36,12 @@ export interface PaymentRecordResDtoOutput {
   description: string | null;
   /** @nullable */
   approvedBy: string | null;
-  /** @nullable */
-  approvedAt: PaymentRecordResDtoOutputApprovedAt;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  approvedAt: string | null;
   paymentType: PaymentRecordResDtoOutputPaymentType;
   paymentSource: PaymentRecordResDtoOutputPaymentSource;
   amount: number;
@@ -51,17 +52,27 @@ export interface PaymentRecordResDtoOutput {
   /** @nullable */
   transactionReference: string | null;
   status: PaymentRecordResDtoOutputStatus;
-  /** @nullable */
-  paidAt: PaymentRecordResDtoOutputPaidAt;
-  /** @nullable */
-  cancelledAt: PaymentRecordResDtoOutputCancelledAt;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  paidAt: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  cancelledAt: string | null;
   /** @nullable */
   cancelReason: string | null;
   /** @nullable */
   note: string | null;
   /** @nullable */
   createdBy: string | null;
-  /** @nullable */
-  userId: string | null;
-  createdAt: unknown;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  createdAt: string;
 }

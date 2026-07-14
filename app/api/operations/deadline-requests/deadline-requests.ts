@@ -21,9 +21,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type {
+  BoardResolveBodyDto,
   CounterDeadlineBodyDto,
   CreateDeadlineRequestBodyDto,
   DeadlineControllerAgreePathParameters,
+  DeadlineControllerBoardResolvePathParameters,
   DeadlineControllerCounterPathParameters,
   DeadlineControllerFinalizePathParameters,
   DeadlineControllerGetOnePathParameters,
@@ -404,6 +406,55 @@ export const deadlineControllerFinalize = async ({ id }: DeadlineControllerFinal
     method: 'POST'
     
     
+  }
+);}
+
+
+/**
+ * @summary A-DL-03: Board chốt request BOARD_REVIEW/ESCALATED → APPROVED (cập nhật Schedule) | REJECTED
+ */
+export type deadlineControllerBoardResolveResponse201 = {
+  data: DeadlineRequestResDtoOutput
+  status: 201
+}
+
+export type deadlineControllerBoardResolveResponse404 = {
+  data: void
+  status: 404
+}
+
+export type deadlineControllerBoardResolveResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type deadlineControllerBoardResolveResponseSuccess = (deadlineControllerBoardResolveResponse201) & {
+  headers: Headers;
+};
+export type deadlineControllerBoardResolveResponseError = (deadlineControllerBoardResolveResponse404 | deadlineControllerBoardResolveResponse409) & {
+  headers: Headers;
+};
+
+export type deadlineControllerBoardResolveResponse = (deadlineControllerBoardResolveResponseSuccess | deadlineControllerBoardResolveResponseError)
+
+export const getDeadlineControllerBoardResolveUrl = ({ id }: DeadlineControllerBoardResolvePathParameters,) => {
+
+
+  
+
+  return `/deadline-requests/${id}/board-resolve`
+}
+
+export const deadlineControllerBoardResolve = async ({ id }: DeadlineControllerBoardResolvePathParameters,
+    boardResolveBodyDto: BoardResolveBodyDto, options?: RequestInit): Promise<deadlineControllerBoardResolveResponse> => {
+  
+  return customFetch<deadlineControllerBoardResolveResponse>(getDeadlineControllerBoardResolveUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      boardResolveBodyDto,)
   }
 );}
 

@@ -1,0 +1,5 @@
+export { AssistantDashboard } from './assistant-dashboard-page'
+export { AssistantTasksPage } from './assistant-tasks-page'
+export { AssistantStudioPage } from './assistant-studio-page'
+export { AssistantInvitesPage } from './assistant-invites-page'
+export { AssistantNotificationsPage } from './assistant-notifications-page'

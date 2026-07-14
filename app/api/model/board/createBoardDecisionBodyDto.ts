@@ -28,6 +28,7 @@ export interface CreateBoardDecisionBodyDto {
   boardSessionId: string;
   /** @nullable */
   targetSeriesId: string | null;
+  /** Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT */
   decisionType: CreateBoardDecisionBodyDtoDecisionType;
   /** @nullable */
   details: CreateBoardDecisionBodyDtoDetails;

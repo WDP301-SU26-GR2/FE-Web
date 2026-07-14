@@ -44,7 +44,8 @@
     "users": "Users",
     "reports": "Reports",
     "uploadBatch": "Upload Batch",
-    "editorSupport": "Editor Support"
+    "editorSupport": "Editor Support",
+    "invites": "Invites"
   },
   "profile": {
     "mangakaName": "Mangaka Profile",

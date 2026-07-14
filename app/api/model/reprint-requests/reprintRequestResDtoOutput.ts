@@ -21,9 +21,6 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { ReprintRequestResDtoOutputRevisionMode } from './reprintRequestResDtoOutputRevisionMode';
-import type { ReprintRequestResDtoOutputMangakaApprovedAt } from './reprintRequestResDtoOutputMangakaApprovedAt';
-import type { ReprintRequestResDtoOutputBoardApprovedAt } from './reprintRequestResDtoOutputBoardApprovedAt';
-import type { ReprintRequestResDtoOutputPublishedAt } from './reprintRequestResDtoOutputPublishedAt';
 import type { ReprintRequestResDtoOutputChaptersItem } from './reprintRequestResDtoOutputChaptersItem';
 
 export interface ReprintRequestResDtoOutput {
@@ -48,12 +45,28 @@ export interface ReprintRequestResDtoOutput {
    */
   chapterRangeEnd: number | null;
   status: string;
-  /** @nullable */
-  mangakaApprovedAt: ReprintRequestResDtoOutputMangakaApprovedAt;
-  /** @nullable */
-  boardApprovedAt: ReprintRequestResDtoOutputBoardApprovedAt;
-  /** @nullable */
-  publishedAt: ReprintRequestResDtoOutputPublishedAt;
-  createdAt: unknown;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  mangakaApprovedAt: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  boardApprovedAt: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  publishedAt: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  createdAt: string;
   chapters: ReprintRequestResDtoOutputChaptersItem[];
 }

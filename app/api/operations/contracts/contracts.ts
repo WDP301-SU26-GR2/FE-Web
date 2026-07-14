@@ -21,30 +21,51 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type {
+  AmendmentResDtoOutput,
+  ContractControllerBoardApprovePathParameters,
+  ContractControllerBoardRequestChangesPathParameters,
   ContractControllerCheckStatusPathParameters,
+  ContractControllerCreateAmendmentPathParameters,
   ContractControllerCreatePaymentConditionPathParameters,
   ContractControllerDisablePaymentConditionPathParameters,
+  ContractControllerGetAmendmentPathParameters,
   ContractControllerGetContractByIdPathParameters,
   ContractControllerGetContractVersionByIdPathParameters,
   ContractControllerGetContractVersionsPathParameters,
   ContractControllerGetPaymentConditionsPathParameters,
+  ContractControllerListAmendmentsPathParameters,
+  ContractControllerRejectAmendmentPathParameters,
+  ContractControllerReportRevenuePathParameters,
+  ContractControllerRequestChangesPathParameters,
+  ContractControllerSignAmendmentBoardPathParameters,
+  ContractControllerSignAmendmentMangakaPathParameters,
   ContractControllerSignBoardPathParameters,
   ContractControllerSignMangakaPathParameters,
+  ContractControllerSubmitAmendmentPathParameters,
+  ContractControllerUpdateAmendmentPathParameters,
   ContractControllerUpdateContractPathParameters,
   ContractControllerUpdatePaymentConditionPathParameters,
   ContractControllerUpdateStatusPathParameters,
+  ContractControllerVoidAmendmentPathParameters,
   ContractHealthResDtoOutput,
   ContractResDtoOutput,
   ContractSignResDtoOutput,
   ContractStatusProgressResDtoOutput,
   ContractVersionResDtoOutput,
+  CreateAmendmentBodyDto,
   CreateContractBodyDto,
   CreatePaymentConditionBodyDto,
   EditorUpdateContractBodyDto,
+  MessageResDtoOutput,
   PaymentConditionListResDtoOutput,
   PaymentConditionResDtoOutput,
+  RejectAmendmentBodyDto,
+  ReportRevenueBodyDto,
+  SignAmendmentBodyDto,
   SignContractWithOtpBodyDto,
-  UpdatePaymentConditionBodyDto
+  UpdateAmendmentBodyDto,
+  UpdatePaymentConditionBodyDto,
+  VoidAmendmentBodyDto
 } from '../../model/contracts';
 
 import { customFetch } from '../../mutator/custom-fetch';
@@ -120,19 +141,31 @@ export const contractControllerGetContracts = async ( options?: RequestInit): Pr
 
 
 /**
- * @summary Editor tạo hợp đồng nháp cho series → DRAFT
+ * @summary Editor tạo hợp đồng nháp cho series đã SERIALIZED → DRAFT (B-CON-01)
  */
 export type contractControllerCreateDraftResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
+
+export type contractControllerCreateDraftResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerCreateDraftResponse409 = {
+  data: void
+  status: 409
+}
     
 export type contractControllerCreateDraftResponseSuccess = (contractControllerCreateDraftResponse201) & {
   headers: Headers;
 };
-;
+export type contractControllerCreateDraftResponseError = (contractControllerCreateDraftResponse404 | contractControllerCreateDraftResponse409) & {
+  headers: Headers;
+};
 
-export type contractControllerCreateDraftResponse = (contractControllerCreateDraftResponseSuccess)
+export type contractControllerCreateDraftResponse = (contractControllerCreateDraftResponseSuccess | contractControllerCreateDraftResponseError)
 
 export const getContractControllerCreateDraftUrl = () => {
 
@@ -368,19 +401,182 @@ export const contractControllerCheckStatus = async ({ id }: ContractControllerCh
 
 
 /**
+ * @summary B-CON-02: Mangaka yêu cầu chỉnh sửa điều khoản → NEGOTIATION
+ */
+export type contractControllerRequestChangesResponse201 = {
+  data: ContractResDtoOutput
+  status: 201
+}
+
+export type contractControllerRequestChangesResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerRequestChangesResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerRequestChangesResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerRequestChangesResponseSuccess = (contractControllerRequestChangesResponse201) & {
+  headers: Headers;
+};
+export type contractControllerRequestChangesResponseError = (contractControllerRequestChangesResponse403 | contractControllerRequestChangesResponse404 | contractControllerRequestChangesResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerRequestChangesResponse = (contractControllerRequestChangesResponseSuccess | contractControllerRequestChangesResponseError)
+
+export const getContractControllerRequestChangesUrl = ({ id }: ContractControllerRequestChangesPathParameters,) => {
+
+
+  
+
+  return `/contracts/${id}/request-changes`
+}
+
+export const contractControllerRequestChanges = async ({ id }: ContractControllerRequestChangesPathParameters, options?: RequestInit): Promise<contractControllerRequestChangesResponse> => {
+  
+  return customFetch<contractControllerRequestChangesResponse>(getContractControllerRequestChangesUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary B-CON-02 (BOARD_REVIEW): Hội đồng duyệt điều khoản → BOARD_APPROVED
+ */
+export type contractControllerBoardApproveResponse201 = {
+  data: ContractResDtoOutput
+  status: 201
+}
+
+export type contractControllerBoardApproveResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerBoardApproveResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerBoardApproveResponseSuccess = (contractControllerBoardApproveResponse201) & {
+  headers: Headers;
+};
+export type contractControllerBoardApproveResponseError = (contractControllerBoardApproveResponse404 | contractControllerBoardApproveResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerBoardApproveResponse = (contractControllerBoardApproveResponseSuccess | contractControllerBoardApproveResponseError)
+
+export const getContractControllerBoardApproveUrl = ({ id }: ContractControllerBoardApprovePathParameters,) => {
+
+
+  
+
+  return `/contracts/${id}/board-approve`
+}
+
+export const contractControllerBoardApprove = async ({ id }: ContractControllerBoardApprovePathParameters, options?: RequestInit): Promise<contractControllerBoardApproveResponse> => {
+  
+  return customFetch<contractControllerBoardApproveResponse>(getContractControllerBoardApproveUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary B-CON-02 (BOARD_REVIEW): Hội đồng yêu cầu chỉnh sửa → NEGOTIATION
+ */
+export type contractControllerBoardRequestChangesResponse201 = {
+  data: ContractResDtoOutput
+  status: 201
+}
+
+export type contractControllerBoardRequestChangesResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerBoardRequestChangesResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerBoardRequestChangesResponseSuccess = (contractControllerBoardRequestChangesResponse201) & {
+  headers: Headers;
+};
+export type contractControllerBoardRequestChangesResponseError = (contractControllerBoardRequestChangesResponse404 | contractControllerBoardRequestChangesResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerBoardRequestChangesResponse = (contractControllerBoardRequestChangesResponseSuccess | contractControllerBoardRequestChangesResponseError)
+
+export const getContractControllerBoardRequestChangesUrl = ({ id }: ContractControllerBoardRequestChangesPathParameters,) => {
+
+
+  
+
+  return `/contracts/${id}/board-request-changes`
+}
+
+export const contractControllerBoardRequestChanges = async ({ id }: ContractControllerBoardRequestChangesPathParameters, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
+  
+  return customFetch<contractControllerBoardRequestChangesResponse>(getContractControllerBoardRequestChangesUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
  * @summary Mangaka ký hợp đồng bằng OTP
  */
 export type contractControllerSignMangakaResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
+
+export type contractControllerSignMangakaResponse400 = {
+  data: void
+  status: 400
+}
+
+export type contractControllerSignMangakaResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerSignMangakaResponse409 = {
+  data: void
+  status: 409
+}
     
 export type contractControllerSignMangakaResponseSuccess = (contractControllerSignMangakaResponse201) & {
   headers: Headers;
 };
-;
+export type contractControllerSignMangakaResponseError = (contractControllerSignMangakaResponse400 | contractControllerSignMangakaResponse404 | contractControllerSignMangakaResponse409) & {
+  headers: Headers;
+};
 
-export type contractControllerSignMangakaResponse = (contractControllerSignMangakaResponseSuccess)
+export type contractControllerSignMangakaResponse = (contractControllerSignMangakaResponseSuccess | contractControllerSignMangakaResponseError)
 
 export const getContractControllerSignMangakaUrl = ({ id }: ContractControllerSignMangakaPathParameters,) => {
 
@@ -411,13 +607,35 @@ export type contractControllerSignBoardResponse201 = {
   data: ContractSignResDtoOutput
   status: 201
 }
+
+export type contractControllerSignBoardResponse400 = {
+  data: void
+  status: 400
+}
+
+export type contractControllerSignBoardResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerSignBoardResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerSignBoardResponse409 = {
+  data: void
+  status: 409
+}
     
 export type contractControllerSignBoardResponseSuccess = (contractControllerSignBoardResponse201) & {
   headers: Headers;
 };
-;
+export type contractControllerSignBoardResponseError = (contractControllerSignBoardResponse400 | contractControllerSignBoardResponse403 | contractControllerSignBoardResponse404 | contractControllerSignBoardResponse409) & {
+  headers: Headers;
+};
 
-export type contractControllerSignBoardResponse = (contractControllerSignBoardResponseSuccess)
+export type contractControllerSignBoardResponse = (contractControllerSignBoardResponseSuccess | contractControllerSignBoardResponseError)
 
 export const getContractControllerSignBoardUrl = ({ id }: ContractControllerSignBoardPathParameters,) => {
 
@@ -437,6 +655,60 @@ export const contractControllerSignBoard = async ({ id }: ContractControllerSign
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       signContractWithOtpBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Board/Editor nhập doanh thu kỳ cho HĐ REVENUE_SHARE → chia theo ownership split (B-CON-07)
+ */
+export type contractControllerReportRevenueResponse201 = {
+  data: MessageResDtoOutput
+  status: 201
+}
+
+export type contractControllerReportRevenueResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerReportRevenueResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerReportRevenueResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerReportRevenueResponseSuccess = (contractControllerReportRevenueResponse201) & {
+  headers: Headers;
+};
+export type contractControllerReportRevenueResponseError = (contractControllerReportRevenueResponse403 | contractControllerReportRevenueResponse404 | contractControllerReportRevenueResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerReportRevenueResponse = (contractControllerReportRevenueResponseSuccess | contractControllerReportRevenueResponseError)
+
+export const getContractControllerReportRevenueUrl = ({ id }: ContractControllerReportRevenuePathParameters,) => {
+
+
+  
+
+  return `/contracts/${id}/revenue`
+}
+
+export const contractControllerReportRevenue = async ({ id }: ContractControllerReportRevenuePathParameters,
+    reportRevenueBodyDto: ReportRevenueBodyDto, options?: RequestInit): Promise<contractControllerReportRevenueResponse> => {
+  
+  return customFetch<contractControllerReportRevenueResponse>(getContractControllerReportRevenueUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reportRevenueBodyDto,)
   }
 );}
 
@@ -649,6 +921,454 @@ export const contractControllerDisablePaymentCondition = async ({ contractId, co
     method: 'PATCH'
     
     
+  }
+);}
+
+
+/**
+ * @summary Editor tạo phụ lục hợp đồng đã FULLY_EXECUTED → DRAFT (B-CON-08)
+ */
+export type contractControllerCreateAmendmentResponse201 = {
+  data: AmendmentResDtoOutput
+  status: 201
+}
+
+export type contractControllerCreateAmendmentResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerCreateAmendmentResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerCreateAmendmentResponse409 = {
+  data: void
+  status: 409
+}
+
+export type contractControllerCreateAmendmentResponse422 = {
+  data: void
+  status: 422
+}
+    
+export type contractControllerCreateAmendmentResponseSuccess = (contractControllerCreateAmendmentResponse201) & {
+  headers: Headers;
+};
+export type contractControllerCreateAmendmentResponseError = (contractControllerCreateAmendmentResponse403 | contractControllerCreateAmendmentResponse404 | contractControllerCreateAmendmentResponse409 | contractControllerCreateAmendmentResponse422) & {
+  headers: Headers;
+};
+
+export type contractControllerCreateAmendmentResponse = (contractControllerCreateAmendmentResponseSuccess | contractControllerCreateAmendmentResponseError)
+
+export const getContractControllerCreateAmendmentUrl = ({ contractId }: ContractControllerCreateAmendmentPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments`
+}
+
+export const contractControllerCreateAmendment = async ({ contractId }: ContractControllerCreateAmendmentPathParameters,
+    createAmendmentBodyDto: CreateAmendmentBodyDto, options?: RequestInit): Promise<contractControllerCreateAmendmentResponse> => {
+  
+  return customFetch<contractControllerCreateAmendmentResponse>(getContractControllerCreateAmendmentUrl({ contractId }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createAmendmentBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Danh sách phụ lục của hợp đồng
+ */
+export type contractControllerListAmendmentsResponse200 = {
+  data: AmendmentResDtoOutput[]
+  status: 200
+}
+    
+export type contractControllerListAmendmentsResponseSuccess = (contractControllerListAmendmentsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type contractControllerListAmendmentsResponse = (contractControllerListAmendmentsResponseSuccess)
+
+export const getContractControllerListAmendmentsUrl = ({ contractId }: ContractControllerListAmendmentsPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments`
+}
+
+export const contractControllerListAmendments = async ({ contractId }: ContractControllerListAmendmentsPathParameters, options?: RequestInit): Promise<contractControllerListAmendmentsResponse> => {
+  
+  return customFetch<contractControllerListAmendmentsResponse>(getContractControllerListAmendmentsUrl({ contractId }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Chi tiết một phụ lục
+ */
+export type contractControllerGetAmendmentResponse200 = {
+  data: AmendmentResDtoOutput
+  status: 200
+}
+
+export type contractControllerGetAmendmentResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type contractControllerGetAmendmentResponseSuccess = (contractControllerGetAmendmentResponse200) & {
+  headers: Headers;
+};
+export type contractControllerGetAmendmentResponseError = (contractControllerGetAmendmentResponse404) & {
+  headers: Headers;
+};
+
+export type contractControllerGetAmendmentResponse = (contractControllerGetAmendmentResponseSuccess | contractControllerGetAmendmentResponseError)
+
+export const getContractControllerGetAmendmentUrl = ({ contractId, id }: ContractControllerGetAmendmentPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}`
+}
+
+export const contractControllerGetAmendment = async ({ contractId, id }: ContractControllerGetAmendmentPathParameters, options?: RequestInit): Promise<contractControllerGetAmendmentResponse> => {
+  
+  return customFetch<contractControllerGetAmendmentResponse>(getContractControllerGetAmendmentUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Editor sửa phụ lục khi DRAFT (reset chữ ký)
+ */
+export type contractControllerUpdateAmendmentResponse200 = {
+  data: AmendmentResDtoOutput
+  status: 200
+}
+
+export type contractControllerUpdateAmendmentResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerUpdateAmendmentResponse409 = {
+  data: void
+  status: 409
+}
+
+export type contractControllerUpdateAmendmentResponse422 = {
+  data: void
+  status: 422
+}
+    
+export type contractControllerUpdateAmendmentResponseSuccess = (contractControllerUpdateAmendmentResponse200) & {
+  headers: Headers;
+};
+export type contractControllerUpdateAmendmentResponseError = (contractControllerUpdateAmendmentResponse404 | contractControllerUpdateAmendmentResponse409 | contractControllerUpdateAmendmentResponse422) & {
+  headers: Headers;
+};
+
+export type contractControllerUpdateAmendmentResponse = (contractControllerUpdateAmendmentResponseSuccess | contractControllerUpdateAmendmentResponseError)
+
+export const getContractControllerUpdateAmendmentUrl = ({ contractId, id }: ContractControllerUpdateAmendmentPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}`
+}
+
+export const contractControllerUpdateAmendment = async ({ contractId, id }: ContractControllerUpdateAmendmentPathParameters,
+    updateAmendmentBodyDto: UpdateAmendmentBodyDto, options?: RequestInit): Promise<contractControllerUpdateAmendmentResponse> => {
+  
+  return customFetch<contractControllerUpdateAmendmentResponse>(getContractControllerUpdateAmendmentUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateAmendmentBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Editor trình phụ lục để ký (DRAFT → PENDING_SIGNATURES)
+ */
+export type contractControllerSubmitAmendmentResponse200 = {
+  data: AmendmentResDtoOutput
+  status: 200
+}
+
+export type contractControllerSubmitAmendmentResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerSubmitAmendmentResponse409 = {
+  data: void
+  status: 409
+}
+
+export type contractControllerSubmitAmendmentResponse422 = {
+  data: void
+  status: 422
+}
+    
+export type contractControllerSubmitAmendmentResponseSuccess = (contractControllerSubmitAmendmentResponse200) & {
+  headers: Headers;
+};
+export type contractControllerSubmitAmendmentResponseError = (contractControllerSubmitAmendmentResponse404 | contractControllerSubmitAmendmentResponse409 | contractControllerSubmitAmendmentResponse422) & {
+  headers: Headers;
+};
+
+export type contractControllerSubmitAmendmentResponse = (contractControllerSubmitAmendmentResponseSuccess | contractControllerSubmitAmendmentResponseError)
+
+export const getContractControllerSubmitAmendmentUrl = ({ contractId, id }: ContractControllerSubmitAmendmentPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}/submit`
+}
+
+export const contractControllerSubmitAmendment = async ({ contractId, id }: ContractControllerSubmitAmendmentPathParameters, options?: RequestInit): Promise<contractControllerSubmitAmendmentResponse> => {
+  
+  return customFetch<contractControllerSubmitAmendmentResponse>(getContractControllerSubmitAmendmentUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Mangaka ký phụ lục bằng OTP (chỉ REVENUE_SHARE)
+ */
+export type contractControllerSignAmendmentMangakaResponse201 = {
+  data: AmendmentResDtoOutput
+  status: 201
+}
+
+export type contractControllerSignAmendmentMangakaResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerSignAmendmentMangakaResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerSignAmendmentMangakaResponseSuccess = (contractControllerSignAmendmentMangakaResponse201) & {
+  headers: Headers;
+};
+export type contractControllerSignAmendmentMangakaResponseError = (contractControllerSignAmendmentMangakaResponse403 | contractControllerSignAmendmentMangakaResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerSignAmendmentMangakaResponse = (contractControllerSignAmendmentMangakaResponseSuccess | contractControllerSignAmendmentMangakaResponseError)
+
+export const getContractControllerSignAmendmentMangakaUrl = ({ contractId, id }: ContractControllerSignAmendmentMangakaPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}/sign/mangaka`
+}
+
+export const contractControllerSignAmendmentMangaka = async ({ contractId, id }: ContractControllerSignAmendmentMangakaPathParameters,
+    signAmendmentBodyDto: SignAmendmentBodyDto, options?: RequestInit): Promise<contractControllerSignAmendmentMangakaResponse> => {
+  
+  return customFetch<contractControllerSignAmendmentMangakaResponse>(getContractControllerSignAmendmentMangakaUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      signAmendmentBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Board ký phụ lục bằng OTP
+ */
+export type contractControllerSignAmendmentBoardResponse201 = {
+  data: AmendmentResDtoOutput
+  status: 201
+}
+
+export type contractControllerSignAmendmentBoardResponse400 = {
+  data: void
+  status: 400
+}
+
+export type contractControllerSignAmendmentBoardResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerSignAmendmentBoardResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerSignAmendmentBoardResponseSuccess = (contractControllerSignAmendmentBoardResponse201) & {
+  headers: Headers;
+};
+export type contractControllerSignAmendmentBoardResponseError = (contractControllerSignAmendmentBoardResponse400 | contractControllerSignAmendmentBoardResponse403 | contractControllerSignAmendmentBoardResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerSignAmendmentBoardResponse = (contractControllerSignAmendmentBoardResponseSuccess | contractControllerSignAmendmentBoardResponseError)
+
+export const getContractControllerSignAmendmentBoardUrl = ({ contractId, id }: ContractControllerSignAmendmentBoardPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}/sign/board`
+}
+
+export const contractControllerSignAmendmentBoard = async ({ contractId, id }: ContractControllerSignAmendmentBoardPathParameters,
+    signAmendmentBodyDto: SignAmendmentBodyDto, options?: RequestInit): Promise<contractControllerSignAmendmentBoardResponse> => {
+  
+  return customFetch<contractControllerSignAmendmentBoardResponse>(getContractControllerSignAmendmentBoardUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      signAmendmentBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Mangaka từ chối phụ lục → về DRAFT (chỉ REVENUE_SHARE)
+ */
+export type contractControllerRejectAmendmentResponse200 = {
+  data: AmendmentResDtoOutput
+  status: 200
+}
+
+export type contractControllerRejectAmendmentResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerRejectAmendmentResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerRejectAmendmentResponseSuccess = (contractControllerRejectAmendmentResponse200) & {
+  headers: Headers;
+};
+export type contractControllerRejectAmendmentResponseError = (contractControllerRejectAmendmentResponse403 | contractControllerRejectAmendmentResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerRejectAmendmentResponse = (contractControllerRejectAmendmentResponseSuccess | contractControllerRejectAmendmentResponseError)
+
+export const getContractControllerRejectAmendmentUrl = ({ contractId, id }: ContractControllerRejectAmendmentPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}/reject`
+}
+
+export const contractControllerRejectAmendment = async ({ contractId, id }: ContractControllerRejectAmendmentPathParameters,
+    rejectAmendmentBodyDto: RejectAmendmentBodyDto, options?: RequestInit): Promise<contractControllerRejectAmendmentResponse> => {
+  
+  return customFetch<contractControllerRejectAmendmentResponse>(getContractControllerRejectAmendmentUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      rejectAmendmentBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Editor hủy phụ lục (non-terminal → VOIDED)
+ */
+export type contractControllerVoidAmendmentResponse200 = {
+  data: AmendmentResDtoOutput
+  status: 200
+}
+
+export type contractControllerVoidAmendmentResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerVoidAmendmentResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerVoidAmendmentResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type contractControllerVoidAmendmentResponseSuccess = (contractControllerVoidAmendmentResponse200) & {
+  headers: Headers;
+};
+export type contractControllerVoidAmendmentResponseError = (contractControllerVoidAmendmentResponse403 | contractControllerVoidAmendmentResponse404 | contractControllerVoidAmendmentResponse409) & {
+  headers: Headers;
+};
+
+export type contractControllerVoidAmendmentResponse = (contractControllerVoidAmendmentResponseSuccess | contractControllerVoidAmendmentResponseError)
+
+export const getContractControllerVoidAmendmentUrl = ({ contractId, id }: ContractControllerVoidAmendmentPathParameters,) => {
+
+
+  
+
+  return `/contracts/${contractId}/amendments/${id}/void`
+}
+
+export const contractControllerVoidAmendment = async ({ contractId, id }: ContractControllerVoidAmendmentPathParameters,
+    voidAmendmentBodyDto: VoidAmendmentBodyDto, options?: RequestInit): Promise<contractControllerVoidAmendmentResponse> => {
+  
+  return customFetch<contractControllerVoidAmendmentResponse>(getContractControllerVoidAmendmentUrl({ contractId, id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      voidAmendmentBodyDto,)
   }
 );}
 

@@ -33,10 +33,15 @@ import type {
   AssistantProfileResDtoOutput,
   MangakaProfileBodyDto,
   MangakaProfileResDtoOutput,
+  MeResDtoOutput,
   MessageResDtoOutput,
+  StaffProfileBodyDto,
+  StaffProfileResDtoOutput,
+  UpdateMeBodyDto,
   UsersControllerDeleteUserPathParameters,
   UsersControllerGetAssistantProfilePathParameters,
   UsersControllerGetMangakaProfilePathParameters,
+  UsersControllerGetStaffProfilePathParameters,
   UsersControllerGetUserPathParameters,
   UsersControllerListAssistantsParams,
   UsersControllerListUsersParams,
@@ -415,6 +420,96 @@ export const usersControllerGetAdminStats = async ( options?: RequestInit): Prom
 
 
 /**
+ * @summary Xem thông tin tài khoản của chính mình (mọi role)
+ */
+export type usersControllerGetMeResponse200 = {
+  data: MeResDtoOutput
+  status: 200
+}
+
+export type usersControllerGetMeResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type usersControllerGetMeResponseSuccess = (usersControllerGetMeResponse200) & {
+  headers: Headers;
+};
+export type usersControllerGetMeResponseError = (usersControllerGetMeResponse404) & {
+  headers: Headers;
+};
+
+export type usersControllerGetMeResponse = (usersControllerGetMeResponseSuccess | usersControllerGetMeResponseError)
+
+export const getUsersControllerGetMeUrl = () => {
+
+
+  
+
+  return `/me`
+}
+
+export const usersControllerGetMe = async ( options?: RequestInit): Promise<usersControllerGetMeResponse> => {
+  
+  return customFetch<usersControllerGetMeResponse>(getUsersControllerGetMeUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Cập nhật thông tin tài khoản của chính mình (name/displayName/avatar/phoneNumber). '' = xoá field nullable
+ */
+export type usersControllerUpdateMeResponse200 = {
+  data: MeResDtoOutput
+  status: 200
+}
+
+export type usersControllerUpdateMeResponse404 = {
+  data: void
+  status: 404
+}
+
+export type usersControllerUpdateMeResponse422 = {
+  data: void
+  status: 422
+}
+    
+export type usersControllerUpdateMeResponseSuccess = (usersControllerUpdateMeResponse200) & {
+  headers: Headers;
+};
+export type usersControllerUpdateMeResponseError = (usersControllerUpdateMeResponse404 | usersControllerUpdateMeResponse422) & {
+  headers: Headers;
+};
+
+export type usersControllerUpdateMeResponse = (usersControllerUpdateMeResponseSuccess | usersControllerUpdateMeResponseError)
+
+export const getUsersControllerUpdateMeUrl = () => {
+
+
+  
+
+  return `/me`
+}
+
+export const usersControllerUpdateMe = async (updateMeBodyDto: UpdateMeBodyDto, options?: RequestInit): Promise<usersControllerUpdateMeResponse> => {
+  
+  return customFetch<usersControllerUpdateMeResponse>(getUsersControllerUpdateMeUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateMeBodyDto,)
+  }
+);}
+
+
+/**
  * @summary Mangaka tạo/cập nhật hồ sơ của mình (penName/genres/level/bio/portfolio) — lazy 1:1
  */
 export type usersControllerUpsertMangakaProfileResponse200 = {
@@ -701,6 +796,133 @@ export const getUsersControllerGetAssistantProfileUrl = ({ userId }: UsersContro
 export const usersControllerGetAssistantProfile = async ({ userId }: UsersControllerGetAssistantProfilePathParameters, options?: RequestInit): Promise<usersControllerGetAssistantProfileResponse> => {
   
   return customFetch<usersControllerGetAssistantProfileResponse>(getUsersControllerGetAssistantProfileUrl({ userId }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Editor/Board tạo/cập nhật hồ sơ của mình (specialtyGenres/demographics/bio) — lazy 1:1
+ */
+export type usersControllerUpsertStaffProfileResponse200 = {
+  data: StaffProfileResDtoOutput
+  status: 200
+}
+
+export type usersControllerUpsertStaffProfileResponse422 = {
+  data: void
+  status: 422
+}
+    
+export type usersControllerUpsertStaffProfileResponseSuccess = (usersControllerUpsertStaffProfileResponse200) & {
+  headers: Headers;
+};
+export type usersControllerUpsertStaffProfileResponseError = (usersControllerUpsertStaffProfileResponse422) & {
+  headers: Headers;
+};
+
+export type usersControllerUpsertStaffProfileResponse = (usersControllerUpsertStaffProfileResponseSuccess | usersControllerUpsertStaffProfileResponseError)
+
+export const getUsersControllerUpsertStaffProfileUrl = () => {
+
+
+  
+
+  return `/me/staff-profile`
+}
+
+export const usersControllerUpsertStaffProfile = async (staffProfileBodyDto: StaffProfileBodyDto, options?: RequestInit): Promise<usersControllerUpsertStaffProfileResponse> => {
+  
+  return customFetch<usersControllerUpsertStaffProfileResponse>(getUsersControllerUpsertStaffProfileUrl(),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      staffProfileBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Editor/Board xem hồ sơ của mình
+ */
+export type usersControllerGetMyStaffProfileResponse200 = {
+  data: StaffProfileResDtoOutput
+  status: 200
+}
+
+export type usersControllerGetMyStaffProfileResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type usersControllerGetMyStaffProfileResponseSuccess = (usersControllerGetMyStaffProfileResponse200) & {
+  headers: Headers;
+};
+export type usersControllerGetMyStaffProfileResponseError = (usersControllerGetMyStaffProfileResponse404) & {
+  headers: Headers;
+};
+
+export type usersControllerGetMyStaffProfileResponse = (usersControllerGetMyStaffProfileResponseSuccess | usersControllerGetMyStaffProfileResponseError)
+
+export const getUsersControllerGetMyStaffProfileUrl = () => {
+
+
+  
+
+  return `/me/staff-profile`
+}
+
+export const usersControllerGetMyStaffProfile = async ( options?: RequestInit): Promise<usersControllerGetMyStaffProfileResponse> => {
+  
+  return customFetch<usersControllerGetMyStaffProfileResponse>(getUsersControllerGetMyStaffProfileUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Xem hồ sơ Editor/Board công khai (ẩn email/phone)
+ */
+export type usersControllerGetStaffProfileResponse200 = {
+  data: StaffProfileResDtoOutput
+  status: 200
+}
+
+export type usersControllerGetStaffProfileResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type usersControllerGetStaffProfileResponseSuccess = (usersControllerGetStaffProfileResponse200) & {
+  headers: Headers;
+};
+export type usersControllerGetStaffProfileResponseError = (usersControllerGetStaffProfileResponse404) & {
+  headers: Headers;
+};
+
+export type usersControllerGetStaffProfileResponse = (usersControllerGetStaffProfileResponseSuccess | usersControllerGetStaffProfileResponseError)
+
+export const getUsersControllerGetStaffProfileUrl = ({ userId }: UsersControllerGetStaffProfilePathParameters,) => {
+
+
+  
+
+  return `/staff/${userId}`
+}
+
+export const usersControllerGetStaffProfile = async ({ userId }: UsersControllerGetStaffProfilePathParameters, options?: RequestInit): Promise<usersControllerGetStaffProfileResponse> => {
+  
+  return customFetch<usersControllerGetStaffProfileResponse>(getUsersControllerGetStaffProfileUrl({ userId }),
   {      
     ...options,
     method: 'GET'

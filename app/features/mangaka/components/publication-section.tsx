@@ -11,8 +11,6 @@ export type PublicationSectionProps = {
   error: string | null
   chapters: ChapterListResDtoOutputItemsItem[]
   onRefresh: () => void
-  /** Whether the series currently has at least one APPROVED Name. */
-  hasApprovedName: boolean
   /** Total chapters count label (number of approved names etc). */
   nextChapterNumber: number
   onCreateClick: () => void
@@ -61,9 +59,11 @@ function formatDate(iso: string | null, locale: string): string {
  * - Lists every chapter for the series in chapterNumber order.
  * - Shows the chapter status, optional manuscript status, deadline, and
  *   "On hold" badge when applicable.
- * - "Create chapter" CTA is visible only to the series owner AND only
- *   when there's at least one APPROVED Name on the series (BE rejects
- *   with 422 otherwise — see §7.1 of FE-API-Guide-v2.md).
+ * - "Create chapter" CTA is visible to the series owner. The previous
+ *   APPROVED-Name gate was removed when the BE flow changed: POST /chapters
+ *   now auto-matches the latest APPROVED Name server-side, so FE no
+ *   longer pre-checks the gate (BE still owns the 409 on
+ *   `Error.NoApprovedName`).
  * - No click-to-detail for now (no chapter detail route exists yet);
  *   rows are presentation-only.
  */
@@ -73,7 +73,6 @@ export function PublicationSection({
   error,
   chapters,
   onRefresh,
-  hasApprovedName,
   onCreateClick
 }: PublicationSectionProps) {
   const { t, i18n } = useTranslation('mangaka')
@@ -106,12 +105,7 @@ export function PublicationSection({
           <button
             type='button'
             onClick={onCreateClick}
-            disabled={!hasApprovedName}
-            title={hasApprovedName ? undefined : t('seriesDetail.publication.createButtonTooltipNoApproved')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity',
-              hasApprovedName ? 'hover:opacity-90 cursor-pointer' : 'cursor-not-allowed opacity-60'
-            )}
+            className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 cursor-pointer'
           >
             <BookPlus className='h-3.5 w-3.5' />
             <span>{t('seriesDetail.publication.createButton')}</span>
@@ -121,13 +115,6 @@ export function PublicationSection({
 
       {!collapsed && (
         <div id='publication-section-body' className='space-y-3 p-5'>
-          {/* Hint when there is no APPROVED Name yet */}
-          {isOwner && !hasApprovedName && (
-            <div className='rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700'>
-              {t('seriesDetail.publication.noApprovedNameHint')}
-            </div>
-          )}
-
           {isLoading && chapters.length === 0 ? (
             <div className='flex flex-col items-center gap-2 py-10 text-muted-foreground'>
               <Loader2 className='h-6 w-6 animate-spin' />
@@ -148,7 +135,7 @@ export function PublicationSection({
             <div className='flex flex-col items-center gap-2 py-10 text-center text-muted-foreground'>
               <ImageIcon className='h-8 w-8 text-muted-foreground/40' />
               <p className='text-sm'>{t('seriesDetail.publication.empty')}</p>
-              {isOwner && hasApprovedName && (
+              {isOwner && (
                 <p className='text-xs text-muted-foreground/80'>{t('seriesDetail.publication.emptyHint')}</p>
               )}
             </div>

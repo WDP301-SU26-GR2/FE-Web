@@ -39,6 +39,11 @@ export type reviewsControllerCreateAssistantReviewResponse201 = {
   status: 201
 }
 
+export type reviewsControllerCreateAssistantReviewResponse404 = {
+  data: void
+  status: 404
+}
+
 export type reviewsControllerCreateAssistantReviewResponse422 = {
   data: void
   status: 422
@@ -47,7 +52,7 @@ export type reviewsControllerCreateAssistantReviewResponse422 = {
 export type reviewsControllerCreateAssistantReviewResponseSuccess = (reviewsControllerCreateAssistantReviewResponse201) & {
   headers: Headers;
 };
-export type reviewsControllerCreateAssistantReviewResponseError = (reviewsControllerCreateAssistantReviewResponse422) & {
+export type reviewsControllerCreateAssistantReviewResponseError = (reviewsControllerCreateAssistantReviewResponse404 | reviewsControllerCreateAssistantReviewResponse422) & {
   headers: Headers;
 };
 
@@ -124,6 +129,11 @@ export type reviewsControllerCreateMangakaReviewResponse201 = {
   status: 201
 }
 
+export type reviewsControllerCreateMangakaReviewResponse404 = {
+  data: void
+  status: 404
+}
+
 export type reviewsControllerCreateMangakaReviewResponse422 = {
   data: void
   status: 422
@@ -132,7 +142,7 @@ export type reviewsControllerCreateMangakaReviewResponse422 = {
 export type reviewsControllerCreateMangakaReviewResponseSuccess = (reviewsControllerCreateMangakaReviewResponse201) & {
   headers: Headers;
 };
-export type reviewsControllerCreateMangakaReviewResponseError = (reviewsControllerCreateMangakaReviewResponse422) & {
+export type reviewsControllerCreateMangakaReviewResponseError = (reviewsControllerCreateMangakaReviewResponse404 | reviewsControllerCreateMangakaReviewResponse422) & {
   headers: Headers;
 };
 

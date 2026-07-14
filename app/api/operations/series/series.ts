@@ -23,22 +23,27 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type {
   CreateProposalBodyDto,
   CreateProposalResDtoOutput,
+  FranchiseConsentBodyDto,
+  HiatusBodyDto,
   MessageResDtoOutput,
-  NameListResDtoOutput,
-  NameResDtoOutput,
+  ProposeCompletionBodyDto,
   ReasonBodyDto,
   SeriesControllerApproveProposalPathParameters,
   SeriesControllerClaimPathParameters,
   SeriesControllerDeleteProposalPathParameters,
-  SeriesControllerGetNamePathParameters,
+  SeriesControllerFinalizeEndingPathParameters,
+  SeriesControllerForceCancelPathParameters,
+  SeriesControllerFranchiseConsentPathParameters,
   SeriesControllerGetSeriesPathParameters,
-  SeriesControllerListNamesPathParameters,
+  SeriesControllerHiatusPathParameters,
   SeriesControllerListSeriesParams,
   SeriesControllerPitchPathParameters,
+  SeriesControllerProposeCompletionPathParameters,
   SeriesControllerRejectPathParameters,
   SeriesControllerReleasePathParameters,
   SeriesControllerRequestProposalRevisionPathParameters,
   SeriesControllerResubmitProposalPathParameters,
+  SeriesControllerResumePathParameters,
   SeriesControllerSubmitPathParameters,
   SeriesControllerUpdateProposalPathParameters,
   SeriesControllerWithdrawPathParameters,
@@ -129,100 +134,6 @@ export const getSeriesControllerGetSeriesUrl = ({ id }: SeriesControllerGetSerie
 export const seriesControllerGetSeries = async ({ id }: SeriesControllerGetSeriesPathParameters, options?: RequestInit): Promise<seriesControllerGetSeriesResponse> => {
   
   return customFetch<seriesControllerGetSeriesResponse>(getSeriesControllerGetSeriesUrl({ id }),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * @summary Danh sách Name của series
- */
-export type seriesControllerListNamesResponse200 = {
-  data: NameListResDtoOutput
-  status: 200
-}
-
-export type seriesControllerListNamesResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerListNamesResponse404 = {
-  data: void
-  status: 404
-}
-    
-export type seriesControllerListNamesResponseSuccess = (seriesControllerListNamesResponse200) & {
-  headers: Headers;
-};
-export type seriesControllerListNamesResponseError = (seriesControllerListNamesResponse403 | seriesControllerListNamesResponse404) & {
-  headers: Headers;
-};
-
-export type seriesControllerListNamesResponse = (seriesControllerListNamesResponseSuccess | seriesControllerListNamesResponseError)
-
-export const getSeriesControllerListNamesUrl = ({ id }: SeriesControllerListNamesPathParameters,) => {
-
-
-  
-
-  return `/series/${id}/names`
-}
-
-export const seriesControllerListNames = async ({ id }: SeriesControllerListNamesPathParameters, options?: RequestInit): Promise<seriesControllerListNamesResponse> => {
-  
-  return customFetch<seriesControllerListNamesResponse>(getSeriesControllerListNamesUrl({ id }),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * @summary Chi tiết 1 Name (kèm pages)
- */
-export type seriesControllerGetNameResponse200 = {
-  data: NameResDtoOutput
-  status: 200
-}
-
-export type seriesControllerGetNameResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerGetNameResponse404 = {
-  data: void
-  status: 404
-}
-    
-export type seriesControllerGetNameResponseSuccess = (seriesControllerGetNameResponse200) & {
-  headers: Headers;
-};
-export type seriesControllerGetNameResponseError = (seriesControllerGetNameResponse403 | seriesControllerGetNameResponse404) & {
-  headers: Headers;
-};
-
-export type seriesControllerGetNameResponse = (seriesControllerGetNameResponseSuccess | seriesControllerGetNameResponseError)
-
-export const getSeriesControllerGetNameUrl = ({ id, nameId }: SeriesControllerGetNamePathParameters,) => {
-
-
-  
-
-  return `/series/${id}/names/${nameId}`
-}
-
-export const seriesControllerGetName = async ({ id, nameId }: SeriesControllerGetNamePathParameters, options?: RequestInit): Promise<seriesControllerGetNameResponse> => {
-  
-  return customFetch<seriesControllerGetNameResponse>(getSeriesControllerGetNameUrl({ id, nameId }),
   {      
     ...options,
     method: 'GET'
@@ -690,6 +601,60 @@ export const seriesControllerWithdraw = async ({ id }: SeriesControllerWithdrawP
 
 
 /**
+ * @summary Mangaka gốc đồng ý/từ chối series phái sinh (A-SER-06). REJECTED chỉ block submit.
+ */
+export type seriesControllerFranchiseConsentResponse201 = {
+  data: SeriesResDtoOutput
+  status: 201
+}
+
+export type seriesControllerFranchiseConsentResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerFranchiseConsentResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerFranchiseConsentResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerFranchiseConsentResponseSuccess = (seriesControllerFranchiseConsentResponse201) & {
+  headers: Headers;
+};
+export type seriesControllerFranchiseConsentResponseError = (seriesControllerFranchiseConsentResponse403 | seriesControllerFranchiseConsentResponse404 | seriesControllerFranchiseConsentResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerFranchiseConsentResponse = (seriesControllerFranchiseConsentResponseSuccess | seriesControllerFranchiseConsentResponseError)
+
+export const getSeriesControllerFranchiseConsentUrl = ({ id }: SeriesControllerFranchiseConsentPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/franchise-consent`
+}
+
+export const seriesControllerFranchiseConsent = async ({ id }: SeriesControllerFranchiseConsentPathParameters,
+    franchiseConsentBodyDto: FranchiseConsentBodyDto, options?: RequestInit): Promise<seriesControllerFranchiseConsentResponse> => {
+  
+  return customFetch<seriesControllerFranchiseConsentResponse>(getSeriesControllerFranchiseConsentUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      franchiseConsentBodyDto,)
+  }
+);}
+
+
+/**
  * @summary Editor pitch series lên Board (Series → PITCHED, gọi B5)
  */
 export type seriesControllerPitchResponse201 = {
@@ -831,6 +796,270 @@ export const getSeriesControllerReleaseUrl = ({ id }: SeriesControllerReleasePat
 export const seriesControllerRelease = async ({ id }: SeriesControllerReleasePathParameters, options?: RequestInit): Promise<seriesControllerReleaseResponse> => {
   
   return customFetch<seriesControllerReleaseResponse>(getSeriesControllerReleaseUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Editor cho series tạm ngưng (SERIALIZED→HIATUS). Dừng đồng hồ TIME_BOUND.
+ */
+export type seriesControllerHiatusResponse201 = {
+  data: SeriesResDtoOutput
+  status: 201
+}
+
+export type seriesControllerHiatusResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerHiatusResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerHiatusResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerHiatusResponseSuccess = (seriesControllerHiatusResponse201) & {
+  headers: Headers;
+};
+export type seriesControllerHiatusResponseError = (seriesControllerHiatusResponse403 | seriesControllerHiatusResponse404 | seriesControllerHiatusResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerHiatusResponse = (seriesControllerHiatusResponseSuccess | seriesControllerHiatusResponseError)
+
+export const getSeriesControllerHiatusUrl = ({ id }: SeriesControllerHiatusPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/hiatus`
+}
+
+export const seriesControllerHiatus = async ({ id }: SeriesControllerHiatusPathParameters,
+    hiatusBodyDto: HiatusBodyDto, options?: RequestInit): Promise<seriesControllerHiatusResponse> => {
+  
+  return customFetch<seriesControllerHiatusResponse>(getSeriesControllerHiatusUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      hiatusBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Editor cho series hoạt động lại (HIATUS→SERIALIZED). Dời deadline TIME_BOUND theo thời gian hiatus.
+ */
+export type seriesControllerResumeResponse201 = {
+  data: SeriesResDtoOutput
+  status: 201
+}
+
+export type seriesControllerResumeResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerResumeResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerResumeResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerResumeResponseSuccess = (seriesControllerResumeResponse201) & {
+  headers: Headers;
+};
+export type seriesControllerResumeResponseError = (seriesControllerResumeResponse403 | seriesControllerResumeResponse404 | seriesControllerResumeResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerResumeResponse = (seriesControllerResumeResponseSuccess | seriesControllerResumeResponseError)
+
+export const getSeriesControllerResumeUrl = ({ id }: SeriesControllerResumePathParameters,) => {
+
+
+  
+
+  return `/series/${id}/resume`
+}
+
+export const seriesControllerResume = async ({ id }: SeriesControllerResumePathParameters, options?: RequestInit): Promise<seriesControllerResumeResponse> => {
+  
+  return customFetch<seriesControllerResumeResponse>(getSeriesControllerResumeUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Editor chốt kết thúc: CANCELLING→CANCELLED / COMPLETING→COMPLETED.
+ */
+export type seriesControllerFinalizeEndingResponse201 = {
+  data: SeriesResDtoOutput
+  status: 201
+}
+
+export type seriesControllerFinalizeEndingResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerFinalizeEndingResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerFinalizeEndingResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerFinalizeEndingResponseSuccess = (seriesControllerFinalizeEndingResponse201) & {
+  headers: Headers;
+};
+export type seriesControllerFinalizeEndingResponseError = (seriesControllerFinalizeEndingResponse403 | seriesControllerFinalizeEndingResponse404 | seriesControllerFinalizeEndingResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerFinalizeEndingResponse = (seriesControllerFinalizeEndingResponseSuccess | seriesControllerFinalizeEndingResponseError)
+
+export const getSeriesControllerFinalizeEndingUrl = ({ id }: SeriesControllerFinalizeEndingPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/finalize-ending`
+}
+
+export const seriesControllerFinalizeEnding = async ({ id }: SeriesControllerFinalizeEndingPathParameters, options?: RequestInit): Promise<seriesControllerFinalizeEndingResponse> => {
+  
+  return customFetch<seriesControllerFinalizeEndingResponse>(getSeriesControllerFinalizeEndingUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Đề xuất kết thúc series tự nhiên (Mangaka/Editor) — PB-06
+ */
+export type seriesControllerProposeCompletionResponse200 = {
+  data: SeriesResDtoOutput
+  status: 200
+}
+
+export type seriesControllerProposeCompletionResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerProposeCompletionResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerProposeCompletionResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerProposeCompletionResponseSuccess = (seriesControllerProposeCompletionResponse200) & {
+  headers: Headers;
+};
+export type seriesControllerProposeCompletionResponseError = (seriesControllerProposeCompletionResponse403 | seriesControllerProposeCompletionResponse404 | seriesControllerProposeCompletionResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerProposeCompletionResponse = (seriesControllerProposeCompletionResponseSuccess | seriesControllerProposeCompletionResponseError)
+
+export const getSeriesControllerProposeCompletionUrl = ({ id }: SeriesControllerProposeCompletionPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/propose-completion`
+}
+
+export const seriesControllerProposeCompletion = async ({ id }: SeriesControllerProposeCompletionPathParameters,
+    proposeCompletionBodyDto: ProposeCompletionBodyDto, options?: RequestInit): Promise<seriesControllerProposeCompletionResponse> => {
+  
+  return customFetch<seriesControllerProposeCompletionResponse>(getSeriesControllerProposeCompletionUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      proposeCompletionBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Editor đóng series CANCELLING không ending (Req 1.11c) — PB-06
+ */
+export type seriesControllerForceCancelResponse200 = {
+  data: SeriesResDtoOutput
+  status: 200
+}
+
+export type seriesControllerForceCancelResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerForceCancelResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerForceCancelResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerForceCancelResponseSuccess = (seriesControllerForceCancelResponse200) & {
+  headers: Headers;
+};
+export type seriesControllerForceCancelResponseError = (seriesControllerForceCancelResponse403 | seriesControllerForceCancelResponse404 | seriesControllerForceCancelResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerForceCancelResponse = (seriesControllerForceCancelResponseSuccess | seriesControllerForceCancelResponseError)
+
+export const getSeriesControllerForceCancelUrl = ({ id }: SeriesControllerForceCancelPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/force-cancel`
+}
+
+export const seriesControllerForceCancel = async ({ id }: SeriesControllerForceCancelPathParameters, options?: RequestInit): Promise<seriesControllerForceCancelResponse> => {
+  
+  return customFetch<seriesControllerForceCancelResponse>(getSeriesControllerForceCancelUrl({ id }),
   {      
     ...options,
     method: 'POST'

@@ -1,0 +1,241 @@
+{
+  "dashboard": {
+    "title": "Không gian làm việc Trợ lý",
+    "subtitle": "Nhiệm vụ, quan hệ studio và lời mời đang chờ ở cùng một nơi.",
+    "engineStatus": "Assistant workspace v1.0.0 • Đồng bộ: {{time}} trước",
+    "activeNow": "Đang hợp tác",
+    "viewAll": "Xem tất cả",
+    "statCards": {
+      "pendingTasks": {
+        "label": "Nhiệm vụ chờ xử lý",
+        "description": "Nhiệm vụ đang chờ bạn bắt đầu hoặc nộp",
+        "delta": "{{count}} đang chờ"
+      },
+      "inProgressTasks": {
+        "label": "Đang làm",
+        "description": "Nhiệm vụ đã bắt đầu nhưng chưa nộp",
+        "delta": "{{count}} đang chạy"
+      },
+      "upcomingDeadlines": {
+        "label": "Đến hạn trong 7 ngày",
+        "description": "Nhiệm vụ có deadline gần nhất",
+        "delta": "{{count}} sắp đến hạn"
+      },
+      "rating": {
+        "label": "Đánh giá trung bình",
+        "description": "Điểm đánh giá từ các Mangaka đã cộng tác",
+        "delta": "{{avg}} • {{count}} đánh giá"
+      }
+    }
+  },
+  "tasks": {
+    "title": "Nhiệm vụ của tôi",
+    "subtitle": "Các nhiệm vụ sản xuất được Mangaka giao cho bạn.",
+    "back": "Quay lại dashboard",
+    "filters": {
+      "status": "Trạng thái",
+      "all": "Tất cả",
+      "statuses": {
+        "ASSIGNED": "Đã giao",
+        "IN_PROGRESS": "Đang làm",
+        "SUBMITTED": "Đã nộp",
+        "UNDER_REVIEW": "Đang review",
+        "APPROVED": "Đã duyệt",
+        "REVISION_REQUESTED": "Yêu cầu sửa",
+        "ON_HOLD": "Tạm dừng",
+        "CANCELLED": "Đã huỷ"
+      }
+    },
+    "taskType": {
+      "BACKGROUND": "Vẽ nền",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Speed line",
+      "INKING": "Đi mực",
+      "COLORING": "Tô màu",
+      "LETTERING": "Chữ/thoại"
+    },
+    "card": {
+      "taskType": "Loại công việc",
+      "priority": "Độ ưu tiên",
+      "deadline": "Deadline",
+      "deadlineNone": "Không có deadline",
+      "versions": "{{count}} bản nộp",
+      "versions_other": "{{count}} bản nộp",
+      "pageIdLabel": "Page ID",
+      "statusReason": "Ghi chú"
+    },
+    "actions": {
+      "start": "Bắt đầu task",
+      "submit": "Nộp kết quả"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
+    },
+    "empty": {
+      "title": "Chưa có nhiệm vụ nào",
+      "description": "Khi Mangaka giao task cho bạn, task sẽ hiện ở đây."
+    },
+    "error": {
+      "loadFailed": "Không tải được danh sách task. Vui lòng thử lại.",
+      "startFailed": "Không thể bắt đầu task.",
+      "submitFailed": "Không thể nộp kết quả task.",
+      "retry": "Thử lại",
+      "noFileToSubmit": "Vui lòng đính kèm key file kết quả trước khi nộp.",
+      "submitSuccess": "Đã nộp task. Đang chờ Mangaka review."
+    }
+  },
+  "studio": {
+    "title": "Quan hệ Studio",
+    "subtitle": "Các cộng tác đang và đã thực hiện với Mangaka.",
+    "back": "Quay lại dashboard",
+    "filters": {
+      "status": "Trạng thái",
+      "all": "Tất cả",
+      "activeOnly": "Chỉ đang hợp tác",
+      "statuses": {
+        "ACTIVE": "Đang hoạt động",
+        "COMPLETED": "Đã hoàn thành",
+        "TERMINATED": "Đã huỷ"
+      }
+    },
+    "taskType": {
+      "BACKGROUND": "Vẽ nền",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Speed line",
+      "INKING": "Đi mực",
+      "COLORING": "Tô màu",
+      "LETTERING": "Chữ/thoại"
+    },
+    "card": {
+      "mangakaFallback": "Mangaka #{{id}}",
+      "hireWindow": "{{from}} – {{to}}",
+      "hireWindowNoEnd": "Từ {{from}}",
+      "seriesNone": "Không có series context",
+      "terminatedReason": "Lý do: {{reason}}",
+      "noReason": "Không có lý do",
+      "ended": "Bắt đầu {{date}}",
+      "taskTypesTitle": "Loại task được giao",
+      "activeNowBadge": "Đang hợp tác",
+      "endedBadge": "Đã kết thúc"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
+    },
+    "empty": {
+      "title": "Chưa có quan hệ studio nào",
+      "description": "Chấp nhận một lời mời cộng tác để bắt đầu làm việc với Mangaka."
+    },
+    "error": {
+      "loadFailed": "Không tải được quan hệ studio. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    }
+  },
+  "invites": {
+    "title": "Lời mời cộng tác",
+    "subtitle": "Lời mời do Mangaka gửi yêu cầu bạn tham gia studio của họ.",
+    "back": "Quay lại dashboard",
+    "filters": {
+      "status": "Trạng thái",
+      "all": "Tất cả",
+      "statuses": {
+        "PENDING": "Đang chờ",
+        "ACCEPTED": "Đã chấp nhận",
+        "DECLINED": "Đã từ chối",
+        "EXPIRED": "Đã hết hạn",
+        "CANCELLED": "Đã huỷ"
+      }
+    },
+    "taskType": {
+      "BACKGROUND": "Vẽ nền",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Speed line",
+      "INKING": "Đi mực",
+      "COLORING": "Tô màu",
+      "LETTERING": "Chữ/thoại"
+    },
+    "card": {
+      "mangakaFallback": "Mangaka #{{id}}",
+      "hireWindow": "{{from}} – {{to}}",
+      "hireWindowNoEnd": "Từ {{from}}",
+      "seriesNone": "Không có series context",
+      "taskTypesTitle": "Sẽ làm việc về",
+      "receivedAt": "Nhận {{date}}"
+    },
+    "actions": {
+      "accept": "Chấp nhận",
+      "decline": "Từ chối"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
+    },
+    "empty": {
+      "title": "Chưa có lời mời nào",
+      "description": "Khi Mangaka gửi lời mời cộng tác, lời mời sẽ hiện ở đây."
+    },
+    "error": {
+      "loadFailed": "Không tải được lời mời. Vui lòng thử lại.",
+      "acceptFailed": "Không thể chấp nhận lời mời.",
+      "declineFailed": "Không thể từ chối lời mời.",
+      "retry": "Thử lại"
+    },
+    "success": {
+      "accepted": "Đã chấp nhận lời mời. StudioAssignment ACTIVE đã được tạo.",
+      "declined": "Đã từ chối lời mời."
+    }
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "subtitle": "Cập nhật về nhiệm vụ, thay đổi deadline và kết quả review.",
+    "back": "Quay lại dashboard",
+    "filters": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "read": "Đã đọc"
+    },
+    "type": {
+      "SYSTEM": "Hệ thống",
+      "CONTRACT": "Hợp đồng",
+      "TASK": "Nhiệm vụ",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Khảo sát",
+      "BOARD": "Hội đồng",
+      "REVIEW": "Đánh giá"
+    },
+    "item": {
+      "noContent": "(không có nội dung)",
+      "openTarget": "Mở",
+      "reference": "Tham chiếu: {{type}} • {{id}}"
+    },
+    "actions": {
+      "markRead": "Đánh dấu đã đọc",
+      "markAllRead": "Đánh dấu tất cả đã đọc"
+    },
+    "summary": {
+      "unreadCount_one": "{{count}} chưa đọc",
+      "unreadCount_other": "{{count}} chưa đọc",
+      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau"
+    },
+    "empty": {
+      "title": "Đã đọc hết thông báo",
+      "description": "Hiện không có thông báo nào."
+    },
+    "error": {
+      "loadFailed": "Không tải được thông báo. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "success": {
+      "markedRead": "Đã đánh dấu thông báo là đã đọc.",
+      "markedAllRead": "Đã đánh dấu tất cả thông báo là đã đọc."
+    }
+  }
+}

@@ -25,6 +25,8 @@ import type { SeriesListResDtoOutputItemsItemDemographic } from './seriesListRes
 import type { SeriesListResDtoOutputItemsItemPublicationType } from './seriesListResDtoOutputItemsItemPublicationType';
 import type { SeriesListResDtoOutputItemsItemStatus } from './seriesListResDtoOutputItemsItemStatus';
 import type { SeriesListResDtoOutputItemsItemRelationshipType } from './seriesListResDtoOutputItemsItemRelationshipType';
+import type { SeriesListResDtoOutputItemsItemFranchiseConsentStatus } from './seriesListResDtoOutputItemsItemFranchiseConsentStatus';
+import type { SeriesListResDtoOutputItemsItemCompletionProposal } from './seriesListResDtoOutputItemsItemCompletionProposal';
 import type { SeriesListResDtoOutputItemsItemProposal } from './seriesListResDtoOutputItemsItemProposal';
 
 export type SeriesListResDtoOutputItemsItem = {
@@ -63,6 +65,18 @@ export type SeriesListResDtoOutputItemsItem = {
    * @nullable
    */
   publicationType: SeriesListResDtoOutputItemsItemPublicationType;
+  /**
+   * Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED
+   * @nullable
+   */
+  magazine: string | null;
+  /**
+   * Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   * @nullable
+   */
+  startIssueNumber: number | null;
   /** Series state machine status. Values: DRAFT, IN_REVIEW, READY_TO_PITCH, PITCHED, SERIALIZED, HIATUS, COMPLETING, CANCELLING, COMPLETED, CANCELLED, REJECTED, ABANDONED, WITHDRAWN */
   status: SeriesListResDtoOutputItemsItemStatus;
   /**
@@ -75,6 +89,11 @@ export type SeriesListResDtoOutputItemsItem = {
    * @nullable
    */
   relationshipType: SeriesListResDtoOutputItemsItemRelationshipType;
+  /**
+   * Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết
+   * @nullable
+   */
+  franchiseConsentStatus: SeriesListResDtoOutputItemsItemFranchiseConsentStatus;
   /** ISO 8601 */
   createdAt: string;
   /**
@@ -82,6 +101,11 @@ export type SeriesListResDtoOutputItemsItem = {
    * @nullable
    */
   reviewStartedAt: string | null;
+  /**
+   * Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất
+   * @nullable
+   */
+  completionProposal: SeriesListResDtoOutputItemsItemCompletionProposal;
   /**
    * Hồ sơ proposal (nhúng trong Series); null nếu chưa có
    * @nullable

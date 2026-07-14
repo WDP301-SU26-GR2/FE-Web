@@ -23,7 +23,7 @@ import {
   SeriesResDtoOutputStatus as SeriesStatusEnum
 } from '~/api/model/series'
 import type { SeriesResDtoOutput } from '~/api/model/series'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/series'
+import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
 
 import { useSeriesDetail } from './hooks/use-series-detail'
 import { useSubmitSeries } from './hooks/use-submit-series'
@@ -171,10 +171,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
-  // Per §7.1 of FE-API-Guide-v2.md the BE rejects POST /chapters unless
-  // the Name is APPROVED — gate the "Create chapter" affordance on this
-  // so users don't burn a request.
-  const hasApprovedName = names.some((n) => n.status === 'APPROVED')
   const nextChapterNumber = useMemo(() => {
     if (chapters.length === 0) return 1
     return chapters.reduce((max, c) => Math.max(max, c.chapterNumber), 0) + 1
@@ -419,7 +415,9 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
 
       {/* PUBLICATION section — visible once the series enters the production phase.
           Per FE-API-Guide-v2.md §6.2 / §7, the Mangaka produces chapters only
-          after the series has been serialized (Board approved). */}
+          after the series has been serialized (Board approved). BE auto-matches
+          the latest APPROVED Name server-side, so FE no longer gates the
+          "Create chapter" affordance on hasApprovedName. */}
       {isPublicationPhase && (
         <PublicationSection
           isOwner={isOwner}
@@ -427,7 +425,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
           error={chaptersError}
           chapters={chapters}
           onRefresh={refreshChapters}
-          hasApprovedName={hasApprovedName}
           nextChapterNumber={nextChapterNumber}
           onCreateClick={() => setCreateChapterOpen(true)}
         />
@@ -457,20 +454,19 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         }}
       />
 
-      {/* Create-chapter confirmation (publication phase). */}
+      {/* Create-chapter confirmation (publication phase). BE auto-matches the
+          latest APPROVED Name for the series, so FE does not send a nameId. */}
       <CreateChapterDialog
         seriesId={series.id}
-        names={names}
         nextChapterNumber={nextChapterNumber}
         isSubmitting={isCreating}
-        open={createChapterOpen && hasApprovedName}
+        open={createChapterOpen}
         onCancel={() => {
           if (!isCreating) setCreateChapterOpen(false)
         }}
         onConfirm={async (input) => {
           const created = await createChapter({
             seriesId: series.id,
-            nameId: input.nameId,
             chapterNumber: input.chapterNumber,
             title: input.title
           })

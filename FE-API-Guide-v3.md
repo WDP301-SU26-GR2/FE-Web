@@ -1,0 +1,9402 @@
+# FE API Guide v3 — Manga Creation Workflow System
+
+> **Nguồn sự thật:** sinh + đối chiếu 100% từ Swagger runtime (`GET /api-json`) @ commit `c953e0c` (Spec 12) — **239 route, 60 enum**, đã verify bằng flow-test 2.204 case / 0 FAIL (2026-07-12).
+> **Phạm vi:** TOÀN BỘ backend (BE-A + BE-B), tổ chức theo **flow nghiệp vụ Requiment (Flow 1–13)** — mỗi flow: mô tả nghiệp vụ, các bước happy path (gọi API nào), bảng unhappy case, rồi reference chi tiết từng API (role, field, enum, lỗi).
+> **Thay thế:** `FE-API-Guide-v2.md` (chỉ cover BE-A, đã lỗi thời sau Spec 9/10/11/12 + Fix-1/2). Đọc §16 để biết breaking change so với v2.
+
+## Mục lục
+
+- §0. Quy ước chung (BẮT BUỘC đọc trước khi gọi API)
+- §1. Từ điển Enum (60 enum — đầy đủ giá trị + ý nghĩa)
+- §2. Auth, Tài khoản & Hồ sơ (Flow 11)
+- §3. Flow 1 — Series Proposal → Serialization (kèm Board engine)
+- §4. Flow 6 — Contract & Payment
+- §5. Flow 2 — Chapter Production (chapter-first)
+- §6. Flow 3 — Region / Task / AI segmentation
+- §7. Flow 9 — Danh bạ trợ lý & Studio (kèm Review/Reputation)
+- §8. Flow 10 — Deadline Negotiation
+- §9. Flow 4 — Survey / Guest Voting / Ranking
+- §10. Flow 5 — Series Lifecycle (hiatus / complete / cancel)
+- §11. Flow 7 — Reprint (tái bản)
+- §12. Flow 8 — Transfer (chuyển nhượng)
+- §13. Flow 12 + 13 — Franchise consent & Publication Version
+- §14. Cross-cutting: Upload R2, Notification, Audit, AppConfig
+- §15. WebSocket `/board` (realtime phiên họp Hội đồng)
+- §16. Changelog v2 → v3 (breaking change FE phải sửa)
+
+---
+
+## §0. Quy ước chung
+
+### 0.1. Response envelope — FE LUÔN đọc `res.data`
+
+Mọi response **thành công** đều được bọc:
+
+```jsonc
+{ "success": true, "message": "Success", "data": { /* payload — chính là shape ghi trong guide này */ } }
+```
+
+- Bảng "Response" của từng API trong guide mô tả shape **BÊN TRONG `data`** (chưa bọc).
+- `message` có thể là text nghiệp vụ (vd "Chapter name deleted") — hiển thị được cho user.
+
+Mọi response **lỗi**:
+
+```jsonc
+// Lỗi field-level (validation 422 hoặc lỗi nghiệp vụ có path):
+{ "success": false, "statusCode": 422, "message": "Invalid email address",
+  "errors": [ { "message": "Invalid email address", "path": "email" } ] }
+
+// Lỗi đơn (không gắn field):
+{ "success": false, "statusCode": 403, "message": "Error.EmailNotVerified" }
+
+// Rate-limit (OTP) — có thêm code + retryAfter (giây) cho UI cooldown:
+{ "success": false, "statusCode": 429, "message": "Error.OtpRateLimited",
+  "code": "AUTH_OTP_RATE_LIMITED", "retryAfter": 60 }
+```
+
+- `message` **luôn là string**. Mã `Error.PascalCase` là **code để FE map sang text hiển thị** (đa ngôn ngữ tuỳ FE) — KHÔNG hiển thị raw code cho user.
+- Nhiều lỗi field cùng lúc → `message: "Validation failed"` + chi tiết trong `errors[]`.
+
+### 0.2. Status code semantics
+
+| Status | Ý nghĩa |
+|---|---|
+| 200 / 201 | Thành công (POST tạo mới = 201, còn lại = 200) |
+| 401 | Thiếu / sai / hết hạn Bearer token |
+| 403 | Có token nhưng sai role, hoặc không phải chủ sở hữu / người được phân công (scoping) |
+| 404 | Không tìm thấy (gồm cả trường hợp id không phải ObjectId 24-hex hợp lệ) |
+| 409 | Vi phạm state machine (chuyển trạng thái sai) hoặc trùng dữ liệu unique |
+| 410 | OTP hết hạn |
+| **422** | **Validation fail** (body/query sai kiểu, thiếu field, field lạ với schema `.strict()`) — LƯU Ý: là 422, KHÔNG phải 400 |
+| 429 | Rate-limit (kèm `code` + `retryAfter`) |
+| 503 | Tính năng phụ thuộc service ngoài đang tắt (vd AI segmentation khi `AI_SERVICE_URL` trống) |
+
+### 0.3. Auth
+
+- Đăng nhập → nhận `accessToken` (TTL ngắn) + `refreshToken` (TTL dài). Mọi request gắn `Authorization: Bearer <accessToken>`.
+- Access hết hạn → gọi `POST /auth/refresh-token` — refresh bị **rotate** (cái cũ bị revoke, dùng lại → 401).
+- Route **PUBLIC** (không cần token) được ghi rõ ở từng API; còn lại mặc định cần Bearer.
+- User có `mustChangePassword=true` (tài khoản admin cấp) bị chặn **403 ở MỌI route nghiệp vụ** (kể cả `GET /me`) cho tới khi đổi mật khẩu qua `POST /auth/change-password` — flag này trả về ngay trong response login, FE điều hướng sang màn đổi mật khẩu.
+- **Role:** `MANGAKA`, `ASSISTANT`, `EDITOR`, `BOARD_MEMBER`, `SUPER_ADMIN`. Ngoài role, hầu hết API còn **scope theo sở hữu**: Mangaka chỉ thao tác series/chapter của mình, Editor chỉ series mình phụ trách, Assistant chỉ task được giao — sai scope → 403 dù đúng role.
+
+### 0.4. Datetime & file
+
+- **Mọi datetime là ISO 8601 UTC** (`2026-07-12T09:00:00.000Z`). FE tự đổi sang giờ VN (UTC+7) khi hiển thị. Swagger đánh dấu các field này `format: date-time`.
+- **File KHÔNG BAO GIỜ đi qua Backend.** Mọi field file (`coverImage`, `namePages[].fileUrl`, `originalFile`, `portfolio`, `avatar`...) là **object key** trên Cloudflare R2:
+  - Upload: `POST /uploads/sign` → nhận `uploadUrl` (presigned PUT) + `key` → FE PUT bytes **thẳng lên R2** với đúng `requiredHeaders` → rồi gửi `key` vào API nghiệp vụ.
+  - Hiển thị: đổi `key` → URL tạm qua `POST /uploads/sign-download`. KHÔNG cache URL (có hạn) — cache `key`.
+  - Allowlist: `image/png`, `image/jpeg`, `image/webp`, `application/pdf`; tối đa 15MB (cấu hình `AppConfig.maxUploadBytes`).
+
+### 0.5. Quy ước field trong guide
+
+- Cột **Kiểu**: ràng buộc ghi trong ngoặc (độ dài / min-max). Dấu **✍ = field tự do, FE/client tự nhập giá trị** (không có enum, chỉ cần đúng kiểu + ràng buộc). Field `enum \`X\`` → tra bảng giá trị ở **§1** (đầy đủ, không sót giá trị nào).
+- **Partial-update (PATCH/PUT):** field omit hoặc gửi `null` = **giữ nguyên**; gửi `[]` cho mảng = **xoá sạch**; riêng `PATCH /me` chuỗi rỗng `''` = xoá field nullable (displayName/avatar).
+- Schema `.strict()`: gửi field lạ → 422 (đừng gửi thừa field).
+- **Phân trang:** `limit` (default 20, max 100) + `offset` (default 0); response kèm `total` khi có.
+
+### 0.6. Notification deep-link
+
+`Notification.referenceType` là mã sự kiện dạng `<ENTITY>_<ACTION>` (vd `TASK_ASSIGNED`, `PROPOSAL_RESUBMITTED`, `NAME_APPROVED`, `CONTRACT_SIGNED`...). FE deep-link bằng **prefix** của `referenceType` + `referenceId`:
+
+| Prefix | Điều hướng tới |
+|---|---|
+| `TASK_*` | Chi tiết task (`referenceId` = taskId) |
+| `PROPOSAL_*`, `SERIES_*`, `NAME_*`, `FRANCHISE_*` | Chi tiết series (`referenceId` = seriesId/nameId) |
+| `CHAPTER_*`, `MANUSCRIPT_*`, `PAGE_*` | Chi tiết chapter |
+| `CONTRACT_*`, `AMENDMENT_*`, `PAYMENT_*` | Chi tiết hợp đồng / thanh toán |
+| `DEADLINE_*` | Chi tiết deadline request |
+| `BOARD_*`, `DECISION_*` | Phiên họp / quyết định Board |
+| `SURVEY_*`, `RANKING_*` | Kỳ khảo sát / bảng xếp hạng |
+| `REVIEW_*`, `INVITE_*`, `ASSIGNMENT_*` | Hồ sơ / lời mời cộng tác |
+
+### 0.7. Realtime
+
+- **Mặc định là polling** (10–30s) cho dashboard tiến độ + notification (badge dùng `unreadCount` của `GET /notifications`).
+- Duy nhất **phiên họp Board** có WebSocket (`/board` namespace, Socket.IO) — xem §15. Kết nối **bắt buộc JWT**.
+
+---
+
+## §1. Từ điển Enum (60 enum — nguồn: Prisma schema, đầy đủ 100% giá trị)
+
+> Field nào trong guide ghi `enum \`X\`` thì **chỉ được gửi/nhận đúng các giá trị liệt kê dưới đây** — gửi giá trị khác → 422. Enum đánh dấu `(read-only)` = chỉ xuất hiện trong response, FE không bao giờ gửi lên.
+
+### 1.1. Identity & Access
+
+**`RoleCode`** — vai trò user (gán khi tạo tài khoản, nằm trong JWT):
+| Giá trị | Ý nghĩa |
+|---|---|
+| `MANGAKA` | Tác giả — tạo series/chapter, phân vùng, giao task, review trợ lý |
+| `ASSISTANT` | Trợ lý — nhận task (background/screentone/...), nộp kết quả |
+| `EDITOR` | Biên tập viên — claim series, review proposal/Name/manuscript, đặt deadline, pitch lên Board |
+| `BOARD_MEMBER` | Thành viên Hội đồng — vote quyết định serial hóa / hủy / đổi format |
+| `SUPER_ADMIN` | Quản trị hệ thống — tạo Editor/Board, moderation user, config |
+
+**`UserStatus`** — vòng đời tài khoản:
+| Giá trị | Ý nghĩa |
+|---|---|
+| `INACTIVE` | Vừa đăng ký, CHƯA verify email (chưa login được đầy đủ) |
+| `ACTIVE` | Đang hoạt động bình thường |
+| `BANNED` | Bị cấm vĩnh viễn (vi phạm) — login → 403 `Error.AccountBanned` |
+| `BLOCKED` | Bị khóa tạm thời — login → 403 như BANNED, admin có thể mở lại |
+
+**`RegistrationType`** (read-only): `SELF_REGISTERED` (Mangaka/Assistant tự đăng ký) · `ADMIN_CREATED` (Editor/Board do Super Admin cấp, bị ép đổi mật khẩu lần đầu).
+
+**`OtpPurpose`** (nội bộ BE, FE không gửi): `REGISTER` (verify email đăng ký) · `FORGOT_PASSWORD` (đặt lại mật khẩu) · `SIGNING_CONTRACT` (ký hợp đồng bằng OTP) · `VOTE` (guest voting).
+
+### 1.2. Series & Proposal
+
+**`SeriesStatus`** — state machine vòng đời Series (Flow 1 + Flow 5):
+| Giá trị | Ý nghĩa |
+|---|---|
+| `DRAFT` | Mangaka đang soạn proposal, chưa submit — sửa/xoá tự do |
+| `IN_REVIEW` | Đã submit, vào hàng đợi / đang được Editor review (proposal + Name) |
+| `READY_TO_PITCH` | Proposal APPROVED **và** Name APPROVED — Editor sẵn sàng pitch |
+| `PITCHED` | Editor đã mở BoardDecision SERIALIZATION, chờ Board vote |
+| `SERIALIZED` | Board duyệt — series chính thức được đăng định kỳ (tạo chapter được) |
+| `HIATUS` | Tạm ngưng (Mangaka nghỉ) — không tính at-risk, TIME_BOUND dừng đồng hồ |
+| `COMPLETING` | Đang kết thúc tự nhiên (Board duyệt COMPLETION) — vẫn tạo được chương cuối, không giới hạn |
+| `CANCELLING` | Bị Board hủy — chỉ được tạo thêm đúng `endingChapterAllowance` chương kết thúc |
+| `COMPLETED` | Đã kết thúc tự nhiên (terminal) |
+| `CANCELLED` | Đã hủy xong (terminal) |
+| `REJECTED` | Board từ chối serial hóa (Mangaka có thể sửa và nộp lại từ DRAFT) |
+| `ABANDONED` | Editor từ chối hẳn concept ở giai đoạn review (terminal) |
+| `WITHDRAWN` | Mangaka tự rút hồ sơ (terminal) |
+
+**`ProposalStatus`** — trạng thái hồ sơ proposal (embedded trong Series):
+| Giá trị | Ý nghĩa |
+|---|---|
+| `DRAFT` | Đang soạn |
+| `PROPOSAL_REVIEW` | Đã submit, chờ/đang được Editor review |
+| `PROPOSAL_REVISION` | Editor yêu cầu sửa — Mangaka được PUT cập nhật rồi resubmit |
+| `PROPOSAL_APPROVED` | Editor đã duyệt concept |
+| `PITCHED` | Đã pitch lên Board |
+| `APPROVED` / `REJECTED` | Kết quả Board |
+| `WITHDRAWN` | Mangaka rút |
+
+**`NameStatus`** — trạng thái storyboard Name (nguồn sự thật duy nhất, cho cả proposal-Name lẫn chapter-Name): `DRAFT` (đang vẽ) → `SUBMITTED` (đã nộp) → `IN_REVIEW` (Editor đang xem) ⇄ `REVISION` (bị yêu cầu sửa — Mangaka sửa trang + resubmit, `version` tăng) → `APPROVED` (duyệt — với chapter-Name: **mở gate upload page**).
+
+**`NameKind`**: `PROPOSAL` (Name chương mẫu nộp kèm proposal — thao tác qua `/series/:id/names/*`) · `CHAPTER` (storyboard từng chương — thao tác qua `/chapters/:id/names/*`).
+
+**`Genre`** (17 giá trị — thể loại, mảng nhiều giá trị/series): `ACTION`, `ADVENTURE`, `COMEDY`, `DRAMA`, `FANTASY`, `HORROR`, `MYSTERY`, `ROMANCE`, `SCI_FI`, `SLICE_OF_LIFE`, `SPORTS`, `SUPERNATURAL`, `THRILLER`, `HISTORICAL`, `ISEKAI`, `MECHA`, `PSYCHOLOGICAL`. Dùng cho: proposal, filter danh bạ, hồ sơ staff (`specialtyGenres` — engine auto-assign Board chấm điểm theo field này).
+
+**`Demographic`** — phân khúc độc giả mục tiêu: `SHONEN` (nam thiếu niên) · `SEINEN` (nam trưởng thành) · `SHOJO` (nữ thiếu niên) · `JOSEI` (nữ trưởng thành) · `KODOMO` (trẻ em).
+
+**`PublicationType`** — nhịp xuất bản (Board quyết khi serialize, đổi qua FORMAT_CHANGE): `WEEKLY` (tuần — ngưỡng cảnh báo deadline gắt hơn) · `MONTHLY` (tháng) · `IRREGULAR` (không định kỳ).
+
+**`RelationshipType`** — quan hệ franchise với series gốc (Flow 12): `SEQUEL` (hậu truyện) · `SPINOFF` (ngoại truyện nhân vật phụ) · `SIDE_STORY` (truyện phụ cùng vũ trụ) · `REBOOT` (làm lại).
+
+**`FranchiseConsentStatus`** (read-only): `PENDING` (chờ Mangaka gốc đồng ý — series con bị chặn submit) · `APPROVED` (được phép) · `REJECTED` (từ chối — vẫn chặn submit).
+
+### 1.3. Chapter Production
+
+**`ChapterStatus`** (read-only — DẪN XUẤT từ Manuscript, FE không set):
+| Giá trị | Ý nghĩa |
+|---|---|
+| `DRAFT` | Name-phase: chapter đã tạo slot, Name chưa có hoặc chưa APPROVED (chưa upload page được) |
+| `IN_PRODUCTION` | Đang sản xuất (Manuscript từ IN_PRODUCTION → READY_FOR_PRINT) |
+| `COMPLETED` | (dự phòng — hiện Manuscript điều khiển trực tiếp sang PUBLISHED) |
+| `PUBLISHED` | Đã xuất bản |
+
+**`ManuscriptStatus`** — state machine sản xuất bản thảo:
+| Giá trị | Ý nghĩa |
+|---|---|
+| `DRAFT` | Khởi tạo cùng chapter (chapter-first), chưa có page |
+| `IN_PRODUCTION` | Có page đầu tiên — đang vẽ / giao task |
+| `COMPOSITE_REVIEW` | Mọi task đã nộp — Mangaka đang duyệt bản tổng hợp từng trang |
+| `EDITOR_REVIEW` | Mangaka đã nộp cho Editor final check |
+| `EDITOR_REVISION` | Editor yêu cầu sửa (annotate) — Mangaka sửa rồi resubmit |
+| `READY_FOR_PRINT` | Editor đã duyệt — chờ publish |
+| `AWAITING_CO_OWNER_APPROVAL` | Series có co-owner (PARTIAL_TRANSFER) — chờ Mangaka gốc duyệt trước khi phát hành |
+| `PUBLISHED` | Đã xuất bản (emit sự kiện cho payment + ranking) |
+
+**`PageStatus`**: `NOT_STARTED` (chưa có task) → `IN_PROGRESS` (task đầu tiên bắt đầu) → `COMPOSITE_READY` (mọi task trên trang đã SUBMITTED — auto bởi cascade) → `COMPLETED` (mọi task APPROVED).
+
+**`ChapterHoldAction`** (read-only, trong `holdHistory[]`): `HOLD` · `RESUME`. Lưu ý: hold KHÔNG phải một `ChapterStatus` — chapter đang hold có object `hold != null`, mọi mutation sản xuất bị chặn 409 `Error.ChapterOnHold`.
+
+### 1.4. Region / Task / AI
+
+**`RegionType`** — loại vùng trên trang: `PANEL` (khung truyện) · `BACKGROUND` (nền cần vẽ) · `SPEECH_BUBBLE` (bóng thoại) · `SFX` (hiệu ứng chữ/âm thanh) · `CHARACTER` (nhân vật).
+
+**`TaskStatus`** — vòng đời task giao trợ lý:
+| Giá trị | Ý nghĩa |
+|---|---|
+| `ASSIGNED` | Vừa giao, Assistant chưa bắt đầu |
+| `IN_PROGRESS` | Assistant đã bấm start |
+| `SUBMITTED` | Đã nộp kết quả (tạo TaskVersion mới) |
+| `UNDER_REVIEW` | Mangaka đang review (trạng thái trung gian khi approve) |
+| `APPROVED` | Duyệt — trigger cascade Page/Manuscript |
+| `REVISION_REQUESTED` | Bị yêu cầu sửa — Assistant start/submit lại (version tăng) |
+| `ON_HOLD` | Assistant nghỉ (ON_LEAVE/UNAVAILABLE) — Mangaka reassign được |
+| `CANCELLED` | Bị hủy (xóa region / Mangaka hủy tay) — giữ lịch sử version |
+
+**`TaskVersionReviewStatus`** — trạng thái từng bản nộp: `PENDING` (chờ review) · `APPROVED` · `REVISION_REQUESTED`.
+
+**`Specialization`** — chuyên môn Assistant = loại việc giao được: `BACKGROUND` (vẽ nền) · `SCREENTONE` (dán tone) · `EFFECT_LINES` (speed line/hiệu ứng) · `INKING` (đi mực) · `COLORING` (tô màu) · `LETTERING` (chữ/thoại).
+
+**`AvailabilityStatus`** — Assistant tự khai: `AVAILABLE` (nhận việc) · `BUSY` (bận) · `ON_LEAVE` (nghỉ phép — task đang làm auto ON_HOLD) · `UNAVAILABLE` (ngừng nhận — cũng auto ON_HOLD).
+
+**`AiJobType`**: `SEGMENT` (đang dùng) · `COLOR`, `NUMBER` (dự phòng tương lai).
+**`AiJobStatus`**: `QUEUED` → `RUNNING` → `SUCCEEDED` | `FAILED` (FE poll `GET /ai-jobs/:id`).
+**`AiSegmentMode`**: `MODEL` (YOLO deep-learning — chính xác hơn, chậm hơn) · `HEURISTIC` (OpenCV baseline — nhanh, fallback).
+
+### 1.5. Studio & Review
+
+**`CollaborationInviteStatus`**: `PENDING` (chờ Assistant trả lời) · `ACCEPTED` (→ sinh StudioAssignment ACTIVE) · `DECLINED` (Assistant từ chối) · `EXPIRED` (quá hạn) · `CANCELLED` (Mangaka rút lời mời).
+
+**`StudioAssignmentStatus`**: `ACTIVE` (đang hợp tác — điều kiện để giao task; hết `hireEnd` tự coi như kết thúc, KHÔNG có giá trị EXPIRED riêng) · `COMPLETED` (kết thúc trọn vẹn) · `TERMINATED` (Mangaka chấm dứt sớm, kèm lý do).
+
+**`ReviewStage`** (annotation): `ASSISTANT` · `MANGAKA` · `EDITOR` — giai đoạn review mà annotation thuộc về.
+
+### 1.6. Contract & Payment (Flow 6)
+
+**`ContractType`** — **biến điều khiển Ownership Principle** (chi phối Reprint/Transfer/Franchise):
+| Giá trị | Ý nghĩa |
+|---|---|
+| `FULL_BUYOUT` | NXB mua đứt 100% — Board toàn quyền tái bản/chuyển nhượng/franchise, KHÔNG cần hỏi Mangaka |
+| `REVENUE_SHARE` | Ăn chia % sở hữu — mọi quyết định lớn (reprint, transfer, sequel) PHẢI có Mangaka đồng ý; Mangaka nhận chia lợi nhuận định kỳ |
+
+**`ContractStatus`** — vòng đời hợp đồng:
+| Giá trị | Ý nghĩa |
+|---|---|
+| `DRAFT` | Editor đang soạn |
+| `MANGAKA_REVIEW` | Đã gửi Mangaka xem |
+| `NEGOTIATION` | Có bên yêu cầu sửa — Editor chỉnh rồi gửi lại (reset mọi phê duyệt trước đó) |
+| `MANGAKA_APPROVED` | Mangaka đồng ý điều khoản → chuyển Board duyệt |
+| `BOARD_APPROVED` | Board đồng ý — đủ điều kiện ký |
+| `MANGAKA_SIGNED` | Mangaka đã ký (OTP) |
+| `FULLY_EXECUTED` | Cả 2 bên ký — **khóa cứng** (sửa phải qua Amendment); điều kiện để publish chapter |
+| `FULFILLED` | Hoàn thành trọn nghĩa vụ (series COMPLETED) |
+| `TERMINATED` | Tất toán do series bị CANCEL (mốc đã đạt vẫn trả + compensation) |
+| `TERMINATED_BY_BREACH` | Chấm dứt do Mangaka vi phạm (không compensation) |
+| `EXPIRED` | Hết hạn hợp đồng |
+| `VOIDED` | Hủy trước khi ký xong |
+
+**`ConditionType`** — loại điều kiện giải ngân (`thresholdConfig` khác nhau từng loại — xem route B-CON-04):
+| Giá trị | Ý nghĩa |
+|---|---|
+| `CHAPTER_MILESTONE` | Mốc chương tuyệt đối: đủ N chương published → trả M |
+| `RECURRING_CHAPTER` | Lặp: cứ mỗi N chương → trả M (series mở không biết trước số chương) |
+| `RANKING_MILESTONE` | Đạt top X trong Y kỳ ranking liên tiếp → bonus |
+| `TIME_BOUND` | Trong hạn D đạt N chương → trả M; quá hạn không đạt → MISSED. Series HIATUS → **dừng đồng hồ** |
+
+**`PaymentConditionStatus`**: `PENDING` (đang theo dõi) · `ACHIEVED` (đã đạt — sinh PaymentRecord) · `PAID` · `CANCELLED` · `MISSED` (TIME_BOUND quá hạn) · `DISABLED` (tạm tắt — vd trong lúc HIATUS).
+
+**`PaymentType`** — bản chất khoản chi: `CONDITION_PAYOUT` · `REVENUE_SHARE` (chia lợi nhuận kỳ) · `COMPENSATION` (bồi thường termination) · `CHAPTER_MILESTONE` / `RECURRING_CHAPTER` / `RANKING_MILESTONE` / `TIME_BOUND` (payout theo loại điều kiện) · `TRANSFER` (tiền chuyển nhượng B trả A).
+
+**`PaymentSource`** — nguồn phát sinh: `CONTRACT` · `REPRINT` · `TRANSFER` · `TERMINATION` · `MANUAL`.
+
+**`PaymentRecordStatus`**: `TRIGGERED` (điều kiện vừa đạt, chờ duyệt) → `APPROVED` (Board duyệt chi) → `PAID` (đã chi, có `paidAt`); nhánh khác: `PENDING` · `MISSED` · `FAILED` · `CANCELLED`.
+
+**`ContractAmendmentStatus`** — phụ lục sửa HĐ đã ký: `DRAFT` (soạn/sửa được) → `PENDING_SIGNATURES` (trình ký — reject sẽ về DRAFT + reset chữ ký) → `FULLY_EXECUTED` (đủ chữ ký → ghi đè điều khoản lên HĐ gốc + log ContractVersion) | `VOIDED`.
+
+**`AmendmentTrigger`**: `MANUAL` (Editor tự tạo) · `FORMAT_CHANGE` / `COMPLETION` (auto-sinh DRAFT khi Board quyết Flow 5, nhắc Editor hoàn thiện).
+
+### 1.7. Board & Decision (Flow 1/5/7/8)
+
+**`BoardSessionStatus`**: `UPCOMING` (đã lên lịch, chưa tới giờ — chưa vote được) → `ACTIVE` (đang họp — vote được; auto-start bởi cron khi tới `startTime` hoặc start tay) → `CONCLUDED` (bế mạc — decision còn treo bị sweep sang EXPIRED).
+
+**`DecisionType`** — loại quyết định: `SERIALIZATION` (duyệt serial hóa — Flow 1) · `CANCELLATION` (hủy series) · `FORMAT_CHANGE` (đổi nhịp/tạp chí) · `COMPLETION` (kết thúc tự nhiên) · `CONTINUE`/`CANCEL`/`HIATUS`/`ENDING_ALLOWANCE` (giá trị lifecycle bổ trợ) · `SERIES_CONTRACT_APPROVAL`/`CONTRACT` (liên quan hợp đồng) · `REPRINT` · `TRANSFER`.
+
+**`BoardDecisionResult`** (read-only): `PENDING` (đang vote) · `PENDING_QUORUM` (chưa đủ quorum) · `APPROVED` · `REJECTED` · `EXPIRED` (phiên bế mạc mà chưa chốt — series giữ nguyên trạng thái, Editor mở phiên mới).
+
+**`VoteValue`**: `APPROVE` · `REJECT` · `ABSTAIN` (trắng).
+
+### 1.8. Survey / Voting / Ranking (Flow 4)
+
+**`SurveyStatus`** — kỳ bình chọn: `DRAFT` → `OPEN` (guest vote được) → `CLOSED` (hết nhận phiếu) → `REFLECTED` (đã finalize + công bố — `GET /vote/results` chỉ trả khi REFLECTED).
+
+**`ReaderAuthMethod`** — cách guest xác thực: `EMAIL_OTP` (đang dùng) · `PHONE_OTP` (dự phòng SMS) · `CAPTCHA_ONLY` (dự phòng).
+
+**`VotingAuthMode`** — cấu hình hệ thống: `OTP` · `CAPTCHA` · `HYBRID`.
+
+**`RiskLevel`** (read-only, tín hiệu nội bộ — KHÔNG trả ở route public): `NONE` (an toàn) · `LOW` (bottom 1/3 kỳ này) · `MEDIUM` (bottom 1/3 ≥3 kỳ liên tiếp) · `SEVERE` (≥5 kỳ — feed Board xem xét hủy, trigger Flow 5).
+
+### 1.9. Reprint / Transfer (Flow 7/8)
+
+**`ReprintRequestStatus`**: `PENDING`/`PROPOSED` (vừa tạo) → [REVENUE_SHARE: `MANGAKA_REVIEW` → `MANGAKA_APPROVED` | `REJECTED_BY_MANGAKA`] → `BOARD_APPROVED`/`APPROVED` (vào sản xuất) → `IN_PRODUCTION` → `PUBLISHED`; `REJECTED` (Board từ chối).
+
+**`ReprintChapterStatus`** — từng chương trong bản tái bản: `PENDING` (chờ xử lý) · `IN_REVISION` (đang sửa — WITH_REVISION) · `READY` (sẵn sàng check) · `APPROVED` (Editor duyệt) · `PUBLISHED`.
+
+**`ReprintRevisionMode`**: `AS_IS` (in lại nguyên bản — dùng manuscript gốc) · `WITH_REVISION` (Mangaka/reviser sửa art trước khi in).
+
+**`ReviserType`** — người sửa khi Mangaka gốc không hợp tác (chỉ FULL_BUYOUT): `INTERNAL_TEAM` (đội nội bộ NXB) · `OTHER_MANGAKA` (mangaka khác).
+
+**`TransferType`** (chỉ có nghĩa khi HĐ gốc REVENUE_SHARE): `FULL_TRANSFER` (B mua trọn phần của A — A rời hẳn) · `PARTIAL_TRANSFER` (A giữ một phần → thành **co-owner**, duyệt từng chapter mới trước khi publish).
+
+**`TransferRequestStatus`**: `SUBMITTED` (B nộp hồ sơ) → `UNDER_REVIEW` (Board sàng lọc) → [`REJECTED_BY_BOARD`] → `NEGOTIATING` (Editor deal với A — chỉ REVENUE_SHARE) → [`REJECTED_BY_ORIGINAL_MANGAKA`] → `PROPOSED`/`ACCEPTED` → hoàn tất; `REJECTED` · `CANCELLED`.
+
+**`TransferContractStatus`** — ký 3 bên: `DRAFT` → `A_SIGNED` (Mangaka gốc ký) → `B_SIGNED` (Mangaka nhận ký) → `BOARD_SIGNED` → `FULLY_EXECUTED` (cập nhật ownership + `Series.coOwnerId` nếu PARTIAL) | `VOIDED`.
+
+**`CoOwnerApprovalStatus`** (read-only): `PENDING` (chờ co-owner duyệt chapter) · `APPROVED` · `REJECTED` · `ESCALATED` (quá hạn grace — cron báo Board).
+
+### 1.10. Deadline / Publication / Khác
+
+**`DeadlineRequestStatus`** (Flow 10): `PROPOSED` (một phe đề xuất) ⇄ `COUNTER_PROPOSED` (phe kia counter — turn-taking) → `AGREED_BY_PARTIES` (2 phe đồng ý) → `APPROVED` (Editor finalize — cập nhật Schedule) | `BOARD_REVIEW` (ảnh hưởng slot → Board resolve) | `ESCALATED` (bất đồng → Board phân xử) | `REJECTED` (rút/từ chối).
+
+**`ReadingDirection`** (Flow 13): `RTL` (phải-qua-trái — manga gốc Nhật) · `LTR` (trái-qua-phải — bản dịch phương Tây).
+
+**`AnnotationTargetType`** — annotation gắn lên: `PAGE` · `REGION` · `TASK` · `MANUSCRIPT` · `NAME`.
+**`AnnotationType`** — hình thức markup: `TEXT` (ghi chú) · `HIGHLIGHT` (khoanh vùng) · `DRAWING` (vẽ đè).
+
+**`AssetType`** — phân loại file đính kèm: `REFERENCE` (ảnh tham khảo) · `BACKGROUND` · `SCREENTONE` · `BRUSH` · `OTHER`.
+
+**`NotificationType`** — nhóm thông báo (dùng filter): `SYSTEM` · `CONTRACT` · `TASK` · `DEADLINE` · `SURVEY` · `BOARD` · `REVIEW`.
+
+**`AuditEntityType`** (read-only — `GET /audit`): `SERIES`, `MANUSCRIPT`, `PAGE`, `CHAPTER`, `TASK`, `DEADLINE_REQUEST`, `USER`, `REGION`, `APP_CONFIG`, `CONTRACT`, `BOARD_DECISION`, `REPRINT_REQUEST`, `TRANSFER_REQUEST`, `PAYMENT_RECORD`, `SURVEY_PERIOD`, `PUBLICATION_VERSION`.
+
+**`WarningLevel`** (read-only — `GET /chapters/:id/progress`): `NONE` (an toàn) · `YELLOW` (nguy cơ — weekly: ≤2 ngày & <70%; monthly: ≤5 ngày & <60%) · `RED` (khó kịp — weekly: ≤1 ngày & <90%; monthly: ≤2 ngày & <85%) · `CRITICAL` (quá hạn). *(Enum tính toán, không nằm trong Prisma.)*
+
+---
+
+## §2. Auth, Tài khoản & Hồ sơ (Flow 11)
+
+**Nghiệp vụ:** Mangaka/Assistant **tự đăng ký** → verify email bằng OTP → ACTIVE ngay (KHÔNG cần admin duyệt). Editor/Board Member do **Super Admin cấp tài khoản** (mật khẩu tạm, bị ép đổi lần đầu). Mỗi role có hồ sơ nghề nghiệp riêng: `MangakaProfile` / `AssistantProfile` / `StaffProfile` (Editor + Board dùng chung — Spec 12); thông tin tài khoản chung (tên, avatar, SĐT) sửa qua `PATCH /me`.
+
+### Happy path — tự đăng ký (Mangaka/Assistant)
+
+1. `POST /auth/register` (`type` = MANGAKA | ASSISTANT) → 201, tài khoản `INACTIVE`, OTP gửi vào email.
+2. `POST /auth/verify-email` với `{email, code}` → `ACTIVE` + `emailVerified=true`.
+3. `POST /auth/login` → `{accessToken, refreshToken, mustChangePassword:false}`.
+4. Build hồ sơ: `PUT /me/mangaka-profile` hoặc `PUT /me/assistant-profile`; sửa tên/avatar/SĐT qua `PATCH /me`.
+5. Access hết hạn → `POST /auth/refresh-token`; đăng xuất → `POST /auth/logout`.
+
+### Happy path — admin cấp tài khoản (Editor/Board)
+
+1. Super Admin `POST /admin/users` (roleCode EDITOR | BOARD_MEMBER) → mật khẩu tạm trả 1 lần (+ email best-effort), `mustChangePassword=true`.
+2. User login → bị `PasswordPolicyGuard` chặn 403 mọi route → `POST /auth/change-password` → dùng bình thường.
+3. Editor/Board build hồ sơ `PUT /me/staff-profile` (khai `specialtyGenres` — **quan trọng**: engine auto-assign Board dùng field này, Flow 1).
+
+### Đăng nhập Google
+
+`POST /auth/google` với Google ID token — chỉ **link vào tài khoản có sẵn** (match email), KHÔNG tự tạo tài khoản mới.
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Email đã tồn tại | `POST /auth/register` | 409 `Error.EmailAlreadyExists` |
+| Mật khẩu yếu (<8, thiếu hoa/thường/số) / phone sai E.164 | `POST /auth/register` | 422 field-level |
+| Xin OTP dồn dập (quota email/IP, cooldown 60s) | register / send-otp-email | 429 `Error.OtpRateLimited` + `retryAfter` |
+| OTP sai quá số lần | `POST /auth/verify-email` | 422 `Error.OtpLocked` (phải xin OTP mới) |
+| OTP hết hạn (5 phút) | verify-email / forgot-password | 410 `Error.OTPExpired` |
+| Verify lần 2 | `POST /auth/verify-email` | 409 `Error.EmailAlreadyVerified` |
+| Login khi chưa verify email | `POST /auth/login` | 403 `Error.EmailNotVerified` |
+| Login khi bị BANNED/BLOCKED | `POST /auth/login` | 403 `Error.AccountBanned` |
+| Sai email / sai mật khẩu | `POST /auth/login` | 422 field-level (`Error.EmailNotFound` / `Error.InvalidPassword`) |
+| Refresh token đã dùng (replay) / hết hạn | `POST /auth/refresh-token` | 401 `Error.RefreshTokenAlreadyUsed` / 401 |
+| Google token sai chữ ký | `POST /auth/google` | 401 `Error.InvalidGoogleToken` |
+| Email Google chưa có tài khoản | `POST /auth/google` | 403 `Error.GoogleAccountNotRegistered` |
+| Chưa đổi mật khẩu tạm mà gọi route khác | mọi route (kể cả `GET /me`) | 403 (by design — FE đọc cờ `mustChangePassword` từ login) |
+| `PATCH /me` gửi `email`/`role`/`status` | `PATCH /me` | 422 (schema strict — không cho tự đổi) |
+| Xem hồ sơ user sai role route (vd `GET /mangakas/:id` với id Assistant) | public profile | 404 |
+| User đúng role nhưng chưa build hồ sơ | `GET /mangakas\|assistants\|staff/:userId` | 200 graceful: `hasProfile:false` + basics + field default rỗng |
+
+**Quy ước `PATCH /me`:** omit/`null` = giữ nguyên; `''` = XÓA (chỉ `displayName`/`avatar`). `name`/`phoneNumber` không xoá được (bắt buộc trên User).
+
+### API Reference
+
+#### `POST /auth/register`
+> Dang ky Mangaka/Assistant -> User INACTIVE + gui OTP (purpose=REGISTER). Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`RegisterBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `email` | string (regex) ✍ | ✅ | Email đăng nhập |
+| `name` | string (2..100 ký tự) ✍ | ✅ | Tên |
+| `phoneNumber` | string (regex) ✍ | ✅ | E.164 format, e.g. +84912345678 |
+| `password` | string (regex) ✍ | ✅ | Mật khẩu ≥8 ký tự, có hoa/thường/số |
+| `displayName` | string (2..100 ký tự) ✍ | ✅ | Tên hiển thị (null = dùng name) |
+| `confirm_password` | string (8..100 ký tự) ✍ | ✅ |  |
+| `type` | enum `ReviewStage` | ✅ | Allowed role codes: MANGAKA, ASSISTANT |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 409 | `Error.EmailAlreadyExists` | email is already used |
+| 422 | — | Validation (password >=8, hoa/thuong/so; roleCode chi MANGAKA/ASSISTANT) |
+| 429 | `Error.OtpRateLimited` | too many OTP requests |
+
+---
+
+#### `POST /auth/verify-email`
+> Xac thuc email bang OTP -> emailVerified=true + status=ACTIVE. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`VerifyEmailBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `email` | string (regex) ✍ | ✅ | Email đăng nhập |
+| `code` | string (6..6 ký tự) ✍ | ✅ | Mã OTP 6 số |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 409 | `Error.EmailAlreadyVerified` | email is already verified |
+| 410 | `Error.OTPExpired` | OTP code has expired |
+| 422 | `Error.InvalidOTP` | OTP code is invalid |
+| 422 | `Error.OTPLocked` | OTP attempts are locked |
+| 422 | `Error.EmailNotFound` | email does not exist |
+
+---
+
+#### `POST /auth/login`
+> Dang nhap (email + password) -> access JWT + refresh token. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`LoginBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `email` | string (regex) ✍ | ✅ | Email đăng nhập |
+| `password` | string (6..100 ký tự) ✍ | ✅ | Mật khẩu ≥8 ký tự, có hoa/thường/số |
+
+**Response 201** (`LoginRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `user` | object | ✅ |  |
+| `user.id` | string | ✅ | ObjectId của bản ghi |
+| `user.email` | string (regex) | ✅ | Email đăng nhập |
+| `user.name` | string (2..100 ký tự) | ✅ | Tên |
+| `user.displayName` | string (2..100 ký tự) | ✅ | Tên hiển thị (null = dùng name) |
+| `user.phoneNumber` | string (9..15 ký tự) | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `user.role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `accessToken` | string | ✅ | JWT access (TTL ngắn) — gắn Authorization: Bearer |
+| `refreshToken` | string | ✅ | JWT refresh (TTL dài) — đổi access mới qua /auth/refresh-token |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.AccountBanned` | account is banned or blocked |
+| 403 | `Error.EmailNotVerified` | email is not verified |
+| 422 | `Error.EmailNotFound` | email does not exist |
+| 422 | `Error.InvalidPassword` | password is invalid |
+
+---
+
+#### `POST /auth/google`
+> Dang nhap Google (FE gui idToken) -> access + refresh. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`GoogleLoginBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `idToken` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 201** (`LoginRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `user` | object | ✅ |  |
+| `user.id` | string | ✅ | ObjectId của bản ghi |
+| `user.email` | string (regex) | ✅ | Email đăng nhập |
+| `user.name` | string (2..100 ký tự) | ✅ | Tên |
+| `user.displayName` | string (2..100 ký tự) | ✅ | Tên hiển thị (null = dùng name) |
+| `user.phoneNumber` | string (9..15 ký tự) | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `user.role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `accessToken` | string | ✅ | JWT access (TTL ngắn) — gắn Authorization: Bearer |
+| `refreshToken` | string | ✅ | JWT refresh (TTL dài) — đổi access mới qua /auth/refresh-token |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 401 | `Error.InvalidGoogleToken` | google token is invalid |
+| 403 | `Error.GoogleEmailNotVerified` | google email is not verified |
+| 403 | `Error.GoogleAccountNotRegistered` | google account is not registered |
+| 403 | `Error.AccountBanned` | account is banned or blocked |
+| 403 | `Error.EmailNotVerified` | email is not verified |
+| 409 | `Error.GoogleAccountMismatch` | google account does not match existing account |
+
+---
+
+#### `POST /auth/refresh-token`
+> Rotate refresh token -> cap access moi + revoke refresh cu. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`RefreshTokenBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `refreshToken` | string ✍ | ✅ | JWT refresh (TTL dài) — đổi access mới qua /auth/refresh-token |
+
+**Response 201** (`RefreshTokenRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `user` | object | ✅ |  |
+| `user.id` | string | ✅ | ObjectId của bản ghi |
+| `user.email` | string (regex) | ✅ | Email đăng nhập |
+| `user.name` | string (2..100 ký tự) | ✅ | Tên |
+| `user.displayName` | string (2..100 ký tự) | ✅ | Tên hiển thị (null = dùng name) |
+| `user.phoneNumber` | string (9..15 ký tự) | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `user.role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `accessToken` | string | ✅ | JWT access (TTL ngắn) — gắn Authorization: Bearer |
+| `refreshToken` | string | ✅ | JWT refresh (TTL dài) — đổi access mới qua /auth/refresh-token |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 401 | `Error.UnauthorizedAccess` | authentication token is missing or invalid |
+| 401 | `Error.RefreshTokenAlreadyUsed` | refresh token has already been used |
+| 403 | `Error.AccountBanned` | account is banned or blocked |
+| 403 | `Error.EmailNotVerified` | email is not verified |
+
+---
+
+#### `POST /auth/logout`
+> Logout -> revoke refresh token hien tai. Public (gui refresh token trong body).
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`LogoutBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `refreshToken` | string ✍ | ✅ | JWT refresh (TTL dài) — đổi access mới qua /auth/refresh-token |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 401 | `Error.UnauthorizedAccess` | authentication token is missing or invalid |
+
+---
+
+#### `POST /auth/send-otp-email`
+> Gui lai OTP qua email (cho tai khoan chua verify). Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`SendOtpBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `email` | string (regex) ✍ | ✅ | Email đăng nhập |
+| `purpose` | enum `OtpPurpose` | ✅ | OTP purpose: REGISTER, FORGOT_PASSWORD, SIGNING_CONTRACT |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | `Error.EmailNotFound` | email does not exist |
+| 422 | `Error.EmailAlreadyExists` | email is already used |
+| 429 | `Error.OtpRateLimited` | too many OTP requests |
+
+---
+
+#### `POST /auth/forgot-password`
+> Dat lai mat khau bang OTP (purpose=FORGOT_PASSWORD) + revoke toan bo refresh token. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`ForgotPasswordBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `email` | string (regex) ✍ | ✅ | Email đăng nhập |
+| `code` | string (6..6 ký tự) ✍ | ✅ | Mã OTP 6 số |
+| `newPassword` | string (regex) ✍ | ✅ |  |
+| `confirmNewPassword` | string (8..100 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 410 | `Error.OTPExpired` | OTP code has expired |
+| 422 | `Error.EmailNotFound` | email does not exist |
+| 422 | `Error.InvalidOTP` | OTP code is invalid |
+| 422 | `Error.OTPLocked` | OTP attempts are locked |
+| 422 | `Error.InvalidPassword` | password is invalid |
+
+---
+
+#### `POST /auth/change-password`
+> Doi mat khau (user da dang nhap; dung cho lan dau mustChangePassword)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Body** (`ChangePasswordBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `currentPassword` | string (6..100 ký tự) ✍ | ✅ |  |
+| `newPassword` | string (regex) ✍ | ✅ |  |
+| `confirmNewPassword` | string (8..100 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | `Error.InvalidPassword` | password is invalid |
+
+---
+
+#### `GET /me`
+> Xem thông tin tài khoản của chính mình (mọi role)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`MeRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `email` | string | ✅ | Email đăng nhập |
+| `name` | string | ✅ | Tên |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `avatar` | string | ✅ | Object key trên R2 (A7) — FE đổi sang signed GET để hiển thị |
+| `phoneNumber` | string | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `status` | enum `UserStatus` | ✅ | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `emailVerified` | boolean | ✅ | true = đã xác thực email |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+
+---
+
+#### `PATCH /me`
+> Cập nhật thông tin tài khoản của chính mình (name/displayName/avatar/phoneNumber). '' = xoá field nullable
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Body** (`UpdateMeBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `name` | string (2..100 ký tự) ✍ | — | Tên |
+| `displayName` | string (0..100 ký tự) ✍ | — | Chuỗi rỗng '' = XOÁ; omit/null = giữ nguyên |
+| `avatar` | string (0..500 ký tự) ✍ | — | Object key A7. Chuỗi rỗng '' = XOÁ; omit/null = giữ nguyên |
+| `phoneNumber` | string (regex) ✍ | — | E.164 format, e.g. +84912345678 |
+
+**Response 200** (`MeRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `email` | string | ✅ | Email đăng nhập |
+| `name` | string | ✅ | Tên |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `avatar` | string | ✅ | Object key trên R2 (A7) — FE đổi sang signed GET để hiển thị |
+| `phoneNumber` | string | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `status` | enum `UserStatus` | ✅ | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `emailVerified` | boolean | ✅ | true = đã xác thực email |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+| 422 | — | Validation fail (gửi email/role/status → strict reject) |
+
+---
+
+#### `PUT /me/mangaka-profile`
+> Mangaka tạo/cập nhật hồ sơ của mình (penName/genres/level/bio/portfolio) — lazy 1:1
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`MangakaProfileBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `penName` | string (1..100 ký tự) ✍ | ✅ |  |
+| `genres` | enum `Genre`[] | — | Manga genre (mảng, nhiều thể loại / series) (default: `[]`) |
+| `experienceLevel` | string ✍ | — | Cấp kinh nghiệm |
+| `bio` | string ✍ | — | Giới thiệu bản thân (text tự do) |
+| `portfolioFiles` | string[] ✍ | — | (default: `[]`) |
+
+**Response 200** (`MangakaProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `penName` | string | ✅ |  |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `bio` | string | ✅ | Giới thiệu bản thân (text tự do) |
+| `portfolioFiles` | string[] | ✅ |  |
+| `reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `ratingCount` | number | ✅ | Số lượt đánh giá |
+| `isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `displayName` | string | — | Tên hiển thị (null = dùng name) |
+| `avatar` | string | — | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = user chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /me/mangaka-profile`
+> Mangaka xem hồ sơ của mình
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`MangakaProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `penName` | string | ✅ |  |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `bio` | string | ✅ | Giới thiệu bản thân (text tự do) |
+| `portfolioFiles` | string[] | ✅ |  |
+| `reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `ratingCount` | number | ✅ | Số lượt đánh giá |
+| `isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `displayName` | string | — | Tên hiển thị (null = dùng name) |
+| `avatar` | string | — | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = user chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+
+---
+
+#### `PUT /me/assistant-profile`
+> Assistant tạo/cập nhật hồ sơ của mình (specializations/level/availability) — lazy 1:1
+
+**Quyền:** ASSISTANT (Bearer)
+
+**Body** (`AssistantProfileBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `specializations` | enum `Specialization`[] | — | Assistant specialization/task type (default: `[]`) |
+| `experienceLevel` | string ✍ | — | Cấp kinh nghiệm |
+| `portfolioFiles` | string[] ✍ | — | (default: `[]`) |
+| `availabilityStatus` | enum `AvailabilityStatus` | — | Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE |
+| `availabilityFrom` | string (regex, ISO 8601) ✍ | — |  |
+| `availabilityTo` | string (regex, ISO 8601) ✍ | — |  |
+
+**Response 200** (`AssistantProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `specializations` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `portfolioFiles` | string[] | ✅ |  |
+| `availabilityStatus` | enum `AvailabilityStatus` | ✅ | Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE |
+| `availabilityFrom` | string | ✅ |  |
+| `availabilityTo` | string | ✅ |  |
+| `reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `ratingCount` | number | ✅ | Số lượt đánh giá |
+| `isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `displayName` | string | — | Tên hiển thị (null = dùng name) |
+| `avatar` | string | — | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = user chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /me/assistant-profile`
+> Assistant xem hồ sơ của mình
+
+**Quyền:** ASSISTANT (Bearer)
+
+**Response 200** (`AssistantProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `specializations` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `portfolioFiles` | string[] | ✅ |  |
+| `availabilityStatus` | enum `AvailabilityStatus` | ✅ | Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE |
+| `availabilityFrom` | string | ✅ |  |
+| `availabilityTo` | string | ✅ |  |
+| `reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `ratingCount` | number | ✅ | Số lượt đánh giá |
+| `isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `displayName` | string | — | Tên hiển thị (null = dùng name) |
+| `avatar` | string | — | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = user chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+
+---
+
+#### `PUT /me/staff-profile`
+> Editor/Board tạo/cập nhật hồ sơ của mình (specialtyGenres/demographics/bio) — lazy 1:1
+
+**Quyền:** EDITOR, BOARD_MEMBER (Bearer)
+
+**Body** (`StaffProfileBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `specialtyGenres` | enum `Genre`[] | — | Sở trường thể loại — dùng để auto-assign Board vào phiên pitch (PB-05) (default: `[]`) |
+| `demographics` | enum `Demographic`[] | — | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO (default: `[]`) |
+| `bio` | string (0..2000 ký tự) ✍ | — | Giới thiệu bản thân (text tự do) |
+| `yearsOfExperience` | integer (≥ 0, ≤ 80) ✍ | — | Số năm kinh nghiệm (0–80) |
+
+**Response 200** (`StaffProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `specialtyGenres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographics` | enum `Demographic`[] | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `bio` | string | ✅ | Giới thiệu bản thân (text tự do) |
+| `yearsOfExperience` | number | ✅ | Số năm kinh nghiệm (0–80) |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /me/staff-profile`
+> Editor/Board xem hồ sơ của mình
+
+**Quyền:** EDITOR, BOARD_MEMBER (Bearer)
+
+**Response 200** (`StaffProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `specialtyGenres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographics` | enum `Demographic`[] | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `bio` | string | ✅ | Giới thiệu bản thân (text tự do) |
+| `yearsOfExperience` | number | ✅ | Số năm kinh nghiệm (0–80) |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+
+---
+
+#### `GET /mangakas/:userId`
+> Xem hồ sơ Mangaka công khai (kèm reputation)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`MangakaProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `penName` | string | ✅ |  |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `bio` | string | ✅ | Giới thiệu bản thân (text tự do) |
+| `portfolioFiles` | string[] | ✅ |  |
+| `reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `ratingCount` | number | ✅ | Số lượt đánh giá |
+| `isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `displayName` | string | — | Tên hiển thị (null = dùng name) |
+| `avatar` | string | — | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = user chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+
+---
+
+#### `GET /assistants/:userId`
+> Xem hồ sơ Assistant công khai (danh bạ; kèm reputation/availability)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`AssistantProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `specializations` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `portfolioFiles` | string[] | ✅ |  |
+| `availabilityStatus` | enum `AvailabilityStatus` | ✅ | Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE |
+| `availabilityFrom` | string | ✅ |  |
+| `availabilityTo` | string | ✅ |  |
+| `reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `ratingCount` | number | ✅ | Số lượt đánh giá |
+| `isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `displayName` | string | — | Tên hiển thị (null = dùng name) |
+| `avatar` | string | — | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = user chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+
+---
+
+#### `GET /staff/:userId`
+> Xem hồ sơ Editor/Board công khai (ẩn email/phone)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`StaffProfileRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `userId` | string | ✅ | ObjectId của User |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `specialtyGenres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographics` | enum `Demographic`[] | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `bio` | string | ✅ | Giới thiệu bản thân (text tự do) |
+| `yearsOfExperience` | number | ✅ | Số năm kinh nghiệm (0–80) |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `hasProfile` | boolean | ✅ | false = chưa build hồ sơ; field profile = default rỗng |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+
+---
+
+#### `POST /admin/users`
+> Super Admin tạo Editor/Board → status=ACTIVE, registrationType=ADMIN_CREATED, mật khẩu tạm
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Body** (`AdminCreateUserBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `email` | string (regex) ✍ | ✅ | Email đăng nhập |
+| `name` | string (2..100 ký tự) ✍ | ✅ | Tên |
+| `phoneNumber` | string (regex) ✍ | ✅ | E.164 format, e.g. +84912345678 |
+| `roleCode` | enum `RoleCode` | ✅ | Allowed role codes: EDITOR, BOARD_MEMBER |
+
+**Response 201** (`AdminCreateUserRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `email` | string | ✅ | Email đăng nhập |
+| `roleCode` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `temporaryPassword` | string | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 409 | `Error.EmailAlreadyExists` | email is already used |
+| 422 | — | Validation (roleCode chỉ EDITOR/BOARD_MEMBER) |
+
+---
+
+#### `GET /admin/users`
+> Super Admin liệt kê user (filter roleCode/status/search, phân trang, ẩn chính mình + soft-deleted)
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `roleCode` | enum `RoleCode` | — | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `status` | enum `UserStatus` | — | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `search` | string (1..200 ký tự) | — |  |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+| `includeDeleted` | enum(true, false) | — |  |
+
+**Response 200** (`AdminUserListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].email` | string | ✅ | Email đăng nhập |
+| `items[].name` | string | ✅ | Tên |
+| `items[].displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `items[].phoneNumber` | string | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `items[].avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `items[].role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `items[].status` | enum `UserStatus` | ✅ | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `items[].emailVerified` | boolean | ✅ | true = đã xác thực email |
+| `items[].registrationType` | enum `RegistrationType` | ✅ | How the account was created: SELF_REGISTERED or ADMIN_CREATED |
+| `items[].mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `GET /admin/users/:id`
+> Super Admin xem chi tiết 1 user
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 200** (`AdminUserRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `email` | string | ✅ | Email đăng nhập |
+| `name` | string | ✅ | Tên |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `phoneNumber` | string | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `status` | enum `UserStatus` | ✅ | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `emailVerified` | boolean | ✅ | true = đã xác thực email |
+| `registrationType` | enum `RegistrationType` | ✅ | How the account was created: SELF_REGISTERED or ADMIN_CREATED |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+
+---
+
+#### `PATCH /admin/users/:id/status`
+> Super Admin ban/block/unban user (ACTIVE/BANNED/BLOCKED) — phạt thì revoke refresh + notify
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Body** (`AdminUpdateUserStatusBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | enum `UserStatus` | ✅ | Allowed status changes: ACTIVE, BANNED, BLOCKED. INACTIVE is not allowed (pre-verify state). |
+| `reason` | string (1..∞ ký tự) ✍ | — | Ban/block reason — included in the notification sent to the user |
+
+**Response 200** (`AdminUserRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `email` | string | ✅ | Email đăng nhập |
+| `name` | string | ✅ | Tên |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `phoneNumber` | string | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `status` | enum `UserStatus` | ✅ | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `emailVerified` | boolean | ✅ | true = đã xác thực email |
+| `registrationType` | enum `RegistrationType` | ✅ | How the account was created: SELF_REGISTERED or ADMIN_CREATED |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+| 422 | — | Error.CannotModifyAdminUser (id) - super admin users cannot be modified by admin moderation routes
+
+Validation fail (status không nhận INACTIVE) |
+
+---
+
+#### `DELETE /admin/users/:id`
+> Super Admin xóa mềm user (set deletedAt) + thu hồi toàn bộ refresh token
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+| 409 | `Error.UserAlreadyDeleted` | user has already been soft-deleted |
+| 422 | `Error.CannotModifyAdminUser` | super admin users cannot be modified by admin moderation routes |
+
+---
+
+#### `POST /admin/users/:id/restore`
+> Super Admin khôi phục user đã xóa mềm (unset deletedAt — về absent)
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 201** (`AdminUserRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `email` | string | ✅ | Email đăng nhập |
+| `name` | string | ✅ | Tên |
+| `displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `phoneNumber` | string | ✅ | Số điện thoại E.164 (vd +849xxxxxxxx) |
+| `avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `role` | enum `RoleCode` | ✅ | Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `status` | enum `UserStatus` | ✅ | User lifecycle status: INACTIVE, ACTIVE, BANNED, BLOCKED |
+| `emailVerified` | boolean | ✅ | true = đã xác thực email |
+| `registrationType` | enum `RegistrationType` | ✅ | How the account was created: SELF_REGISTERED or ADMIN_CREATED |
+| `mustChangePassword` | boolean | ✅ | true = bị chặn mọi route nghiệp vụ tới khi đổi mật khẩu |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+| 409 | `Error.UserNotDeleted` | user is not soft-deleted |
+| 422 | `Error.CannotModifyAdminUser` | super admin users cannot be modified by admin moderation routes |
+
+---
+
+#### `POST /admin/users/:id/reset-password`
+> Super Admin cấp mật khẩu tạm (trả 1 lần) + mustChangePassword + revoke refresh + email best-effort
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 201** (`AdminResetPasswordRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `temporaryPassword` | string | ✅ | Returned once only — user is forced to change it on next login |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.UserNotFound` | user does not exist |
+| 422 | `Error.CannotModifyAdminUser` | super admin users cannot be modified by admin moderation routes |
+
+---
+
+#### `GET /admin/stats`
+> Super Admin: số liệu tổng quan users/series/chapters/tasks (groupBy snapshot)
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 200** (`AdminStatsRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `users` | object | ✅ |  |
+| `users.total` | number | ✅ | Users not soft-deleted |
+| `users.deleted` | number | ✅ | Soft-deleted users |
+| `users.byStatus` | object | ✅ |  |
+| `users.byRole` | object | ✅ |  |
+| `series` | object | ✅ |  |
+| `series.total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `series.byStatus` | object | ✅ |  |
+| `chapters` | object | ✅ |  |
+| `chapters.total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `chapters.published` | number | ✅ |  |
+| `tasks` | object | ✅ |  |
+| `tasks.total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `tasks.byStatus` | object | ✅ |  |
+---
+
+## §3. Flow 1 — Series Proposal → Serialization (kèm Board engine)
+
+**Nghiệp vụ:** Mangaka nộp hồ sơ series mới (synopsis + thiết kế nhân vật + **Name chương mẫu**) → hồ sơ vào **hàng đợi review chung** → một Editor **claim** (nhận) → review lặp proposal + Name → khi CẢ HAI được duyệt → Editor **pitch** lên Hội đồng → Board họp phiên, vote (quorum, đa số >50%) → APPROVED = series `SERIALIZED` + được xếp slot (tạp chí, số bắt đầu, weekly/monthly) → tự động mở đường tạo Contract (Flow 6, §4).
+
+**State machine Series:** `DRAFT → IN_REVIEW → READY_TO_PITCH → PITCHED → SERIALIZED` (nhánh kết thúc sớm: `ABANDONED` Editor từ chối hẳn / `WITHDRAWN` Mangaka rút / `REJECTED` Board từ chối — nộp lại được).
+
+### Happy path
+
+1. **Mangaka** `POST /series/proposals` → Series `DRAFT` + proposal + Name mẫu (`kind=PROPOSAL`). Sửa: `PUT /series/proposals/:id`; xoá nháp: `DELETE /series/proposals/:id`.
+2. **Mangaka** `POST /series/:id/submit` → Series `IN_REVIEW`, proposal `PROPOSAL_REVIEW`, Name `SUBMITTED` — vào hàng đợi (Editor thấy qua `GET /series` — hàng đợi = series IN_REVIEW chưa có editor).
+3. **Editor** `POST /series/:id/claim` → thành Editor phụ trách (atomic — nhiều Editor bấm cùng lúc chỉ 1 người thắng). Chưa bắt đầu review thì được `POST /series/:id/release` nhả về hàng đợi.
+4. **Vòng review proposal:** Editor `POST /series/:id/proposal/request-revision` (kèm lý do) → Mangaka sửa (`PUT /series/proposals/:id`) → `POST /series/:id/proposal/resubmit` → ... → Editor `POST /series/:id/proposal/approve`.
+5. **Vòng review Name mẫu** (route series-scoped — CHỈ proposal-Name): Editor `POST /series/:id/names/:nameId/request-revision` → Mangaka sửa trang (`PUT .../pages` thay toàn bộ hoặc `POST .../pages` thêm 1 trang) → `POST .../resubmit` (version++) → Editor `POST .../approve`.
+6. Proposal APPROVED **và** Name APPROVED → Series tự sang `READY_TO_PITCH`.
+7. **Editor** xem gợi ý roster: `GET /board/suggest-members?seriesId=` (chấm điểm theo `specialtyGenres` khớp genres của series, luôn lẻ ≥3) → `POST /board/sessions` (tạo phiên họp — **truyền roster tay HOẶC bỏ trống `allowedEditorIds` + truyền `seriesId` để hệ thống auto-assign**) → phiên tự `ACTIVE` khi tới `startTime` (hoặc `PATCH /board/sessions/:id/start`).
+8. **Editor** `POST /series/:id/pitch` → Series `PITCHED`; mở quyết định `POST /board/decisions` (type `SERIALIZATION`, kèm slot trong `details`: magazine/startIssueNumber/publicationType). Editor đính hồ sơ `POST /board/reports`.
+9. **Board members** `POST /board/decisions/:id/vote` (APPROVE/REJECT/ABSTAIN — realtime tiến độ vote qua WS §15). Đủ quorum + >50% APPROVE → decision `APPROVED` → **hệ thống tự chuyển Series `SERIALIZED` + set slot** → thông báo Mangaka/Editor → Flow 6 bắt đầu.
+10. Phiên xong → `PATCH /board/sessions/:id/conclude` (hoặc cron auto khi quá `endTime`).
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Sửa proposal khi không phải chủ | `PUT /series/proposals/:id` | 403 `Error.NotSeriesOwner` |
+| Sửa proposal ngoài trạng thái DRAFT/PROPOSAL_REVISION | `PUT /series/proposals/:id` | 409 `Error.ProposalNotEditable` |
+| Xoá proposal khi series đã submit | `DELETE /series/proposals/:id` | 409 `Error.ProposalNotDeletable` |
+| Submit khi thiếu điều kiện (đã submit rồi / consent franchise chưa duyệt) | `POST /series/:id/submit` | 409 (`Error.InvalidSeriesTransition` / `Error.FranchiseConsentRequired`) |
+| 2 Editor claim cùng lúc | `POST /series/:id/claim` | người sau 409 `Error.SeriesAlreadyClaimed` |
+| Release sau khi đã bắt đầu review | `POST /series/:id/release` | 409 `Error.ReviewAlreadyStarted` |
+| Editor khác (không phụ trách) review/pitch | mọi action review | 403 `Error.NotAssignedEditor` |
+| Duyệt Name sai trạng thái (vd approve khi đang REVISION) | names lifecycle | 409 `Error.InvalidNameState` |
+| Gọi route series-Name với chapter-Name | `/series/:id/names/:nameId/*` | 404 `Error.NameNotFound` (tách vai Spec 12 — dùng `/chapters/:id/names/*`) |
+| Query `?kind=` trên list Name (contract cũ) | `GET /series/:id/names` | 422 (schema strict — route chỉ còn trả proposal-Name) |
+| Name sửa quá nhiều vòng (> `nameMaxReviewRounds`, mặc định 8) | resubmit | vẫn 201 — hệ thống notify cảnh báo Editor (không chặn) |
+| Pitch khi chưa READY_TO_PITCH | `POST /series/:id/pitch` | 409 `Error.SeriesNotReadyToPitch` |
+| Tạo session: roster chẵn / <3 | `POST /board/sessions` | 422 `Error.InvalidBoardMembers` |
+| Tạo session: bỏ trống roster mà không truyền seriesId | `POST /board/sessions` | 422 `Error.RosterSourceRequired` |
+| Auto-assign khi hệ thống < 3 BOARD_MEMBER active | sessions / suggest-members | 422 `Error.NotEnoughBoardMembers` |
+| Vote khi không thuộc roster phiên | `POST /board/decisions/:id/vote` | 403 (VoterNotAllowed) |
+| Vote khi phiên chưa ACTIVE / đã CONCLUDED | vote | 4xx theo trạng thái phiên |
+| Phiên bế mạc mà decision chưa đủ quorum | (cron/conclude) | decision → `EXPIRED`, series **giữ `PITCHED`**, Editor được notify mở phiên mới |
+| Board REJECT | (kết quả vote) | Series `REJECTED` + statusReason — Mangaka sửa và nộp lại |
+| Editor từ chối hẳn concept | `POST /series/:id/reject` | Series `ABANDONED` (terminal) |
+| Mangaka rút hồ sơ | `POST /series/:id/withdraw` | Series `WITHDRAWN` (terminal) |
+| Xem series ngoài scope (Mangaka xem series người khác) | `GET /series/:id` | 403 `Error.SeriesAccessDenied` |
+
+> **Scope đọc `GET /series`:** MANGAKA → của mình · EDITOR → mình phụ trách + hàng đợi (IN_REVIEW chưa ai claim) · BOARD/SUPER_ADMIN → tất cả (ẩn DRAFT/WITHDRAWN) · ASSISTANT → không có quyền.
+
+### API Reference
+
+#### `POST /series/proposals`
+> Mangaka tạo proposal mới (Series DRAFT + SeriesProposal + Name chương mẫu)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateProposalBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `title` | string (1..200 ký tự) ✍ | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string (1..∞ ký tự) ✍ | — | Object key ảnh bìa trên R2 |
+| `genres` | enum `Genre`[] | — | Manga genre (mảng, nhiều thể loại / series) (default: `[]`) |
+| `demographic` | enum `Demographic` | — | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | — | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `synopsis` | string (0..5000 ký tự) ✍ | — | Tóm tắt cốt truyện |
+| `characterDesigns` | string[] ✍ | — | Danh sách object key file thiết kế nhân vật trên R2 (default: `[]`) |
+| `estimatedLength` | integer (≥ 1) ✍ | — | Ước tính số chương của series |
+| `namePages` | object[] | — | Các trang storyboard Name (default: `[]`) |
+| `namePages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `namePages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `parentSeriesId` | string ✍ | — | ObjectId series gốc (franchise — Flow 12) |
+| `relationshipType` | enum `RelationshipType` | — | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+
+**Response 201** (`CreateProposalRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `series` | object | ✅ |  |
+| `series.id` | string | ✅ | ObjectId của bản ghi |
+| `series.mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `series.editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `series.coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `series.parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `series.title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `series.coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `series.genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `series.demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `series.publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `series.magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `series.startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `series.status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `series.statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `series.relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `series.franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `series.createdAt` | string | ✅ | ISO 8601 |
+| `series.reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `series.completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `series.proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `name` | object | ✅ | Tên |
+| `name.id` | string | ✅ | ObjectId của bản ghi |
+| `name.seriesId` | string | ✅ | ObjectId của Series |
+| `name.chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal |
+| `name.kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `name.status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `name.version` | number | ✅ | Tăng mỗi lần resubmit |
+| `name.submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+| `name.pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | `Error.ParentSeriesNotFound` | parent series does not exist |
+
+---
+
+#### `PUT /series/proposals/:id`
+> Mangaka sửa proposal (partial-update; chỉ DRAFT/PROPOSAL_REVISION; KHÔNG nhận namePages)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdateProposalBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `title` | string (1..200 ký tự) ✍ | — | Tiêu đề (FE tự nhập) |
+| `coverImage` | string (1..∞ ký tự) ✍ | — | Object key ảnh bìa trên R2 |
+| `genres` | enum `Genre`[] | — | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | — | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | — | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `synopsis` | string (0..5000 ký tự) ✍ | — | Tóm tắt cốt truyện |
+| `characterDesigns` | string[] ✍ | — | Danh sách object key file thiết kế nhân vật trên R2 |
+| `estimatedLength` | integer (≥ 1) ✍ | — | Ước tính số chương của series |
+
+**Response 200** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.ProposalNotEditable` | proposal cannot be edited in current state |
+
+---
+
+#### `DELETE /series/proposals/:id`
+> Mangaka xoá hẳn draft tạo nhầm (chỉ khi Series=DRAFT). Trả message.
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.ProposalNotDeletable` | proposal cannot be deleted in current state |
+
+---
+
+#### `GET /series`
+> Danh sách series theo scope vai trò (Mangaka=của mình; Editor=phụ trách+hàng đợi; Board/Admin=tất cả)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | enum `SeriesStatus` | — | Series state machine status |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`SeriesListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `items[].editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `items[].coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `items[].parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `items[].title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `items[].coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `items[].genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `items[].demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `items[].publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `items[].magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `items[].startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `items[].status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `items[].statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `items[].relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `items[].franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `items[].createdAt` | string | ✅ | ISO 8601 |
+| `items[].reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `items[].completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `items[].proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `GET /series/:id`
+> Chi tiết 1 series (kèm proposal)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `POST /series/:id/submit`
+> Mangaka submit → mở 2 vòng review (proposal+Name), Series DRAFT→IN_REVIEW
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`CreateProposalRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `series` | object | ✅ |  |
+| `series.id` | string | ✅ | ObjectId của bản ghi |
+| `series.mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `series.editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `series.coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `series.parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `series.title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `series.coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `series.genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `series.demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `series.publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `series.magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `series.startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `series.status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `series.statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `series.relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `series.franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `series.createdAt` | string | ✅ | ISO 8601 |
+| `series.reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `series.completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `series.proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `name` | object | ✅ | Tên |
+| `name.id` | string | ✅ | ObjectId của bản ghi |
+| `name.seriesId` | string | ✅ | ObjectId của Series |
+| `name.chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal |
+| `name.kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `name.status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `name.version` | number | ✅ | Tăng mỗi lần resubmit |
+| `name.submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+| `name.pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
+| 409 | `Error.FranchiseConsentRequired` | derivative needs original mangaka consent (APPROVED) before submit |
+
+---
+
+#### `POST /series/:id/claim`
+> Editor nhận series từ hàng đợi (atomic chống race; set editorId)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.SeriesAlreadyClaimed` | series has already been claimed |
+
+---
+
+#### `POST /series/:id/release`
+> Editor nhả series về hàng đợi (chỉ khi chưa bắt đầu review)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.ReviewAlreadyStarted` | review has already started |
+
+---
+
+#### `POST /series/:id/proposal/request-revision`
+> Editor phụ trách yêu cầu sửa proposal (→ PROPOSAL_REVISION). Set reviewStartedAt.
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
+
+---
+
+#### `POST /series/:id/proposal/resubmit`
+> Mangaka nộp lại proposal sau revision (→ PROPOSAL_REVIEW)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
+
+---
+
+#### `POST /series/:id/proposal/approve`
+> Editor duyệt proposal (→ PROPOSAL_APPROVED; nếu Name cũng APPROVED → READY_TO_PITCH)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
+
+---
+
+#### `GET /series/:id/names`
+> List proposal-Name của series (chapter-Name xem ở /chapters/:id/names)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`NameListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `items[].chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `items[].kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `items[].status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `items[].version` | number | ✅ | Tăng mỗi lần resubmit |
+| `items[].pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `items[].submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `GET /series/:id/names/:nameId`
+> Chi tiết 1 Name
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 404 | `Error.NameNotFound` | name does not exist |
+
+---
+
+#### `POST /series/:id/names/:nameId/request-revision`
+> Editor phụ trách yêu cầu sửa Name → REVISION
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /series/:id/names/:nameId/resubmit`
+> Mangaka nộp lại Name sau revision → IN_REVIEW, version++
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /series/:id/names/:nameId/approve`
+> Editor duyệt Name → APPROVED (proposal-Name → emit → Series READY_TO_PITCH)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `PUT /series/:id/names/:nameId/pages`
+> Mangaka thay TOÀN BỘ trang Name (chỉ DRAFT/REVISION)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdateNamePagesBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pages` | object[] | ✅ |  |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+
+**Response 200** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /series/:id/names/:nameId/pages`
+> Mangaka thêm 1 trang Name (append; chỉ DRAFT/REVISION)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`AddNamePageBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageNumber` | integer (≥ 1) ✍ | ✅ | Số thứ tự trang trong chương |
+| `fileUrl` | string (1..∞ ký tự) ✍ | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /series/:id/reject`
+> Editor từ chối hẳn concept (Series → ABANDONED + statusReason)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
+
+---
+
+#### `POST /series/:id/withdraw`
+> Mangaka rút hồ sơ (Series → WITHDRAWN + statusReason)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `POST /series/:id/pitch`
+> Editor pitch series lên Board (Series → PITCHED, gọi B5)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.SeriesNotReadyToPitch` | series is not ready to pitch |
+
+---
+
+#### `GET /board/suggest-members`
+> Gợi ý roster Board theo thể loại của series (PB-05) — lẻ, >= 3
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (regex) | ✅ | ObjectId của Series |
+| `size` | integer (≥ 3) | — |  |
+
+**Response 200** (`SuggestBoardMembersRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].userId` | string | ✅ | ObjectId của User |
+| `items[].displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `items[].avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `items[].specialtyGenres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `items[].matchedGenres` | enum `Genre`[] | ✅ | Giao giữa sở trường và thể loại của series |
+| `items[].score` | number | ✅ | Số thể loại khớp |
+| `items[].hasProfile` | boolean | ✅ | false = user đúng role nhưng chưa build hồ sơ (field profile trả default rỗng) |
+| `size` | number | ✅ | Sĩ số roster đề xuất — LUÔN lẻ và >= 3 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 422 | `Error.NotEnoughBoardMembers` | fewer than 3 active board members exist — cannot form a valid session |
+
+---
+
+#### `POST /board/sessions`
+> Editor tạo phiên họp Hội đồng → SCHEDULED
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`CreateBoardSessionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `title` | string (5..100 ký tự) ✍ | ✅ | Tiêu đề (FE tự nhập) |
+| `startTime` | string (regex, ISO 8601) ✍ | ✅ | Thời điểm bắt đầu phiên họp (ISO) |
+| `endTime` | string (regex, ISO 8601) ✍ | — | Giờ kết thúc dự kiến; bỏ trống = chỉ kết thúc thủ công |
+| `description` | string (0..500 ký tự) ✍ | — |  |
+| `allowedEditorIds` | string[] ✍ | — | Bỏ trống → hệ thống tự phân công theo seriesId (PB-05) |
+| `seriesId` | string (regex) ✍ | — | Nguồn thể loại cho auto-assign roster. BẮT BUỘC khi omit allowedEditorIds |
+| `rosterSize` | integer (≥ 3) ✍ | — | Sĩ số mong muốn (sẽ được ép về số lẻ). Mặc định lấy BoardConfig.quorumMin |
+
+**Response 201** (`BoardSessionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `description` | string | ✅ |  |
+| `creatorId` | string | ✅ | ObjectId User đã tạo |
+| `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
+| `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.BoardSessionAlreadyExists` | a board session with this title is already UPCOMING or ACTIVE |
+| 422 | `Error.InvalidBoardMembers` | board member count must be odd to prevent tie votes |
+| 422 | `Error.RosterSourceRequired` | provide allowedEditorIds, or seriesId so the roster can be auto-assigned |
+| 422 | `Error.NotEnoughBoardMembers` | fewer than 3 active board members exist — cannot form a valid session |
+
+---
+
+#### `GET /board/sessions`
+> Danh sách phiên họp Hội đồng
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /board/sessions/:id`
+> Chi tiết phiên họp Hội đồng
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** (`BoardSessionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `description` | string | ✅ |  |
+| `creatorId` | string | ✅ | ObjectId User đã tạo |
+| `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
+| `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `PATCH /board/sessions/:id/start`
+> Kích hoạt phiên họp Hội đồng → ACTIVE
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Response 200** (`BoardSessionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `description` | string | ✅ |  |
+| `creatorId` | string | ✅ | ObjectId User đã tạo |
+| `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
+| `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.BoardSessionNotOpen` | board session is not ACTIVE; voting/config update not allowed |
+| 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+| 409 | `Error.InvalidBoardSessionTransition` | board session status transition is not allowed by BOARD_SESSION_TRANSITIONS |
+
+---
+
+#### `PATCH /board/sessions/:id/conclude`
+> Kết thúc phiên họp Hội đồng → CONCLUDED; quyết định treo → EXPIRED
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Response 200** (`BoardSessionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `description` | string | ✅ |  |
+| `creatorId` | string | ✅ | ObjectId User đã tạo |
+| `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
+| `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSessionCreator` | only the board session creator or a Super Admin can conclude the session |
+| 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+| 409 | `Error.InvalidBoardSessionTransition` | board session status transition is not allowed by BOARD_SESSION_TRANSITIONS |
+
+---
+
+#### `POST /board/decisions`
+> Editor tạo quyết định Hội đồng nháp → PENDING
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`CreateBoardDecisionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `boardSessionId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `targetSeriesId` | string ✍ | ✅ |  |
+| `decisionType` | enum `DecisionType` | ✅ | Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER |
+| `details` | object | ✅ |  |
+
+**Response 201** (`BoardDecisionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `targetSeriesId` | string | — |  |
+| `boardSessionId` | string | ✅ |  |
+| `decisionType` | enum `DecisionType` | — | Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER |
+| `result` | enum `BoardDecisionResult` | — | Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới) |
+| `totalVotes` | number | ✅ |  |
+| `approveCount` | number | ✅ |  |
+| `rejectCount` | number | ✅ |  |
+| `quorumMet` | boolean | ✅ | true = phiên vote đủ quorum |
+| `endingChapterAllowance` | number | — | Số chương kết thúc Board cấp khi CANCEL |
+| `details` | any | — |  |
+| `decidedAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `allowedEditorIds` | string[] | — | Roster Board member được vote trong session |
+| `votes` | object[] | ✅ |  |
+| `votes[].voterId` | string | — |  |
+| `votes[].voteValue` | enum `VoteValue` | — | Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN |
+| `votes[].note` | string | — | Ghi chú text tự do |
+| `votes[].votedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+| 422 | `Error.InvalidBoardMembers` | board member count must be odd to prevent tie votes |
+
+---
+
+#### `GET /board/decisions`
+> Danh sách quyết định Hội đồng
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /board/decisions/:id`
+> Chi tiết quyết định Hội đồng
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** (`BoardDecisionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `targetSeriesId` | string | — |  |
+| `boardSessionId` | string | ✅ |  |
+| `decisionType` | enum `DecisionType` | — | Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER |
+| `result` | enum `BoardDecisionResult` | — | Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới) |
+| `totalVotes` | number | ✅ |  |
+| `approveCount` | number | ✅ |  |
+| `rejectCount` | number | ✅ |  |
+| `quorumMet` | boolean | ✅ | true = phiên vote đủ quorum |
+| `endingChapterAllowance` | number | — | Số chương kết thúc Board cấp khi CANCEL |
+| `details` | any | — |  |
+| `decidedAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `allowedEditorIds` | string[] | — | Roster Board member được vote trong session |
+| `votes` | object[] | ✅ |  |
+| `votes[].voterId` | string | — |  |
+| `votes[].voteValue` | enum `VoteValue` | — | Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN |
+| `votes[].note` | string | — | Ghi chú text tự do |
+| `votes[].votedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `POST /board/decisions/:id/vote`
+> Board/Editor bỏ phiếu cho quyết định → cập nhật kết quả
+
+**Quyền:** BOARD_MEMBER, EDITOR (Bearer)
+
+**Body** (`CastVoteBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `voteValue` | enum `VoteValue` | ✅ | Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN |
+| `note` | string (0..300 ký tự) ✍ | — | Ghi chú text tự do |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.BoardSessionNotOpen` | board session is not ACTIVE; voting/config update not allowed |
+| 403 | `Error.VoterNotAllowed` | caller is not in session.allowedEditorIds |
+| 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+| 409 | `Error.VoterAlreadyVoted` | voter has already cast a vote on this decision |
+
+---
+
+#### `GET /board/decisions/:id/votes`
+> Danh sách phiếu biểu quyết của quyết định
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `POST /board/reports`
+> Editor tạo báo cáo phân tích series cho Hội đồng
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreateSeriesReportBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId của Series |
+| `boardDecisionId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `reportType` | string ✍ | ✅ |  |
+| `content` | string (1..∞ ký tự) ✍ | ✅ | Nội dung text |
+| `attachments` | string[] ✍ | ✅ |  |
+
+**Response 201** (`SeriesReportRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | — | ObjectId của Series |
+| `boardDecisionId` | string | — |  |
+| `preparedBy` | string | — |  |
+| `reportType` | string | — |  |
+| `content` | string | — | Nội dung text |
+| `attachments` | string[] | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.BoardSessionClosedReport` | cannot submit a series report for a CONCLUDED session |
+| 403 | `Error.EditorNotInvited` | caller is not in session.allowedEditorIds for report submission |
+| 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `GET /board/reports`
+> Danh sách báo cáo Hội đồng
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /board/reports/:id`
+> Chi tiết báo cáo Hội đồng
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** (`SeriesReportRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | — | ObjectId của Series |
+| `boardDecisionId` | string | — |  |
+| `preparedBy` | string | — |  |
+| `reportType` | string | — |  |
+| `content` | string | — | Nội dung text |
+| `attachments` | string[] | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.BoardReportNotFound` | series report does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `GET /board/config`
+> Xem cấu hình biểu quyết Hội đồng hiện tại
+
+**Quyền:** SUPER_ADMIN, BOARD_MEMBER, EDITOR (Bearer)
+
+**Response 200** (`BoardConfigRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `updatedBy` | string | — |  |
+| `boardTotalMembers` | number | ✅ |  |
+| `quorumMin` | number | ✅ |  |
+| `approveMajorityRatio` | number | ✅ |  |
+| `isDefault` | boolean | — |  |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `PATCH /board/config/:id`
+> Super Admin cập nhật cấu hình biểu quyết Hội đồng
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Body** (`UpdateBoardConfigBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `boardTotalMembers` | number ✍ | ✅ |  |
+| `quorumMin` | number ✍ | ✅ |  |
+| `approveMajorityRatio` | number ✍ | ✅ |  |
+| `updatedBy` | string ✍ | ✅ |  |
+
+**Response 200** (`BoardConfigRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `updatedBy` | string | — |  |
+| `boardTotalMembers` | number | ✅ |  |
+| `quorumMin` | number | ✅ |  |
+| `approveMajorityRatio` | number | ✅ |  |
+| `isDefault` | boolean | — |  |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.BoardConfigLocked` | cannot update BoardConfig while a session is ACTIVE/UPCOMING |
+| 404 | `Error.BoardConfigNotFound` | system has no active BoardConfig row |
+---
+
+## §4. Flow 6 — Contract & Payment
+
+**Nghiệp vụ:** Series `SERIALIZED` xong (Flow 1) → Editor soạn hợp đồng theo định giá Board (loại `FULL_BUYOUT` mua đứt / `REVENUE_SHARE` ăn chia %) + danh sách **điều kiện giải ngân** (PaymentCondition 4 loại) → vòng thương lượng (Mangaka và Board đều phải gật CÙNG MỘT bản) → ký 2 bên → `FULLY_EXECUTED` (khóa). **Chưa có hợp đồng FULLY_EXECUTED thì KHÔNG publish được chapter** (Flow 2 §5). Sau đó engine tự theo dõi: mỗi chapter published / mỗi kỳ ranking chốt → điều kiện đạt → sinh PaymentRecord → Board duyệt → chi. Sửa HĐ đã ký = **Amendment** (phụ lục, có vòng ký riêng).
+
+### Happy path — ký hợp đồng
+
+1. **Editor** `POST /contracts` (seriesId + contractType + valuationAmount + ownership % + terminationClause) → `DRAFT`. Chỉ tạo được khi series `SERIALIZED`.
+2. **Editor** thêm điều kiện: `POST /contracts/:contractId/payment-conditions` (4 loại — `thresholdConfig` theo loại, xem reference). Sửa/tắt: `PATCH .../payment-conditions/:conditionId` / `.../disable`.
+3. **Editor** gửi Mangaka: `PATCH /contracts/:id/status` (sang MANGAKA_REVIEW).
+4. **Mangaka** xem (`GET /contracts/:id`): đồng ý → `PATCH /contracts/:id/status` (MANGAKA_APPROVED) **hoặc** yêu cầu sửa → `POST /contracts/:id/request-changes` (→ NEGOTIATION → Editor sửa `PATCH /contracts/:id` → gửi lại — mọi sửa đổi reset phê duyệt cũ).
+5. **Board** duyệt bản Mangaka đã gật: `POST /contracts/:id/board-approve` (hoặc `board-request-changes` → NEGOTIATION → vòng lại từ Mangaka).
+6. Ký: **Mangaka** `POST /contracts/:id/signatures/mangaka` (OTP) → `MANGAKA_SIGNED` → **Board** `POST /contracts/:id/signatures/board` → **`FULLY_EXECUTED`** (khóa — mở gate publish chapter).
+
+### Happy path — dòng tiền tự động
+
+- Chapter published → engine đếm → `CHAPTER_MILESTONE`/`RECURRING_CHAPTER` đạt → PaymentRecord `TRIGGERED` (idempotent — không double-trigger).
+- Kỳ ranking REFLECTED → check `RANKING_MILESTONE`.
+- Cron daily check `TIME_BOUND` → quá hạn không đạt → `MISSED`. Series `HIATUS` → TIME_BOUND `DISABLED` (dừng đồng hồ), resume → `PENDING` + deadline dời đúng bằng thời gian nghỉ.
+- **Board** duyệt chi: `PATCH /payments/:id/approve` → `PATCH /payments/:id/pay` (→ `PAID` + `paidAt`); hủy: `PATCH /payments/:id/cancel`.
+- **REVENUE_SHARE:** Editor/Board nhập doanh thu kỳ `POST /contracts/:id/revenue` → hệ thống chia theo ownership split → PaymentRecord loại `REVENUE_SHARE` cho (các) mangaka.
+
+### Happy path — Amendment (sửa HĐ đã ký)
+
+1. **Editor** `POST /contracts/:contractId/amendments` (field typed: valuation/2 pct/termination/start/end — chỉ điền field muốn đổi) → `DRAFT`. (Flow 5 CHANGE_FORMAT/COMPLETION cũng auto-sinh DRAFT + notify Editor.)
+2. Sửa nháp `PATCH .../amendments/:id` → trình ký `POST .../submit` → `PENDING_SIGNATURES`.
+3. Ký **ownership-aware**: REVENUE_SHARE = Mangaka (`.../sign/mangaka`, OTP) + Board (`.../sign/board`); **FULL_BUYOUT = CHỈ Board ký** (Mangaka chỉ được notify).
+4. Đủ chữ ký → `FULLY_EXECUTED` → **ghi đè điều khoản lên HĐ gốc** + log snapshot (`GET /contracts/:id/versions`).
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Tạo contract khi series chưa SERIALIZED | `POST /contracts` | 409 `Error.SeriesNotSerialized` |
+| Ownership không hợp lệ (tổng ≠100; FULL_BUYOUT ≠ 100/0) | `POST /contracts` | 422 field-level |
+| `thresholdConfig` sai schema theo `conditionType` | payment-conditions | 422 |
+| Chuyển trạng thái sai bảng transition | status/approve routes | 409 `Error.InvalidContractTransition` |
+| Mangaka khác approve hộ HĐ không phải của mình | `PATCH /contracts/:id/status` | 403 |
+| Ký khi chưa được duyệt đủ (chưa BOARD_APPROVED) | signatures | 409 `Error.ContractNotSignableYet` |
+| OTP ký sai/hết hạn | signatures (OTP) | 422 / 410 |
+| Sửa HĐ đã FULLY_EXECUTED trực tiếp | `PATCH /contracts/:id` | 409 (phải dùng Amendment) |
+| Mangaka ký amendment của HĐ FULL_BUYOUT | `.../sign/mangaka` | 409 `Error.MangakaSignNotRequired` |
+| Execute amendment 2 lần (double-submit) | sign cuối | 409 (guard atomic) |
+| Reject amendment đang trình ký | `.../reject` | về `DRAFT` + **reset toàn bộ chữ ký** |
+| Duyệt/chi PaymentRecord sai trạng thái | payments approve/pay | 409 |
+| id rác (không phải ObjectId) | mọi route `:id` | 404 (không 500) |
+| Series bị CANCEL giữa chừng | (event) | HĐ → `TERMINATED`: mốc ĐÃ ĐẠT vẫn trả, mốc chưa đạt → MISSED, sinh `COMPENSATION` theo termination clause |
+
+### API Reference
+
+#### `GET /contracts/health`
+> Health check module contract
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`ContractHealthRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `status` | string | ✅ |  |
+| `module` | string | ✅ |  |
+
+---
+
+#### `POST /contracts`
+> Editor tạo hợp đồng nháp cho series đã SERIALIZED → DRAFT (B-CON-01)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreateContractBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId của Series |
+| `mangakaId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `boardDecisionId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number (≥ 0) ✍ | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number (≥ 0, ≤ 100) ✍ | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number (≥ 0, ≤ 100) ✍ | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string (1..∞ ký tự) ✍ | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) ✍ | ✅ |  |
+| `contractEnd` | string (regex, ISO 8601) ✍ | ✅ |  |
+
+**Response 201** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.SeriesNotSerialized` | Series phải ở SERIALIZED (hoặc CANCELLING/COMPLETING cho chương kết thúc) mới tạo được chapter |
+
+---
+
+#### `GET /contracts`
+> Danh sách hợp đồng theo scope role hiện tại
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /contracts/:id`
+> Chi tiết hợp đồng
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `GET /contracts/:id/status`
+> Xem trạng thái hợp đồng và tiến độ ký
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** (`ContractStatusProgressRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangaka` | object | ✅ |  |
+| `mangaka.id` | string | ✅ | ObjectId của bản ghi |
+| `mangaka.isSigned` | boolean | ✅ |  |
+| `mangaka.signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardProgress` | object | ✅ |  |
+| `boardProgress.totalRequired` | number | ✅ |  |
+| `boardProgress.totalSigned` | number | ✅ |  |
+| `boardProgress.signedEditors` | object[] | ✅ |  |
+| `boardProgress.pendingEditors` | object[] | ✅ |  |
+
+---
+
+#### `PATCH /contracts/:id`
+> Editor cập nhật điều khoản hợp đồng nháp
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`EditorUpdateContractBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `contractType` | enum `ContractType` | — | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number (≥ 0) ✍ | — | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number (≥ 0, ≤ 100) ✍ | — | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number (≥ 0, ≤ 100) ✍ | — | % sở hữu của Mangaka |
+| `terminationClause` | string ✍ | — | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) ✍ | — |  |
+| `contractEnd` | string (regex, ISO 8601) ✍ | — |  |
+| `note` | string (0..500 ký tự) ✍ | — | Ghi chú text tự do |
+
+**Response 200** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `PATCH /contracts/:id/status`
+> Editor/Mangaka cập nhật trạng thái hợp đồng theo workflow
+
+**Quyền:** EDITOR, MANGAKA (Bearer)
+
+**Response 200** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `POST /contracts/:id/request-changes`
+> B-CON-02: Mangaka yêu cầu chỉnh sửa điều khoản → NEGOTIATION
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
+
+---
+
+#### `POST /contracts/:id/board-approve`
+> B-CON-02 (BOARD_REVIEW): Hội đồng duyệt điều khoản → BOARD_APPROVED
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Response 201** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
+
+---
+
+#### `POST /contracts/:id/board-request-changes`
+> B-CON-02 (BOARD_REVIEW): Hội đồng yêu cầu chỉnh sửa → NEGOTIATION
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Response 201** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
+
+---
+
+#### `POST /contracts/:id/signatures/mangaka`
+> Mangaka ký hợp đồng bằng OTP
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`SignContractWithOtpBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `otpCode` | string (6..6 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`ContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `boardDecisionId` | string | ✅ |  |
+| `sourceTransferRequestId` | string | — |  |
+| `contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | CONTRACT_ALREADY_SIGNED_BY_THIS_PARTY |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.ContractNotSignableYet` | contract must reach BOARD_APPROVED before it can be signed (B-CON-02) |
+
+---
+
+#### `POST /contracts/:id/signatures/board`
+> Board ký hợp đồng bằng OTP
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`SignContractWithOtpBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `otpCode` | string (6..6 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`ContractSignRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `status` | string | ✅ |  |
+| `message` | string | ✅ | Message hiển thị cho user |
+| `contract` | object | ✅ |  |
+| `contract.id` | string | ✅ | ObjectId của bản ghi |
+| `contract.seriesId` | string | ✅ | ObjectId của Series |
+| `contract.mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `contract.editorId` | string | ✅ | ObjectId User của Editor phụ trách |
+| `contract.boardDecisionId` | string | ✅ |  |
+| `contract.sourceTransferRequestId` | string | — |  |
+| `contract.contractType` | enum `ContractType` | ✅ | Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) \| REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03 |
+| `contract.valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `contract.publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `contract.mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `contract.terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contract.contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contract.contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contract.status` | enum `ContractStatus` | ✅ | Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED \| TERMINATED \| TERMINATED_BY_BREACH \| EXPIRED \| VOIDED |
+| `contract.mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contract.boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contract.createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | CONTRACT_ALREADY_SIGNED_BY_THIS_PARTY |
+| 400 | — | BOARD_DECISION_NOT_FOUND |
+| 400 | — | BOARD_MEMBER_ALREADY_SIGNED |
+| 403 | — | NOT_AUTHORIZED_IN_BOARD |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.ContractNotSignableYet` | contract must reach BOARD_APPROVED before it can be signed (B-CON-02) |
+
+---
+
+#### `POST /contracts/:contractId/payment-conditions`
+> Editor tạo điều kiện thanh toán cho hợp đồng
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreatePaymentConditionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `conditionType` | enum `ConditionType` | ✅ |  |
+| `thresholdConfig` | any | ✅ | Cấu hình ngưỡng theo conditionType (JSON — xem mô tả route) |
+| `isRecurring` | boolean ✍ | — | (default: `false`) |
+| `payoutAmount` | number (≥ 0) ✍ | — | Số tiền chi khi điều kiện đạt |
+| `payoutPct` | number (≥ 0, ≤ 100) ✍ | — |  |
+
+**Response 201** (`PaymentConditionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionType` | enum `ConditionType` | ✅ |  |
+| `thresholdConfig` | any | ✅ | Cấu hình ngưỡng theo conditionType (JSON — xem mô tả route) |
+| `payoutAmount` | number | ✅ | Số tiền chi khi điều kiện đạt |
+| `payoutPct` | number | ✅ |  |
+| `isRecurring` | boolean | ✅ |  |
+| `status` | enum `PaymentConditionStatus` | ✅ | Trạng thái điều kiện giải ngân: PENDING (chờ đạt) \| ACHIEVED (đã đạt) \| PAID (đã chi) \| CANCELLED (đã huỷ) \| MISSED (hết hạn không đạt) \| DISABLED (tạm dừng khi series HIATUS — BR-CONTRACT-07) |
+| `lastTriggeredValue` | number | ✅ |  |
+| `achievedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_MANAGE_PAYMENT_CONDITIONS |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /contracts/:contractId/payment-conditions`
+> Danh sách điều kiện thanh toán của hợp đồng
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** (`PaymentConditionListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].contractId` | string | ✅ | ObjectId của Contract |
+| `data[].conditionType` | enum `ConditionType` | ✅ |  |
+| `data[].thresholdConfig` | any | ✅ | Cấu hình ngưỡng theo conditionType (JSON — xem mô tả route) |
+| `data[].payoutAmount` | number | ✅ | Số tiền chi khi điều kiện đạt |
+| `data[].payoutPct` | number | ✅ |  |
+| `data[].isRecurring` | boolean | ✅ |  |
+| `data[].status` | enum `PaymentConditionStatus` | ✅ | Trạng thái điều kiện giải ngân: PENDING (chờ đạt) \| ACHIEVED (đã đạt) \| PAID (đã chi) \| CANCELLED (đã huỷ) \| MISSED (hết hạn không đạt) \| DISABLED (tạm dừng khi series HIATUS — BR-CONTRACT-07) |
+| `data[].lastTriggeredValue` | number | ✅ |  |
+| `data[].achievedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_MANAGE_PAYMENT_CONDITIONS |
+| 404 | — | CONTRACT_NOT_FOUND |
+
+---
+
+#### `PATCH /contracts/:contractId/payment-conditions/:conditionId`
+> Editor cập nhật điều kiện thanh toán của hợp đồng
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`UpdatePaymentConditionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `thresholdConfig` | any | — | Cấu hình ngưỡng theo conditionType (JSON — xem mô tả route) |
+| `payoutAmount` | number (≥ 0) ✍ | — | Số tiền chi khi điều kiện đạt |
+| `payoutPct` | number (≥ 0, ≤ 100) ✍ | — |  |
+| `isRecurring` | boolean ✍ | — |  |
+
+**Response 200** (`PaymentConditionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionType` | enum `ConditionType` | ✅ |  |
+| `thresholdConfig` | any | ✅ | Cấu hình ngưỡng theo conditionType (JSON — xem mô tả route) |
+| `payoutAmount` | number | ✅ | Số tiền chi khi điều kiện đạt |
+| `payoutPct` | number | ✅ |  |
+| `isRecurring` | boolean | ✅ |  |
+| `status` | enum `PaymentConditionStatus` | ✅ | Trạng thái điều kiện giải ngân: PENDING (chờ đạt) \| ACHIEVED (đã đạt) \| PAID (đã chi) \| CANCELLED (đã huỷ) \| MISSED (hết hạn không đạt) \| DISABLED (tạm dừng khi series HIATUS — BR-CONTRACT-07) |
+| `lastTriggeredValue` | number | ✅ |  |
+| `achievedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | PAYMENT_CONDITION_NOT_EDITABLE_STATUS_ACHIEVED_OR_MISSED |
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_MANAGE_PAYMENT_CONDITIONS |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 404 | — | PAYMENT_CONDITION_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `PATCH /contracts/:contractId/payment-conditions/:conditionId/disable`
+> Editor vô hiệu hóa điều kiện thanh toán
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 200** (`PaymentConditionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionType` | enum `ConditionType` | ✅ |  |
+| `thresholdConfig` | any | ✅ | Cấu hình ngưỡng theo conditionType (JSON — xem mô tả route) |
+| `payoutAmount` | number | ✅ | Số tiền chi khi điều kiện đạt |
+| `payoutPct` | number | ✅ |  |
+| `isRecurring` | boolean | ✅ |  |
+| `status` | enum `PaymentConditionStatus` | ✅ | Trạng thái điều kiện giải ngân: PENDING (chờ đạt) \| ACHIEVED (đã đạt) \| PAID (đã chi) \| CANCELLED (đã huỷ) \| MISSED (hết hạn không đạt) \| DISABLED (tạm dừng khi series HIATUS — BR-CONTRACT-07) |
+| `lastTriggeredValue` | number | ✅ |  |
+| `achievedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | PAYMENT_CONDITION_NOT_EDITABLE_STATUS_ACHIEVED_OR_MISSED |
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_MANAGE_PAYMENT_CONDITIONS |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 404 | — | PAYMENT_CONDITION_NOT_FOUND |
+
+---
+
+#### `POST /contracts/:id/revenue`
+> Board/Editor nhập doanh thu kỳ cho HĐ REVENUE_SHARE → chia theo ownership split (B-CON-07)
+
+**Quyền:** BOARD_MEMBER, EDITOR (Bearer)
+
+**Body** (`ReportRevenueBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `revenue` | number (≥ 0) ✍ | ✅ |  |
+| `period` | string (1..∞ ký tự) ✍ | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | — | REVENUE_NOT_APPLICABLE - contract must be REVENUE_SHARE and FULLY_EXECUTED to report revenue |
+
+---
+
+#### `GET /contracts/:id/versions`
+> Danh sách phiên bản hợp đồng
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /contracts/:id/versions/:versionId`
+> Chi tiết một phiên bản hợp đồng
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** (`ContractVersionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `editedById` | string | ✅ |  |
+| `note` | string | ✅ | Ghi chú text tự do |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `POST /contracts/:contractId/amendments`
+> Editor tạo phụ lục hợp đồng đã FULLY_EXECUTED → DRAFT (B-CON-08)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreateAmendmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `changedClauses` | string[] ✍ | ✅ |  |
+| `reason` | string (1..∞ ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `valuationAmount` | number (≥ 0) ✍ | — | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number (≥ 0, ≤ 100) ✍ | — | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number (≥ 0, ≤ 100) ✍ | — | % sở hữu của Mangaka |
+| `terminationClause` | string (1..∞ ký tự) ✍ | — | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) ✍ | — |  |
+| `contractEnd` | string (regex, ISO 8601) ✍ | — |  |
+
+**Response 201** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 404 | — | CONTRACT_NOT_FOUND |
+| 409 | `Error.ContractNotAmendable` | contract must be FULLY_EXECUTED to create an amendment (BR-CONTRACT-01) |
+| 409 | `Error.OpenAmendmentExists` | contract already has a non-terminal amendment (DRAFT/PENDING_SIGNATURES) |
+| 422 | `Error.OwnershipMismatch` | ownership split must total 100; FULL_BUYOUT stays 100/0 |
+
+---
+
+#### `GET /contracts/:contractId/amendments`
+> Danh sách phụ lục của hợp đồng
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /contracts/:contractId/amendments/:id`
+> Chi tiết một phụ lục
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
+
+**Response 200** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
+
+---
+
+#### `PATCH /contracts/:contractId/amendments/:id`
+> Editor sửa phụ lục khi DRAFT (reset chữ ký)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`UpdateAmendmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `changedClauses` | string[] ✍ | — |  |
+| `reason` | string (1..∞ ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `valuationAmount` | number (≥ 0) ✍ | — | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number (≥ 0, ≤ 100) ✍ | — | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number (≥ 0, ≤ 100) ✍ | — | % sở hữu của Mangaka |
+| `terminationClause` | string (1..∞ ký tự) ✍ | — | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) ✍ | — |  |
+| `contractEnd` | string (regex, ISO 8601) ✍ | — |  |
+
+**Response 200** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
+| 409 | `Error.AmendmentNotEditable` | amendment can only be edited while DRAFT |
+| 422 | `Error.OwnershipMismatch` | ownership split must total 100; FULL_BUYOUT stays 100/0 |
+
+---
+
+#### `POST /contracts/:contractId/amendments/:id/submit`
+> Editor trình phụ lục để ký (DRAFT → PENDING_SIGNATURES)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 200** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
+| 409 | `Error.AmendmentNotSubmittable` | amendment can only be submitted while DRAFT |
+| 422 | `Error.AmendmentNoChanges` | submit requires at least one changed term + non-empty changedClauses |
+
+---
+
+#### `POST /contracts/:contractId/amendments/:id/sign/mangaka`
+> Mangaka ký phụ lục bằng OTP (chỉ REVENUE_SHARE)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`SignAmendmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `otpCode` | string (6..6 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
+| 409 | — | MangakaSignNotRequired |
+
+---
+
+#### `POST /contracts/:contractId/amendments/:id/sign/board`
+> Board ký phụ lục bằng OTP
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`SignAmendmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `otpCode` | string (6..6 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | BOARD_MEMBER_ALREADY_SIGNED |
+| 403 | — | NOT_AUTHORIZED_IN_BOARD |
+| 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
+
+---
+
+#### `POST /contracts/:contractId/amendments/:id/reject`
+> Mangaka từ chối phụ lục → về DRAFT (chỉ REVENUE_SHARE)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`RejectAmendmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..∞ ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 200** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
+| 409 | — | MangakaSignNotRequired |
+
+---
+
+#### `POST /contracts/:contractId/amendments/:id/void`
+> Editor hủy phụ lục (non-terminal → VOIDED)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`VoidAmendmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `voidReason` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 200** (`AmendmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `changedClauses` | string[] | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `status` | enum `ContractAmendmentStatus` | ✅ | Vòng đời phụ lục hợp đồng: DRAFT → PENDING_SIGNATURES → FULLY_EXECUTED \| VOIDED (reject → về DRAFT) |
+| `triggerSource` | enum `AmendmentTrigger` | ✅ | Nguồn phát sinh phụ lục: MANUAL (Editor tự tạo) \| FORMAT_CHANGE \| COMPLETION (từ quyết định Flow 5 — BR-CONTRACT-06) |
+| `valuationAmount` | number | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `publisherOwnershipPct` | number | ✅ | % sở hữu của NXB |
+| `mangakaOwnershipPct` | number | ✅ | % sở hữu của Mangaka |
+| `terminationClause` | string | ✅ | Điều khoản bồi thường khi hủy (text) |
+| `contractStart` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `contractEnd` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `fullyExecutedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `voidReason` | string | ✅ |  |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].amendmentId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
+| 409 | `Error.AmendmentNotVoidable` | amendment is already terminal (FULLY_EXECUTED/VOIDED) |
+
+---
+
+#### `GET /payments`
+> Danh sách payment toàn hệ thống (filter status/receiver/series/contract/type/source)
+
+**Quyền:** BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | enum `PaymentRecordStatus` | — | Trạng thái khoản chi: TRIGGERED (điều kiện đạt) \| PENDING (chờ xử lý) → APPROVED (Board duyệt) → PAID (đã trả); MISSED/FAILED/CANCELLED = không chi trả |
+| `receiverId` | string | — |  |
+| `seriesId` | string | — | ObjectId của Series |
+| `contractId` | string | — | ObjectId của Contract |
+| `paymentType` | enum `PaymentType` | — | Loại khoản chi cho Mangaka: CONDITION_PAYOUT (đạt điều kiện) \| REVENUE_SHARE (chia lợi nhuận định kỳ) \| COMPENSATION (đền bù khi huỷ series) \| CHAPTER_MILESTONE \| RECURRING_CHAPTER \| RANKING_MILESTONE \| TIME_BOUND (các payout theo điều kiện) \| TRANSFER (liên quan chuyển nhượng) |
+| `paymentSource` | enum `PaymentSource` | — | Nguồn phát sinh khoản chi: CONTRACT (hợp đồng gốc) \| REPRINT (tái bản) \| TRANSFER (chuyển nhượng) \| TERMINATION (huỷ/kết thúc hợp đồng) \| MANUAL (tạo thủ công) |
+
+**Response 200** (`PaymentRecordListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].contractId` | string | ✅ | ObjectId của Contract |
+| `data[].conditionId` | string | ✅ |  |
+| `data[].receiverId` | string | ✅ |  |
+| `data[].seriesId` | string | ✅ | ObjectId của Series |
+| `data[].description` | string | ✅ |  |
+| `data[].approvedBy` | string | ✅ |  |
+| `data[].approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].paymentType` | enum `PaymentType` | ✅ |  |
+| `data[].paymentSource` | enum `PaymentSource` | ✅ |  |
+| `data[].amount` | number | ✅ | Số tiền |
+| `data[].period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `data[].paymentMethod` | string | ✅ |  |
+| `data[].transactionReference` | string | ✅ |  |
+| `data[].status` | enum `PaymentRecordStatus` | ✅ |  |
+| `data[].paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelReason` | string | ✅ |  |
+| `data[].note` | string | ✅ | Ghi chú text tự do |
+| `data[].createdBy` | string | ✅ |  |
+| `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `GET /payments/:id`
+> Chi tiết một payment record
+
+**Quyền:** BOARD_MEMBER, SUPER_ADMIN, MANGAKA, EDITOR (Bearer)
+
+**Response 200** (`PaymentRecordRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionId` | string | ✅ |  |
+| `receiverId` | string | ✅ |  |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `description` | string | ✅ |  |
+| `approvedBy` | string | ✅ |  |
+| `approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `paymentType` | enum `PaymentType` | ✅ |  |
+| `paymentSource` | enum `PaymentSource` | ✅ |  |
+| `amount` | number | ✅ | Số tiền |
+| `period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `paymentMethod` | string | ✅ |  |
+| `transactionReference` | string | ✅ |  |
+| `status` | enum `PaymentRecordStatus` | ✅ |  |
+| `paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelReason` | string | ✅ |  |
+| `note` | string | ✅ | Ghi chú text tự do |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | PAYMENT_RECORD_NOT_FOUND |
+
+---
+
+#### `GET /payments/contracts/:id/payments`
+> Danh sách payment theo contractId
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`PaymentRecordListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].contractId` | string | ✅ | ObjectId của Contract |
+| `data[].conditionId` | string | ✅ |  |
+| `data[].receiverId` | string | ✅ |  |
+| `data[].seriesId` | string | ✅ | ObjectId của Series |
+| `data[].description` | string | ✅ |  |
+| `data[].approvedBy` | string | ✅ |  |
+| `data[].approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].paymentType` | enum `PaymentType` | ✅ |  |
+| `data[].paymentSource` | enum `PaymentSource` | ✅ |  |
+| `data[].amount` | number | ✅ | Số tiền |
+| `data[].period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `data[].paymentMethod` | string | ✅ |  |
+| `data[].transactionReference` | string | ✅ |  |
+| `data[].status` | enum `PaymentRecordStatus` | ✅ |  |
+| `data[].paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelReason` | string | ✅ |  |
+| `data[].note` | string | ✅ | Ghi chú text tự do |
+| `data[].createdBy` | string | ✅ |  |
+| `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `GET /payments/series/:id/payments`
+> Danh sách payment theo seriesId
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`PaymentRecordListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].contractId` | string | ✅ | ObjectId của Contract |
+| `data[].conditionId` | string | ✅ |  |
+| `data[].receiverId` | string | ✅ |  |
+| `data[].seriesId` | string | ✅ | ObjectId của Series |
+| `data[].description` | string | ✅ |  |
+| `data[].approvedBy` | string | ✅ |  |
+| `data[].approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].paymentType` | enum `PaymentType` | ✅ |  |
+| `data[].paymentSource` | enum `PaymentSource` | ✅ |  |
+| `data[].amount` | number | ✅ | Số tiền |
+| `data[].period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `data[].paymentMethod` | string | ✅ |  |
+| `data[].transactionReference` | string | ✅ |  |
+| `data[].status` | enum `PaymentRecordStatus` | ✅ |  |
+| `data[].paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelReason` | string | ✅ |  |
+| `data[].note` | string | ✅ | Ghi chú text tự do |
+| `data[].createdBy` | string | ✅ |  |
+| `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `GET /payments/users/:id/payments`
+> Danh sách payment theo receiverId
+
+**Quyền:** MANGAKA, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`PaymentRecordListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].contractId` | string | ✅ | ObjectId của Contract |
+| `data[].conditionId` | string | ✅ |  |
+| `data[].receiverId` | string | ✅ |  |
+| `data[].seriesId` | string | ✅ | ObjectId của Series |
+| `data[].description` | string | ✅ |  |
+| `data[].approvedBy` | string | ✅ |  |
+| `data[].approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].paymentType` | enum `PaymentType` | ✅ |  |
+| `data[].paymentSource` | enum `PaymentSource` | ✅ |  |
+| `data[].amount` | number | ✅ | Số tiền |
+| `data[].period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `data[].paymentMethod` | string | ✅ |  |
+| `data[].transactionReference` | string | ✅ |  |
+| `data[].status` | enum `PaymentRecordStatus` | ✅ |  |
+| `data[].paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `data[].cancelReason` | string | ✅ |  |
+| `data[].note` | string | ✅ | Ghi chú text tự do |
+| `data[].createdBy` | string | ✅ |  |
+| `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `PATCH /payments/:id/approve`
+> Board duyệt payment → APPROVED
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`ApprovePaymentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `approvedBy` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 200** (`PaymentRecordRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionId` | string | ✅ |  |
+| `receiverId` | string | ✅ |  |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `description` | string | ✅ |  |
+| `approvedBy` | string | ✅ |  |
+| `approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `paymentType` | enum `PaymentType` | ✅ |  |
+| `paymentSource` | enum `PaymentSource` | ✅ |  |
+| `amount` | number | ✅ | Số tiền |
+| `period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `paymentMethod` | string | ✅ |  |
+| `transactionReference` | string | ✅ |  |
+| `status` | enum `PaymentRecordStatus` | ✅ |  |
+| `paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelReason` | string | ✅ |  |
+| `note` | string | ✅ | Ghi chú text tự do |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | INVALID_STATUS_FOR_APPROVAL_EXPECTED_TRIGGERED |
+| 404 | — | PAYMENT_RECORD_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `PATCH /payments/:id/pay`
+> Board/Admin xác nhận đã thanh toán → PAID
+
+**Quyền:** BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Body** (`PayPaymentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `paymentMethod` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `transactionReference` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `note` | string ✍ | — | Ghi chú text tự do |
+
+**Response 200** (`PaymentRecordRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionId` | string | ✅ |  |
+| `receiverId` | string | ✅ |  |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `description` | string | ✅ |  |
+| `approvedBy` | string | ✅ |  |
+| `approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `paymentType` | enum `PaymentType` | ✅ |  |
+| `paymentSource` | enum `PaymentSource` | ✅ |  |
+| `amount` | number | ✅ | Số tiền |
+| `period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `paymentMethod` | string | ✅ |  |
+| `transactionReference` | string | ✅ |  |
+| `status` | enum `PaymentRecordStatus` | ✅ |  |
+| `paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelReason` | string | ✅ |  |
+| `note` | string | ✅ | Ghi chú text tự do |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | INVALID_STATUS_FOR_PAYMENT_EXPECTED_APPROVED |
+| 404 | — | PAYMENT_RECORD_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `PATCH /payments/:id/cancel`
+> Board/Admin hủy payment chưa PAID → CANCELLED
+
+**Quyền:** BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Body** (`CancelPaymentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `cancelReason` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 200** (`PaymentRecordRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `contractId` | string | ✅ | ObjectId của Contract |
+| `conditionId` | string | ✅ |  |
+| `receiverId` | string | ✅ |  |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `description` | string | ✅ |  |
+| `approvedBy` | string | ✅ |  |
+| `approvedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `paymentType` | enum `PaymentType` | ✅ |  |
+| `paymentSource` | enum `PaymentSource` | ✅ |  |
+| `amount` | number | ✅ | Số tiền |
+| `period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `paymentMethod` | string | ✅ |  |
+| `transactionReference` | string | ✅ |  |
+| `status` | enum `PaymentRecordStatus` | ✅ |  |
+| `paidAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelledAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `cancelReason` | string | ✅ |  |
+| `note` | string | ✅ | Ghi chú text tự do |
+| `createdBy` | string | ✅ |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | PAYMENT_ALREADY_PAID_CANNOT_CANCEL |
+| 404 | — | PAYMENT_RECORD_NOT_FOUND |
+| 422 | — | Validation fail |
+---
+
+## §5. Flow 2 — Chapter Production (chapter-first)
+
+**Nghiệp vụ (chapter-first):** slot chương (số + tiêu đề + deadline) tạo **TRƯỚC** → Mangaka vẽ **Name** (storyboard) gắn vào chapter → Editor duyệt Name (checkpoint #1 — sửa storyboard rẻ hơn sửa bản vẽ thật) → khi Name `APPROVED` mới được **upload page** → phân vùng + giao task trợ lý (Flow 3, §6) → Mangaka duyệt bản tổng hợp → nộp Editor final check → duyệt → **publish** (bị gate bởi Contract FULLY_EXECUTED). Series có co-owner (PARTIAL_TRANSFER, Flow 8) thì publish phải qua co-owner duyệt.
+
+**State machine Manuscript:** `DRAFT → IN_PRODUCTION → COMPOSITE_REVIEW → EDITOR_REVIEW ⇄ EDITOR_REVISION → READY_FOR_PRINT → [AWAITING_CO_OWNER_APPROVAL] → PUBLISHED`. `Chapter.status` là giá trị **dẫn xuất** (DRAFT = name-phase → IN_PRODUCTION → PUBLISHED).
+
+### Happy path
+
+1. **Mangaka** `POST /chapters` `{seriesId, chapterNumber, title?}` → Chapter `DRAFT` + Manuscript `DRAFT` + Schedule. (Sửa `PATCH /chapters/:id`; xoá slot nhầm `DELETE /chapters/:id` — chỉ DRAFT, cascade.)
+2. **Editor** đặt deadline: `PUT /chapters/:id/schedule`; gia hạn đơn phương: `PATCH /chapters/:id/schedule/extend` (giữ lịch sử). *(Thương lượng 2 chiều → Flow 10, §8.)*
+3. **Mangaka** tạo Name: `POST /chapters/:id/names` (tự SUBMITTED, derive chapterNumber). Vẽ hỏng chưa duyệt → `DELETE /chapters/:id/names/:nameId` rồi tạo lại.
+4. **Vòng duyệt Name** (route chapter-scoped): Editor `POST /chapters/:id/names/:nameId/request-revision` → Mangaka sửa trang (`PUT/POST .../pages`) → `.../resubmit` → Editor `.../approve` → **mở gate page**.
+5. **Mangaka** upload trang: `POST /chapters/:id/pages` (object key từ §14) — trang đầu tiên đẩy Manuscript `IN_PRODUCTION`. Vòng đời Page chuyển tự động theo cascade task (Flow 3); fallback tay: `PATCH /pages/:pageId`.
+6. Mọi task nộp xong → Manuscript auto `COMPOSITE_REVIEW` (fallback tay: `POST /chapters/:id/manuscript/mark-composite-ready`). Mangaka duyệt composite từng trang (annotation §5-cuối + approve task ở Flow 3).
+7. Mọi Page `COMPLETED` → **Mangaka** `POST /chapters/:id/manuscript/submit` → `EDITOR_REVIEW`.
+8. **Editor** final check: `request-revision` (annotate lên manuscript) ⇄ Mangaka `resubmit`; đạt → `POST /chapters/:id/manuscript/approve` → `READY_FOR_PRINT`.
+9. **Editor** `POST /chapters/:id/publish` → `PUBLISHED` + `publishedAt` (kích hoạt đếm mốc thanh toán Flow 6 + đủ điều kiện lên ranking Flow 4). Series có co-owner → sang `AWAITING_CO_OWNER_APPROVAL`, co-owner `POST /chapters/:id/co-owner-approve|reject`.
+10. Theo dõi: `GET /chapters/:id/progress` (Editor/Mangaka/Board — poll 10–30s): số trang theo trạng thái, taskBreakdown, deadline còn lại, `warningLevel`, `onHold`.
+
+**Tạm ngưng giữa chừng (hiatus cấp chương):** Editor `POST /chapters/:id/hold` `{reason, expectedReturnDate?}` — đóng băng (mọi mutation sản xuất → 409), `POST /chapters/:id/resume` khôi phục.
+
+**Annotation (markup dùng chung):** `POST /annotations` (targetType PAGE/REGION/TASK/MANUSCRIPT/NAME + coordinates + TEXT/HIGHLIGHT/DRAWING) · `GET /annotations?targetType=&targetId=` (bắt buộc cả 2) · `PATCH /annotations/:id/resolve` · `DELETE /annotations/:id` (chỉ tác giả). Dùng cho cả Editor→Mangaka lẫn Mangaka→Assistant.
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Tạo chapter khi series chưa SERIALIZED | `POST /chapters` | 409 `Error.SeriesNotSerialized` |
+| Series CANCELLING đã hết quota chương kết thúc | `POST /chapters` | 409 `Error.EndingAllowanceExceeded` |
+| Trùng số chương | `POST /chapters` / `PATCH` | 409 `Error.DuplicateChapterNumber` |
+| Upload page khi Name chưa APPROVED | `POST /chapters/:id/pages` | 409 `Error.ChapterNameNotApproved` |
+| Tạo Name khi chapter đã có Name | `POST /chapters/:id/names` | 409 `Error.ChapterNameAlreadyExists` |
+| Tạo Name khi chapter không còn DRAFT | `POST /chapters/:id/names` | 409 `Error.ChapterNotDraftForName` |
+| Xoá Name đã APPROVED / chapter hết DRAFT | `DELETE /chapters/:id/names/:nameId` | 409 `Error.NameNotDeletable` |
+| Đổi `chapterNumber` khi hết DRAFT | `PATCH /chapters/:id` | 409 `Error.ChapterNumberLocked` |
+| Đổi `title` sau PUBLISHED | `PATCH /chapters/:id` | 409 `Error.ChapterNotEditable` |
+| Xoá chapter hết DRAFT | `DELETE /chapters/:id` | 409 `Error.ChapterNotDeletable` |
+| Submit manuscript khi còn page chưa COMPLETED | manuscript/submit | 409 `Error.PagesNotAllCompleted` |
+| Chuyển manuscript sai bậc | manuscript/* | 409 `Error.InvalidManuscriptTransition` |
+| Publish khi chưa READY_FOR_PRINT | publish | 409 |
+| **Publish khi series chưa có Contract FULLY_EXECUTED** | publish | 409 `Error.ContractNotExecuted` *(ngoại lệ: series CANCELLING/COMPLETING được bypass để ra chương kết thúc)* |
+| Mutation khi chapter đang hold | pages/tasks/manuscript | 409 `Error.ChapterOnHold` |
+| Không phải co-owner mà gọi co-owner-approve | co-owner-approve/reject | 403 `Error.NotCoOwner` |
+| Co-owner im lặng quá hạn grace | (cron) | approval → `ESCALATED`, Board + Editor được notify |
+| Người ngoài series thao tác | mọi route | 403 (`Error.NotSeriesOwner` / `Error.NotAssignedEditor`) |
+| Annotation thiếu targetType/targetId khi list | `GET /annotations` | 422 |
+| Annotation target không tồn tại | `POST /annotations` | 422 `Error.AnnotationTargetNotFound` |
+| Xoá annotation của người khác | `DELETE /annotations/:id` | 403 `Error.AnnotationForbidden` |
+
+### API Reference
+
+#### `POST /chapters`
+> Mangaka tạo Chapter (chapter-first): chapterNumber + title → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule. Name tạo sau.
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateChapterBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId của Series |
+| `chapterNumber` | integer (≥ 0) ✍ | ✅ | Số thứ tự chương trong series |
+| `title` | string (0..200 ký tự) ✍ | — | Tiêu đề (FE tự nhập) |
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.DuplicateChapterNumber` | chapter number already exists in this series |
+| 409 | `Error.SeriesNotSerialized` | Series phải ở SERIALIZED (hoặc CANCELLING/COMPLETING cho chương kết thúc) mới tạo được chapter |
+| 409 | `Error.EndingAllowanceExceeded` | Series CANCELLING đã tạo đủ số chương kết thúc Board cấp (endingChapterAllowance) |
+
+---
+
+#### `GET /chapters`
+> List chapter theo seriesId (query)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string | ✅ | ObjectId của Series |
+
+**Response 200** (`ChapterListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `items[].chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `items[].title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `items[].totalPages` | number | ✅ | Tổng số trang của chương |
+| `items[].status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `items[].publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `items[].hold` | object | ✅ | null = chapter is not on hold |
+| `items[].manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `items[].schedule` | object | ✅ |  |
+
+---
+
+#### `GET /chapters/:id`
+> Chi tiết 1 chapter (kèm manuscript/schedule)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+---
+
+#### `PATCH /chapters/:id`
+> Mangaka sửa title (pre-PUBLISHED) / chapterNumber (chỉ khi DRAFT) — chapter-first
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdateChapterBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `title` | string (0..200 ký tự) ✍ | — | Tiêu đề (FE tự nhập) |
+| `chapterNumber` | integer ✍ | — | Số thứ tự chương trong series |
+
+**Response 200** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.ChapterNotEditable` | chapter title cannot be changed after PUBLISHED |
+| 409 | `Error.ChapterNumberLocked` | chapterNumber can only be changed while the chapter is in DRAFT status |
+| 409 | `Error.DuplicateChapterNumber` | chapter number already exists in this series |
+
+---
+
+#### `DELETE /chapters/:id`
+> Mangaka xóa chapter DRAFT (cascade Name/Manuscript/Schedule/Pages) — chapter-first
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.ChapterNotDeletable` | chapter can only be deleted while in DRAFT status |
+
+---
+
+#### `POST /chapters/:id/names`
+> Mangaka tạo chapter-Name (storyboard) cho chapter DRAFT — chapter-first
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateChapterNameBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `namePages` | object[] | ✅ | Các trang storyboard Name |
+| `namePages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `namePages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.ChapterNotDraftForName` | chapter must be in DRAFT status to create a Name |
+| 409 | `Error.ChapterNameAlreadyExists` | this chapter already has a Name assigned |
+
+---
+
+#### `GET /chapters/:id/names`
+> List Name của chapter (thực tế 0..1)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`NameListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `items[].chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `items[].kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `items[].status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `items[].version` | number | ✅ | Tăng mỗi lần resubmit |
+| `items[].pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `items[].submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+---
+
+#### `GET /chapters/:id/names/:nameId`
+> Chi tiết Name của chapter
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+
+---
+
+#### `POST /chapters/:id/names/:nameId/request-revision`
+> Editor phụ trách yêu cầu sửa Name của chapter → REVISION
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /chapters/:id/names/:nameId/resubmit`
+> Mangaka nộp lại Name của chapter → IN_REVIEW, version++
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /chapters/:id/names/:nameId/approve`
+> Editor duyệt Name của chapter → APPROVED (mở gate upload page)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `PUT /chapters/:id/names/:nameId/pages`
+> Mangaka thay TOÀN BỘ trang Name của chapter (chỉ DRAFT/REVISION)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdateNamePagesBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pages` | object[] | ✅ |  |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+
+**Response 200** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `POST /chapters/:id/names/:nameId/pages`
+> Mangaka thêm 1 trang vào Name của chapter (append; chỉ DRAFT/REVISION)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`AddNamePageBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageNumber` | integer (≥ 1) ✍ | ✅ | Số thứ tự trang trong chương |
+| `fileUrl` | string (1..∞ ký tự) ✍ | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+
+**Response 201** (`NameRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `chapterId` | string | ✅ | null = proposal-Name; có giá trị = Name của chapter đó |
+| `chapterNumber` | number | ✅ | null cho Name chương mẫu của proposal; N = Name của chương N (kind=CHAPTER) |
+| `kind` | enum `NameKind` | ✅ | Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard) |
+| `status` | enum `NameStatus` | ✅ | Name/chapter-name review status |
+| `version` | number | ✅ | Tăng mỗi lần resubmit |
+| `pages` | object[] | ✅ | Các trang vẽ thô; fileUrl là object key (R2) |
+| `pages[].pageNumber` | integer (≥ 1) | ✅ | Số thứ tự trang trong chương |
+| `pages[].fileUrl` | string (1..∞ ký tự) | ✅ | Object key file trên R2 (xin qua POST /uploads/sign) |
+| `submittedAt` | string | ✅ | ISO 8601; null khi chưa submit |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+| 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+---
+
+#### `DELETE /chapters/:id/names/:nameId`
+> Mangaka xoá Name của chapter để vẽ lại (chỉ chapter DRAFT + Name chưa APPROVED)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 404 | `Error.NameNotFound` | name does not exist |
+| 409 | `Error.NameNotDeletable` | only a not-yet-approved Name on a DRAFT chapter can be deleted |
+
+---
+
+#### `POST /chapters/:id/pages`
+> Mangaka upload trang (pencil/ink) → tạo Page (NOT_STARTED)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreatePageBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageNumber` | integer (≥ 1) ✍ | ✅ | Số thứ tự trang trong chương |
+| `originalFile` | string (1..∞ ký tự) ✍ | ✅ | Object key file trang gốc (pencil/ink của Mangaka) |
+
+**Response 201** (`PageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `pageNumber` | number | ✅ | Số thứ tự trang trong chương |
+| `originalFile` | string | ✅ | Object key file gốc (pencil/ink) trên R2 |
+| `compositeFile` | string | ✅ | Object key file composite trên R2 |
+| `status` | enum `PageStatus` | ✅ | Page production status |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 409 | `Error.ChapterNameNotApproved` | Name must be APPROVED before uploading pages; create/approve the Name first |
+
+---
+
+#### `GET /chapters/:id/pages`
+> List trang của chapter
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`PageListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].chapterId` | string | ✅ | ObjectId của Chapter |
+| `items[].pageNumber` | number | ✅ | Số thứ tự trang trong chương |
+| `items[].originalFile` | string | ✅ | Object key file gốc (pencil/ink) trên R2 |
+| `items[].compositeFile` | string | ✅ | Object key file composite trên R2 |
+| `items[].status` | enum `PageStatus` | ✅ | Page production status |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+---
+
+#### `PATCH /pages/:pageId`
+> Mangaka cập nhật trang (file/status: NOT_STARTED→IN_PROGRESS→COMPOSITE_READY→COMPLETED)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdatePageBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `compositeFile` | string (1..∞ ký tự) ✍ | — | Object key bản tổng hợp sau khi Assistant xong |
+| `status` | enum `PageStatus` | — | Page production status |
+
+**Response 200** (`PageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `pageNumber` | number | ✅ | Số thứ tự trang trong chương |
+| `originalFile` | string | ✅ | Object key file gốc (pencil/ink) trên R2 |
+| `compositeFile` | string | ✅ | Object key file composite trên R2 |
+| `status` | enum `PageStatus` | ✅ | Page production status |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+| 409 | `Error.InvalidPageTransition` | page state transition is not allowed |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/manuscript/mark-composite-ready`
+> Mangaka chốt composite (cần tất cả trang COMPLETED) → Manuscript sang COMPOSITE_REVIEW
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.PagesNotAllCompleted` | all pages must be completed first |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/manuscript/submit`
+> Mangaka nộp manuscript cho Editor final check → EDITOR_REVIEW
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/manuscript/request-revision`
+> Editor yêu cầu sửa manuscript → EDITOR_REVISION (kèm Annotation)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/manuscript/resubmit`
+> Mangaka nộp lại sau revision → EDITOR_REVIEW
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/manuscript/approve`
+> Editor duyệt manuscript → READY_FOR_PRINT
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/publish`
+> Editor xuất bản chapter (chỉ READY_FOR_PRINT) → PUBLISHED + emit chapter.published. Chặn nếu series chưa có Contract FULLY_EXECUTED (BR-CONTRACT-05). Co-owner gate: defer B3.
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+| 409 | `Error.ContractNotExecuted` | series has no FULLY_EXECUTED contract; cannot publish (BR-CONTRACT-05) |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /chapters/:id/co-owner-approve`
+> A-CHP-06: Co-owner (PARTIAL_TRANSFER) duyệt chapter đang AWAITING_CO_OWNER_APPROVAL → PUBLISHED
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotCoOwner` | only the series co-owner (PARTIAL_TRANSFER) can approve/reject this chapter |
+| 404 | `Error.CoOwnerApprovalNotFound` | no co-owner approval record exists for this chapter |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.CoOwnerApprovalNotPending` | co-owner approval is not PENDING; already decided or escalated |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+
+---
+
+#### `POST /chapters/:id/co-owner-reject`
+> A-CHP-06: Co-owner từ chối → Manuscript về EDITOR_REVISION
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotCoOwner` | only the series co-owner (PARTIAL_TRANSFER) can approve/reject this chapter |
+| 404 | `Error.CoOwnerApprovalNotFound` | no co-owner approval record exists for this chapter |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.CoOwnerApprovalNotPending` | co-owner approval is not PENDING; already decided or escalated |
+| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+
+---
+
+#### `PUT /chapters/:id/schedule`
+> Editor phụ trách set deadline gốc/hiện tại của chapter
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`SetScheduleBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `originalDeadline` | string (regex, ISO 8601) ✍ | — | Deadline gốc khi tạo |
+| `currentDeadline` | string (regex, ISO 8601) ✍ | — | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+
+**Response 200** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+---
+
+#### `PATCH /chapters/:id/schedule/extend`
+> Editor gia hạn deadline → tạo ScheduleExtension (previous/new/reason), set extended=true
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ExtendDeadlineBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `newDeadline` | string (regex, ISO 8601) ✍ | ✅ |  |
+| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 200** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+---
+
+#### `POST /chapters/:id/hold`
+> Editor pauses chapter production with hold flag
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`HoldChapterBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..∞ ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `expectedReturnDate` | string (regex, ISO 8601) ✍ | — |  |
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.ChapterNotHoldable` | manuscript must be IN_PRODUCTION..READY_FOR_PRINT to hold |
+| 409 | `Error.ChapterAlreadyOnHold` | chapter is already on hold |
+
+---
+
+#### `POST /chapters/:id/resume`
+> Editor resumes a chapter that is on hold
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`ChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
+| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
+| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
+| `hold` | object | ✅ | null = chapter is not on hold |
+| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `hold.expectedReturnDate` | string | ✅ |  |
+| `hold.heldBy` | string | ✅ |  |
+| `hold.heldAt` | string | ✅ |  |
+| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `schedule` | object | ✅ |  |
+| `schedule.id` | string | ✅ | ObjectId của bản ghi |
+| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
+| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
+| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
+| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+| 409 | `Error.ChapterNotOnHold` | chapter is not on hold; nothing to resume |
+
+---
+
+#### `GET /chapters/:id/progress`
+> Chapter progress dashboard for owner editor, mangaka, board, or super admin
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`ChapterProgressRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `nameStatus` | enum `NameStatus` | ✅ | null = chapter không gắn Name |
+| `totalPages` | number | ✅ | Tổng số trang của chương |
+| `pagesCompleted` | number | ✅ |  |
+| `pagesInProgress` | number | ✅ |  |
+| `pagesNotStarted` | number | ✅ |  |
+| `taskBreakdown` | object | ✅ |  |
+| `taskBreakdown.assigned` | number | ✅ |  |
+| `taskBreakdown.inProgress` | number | ✅ |  |
+| `taskBreakdown.submitted` | number | ✅ |  |
+| `taskBreakdown.underReview` | number | ✅ |  |
+| `taskBreakdown.approved` | number | ✅ |  |
+| `taskBreakdown.revisionRequested` | number | ✅ |  |
+| `taskBreakdown.onHold` | number | ✅ |  |
+| `taskBreakdown.cancelled` | number | ✅ |  |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `remainingHours` | number | ✅ |  |
+| `progressPct` | number | ✅ |  |
+| `warningLevel` | enum(NONE, YELLOW, RED, CRITICAL) | ✅ | Deadline warning: NONE an toan, YELLOW nguy co, RED kho kip, CRITICAL qua han |
+| `onHold` | boolean | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.ChapterAccessDenied` | caller is outside the chapter scope (owner mangaka / assigned editor / board / admin) |
+| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+---
+
+#### `POST /annotations`
+> Tạo annotation/markup (TEXT/HIGHLIGHT/DRAWING + coordinates) trên target (Page/Region/Task/Manuscript/Name)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Body** (`CreateAnnotationBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `targetType` | enum `AnnotationTargetType` | ✅ | Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME |
+| `targetId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `annotationType` | enum `AnnotationType` | ✅ | Annotation type: TEXT, HIGHLIGHT, DRAWING |
+| `coordinates` | object | — | Toạ độ vùng trên trang {x,y,width,height} — pixel trên ảnh gốc |
+| `content` | string (0..5000 ký tự) ✍ | — | Nội dung text |
+| `reviewStage` | enum `ReviewStage` | — | Review stage: ASSISTANT, MANGAKA, EDITOR |
+| `taskId` | string ✍ | — | ObjectId của Task |
+
+**Response 201** (`AnnotationRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `taskId` | string | ✅ | ObjectId của Task |
+| `authorId` | string | ✅ |  |
+| `authorRole` | string | ✅ | RoleCode của người tạo annotation: Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `targetType` | enum `AnnotationTargetType` | ✅ | Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME |
+| `targetId` | string | ✅ |  |
+| `annotationType` | enum `AnnotationType` | ✅ | Annotation type: TEXT, HIGHLIGHT, DRAWING |
+| `reviewStage` | enum `ReviewStage` | ✅ | Review stage: ASSISTANT, MANGAKA, EDITOR |
+| `coordinates` | object | ✅ | Toạ độ vùng trên trang {x,y,width,height} — pixel trên ảnh gốc |
+| `content` | string | ✅ | Nội dung text |
+| `isResolved` | boolean | ✅ | true = annotation đã được xử lý xong |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Error.AnnotationTargetNotFound (targetId) - targetId does not exist (or malformed id) for the chosen targetType
+
+Validation fail (targetType/targetId/annotationType/...) |
+
+---
+
+#### `GET /annotations`
+> List annotation theo targetType + targetId
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `targetType` | enum `AnnotationTargetType` | ✅ | Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME |
+| `targetId` | string (1..∞ ký tự) | ✅ |  |
+
+**Response 200** (`AnnotationListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].taskId` | string | ✅ | ObjectId của Task |
+| `items[].authorId` | string | ✅ |  |
+| `items[].authorRole` | string | ✅ | RoleCode của người tạo annotation: Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `items[].targetType` | enum `AnnotationTargetType` | ✅ | Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME |
+| `items[].targetId` | string | ✅ |  |
+| `items[].annotationType` | enum `AnnotationType` | ✅ | Annotation type: TEXT, HIGHLIGHT, DRAWING |
+| `items[].reviewStage` | enum `ReviewStage` | ✅ | Review stage: ASSISTANT, MANGAKA, EDITOR |
+| `items[].coordinates` | object | ✅ | Toạ độ vùng trên trang {x,y,width,height} — pixel trên ảnh gốc |
+| `items[].content` | string | ✅ | Nội dung text |
+| `items[].isResolved` | boolean | ✅ | true = annotation đã được xử lý xong |
+| `items[].resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Thiếu/sai query targetType hoặc targetId |
+
+---
+
+#### `PATCH /annotations/:id/resolve`
+> Đánh dấu annotation đã giải quyết (isResolved=true). Chỉ author.
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`AnnotationRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `taskId` | string | ✅ | ObjectId của Task |
+| `authorId` | string | ✅ |  |
+| `authorRole` | string | ✅ | RoleCode của người tạo annotation: Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN |
+| `targetType` | enum `AnnotationTargetType` | ✅ | Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME |
+| `targetId` | string | ✅ |  |
+| `annotationType` | enum `AnnotationType` | ✅ | Annotation type: TEXT, HIGHLIGHT, DRAWING |
+| `reviewStage` | enum `ReviewStage` | ✅ | Review stage: ASSISTANT, MANGAKA, EDITOR |
+| `coordinates` | object | ✅ | Toạ độ vùng trên trang {x,y,width,height} — pixel trên ảnh gốc |
+| `content` | string | ✅ | Nội dung text |
+| `isResolved` | boolean | ✅ | true = annotation đã được xử lý xong |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.AnnotationForbidden` | current user cannot update this annotation |
+| 404 | `Error.AnnotationNotFound` | annotation does not exist |
+
+---
+
+#### `DELETE /annotations/:id`
+> Xoá annotation. Chỉ author.
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.AnnotationForbidden` | current user cannot update this annotation |
+| 404 | `Error.AnnotationNotFound` | annotation does not exist |
+---
+
+## §6. Flow 3 — Region / Task / AI segmentation
+
+**Nghiệp vụ:** trên mỗi trang đã pencil/ink, Mangaka **khoanh vùng** (Region) cần xử lý — tự tay hoặc nhờ **AI segment** (đề xuất trước, Mangaka confirm/apply mới ghi) → tạo **Task** cho từng vùng, giao Assistant (CHỈ giao được cho người có StudioAssignment ACTIVE + còn trong thời hạn thuê — Flow 9) → Assistant start → nộp kết quả (mỗi lần nộp = 1 TaskVersion, giữ lịch sử) → Mangaka approve / yêu cầu sửa. Task được duyệt tự **cascade**: mọi task của trang SUBMITTED → Page `COMPOSITE_READY`; mọi task APPROVED → Page `COMPLETED`; đủ điều kiện → Manuscript nhích trạng thái (Flow 2).
+
+### Happy path
+
+1. **Mangaka** khoanh tay: `POST /pages/:id/regions` (coordinates + regionType) — hoặc nhờ AI:
+   a. `POST /pages/:id/segment` `{mode: MODEL|HEURISTIC}` → 201 `{jobId}` (async).
+   b. Poll `GET /ai-jobs/:id` tới `SUCCEEDED` (kèm `proposedRegions` — CHƯA ghi DB). Danh sách job của trang: `GET /pages/:id/ai-jobs`.
+   c. `POST /ai-jobs/:id/apply` → ghi Region[] `createdBy=AI` + confidence (vùng MANUAL/đã confirm/đã có task được GIỮ nguyên).
+2. Chỉnh vùng: `PATCH /regions/:id` (confirm / sửa toạ độ); xoá vùng: `DELETE /regions/:id`.
+3. **Mangaka** giao việc: `POST /tasks` (regionId/pageId + assistantId + taskType + deadline + priority + assetIds tham khảo) — hoặc `POST /tasks/batch` (all-or-nothing, tối đa 50).
+4. **Assistant** `POST /tasks/:id/start` → tải file gốc + asset (signed GET §14) → làm → `POST /tasks/:id/submit` (kèm object key kết quả) → TaskVersion `PENDING`.
+5. **Mangaka** review trên composite: `POST /tasks/:id/approve` (→ cascade) hoặc `POST /tasks/:id/request-revision` (kèm note — Assistant thấy annotation, sửa, start/submit lại, version++).
+6. Assistant nghỉ giữa chừng (đổi availability ON_LEAVE/UNAVAILABLE ở hồ sơ) → task đang làm auto `ON_HOLD` → **Mangaka** `POST /tasks/:id/reassign` sang Assistant khác (người mới cũng phải đang được thuê).
+7. Hủy việc: `POST /tasks/:id/cancel` (kèm lý do — giữ versions).
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Khoanh vùng trang của series người khác | `POST /pages/:id/regions` | 403 `Error.NotSeriesOwner` |
+| Coordinates âm / width-height ≤ 0 | regions create/patch | 422 |
+| Segment khi page chưa có file | `POST /pages/:id/segment` | 422 `Error.PageHasNoFile` |
+| Segment khi đã có job đang chạy trên trang | segment | 409 `Error.SegmentJobAlreadyRunning` |
+| AI đang tắt (`AI_SERVICE_URL` trống) | segment | 503 `Error.AiNotEnabled` — **fallback khoanh tay, flow không nghẽn** |
+| Apply job chưa SUCCEEDED / đã apply | `POST /ai-jobs/:id/apply` | 409 `Error.AiJobNotApplicable` |
+| Xoá vùng đã có task APPROVED | `DELETE /regions/:id` | 409 `Error.RegionHasTasks` — vùng có task chưa xong thì cascade CANCELLED + notify Assistant |
+| Giao task cho Assistant chưa được thuê / hết hạn thuê | `POST /tasks` / reassign | 409 `Error.AssistantNotHired` |
+| `assetIds` chứa asset không tồn tại | tasks create/patch | 422 `Error.AssetNotFound` |
+| Assistant khác start/submit task không phải của mình | start/submit | 403 `Error.NotTaskAssignee` |
+| Chuyển trạng thái task sai bậc (submit khi chưa start...) | task lifecycle | 409 `Error.InvalidTaskTransition` |
+| Reassign task không ở trạng thái cho phép | reassign | 409 `Error.TaskNotReassignable` |
+| Thao tác task khi chapter đang hold | start/submit/approve | 409 `Error.ChapterOnHold` |
+| Task sắp trễ deadline | (cron hourly) | notify Assistant + Mangaka (`TASK_DEADLINE_WARNING`) |
+
+> **Scope đọc `GET /tasks`:** MANGAKA thấy task mình giao; ASSISTANT thấy task được giao cho mình. Filter: `assigneeId`, `status`, `regionId`, `pageId`.
+
+### API Reference
+
+#### `POST /pages/:id/regions`
+> Mangaka khoanh vùng manual trên trang → Region
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateRegionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `coordinates` | object | ✅ | Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0) |
+| `coordinates.x` | number (≥ 0) | ✅ |  |
+| `coordinates.y` | number (≥ 0) | ✅ |  |
+| `coordinates.width` | number (≥ 0) | ✅ |  |
+| `coordinates.height` | number (≥ 0) | ✅ |  |
+| `regionType` | enum `RegionType` | — | Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER |
+
+**Response 201** (`RegionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `coordinates` | object | ✅ | Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0) |
+| `coordinates.x` | number (≥ 0) | ✅ |  |
+| `coordinates.y` | number (≥ 0) | ✅ |  |
+| `coordinates.width` | number (≥ 0) | ✅ |  |
+| `coordinates.height` | number (≥ 0) | ✅ |  |
+| `regionType` | enum `RegionType` | ✅ | Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER |
+| `createdBy` | string | ✅ | MANUAL \| AI |
+| `confirmedByMangaka` | boolean | ✅ | true = Mangaka đã xác nhận vùng (vùng AI đề xuất cần confirm) |
+| `confidenceScore` | number | ✅ | null khi MANUAL |
+| `detectedSubtype` | string | ✅ | Original AI model class (frame/body/text-block/bubble/...) |
+| `aiModelVersion` | string | ✅ | AI model version that produced this region; null for MANUAL |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /pages/:id/regions`
+> Danh sách vùng của 1 trang (Mangaka sở hữu / Editor)
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Response 200** (`RegionListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].pageId` | string | ✅ | ObjectId của Page |
+| `items[].coordinates` | object | ✅ | Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0) |
+| `items[].regionType` | enum `RegionType` | ✅ | Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER |
+| `items[].createdBy` | string | ✅ | MANUAL \| AI |
+| `items[].confirmedByMangaka` | boolean | ✅ | true = Mangaka đã xác nhận vùng (vùng AI đề xuất cần confirm) |
+| `items[].confidenceScore` | number | ✅ | null khi MANUAL |
+| `items[].detectedSubtype` | string | ✅ | Original AI model class (frame/body/text-block/bubble/...) |
+| `items[].aiModelVersion` | string | ✅ | AI model version that produced this region; null for MANUAL |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+
+---
+
+#### `PATCH /regions/:id`
+> Sửa vùng (partial)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdateRegionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `coordinates` | object | — | Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0) |
+| `coordinates.x` | number (≥ 0) | ✅ |  |
+| `coordinates.y` | number (≥ 0) | ✅ |  |
+| `coordinates.width` | number (≥ 0) | ✅ |  |
+| `coordinates.height` | number (≥ 0) | ✅ |  |
+| `regionType` | enum `RegionType` | — | Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER |
+| `confirmedByMangaka` | boolean ✍ | — | true = Mangaka đã xác nhận vùng (vùng AI đề xuất cần confirm) |
+
+**Response 200** (`RegionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `coordinates` | object | ✅ | Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0) |
+| `coordinates.x` | number (≥ 0) | ✅ |  |
+| `coordinates.y` | number (≥ 0) | ✅ |  |
+| `coordinates.width` | number (≥ 0) | ✅ |  |
+| `coordinates.height` | number (≥ 0) | ✅ |  |
+| `regionType` | enum `RegionType` | ✅ | Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER |
+| `createdBy` | string | ✅ | MANUAL \| AI |
+| `confirmedByMangaka` | boolean | ✅ | true = Mangaka đã xác nhận vùng (vùng AI đề xuất cần confirm) |
+| `confidenceScore` | number | ✅ | null khi MANUAL |
+| `detectedSubtype` | string | ✅ | Original AI model class (frame/body/text-block/bubble/...) |
+| `aiModelVersion` | string | ✅ | AI model version that produced this region; null for MANUAL |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.RegionNotFound` | region not found or invalid id |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Validation fail |
+
+---
+
+#### `DELETE /regions/:id`
+> Xoá vùng → cascade CANCELLED task chưa kết thúc + notify Assistant (chặn nếu có APPROVED)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`DeleteRegionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `cancelledTaskIds` | string[] | ✅ | Task ids cascaded to CANCELLED |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.RegionNotFound` | region not found or invalid id |
+| 409 | `Error.RegionHasApprovedTasks` | region has approved task(s); cannot delete |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /pages/:id/segment`
+> Run async AI page segmentation and return a job id for polling
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`SegmentPageBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `mode` | enum `AiSegmentMode` | — | Segmentation mode: MODEL (YOLO deep learning) or HEURISTIC (OpenCV baseline) (default: `"MODEL"`) |
+
+**Response 201** (`SegmentAcceptedRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `jobId` | string | ✅ | ObjectId AiJob để poll |
+| `status` | enum `AiJobStatus` | ✅ | AI job lifecycle: QUEUED -> RUNNING -> SUCCEEDED \| FAILED |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+| 409 | `Error.SegmentJobAlreadyRunning` | a segmentation job is already queued/running for this page |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Error.PageHasNoFile (pageId) - page has no uploaded original file to segment
+
+Validation fail |
+| 503 | `Error.AiNotEnabled` | AI service is not configured (AI_SERVICE_URL empty); use manual regions |
+| 503 | `Error.AiEnqueueFailed` | could not enqueue AI job (queue unavailable); use manual regions |
+
+---
+
+#### `GET /ai-jobs/:id`
+> Poll one AI job status and proposed regions
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`AiJobRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `type` | enum `AiJobType` | ✅ | AI job type: SEGMENT; COLOR/NUMBER are reserved for Spec 3 |
+| `mode` | enum `AiSegmentMode` | ✅ | Segmentation mode: MODEL (YOLO deep learning) or HEURISTIC (OpenCV baseline) |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `status` | enum `AiJobStatus` | ✅ | AI job lifecycle: QUEUED -> RUNNING -> SUCCEEDED \| FAILED |
+| `error` | string | ✅ | Error message when FAILED |
+| `modelVersion` | string | ✅ |  |
+| `proposedRegions` | object[] | ✅ | Returned only on job detail route |
+| `proposedRegions[].regionType` | enum `RegionType` | ✅ | Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER |
+| `proposedRegions[].detectedSubtype` | string | ✅ |  |
+| `proposedRegions[].coordinates` | object | ✅ | Pixel bbox coordinates, top-left origin |
+| `proposedRegions[].confidenceScore` | number (≥ 0, ≤ 1) | ✅ | Độ tin cậy AI 0–1 (null khi vùng tạo MANUAL) |
+| `regionCount` | number | ✅ |  |
+| `appliedAt` | string | ✅ | ISO timestamp; latest applied job is the active proposal |
+| `startedAt` | string | ✅ |  |
+| `finishedAt` | string | ✅ |  |
+| `durationMs` | number | ✅ | Inference duration in milliseconds |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.AiJobNotFound` | AI job does not exist or does not belong to the current user |
+
+---
+
+#### `GET /pages/:id/ai-jobs`
+> List AI proposals for one page without proposedRegions payload
+
+**Quyền:** MANGAKA (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `type` | enum `AiJobType` | — | AI job type: SEGMENT; COLOR/NUMBER are reserved for Spec 3 (default: `"SEGMENT"`) |
+
+**Response 200** (`AiJobListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].type` | enum `AiJobType` | ✅ | AI job type: SEGMENT; COLOR/NUMBER are reserved for Spec 3 |
+| `items[].mode` | enum `AiSegmentMode` | ✅ | Segmentation mode: MODEL (YOLO deep learning) or HEURISTIC (OpenCV baseline) |
+| `items[].pageId` | string | ✅ | ObjectId của Page |
+| `items[].status` | enum `AiJobStatus` | ✅ | AI job lifecycle: QUEUED -> RUNNING -> SUCCEEDED \| FAILED |
+| `items[].error` | string | ✅ | Error message when FAILED |
+| `items[].modelVersion` | string | ✅ |  |
+| `items[].regionCount` | number | ✅ |  |
+| `items[].appliedAt` | string | ✅ | ISO timestamp; latest applied job is the active proposal |
+| `items[].startedAt` | string | ✅ |  |
+| `items[].finishedAt` | string | ✅ |  |
+| `items[].durationMs` | number | ✅ | Inference duration in milliseconds |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+
+---
+
+#### `POST /ai-jobs/:id/apply`
+> Apply one AI proposal into Region[] while preserving manual/confirmed/task-linked regions
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`ApplyAiJobRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+| `created` | number | ✅ |  |
+| `removed` | number | ✅ | Previous bare AI regions removed |
+| `skipped` | number | ✅ | AI regions kept because they are confirmed or task-linked |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.AiJobNotFound` | AI job does not exist or does not belong to the current user |
+| 404 | `Error.PageNotFound` | page does not exist |
+| 409 | `Error.AiJobNotApplicable` | AI job is not in SUCCEEDED state or has no proposed regions |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+---
+
+#### `POST /tasks`
+> Giao task cho Assistant (enforce BR-ASSIST-01)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateTaskBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageId` | string ✍ | ✅ | ObjectId của Page |
+| `regionId` | string ✍ | — | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string ✍ | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `deadline` | string (regex, ISO 8601) ✍ | — | Hạn chót (ISO 8601 UTC) |
+| `priority` | integer (≥ 0) ✍ | — | Độ ưu tiên task (số nhỏ = ưu tiên cao) (default: `0`) |
+| `assetIds` | string[] ✍ | — | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) (default: `[]`) |
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+| 409 | `Error.AssistantNotHired` | assistant has no ACTIVE studio assignment within hire period (BR-ASSIST-01) |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Error.AssetNotFound (assetIds) - asset does not exist
+
+Validation fail |
+
+---
+
+#### `POST /tasks/batch`
+> Giao nhiều task (all-or-nothing)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`BatchCreateTaskBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].pageId` | string | ✅ | ObjectId của Page |
+| `items[].regionId` | string | — | ObjectId của Region (vùng trên trang) |
+| `items[].assistantId` | string | ✅ | ObjectId User của Assistant |
+| `items[].taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `items[].deadline` | string (regex, ISO 8601) | — | Hạn chót (ISO 8601 UTC) |
+| `items[].priority` | integer (≥ 0) | — | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `items[].assetIds` | string[] | — | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+
+**Response 201** (`TaskListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].pageId` | string | ✅ | ObjectId của Page |
+| `items[].regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `items[].assistantId` | string | ✅ | ObjectId User của Assistant |
+| `items[].taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `items[].status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `items[].statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `items[].priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `items[].deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `items[].assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `items[].versions` | object[] | ✅ |  |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.PageNotFound` | page does not exist |
+| 409 | `Error.AssistantNotHired` | assistant has no ACTIVE studio assignment within hire period (BR-ASSIST-01) |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Error.AssetNotFound (assetIds) - asset does not exist
+
+Validation fail |
+
+---
+
+#### `GET /tasks`
+> Danh sách task theo status/regionId (Assistant=được giao; Mangaka=theo pageId sở hữu)
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageId` | string | — | ObjectId của Page |
+| `regionId` | string | — | Lọc task theo vùng (Region id) |
+| `assistantId` | string | — | ObjectId User của Assistant |
+| `status` | enum `TaskStatus` | — | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`TaskListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].pageId` | string | ✅ | ObjectId của Page |
+| `items[].regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `items[].assistantId` | string | ✅ | ObjectId User của Assistant |
+| `items[].taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `items[].status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `items[].statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `items[].priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `items[].deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `items[].assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `items[].versions` | object[] | ✅ |  |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `GET /tasks/:id`
+> Chi tiết task (Mangaka sở hữu / Assistant được giao)
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+**Response 200** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+
+---
+
+#### `PATCH /tasks/:id`
+> Sửa task (assetIds/deadline/priority)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`UpdateTaskBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `assetIds` | string[] ✍ | — | [] = clear; omit/null = giữ nguyên |
+| `deadline` | string (regex, ISO 8601) ✍ | — | Hạn chót (ISO 8601 UTC) |
+| `priority` | integer (≥ 0) ✍ | — | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+
+**Response 200** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Error.AssetNotFound (assetIds) - asset does not exist
+
+Validation fail |
+
+---
+
+#### `POST /tasks/:id/start`
+> Assistant bắt đầu xử lý task → IN_PROGRESS (SRS §2.2a)
+
+**Quyền:** ASSISTANT (Bearer)
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotTaskAssignee` | caller is not the assigned assistant of this task |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.InvalidTaskTransition` | invalid task status transition |
+
+---
+
+#### `POST /tasks/:id/submit`
+> Assistant nộp kết quả → SUBMITTED + TaskVersion + cascade
+
+**Quyền:** ASSISTANT (Bearer)
+
+**Body** (`SubmitTaskBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `file` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotTaskAssignee` | caller is not the assigned assistant of this task |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.InvalidTaskTransition` | invalid task status transition |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /tasks/:id/approve`
+> Mangaka duyệt task → APPROVED
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.InvalidTaskTransition` | invalid task status transition |
+
+---
+
+#### `POST /tasks/:id/request-revision`
+> Mangaka yêu cầu sửa → REVISION_REQUESTED (markup riêng qua /annotations)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`RequestRevisionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reviewerNote` | string (1..1000 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.InvalidTaskTransition` | invalid task status transition |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /tasks/:id/reassign`
+> Giao lại task (ASSIGNED/IN_PROGRESS/REVISION_REQUESTED/ON_HOLD) cho Assistant khác → ASSIGNED
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`ReassignTaskBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `assistantId` | string ✍ | ✅ | ObjectId User của Assistant |
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.TaskNotReassignable` | only ASSIGNED/IN_PROGRESS/REVISION_REQUESTED/ON_HOLD tasks can be reassigned; review or cancel submitted tasks first |
+| 409 | `Error.AssistantNotHired` | assistant has no ACTIVE studio assignment within hire period (BR-ASSIST-01) |
+| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /tasks/:id/cancel`
+> Mangaka cancels a non-terminal task -> CANCELLED and notifies assigned Assistant
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CancelTaskBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..∞ ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`TaskRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `pageId` | string | ✅ | ObjectId của Page |
+| `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
+| `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
+| `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
+| `priority` | number | ✅ | Độ ưu tiên task (số nhỏ = ưu tiên cao) |
+| `deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `assetIds` | string[] | ✅ | Danh sách ObjectId Asset đính kèm (tạo qua POST /uploads/sign) |
+| `versions` | object[] | ✅ |  |
+| `versions[].submittedBy` | string | ✅ |  |
+| `versions[].versionNumber` | number | ✅ | Số thứ tự bản nộp |
+| `versions[].file` | string | ✅ |  |
+| `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
+| `versions[].reviewerNote` | string | ✅ |  |
+| `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
+| 404 | `Error.TaskNotFound` | task not found or invalid id |
+| 409 | `Error.TaskNotCancellable` | task is APPROVED/CANCELLED and cannot be cancelled |
+| 422 | — | Validation fail |
+---
+
+## §7. Flow 9 — Danh bạ trợ lý & Studio (kèm Review/Reputation)
+
+**Nghiệp vụ:** hệ thống là **danh bạ tìm trợ lý** — lương/điều kiện deal **NGOÀI hệ thống** (không quản lý lương). Mangaka lọc danh bạ theo chuyên môn + lịch rảnh + rating → deal ngoài → gửi **CollaborationInvite** (bắt buộc khai thời hạn thuê hireStart–hireEnd + loại việc) → Assistant accept → sinh **StudioAssignment ACTIVE** → từ đó Flow 3 mới cho giao task. Hết hạn thuê tự coi như kết thúc (không cron). Sau khi hợp tác kết thúc, Mangaka đánh giá Assistant (và Editor đánh giá Mangaka) → nuôi **reputation** (Bayesian) → xếp hạng danh bạ.
+
+### Happy path
+
+1. **Mangaka** `GET /assistants?specialization=&availableFrom=&availableTo=&level=` — danh bạ xếp theo isRecommended/reputation, ẨN email/phone.
+2. Deal ngoài hệ thống xong → `POST /collaboration-invites` (assistantId + seriesId + hireStart/hireEnd + taskTypes).
+3. **Assistant** `POST /collaboration-invites/:id/accept` → StudioAssignment `ACTIVE` (hoặc `/decline`; Mangaka đổi ý → `/cancel`).
+4. Làm việc theo Flow 3. Xem quan hệ: `GET /studio-assignments` (2 phía); Mangaka tổng quan xưởng: `GET /studio/overview`.
+5. Kết thúc sớm: `POST /studio-assignments/:id/terminate` (kèm lý do) — hoặc để tự hết hạn `hireEnd`.
+6. **Đánh giá sau hợp tác:** Mangaka `POST /assistant-reviews` (BẮT BUỘC kèm `studioAssignmentId` đã kết thúc, rating 1–5, upsert theo cặp — review lại = update). Editor đánh giá Mangaka: `POST /mangaka-reviews`. Đọc: `GET /assistant-reviews` / `GET /mangaka-reviews`.
+7. Reputation tự tính: `score = (C·m + Σrating)/(C + count)` (m=3.5, C=5); `isRecommended` khi count ≥ 3 và score ≥ ngưỡng AppConfig.
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| `hireStart ≥ hireEnd` hoặc ngày quá khứ | `POST /collaboration-invites` | 422 `Error.InvalidHirePeriod` |
+| Mời người không phải ASSISTANT | invites | 422 `Error.TargetNotAssistant` |
+| Đã có collaboration ACTIVE cùng cặp | invites | 409 `Error.DuplicateActiveCollaboration` |
+| Người không được mời bấm accept/decline | accept/decline | 403 `Error.NotInvitee` |
+| Cancel invite không phải của mình | cancel | 403 `Error.NotInviteOwner` |
+| Accept/decline/cancel khi invite hết PENDING | các action | 409 `Error.InviteNotPending` |
+| Terminate assignment không còn ACTIVE | terminate | 409 `Error.AssignmentNotActive` |
+| Review khi assignment CHƯA kết thúc / sai cặp | `POST /assistant-reviews` | 422 `Error.ReviewRequiresEndedAssignment` |
+| Tự đánh giá chính mình | reviews | 422 `Error.CannotReviewSelf` |
+| Review user chưa build profile | reviews | 404 `Error.ProfileNotFound` |
+| rating ngoài 1–5 | reviews | 422 |
+
+### API Reference
+
+#### `GET /assistants`
+> Danh bạ trợ lý: lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `specialization` | enum `Specialization` | — | Assistant specialization/task type |
+| `level` | string (1..100 ký tự) | — |  |
+| `availableFrom` | string (regex, ISO 8601) | — |  |
+| `availableTo` | string (regex, ISO 8601) | — |  |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`AssistantDirectoryListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].userId` | string | ✅ | ObjectId của User |
+| `items[].displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `items[].avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+| `items[].specializations` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `items[].experienceLevel` | string | ✅ | Cấp kinh nghiệm |
+| `items[].portfolioFiles` | string[] | ✅ |  |
+| `items[].availabilityStatus` | enum `AvailabilityStatus` | ✅ | Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE |
+| `items[].availabilityFrom` | string | ✅ |  |
+| `items[].availabilityTo` | string | ✅ |  |
+| `items[].reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `items[].ratingAvg` | number | ✅ | Điểm trung bình đánh giá |
+| `items[].ratingCount` | number | ✅ | Số lượt đánh giá |
+| `items[].isRecommended` | boolean | ✅ | true = hệ thống gắn nhãn đề xuất (ratingCount ≥ 3 và score ≥ ngưỡng AppConfig) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `POST /collaboration-invites`
+> Mangaka mời Assistant cộng tác → invite PENDING + notify
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateInviteBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `assistantId` | string ✍ | ✅ | ObjectId User của Assistant |
+| `seriesId` | string ✍ | — | metadata; A4-a KHÔNG validate series tồn tại/sở hữu |
+| `hireStart` | string (regex, ISO 8601) ✍ | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string (regex, ISO 8601) ✍ | ✅ | Ngày kết thúc thuê (ISO) |
+| `taskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+
+**Response 201** (`InviteRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `taskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `CollaborationInviteStatus` | ✅ | Trạng thái lời mời cộng tác: PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.AssistantNotFound` | assistant does not exist or is not active |
+| 409 | `Error.DuplicateActiveCollaboration` | an active collaboration or pending invite already exists for this pair |
+| 422 | `Error.TargetNotAssistant` | target user is not an assistant |
+| 422 | — | Error.InvalidHirePeriod (hireEnd) - hire period is invalid (start must be before end, end in the future)
+
+Validation fail |
+
+---
+
+#### `GET /collaboration-invites`
+> Danh sách invite theo scope role (Mangaka=gửi, Assistant=nhận)
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | enum `CollaborationInviteStatus` | — | Trạng thái lời mời cộng tác: PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`InviteListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `items[].assistantId` | string | ✅ | ObjectId User của Assistant |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `items[].hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `items[].taskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `items[].status` | enum `CollaborationInviteStatus` | ✅ | Trạng thái lời mời cộng tác: PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `GET /collaboration-invites/:id`
+> Chi tiết 1 invite (chỉ owner hoặc invitee)
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+**Response 200** (`InviteRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `taskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `CollaborationInviteStatus` | ✅ | Trạng thái lời mời cộng tác: PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.InviteNotFound` | collaboration invite does not exist |
+
+---
+
+#### `POST /collaboration-invites/:id/accept`
+> Assistant chấp nhận invite → tạo StudioAssignment ACTIVE
+
+**Quyền:** ASSISTANT (Bearer)
+
+**Response 201** (`AssignmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `assignedTaskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `StudioAssignmentStatus` | ✅ | Trạng thái hợp tác studio: ACTIVE, COMPLETED, TERMINATED |
+| `terminatedReason` | string | ✅ |  |
+| `activeNow` | boolean | ✅ | true = status ACTIVE và thời điểm hiện tại trong [hireStart, hireEnd] (lazy) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotInvitee` | current user is not the invitee |
+| 404 | `Error.InviteNotFound` | collaboration invite does not exist |
+| 409 | `Error.InviteNotPending` | invite is not in PENDING state |
+| 409 | `Error.DuplicateActiveCollaboration` | an active collaboration or pending invite already exists for this pair |
+
+---
+
+#### `POST /collaboration-invites/:id/decline`
+> Assistant từ chối invite → DECLINED
+
+**Quyền:** ASSISTANT (Bearer)
+
+**Response 201** (`InviteRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `taskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `CollaborationInviteStatus` | ✅ | Trạng thái lời mời cộng tác: PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotInvitee` | current user is not the invitee |
+| 404 | `Error.InviteNotFound` | collaboration invite does not exist |
+| 409 | `Error.InviteNotPending` | invite is not in PENDING state |
+
+---
+
+#### `POST /collaboration-invites/:id/cancel`
+> Mangaka huỷ invite của mình → CANCELLED
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`InviteRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `taskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `CollaborationInviteStatus` | ✅ | Trạng thái lời mời cộng tác: PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotInviteOwner` | current user is not the invite owner |
+| 404 | `Error.InviteNotFound` | collaboration invite does not exist |
+| 409 | `Error.InviteNotPending` | invite is not in PENDING state |
+
+---
+
+#### `GET /studio-assignments`
+> Danh sách assignment theo scope role (filter status / activeNow=true)
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | enum `StudioAssignmentStatus` | — | Trạng thái hợp tác studio: ACTIVE, COMPLETED, TERMINATED |
+| `activeNow` | enum(true, false) | — |  |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`AssignmentListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `items[].assistantId` | string | ✅ | ObjectId User của Assistant |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `items[].hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `items[].assignedTaskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `items[].status` | enum `StudioAssignmentStatus` | ✅ | Trạng thái hợp tác studio: ACTIVE, COMPLETED, TERMINATED |
+| `items[].terminatedReason` | string | ✅ |  |
+| `items[].activeNow` | boolean | ✅ | true = status ACTIVE và thời điểm hiện tại trong [hireStart, hireEnd] (lazy) |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `GET /studio-assignments/:id`
+> Chi tiết 1 assignment (chỉ mangaka owner hoặc assistant)
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+**Response 200** (`AssignmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `assignedTaskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `StudioAssignmentStatus` | ✅ | Trạng thái hợp tác studio: ACTIVE, COMPLETED, TERMINATED |
+| `terminatedReason` | string | ✅ |  |
+| `activeNow` | boolean | ✅ | true = status ACTIVE và thời điểm hiện tại trong [hireStart, hireEnd] (lazy) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.AssignmentNotFound` | studio assignment does not exist |
+
+---
+
+#### `POST /studio-assignments/:id/terminate`
+> Mangaka kết thúc sớm assignment ACTIVE → TERMINATED + notify
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`TerminateAssignmentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..500 ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`AssignmentRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
+| `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
+| `assignedTaskTypes` | enum `Specialization`[] | ✅ | Assistant specialization/task type |
+| `status` | enum `StudioAssignmentStatus` | ✅ | Trạng thái hợp tác studio: ACTIVE, COMPLETED, TERMINATED |
+| `terminatedReason` | string | ✅ |  |
+| `activeNow` | boolean | ✅ | true = status ACTIVE và thời điểm hiện tại trong [hireStart, hireEnd] (lazy) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignmentOwner` | current user is not the owner of this assignment |
+| 404 | `Error.AssignmentNotFound` | studio assignment does not exist |
+| 409 | `Error.AssignmentNotActive` | studio assignment is not active |
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /studio/overview`
+> Mangaka overview of active production chapters sorted by warning severity
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`StudioOverviewRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].chapterId` | string | ✅ | ObjectId của Chapter |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].seriesTitle` | string | ✅ |  |
+| `items[].chapterNumber` | number | ✅ | Số thứ tự chương trong series |
+| `items[].title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `items[].manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
+| `items[].deadline` | string | ✅ | Hạn chót (ISO 8601 UTC) |
+| `items[].remainingHours` | number | ✅ |  |
+| `items[].progressPct` | number | ✅ |  |
+| `items[].warningLevel` | enum(NONE, YELLOW, RED, CRITICAL) | ✅ | Deadline warning: NONE an toan, YELLOW nguy co, RED kho kip, CRITICAL qua han |
+| `items[].onHold` | boolean | ✅ |  |
+| `items[].pagesCompleted` | number | ✅ |  |
+| `items[].totalPages` | number | ✅ | Tổng số trang của chương |
+| `items[].openTasks` | number | ✅ |  |
+
+---
+
+#### `POST /assistant-reviews`
+> Mangaka đánh giá Assistant (rating 1-5 + comment) sau StudioAssignment → feed reputation (A-AUTH-07)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateAssistantReviewBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `assistantId` | string ✍ | ✅ | ObjectId User của Assistant |
+| `rating` | integer (≥ 1, ≤ 5) ✍ | ✅ | Điểm đánh giá 1–5 (int) |
+| `comment` | string (0..1000 ký tự) ✍ | — | Nhận xét text tự do |
+| `studioAssignmentId` | string ✍ | ✅ |  |
+| `seriesId` | string ✍ | — | ObjectId của Series |
+
+**Response 201** (`ReviewRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `rating` | number | ✅ | Điểm đánh giá 1–5 (int) |
+| `comment` | string | ✅ | Nhận xét text tự do |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `reviewer` | object | — |  |
+| `reviewer.id` | string | ✅ | ObjectId của bản ghi |
+| `reviewer.displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `reviewer.avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+| 422 | `Error.CannotReviewSelf` | reviewer and target user must be different |
+| 422 | `Error.ReviewRequiresEndedAssignment` | review requires an ended studio assignment between the pair |
+
+---
+
+#### `GET /assistant-reviews`
+> List review của 1 Assistant (phân trang)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `assistantId` | string (1..∞ ký tự) | ✅ | ObjectId User của Assistant |
+| `limit` | integer (≥ 0) | — | Số bản ghi mỗi trang |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) |
+
+**Response 200** (`ReviewListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].rating` | number | ✅ | Điểm đánh giá 1–5 (int) |
+| `items[].comment` | string | ✅ | Nhận xét text tự do |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `items[].reviewer` | object | — |  |
+
+---
+
+#### `POST /mangaka-reviews`
+> Editor đánh giá Mangaka (rating 1-5 + comment) sau series/hợp tác → feed reputation (A-AUTH-07)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreateMangakaReviewBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `mangakaId` | string ✍ | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `rating` | integer (≥ 1, ≤ 5) ✍ | ✅ | Điểm đánh giá 1–5 (int) |
+| `comment` | string (0..1000 ký tự) ✍ | — | Nhận xét text tự do |
+| `seriesId` | string ✍ | — | ObjectId của Series |
+
+**Response 201** (`ReviewRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `rating` | number | ✅ | Điểm đánh giá 1–5 (int) |
+| `comment` | string | ✅ | Nhận xét text tự do |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `reviewer` | object | — |  |
+| `reviewer.id` | string | ✅ | ObjectId của bản ghi |
+| `reviewer.displayName` | string | ✅ | Tên hiển thị (null = dùng name) |
+| `reviewer.avatar` | string | ✅ | Object key ảnh đại diện trên R2 — FE đổi sang signed GET (§14) để hiển thị |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ProfileNotFound` | profile does not exist |
+| 422 | `Error.CannotReviewSelf` | reviewer and target user must be different |
+
+---
+
+#### `GET /mangaka-reviews`
+> List review của 1 Mangaka (phân trang)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `mangakaId` | string (1..∞ ký tự) | ✅ | ObjectId User của Mangaka chủ sở hữu |
+| `limit` | integer (≥ 0) | — | Số bản ghi mỗi trang |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) |
+
+**Response 200** (`ReviewListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].rating` | number | ✅ | Điểm đánh giá 1–5 (int) |
+| `items[].comment` | string | ✅ | Nhận xét text tự do |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `items[].reviewer` | object | — |  |
+---
+
+## §8. Flow 10 — Deadline Negotiation (thương lượng deadline)
+
+**Nghiệp vụ:** Editor vốn có quyền set/gia hạn deadline **đơn phương** (§5 bước 2). Flow này dành cho **thương lượng 2 chiều** (Mangaka xin dời, hoặc 2 bên bất đồng): propose → counter (turn-taking — chỉ phe đối diện được phản hồi) → agree → **Editor finalize** (ghi vào Schedule). Nếu thay đổi **ảnh hưởng slot xuất bản** (dời quá `DEADLINE_SLOT_GRACE_HOURS`, mặc định 48h — hệ thống tự đánh giá `affectsSlot`) hoặc 2 bên **bất đồng** (reject → ESCALATED) thì **Board phân xử** qua `board-resolve`.
+
+### Happy path
+
+1. **Mangaka hoặc Editor** (người trong cuộc của chapter) `POST /deadline-requests` `{chapterId, requestedDeadline, reason}` → `PROPOSED`. Hệ thống tự tính `affectsSlot`.
+2. Phe đối diện: `POST /deadline-requests/:id/counter` (đề xuất mốc khác — flip lượt, lặp được) hoặc `POST .../agree` → `AGREED_BY_PARTIES`.
+3. Không ảnh hưởng slot → **Editor** `POST .../finalize` → `APPROVED` + Schedule cập nhật (tái dùng cơ chế extension, giữ lịch sử).
+4. Ảnh hưởng slot → tự sang `BOARD_REVIEW` → **Board** `POST .../board-resolve` (approve → cập nhật Schedule / reject).
+5. Bất đồng: một phe `POST .../reject` → `ESCALATED` → Board `board-resolve` phân xử. Người tạo đổi ý: `POST .../withdraw` → `REJECTED`.
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Người ngoài chapter tạo/thao tác | mọi route | 403 `Error.DeadlineRequestAccessDenied` |
+| Đã có request đang mở trên chapter | `POST /deadline-requests` | 409 `Error.OpenDeadlineRequestExists` |
+| Chapter đã PUBLISHED | create | 409 `Error.DeadlineRequestNotAllowed` |
+| `requestedDeadline` trong quá khứ | create/counter | 422 |
+| Tự counter/agree đề xuất của chính phe mình | counter/agree | 403 `Error.NotCounterparty` |
+| Chuyển trạng thái sai (finalize khi chưa AGREED...) | mọi action | 409 `Error.InvalidDeadlineRequestTransition` |
+| Finalize khi affectsSlot=true | finalize | 409 (phải chờ Board resolve) |
+| Withdraw bởi người không tạo | withdraw | 403 |
+
+### API Reference
+
+#### `POST /deadline-requests`
+> Mangaka/Editor tạo yêu cầu đổi deadline → PROPOSED
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Body** (`CreateDeadlineRequestBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `chapterId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId của Chapter |
+| `requestedDeadline` | string (regex, ISO 8601) ✍ | ✅ |  |
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.OpenDeadlineRequestExists` | an open deadline negotiation already exists for this chapter |
+| 409 | `Error.DeadlineRequestNotAllowed` | deadline action is not allowed for the current chapter or request state |
+
+---
+
+#### `GET /deadline-requests`
+> List deadline-request theo chapter (scope theo role)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `chapterId` | string (1..∞ ký tự) | ✅ | ObjectId của Chapter |
+| `status` | enum `DeadlineRequestStatus` | — | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+
+**Response 200** (`DeadlineRequestListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].scheduleId` | string | ✅ |  |
+| `items[].chapterId` | string | ✅ | ObjectId của Chapter |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `items[].lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `items[].currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `items[].requestedDeadline` | string | ✅ |  |
+| `items[].reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `items[].affectsSlot` | boolean | ✅ |  |
+| `items[].status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `items[].boardReviewedBy` | string | ✅ |  |
+| `items[].resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+
+---
+
+#### `GET /deadline-requests/:id`
+> Chi tiết 1 deadline-request (scope theo role)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+
+---
+
+#### `POST /deadline-requests/:id/counter`
+> Bên kia đề xuất deadline khác → COUNTER_PROPOSED
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Body** (`CounterDeadlineBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `requestedDeadline` | string (regex, ISO 8601) ✍ | ✅ |  |
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 403 | `Error.NotCounterparty` | only the counterparty can perform this deadline negotiation action |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+---
+
+#### `POST /deadline-requests/:id/agree`
+> Bên kia đồng ý → AGREED_BY_PARTIES
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 403 | `Error.NotCounterparty` | only the counterparty can perform this deadline negotiation action |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+---
+
+#### `POST /deadline-requests/:id/reject`
+> Bên kia từ chối → ESCALATED (leo Board, defer B5)
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Body** (`DeadlineReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 403 | `Error.NotCounterparty` | only the counterparty can perform this deadline negotiation action |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+---
+
+#### `POST /deadline-requests/:id/withdraw`
+> Người khởi tạo rút yêu cầu → REJECTED (terminal)
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+---
+
+#### `POST /deadline-requests/:id/finalize`
+> Editor chốt: !affectsSlot → APPROVED (cập nhật Schedule) | affectsSlot → BOARD_REVIEW (defer B5)
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+---
+
+#### `POST /deadline-requests/:id/board-resolve`
+> A-DL-03: Board chốt request BOARD_REVIEW/ESCALATED → APPROVED (cập nhật Schedule) | REJECTED
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`BoardResolveBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `decision` | enum `VoteValue` | ✅ | Board quyết định: APPROVE → cập nhật Schedule; REJECT → giữ nguyên |
+| `note` | string (0..1000 ký tự) ✍ | — | Ghi chú text tự do |
+
+**Response 201** (`DeadlineRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `scheduleId` | string | ✅ |  |
+| `chapterId` | string | ✅ | ObjectId của Chapter |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ | Phe khởi tạo: 'MANGAKA' \| 'EDITOR' |
+| `lastProposedBy` | string | ✅ | Phe đề xuất gần nhất |
+| `currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
+| `requestedDeadline` | string | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `affectsSlot` | boolean | ✅ |  |
+| `status` | enum `DeadlineRequestStatus` | ✅ | Deadline negotiation status: PROPOSED, COUNTER_PROPOSED, AGREED_BY_PARTIES, APPROVED, REJECTED, ESCALATED, BOARD_REVIEW |
+| `boardReviewedBy` | string | ✅ |  |
+| `resolvedAt` | string | ✅ | Thời điểm resolve (ISO 8601 UTC) |
+| `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+| 409 | `Error.DeadlineNotAwaitingBoard` | deadline request is not awaiting Board decision (must be BOARD_REVIEW or ESCALATED) |
+---
+
+## §9. Flow 4 — Survey / Guest Voting / Ranking
+
+**Nghiệp vụ:** mỗi kỳ phát hành, Editor/Admin **mở kỳ bình chọn** (SurveyPeriod — mở TAY theo lịch tạp chí, không auto). Độc giả (**Guest — KHÔNG cần tài khoản**) vào trang public, xác thực email OTP, chọn tối đa 3 series → 1 danh tính = 1 phiếu/kỳ (BE chỉ lưu HMAC hash, không lưu email gốc). Kỳ đóng → Editor **finalize**: gộp phiếu online (có trọng số 0–1) + phiếu offline nhập tay (postcard, trọng số 1.0) → xếp hạng + tie-break → RankingRecord + đánh dấu **at-risk** (bottom 1/3; loại trừ series <8 chương published và series HIATUS) → notify Mangaka/Editor/Board. SEVERE (≥5 kỳ liên tiếp) → feed Board xem xét hủy (Flow 5).
+
+### Happy path — phía Guest (public, không token)
+
+1. `GET /vote/context` → kỳ `OPEN` hiện tại + danh sách series được vote (chỉ field public-safe) + `maxSeriesPerVote`. Không có kỳ mở → `{period:null, series:[]}` (200).
+2. `POST /vote/otp` `{identity: email}` → OTP gửi email (rate-limit: 3/danh tính/24h, 10/IP/24h, cooldown 60s).
+3. `POST /vote` `{surveyPeriodId, identity, otp, seriesIds[≤3], captchaScore?}` → 201. Cookie "đã vote" chỉ là UX — chống trùng thật nằm ở server.
+4. Sau khi kỳ `REFLECTED`: `GET /vote/results?surveyPeriodId=` → bảng xếp hạng public (KHÔNG lộ isAtRisk/riskLevel/isReliable).
+
+### Happy path — phía vận hành (Editor/Board/Admin)
+
+1. `POST /survey-periods` (issueNumber + thời gian mở/đóng) → `PATCH /survey-periods/:id/status` điều khiển `OPEN`/`CLOSED`.
+2. Nhập phiếu giấy: `POST /survey-data/import` (danh sách seriesId + voteCount + reflectedIssueNumber).
+3. `POST /survey-periods/:id/finalize` → tính ranking (async) → kỳ `REFLECTED`; xem: `GET /survey-periods/:id/rankings|votes|survey-data`.
+4. Nội bộ: `GET /rankings/board?surveyPeriodId=` (bảng tổng — Board thấy đủ risk signal) · `GET /rankings?seriesId=&periods=12` (trend chart — scope: Mangaka series mình, Editor series phụ trách).
+5. Config: `GET|PATCH /voting-config` (maxSeriesPerVote, rate-limit, cooldown, ipVotesPerPeriod, captchaThreshold...).
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| `identity` không phải email hợp lệ | `POST /vote/otp` / `/vote` | 422 |
+| Xin OTP lại trong 60s / vượt quota | `POST /vote/otp` | 429 `code: VOTE_OTP_RATE_LIMITED` + `retryAfter` |
+| OTP sai / hết hạn (5') | `POST /vote` | 422 / 410 |
+| Danh tính đã vote kỳ này | `POST /vote` | 409 (unique identity+period) |
+| Cùng IP vote quá `ipVotesPerPeriod` | `POST /vote` | 429 — **check TRƯỚC verify OTP, không đốt OTP oan** |
+| `seriesIds` trùng nhau trong 1 phiếu | `POST /vote` | 422 `Error.DuplicateSeriesInVote` |
+| Series không tồn tại / không SERIALIZED / id rác | `POST /vote` | 422 `Error.SeriesNotVotable` |
+| Chọn quá `maxSeriesPerVote` | `POST /vote` | 422 |
+| Xem kết quả khi kỳ chưa REFLECTED | `GET /vote/results` | 409 `Error.SurveyPeriodNotFinalized` |
+| Kỳ không tồn tại | results / finalize | 404 `Error.SurveyPeriodNotFound` |
+| Finalize kỳ chưa CLOSED / finalize lại | finalize | 409 |
+| captchaScore < threshold | `POST /vote` | phiếu vẫn nhận nhưng `isFlagged=true`, `voteWeight=0.5` (gian lận xác định → 0) |
+| Kỳ quá ít phiếu (< ngưỡng AppConfig) | (finalize) | RankingRecord `isReliable=false`, KHÔNG kích hoạt cảnh báo at-risk |
+
+### API Reference
+
+#### `POST /survey-periods`
+> Editor tạo kỳ bình chọn mới → DRAFT/OPEN/CLOSED
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`CreateSurveyPeriodBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `issueNumber` | integer (≥ 0) ✍ | — | Số kỳ phát hành áp dụng |
+| `reflectedIssueNumber` | integer (≥ 0) ✍ | — | Số kỳ mà kết quả vote thực sự phản ánh (độ trễ nghiệp vụ báo giấy) |
+| `startDate` | string (regex, ISO 8601) ✍ | ✅ |  |
+| `endDate` | string (regex, ISO 8601) ✍ | ✅ |  |
+| `status` | enum `SurveyStatus` | — | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
+
+**Response 201** (`SurveyPeriodRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `issueNumber` | integer | — | Số kỳ phát hành áp dụng |
+| `reflectedIssueNumber` | integer | — | Số kỳ mà kết quả vote thực sự phản ánh (độ trễ nghiệp vụ báo giấy) |
+| `startDate` | string (regex, ISO 8601) | ✅ |  |
+| `endDate` | string (regex, ISO 8601) | ✅ |  |
+| `status` | enum `SurveyStatus` | ✅ | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
+
+---
+
+#### `GET /survey-periods`
+> Danh sách kỳ bình chọn
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /survey-periods/:id`
+> Chi tiết kỳ bình chọn
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** (`SurveyPeriodRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `issueNumber` | integer | — | Số kỳ phát hành áp dụng |
+| `reflectedIssueNumber` | integer | — | Số kỳ mà kết quả vote thực sự phản ánh (độ trễ nghiệp vụ báo giấy) |
+| `startDate` | string (regex, ISO 8601) | ✅ |  |
+| `endDate` | string (regex, ISO 8601) | ✅ |  |
+| `status` | enum `SurveyStatus` | ✅ | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
+
+---
+
+#### `PATCH /survey-periods/:id/status`
+> Editor cập nhật trạng thái kỳ bình chọn → OPEN/CLOSED/REFLECTED
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`UpdateSurveyPeriodStatusBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | enum `SurveyStatus` | ✅ | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
+
+**Response 200** (`SurveyPeriodRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `issueNumber` | integer | — | Số kỳ phát hành áp dụng |
+| `reflectedIssueNumber` | integer | — | Số kỳ mà kết quả vote thực sự phản ánh (độ trễ nghiệp vụ báo giấy) |
+| `startDate` | string (regex, ISO 8601) | ✅ |  |
+| `endDate` | string (regex, ISO 8601) | ✅ |  |
+| `status` | enum `SurveyStatus` | ✅ | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SurveyPeriodNotFound` |  |
+
+---
+
+#### `GET /vote/context`
+> Public — kỳ bình chọn OPEN hiện tại + danh sách series SERIALIZED cho trang vote Guest
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Response 200** (`VoteContextRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `period` | object | ✅ | null = hiện không có kỳ bình chọn OPEN |
+| `period.id` | string | ✅ | ObjectId của bản ghi |
+| `period.issueNumber` | integer | ✅ | Số kỳ phát hành áp dụng |
+| `period.reflectedIssueNumber` | integer | ✅ | Số kỳ mà kết quả vote thực sự phản ánh (độ trễ nghiệp vụ báo giấy) |
+| `period.startDate` | string | ✅ | ISO 8601 UTC |
+| `period.endDate` | string | ✅ | ISO 8601 UTC |
+| `series` | object[] | ✅ |  |
+| `series[].id` | string | ✅ | ObjectId của bản ghi |
+| `series[].title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `series[].coverImage` | string | ✅ | Object key R2 — Guest chưa xem được ảnh (public sign chưa có) |
+| `series[].genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `series[].demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `maxSeriesPerVote` | integer | ✅ |  |
+
+---
+
+#### `POST /vote/otp`
+> Reader yêu cầu OTP cho Guest Voting. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`VoteOtpRequestBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `identity` | string (regex) ✍ | ✅ | Email nhận OTP - hệ chạy EMAIL mode (Requiment 1.15d); SMS là mở rộng tương lai |
+| `captchaToken` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 429 | `Error.VoteOtpRateLimit` |  |
+
+---
+
+#### `POST /vote`
+> Reader xác thực OTP và gửi vote. Public.
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Body** (`ReaderVoteBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `surveyPeriodId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `identity` | string (regex) ✍ | ✅ | Email đã nhận OTP |
+| `otpCode` | string (4..∞ ký tự) ✍ | ✅ |  |
+| `seriesIds` | string[] ✍ | ✅ |  |
+| `captchaScore` | number (≥ 0, ≤ 1) ✍ | — |  |
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.SurveyPeriodNotOpen` |  |
+| 400 | `Error.VoteOtpNotFound` |  |
+| 404 | `Error.SurveyPeriodNotFound` |  |
+| 409 | `Error.ReaderAlreadyVoted` |  |
+| 422 | `Error.TooManySeriesSelected` | số series vượt maxSeriesPerVote (VotingConfig); trần cứng 3 theo Requiment §1.15 |
+| 422 | `Error.DuplicateSeriesInVote` | seriesIds chứa id trùng nhau trong cùng một phiếu (PB-03) |
+| 422 | `Error.SeriesNotVotable` | seriesIds chứa id rác/không tồn tại hoặc series không ở trạng thái SERIALIZED (PB-03) |
+| 429 | `Error.VoteIpLimitExceeded` | IP này đã đạt trần số phiếu cho kỳ bình chọn (VotingConfig.ipVotesPerPeriod); chặn trước khi đốt OTP |
+
+---
+
+#### `GET /vote/results`
+> Public — bảng xếp hạng của kỳ đã chốt (REFLECTED); ẩn tín hiệu biên tập nội bộ
+
+**Quyền:** **PUBLIC** (không cần token)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `surveyPeriodId` | string (1..∞ ký tự) | ✅ |  |
+
+**Response 200** (`VoteResultsRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `surveyPeriodId` | string | ✅ |  |
+| `issueNumber` | integer | ✅ | Số kỳ phát hành áp dụng |
+| `results` | object[] | ✅ |  |
+| `results[].rankPosition` | integer | ✅ | Vị trí xếp hạng (1 = cao nhất) |
+| `results[].seriesId` | string | ✅ | ObjectId của Series |
+| `results[].seriesTitle` | string | ✅ | null nếu series đã bị xóa |
+| `results[].voteCount` | number | ✅ | Tổng trọng số phiếu (online weighted + offline 1.0) |
+| `results[].rankChange` | integer | ✅ | Thay đổi hạng so kỳ trước (+lên/-xuống) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SurveyPeriodNotFound` |  |
+| 409 | `Error.SurveyPeriodNotFinalized` | Kỳ bình chọn chưa REFLECTED (chưa finalize) — kết quả public chỉ xem được sau khi chốt |
+
+---
+
+#### `POST /survey-data/import`
+> Editor nhập vote offline từ postcard
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`ImportSurveyDataBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `surveyPeriodId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `issueNumber` | integer (≥ 0) ✍ | — | Số kỳ phát hành áp dụng |
+| `reflectedIssueNumber` | integer (≥ 0) ✍ | — | Số kỳ mà kết quả vote thực sự phản ánh (độ trễ nghiệp vụ báo giấy) |
+| `surveyDate` | string (regex, ISO 8601) ✍ | — |  |
+| `entries` | object[] | ✅ |  |
+| `entries[].seriesId` | string (1..∞ ký tự) | ✅ | ObjectId của Series |
+| `entries[].voteCount` | integer (≥ 0) | ✅ | Tổng trọng số phiếu (online weighted + offline 1.0) |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.SurveyDataImportNotAllowed` |  |
+| 404 | `Error.SurveyPeriodNotFound` |  |
+
+---
+
+#### `POST /survey-periods/:id/finalize`
+> Editor finalize ranking cho kỳ bình chọn
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | `Error.SurveyPeriodAlreadyFinalized` |  |
+| 400 | `Error.SurveyDataImportNotAllowed` |  |
+| 404 | `Error.SurveyPeriodNotFound` |  |
+
+---
+
+#### `GET /survey-periods/:id/votes`
+> Danh sách phiếu vote của kỳ bình chọn
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /survey-periods/:id/survey-data`
+> Danh sách dữ liệu vote offline của kỳ bình chọn
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /survey-periods/:id/rankings`
+> Danh sách ranking của kỳ bình chọn
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Response 200** (`RankingRecordListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].rankPosition` | integer | — | Vị trí xếp hạng (1 = cao nhất) |
+| `items[].voteCount` | number | ✅ | Tổng trọng số phiếu (online weighted + offline 1.0) |
+| `items[].previousRank` | integer | ✅ | Hạng kỳ trước (null = kỳ đầu) |
+| `items[].rankChange` | integer | ✅ | Thay đổi hạng so kỳ trước (+lên/-xuống) |
+| `items[].isAtRisk` | boolean | ✅ | true = thuộc bottom 1/3 kỳ này (tín hiệu nội bộ) |
+| `items[].riskLevel` | enum `RiskLevel` | ✅ | Mức nguy cơ của series theo kết quả ranking kỳ: NONE bình thường, LOW at-risk kỳ này, MEDIUM 3+ kỳ liên tiếp, SEVERE 5+ kỳ liên tiếp (feed Board) |
+| `items[].consecutiveAtRiskCount` | integer | ✅ | Số kỳ liên tiếp nằm bottom 1/3 |
+| `items[].isReliable` | boolean | ✅ | false = dữ liệu kỳ không đủ tin cậy (quá ít phiếu / chapter bị hold lâu) |
+
+---
+
+#### `GET /rankings`
+> PB-04: trend xếp hạng 1 series (scoped theo owner)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (1..∞ ký tự) | ✅ | ObjectId của Series |
+| `periods` | integer (≥ 1, ≤ 60) | — |  (default: `12`) |
+
+**Response 200** (`BoardRankingListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].rankPosition` | integer | — | Vị trí xếp hạng (1 = cao nhất) |
+| `items[].voteCount` | number | ✅ | Tổng trọng số phiếu (online weighted + offline 1.0) |
+| `items[].previousRank` | integer | ✅ | Hạng kỳ trước (null = kỳ đầu) |
+| `items[].rankChange` | integer | ✅ | Thay đổi hạng so kỳ trước (+lên/-xuống) |
+| `items[].isAtRisk` | boolean | ✅ | true = thuộc bottom 1/3 kỳ này (tín hiệu nội bộ) |
+| `items[].riskLevel` | enum `RiskLevel` | ✅ | Mức nguy cơ của series theo kết quả ranking kỳ: NONE bình thường, LOW at-risk kỳ này, MEDIUM 3+ kỳ liên tiếp, SEVERE 5+ kỳ liên tiếp (feed Board) |
+| `items[].isReliable` | boolean | ✅ | false = dữ liệu kỳ không đủ tin cậy (quá ít phiếu / chapter bị hold lâu) |
+| `items[].recordedAt` | string | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.RankingAccessDenied` | MANGAKA chỉ xem được series mình sở hữu; EDITOR chỉ xem được series mình phụ trách; BOARD/SUPER_ADMIN xem mọi series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `GET /rankings/board`
+> PB-04: bảng xếp hạng toàn tạp chí 1 kỳ (full, mọi role nội bộ)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `surveyPeriodId` | string | ✅ |  |
+
+**Response 200** (`BoardRankingListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].rankPosition` | integer | — | Vị trí xếp hạng (1 = cao nhất) |
+| `items[].voteCount` | number | ✅ | Tổng trọng số phiếu (online weighted + offline 1.0) |
+| `items[].previousRank` | integer | ✅ | Hạng kỳ trước (null = kỳ đầu) |
+| `items[].rankChange` | integer | ✅ | Thay đổi hạng so kỳ trước (+lên/-xuống) |
+| `items[].isAtRisk` | boolean | ✅ | true = thuộc bottom 1/3 kỳ này (tín hiệu nội bộ) |
+| `items[].riskLevel` | enum `RiskLevel` | ✅ | Mức nguy cơ của series theo kết quả ranking kỳ: NONE bình thường, LOW at-risk kỳ này, MEDIUM 3+ kỳ liên tiếp, SEVERE 5+ kỳ liên tiếp (feed Board) |
+| `items[].isReliable` | boolean | ✅ | false = dữ liệu kỳ không đủ tin cậy (quá ít phiếu / chapter bị hold lâu) |
+| `items[].recordedAt` | string | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SurveyPeriodNotFound` |  |
+
+---
+
+#### `GET /voting-config`
+> Xem cấu hình bình chọn hiện tại
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 200** (`VotingConfigRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `authMode` | enum `VotingAuthMode` | ✅ |  |
+| `maxSeriesPerVote` | integer | ✅ |  |
+| `otpExpirySeconds` | integer | ✅ |  |
+| `otpMaxAttempts` | integer | ✅ |  |
+| `ipRateLimit` | integer | ✅ |  |
+| `phoneRateLimit` | integer | ✅ |  |
+| `otpCooldownSeconds` | integer | ✅ |  |
+| `ipVotesPerPeriod` | integer | ✅ |  |
+| `captchaThreshold` | number | ✅ |  |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | Thời điểm cập nhật gần nhất (ISO 8601 UTC) |
+
+---
+
+#### `PATCH /voting-config`
+> Super Admin cập nhật cấu hình bình chọn
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Body** (`VotingConfigBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `authMode` | enum `VotingAuthMode` | — |  |
+| `maxSeriesPerVote` | integer (≥ 1) ✍ | — |  |
+| `otpExpirySeconds` | integer (≥ 60) ✍ | — |  |
+| `otpMaxAttempts` | integer (≥ 1) ✍ | — |  |
+| `ipRateLimit` | integer (≥ 1) ✍ | — |  |
+| `phoneRateLimit` | integer (≥ 1) ✍ | — |  |
+| `otpCooldownSeconds` | integer (≥ 0) ✍ | — |  |
+| `ipVotesPerPeriod` | integer (≥ 1) ✍ | — |  |
+| `captchaThreshold` | number (≥ 0, ≤ 1) ✍ | — |  |
+
+**Response 200** (`VotingConfigRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `authMode` | enum `VotingAuthMode` | ✅ |  |
+| `maxSeriesPerVote` | integer | ✅ |  |
+| `otpExpirySeconds` | integer | ✅ |  |
+| `otpMaxAttempts` | integer | ✅ |  |
+| `ipRateLimit` | integer | ✅ |  |
+| `phoneRateLimit` | integer | ✅ |  |
+| `otpCooldownSeconds` | integer | ✅ |  |
+| `ipVotesPerPeriod` | integer | ✅ |  |
+| `captchaThreshold` | number | ✅ |  |
+| `updatedAt` | string (regex, ISO 8601) | ✅ | Thời điểm cập nhật gần nhất (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.VotingConfigNotFound` |  |
+---
+
+## §10. Flow 5 — Series Lifecycle (hiatus / complete / cancel / đổi format)
+
+**Nghiệp vụ:** series đang chạy có 4 ngã rẽ, đều quyết bởi **BoardDecision** (engine §3) trừ hiatus:
+- **HIATUS** (Editor ghi nhận Mangaka nghỉ — không cần Board): dừng at-risk + dừng đồng hồ TIME_BOUND.
+- **CONTINUE / CHANGE_FORMAT / COMPLETE / CANCEL**: Editor mở decision (type tương ứng) → Board vote → hệ thống **tự áp kết quả lên Series** (đổi publicationType; sang COMPLETING; sang CANCELLING + cấp `endingChapterAllowance`...). CHANGE_FORMAT/COMPLETION còn auto-sinh **Amendment DRAFT** (Flow 6) nhắc Editor cập nhật hợp đồng. CANCEL → tất toán hợp đồng (mốc đã đạt vẫn trả + compensation).
+- Series `CANCELLING` được vẽ nốt đúng số chương Board cấp (Immediate Axe 1–2, thường 3–5) rồi Editor **chốt ending**; `COMPLETING` không giới hạn chương cuối.
+- **Dashboard bảo vệ series:** Editor gom ranking trend + doanh số tankobon + report để cãi trước Board.
+
+### Happy path
+
+1. **Hiatus:** Editor `POST /series/:id/hiatus` `{reason}` → `HIATUS` (TIME_BOUND `DISABLED`); quay lại: `POST /series/:id/resume` → `SERIALIZED` (deadline TIME_BOUND dời đúng thời gian nghỉ). HIATUS quá lâu (> `hiatusTooLongDays`) → cron notify Editor + Board bàn tương lai.
+2. **Kết thúc tự nhiên:** Mangaka/Editor `POST /series/:id/propose-completion` `{reason}` → notify Editor mở decision `COMPLETION` → Board APPROVE → `COMPLETING` → ra chương cuối → Editor `POST /series/:id/finalize-ending` → `COMPLETED` (hợp đồng `FULFILLED`).
+3. **Hủy:** ranking SEVERE feed Board → decision `CANCELLATION` (kèm `endingChapterAllowance`) → APPROVE → `CANCELLING` (hợp đồng `TERMINATED` ngay; publish chương kết thúc được **bypass** contract-gate) → hết chương ending → Editor `finalize-ending` → `CANCELLED`.
+4. **Mangaka không vẽ nổi ending:** Editor `POST /series/:id/force-cancel` → lấy chương cuối hiện có làm điểm dừng → `CANCELLED` (statusReason "no ending").
+5. **Đổi format:** decision `FORMAT_CHANGE` APPROVED → Series đổi `publicationType` — **KHÔNG hồi tố deadline** chương đang làm; Editor được notify tự đặt deadline chương kế (§5 bước 2) + Amendment DRAFT sinh sẵn.
+6. **Dữ liệu bảo vệ:** `POST /tankobon-sales` (Editor/Board nhập doanh số volume) · `GET /series/:id/defense-dashboard` (Editor phụ trách/Board — gộp ranking trend + tankobon + report + tuổi series).
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Hiatus khi series không SERIALIZED / resume khi không HIATUS | hiatus/resume | 409 `Error.InvalidSeriesTransition` |
+| Editor không phụ trách series gọi lifecycle | mọi route | 403 `Error.NotAssignedEditor` |
+| propose-completion bởi người ngoài series | propose-completion | 403 |
+| finalize-ending khi series không ở CANCELLING/COMPLETING | finalize-ending | 409 |
+| force-cancel khi series không CANCELLING | force-cancel | 409 |
+| Tạo chapter vượt allowance khi CANCELLING | `POST /chapters` (§5) | 409 `Error.EndingAllowanceExceeded` |
+| Mangaka xem defense-dashboard | defense-dashboard | 403 (chỉ Editor phụ trách + Board) |
+| unitsSold âm / thiếu field | tankobon-sales | 422 |
+| Board decision EXPIRED (phiên bế mạc không đủ quorum) | (engine) | series GIỮ NGUYÊN trạng thái — mở phiên mới |
+
+### API Reference
+
+#### `POST /series/:id/hiatus`
+> Editor cho series tạm ngưng (SERIALIZED→HIATUS). Dừng đồng hồ TIME_BOUND.
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`HiatusBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `expectedReturnDate` | string (regex, ISO 8601) ✍ | — |  |
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidSeriesTransition` | series state transition is not allowed |
+
+---
+
+#### `POST /series/:id/resume`
+> Editor cho series hoạt động lại (HIATUS→SERIALIZED). Dời deadline TIME_BOUND theo thời gian hiatus.
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.InvalidSeriesTransition` | series state transition is not allowed |
+
+---
+
+#### `POST /series/:id/propose-completion`
+> Đề xuất kết thúc series tự nhiên (Mangaka/Editor) — PB-06
+
+**Quyền:** MANGAKA, EDITOR (Bearer)
+
+**Body** (`ProposeCompletionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `proposedEndingChapters` | integer ✍ | — |  |
+
+**Response 200** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.SeriesNotProposableForCompletion` |  |
+
+---
+
+#### `POST /series/:id/finalize-ending`
+> Editor chốt kết thúc: CANCELLING→CANCELLED / COMPLETING→COMPLETED.
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.SeriesNotInEndingState` | Series không ở trạng thái CANCELLING/COMPLETING nên không thể chốt kết thúc. |
+
+---
+
+#### `POST /series/:id/force-cancel`
+> Editor đóng series CANCELLING không ending (Req 1.11c) — PB-06
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 200** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.SeriesNotInCancellingState` |  |
+
+---
+
+#### `POST /tankobon-sales`
+> Nhập doanh số tankobon cho series (Editor/Board) — PB-08
+
+**Quyền:** EDITOR, BOARD_MEMBER (Bearer)
+
+**Body** (`CreateTankobonSalesBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string ✍ | ✅ | Series ObjectId |
+| `volumeNumber` | integer (≥ 0) ✍ | ✅ | Số volume tankobon |
+| `unitsSold` | integer (≥ 0) ✍ | ✅ | Số bản bán ra |
+| `period` | string (1..∞ ký tự) ✍ | ✅ | Free-text period label, e.g. "2026-Q2" |
+
+**Response 201** (`TankobonSalesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `volumeNumber` | integer | ✅ | Số volume tankobon |
+| `unitsSold` | integer | ✅ | Số bản bán ra |
+| `period` | string | ✅ | Kỳ (chuỗi tự do, vd 2026-Q1) |
+| `recordedBy` | string | ✅ |  |
+| `createdAt` | string | ✅ | ISO 8601 UTC |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `GET /series/:id/defense-dashboard`
+> Dashboard bảo vệ series: ranking trend + tankobon + reports (Editor phụ trách/Board) — PB-08
+
+**Quyền:** EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Response 200** (`DefenseDashboardRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `rankingTrend` | object[] | ✅ |  |
+| `rankingTrend[].surveyPeriodId` | string | ✅ |  |
+| `rankingTrend[].rankPosition` | integer | ✅ | Vị trí xếp hạng (1 = cao nhất) |
+| `rankingTrend[].voteCount` | number | ✅ | Tổng trọng số phiếu (online weighted + offline 1.0) |
+| `rankingTrend[].previousRank` | integer | ✅ | Hạng kỳ trước (null = kỳ đầu) |
+| `rankingTrend[].rankChange` | integer | ✅ | Thay đổi hạng so kỳ trước (+lên/-xuống) |
+| `rankingTrend[].isAtRisk` | boolean | ✅ | true = thuộc bottom 1/3 kỳ này (tín hiệu nội bộ) |
+| `rankingTrend[].riskLevel` | string | ✅ |  |
+| `rankingTrend[].recordedAt` | string | ✅ |  |
+| `tankobon` | object | ✅ |  |
+| `tankobon.totalUnitsSold` | integer | ✅ |  |
+| `tankobon.volumes` | object[] | ✅ |  |
+| `seriesReports` | object[] | ✅ |  |
+| `seriesReports[].id` | string | ✅ | ObjectId của bản ghi |
+| `seriesReports[].reportType` | string | ✅ |  |
+| `seriesReports[].content` | string | ✅ | Nội dung text |
+| `seriesReports[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `serialization` | object | ✅ |  |
+| `serialization.serializedSince` | string | ✅ | ISO of SERIALIZED transition, null if never |
+| `serialization.chaptersPublished` | integer | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DefenseDashboardAccessDenied` |  |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+---
+
+## §11. Flow 7 — Reprint (tái bản)
+
+**Nghiệp vụ:** Board/Editor muốn in lại series (hot-nhưng-cũ, kỷ niệm, tie-in) → tạo ReprintRequest (`AS_IS` in nguyên bản / `WITH_REVISION` sửa art). Nhánh rẽ theo **Ownership Principle**: HĐ gốc `FULL_BUYOUT` → Board tự duyệt (KHÔNG cần hỏi Mangaka; Mangaka gốc không hợp tác sửa → gán reviser khác); `REVENUE_SHARE` → **Mangaka phải đồng ý trước**. Tái bản **bỏ qua proposal/Name** — vào thẳng sản xuất từng ReprintChapter → Editor check → đủ hết → PUBLISHED (doanh thu REVENUE_SHARE chia qua route revenue Flow 6).
+
+### Happy path
+
+1. **Editor/Board** `POST /reprint-requests` (seriesId + revisionMode + reason + chapterRange) → `PENDING`.
+2. HĐ gốc REVENUE_SHARE → **Mangaka** `PATCH /reprint-requests/:id/mangaka-review` (accept → `MANGAKA_APPROVED` / reject → `REJECTED_BY_MANGAKA`). FULL_BUYOUT → bỏ qua bước này.
+3. **Board** `PATCH /reprint-requests/:id/board-approve` → vào sản xuất; hệ thống sinh ReprintChapter theo range.
+4. `WITH_REVISION`: sửa manuscript từng chương `PATCH /reprint-requests/:id/chapters/:chapterId/manuscript` (object key bản sửa). Mangaka gốc không hợp tác (chỉ FULL_BUYOUT): `PATCH .../assign-reviser` `{reviserId, reviserType}`.
+5. **Editor** duyệt từng chương: `PATCH .../chapters/:chapterId/approve` → chương cuối cùng APPROVED → request tự `PUBLISHED`.
+6. Theo dõi: `GET /reprint-requests` (scope: Editor/Board đầy đủ; Mangaka thấy của series mình) + `GET .../chapters`.
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Mangaka KHÁC review reprint không thuộc series mình | mangaka-review | 403 (ownership guard) |
+| mangaka-review trên request FULL_BUYOUT | mangaka-review | 409 (không cần Mangaka — Ownership Principle) |
+| Board approve khi REVENUE_SHARE chưa được Mangaka accept | board-approve | 409 `Error.InvalidReprintTransition` |
+| assign-reviser khi không phải FULL_BUYOUT + WITH_REVISION | assign-reviser | 409 |
+| reviserType=OTHER_MANGAKA nhưng reviserId không phải MANGAKA | assign-reviser | 422 |
+| Sửa manuscript chương AS_IS | chapters/manuscript | 409 |
+| Approve chương sai trạng thái | chapters/approve | 409 |
+| id rác | mọi route `:id` | 404 |
+
+### API Reference
+
+#### `POST /reprint-requests`
+> Editor tạo yêu cầu tái bản (B-RPT-01)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreateReprintRequestBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId của Series |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string (1..∞ ký tự) ✍ | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer (≥ 0) ✍ | ✅ |  |
+| `chapterRangeEnd` | integer (≥ 0) ✍ | ✅ |  |
+
+**Response 201** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ActiveContractNotFound` | series has no FULLY_EXECUTED contract; cannot create/manipulate reprint request |
+| 404 | `Error.OriginalChaptersNotFound` | no PUBLISHED original chapter exists in the requested chapter range |
+
+---
+
+#### `GET /reprint-requests`
+> Danh sách yêu cầu tái bản (filter status/seriesId, scope theo role)
+
+**Quyền:** EDITOR, BOARD_MEMBER, MANGAKA, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `status` | string | ✅ |  |
+| `seriesId` | string | ✅ | ObjectId của Series |
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+---
+
+#### `GET /reprint-requests/:id`
+> Chi tiết yêu cầu tái bản
+
+**Quyền:** EDITOR, BOARD_MEMBER, MANGAKA, SUPER_ADMIN (Bearer)
+
+**Response 200** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `PATCH /reprint-requests/:id/mangaka-review`
+> Mangaka chấp nhận/từ chối yêu cầu tái bản (B-RPT-02)
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`MangakaReviewReprintBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `accept` | boolean ✍ | ✅ |  |
+| `reason` | string ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 200** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.ReprintActionNotAllowed` | mangaka review is only valid for REVENUE_SHARE contracts (Ownership Principle) |
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+| 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
+
+---
+
+#### `PATCH /reprint-requests/:id/board-approve`
+> Board duyệt/từ chối yêu cầu tái bản (B-RPT-02)
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`BoardApproveReprintBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `approve` | boolean ✍ | ✅ |  |
+| `reason` | string ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+
+**Response 200** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.ActiveContractNotFound` | series has no FULLY_EXECUTED contract; cannot create/manipulate reprint request |
+| 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
+
+---
+
+#### `GET /reprint-requests/:id/chapters`
+> Danh sách chapter trong yêu cầu tái bản
+
+**Quyền:** EDITOR, BOARD_MEMBER, MANGAKA, SUPER_ADMIN (Bearer)
+
+**Response 200** :
+
+_(xem envelope §0 — data có thể null)_
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `GET /reprint-requests/:id/chapters/:chapterId`
+> Chi tiết chapter trong yêu cầu tái bản
+
+**Quyền:** EDITOR, BOARD_MEMBER, MANGAKA, SUPER_ADMIN (Bearer)
+
+**Response 200** (`ReprintChapterRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `originalChapterId` | string | ✅ |  |
+| `manuscriptFile` | string | ✅ |  |
+| `status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
+
+---
+
+#### `PATCH /reprint-requests/:id/chapters/:chapterId/assign-reviser`
+> Gán reviser cho chapter tái bản WITH_REVISION (FULL_BUYOUT) — PB-07
+
+**Quyền:** BOARD_MEMBER, EDITOR (Bearer)
+
+**Body** (`AssignReviserBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reviserId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `reviserType` | enum `ReviserType` | ✅ |  |
+
+**Response 200** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
+| 409 | `Error.ReprintNotWithRevision` | reviser can only be assigned when revisionMode = WITH_REVISION |
+| 409 | `Error.ReviserOnlyForFullBuyout` | reviser can only be assigned when the active contract is FULL_BUYOUT |
+| 422 | `Error.ReviserMangakaNotFound` | reviserType=OTHER_MANGAKA requires the target user to have role MANGAKA |
+
+---
+
+#### `PATCH /reprint-requests/:id/chapters/:chapterId/manuscript`
+> Mangaka cập nhật manuscript cho chapter tái bản
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`SubmitChapterManuscriptBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `originalChapterId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `manuscriptFile` | string (1..∞ ký tự) ✍ | ✅ |  |
+
+**Response 200** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
+| 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
+
+---
+
+#### `PATCH /reprint-requests/:id/chapters/:chapterId/approve`
+> Editor duyệt chapter tái bản; auto-publish toàn bộ request khi mọi chapter đạt APPROVED
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`EditorApproveChapterBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `originalChapterId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `approve` | boolean ✍ | ✅ |  |
+
+**Response 200** (`ReprintRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestedBy` | string | ✅ |  |
+| `revisionMode` | enum `ReprintRevisionMode` | ✅ |  |
+| `reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `chapterRangeStart` | integer | ✅ |  |
+| `chapterRangeEnd` | integer | ✅ |  |
+| `status` | string | ✅ |  |
+| `mangakaApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `boardApprovedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `publishedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `chapters` | object[] | ✅ |  |
+| `chapters[].originalChapterId` | string | ✅ |  |
+| `chapters[].manuscriptFile` | string | ✅ |  |
+| `chapters[].status` | enum `ReprintChapterStatus` | ✅ |  |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+| 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
+| 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
+---
+
+## §12. Flow 8 — Transfer (chuyển nhượng series giữa các Mangaka)
+
+**Nghiệp vụ:** Mangaka B muốn tiếp quản series của Mangaka A (vd Boruto). Board sàng lọc hồ sơ năng lực trước. Sau đó rẽ theo HĐ gốc:
+- **FULL_BUYOUT** (NXB sở hữu 100% — A không còn gì để bán): Board toàn quyền → đóng HĐ A (`TERMINATED`, mốc chưa đạt MISSED) → **định giá lại** phần còn lại → ký HĐ MỚI FULL_BUYOUT cho B (điều kiện đếm theo đóng góp MỚI của B, không cộng dồn công A). KHÔNG cần A đồng ý — chỉ notify.
+- **REVENUE_SHARE** (A còn % sở hữu): Editor **deal với A** → A đồng ý bán trọn (`FULL_TRANSFER`) hay một phần (`PARTIAL_TRANSFER`) → lập **TransferContract ký 3 bên** (A → B → Board, OTP) → cập nhật ownership. `PARTIAL_TRANSFER` → A thành **co-owner**: mỗi chapter mới phải A duyệt trước khi phát hành (`AWAITING_CO_OWNER_APPROVAL` — §5; quá hạn grace → escalate Board).
+
+### Happy path
+
+1. **Mangaka B** `POST /transfers/requests` (seriesId + plan + hồ sơ năng lực) → `SUBMITTED` (snapshot loại HĐ gốc). Xem: `GET /transfers/requests/mine`.
+2. **Board** sàng lọc (`GET /transfers/requests/pending-board`): `POST /transfers/requests/:id/board-approve` hoặc `board-reject` (→ `REJECTED_BY_BOARD`).
+3. **Nhánh FULL_BUYOUT:** Board `POST /transfers/requests/:id/assign-full-buyout` `{valuationAmount, conditions[]}` → đóng HĐ A + tạo HĐ mới cho B + `Series.mangakaId = B` + notify A. XONG.
+4. **Nhánh REVENUE_SHARE:** Editor `POST /transfers/requests/:id/start-negotiation` → `NEGOTIATING` → deal ngoài với A → **Mangaka A** `POST .../mangaka-accept` (hoặc `mangaka-reject` → `REJECTED_BY_ORIGINAL_MANGAKA`).
+5. **Editor** `POST /transfers/contracts` (transferType + transferAmount B trả A + newOwnershipSplit `{publisher, A, B}` tổng =100) → ký lần lượt `POST /transfers/contracts/:id/sign` (A → B → Board, OTP) → `FULLY_EXECUTED` → ownership cập nhật; PARTIAL → set `Series.coOwnerId = A`.
+6. Xem chữ ký: `GET /transfers/contracts/:id/signatures`.
+
+### Unhappy cases
+
+| Tình huống | API | Kết quả |
+|---|---|---|
+| Series không có HĐ FULLY_EXECUTED | `POST /transfers/requests` | 4xx `Error.NoActiveContractFound` |
+| Board thao tác khi request sai trạng thái | board-approve/reject | 409 `Error.InvalidStatusForScreening` |
+| start-negotiation trên HĐ gốc FULL_BUYOUT | start-negotiation | 409 `Error.OnlyAppliesToRevenueShare` |
+| A accept/reject khi chưa NEGOTIATING | mangaka-accept/reject | 409 `Error.RequestNotInNegotiatingStage` |
+| Tạo TransferContract khi request sai trạng thái | `POST /transfers/contracts` | 409 `Error.InvalidTransferState` |
+| `newOwnershipSplit` tổng ≠ 100 | `POST /transfers/contracts` | 422 `Error.InvalidOwnershipSplit` |
+| Ký sai lượt / OTP sai | contracts/:id/sign | 409 / 422 |
+| Sau PARTIAL_TRANSFER: chapter publish không chờ A | (Flow 2 §5) | Manuscript `AWAITING_CO_OWNER_APPROVAL`; A quá hạn → `ESCALATED` + Board notify |
+
+### API Reference
+
+#### `POST /transfers/requests`
+> Mangaka B tạo yêu cầu chuyển nhượng tác phẩm → PENDING_SCREENING
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`CreateTransferRequestBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string (1..∞ ký tự) ✍ | ✅ | ObjectId của Series |
+| `planDescription` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `proposedType` | enum `TransferType` | ✅ | Kiểu chuyển nhượng (chỉ có nghĩa khi HĐ gốc REVENUE_SHARE): FULL_TRANSFER (B mua trọn phần của A, A ra đi) \| PARTIAL_TRANSFER (A giữ lại một phần → A thành co-owner, duyệt mỗi chapter mới — BR-TRANSFER-03) |
+| `proposedPercentage` | number (≥ 0, ≤ 100) ✍ | — |  |
+
+**Response 201** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | NO_ACTIVE_CONTRACT_FOUND_FOR_THIS_SERIES |
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /transfers/requests/mine`
+> Danh sách yêu cầu chuyển nhượng của Mangaka hiện tại
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 200** (`TransferRequestListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].seriesId` | string | ✅ | ObjectId của Series |
+| `data[].requestingMangakaId` | string | ✅ |  |
+| `data[].originalMangakaId` | string | ✅ |  |
+| `data[].originalContractType` | string | — |  |
+| `data[].proposedType` | string | — |  |
+| `data[].proposedPercentage` | number | — |  |
+| `data[].planDescription` | string | — |  |
+| `data[].originalContractId` | string | — |  |
+| `data[].status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `data[].boardDecisionId` | string | — |  |
+| `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `GET /transfers/requests/pending-board`
+> Danh sách yêu cầu chuyển nhượng chờ Board xử lý
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Response 200** (`TransferRequestListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `data` | object[] | ✅ |  |
+| `data[].id` | string | ✅ | ObjectId của bản ghi |
+| `data[].seriesId` | string | ✅ | ObjectId của Series |
+| `data[].requestingMangakaId` | string | ✅ |  |
+| `data[].originalMangakaId` | string | ✅ |  |
+| `data[].originalContractType` | string | — |  |
+| `data[].proposedType` | string | — |  |
+| `data[].proposedPercentage` | number | — |  |
+| `data[].planDescription` | string | — |  |
+| `data[].originalContractId` | string | — |  |
+| `data[].status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `data[].boardDecisionId` | string | — |  |
+| `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+---
+
+#### `GET /transfers/requests/:id`
+> Chi tiết yêu cầu chuyển nhượng
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER (Bearer)
+
+**Response 200** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+---
+
+#### `POST /transfers/requests/:id/board-approve`
+> Board duyệt sàng lọc yêu cầu chuyển nhượng
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`BoardDecisionTransferBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `boardSessionId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `details` | string ✍ | — |  |
+
+**Response 201** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | INVALID_STATUS_FOR_SCREENING |
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /transfers/requests/:id/board-reject`
+> Board từ chối sàng lọc yêu cầu chuyển nhượng
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`BoardDecisionTransferBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `boardSessionId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `details` | string ✍ | — |  |
+
+**Response 201** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | INVALID_STATUS_FOR_SCREENING |
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /transfers/requests/:id/assign-full-buyout`
+> Board chọn Full Buyout → bàn giao series cho Mangaka B
+
+**Quyền:** BOARD_MEMBER (Bearer)
+
+**Body** (`AssignFullBuyoutBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `boardSessionId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `valuationAmount` | number (≥ 0) ✍ | ✅ | Giá trị định giá tác phẩm (Board quyết) |
+| `conditions` | object[] | ✅ |  |
+| `conditions[].description` | string (1..∞ ký tự) | ✅ |  |
+| `conditions[].type` | enum `ConditionType` | ✅ | Allowed values: CHAPTER_MILESTONE, RECURRING_CHAPTER, RANKING_MILESTONE, TIME_BOUND |
+| `conditions[].value` | number (≥ 0) | ✅ |  |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | THIS_ACTION_ONLY_APPLIES_TO_FULL_BUYOUT_CONTRACTS |
+| 400 | — | ORIGINAL_CONTRACT_ID_NOT_FOUND |
+| 400 | `Error.ValuationRequired` | a positive valuationAmount is required for Full Buyout re-valuation (B-TRF-02) |
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /transfers/requests/:id/start-negotiation`
+> Editor bắt đầu thương lượng Revenue Share với Mangaka A
+
+**Quyền:** EDITOR (Bearer)
+
+**Response 201** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | THIS_ACTION_ONLY_APPLIES_TO_REVENUE_SHARE_CONTRACTS |
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+---
+
+#### `POST /transfers/requests/:id/mangaka-accept`
+> Mangaka A đồng ý chuyển nhượng tác phẩm
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | REQUEST_IS_NOT_IN_NEGOTIATING_STAGE |
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+---
+
+#### `POST /transfers/requests/:id/mangaka-reject`
+> Mangaka A từ chối chuyển nhượng tác phẩm
+
+**Quyền:** MANGAKA (Bearer)
+
+**Response 201** (`TransferRequestRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `requestingMangakaId` | string | ✅ |  |
+| `originalMangakaId` | string | ✅ |  |
+| `originalContractType` | string | — |  |
+| `proposedType` | string | — |  |
+| `proposedPercentage` | number | — |  |
+| `planDescription` | string | — |  |
+| `originalContractId` | string | — |  |
+| `status` | enum `TransferRequestStatus` | ✅ | Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD \| REJECTED_BY_ORIGINAL_MANGAKA \| REJECTED \| CANCELLED |
+| `boardDecisionId` | string | — |  |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | REQUEST_IS_NOT_IN_NEGOTIATING_STAGE |
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+---
+
+#### `POST /transfers/contracts`
+> Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT (chỉ khi request UNDER_REVIEW)
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`CreateTransferContractBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `transferRequestId` | string (1..∞ ký tự) ✍ | ✅ |  |
+| `transferAmount` | number (≥ 0) ✍ | ✅ |  |
+| `transferType` | enum `TransferType` | ✅ | Kiểu chuyển nhượng (chỉ có nghĩa khi HĐ gốc REVENUE_SHARE): FULL_TRANSFER (B mua trọn phần của A, A ra đi) \| PARTIAL_TRANSFER (A giữ lại một phần → A thành co-owner, duyệt mỗi chapter mới — BR-TRANSFER-03) |
+| `newOwnershipSplit` | object | ✅ | Cấu hình chia tỷ lệ sở hữu doanh thu mới — tổng các giá trị PHẢI = 100 (%) |
+| `coOwnerApprovalRequired` | boolean ✍ | — | (default: `false`) |
+
+**Response 201** (`TransferContractRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `transferRequestId` | string | — |  |
+| `seriesId` | string | — | ObjectId của Series |
+| `fromMangakaId` | string | — |  |
+| `toMangakaId` | string | — |  |
+| `transferType` | string | — |  |
+| `transferAmount` | number | — |  |
+| `newOwnershipSplit` | any | — |  |
+| `coOwnerApprovalRequired` | boolean | ✅ |  |
+| `status` | enum `TransferContractStatus` | ✅ | Vòng đời hợp đồng chuyển nhượng 3 bên: DRAFT → A_SIGNED → B_SIGNED → BOARD_SIGNED → FULLY_EXECUTED \| VOIDED |
+| `aSignedAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `bSignedAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `boardSignedAt` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
+| `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `signatures` | object[] | — |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].transferContractId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+| 409 | `Error.InvalidTransferState` | transfer request is not in the required state for this action (B-TRF-03) |
+| 422 | — | Validation fail |
+
+---
+
+#### `POST /transfers/contracts/:id/sign`
+> Mangaka/Board ký hợp đồng chuyển nhượng bằng OTP
+
+**Quyền:** MANGAKA, BOARD_MEMBER (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `signerRole` | string | ✅ |  |
+
+**Body** (`SignTransferContractBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `otpCode` | string (6..6 ký tự) ✍ | ✅ |  |
+
+**Response 201** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 400 | — | USER_HAS_ALREADY_SIGNED_THIS_CONTRACT |
+| 404 | — | TRANSFER_CONTRACT_NOT_FOUND |
+| 404 | — | USER_OR_EMAIL_NOT_FOUND |
+| 404 | — | TRANSFER_CONTRACT_NOT_FOUND_AFTER_UPDATE |
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /transfers/contracts/:id/signatures`
+> Danh sách chữ ký của hợp đồng chuyển nhượng
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER (Bearer)
+
+**Response 200** (`TransferSignatureListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `signatures` | object[] | ✅ |  |
+| `signatures[].id` | string | ✅ | ObjectId của bản ghi |
+| `signatures[].transferContractId` | string | ✅ |  |
+| `signatures[].userId` | string | ✅ | ObjectId của User |
+| `signatures[].role` | string | ✅ |  |
+| `signatures[].signedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | — | TRANSFER_CONTRACT_NOT_FOUND |
+---
+
+## §13. Flow 12 + 13 — Franchise consent & Publication Version
+
+### Flow 12 — Sequel/Franchise
+
+**Nghiệp vụ:** series MỚI nối tiếp series cũ (sequel/spinoff/side-story/reboot — khác Transfer: đây là series mới, không đổi tác giả series cũ). Tạo qua Flow 1 bình thường, thêm `parentSeriesId` + `relationshipType` trong `POST /series/proposals`. **Ownership gate:** series gốc `REVENUE_SHARE` và tác giả khác → cần **Mangaka gốc đồng ý** (`franchiseConsentStatus=PENDING`, series con bị **chặn submit** tới khi APPROVED); `FULL_BUYOUT` → không cần consent.
+
+1. Mangaka tạo proposal kèm `parentSeriesId` — parent không tồn tại → 422 `Error.ParentSeriesNotFound`.
+2. Cần consent → Mangaka gốc được notify → `POST /series/:id/franchise-consent` `{action: approve|reject}`.
+3. `PENDING`/`REJECTED` mà submit → 409 `Error.FranchiseConsentRequired`. APPROVED → Flow 1 chạy tiếp bình thường.
+
+### Flow 13 — Publication Version (registry phiên bản phát hành)
+
+**Nghiệp vụ:** registry CRUD thuần ghi nhận các phiên bản phát hành của series (ngôn ngữ, chiều đọc RTL/LTR, loại bản) — KHÔNG gắn state machine nào.
+
+- Editor/Admin ghi: `POST /series/:seriesId/publication-versions` · `PATCH|DELETE /publication-versions/:id`.
+- Đọc: `GET /series/:seriesId/publication-versions` · `GET /publication-versions/:id`.
+- Unhappy: id rác/không tồn tại → 404; sai role ghi → 403; language/versionType thiếu → 422.
+
+### API Reference
+
+#### `POST /series/:id/franchise-consent`
+> Mangaka gốc đồng ý/từ chối series phái sinh (A-SER-06). REJECTED chỉ block submit.
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body** (`FranchiseConsentBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `approve` | boolean ✍ | ✅ |  |
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
+| `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
+| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
+| `coverImage` | string | ✅ | Object key ảnh bìa (R2) — đổi sang signed GET để hiển thị; KHÔNG phải URL |
+| `genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
+| `publicationType` | enum `PublicationType` | ✅ | Publication cadence: WEEKLY, MONTHLY, IRREGULAR |
+| `magazine` | string | ✅ | Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Series state machine status |
+| `statusReason` | string | ✅ | Lý do của lần đổi status gần nhất (reject/withdraw/cancel...); null nếu không có |
+| `relationshipType` | enum `RelationshipType` | ✅ | Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Mốc Editor bắt đầu review (set 1 lần ở action review đầu); có giá trị = khoá nhả series |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất |
+| `completionProposal.proposedByRole` | string | ✅ | Vai trò người đề xuất (MANGAKA\|EDITOR) |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc dự kiến; null nếu không ghi |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Hồ sơ proposal (nhúng trong Series); null nếu chưa có |
+| `proposal.nameId` | string | ✅ | Id Name chương mẫu gắn proposal |
+| `proposal.synopsis` | string | ✅ | Tóm tắt cốt truyện |
+| `proposal.characterDesigns` | string[] | ✅ | Mảng object key ảnh thiết kế nhân vật (R2) |
+| `proposal.estimatedLength` | number | ✅ | Số chương ước tính |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Series proposal review status |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotOriginalMangaka` | only the parent series original mangaka can give franchise consent |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+| 409 | `Error.NotFranchiseConsentTarget` | series is not a franchise pending consent |
+
+---
+
+#### `POST /series/:seriesId/publication-versions`
+> B-PUB-01: Tạo phiên bản phát hành cho series (Flow 13)
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`CreatePublicationVersionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `language` | string (1..20 ký tự) ✍ | ✅ | Mã ngôn ngữ, vd JA/EN/VI |
+| `readingDirection` | enum `ReadingDirection` | — | Reading direction: RTL (right-to-left, manga gốc) \| LTR (left-to-right, bản dịch phương Tây) (default: `"RTL"`) |
+| `versionType` | enum(ORIGINAL, DIGITAL, FLIPPED, ) | — | ORIGINAL \| DIGITAL \| FLIPPED |
+| `notes` | string (0..2000 ký tự) ✍ | — |  |
+
+**Response 201** (`PublicationVersionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `language` | string | ✅ |  |
+| `readingDirection` | enum `ReadingDirection` | ✅ | Reading direction: RTL (right-to-left, manga gốc) \| LTR (left-to-right, bản dịch phương Tây) |
+| `versionType` | string | ✅ | ORIGINAL \| DIGITAL \| FLIPPED (hoặc null nếu không set) |
+| `notes` | string | ✅ |  |
+| `createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `GET /series/:seriesId/publication-versions`
+> List phiên bản phát hành của series (scope theo role)
+
+**Quyền:** EDITOR, BOARD_MEMBER, SUPER_ADMIN, MANGAKA (Bearer)
+
+**Response 200** (`PublicationVersionListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].seriesId` | string | ✅ | ObjectId của Series |
+| `items[].language` | string | ✅ |  |
+| `items[].readingDirection` | enum `ReadingDirection` | ✅ | Reading direction: RTL (right-to-left, manga gốc) \| LTR (left-to-right, bản dịch phương Tây) |
+| `items[].versionType` | string | ✅ | ORIGINAL \| DIGITAL \| FLIPPED (hoặc null nếu không set) |
+| `items[].notes` | string | ✅ |  |
+| `items[].createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `GET /publication-versions/:id`
+> Chi tiết 1 phiên bản phát hành
+
+**Quyền:** EDITOR, BOARD_MEMBER, SUPER_ADMIN, MANGAKA (Bearer)
+
+**Response 200** (`PublicationVersionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `language` | string | ✅ |  |
+| `readingDirection` | enum `ReadingDirection` | ✅ | Reading direction: RTL (right-to-left, manga gốc) \| LTR (left-to-right, bản dịch phương Tây) |
+| `versionType` | string | ✅ | ORIGINAL \| DIGITAL \| FLIPPED (hoặc null nếu không set) |
+| `notes` | string | ✅ |  |
+| `createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.PublicationVersionNotFound` | publication version does not exist |
+
+---
+
+#### `PATCH /publication-versions/:id`
+> Sửa (partial) phiên bản phát hành
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Body** (`UpdatePublicationVersionBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `language` | string (1..20 ký tự) ✍ | — |  |
+| `readingDirection` | enum `ReadingDirection` | — | Reading direction: RTL (right-to-left, manga gốc) \| LTR (left-to-right, bản dịch phương Tây) |
+| `versionType` | enum(ORIGINAL, DIGITAL, FLIPPED, ) | — |  |
+| `notes` | string (0..2000 ký tự) ✍ | — |  |
+
+**Response 200** (`PublicationVersionRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `seriesId` | string | ✅ | ObjectId của Series |
+| `language` | string | ✅ |  |
+| `readingDirection` | enum `ReadingDirection` | ✅ | Reading direction: RTL (right-to-left, manga gốc) \| LTR (left-to-right, bản dịch phương Tây) |
+| `versionType` | string | ✅ | ORIGINAL \| DIGITAL \| FLIPPED (hoặc null nếu không set) |
+| `notes` | string | ✅ |  |
+| `createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.PublicationVersionNotFound` | publication version does not exist |
+
+---
+
+#### `DELETE /publication-versions/:id`
+> Xóa phiên bản phát hành
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer)
+
+**Response 200** (`MessageRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `message` | string | ✅ | Message hiển thị cho user |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
+| 404 | `Error.PublicationVersionNotFound` | publication version does not exist |
+---
+
+## §14. Cross-cutting: Upload R2, Notification, Audit, AppConfig
+
+### Upload / Download file (mọi user đã đăng nhập)
+
+Chu trình chuẩn (mọi field file trong hệ đều đi đường này):
+1. `POST /uploads/sign` `{fileName, contentType, contentLength, assetType?}` → `{assetId, key, uploadUrl, requiredHeaders, expiresAt}`.
+2. FE `PUT` bytes **thẳng lên `uploadUrl`** với đúng `requiredHeaders` (Content-Type đã pin vào chữ ký — sai type/size R2 từ chối 403).
+3. Gửi `key` vào API nghiệp vụ (coverImage, namePages, originalFile, portfolio, assetIds...).
+4. Hiển thị: `POST /uploads/sign-download` `{key}` → `{downloadUrl, expiresAt}` (RBAC: chủ upload hoặc EDITOR/BOARD/ADMIN — khác → 403 `Error.DownloadForbidden`).
+
+Unhappy: contentType ngoài allowlist → 422 `Error.UnsupportedFileType`; quá 15MB → 422 `Error.FileTooLarge`; key không tồn tại → 404 `Error.AssetNotFound`. Asset xin URL nhưng không upload → cron tự dọn.
+
+### Notification (mọi user)
+
+- `GET /notifications?isRead=&type=&limit=&offset=` — filter `isRead` 3 trạng thái (omit=tất cả), response luôn kèm `unreadCount` (badge — độc lập filter). Scope cứng theo user hiện tại.
+- `PATCH /notifications/:id/read` (idempotent; của người khác/không tồn tại → 404 `Error.NotificationNotFound`) · `PATCH /notifications/read-all` → `{updated}`.
+- Realtime = polling. Deep-link theo `referenceType` prefix — xem §0.6.
+
+### Audit log (SUPER_ADMIN + BOARD_MEMBER)
+
+`GET /audit?entityType=&entityId=&actorId=&limit=&offset=` — truy vết mọi chuyển trạng thái/moderation/config: ai (`actorId` null = hệ thống), entity nào, từ→đến trạng thái, lý do, lúc nào. Phục vụ màn hình lịch sử/minh bạch.
+
+### AppConfig (SUPER_ADMIN)
+
+`GET /admin/app-config` · `PATCH /admin/app-config` — registry tham số nghiệp vụ runtime (không cần deploy lại): `nameMaxReviewRounds` (ngưỡng cảnh báo Name lặp, default 8) · `maxUploadBytes` (trần upload, default 15MB, cứng ≤50MB) · `reputationRecommendThreshold` (ngưỡng isRecommended) · `coOwnerApprovalGraceDays` (hạn co-owner duyệt chapter) · `hiatusTooLongDays` (ngưỡng cron cảnh báo hiatus) · `lowVoteReliabilityThreshold` (ngưỡng kỳ vote "không đủ tin cậy") · `assignmentGraceDays`. Cache 30s — PATCH xong đợi ~30s mới chắc chắn áp.
+
+### API Reference
+
+#### `POST /uploads/sign`
+> Xin signed URL upload (presigned PUT) lên R2; validate type/size; tạo Asset; trả uploadUrl + key
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Body** (`SignUploadBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `fileName` | string (1..255 ký tự) ✍ | ✅ | Tên file gốc (dùng sinh object key an toàn) |
+| `contentType` | enum(image/png, image/jpeg, image/webp, application/pdf) | ✅ | Loại file cho phép: image/png · image/jpeg · image/webp · application/pdf |
+| `contentLength` | integer (≥ 0) ✍ | ✅ | Bytes - must be less than or equal to maxUploadBytes from AppConfig (default 15MB) |
+| `assetType` | enum `AssetType` | — | Uploaded asset type |
+
+**Response 201** (`SignUploadRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `assetId` | string | ✅ |  |
+| `key` | string | ✅ | Object key trên R2 |
+| `uploadUrl` | string | ✅ | Presigned PUT URL — FE upload thẳng R2, hết hạn theo expiresAt |
+| `requiredHeaders` | object | ✅ | Header BẮT BUỘC gửi kèm khi PUT (Content-Type đã pin vào chữ ký) |
+| `expiresAt` | string | ✅ | Hạn hiệu lực (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | `Error.UnsupportedFileType` | file type is not allowed |
+| 422 | `Error.FileTooLarge` | file exceeds upload size limit |
+
+---
+
+#### `POST /uploads/sign-download`
+> Xin signed URL download (presigned GET) cho 1 object key (chủ sở hữu / EDITOR / BOARD)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Body** (`SignDownloadBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `key` | string (1..∞ ký tự) ✍ | ✅ | Object key trên R2 |
+
+**Response 201** (`SignDownloadRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `downloadUrl` | string | ✅ | Presigned GET URL tạm thời |
+| `expiresAt` | string | ✅ | Hạn hiệu lực (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.DownloadForbidden` | current user cannot download this asset |
+| 404 | `Error.AssetNotFound` | asset does not exist |
+
+---
+
+#### `GET /notifications`
+> List thông báo của user hiện tại (filter isRead/type, kèm unreadCount cho badge)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `isRead` | enum(true, false) | — | true = user đã đọc thông báo |
+| `type` | enum `NotificationType` | — | Notification type: SYSTEM, CONTRACT, TASK, DEADLINE, SURVEY, BOARD, REVIEW |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`NotificationListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].type` | enum `NotificationType` | ✅ | Notification type: SYSTEM, CONTRACT, TASK, DEADLINE, SURVEY, BOARD, REVIEW |
+| `items[].referenceId` | string | ✅ | ID thực thể liên quan (chapter/task/...) |
+| `items[].referenceType` | string | ✅ | Mã action liên quan đến referenceId, ví dụ TASK_APPROVED hoặc CHAPTER_PUBLISHED |
+| `items[].content` | string | ✅ | Nội dung hiển thị; notification mới luôn có content |
+| `items[].isRead` | boolean | ✅ | true = user đã đọc thông báo |
+| `items[].createdAt` | string | ✅ | ISO 8601 |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `unreadCount` | number | ✅ | Tổng số chưa đọc (độc lập filter, dùng cho badge) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+---
+
+#### `PATCH /notifications/:id/read`
+> Đánh dấu 1 thông báo đã đọc (idempotent)
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`NotificationRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `type` | enum `NotificationType` | ✅ | Notification type: SYSTEM, CONTRACT, TASK, DEADLINE, SURVEY, BOARD, REVIEW |
+| `referenceId` | string | ✅ | ID thực thể liên quan (chapter/task/...) |
+| `referenceType` | string | ✅ | Mã action liên quan đến referenceId, ví dụ TASK_APPROVED hoặc CHAPTER_PUBLISHED |
+| `content` | string | ✅ | Nội dung hiển thị; notification mới luôn có content |
+| `isRead` | boolean | ✅ | true = user đã đọc thông báo |
+| `createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 404 | `Error.NotificationNotFound` | notification does not exist or does not belong to the current user |
+
+---
+
+#### `PATCH /notifications/read-all`
+> Đánh dấu tất cả thông báo chưa đọc của user là đã đọc
+
+**Quyền:** Mọi user đã đăng nhập (Bearer)
+
+**Response 200** (`ReadAllRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `updated` | number | ✅ | Số notification vừa được đánh dấu đã đọc |
+
+---
+
+#### `GET /audit`
+> List audit logs for privileged audit viewers
+
+**Quyền:** SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `entityType` | enum `AuditEntityType` | — | Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST |
+| `entityId` | string | — | Id entity bị tác động |
+| `actorId` | string | — | Id user thao tác |
+| `action` | string | — | TRANSITION \| HOLD \| RESUME \| BAN \| ... (string chuẩn hóa) |
+| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
+
+**Response 200** (`AuditLogListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng bản ghi (phần tử xem các dòng con) |
+| `items[].id` | string | ✅ | ObjectId của bản ghi |
+| `items[].actorId` | string | ✅ | null = hành động hệ thống (cron/listener) |
+| `items[].entityType` | enum `AuditEntityType` | ✅ | Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST |
+| `items[].entityId` | string | ✅ |  |
+| `items[].action` | string | ✅ |  |
+| `items[].fromState` | string | ✅ |  |
+| `items[].toState` | string | ✅ |  |
+| `items[].reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Validation fail |
+
+---
+
+#### `GET /admin/app-config`
+> Super Admin reads runtime app configuration
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Response 200** (`AppConfigRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `updatedBy` | string | ✅ | Admin user id that last updated app config |
+| `coOwnerApprovalGraceDays` | integer (≥ 0) | ✅ | Grace days for co-owner approval flows |
+| `nameMaxReviewRounds` | integer (≥ 0) | ✅ | Maximum name review rounds before loop warning |
+| `reputationRecommendThreshold` | number (≥ 1, ≤ 5) | ✅ | Minimum reputation score for recommendations |
+| `hiatusTooLongDays` | integer (≥ 0) | ✅ | Days before a hiatus is considered too long |
+| `lowVoteReliabilityThreshold` | integer (≥ 0) | ✅ | Vote count below which reliability is low |
+| `maxUploadBytes` | integer (≥ 0, ≤ 52428800) | ✅ | Maximum upload size in bytes |
+| `assignmentGraceDays` | integer (≥ 0) | ✅ | Grace days around assignment lifecycle checks |
+| `updatedAt` | string | ✅ | Thời điểm cập nhật gần nhất (ISO 8601 UTC) |
+
+---
+
+#### `PATCH /admin/app-config`
+> Super Admin updates runtime app configuration
+
+**Quyền:** SUPER_ADMIN (Bearer)
+
+**Body** (`PatchAppConfigBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `coOwnerApprovalGraceDays` | integer (≥ 0) ✍ | — | Grace days for co-owner approval flows |
+| `nameMaxReviewRounds` | integer ✍ | — | Maximum name review rounds before loop warning |
+| `reputationRecommendThreshold` | number (≥ 1, ≤ 5) ✍ | — | Minimum reputation score for recommendations |
+| `hiatusTooLongDays` | integer ✍ | — | Days before a hiatus is considered too long |
+| `lowVoteReliabilityThreshold` | integer (≥ 0) ✍ | — | Vote count below which reliability is low |
+| `maxUploadBytes` | integer (≤ 52428800) ✍ | — | Maximum upload size in bytes; hard cap is 50MB |
+| `assignmentGraceDays` | integer (≥ 0) ✍ | — | Grace days around assignment lifecycle checks |
+
+**Response 200** (`AppConfigRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của bản ghi |
+| `updatedBy` | string | ✅ | Admin user id that last updated app config |
+| `coOwnerApprovalGraceDays` | integer (≥ 0) | ✅ | Grace days for co-owner approval flows |
+| `nameMaxReviewRounds` | integer (≥ 0) | ✅ | Maximum name review rounds before loop warning |
+| `reputationRecommendThreshold` | number (≥ 1, ≤ 5) | ✅ | Minimum reputation score for recommendations |
+| `hiatusTooLongDays` | integer (≥ 0) | ✅ | Days before a hiatus is considered too long |
+| `lowVoteReliabilityThreshold` | integer (≥ 0) | ✅ | Vote count below which reliability is low |
+| `maxUploadBytes` | integer (≥ 0, ≤ 52428800) | ✅ | Maximum upload size in bytes |
+| `assignmentGraceDays` | integer (≥ 0) | ✅ | Grace days around assignment lifecycle checks |
+| `updatedAt` | string | ✅ | Thời điểm cập nhật gần nhất (ISO 8601 UTC) |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 422 | — | Validation fail |
+---
+
+## §15. WebSocket `/board` — realtime phiên họp Hội đồng
+
+Socket.IO namespace **`/board`** (server cùng host API). Duy nhất chỗ này có realtime — mọi thứ khác polling.
+
+**Kết nối (BẮT BUỘC JWT):**
+
+```js
+const socket = io(`${API_ORIGIN}/board`, {
+  auth: { token: accessToken }   // hoặc header Authorization: Bearer <token>
+})
+```
+
+- Thiếu/sai token → server `disconnect` ngay khi handshake.
+- Join room phiên họp: `socket.emit('joinSession', { sessionId })` → chỉ **creator / thành viên roster (`allowedEditorIds`) / SUPER_ADMIN** được vào; ngoài danh sách → `{status: 'DENIED'}`; sessionId rác → từ chối.
+- Sự kiện nhận: **`voteProgressUpdated`** — bắn mỗi khi có phiếu mới (payload: tiến độ vote của decision trong phiên) → FE cập nhật màn hình họp trực tiếp. Kết quả chốt (APPROVED/REJECTED) vẫn nên đối chiếu bằng `GET /board/decisions/:id`.
+
+## §16. Changelog v2 → v3 (FE PHẢI đọc nếu đã code theo v2)
+
+**Breaking:**
+
+| # | Thay đổi | Chi tiết |
+|---|---|---|
+| 1 | **Tách vai route Name (Spec 12)** | `/series/:id/names/*` giờ CHỈ còn proposal-Name (đọc + lifecycle). Chapter-Name chuyển hết sang `/chapters/:id/names/*` (đủ GET list/detail, request-revision, resubmit, approve, PUT/POST pages, **DELETE mới**). Gọi chapter-Name qua route series → 404 |
+| 2 | `GET /series/:id/names` bỏ query `kind` | Gửi `?kind=` → 422 (strict). Thêm phân trang `limit`/`offset` |
+| 3 | `NameRes` thêm field `chapterId` | null = proposal-Name; có giá trị = Name của chapter đó |
+| 4 | `PaymentRecord` response **bỏ field `userId`** | FE nào đọc field này phải bỏ |
+| 5 | Reprint/Board đổi error shape | SCREAMING_SNAKE cũ → chuẩn `Error.PascalCase` toàn hệ |
+| 6 | Guest voting đổi field | `phoneNumber` → **`identity`** (email); response ghi `authMethod: EMAIL_OTP` |
+| 7 | `POST /chapters` body | `{seriesId, chapterNumber, title?}` — KHÔNG còn `nameId` (chapter-first, Spec 10) |
+
+**Mới (chưa có trong v2):**
+
+- `GET/PATCH /me` (mọi role — sửa name/displayName/avatar/phone; `''` = xoá displayName/avatar).
+- `PUT|GET /me/staff-profile` (EDITOR/BOARD) + `GET /staff/:userId` — hồ sơ nhân sự NXB, khai `specialtyGenres`.
+- `GET /board/suggest-members?seriesId=` + `POST /board/sessions` cho phép **bỏ trống `allowedEditorIds`** (kèm `seriesId`) để auto-assign roster theo thể loại.
+- `PATCH|DELETE /chapters/:id` · `DELETE /chapters/:id/names/:nameId`.
+- `POST /series/:id/propose-completion` / `force-cancel` / `finalize-ending` / `hiatus` / `resume` / `franchise-consent`.
+- Toàn bộ BE-B: contracts + amendments + payments, board engine, survey/vote/rankings (2 route public `GET /vote/context`, `GET /vote/results`), reprint, transfer, publication-versions, tankobon + defense-dashboard.
+- Notification `referenceType` action-specific (`<ENTITY>_<ACTION>`) — deep-link theo prefix (§0.6).
+- WS `/board` bắt buộc JWT (v2 chưa có auth contract).
+- Swagger: field ngày giờ đã có `format: date-time` (đọc type chính xác từ `/api-json`).
+- 3 mã lỗi mới: `Error.NotEnoughBoardMembers`, `Error.RosterSourceRequired`, `Error.NameNotDeletable`; vote thêm `Error.DuplicateSeriesInVote`, `Error.SeriesNotVotable`; transfer thêm `Error.InvalidOwnershipSplit`; reviews thêm `Error.ProfileNotFound`.
+
+---
+
+*Sinh + đối chiếu từ Swagger runtime commit `c953e0c` — 2026-07-12. Khi BE đổi contract, regenerate phần reference thay vì sửa tay.*

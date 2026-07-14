@@ -21,6 +21,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { TransferContractResDtoOutputNewOwnershipSplit } from './transferContractResDtoOutputNewOwnershipSplit';
+import type { TransferContractResDtoOutputStatus } from './transferContractResDtoOutputStatus';
 import type { TransferContractResDtoOutputSignaturesItem } from './transferContractResDtoOutputSignaturesItem';
 
 export interface TransferContractResDtoOutput {
@@ -40,10 +41,27 @@ export interface TransferContractResDtoOutput {
   /** @nullable */
   newOwnershipSplit?: TransferContractResDtoOutputNewOwnershipSplit;
   coOwnerApprovalRequired: boolean;
-  status: string;
-  aSignedAt?: unknown;
-  bSignedAt?: unknown;
-  boardSignedAt?: unknown;
-  createdAt: unknown;
+  /** Vòng đời hợp đồng chuyển nhượng 3 bên: DRAFT → A_SIGNED → B_SIGNED → BOARD_SIGNED → FULLY_EXECUTED | VOIDED. Values: DRAFT, A_SIGNED, B_SIGNED, BOARD_SIGNED, FULLY_EXECUTED, VOIDED */
+  status: TransferContractResDtoOutputStatus;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  aSignedAt?: string;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  bSignedAt?: string;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  boardSignedAt?: string;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  createdAt: string;
   signatures?: TransferContractResDtoOutputSignaturesItem[];
 }

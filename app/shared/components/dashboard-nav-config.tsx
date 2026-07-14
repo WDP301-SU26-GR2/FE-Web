@@ -9,7 +9,10 @@ import {
   Bell,
   BarChart3,
   Plus,
-  Shield
+  Shield,
+  ClipboardList,
+  Briefcase,
+  Mail
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -74,9 +77,11 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
 function buildAssistantConfig(t: ReturnType<typeof useTranslation>['t']): DashboardNavConfig {
   return {
     navItems: [
-      { label: t('nav.home'), href: '/dashboard/assistant', icon: Users },
-      { label: t('nav.myTasks'), href: '/dashboard/assistant/tasks', icon: FileText },
-      { label: t('nav.notifications'), href: '/dashboard/assistant/notifications', icon: Bell }
+      { label: t('nav.home'), href: '/dashboard/assistant', icon: Home },
+      { label: t('nav.myTasks'), href: '/dashboard/tasks', icon: ClipboardList },
+      { label: t('nav.studio'), href: '/dashboard/studio', icon: Briefcase },
+      { label: t('nav.invites'), href: '/dashboard/invites', icon: Mail },
+      { label: t('nav.notifications'), href: '/dashboard/notifications', icon: Bell }
     ],
     profile: {
       name: t('profile.assistantName'),

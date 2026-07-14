@@ -22,6 +22,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type {
   ChapterControllerApprovePathParameters,
+  ChapterControllerCoOwnerApprovePathParameters,
+  ChapterControllerCoOwnerRejectPathParameters,
   ChapterControllerCreatePagePathParameters,
   ChapterControllerExtendPathParameters,
   ChapterControllerGetOnePathParameters,
@@ -31,12 +33,14 @@ import type {
   ChapterControllerMarkCompositeReadyPathParameters,
   ChapterControllerProgressPathParameters,
   ChapterControllerPublishPathParameters,
+  ChapterControllerRemovePathParameters,
   ChapterControllerRequestRevisionPathParameters,
   ChapterControllerResubmitPathParameters,
   ChapterControllerResumePathParameters,
   ChapterControllerSetSchedulePathParameters,
   ChapterControllerSubmitPathParameters,
   ChapterControllerUpdatePagePathParameters,
+  ChapterControllerUpdatePathParameters,
   ChapterListResDtoOutput,
   ChapterProgressResDtoOutput,
   ChapterResDtoOutput,
@@ -44,17 +48,19 @@ import type {
   CreatePageBodyDto,
   ExtendDeadlineBodyDto,
   HoldChapterBodyDto,
+  MessageResDtoOutput,
   PageListResDtoOutput,
   PageResDtoOutput,
   ReasonBodyDto,
   SetScheduleBodyDto,
+  UpdateChapterBodyDto,
   UpdatePageBodyDto
 } from '../../model/chapters';
 
 import { customFetch } from '../../mutator/custom-fetch';
 
 /**
- * @summary Mangaka tạo Chapter từ Name APPROVED → Chapter + Manuscript(DRAFT) + Schedule
+ * @summary Mangaka tạo Chapter (chapter-first): chapterNumber + title → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule. Name tạo sau.
  */
 export type chapterControllerCreateResponse201 = {
   data: ChapterResDtoOutput
@@ -75,16 +81,11 @@ export type chapterControllerCreateResponse409 = {
   data: void
   status: 409
 }
-
-export type chapterControllerCreateResponse422 = {
-  data: void
-  status: 422
-}
     
 export type chapterControllerCreateResponseSuccess = (chapterControllerCreateResponse201) & {
   headers: Headers;
 };
-export type chapterControllerCreateResponseError = (chapterControllerCreateResponse403 | chapterControllerCreateResponse404 | chapterControllerCreateResponse409 | chapterControllerCreateResponse422) & {
+export type chapterControllerCreateResponseError = (chapterControllerCreateResponse403 | chapterControllerCreateResponse404 | chapterControllerCreateResponse409) & {
   headers: Headers;
 };
 
@@ -154,46 +155,105 @@ export const chapterControllerListBySeries = async (params: ChapterControllerLis
 
 
 /**
- * @summary Chapter progress dashboard for owner editor, mangaka, board, or super admin
+ * @summary Mangaka sửa title (pre-PUBLISHED) / chapterNumber (chỉ khi DRAFT) — chapter-first
  */
-export type chapterControllerProgressResponse200 = {
-  data: ChapterProgressResDtoOutput
+export type chapterControllerUpdateResponse200 = {
+  data: ChapterResDtoOutput
   status: 200
 }
 
-export type chapterControllerProgressResponse403 = {
+export type chapterControllerUpdateResponse403 = {
   data: void
   status: 403
 }
 
-export type chapterControllerProgressResponse404 = {
+export type chapterControllerUpdateResponse404 = {
   data: void
   status: 404
 }
+
+export type chapterControllerUpdateResponse409 = {
+  data: void
+  status: 409
+}
     
-export type chapterControllerProgressResponseSuccess = (chapterControllerProgressResponse200) & {
+export type chapterControllerUpdateResponseSuccess = (chapterControllerUpdateResponse200) & {
   headers: Headers;
 };
-export type chapterControllerProgressResponseError = (chapterControllerProgressResponse403 | chapterControllerProgressResponse404) & {
+export type chapterControllerUpdateResponseError = (chapterControllerUpdateResponse403 | chapterControllerUpdateResponse404 | chapterControllerUpdateResponse409) & {
   headers: Headers;
 };
 
-export type chapterControllerProgressResponse = (chapterControllerProgressResponseSuccess | chapterControllerProgressResponseError)
+export type chapterControllerUpdateResponse = (chapterControllerUpdateResponseSuccess | chapterControllerUpdateResponseError)
 
-export const getChapterControllerProgressUrl = ({ id }: ChapterControllerProgressPathParameters,) => {
+export const getChapterControllerUpdateUrl = ({ id }: ChapterControllerUpdatePathParameters,) => {
 
 
   
 
-  return `/chapters/${id}/progress`
+  return `/chapters/${id}`
 }
 
-export const chapterControllerProgress = async ({ id }: ChapterControllerProgressPathParameters, options?: RequestInit): Promise<chapterControllerProgressResponse> => {
+export const chapterControllerUpdate = async ({ id }: ChapterControllerUpdatePathParameters,
+    updateChapterBodyDto: UpdateChapterBodyDto, options?: RequestInit): Promise<chapterControllerUpdateResponse> => {
   
-  return customFetch<chapterControllerProgressResponse>(getChapterControllerProgressUrl({ id }),
+  return customFetch<chapterControllerUpdateResponse>(getChapterControllerUpdateUrl({ id }),
   {      
     ...options,
-    method: 'GET'
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateChapterBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Mangaka xóa chapter DRAFT (cascade Name/Manuscript/Schedule/Pages) — chapter-first
+ */
+export type chapterControllerRemoveResponse200 = {
+  data: MessageResDtoOutput
+  status: 200
+}
+
+export type chapterControllerRemoveResponse403 = {
+  data: void
+  status: 403
+}
+
+export type chapterControllerRemoveResponse404 = {
+  data: void
+  status: 404
+}
+
+export type chapterControllerRemoveResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type chapterControllerRemoveResponseSuccess = (chapterControllerRemoveResponse200) & {
+  headers: Headers;
+};
+export type chapterControllerRemoveResponseError = (chapterControllerRemoveResponse403 | chapterControllerRemoveResponse404 | chapterControllerRemoveResponse409) & {
+  headers: Headers;
+};
+
+export type chapterControllerRemoveResponse = (chapterControllerRemoveResponseSuccess | chapterControllerRemoveResponseError)
+
+export const getChapterControllerRemoveUrl = ({ id }: ChapterControllerRemovePathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}`
+}
+
+export const chapterControllerRemove = async ({ id }: ChapterControllerRemovePathParameters, options?: RequestInit): Promise<chapterControllerRemoveResponse> => {
+  
+  return customFetch<chapterControllerRemoveResponse>(getChapterControllerRemoveUrl({ id }),
+  {      
+    ...options,
+    method: 'DELETE'
     
     
   }
@@ -233,6 +293,53 @@ export const getChapterControllerGetOneUrl = ({ id }: ChapterControllerGetOnePat
 export const chapterControllerGetOne = async ({ id }: ChapterControllerGetOnePathParameters, options?: RequestInit): Promise<chapterControllerGetOneResponse> => {
   
   return customFetch<chapterControllerGetOneResponse>(getChapterControllerGetOneUrl({ id }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Chapter progress dashboard for owner editor, mangaka, board, or super admin
+ */
+export type chapterControllerProgressResponse200 = {
+  data: ChapterProgressResDtoOutput
+  status: 200
+}
+
+export type chapterControllerProgressResponse403 = {
+  data: void
+  status: 403
+}
+
+export type chapterControllerProgressResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type chapterControllerProgressResponseSuccess = (chapterControllerProgressResponse200) & {
+  headers: Headers;
+};
+export type chapterControllerProgressResponseError = (chapterControllerProgressResponse403 | chapterControllerProgressResponse404) & {
+  headers: Headers;
+};
+
+export type chapterControllerProgressResponse = (chapterControllerProgressResponseSuccess | chapterControllerProgressResponseError)
+
+export const getChapterControllerProgressUrl = ({ id }: ChapterControllerProgressPathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}/progress`
+}
+
+export const chapterControllerProgress = async ({ id }: ChapterControllerProgressPathParameters, options?: RequestInit): Promise<chapterControllerProgressResponse> => {
+  
+  return customFetch<chapterControllerProgressResponse>(getChapterControllerProgressUrl({ id }),
   {      
     ...options,
     method: 'GET'
@@ -852,7 +959,7 @@ export const chapterControllerApprove = async ({ id }: ChapterControllerApproveP
 
 
 /**
- * @summary Editor xuất bản chapter (chỉ READY_FOR_PRINT) → PUBLISHED + emit chapter.published. Co-owner/Contract gate: defer B1/B3.
+ * @summary Editor xuất bản chapter (chỉ READY_FOR_PRINT) → PUBLISHED + emit chapter.published. Chặn nếu series chưa có Contract FULLY_EXECUTED (BR-CONTRACT-05). Co-owner gate: defer B3.
  */
 export type chapterControllerPublishResponse201 = {
   data: ChapterResDtoOutput
@@ -899,6 +1006,112 @@ export const chapterControllerPublish = async ({ id }: ChapterControllerPublishP
     method: 'POST'
     
     
+  }
+);}
+
+
+/**
+ * @summary A-CHP-06: Co-owner (PARTIAL_TRANSFER) duyệt chapter đang AWAITING_CO_OWNER_APPROVAL → PUBLISHED
+ */
+export type chapterControllerCoOwnerApproveResponse201 = {
+  data: ChapterResDtoOutput
+  status: 201
+}
+
+export type chapterControllerCoOwnerApproveResponse403 = {
+  data: void
+  status: 403
+}
+
+export type chapterControllerCoOwnerApproveResponse404 = {
+  data: void
+  status: 404
+}
+
+export type chapterControllerCoOwnerApproveResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type chapterControllerCoOwnerApproveResponseSuccess = (chapterControllerCoOwnerApproveResponse201) & {
+  headers: Headers;
+};
+export type chapterControllerCoOwnerApproveResponseError = (chapterControllerCoOwnerApproveResponse403 | chapterControllerCoOwnerApproveResponse404 | chapterControllerCoOwnerApproveResponse409) & {
+  headers: Headers;
+};
+
+export type chapterControllerCoOwnerApproveResponse = (chapterControllerCoOwnerApproveResponseSuccess | chapterControllerCoOwnerApproveResponseError)
+
+export const getChapterControllerCoOwnerApproveUrl = ({ id }: ChapterControllerCoOwnerApprovePathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}/co-owner-approve`
+}
+
+export const chapterControllerCoOwnerApprove = async ({ id }: ChapterControllerCoOwnerApprovePathParameters, options?: RequestInit): Promise<chapterControllerCoOwnerApproveResponse> => {
+  
+  return customFetch<chapterControllerCoOwnerApproveResponse>(getChapterControllerCoOwnerApproveUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary A-CHP-06: Co-owner từ chối → Manuscript về EDITOR_REVISION
+ */
+export type chapterControllerCoOwnerRejectResponse201 = {
+  data: ChapterResDtoOutput
+  status: 201
+}
+
+export type chapterControllerCoOwnerRejectResponse403 = {
+  data: void
+  status: 403
+}
+
+export type chapterControllerCoOwnerRejectResponse404 = {
+  data: void
+  status: 404
+}
+
+export type chapterControllerCoOwnerRejectResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type chapterControllerCoOwnerRejectResponseSuccess = (chapterControllerCoOwnerRejectResponse201) & {
+  headers: Headers;
+};
+export type chapterControllerCoOwnerRejectResponseError = (chapterControllerCoOwnerRejectResponse403 | chapterControllerCoOwnerRejectResponse404 | chapterControllerCoOwnerRejectResponse409) & {
+  headers: Headers;
+};
+
+export type chapterControllerCoOwnerRejectResponse = (chapterControllerCoOwnerRejectResponseSuccess | chapterControllerCoOwnerRejectResponseError)
+
+export const getChapterControllerCoOwnerRejectUrl = ({ id }: ChapterControllerCoOwnerRejectPathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}/co-owner-reject`
+}
+
+export const chapterControllerCoOwnerReject = async ({ id }: ChapterControllerCoOwnerRejectPathParameters,
+    reasonBodyDto: ReasonBodyDto, options?: RequestInit): Promise<chapterControllerCoOwnerRejectResponse> => {
+  
+  return customFetch<chapterControllerCoOwnerRejectResponse>(getChapterControllerCoOwnerRejectUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reasonBodyDto,)
   }
 );}
 

@@ -8,7 +8,6 @@ import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
 
 export type CreateChapterInput = {
   seriesId: string
-  nameId: string
   chapterNumber: number
   title?: string
 }
@@ -23,11 +22,11 @@ type UseCreateChapterResult = {
  * Hook for the Mangaka "Create new chapter" action (publication phase).
  *
  * Calls POST /chapters (orval-generated `chapterControllerCreate`).
- * On success surfaces a translated success toast and returns the new
- * Chapter. On failure surfaces a translated error toast (BE message
- * preferred) and returns null. BE enforces that the Name must already
- * be APPROVED and the series must be SERIALIZED — UI mirrors these gates
- * but is not authoritative.
+ * BE auto-matches the latest APPROVED Name for the series to seed the
+ * Manuscript (DRAFT) + Schedule, so FE only sends seriesId + chapterNumber
+ * + optional title. On success surfaces a translated success toast and
+ * returns the new Chapter. On failure surfaces a translated error toast
+ * (BE message preferred) and returns null.
  */
 export function useCreateChapter(): UseCreateChapterResult {
   const { t } = useTranslation('mangaka')
@@ -35,12 +34,11 @@ export function useCreateChapter(): UseCreateChapterResult {
 
   const createChapter = useCallback(
     async (input: CreateChapterInput) => {
-      if (!input.seriesId || !input.nameId) return null
+      if (!input.seriesId) return null
       setIsCreating(true)
       try {
         const response = await chapterControllerCreate({
           seriesId: input.seriesId,
-          nameId: input.nameId,
           chapterNumber: input.chapterNumber,
           title: input.title
         })

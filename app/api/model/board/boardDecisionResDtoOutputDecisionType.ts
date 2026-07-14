@@ -22,6 +22,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
+ * Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT
  * @nullable
  */
 export type BoardDecisionResDtoOutputDecisionType = typeof BoardDecisionResDtoOutputDecisionType[keyof typeof BoardDecisionResDtoOutputDecisionType] | null;

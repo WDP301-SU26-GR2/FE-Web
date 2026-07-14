@@ -20,6 +20,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { CreateProposalResDtoOutputNameKind } from './createProposalResDtoOutputNameKind';
 import type { CreateProposalResDtoOutputNameStatus } from './createProposalResDtoOutputNameStatus';
 import type { CreateProposalResDtoOutputNamePagesItem } from './createProposalResDtoOutputNamePagesItem';
 
@@ -31,6 +32,8 @@ export type CreateProposalResDtoOutputName = {
    * @nullable
    */
   chapterNumber: number | null;
+  /** Name storyboard kind: PROPOSAL (proposal chapter-sample) or CHAPTER (per-chapter storyboard). Values: PROPOSAL, CHAPTER */
+  kind: CreateProposalResDtoOutputNameKind;
   /** Name/chapter-name review status. Values: DRAFT, SUBMITTED, IN_REVIEW, REVISION, APPROVED */
   status: CreateProposalResDtoOutputNameStatus;
   /** Tăng mỗi lần resubmit */

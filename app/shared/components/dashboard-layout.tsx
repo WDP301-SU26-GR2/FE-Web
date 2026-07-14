@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from 'react'
-import { Link, useLocation } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Search, Bell, Settings, LogOut, Menu, X, ChevronRight } from 'lucide-react'
+import { Search, Bell, Settings, LogOut, Menu, X, ChevronRight, Loader2 } from 'lucide-react'
 
 import { ThemeToggle } from './theme-toggle'
 import { LanguageSwitcher } from './language-switcher'
+import { useLogout } from '~/features/auth/hooks/use-logout'
+import { useAuth } from '~/features/auth/context/auth-context'
 
 export interface NavItem {
   label: string
@@ -35,15 +37,27 @@ function isItemActive(itemHref: string, pathname: string): boolean {
   return pathname.startsWith(`${itemHref}/`)
 }
 
-export function DashboardLayout({
-  children,
-  navItems,
-  profile,
-  headerActions
-}: DashboardLayoutProps) {
+export function DashboardLayout({ children, navItems, profile, headerActions }: DashboardLayoutProps) {
   const { t } = useTranslation('common')
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout: handleLogout, isLoggingOut } = useLogout()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const { session } = useAuth()
+
+  // The authenticated user's role comes from the persisted session (BE enum,
+  // e.g. "MANGAKA"/"ASSISTANT"). We deliberately do NOT use `profile.role`
+  // here — that field is a localized display label ("Creator" / "Tác giả"),
+  // not the canonical role code.
+  //
+  // Only Mangaka + Assistant have a `/me/*-profile` endpoint today; for other
+  // roles the Settings button is disabled.
+  const settingsHref = (() => {
+    const r = session?.user?.role
+    if (r === 'MANGAKA') return '/dashboard/mangaka/profile'
+    if (r === 'ASSISTANT') return '/dashboard/profile'
+    return null
+  })()
 
   return (
     <div className='flex h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-300'>
@@ -136,13 +150,16 @@ export function DashboardLayout({
                 </div>
               </div>
             </div>
-            <Link
-              to='/login'
-              className='rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0'
+            <button
+              type='button'
+              onClick={() => void handleLogout()}
+              disabled={isLoggingOut}
+              className='rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0 disabled:cursor-not-allowed disabled:opacity-60'
               aria-label={t('layout.signOut')}
+              title={t('layout.signOut')}
             >
-              <LogOut className='h-5 w-5' />
-            </Link>
+              {isLoggingOut ? <Loader2 className='h-5 w-5 animate-spin' /> : <LogOut className='h-5 w-5' />}
+            </button>
           </div>
         </div>
       </aside>
@@ -182,6 +199,11 @@ export function DashboardLayout({
             <button
               className='rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors animate-spin-hover'
               aria-label={t('layout.settings')}
+              title={t('layout.settings')}
+              onClick={() => {
+                if (settingsHref) navigate(settingsHref)
+              }}
+              disabled={!settingsHref}
             >
               <Settings className='h-5 w-5' />
             </button>

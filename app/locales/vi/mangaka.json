@@ -16,6 +16,128 @@
     "editorSupport": "Hỗ trợ biên tập",
     "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Đồng bộ: {{time}} trước"
   },
+  "assistantDirectory": {
+    "title": "Danh bạ trợ lý",
+    "subtitle": "Tìm và mời trợ lý cộng tác cho series của bạn.",
+    "filters": {
+      "specialization": "Chuyên môn",
+      "all": "Tất cả",
+      "levelPlaceholder": "Tìm theo cấp độ (VD: 3 năm)"
+    },
+    "card": {
+      "recommended": "Đề xuất",
+      "reputationTitle": "Điểm uy tín",
+      "reputation": "{{score}} uy tín",
+      "ratingTitle": "Đánh giá trung bình",
+      "rating": "{{avg}} ({{count}})",
+      "unnamedAssistant": "Trợ lý chưa đặt tên",
+      "activeAssignment": "Đang cộng tác",
+      "activeAssignmentTitle": "Bạn đã có quan hệ thuê ACTIVE với trợ lý này",
+      "invite": "Mời cộng tác",
+      "inviteAriaLabel": "Mời cộng tác với {{name}}",
+      "portfolioCount": "{{count}} portfolio",
+      "availableWindow": "Rảnh {{from}} – {{to}}",
+      "availability": {
+        "AVAILABLE": "Sẵn sàng",
+        "BUSY": "Đang bận",
+        "ON_LEAVE": "Đang nghỉ phép",
+        "UNAVAILABLE": "Tạm không nhận"
+      },
+      "specialization": {
+        "BACKGROUND": "Vẽ nền",
+        "SCREENTONE": "Dán tone",
+        "EFFECT_LINES": "Hiệu ứng đường",
+        "INKING": "Tô mực",
+        "COLORING": "Tô màu",
+        "LETTERING": "Chèn thoại"
+      }
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} trong {{total}}"
+    },
+    "empty": {
+      "title": "Không tìm thấy trợ lý phù hợp",
+      "description": "Thử bỏ bộ lọc chuyên môn hoặc đổi từ khoá cấp độ khác.",
+      "clearFilters": "Bỏ bộ lọc"
+    },
+    "error": {
+      "loadFailed": "Không thể tải danh bạ trợ lý. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "invite": {
+      "dialogTitle": "Mời {{name}} cộng tác",
+      "dialogDescription": "Gửi lời mời cộng tác — trợ lý sẽ chấp nhận để bạn giao task. Khoảng thuê phải ở tương lai và kết thúc sau ngày bắt đầu.",
+      "close": "Đóng",
+      "seriesLabel": "Series (tuỳ chọn)",
+      "seriesNone": "Không gắn với series cụ thể",
+      "seriesHint": "BE không kiểm tra quyền sở hữu series khi gửi invite — chỉ là metadata.",
+      "hireStartLabel": "Bắt đầu thuê",
+      "hireEndLabel": "Kết thúc thuê",
+      "taskTypesLabel": "Loại công việc",
+      "taskTypesHint": "Chọn ít nhất 1 chuyên môn mà bạn dự định giao.",
+      "cancel": "Huỷ",
+      "confirm": "Gửi lời mời",
+      "sending": "Đang gửi...",
+      "success": "Đã gửi lời mời cộng tác.",
+      "errorGeneric": "Không thể gửi lời mời. Vui lòng thử lại.",
+      "errorDuplicate": "Bạn đã có quan hệ thuê ACTIVE với trợ lý này — không thể mời lại.",
+      "errorInvalidHire": "Khoảng thuê không hợp lệ. Vui lòng chọn lại ngày bắt đầu/kết thúc.",
+      "errorAssistantNotFound": "Không tìm thấy trợ lý.",
+      "errorHireOrder": "Ngày kết thúc phải sau ngày bắt đầu.",
+      "errorHirePast": "Ngày kết thúc phải ở tương lai.",
+      "errorNoTaskType": "Vui lòng chọn ít nhất 1 loại công việc."
+    }
+  },
+  "myStudio": {
+    "title": "Studio",
+    "subtitle": "Theo dõi các trợ lý đang/đã cộng tác cho series của bạn.",
+    "filters": {
+      "status": "Trạng thái",
+      "all": "Tất cả",
+      "activeNow": "Chỉ quan hệ đang hiệu lực"
+    },
+    "card": {
+      "unnamedAssistant": "Trợ lý #{{id}}",
+      "hireWindow": "{{from}} – {{to}}",
+      "hireWindowNoEnd": "Từ {{from}}",
+      "seriesNone": "Không gắn với series cụ thể",
+      "terminatedReason": "Lý do: {{reason}}",
+      "noReason": "Không ghi lý do",
+      "ended": "Kết thúc {{date}}",
+      "taskTypesTitle": "Loại công việc đã giao",
+      "activeNowBadge": "Đang hiệu lực",
+      "endedBadge": "Đã kết thúc"
+    },
+    "status": {
+      "ACTIVE": "Đang hoạt động",
+      "COMPLETED": "Hoàn thành",
+      "TERMINATED": "Đã chấm dứt"
+    },
+    "taskType": {
+      "BACKGROUND": "Vẽ nền",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Hiệu ứng đường",
+      "INKING": "Tô mực",
+      "COLORING": "Tô màu",
+      "LETTERING": "Chèn thoại"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} trong {{total}}"
+    },
+    "empty": {
+      "title": "Chưa có quan hệ thuê nào",
+      "description": "Khi một trợ lý chấp nhận lời mời của bạn, quan hệ thuê sẽ hiện ở đây.",
+      "goToDirectory": "Mở danh bạ trợ lý"
+    },
+    "error": {
+      "loadFailed": "Không thể tải danh sách thuê. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    }
+  },
   "mySeries": {
     "title": "Series của tôi",
     "subtitle": "Quản lý tất cả series truyện của bạn",
@@ -231,9 +353,7 @@
       "publishedAt": "Xuất bản {{date}}",
       "pages": "{{count}} trang",
       "chapterLabel": "Chương {{n}}",
-      "noApprovedNameHint": "Series chưa có Name (Storyboard) nào được Editor duyệt. Cần duyệt ít nhất 1 Name trước khi tạo chapter mới.",
       "createButton": "Tạo chapter mới",
-      "createButtonTooltipNoApproved": "Cần ít nhất 1 Name được duyệt để tạo chapter",
       "chapterStatus": {
         "DRAFT": "Bản nháp",
         "IN_PRODUCTION": "Đang sản xuất",
@@ -253,14 +373,8 @@
       "manuscriptStatusTitle": "Trạng thái manuscript",
       "create": {
         "dialogTitle": "Tạo chapter mới",
-        "dialogDescription": "Chapter sẽ được tạo từ một Name (Storyboard) đã được Editor duyệt.",
+        "dialogDescription": "Chapter mới sẽ được tạo cho series này. Name (Storyboard) được Editor duyệt gần nhất sẽ tự động được BE match để khởi tạo Manuscript và Schedule.",
         "seriesLabel": "Series",
-        "nameLabel": "Name (Storyboard)",
-        "selectName": "Chọn Name...",
-        "noApprovedNames": "Không có Name APPROVED",
-        "noApprovedNamesHint": "Series chưa có Name nào được duyệt. Editor cần duyệt ít nhất 1 Name trước.",
-        "nameSampleLabel": "Name mẫu (Proposal)",
-        "nameChapterLabel": "Chương {{n}}",
         "chapterNumberLabel": "Số chương",
         "titleLabel": "Tiêu đề (tuỳ chọn)",
         "titlePlaceholder": "VD: Khởi đầu mới",
@@ -269,7 +383,6 @@
         "creating": "Đang tạo...",
         "success": "Đã tạo chapter mới.",
         "errorGeneric": "Không thể tạo chapter. Vui lòng thử lại.",
-        "errorNoName": "Vui lòng chọn một Name (Storyboard).",
         "errorInvalidNumber": "Số chương phải là số nguyên ≥ 1."
       }
     }

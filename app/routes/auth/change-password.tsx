@@ -19,7 +19,7 @@ export function meta() {
 
 export default function ChangePasswordRoute() {
   const { t } = useTranslation('auth')
-  const { logout } = useAuth()
+  const { clearSession } = useAuth()
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -63,7 +63,7 @@ export default function ChangePasswordRoute() {
       // Clear stored tokens so AuthContext resets to unauthenticated
       removeStorage(STORAGE_KEYS.accessToken)
       removeStorage(STORAGE_KEYS.refreshToken)
-      logout()
+      clearSession()
 
       toast.success(t('changePassword.success'))
       window.location.href = '/login'

@@ -31,7 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Áp class `dark` trước hydrate để tránh nhấp nháy màu sai */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <ScrollRestoration />
         <Scripts />

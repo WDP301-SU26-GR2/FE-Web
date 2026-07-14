@@ -23,11 +23,13 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type {
   BoardConfigResDtoOutput,
   BoardControllerCastVotePathParameters,
+  BoardControllerConcludeSessionPathParameters,
   BoardControllerGetDecisionDetailsPathParameters,
   BoardControllerGetDecisionVotesPathParameters,
   BoardControllerGetReportByIdPathParameters,
   BoardControllerGetSessionByIdPathParameters,
   BoardControllerStartSessionPathParameters,
+  BoardControllerSuggestMembersParams,
   BoardControllerUpdateConfigPathParameters,
   BoardDecisionResDtoOutput,
   BoardSessionResDtoOutput,
@@ -38,6 +40,7 @@ import type {
   CreateSeriesReportBodyDto,
   MessageResDtoOutput,
   SeriesReportResDtoOutput,
+  SuggestBoardMembersResDtoOutput,
   UpdateBoardConfigBodyDto
 } from '../../model/board';
 
@@ -50,13 +53,30 @@ export type boardControllerCreateSessionResponse201 = {
   data: BoardSessionResDtoOutput
   status: 201
 }
+
+export type boardControllerCreateSessionResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerCreateSessionResponse409 = {
+  data: void
+  status: 409
+}
+
+export type boardControllerCreateSessionResponse422 = {
+  data: void
+  status: 422
+}
     
 export type boardControllerCreateSessionResponseSuccess = (boardControllerCreateSessionResponse201) & {
   headers: Headers;
 };
-;
+export type boardControllerCreateSessionResponseError = (boardControllerCreateSessionResponse404 | boardControllerCreateSessionResponse409 | boardControllerCreateSessionResponse422) & {
+  headers: Headers;
+};
 
-export type boardControllerCreateSessionResponse = (boardControllerCreateSessionResponseSuccess)
+export type boardControllerCreateSessionResponse = (boardControllerCreateSessionResponseSuccess | boardControllerCreateSessionResponseError)
 
 export const getBoardControllerCreateSessionUrl = () => {
 
@@ -115,19 +135,80 @@ export const boardControllerGetSessions = async ( options?: RequestInit): Promis
 
 
 /**
+ * @summary Gợi ý roster Board theo thể loại của series (PB-05) — lẻ, >= 3
+ */
+export type boardControllerSuggestMembersResponse200 = {
+  data: SuggestBoardMembersResDtoOutput
+  status: 200
+}
+
+export type boardControllerSuggestMembersResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerSuggestMembersResponse422 = {
+  data: void
+  status: 422
+}
+    
+export type boardControllerSuggestMembersResponseSuccess = (boardControllerSuggestMembersResponse200) & {
+  headers: Headers;
+};
+export type boardControllerSuggestMembersResponseError = (boardControllerSuggestMembersResponse404 | boardControllerSuggestMembersResponse422) & {
+  headers: Headers;
+};
+
+export type boardControllerSuggestMembersResponse = (boardControllerSuggestMembersResponseSuccess | boardControllerSuggestMembersResponseError)
+
+export const getBoardControllerSuggestMembersUrl = (params: BoardControllerSuggestMembersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/board/suggest-members?${stringifiedParams}` : `/board/suggest-members`
+}
+
+export const boardControllerSuggestMembers = async (params: BoardControllerSuggestMembersParams, options?: RequestInit): Promise<boardControllerSuggestMembersResponse> => {
+  
+  return customFetch<boardControllerSuggestMembersResponse>(getBoardControllerSuggestMembersUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
  * @summary Chi tiết phiên họp Hội đồng
  */
 export type boardControllerGetSessionByIdResponse200 = {
   data: BoardSessionResDtoOutput
   status: 200
 }
+
+export type boardControllerGetSessionByIdResponse404 = {
+  data: void
+  status: 404
+}
     
 export type boardControllerGetSessionByIdResponseSuccess = (boardControllerGetSessionByIdResponse200) & {
   headers: Headers;
 };
-;
+export type boardControllerGetSessionByIdResponseError = (boardControllerGetSessionByIdResponse404) & {
+  headers: Headers;
+};
 
-export type boardControllerGetSessionByIdResponse = (boardControllerGetSessionByIdResponseSuccess)
+export type boardControllerGetSessionByIdResponse = (boardControllerGetSessionByIdResponseSuccess | boardControllerGetSessionByIdResponseError)
 
 export const getBoardControllerGetSessionByIdUrl = ({ id }: BoardControllerGetSessionByIdPathParameters,) => {
 
@@ -156,13 +237,30 @@ export type boardControllerStartSessionResponse200 = {
   data: BoardSessionResDtoOutput
   status: 200
 }
+
+export type boardControllerStartSessionResponse400 = {
+  data: void
+  status: 400
+}
+
+export type boardControllerStartSessionResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerStartSessionResponse409 = {
+  data: void
+  status: 409
+}
     
 export type boardControllerStartSessionResponseSuccess = (boardControllerStartSessionResponse200) & {
   headers: Headers;
 };
-;
+export type boardControllerStartSessionResponseError = (boardControllerStartSessionResponse400 | boardControllerStartSessionResponse404 | boardControllerStartSessionResponse409) & {
+  headers: Headers;
+};
 
-export type boardControllerStartSessionResponse = (boardControllerStartSessionResponseSuccess)
+export type boardControllerStartSessionResponse = (boardControllerStartSessionResponseSuccess | boardControllerStartSessionResponseError)
 
 export const getBoardControllerStartSessionUrl = ({ id }: BoardControllerStartSessionPathParameters,) => {
 
@@ -175,6 +273,58 @@ export const getBoardControllerStartSessionUrl = ({ id }: BoardControllerStartSe
 export const boardControllerStartSession = async ({ id }: BoardControllerStartSessionPathParameters, options?: RequestInit): Promise<boardControllerStartSessionResponse> => {
   
   return customFetch<boardControllerStartSessionResponse>(getBoardControllerStartSessionUrl({ id }),
+  {      
+    ...options,
+    method: 'PATCH'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Kết thúc phiên họp Hội đồng → CONCLUDED; quyết định treo → EXPIRED
+ */
+export type boardControllerConcludeSessionResponse200 = {
+  data: BoardSessionResDtoOutput
+  status: 200
+}
+
+export type boardControllerConcludeSessionResponse403 = {
+  data: void
+  status: 403
+}
+
+export type boardControllerConcludeSessionResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerConcludeSessionResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type boardControllerConcludeSessionResponseSuccess = (boardControllerConcludeSessionResponse200) & {
+  headers: Headers;
+};
+export type boardControllerConcludeSessionResponseError = (boardControllerConcludeSessionResponse403 | boardControllerConcludeSessionResponse404 | boardControllerConcludeSessionResponse409) & {
+  headers: Headers;
+};
+
+export type boardControllerConcludeSessionResponse = (boardControllerConcludeSessionResponseSuccess | boardControllerConcludeSessionResponseError)
+
+export const getBoardControllerConcludeSessionUrl = ({ id }: BoardControllerConcludeSessionPathParameters,) => {
+
+
+  
+
+  return `/board/sessions/${id}/conclude`
+}
+
+export const boardControllerConcludeSession = async ({ id }: BoardControllerConcludeSessionPathParameters, options?: RequestInit): Promise<boardControllerConcludeSessionResponse> => {
+  
+  return customFetch<boardControllerConcludeSessionResponse>(getBoardControllerConcludeSessionUrl({ id }),
   {      
     ...options,
     method: 'PATCH'
@@ -226,13 +376,25 @@ export type boardControllerCreateDecisionResponse201 = {
   data: BoardDecisionResDtoOutput
   status: 201
 }
+
+export type boardControllerCreateDecisionResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerCreateDecisionResponse422 = {
+  data: void
+  status: 422
+}
     
 export type boardControllerCreateDecisionResponseSuccess = (boardControllerCreateDecisionResponse201) & {
   headers: Headers;
 };
-;
+export type boardControllerCreateDecisionResponseError = (boardControllerCreateDecisionResponse404 | boardControllerCreateDecisionResponse422) & {
+  headers: Headers;
+};
 
-export type boardControllerCreateDecisionResponse = (boardControllerCreateDecisionResponseSuccess)
+export type boardControllerCreateDecisionResponse = (boardControllerCreateDecisionResponseSuccess | boardControllerCreateDecisionResponseError)
 
 export const getBoardControllerCreateDecisionUrl = () => {
 
@@ -297,13 +459,20 @@ export type boardControllerGetDecisionDetailsResponse200 = {
   data: BoardDecisionResDtoOutput
   status: 200
 }
+
+export type boardControllerGetDecisionDetailsResponse404 = {
+  data: void
+  status: 404
+}
     
 export type boardControllerGetDecisionDetailsResponseSuccess = (boardControllerGetDecisionDetailsResponse200) & {
   headers: Headers;
 };
-;
+export type boardControllerGetDecisionDetailsResponseError = (boardControllerGetDecisionDetailsResponse404) & {
+  headers: Headers;
+};
 
-export type boardControllerGetDecisionDetailsResponse = (boardControllerGetDecisionDetailsResponseSuccess)
+export type boardControllerGetDecisionDetailsResponse = (boardControllerGetDecisionDetailsResponseSuccess | boardControllerGetDecisionDetailsResponseError)
 
 export const getBoardControllerGetDecisionDetailsUrl = ({ id }: BoardControllerGetDecisionDetailsPathParameters,) => {
 
@@ -332,13 +501,20 @@ export type boardControllerGetDecisionVotesResponse200 = {
   data: BoardVoteResDtoOutput[]
   status: 200
 }
+
+export type boardControllerGetDecisionVotesResponse404 = {
+  data: void
+  status: 404
+}
     
 export type boardControllerGetDecisionVotesResponseSuccess = (boardControllerGetDecisionVotesResponse200) & {
   headers: Headers;
 };
-;
+export type boardControllerGetDecisionVotesResponseError = (boardControllerGetDecisionVotesResponse404) & {
+  headers: Headers;
+};
 
-export type boardControllerGetDecisionVotesResponse = (boardControllerGetDecisionVotesResponseSuccess)
+export type boardControllerGetDecisionVotesResponse = (boardControllerGetDecisionVotesResponseSuccess | boardControllerGetDecisionVotesResponseError)
 
 export const getBoardControllerGetDecisionVotesUrl = ({ id }: BoardControllerGetDecisionVotesPathParameters,) => {
 
@@ -367,13 +543,35 @@ export type boardControllerCastVoteResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
+
+export type boardControllerCastVoteResponse400 = {
+  data: void
+  status: 400
+}
+
+export type boardControllerCastVoteResponse403 = {
+  data: void
+  status: 403
+}
+
+export type boardControllerCastVoteResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerCastVoteResponse409 = {
+  data: void
+  status: 409
+}
     
 export type boardControllerCastVoteResponseSuccess = (boardControllerCastVoteResponse201) & {
   headers: Headers;
 };
-;
+export type boardControllerCastVoteResponseError = (boardControllerCastVoteResponse400 | boardControllerCastVoteResponse403 | boardControllerCastVoteResponse404 | boardControllerCastVoteResponse409) & {
+  headers: Headers;
+};
 
-export type boardControllerCastVoteResponse = (boardControllerCastVoteResponseSuccess)
+export type boardControllerCastVoteResponse = (boardControllerCastVoteResponseSuccess | boardControllerCastVoteResponseError)
 
 export const getBoardControllerCastVoteUrl = ({ id }: BoardControllerCastVotePathParameters,) => {
 
@@ -439,13 +637,30 @@ export type boardControllerCreateSeriesReportResponse201 = {
   data: SeriesReportResDtoOutput
   status: 201
 }
+
+export type boardControllerCreateSeriesReportResponse400 = {
+  data: void
+  status: 400
+}
+
+export type boardControllerCreateSeriesReportResponse403 = {
+  data: void
+  status: 403
+}
+
+export type boardControllerCreateSeriesReportResponse404 = {
+  data: void
+  status: 404
+}
     
 export type boardControllerCreateSeriesReportResponseSuccess = (boardControllerCreateSeriesReportResponse201) & {
   headers: Headers;
 };
-;
+export type boardControllerCreateSeriesReportResponseError = (boardControllerCreateSeriesReportResponse400 | boardControllerCreateSeriesReportResponse403 | boardControllerCreateSeriesReportResponse404) & {
+  headers: Headers;
+};
 
-export type boardControllerCreateSeriesReportResponse = (boardControllerCreateSeriesReportResponseSuccess)
+export type boardControllerCreateSeriesReportResponse = (boardControllerCreateSeriesReportResponseSuccess | boardControllerCreateSeriesReportResponseError)
 
 export const getBoardControllerCreateSeriesReportUrl = () => {
 
@@ -475,13 +690,20 @@ export type boardControllerGetReportByIdResponse200 = {
   data: SeriesReportResDtoOutput
   status: 200
 }
+
+export type boardControllerGetReportByIdResponse404 = {
+  data: void
+  status: 404
+}
     
 export type boardControllerGetReportByIdResponseSuccess = (boardControllerGetReportByIdResponse200) & {
   headers: Headers;
 };
-;
+export type boardControllerGetReportByIdResponseError = (boardControllerGetReportByIdResponse404) & {
+  headers: Headers;
+};
 
-export type boardControllerGetReportByIdResponse = (boardControllerGetReportByIdResponseSuccess)
+export type boardControllerGetReportByIdResponse = (boardControllerGetReportByIdResponseSuccess | boardControllerGetReportByIdResponseError)
 
 export const getBoardControllerGetReportByIdUrl = ({ id }: BoardControllerGetReportByIdPathParameters,) => {
 
@@ -510,13 +732,25 @@ export type boardControllerUpdateConfigResponse200 = {
   data: BoardConfigResDtoOutput
   status: 200
 }
+
+export type boardControllerUpdateConfigResponse400 = {
+  data: void
+  status: 400
+}
+
+export type boardControllerUpdateConfigResponse404 = {
+  data: void
+  status: 404
+}
     
 export type boardControllerUpdateConfigResponseSuccess = (boardControllerUpdateConfigResponse200) & {
   headers: Headers;
 };
-;
+export type boardControllerUpdateConfigResponseError = (boardControllerUpdateConfigResponse400 | boardControllerUpdateConfigResponse404) & {
+  headers: Headers;
+};
 
-export type boardControllerUpdateConfigResponse = (boardControllerUpdateConfigResponseSuccess)
+export type boardControllerUpdateConfigResponse = (boardControllerUpdateConfigResponseSuccess | boardControllerUpdateConfigResponseError)
 
 export const getBoardControllerUpdateConfigUrl = ({ id }: BoardControllerUpdateConfigPathParameters,) => {
 

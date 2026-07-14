@@ -21,8 +21,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type {
+  AssignFullBuyoutBodyDto,
   BoardDecisionTransferBodyDto,
-  CoOwnerRejectChapterBodyDto,
   CreateTransferContractBodyDto,
   CreateTransferRequestBodyDto,
   MessageResDtoOutput,
@@ -31,9 +31,6 @@ import type {
   TransferControllerBoardApproveScreeningPathParameters,
   TransferControllerBoardAssignFullBuyoutPathParameters,
   TransferControllerBoardRejectScreeningPathParameters,
-  TransferControllerCoOwnerApproveChapterPathParameters,
-  TransferControllerCoOwnerRejectChapterPathParameters,
-  TransferControllerEscalateChapterApprovalPathParameters,
   TransferControllerGetSignaturesPathParameters,
   TransferControllerGetTransferRequestByIdPathParameters,
   TransferControllerMangakaAcceptTransferPathParameters,
@@ -357,7 +354,7 @@ export const getTransferControllerBoardAssignFullBuyoutUrl = ({ id }: TransferCo
 }
 
 export const transferControllerBoardAssignFullBuyout = async ({ id }: TransferControllerBoardAssignFullBuyoutPathParameters,
-    boardDecisionTransferBodyDto: BoardDecisionTransferBodyDto, options?: RequestInit): Promise<transferControllerBoardAssignFullBuyoutResponse> => {
+    assignFullBuyoutBodyDto: AssignFullBuyoutBodyDto, options?: RequestInit): Promise<transferControllerBoardAssignFullBuyoutResponse> => {
   
   return customFetch<transferControllerBoardAssignFullBuyoutResponse>(getTransferControllerBoardAssignFullBuyoutUrl({ id }),
   {      
@@ -365,7 +362,7 @@ export const transferControllerBoardAssignFullBuyout = async ({ id }: TransferCo
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      boardDecisionTransferBodyDto,)
+      assignFullBuyoutBodyDto,)
   }
 );}
 
@@ -512,7 +509,7 @@ export const transferControllerMangakaRejectTransfer = async ({ id }: TransferCo
 
 
 /**
- * @summary Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT
+ * @summary Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT (chỉ khi request UNDER_REVIEW)
  */
 export type transferControllerCreateTransferContractResponse201 = {
   data: TransferContractResDtoOutput
@@ -524,6 +521,11 @@ export type transferControllerCreateTransferContractResponse404 = {
   status: 404
 }
 
+export type transferControllerCreateTransferContractResponse409 = {
+  data: void
+  status: 409
+}
+
 export type transferControllerCreateTransferContractResponse422 = {
   data: void
   status: 422
@@ -532,7 +534,7 @@ export type transferControllerCreateTransferContractResponse422 = {
 export type transferControllerCreateTransferContractResponseSuccess = (transferControllerCreateTransferContractResponse201) & {
   headers: Headers;
 };
-export type transferControllerCreateTransferContractResponseError = (transferControllerCreateTransferContractResponse404 | transferControllerCreateTransferContractResponse422) & {
+export type transferControllerCreateTransferContractResponseError = (transferControllerCreateTransferContractResponse404 | transferControllerCreateTransferContractResponse409 | transferControllerCreateTransferContractResponse422) & {
   headers: Headers;
 };
 
@@ -658,142 +660,6 @@ export const transferControllerGetSignatures = async ({ id }: TransferController
   {      
     ...options,
     method: 'GET'
-    
-    
-  }
-);}
-
-
-/**
- * @summary Co-owner duyệt chapter mới → APPROVED
- */
-export type transferControllerCoOwnerApproveChapterResponse201 = {
-  data: MessageResDtoOutput
-  status: 201
-}
-
-export type transferControllerCoOwnerApproveChapterResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerCoOwnerApproveChapterResponse403 = {
-  data: void
-  status: 403
-}
-    
-export type transferControllerCoOwnerApproveChapterResponseSuccess = (transferControllerCoOwnerApproveChapterResponse201) & {
-  headers: Headers;
-};
-export type transferControllerCoOwnerApproveChapterResponseError = (transferControllerCoOwnerApproveChapterResponse400 | transferControllerCoOwnerApproveChapterResponse403) & {
-  headers: Headers;
-};
-
-export type transferControllerCoOwnerApproveChapterResponse = (transferControllerCoOwnerApproveChapterResponseSuccess | transferControllerCoOwnerApproveChapterResponseError)
-
-export const getTransferControllerCoOwnerApproveChapterUrl = ({ chapterId }: TransferControllerCoOwnerApproveChapterPathParameters,) => {
-
-
-  
-
-  return `/transfers/chapters/${chapterId}/co-owner-approve`
-}
-
-export const transferControllerCoOwnerApproveChapter = async ({ chapterId }: TransferControllerCoOwnerApproveChapterPathParameters, options?: RequestInit): Promise<transferControllerCoOwnerApproveChapterResponse> => {
-  
-  return customFetch<transferControllerCoOwnerApproveChapterResponse>(getTransferControllerCoOwnerApproveChapterUrl({ chapterId }),
-  {      
-    ...options,
-    method: 'POST'
-    
-    
-  }
-);}
-
-
-/**
- * @summary Co-owner từ chối chapter mới → REJECTED
- */
-export type transferControllerCoOwnerRejectChapterResponse201 = {
-  data: MessageResDtoOutput
-  status: 201
-}
-
-export type transferControllerCoOwnerRejectChapterResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerCoOwnerRejectChapterResponse403 = {
-  data: void
-  status: 403
-}
-
-export type transferControllerCoOwnerRejectChapterResponse422 = {
-  data: void
-  status: 422
-}
-    
-export type transferControllerCoOwnerRejectChapterResponseSuccess = (transferControllerCoOwnerRejectChapterResponse201) & {
-  headers: Headers;
-};
-export type transferControllerCoOwnerRejectChapterResponseError = (transferControllerCoOwnerRejectChapterResponse400 | transferControllerCoOwnerRejectChapterResponse403 | transferControllerCoOwnerRejectChapterResponse422) & {
-  headers: Headers;
-};
-
-export type transferControllerCoOwnerRejectChapterResponse = (transferControllerCoOwnerRejectChapterResponseSuccess | transferControllerCoOwnerRejectChapterResponseError)
-
-export const getTransferControllerCoOwnerRejectChapterUrl = ({ chapterId }: TransferControllerCoOwnerRejectChapterPathParameters,) => {
-
-
-  
-
-  return `/transfers/chapters/${chapterId}/co-owner-reject`
-}
-
-export const transferControllerCoOwnerRejectChapter = async ({ chapterId }: TransferControllerCoOwnerRejectChapterPathParameters,
-    coOwnerRejectChapterBodyDto: CoOwnerRejectChapterBodyDto, options?: RequestInit): Promise<transferControllerCoOwnerRejectChapterResponse> => {
-  
-  return customFetch<transferControllerCoOwnerRejectChapterResponse>(getTransferControllerCoOwnerRejectChapterUrl({ chapterId }),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      coOwnerRejectChapterBodyDto,)
-  }
-);}
-
-
-/**
- * @summary Editor/Board escalate duyệt chapter lên Hội đồng
- */
-export type transferControllerEscalateChapterApprovalResponse201 = {
-  data: MessageResDtoOutput
-  status: 201
-}
-    
-export type transferControllerEscalateChapterApprovalResponseSuccess = (transferControllerEscalateChapterApprovalResponse201) & {
-  headers: Headers;
-};
-;
-
-export type transferControllerEscalateChapterApprovalResponse = (transferControllerEscalateChapterApprovalResponseSuccess)
-
-export const getTransferControllerEscalateChapterApprovalUrl = ({ chapterId }: TransferControllerEscalateChapterApprovalPathParameters,) => {
-
-
-  
-
-  return `/transfers/chapters/${chapterId}/escalate`
-}
-
-export const transferControllerEscalateChapterApproval = async ({ chapterId }: TransferControllerEscalateChapterApprovalPathParameters, options?: RequestInit): Promise<transferControllerEscalateChapterApprovalResponse> => {
-  
-  return customFetch<transferControllerEscalateChapterApprovalResponse>(getTransferControllerEscalateChapterApprovalUrl({ chapterId }),
-  {      
-    ...options,
-    method: 'POST'
     
     
   }

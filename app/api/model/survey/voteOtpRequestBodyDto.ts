@@ -22,8 +22,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 export interface VoteOtpRequestBodyDto {
-  /** @minLength 10 */
-  phoneNumber: string;
+  /**
+   * Email nhận OTP - hệ chạy EMAIL mode (Requiment 1.15d); SMS là mở rộng tương lai
+   * @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+   */
+  identity: string;
   /** @minLength 1 */
   captchaToken: string;
 }

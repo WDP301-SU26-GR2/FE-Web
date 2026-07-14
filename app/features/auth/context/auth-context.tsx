@@ -20,8 +20,9 @@ type AuthContextValue = {
   isAuthenticated: boolean
   /** Replace the current session (called after a successful login / refresh). */
   setSession: (next: AuthSession) => void
-  /** Clear all auth-related localStorage keys. */
-  logout: () => void
+  /** Clear all auth-related localStorage keys. Synchronous — used both by the
+   *  user-initiated logout hook and by the axios 401/refresh interceptor. */
+  clearSession: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -127,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('authenticated')
   }, [])
 
-  const logout = useCallback(() => {
+  const clearSession = useCallback(() => {
     clearAuthStorage()
     setSessionState(null)
     setStatus('unauthenticated')
@@ -139,9 +140,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       isAuthenticated: status === 'authenticated',
       setSession,
-      logout
+      clearSession
     }),
-    [status, session, setSession, logout]
+    [status, session, setSession, clearSession]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

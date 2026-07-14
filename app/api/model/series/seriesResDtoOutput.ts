@@ -25,6 +25,8 @@ import type { SeriesResDtoOutputDemographic } from './seriesResDtoOutputDemograp
 import type { SeriesResDtoOutputPublicationType } from './seriesResDtoOutputPublicationType';
 import type { SeriesResDtoOutputStatus } from './seriesResDtoOutputStatus';
 import type { SeriesResDtoOutputRelationshipType } from './seriesResDtoOutputRelationshipType';
+import type { SeriesResDtoOutputFranchiseConsentStatus } from './seriesResDtoOutputFranchiseConsentStatus';
+import type { SeriesResDtoOutputCompletionProposal } from './seriesResDtoOutputCompletionProposal';
 import type { SeriesResDtoOutputProposal } from './seriesResDtoOutputProposal';
 
 export interface SeriesResDtoOutput {
@@ -63,6 +65,18 @@ export interface SeriesResDtoOutput {
    * @nullable
    */
   publicationType: SeriesResDtoOutputPublicationType;
+  /**
+   * Tạp chí Board chọn khi serial hoá (Flow 1 slot); null tới khi series SERIALIZED
+   * @nullable
+   */
+  magazine: string | null;
+  /**
+   * Số kỳ (issue) series bắt đầu đăng (Flow 1 slot); null tới khi series SERIALIZED
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   * @nullable
+   */
+  startIssueNumber: number | null;
   /** Series state machine status. Values: DRAFT, IN_REVIEW, READY_TO_PITCH, PITCHED, SERIALIZED, HIATUS, COMPLETING, CANCELLING, COMPLETED, CANCELLED, REJECTED, ABANDONED, WITHDRAWN */
   status: SeriesResDtoOutputStatus;
   /**
@@ -75,6 +89,11 @@ export interface SeriesResDtoOutput {
    * @nullable
    */
   relationshipType: SeriesResDtoOutputRelationshipType;
+  /**
+   * Gate đồng ý franchise: null=không gate; PENDING chờ Mangaka gốc; APPROVED/REJECTED đã quyết
+   * @nullable
+   */
+  franchiseConsentStatus: SeriesResDtoOutputFranchiseConsentStatus;
   /** ISO 8601 */
   createdAt: string;
   /**
@@ -82,6 +101,11 @@ export interface SeriesResDtoOutput {
    * @nullable
    */
   reviewStartedAt: string | null;
+  /**
+   * Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất
+   * @nullable
+   */
+  completionProposal: SeriesResDtoOutputCompletionProposal;
   /**
    * Hồ sơ proposal (nhúng trong Series); null nếu chưa có
    * @nullable

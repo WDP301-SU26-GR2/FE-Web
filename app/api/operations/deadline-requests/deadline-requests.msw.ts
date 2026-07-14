@@ -53,6 +53,8 @@ export const getDeadlineControllerWithdrawResponseMock = (overrideResponse: Part
 
 export const getDeadlineControllerFinalizeResponseMock = (overrideResponse: Partial< DeadlineRequestResDtoOutput > = {}): DeadlineRequestResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), scheduleId: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), seriesId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), requestedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), lastProposedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), currentDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), requestedDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reason: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), affectsSlot: faker.datatype.boolean(), status: faker.helpers.arrayElement(['PROPOSED','COUNTER_PROPOSED','AGREED_BY_PARTIES','BOARD_REVIEW','ESCALATED','APPROVED','REJECTED'] as const), boardReviewedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
+export const getDeadlineControllerBoardResolveResponseMock = (overrideResponse: Partial< DeadlineRequestResDtoOutput > = {}): DeadlineRequestResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), scheduleId: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), seriesId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), requestedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), lastProposedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), currentDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), requestedDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reason: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), affectsSlot: faker.datatype.boolean(), status: faker.helpers.arrayElement(['PROPOSED','COUNTER_PROPOSED','AGREED_BY_PARTIES','BOARD_REVIEW','ESCALATED','APPROVED','REJECTED'] as const), boardReviewedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+
 export const getDeadlineControllerGetOneResponseMock = (overrideResponse: Partial< DeadlineRequestResDtoOutput > = {}): DeadlineRequestResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), scheduleId: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), seriesId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), requestedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), lastProposedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), currentDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), requestedDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reason: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), affectsSlot: faker.datatype.boolean(), status: faker.helpers.arrayElement(['PROPOSED','COUNTER_PROPOSED','AGREED_BY_PARTIES','BOARD_REVIEW','ESCALATED','APPROVED','REJECTED'] as const), boardReviewedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
 
@@ -140,6 +142,18 @@ export const getDeadlineControllerFinalizeMockHandler = (overrideResponse?: Dead
   }, options)
 }
 
+export const getDeadlineControllerBoardResolveMockHandler = (overrideResponse?: DeadlineRequestResDtoOutput | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<DeadlineRequestResDtoOutput> | DeadlineRequestResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.post('*/deadline-requests/:id/board-resolve', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDeadlineControllerBoardResolveResponseMock()),
+      { status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getDeadlineControllerGetOneMockHandler = (overrideResponse?: DeadlineRequestResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DeadlineRequestResDtoOutput> | DeadlineRequestResDtoOutput), options?: RequestHandlerOptions) => {
   return http.get('*/deadline-requests/:id', async (info) => {await delay(1000);
   
@@ -159,5 +173,6 @@ export const getDeadlineRequestsMock = () => [
   getDeadlineControllerRejectMockHandler(),
   getDeadlineControllerWithdrawMockHandler(),
   getDeadlineControllerFinalizeMockHandler(),
+  getDeadlineControllerBoardResolveMockHandler(),
   getDeadlineControllerGetOneMockHandler()
 ]

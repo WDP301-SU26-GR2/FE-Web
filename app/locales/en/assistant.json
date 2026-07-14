@@ -1,0 +1,241 @@
+{
+  "dashboard": {
+    "title": "Assistant Workspace",
+    "subtitle": "Your tasks, studio collaborations, and pending invites at a glance.",
+    "engineStatus": "Assistant workspace v1.0.0 • Sync: {{time}} ago",
+    "activeNow": "Active now",
+    "viewAll": "View all",
+    "statCards": {
+      "pendingTasks": {
+        "label": "Pending tasks",
+        "description": "Tasks waiting for you to start or submit",
+        "delta": "{{count}} waiting"
+      },
+      "inProgressTasks": {
+        "label": "In progress",
+        "description": "Tasks you have started but not yet submitted",
+        "delta": "{{count}} active"
+      },
+      "upcomingDeadlines": {
+        "label": "Due in 7 days",
+        "description": "Tasks with the closest deadlines",
+        "delta": "{{count}} due soon"
+      },
+      "rating": {
+        "label": "Average rating",
+        "description": "Rating earned from collaborating Mangakas",
+        "delta": "{{avg}} • {{count}} reviews"
+      }
+    }
+  },
+  "tasks": {
+    "title": "My Tasks",
+    "subtitle": "Production tasks assigned to you by collaborating Mangakas.",
+    "back": "Back to dashboard",
+    "filters": {
+      "status": "Status",
+      "all": "All",
+      "statuses": {
+        "ASSIGNED": "Assigned",
+        "IN_PROGRESS": "In progress",
+        "SUBMITTED": "Submitted",
+        "UNDER_REVIEW": "Under review",
+        "APPROVED": "Approved",
+        "REVISION_REQUESTED": "Revision requested",
+        "ON_HOLD": "On hold",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "taskType": {
+      "BACKGROUND": "Background",
+      "SCREENTONE": "Screentone",
+      "EFFECT_LINES": "Effect lines",
+      "INKING": "Inking",
+      "COLORING": "Coloring",
+      "LETTERING": "Lettering"
+    },
+    "card": {
+      "taskType": "Task type",
+      "priority": "Priority",
+      "deadline": "Deadline",
+      "deadlineNone": "No deadline",
+      "versions": "{{count}} version",
+      "versions_other": "{{count}} versions",
+      "pageIdLabel": "Page ID",
+      "statusReason": "Note"
+    },
+    "actions": {
+      "start": "Start task",
+      "submit": "Submit result"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "empty": {
+      "title": "No tasks assigned yet",
+      "description": "When a Mangaka assigns you a task, it will show up here."
+    },
+    "error": {
+      "loadFailed": "Could not load your tasks. Please try again.",
+      "startFailed": "Could not start the task.",
+      "submitFailed": "Could not submit the task result.",
+      "retry": "Retry",
+      "noFileToSubmit": "Please attach the result file key before submitting.",
+      "submitSuccess": "Task submitted. Awaiting Mangaka review."
+    }
+  },
+  "studio": {
+    "title": "Studio Assignments",
+    "subtitle": "Your active and past collaborations with Mangakas.",
+    "back": "Back to dashboard",
+    "filters": {
+      "status": "Status",
+      "all": "All",
+      "activeOnly": "Only active right now",
+      "statuses": {
+        "ACTIVE": "Active",
+        "COMPLETED": "Completed",
+        "TERMINATED": "Terminated"
+      }
+    },
+    "taskType": {
+      "BACKGROUND": "Background",
+      "SCREENTONE": "Screentone",
+      "EFFECT_LINES": "Effect lines",
+      "INKING": "Inking",
+      "COLORING": "Coloring",
+      "LETTERING": "Lettering"
+    },
+    "card": {
+      "mangakaFallback": "Mangaka #{{id}}",
+      "hireWindow": "{{from}} – {{to}}",
+      "hireWindowNoEnd": "From {{from}}",
+      "seriesNone": "No series context",
+      "terminatedReason": "Reason: {{reason}}",
+      "noReason": "No reason recorded",
+      "ended": "Started {{date}}",
+      "taskTypesTitle": "Assigned task types",
+      "activeNowBadge": "Active now",
+      "endedBadge": "Ended"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "empty": {
+      "title": "No studio assignments yet",
+      "description": "Accept a collaboration invite to start working with a Mangaka."
+    },
+    "error": {
+      "loadFailed": "Could not load your studio assignments. Please try again.",
+      "retry": "Retry"
+    }
+  },
+  "invites": {
+    "title": "Collaboration Invites",
+    "subtitle": "Invites sent by Mangakas asking you to join their studio.",
+    "back": "Back to dashboard",
+    "filters": {
+      "status": "Status",
+      "all": "All",
+      "statuses": {
+        "PENDING": "Pending",
+        "ACCEPTED": "Accepted",
+        "DECLINED": "Declined",
+        "EXPIRED": "Expired",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "taskType": {
+      "BACKGROUND": "Background",
+      "SCREENTONE": "Screentone",
+      "EFFECT_LINES": "Effect lines",
+      "INKING": "Inking",
+      "COLORING": "Coloring",
+      "LETTERING": "Lettering"
+    },
+    "card": {
+      "mangakaFallback": "Mangaka #{{id}}",
+      "hireWindow": "{{from}} – {{to}}",
+      "hireWindowNoEnd": "From {{from}}",
+      "seriesNone": "No series context",
+      "taskTypesTitle": "Will work on",
+      "receivedAt": "Received {{date}}"
+    },
+    "actions": {
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "empty": {
+      "title": "No invites",
+      "description": "When a Mangaka sends you a collaboration invite, it will appear here."
+    },
+    "error": {
+      "loadFailed": "Could not load your invites. Please try again.",
+      "acceptFailed": "Could not accept the invite.",
+      "declineFailed": "Could not decline the invite.",
+      "retry": "Retry"
+    },
+    "success": {
+      "accepted": "Invite accepted. A new studio assignment was created.",
+      "declined": "Invite declined."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Updates on tasks, deadline changes, and review outcomes.",
+    "back": "Back to dashboard",
+    "filters": {
+      "all": "All",
+      "unread": "Unread only",
+      "read": "Read only"
+    },
+    "type": {
+      "SYSTEM": "System",
+      "CONTRACT": "Contract",
+      "TASK": "Task",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Survey",
+      "BOARD": "Board",
+      "REVIEW": "Review"
+    },
+    "item": {
+      "noContent": "(no content)",
+      "openTarget": "Open",
+      "reference": "Reference: {{type}} • {{id}}"
+    },
+    "actions": {
+      "markRead": "Mark as read",
+      "markAllRead": "Mark all as read"
+    },
+    "summary": {
+      "unreadCount_one": "{{count}} unread",
+      "unreadCount_other": "{{count}} unread",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page"
+    },
+    "empty": {
+      "title": "You're all caught up",
+      "description": "No notifications to show right now."
+    },
+    "error": {
+      "loadFailed": "Could not load notifications. Please try again.",
+      "retry": "Retry"
+    },
+    "success": {
+      "markedRead": "Notification marked as read.",
+      "markedAllRead": "All notifications marked as read."
+    }
+  }
+}

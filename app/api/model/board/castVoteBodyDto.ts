@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { CastVoteBodyDtoVoteValue } from './castVoteBodyDtoVoteValue';
 
 export interface CastVoteBodyDto {
+  /** Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN */
   voteValue: CastVoteBodyDtoVoteValue;
   /** @maxLength 300 */
   note?: string;

@@ -20,32 +20,35 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
-import type { CreateProposalBodyDtoPublicationType } from './createProposalBodyDtoPublicationType'
-import type { CreateProposalBodyDtoNamePagesItem } from './createProposalBodyDtoNamePagesItem'
-import type { CreateProposalBodyDtoRelationshipType } from './createProposalBodyDtoRelationshipType'
+import type { CreateProposalBodyDtoGenresItem } from './createProposalBodyDtoGenresItem';
+import type { CreateProposalBodyDtoDemographic } from './createProposalBodyDtoDemographic';
+import type { CreateProposalBodyDtoPublicationType } from './createProposalBodyDtoPublicationType';
+import type { CreateProposalBodyDtoNamePagesItem } from './createProposalBodyDtoNamePagesItem';
+import type { CreateProposalBodyDtoRelationshipType } from './createProposalBodyDtoRelationshipType';
 
 export interface CreateProposalBodyDto {
   /**
    * @minLength 1
    * @maxLength 200
    */
-  title: string
+  title: string;
   /** @minLength 1 */
-  coverImage?: string
-  genre?: string
-  demographic?: string
+  coverImage?: string;
+  genres?: CreateProposalBodyDtoGenresItem[];
+  /** Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO. Values: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO */
+  demographic?: CreateProposalBodyDtoDemographic;
   /** Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR */
-  publicationType?: CreateProposalBodyDtoPublicationType
+  publicationType?: CreateProposalBodyDtoPublicationType;
   /** @maxLength 5000 */
-  synopsis?: string
-  characterDesigns?: string[]
+  synopsis?: string;
+  characterDesigns?: string[];
   /**
    * @minimum 1
    * @maximum 9007199254740991
    */
-  estimatedLength?: number
-  namePages?: CreateProposalBodyDtoNamePagesItem[]
-  parentSeriesId?: string
+  estimatedLength?: number;
+  namePages?: CreateProposalBodyDtoNamePagesItem[];
+  parentSeriesId?: string;
   /** Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT. Values: SEQUEL, SPINOFF, SIDE_STORY, REBOOT */
-  relationshipType?: CreateProposalBodyDtoRelationshipType
+  relationshipType?: CreateProposalBodyDtoRelationshipType;
 }

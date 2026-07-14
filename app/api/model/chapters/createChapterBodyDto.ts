@@ -24,11 +24,10 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 export interface CreateChapterBodyDto {
   /** @minLength 1 */
   seriesId: string;
-  /** @minLength 1 */
-  nameId: string;
   /**
-   * @minimum 1
+   * @minimum 0
    * @maximum 9007199254740991
+   * @exclusiveMinimum
    */
   chapterNumber: number;
   /** @maxLength 200 */
