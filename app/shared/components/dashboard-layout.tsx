@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { Search, Bell, Settings, LogOut, Menu, X, ChevronRight } from 'lucide-react'
 
 import { ThemeToggle } from './theme-toggle'
@@ -14,7 +15,6 @@ export interface NavItem {
 export interface DashboardLayoutProps {
   children: ReactNode
   navItems: NavItem[]
-  secondaryNavItems?: NavItem[]
   profile: {
     name: string
     role: string
@@ -24,13 +24,24 @@ export interface DashboardLayoutProps {
   headerActions?: ReactNode
 }
 
+/**
+ * Active state dùng prefix match: '/dashboard/series/abc' highlight 'My Series'
+ * (href='/dashboard/series'). Tránh exact match làm mất highlight khi drill
+ * xuống sub-route. Đây là behavior mong đợi cho nested dashboard routes.
+ */
+function isItemActive(itemHref: string, pathname: string): boolean {
+  if (itemHref === pathname) return true
+  if (itemHref === '/') return false
+  return pathname.startsWith(`${itemHref}/`)
+}
+
 export function DashboardLayout({
   children,
   navItems,
-  secondaryNavItems = [],
   profile,
   headerActions
 }: DashboardLayoutProps) {
+  const { t } = useTranslation('common')
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
@@ -46,19 +57,22 @@ export function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card text-card-foreground transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card text-card-foreground transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         {/* Sidebar Header */}
         <div className='flex h-16 items-center justify-between border-b border-border px-6'>
           <div className='flex flex-col'>
-            <span className='text-lg font-bold tracking-wider text-primary'>MangaStudio Pro</span>
-            <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>Production Environment</span>
+            <span className='text-lg font-bold tracking-wider text-primary'>{t('layout.brand')}</span>
+            <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
+              {t('layout.productionEnvironment')}
+            </span>
           </div>
           <button
             onClick={() => setIsSidebarOpen(false)}
             className='rounded-md p-1 hover:bg-muted lg:hidden'
-            aria-label='Close menu'
+            aria-label={t('layout.closeMenu')}
           >
             <X className='h-5 w-5' />
           </button>
@@ -68,15 +82,16 @@ export function DashboardLayout({
         <nav className='flex-1 space-y-1 overflow-y-auto px-4 py-6'>
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = location.pathname === item.href
+            const isActive = isItemActive(item.href, location.pathname)
             return (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive
+                className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                  isActive
                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                }`}
               >
                 <div className='flex items-center gap-3'>
                   <Icon className='h-5 w-5 shrink-0' />
@@ -86,33 +101,6 @@ export function DashboardLayout({
               </Link>
             )
           })}
-
-          {secondaryNavItems.length > 0 && (
-            <div className='pt-6'>
-              <div className='mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60'>
-                Support & Actions
-              </div>
-              <div className='space-y-1'>
-                {secondaryNavItems.map((item) => {
-                  const Icon = item.icon
-                  const isActive = location.pathname === item.href
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                    >
-                      <Icon className='h-4.5 w-4.5 shrink-0' />
-                      <span>{item.label}</span>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </nav>
 
         {/* Theme & Language switcher controls inside Sidebar */}
@@ -151,7 +139,7 @@ export function DashboardLayout({
             <Link
               to='/login'
               className='rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0'
-              aria-label='Sign Out'
+              aria-label={t('layout.signOut')}
             >
               <LogOut className='h-5 w-5' />
             </Link>
@@ -167,7 +155,7 @@ export function DashboardLayout({
           <button
             onClick={() => setIsSidebarOpen(true)}
             className='rounded-md p-1.5 text-muted-foreground hover:bg-muted lg:hidden'
-            aria-label='Open menu'
+            aria-label={t('layout.openMenu')}
           >
             <Menu className='h-6 w-6' />
           </button>
@@ -177,7 +165,7 @@ export function DashboardLayout({
             <Search className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
             <input
               type='text'
-              placeholder='Search series, manuscripts, or assets...'
+              placeholder={t('layout.searchPlaceholder')}
               className='w-full rounded-md border border-input bg-background/50 py-1.5 pl-10 pr-4 text-sm transition-all focus:border-primary focus:bg-background focus:ring-1 focus:ring-ring focus:outline-none'
             />
           </div>
@@ -186,14 +174,14 @@ export function DashboardLayout({
           <div className='flex items-center gap-4'>
             <button
               className='relative rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors'
-              aria-label='Notifications'
+              aria-label={t('layout.notifications')}
             >
               <Bell className='h-5 w-5' />
               <span className='absolute top-1 right-1 h-2 w-2 rounded-full bg-primary ring-2 ring-card' />
             </button>
             <button
               className='rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors animate-spin-hover'
-              aria-label='Settings'
+              aria-label={t('layout.settings')}
             >
               <Settings className='h-5 w-5' />
             </button>

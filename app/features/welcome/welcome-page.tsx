@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { WelcomeHeader } from './components/welcome-header'
 
 export function WelcomePage() {
-  const { t } = useTranslation('welcome')
+  const { t } = useTranslation(['welcome', 'common'])
 
   return (
     <main className='relative min-h-screen overflow-hidden bg-background text-foreground'>
@@ -37,9 +37,7 @@ export function WelcomePage() {
           </h1>
 
           {/* Subtitle */}
-          <p className='mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl'>
-            {t('heroSubtitle')}
-          </p>
+          <p className='mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl'>{t('heroSubtitle')}</p>
 
           {/* CTA Buttons */}
           <div className='flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row'>
@@ -85,26 +83,38 @@ export function WelcomePage() {
           {/* Brand */}
           <div className='flex items-center gap-2'>
             <span className='text-lg font-bold text-foreground dark:text-white'>{t('appName')}</span>
-            <span className='text-sm text-muted-foreground dark:text-white/40'>Pro</span>
+            <span className='text-sm text-muted-foreground dark:text-white/40'>{t('layout.brandPro')}</span>
           </div>
 
           {/* Copyright */}
           <p className='text-sm text-muted-foreground dark:text-white/40'>
-            &copy; {new Date().getFullYear()} {t('appName')}. All rights reserved.
+            {t('footerCopyright', { year: new Date().getFullYear(), appName: t('appName') })}
           </p>
 
           {/* Links */}
           <nav className='flex items-center gap-6 text-sm'>
-            <a href='#' className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'>
+            <a
+              href='#'
+              className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'
+            >
               {t('footerTerms')}
             </a>
-            <a href='#' className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'>
+            <a
+              href='#'
+              className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'
+            >
               {t('footerPrivacy')}
             </a>
-            <a href='#' className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'>
+            <a
+              href='#'
+              className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'
+            >
               {t('footerContact')}
             </a>
-            <a href='#' className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'>
+            <a
+              href='#'
+              className='text-muted-foreground transition-colors hover:text-foreground dark:text-white/50 dark:hover:text-white'
+            >
               {t('footerDocs')}
             </a>
           </nav>

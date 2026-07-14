@@ -4,20 +4,12 @@ import { useTranslation } from 'react-i18next'
 
 import { useAuth } from '~/features/auth/context/auth-context'
 import { WelcomePage } from '~/features/welcome'
+import { ROLE_DASHBOARD_PATH } from '~/shared/components'
 
 import type { Route } from './+types/home'
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: 'Mangaka' }, { name: 'description', content: 'Welcome to Mangaka' }]
-}
-
-/** Role → dashboard path mapping */
-const ROLE_DASHBOARD_MAP: Record<string, string> = {
-  MANGAKA: '/dashboard/mangaka',
-  ASSISTANT: '/dashboard/assistant',
-  EDITOR: '/dashboard/editor',
-  BOARD: '/dashboard/board',
-  SUPER_ADMIN: '/dashboard/admin'
 }
 
 function SplashScreen() {
@@ -48,8 +40,11 @@ export default function Home() {
   useEffect(() => {
     if (status !== 'authenticated') return
 
-    const role = session?.user?.role?.toUpperCase()
-    const dashboardPath = role ? ROLE_DASHBOARD_MAP[role] : null
+    // Map role code (from LoginResDtoOutputUserRole enum) -> dashboard path.
+    // Su dung ROLE_DASHBOARD_PATH lam source of truth thay vi hard-code lai
+    // de tranh sai key (vi du 'BOARD' vs 'BOARD_MEMBER').
+    const role = session?.user?.role
+    const dashboardPath = role ? ROLE_DASHBOARD_PATH[role] : undefined
 
     if (dashboardPath) {
       navigate(dashboardPath, { replace: true })

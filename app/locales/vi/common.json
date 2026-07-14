@@ -13,5 +13,65 @@
   "errors": {
     "unknown": "Đã xảy ra lỗi không xác định.",
     "notFound": "Không tìm thấy trang yêu cầu."
+  },
+  "errorBoundary": {
+    "title": "Ôi!",
+    "message404": "Không tìm thấy trang yêu cầu.",
+    "messageGeneric": "Đã xảy ra lỗi không xác định."
+  },
+  "layout": {
+    "brand": "Mangaka Studio",
+    "brandPro": "Pro",
+    "productionEnvironment": "Môi trường sản xuất",
+    "supportSection": "Hỗ trợ & Thao tác",
+    "searchPlaceholder": "Tìm series, bản thảo hoặc tài nguyên...",
+    "closeMenu": "Đóng menu",
+    "openMenu": "Mở menu",
+    "notifications": "Thông báo",
+    "settings": "Cài đặt",
+    "signOut": "Đăng xuất"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "mySeries": "Series của tôi",
+    "studio": "Studio",
+    "assistantDirectory": "Danh bạ trợ lý",
+    "ranking": "Xếp hạng",
+    "contracts": "Hợp đồng",
+    "notifications": "Thông báo",
+    "myTasks": "Nhiệm vụ của tôi",
+    "proposals": "Hồ sơ",
+    "users": "Người dùng",
+    "reports": "Báo cáo",
+    "uploadBatch": "Tải lên hàng loạt",
+    "editorSupport": "Hỗ trợ biên tập"
+  },
+  "profile": {
+    "mangakaName": "Hồ sơ Mangaka",
+    "mangakaRole": "Tác giả",
+    "mangakaBadge": "PRO LICENSE",
+    "assistantName": "Trợ lý",
+    "assistantRole": "Trợ lý",
+    "assistantBadge": "ASSISTANT",
+    "editorName": "Biên tập viên",
+    "editorRole": "Biên tập",
+    "editorBadge": "EDITOR",
+    "boardName": "Thành viên Hội đồng",
+    "boardRole": "Hội đồng",
+    "boardBadge": "BOARD_MEMBER",
+    "adminName": "Quản trị viên",
+    "adminRole": "Quản trị",
+    "adminBadge": "SUPER_ADMIN"
+  },
+  "dashboard": {
+    "assistant": "Bảng điều khiển Trợ lý",
+    "editor": "Bảng điều khiển Biên tập",
+    "board": "Bảng điều khiển Hội đồng",
+    "admin": "Bảng điều khiển Quản trị",
+    "comingSoonAssistant": "Bảng điều khiển cho vai trò ASSISTANT — sắp ra mắt.",
+    "comingSoonEditor": "Bảng điều khiển cho vai trò EDITOR — sắp ra mắt.",
+    "comingSoonBoard": "Bảng điều khiển cho vai trò BOARD_MEMBER — sắp ra mắt.",
+    "comingSoonAdmin": "Bảng điều khiển cho vai trò SUPER_ADMIN — sắp ra mắt.",
+    "newChapter": "Chương mới"
   }
 }

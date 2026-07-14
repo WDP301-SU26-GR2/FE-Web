@@ -17,10 +17,10 @@
     "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Đồng bộ: {{time}} trước"
   },
   "mySeries": {
-    "title": "My Series",
+    "title": "Series của tôi",
     "subtitle": "Quản lý tất cả series truyện của bạn",
-    "proposeNewSeries": "Propose New Series",
-    "newChapter": "New Chapter",
+    "proposeNewSeries": "Tạo proposal mới",
+    "newChapter": "Chương mới",
     "activeSeries": "Series đang hoạt động",
     "published": "Đã xuất bản",
     "hiatus": "Tạm ngưng",
@@ -34,48 +34,340 @@
     "delete": "Xóa",
     "showing": "Hiển thị",
     "of": "trong",
-    "seriesCount": "series"
+    "seriesCount": "series",
+    "actionsMenu": "Thao tác với series",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau",
+    "editNotImplemented": "Sửa: chưa được hỗ trợ",
+    "deleteNotImplemented": "Xoá: chưa được hỗ trợ",
+    "stats": {
+      "scopeNote": "Số liệu dựa trên trang hiện tại, không phải toàn bộ series."
+    },
+    "empty": {
+      "title": "Bạn chưa có series nào",
+      "description": "Hãy tạo proposal đầu tiên để gửi lên ban biên tập xét duyệt."
+    },
+    "error": {
+      "loadFailed": "Không thể tải danh sách series. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "pagination": {
+      "showingRange": "Hiển thị {{from}}–{{to}} trong {{total}}"
+    },
+    "statuses": {
+      "DRAFT": "Bản nháp",
+      "IN_REVIEW": "Đang xét duyệt",
+      "READY_TO_PITCH": "Sẵn sàng pitch",
+      "PITCHED": "Đã pitch",
+      "SERIALIZED": "Đang xuất bản",
+      "HIATUS": "Tạm ngưng",
+      "COMPLETING": "Đang hoàn thành",
+      "CANCELLING": "Đang huỷ",
+      "COMPLETED": "Hoàn thành",
+      "CANCELLED": "Đã huỷ",
+      "REJECTED": "Bị từ chối",
+      "ABANDONED": "Bị bỏ",
+      "WITHDRAWN": "Mangaka rút"
+    }
+  },
+  "seriesDetail": {
+    "title": "Series Detail",
+    "subtitle": "Xem thông tin proposal và các trang Name mẫu",
+    "back": "Về My Series",
+    "loading": "Đang tải...",
+    "editProposal": "Sửa Proposal",
+    "statusReason": "Lý do",
+    "demographic": "Nhóm độc giả",
+    "publicationType": "Tần suất",
+    "editor": "Biên tập viên",
+    "editorAssigned": "Đã phân công",
+    "editorUnassigned": "Chưa phân công",
+    "inReviewQueue": "Đang ở hàng đợi",
+    "createdAt": "Ngày tạo",
+    "reviewStartedAt": "Bắt đầu review",
+    "relationshipType": "Quan hệ với series gốc",
+    "enums": {
+      "genres": {
+        "ACTION": "Hành động",
+        "ADVENTURE": "Phiêu lưu",
+        "COMEDY": "Hài hước",
+        "DRAMA": "Chính kịch",
+        "FANTASY": "Giả tưởng",
+        "HORROR": "Kinh dị",
+        "MYSTERY": "Bí ẩn",
+        "ROMANCE": "Lãng mạn",
+        "SCI_FI": "Khoa học viễn tưởng",
+        "SLICE_OF_LIFE": "Đời thường",
+        "SPORTS": "Thể thao",
+        "SUPERNATURAL": "Siêu nhiên",
+        "THRILLER": "Giật gân",
+        "HISTORICAL": "Lịch sử",
+        "ISEKAI": "Isekai (chuyển sinh)",
+        "MECHA": "Mecha (robot)",
+        "PSYCHOLOGICAL": "Tâm lý"
+      },
+      "demographic": {
+        "SHONEN": "Shonen (nam thiếu niên)",
+        "SEINEN": "Seinen (nam trưởng thành)",
+        "SHOJO": "Shoujo (nữ thiếu niên)",
+        "JOSEI": "Josei (nữ trưởng thành)",
+        "KODOMO": "Kodomo (trẻ em)"
+      },
+      "publicationType": {
+        "WEEKLY": "Hàng tuần",
+        "MONTHLY": "Hàng tháng",
+        "IRREGULAR": "Không cố định"
+      },
+      "relationshipType": {
+        "SEQUEL": "Phần tiếp theo",
+        "SPINOFF": "Ngoại truyện",
+        "SIDE_STORY": "Truyện bên lề",
+        "REBOOT": "Làm lại"
+      }
+    },
+    "proposalStatus": {
+      "DRAFT": "Bản nháp",
+      "PROPOSAL_REVIEW": "Đang xét duyệt",
+      "PROPOSAL_REVISION": "Cần chỉnh sửa",
+      "PROPOSAL_APPROVED": "Đã duyệt proposal",
+      "PITCHED": "Đã pitch",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Bị từ chối",
+      "WITHDRAWN": "Mangaka rút"
+    },
+    "nameStatus": {
+      "DRAFT": "Bản nháp",
+      "SUBMITTED": "Đã nộp",
+      "IN_REVIEW": "Đang xét duyệt",
+      "REVISION": "Cần chỉnh sửa",
+      "APPROVED": "Đã duyệt"
+    },
+    "proposal": {
+      "title": "Proposal",
+      "empty": "Series chưa có proposal.",
+      "synopsis": "Tóm tắt cốt truyện",
+      "characterDesigns": "Thiết kế nhân vật",
+      "characterDesignAlt": "Thiết kế nhân vật {{n}}",
+      "estimatedLength": "Số chương ước tính",
+      "chaptersCount": "{{count}} chương",
+      "createdAt": "Ngày tạo proposal",
+      "nameId": "Name mẫu"
+    },
+    "names": {
+      "title": "Name (Storyboard)",
+      "empty": "Chưa có trang Name nào.",
+      "count": "{{count}} name",
+      "alt": "Trang Name {{label}}",
+      "altShort": "Trang Name",
+      "sampleLabel": "Name mẫu (Proposal)",
+      "chapterLabel": "Chương {{n}}",
+      "versionLabel": "Phiên bản {{n}}"
+    },
+    "error": {
+      "loadFailed": "Không thể tải chi tiết series. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "notFound": {
+      "title": "Không tìm thấy series",
+      "description": "Series này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
+      "back": "Về My Series"
+    },
+    "submit": {
+      "button": "Nộp series",
+      "dialogTitle": "Nộp series để biên tập viên xét duyệt?",
+      "dialogDescription": "Series \"{{title}}\" sẽ được chuyển sang trạng thái Đang xét duyệt. Sau khi nộp, bạn sẽ không thể sửa proposal cho tới khi Editor phản hồi.",
+      "bullet1": "Proposal chuyển sang trạng thái Đang xét duyệt.",
+      "bullet2": "Trang Name mẫu được gửi kèm cho Editor review.",
+      "bullet3": "Không thể chỉnh sửa proposal trong khi đang được xét duyệt.",
+      "cancel": "Huỷ",
+      "confirm": "Nộp series",
+      "submitting": "Đang nộp series...",
+      "success": "Đã nộp series để biên tập xét duyệt.",
+      "errorGeneric": "Không thể nộp series. Vui lòng thử lại."
+    },
+    "editProposalNotImplemented": "Sửa proposal: chưa triển khai route",
+    "editProposal": {
+      "button": "Sửa Proposal",
+      "title": "Sửa Proposal",
+      "subtitle": "Cập nhật các trường của proposal. Giữ nguyên trường nào thì trường đó không đổi.",
+      "notEditableTitle": "Không thể sửa proposal",
+      "notEditableDescription": "Chỉ sửa được proposal khi series đang ở DRAFT hoặc khi proposal đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
+      "sectionBasic": "Thông tin cơ bản",
+      "sectionSynopsis": "Tóm tắt cốt truyện",
+      "sectionCharacters": "Thiết kế nhân vật",
+      "newCover": "Đã chọn ảnh bìa mới",
+      "keepCover": "Giữ ảnh bìa hiện tại",
+      "removeCover": "Xoá ảnh bìa",
+      "noChanges": "Chưa có thay đổi nào để lưu.",
+      "saveChanges": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "removeExistingCharacter": "Xoá ảnh thiết kế nhân vật này",
+      "removeExistingCharacterConfirm": "Xoá ảnh thiết kế nhân vật này? Ảnh sẽ bị xoá khi bạn lưu.",
+      "markForRemoval": "Đã đánh dấu xoá",
+      "loading": "Đang tải proposal...",
+      "loadFailed": "Không thể tải proposal.",
+      "retry": "Thử lại",
+      "success": "Đã cập nhật proposal.",
+      "errorGeneric": "Không thể cập nhật proposal. Vui lòng thử lại.",
+      "errorConflict": "Proposal này không còn sửa được (trạng thái đã đổi).",
+      "errorPermission": "Bạn chỉ có thể sửa proposal của chính mình.",
+      "unsavedChangesTitle": "Bỏ các thay đổi chưa lưu?",
+      "unsavedChangesDescription": "Bạn có những thay đổi chưa lưu — chúng sẽ bị mất nếu rời trang.",
+      "unsavedChangesLeave": "Rời trang",
+      "unsavedChangesStay": "Ở lại",
+      "back": "Về trang series"
+    },
+    "publication": {
+      "title": "Xuất bản",
+      "count": "{{count}} chương",
+      "empty": "Chưa có chương nào được tạo.",
+      "emptyHint": "Bấm “Tạo chapter mới” ở góc phải để bắt đầu chương đầu tiên.",
+      "loading": "Đang tải danh sách chương...",
+      "retry": "Thử lại",
+      "error": {
+        "loadFailed": "Không thể tải danh sách chương."
+      },
+      "onHold": "Đang tạm dừng",
+      "publishedAt": "Xuất bản {{date}}",
+      "pages": "{{count}} trang",
+      "chapterLabel": "Chương {{n}}",
+      "noApprovedNameHint": "Series chưa có Name (Storyboard) nào được Editor duyệt. Cần duyệt ít nhất 1 Name trước khi tạo chapter mới.",
+      "createButton": "Tạo chapter mới",
+      "createButtonTooltipNoApproved": "Cần ít nhất 1 Name được duyệt để tạo chapter",
+      "chapterStatus": {
+        "DRAFT": "Bản nháp",
+        "IN_PRODUCTION": "Đang sản xuất",
+        "COMPLETED": "Hoàn thành",
+        "PUBLISHED": "Đã xuất bản"
+      },
+      "manuscriptStatus": {
+        "DRAFT": "Manuscript: Bản nháp",
+        "IN_PRODUCTION": "Manuscript: Đang sản xuất",
+        "COMPOSITE_REVIEW": "Manuscript: Chờ review bản tổng hợp",
+        "EDITOR_REVIEW": "Manuscript: Editor đang duyệt",
+        "EDITOR_REVISION": "Manuscript: Cần chỉnh sửa",
+        "READY_FOR_PRINT": "Manuscript: Sẵn sàng in",
+        "AWAITING_CO_OWNER_APPROVAL": "Manuscript: Chờ đồng sở hữu duyệt",
+        "PUBLISHED": "Manuscript: Đã xuất bản"
+      },
+      "manuscriptStatusTitle": "Trạng thái manuscript",
+      "create": {
+        "dialogTitle": "Tạo chapter mới",
+        "dialogDescription": "Chapter sẽ được tạo từ một Name (Storyboard) đã được Editor duyệt.",
+        "seriesLabel": "Series",
+        "nameLabel": "Name (Storyboard)",
+        "selectName": "Chọn Name...",
+        "noApprovedNames": "Không có Name APPROVED",
+        "noApprovedNamesHint": "Series chưa có Name nào được duyệt. Editor cần duyệt ít nhất 1 Name trước.",
+        "nameSampleLabel": "Name mẫu (Proposal)",
+        "nameChapterLabel": "Chương {{n}}",
+        "chapterNumberLabel": "Số chương",
+        "titleLabel": "Tiêu đề (tuỳ chọn)",
+        "titlePlaceholder": "VD: Khởi đầu mới",
+        "cancel": "Huỷ",
+        "confirm": "Tạo chapter",
+        "creating": "Đang tạo...",
+        "success": "Đã tạo chapter mới.",
+        "errorGeneric": "Không thể tạo chapter. Vui lòng thử lại.",
+        "errorNoName": "Vui lòng chọn một Name (Storyboard).",
+        "errorInvalidNumber": "Số chương phải là số nguyên ≥ 1."
+      }
+    }
+  },
+  "lightbox": {
+    "closePreview": "Đóng xem trước",
+    "loading": "Đang tải...",
+    "failedToLoad": "Không thể tải hình ảnh"
+  },
+  "upload": {
+    "errors": {
+      "putFailed": "Tải lên R2 thất bại: {{status}} {{statusText}}"
+    }
   },
   "wizard": {
     "title": "Propose New Series",
     "subtitle": "Điền thông tin để tạo proposal series mới cho ban biên tập xem xét.",
     "step1": "Thông tin cơ bản",
-    "step1Desc": "Tiêu đề, tóm tắt, thể loại và nhãn nội dung.",
+    "step1Desc": "Tiêu đề, ảnh bìa, thể loại, nhóm độc giả và tần suất phát hành.",
     "step2": "Tóm tắt cốt truyện",
-    "step2Desc": "Viết nội dung cốt truyện chi tiết cho series.",
+    "step2Desc": "Viết nội dung tóm tắt cốt truyện cho series (tối đa 5000 ký tự).",
     "step3": "Thiết kế nhân vật",
-    "step3Desc": "Tải lên hình ảnh thiết kế nhân vật chính.",
-    "step4": "Bản thảo phác họa",
-    "step4Desc": "Tải lên hình ảnh bản thảo phác họa trang đầu tiên.",
+    "step3Desc": "Tải lên hình ảnh thiết kế nhân vật chính (ảnh sẽ gửi dưới dạng object key).",
+    "step4": "Trang Name mẫu",
+    "step4Desc": "Tải lên hình ảnh các trang Name mẫu (storyboard) cho chương đầu tiên.",
     "back": "Quay lại",
     "next": "Tiếp theo",
     "submit": "Gửi Proposal",
     "exit": "Thoát",
     "seriesTitle": "Tiêu đề Series",
     "seriesTitlePlaceholder": "Nhập tiêu đề series của bạn",
-    "altTitles": "Tên thay thế",
-    "altTitlesPlaceholder": "Các tên khác của series (cách nhau bằng dấu phẩy)",
-    "author": "Tác giả",
-    "authorPlaceholder": "Tên tác giả",
-    "demographic": "Nhóm tuổi",
-    "seriesType": "Loại hình",
+    "coverImage": "Ảnh bìa",
+    "uploadCoverTitle": "Tải lên ảnh bìa series",
+    "uploadCoverSubtitle": "Kéo & thả hoặc chọn 1 hình ảnh (PNG, JPG, WEBP)",
+    "genres": "Thể loại",
+    "genresHint": "Có thể chọn nhiều thể loại. Bắt buộc chọn từ danh sách cố định.",
+    "demographic": "Nhóm độc giả",
+    "demographicHint": "Phân khúc độc giả chính mà series hướng tới (theo độ tuổi & giới tính).",
+    "publicationType": "Tần suất phát hành",
+    "estimatedLength": "Số chương ước tính",
+    "estimatedLengthPlaceholder": "VD: 50",
+    "estimatedLengthHint": "Ước lượng tổng số chương dự kiến của toàn bộ series (tối thiểu 1).",
     "selectOption": "Chọn...",
-    "synopsis": "Tóm tắt nội dung",
-    "synopsisPlaceholder": "Viết một đoạn tóm tắt ngắn gọn về nội dung series...",
-    "synopsisHint": "Đây là phần tóm tắt sẽ hiển thị trên trang thông tin series.",
-    "tags": "Nhãn (Tags)",
-    "tagsPlaceholder": "Hành động, Phiêu lưu, Giả tưởng...",
-    "summaryPlaceholder": "Bắt đầu viết cốt truyện chi tiết của bạn ở đây...",
+    "enums": {
+      "genres": {
+        "ACTION": "Hành động",
+        "ADVENTURE": "Phiêu lưu",
+        "COMEDY": "Hài hước",
+        "DRAMA": "Chính kịch",
+        "FANTASY": "Giả tưởng",
+        "HORROR": "Kinh dị",
+        "MYSTERY": "Bí ẩn",
+        "ROMANCE": "Lãng mạn",
+        "SCI_FI": "Khoa học viễn tưởng",
+        "SLICE_OF_LIFE": "Đời thường",
+        "SPORTS": "Thể thao",
+        "SUPERNATURAL": "Siêu nhiên",
+        "THRILLER": "Giật gân",
+        "HISTORICAL": "Lịch sử",
+        "ISEKAI": "Isekai (chuyển sinh)",
+        "MECHA": "Mecha (robot)",
+        "PSYCHOLOGICAL": "Tâm lý"
+      },
+      "demographic": {
+        "SHONEN": "Shonen (nam thiếu niên)",
+        "SEINEN": "Seinen (nam trưởng thành)",
+        "SHOJO": "Shoujo (nữ thiếu niên)",
+        "JOSEI": "Josei (nữ trưởng thành)",
+        "KODOMO": "Kodomo (trẻ em)"
+      },
+      "publicationType": {
+        "WEEKLY": "Hàng tuần",
+        "MONTHLY": "Hàng tháng",
+        "IRREGULAR": "Không cố định"
+      }
+    },
+    "synopsisPlaceholder": "Bắt đầu viết tóm tắt cốt truyện của bạn ở đây (tối đa 5000 ký tự)...",
     "wordCount": "{{count}} từ",
-    "charCount": "{{count}} ký tự",
+    "charCount": "{{count}} / 5000 ký tự",
+    "uploadNamePageTitle": "Tải lên trang Name mẫu",
+    "uploadNamePageSubtitle": "Kéo và thả hoặc chọn file hình ảnh (PNG, JPG, WEBP)",
     "uploadCharacterTitle": "Tải lên hình ảnh thiết kế nhân vật",
     "uploadCharacterSubtitle": "Kéo và thả hoặc chọn file hình ảnh (PNG, JPG, WEBP)",
     "chooseImage": "Chọn hình ảnh",
     "removeImage": "Xóa hình ảnh",
-    "uploadManuscriptTitle": "Tải lên bản thảo phác họa",
-    "uploadManuscriptSubtitle": "Kéo và thả hoặc chọn file hình ảnh (PNG, JPG, WEBP)",
-    "characterNamePlaceholder": "Tên nhân vật",
-    "characterDescPlaceholder": "Mô tả nhân vật...",
-    "pageTitlePlaceholder": "Tiêu đề trang..."
+    "characterDesignAlt": "Ảnh thiết kế nhân vật",
+    "pageTitlePlaceholder": "Tiêu đề trang...",
+    "errors": {
+      "unauthenticated": "Bạn cần đăng nhập để tạo proposal.",
+      "submitFailed": "Không thể tạo proposal. Vui lòng thử lại."
+    },
+    "toolbar": {
+      "bold": "In đậm",
+      "italic": "In nghiêng",
+      "underline": "Gạch chân",
+      "alignLeft": "Căn trái",
+      "alignCenter": "Căn giữa",
+      "alignRight": "Căn phải"
+    }
   }
 }

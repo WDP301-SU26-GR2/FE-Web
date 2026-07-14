@@ -13,5 +13,65 @@
   "errors": {
     "unknown": "An unexpected error occurred.",
     "notFound": "The requested page could not be found."
+  },
+  "errorBoundary": {
+    "title": "Oops!",
+    "message404": "The requested page could not be found.",
+    "messageGeneric": "An unexpected error occurred."
+  },
+  "layout": {
+    "brand": "Mangaka Studio",
+    "brandPro": "Pro",
+    "productionEnvironment": "Production Environment",
+    "supportSection": "Support & Actions",
+    "searchPlaceholder": "Search series, manuscripts, or assets...",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "signOut": "Sign Out"
+  },
+  "nav": {
+    "home": "Home",
+    "mySeries": "My Series",
+    "studio": "Studio",
+    "assistantDirectory": "Assistant Directory",
+    "ranking": "Ranking",
+    "contracts": "Contracts",
+    "notifications": "Notifications",
+    "myTasks": "My Tasks",
+    "proposals": "Proposals",
+    "users": "Users",
+    "reports": "Reports",
+    "uploadBatch": "Upload Batch",
+    "editorSupport": "Editor Support"
+  },
+  "profile": {
+    "mangakaName": "Mangaka Profile",
+    "mangakaRole": "Creator",
+    "mangakaBadge": "PRO LICENSE",
+    "assistantName": "Assistant",
+    "assistantRole": "Assistant",
+    "assistantBadge": "ASSISTANT",
+    "editorName": "Editor",
+    "editorRole": "Editor",
+    "editorBadge": "EDITOR",
+    "boardName": "Board Member",
+    "boardRole": "Board",
+    "boardBadge": "BOARD_MEMBER",
+    "adminName": "Super Admin",
+    "adminRole": "Admin",
+    "adminBadge": "SUPER_ADMIN"
+  },
+  "dashboard": {
+    "assistant": "Assistant Dashboard",
+    "editor": "Editor Dashboard",
+    "board": "Board Dashboard",
+    "admin": "Admin Dashboard",
+    "comingSoonAssistant": "Dashboard for ASSISTANT role — coming soon.",
+    "comingSoonEditor": "Dashboard for EDITOR role — coming soon.",
+    "comingSoonBoard": "Dashboard for BOARD_MEMBER role — coming soon.",
+    "comingSoonAdmin": "Dashboard for SUPER_ADMIN role — coming soon.",
+    "newChapter": "New Chapter"
   }
 }

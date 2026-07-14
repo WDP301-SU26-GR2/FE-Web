@@ -1,3 +1,5 @@
 export { MangakaDashboard } from './mangaka-dashboard'
 export { MySeriesPage } from './my-series-page'
+export { MySeriesDetailPage } from './my-series-detail-page'
+export { EditProposalPage } from './edit-proposal-page'
 export { CreateProposalWizard } from './components/create-proposal-wizard'
