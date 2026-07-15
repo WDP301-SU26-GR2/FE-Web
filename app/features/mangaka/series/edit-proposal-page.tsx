@@ -241,7 +241,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
       if (updated) {
         // Refresh the detail page so it sees the new state, then go back.
         refresh()
-        navigate(`/dashboard/series/${series.id}`)
+        navigate(`/dashboard/mangaka/series/${series.id}`)
       }
     } catch (err) {
       setSubmitError(extractApiErrorMessage(err, t('seriesDetail.editProposal.errorGeneric')))
@@ -261,7 +261,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
   )
 
   const handleBack = () => {
-    requestLeave(() => navigate(`/dashboard/series/${seriesId}`))
+    requestLeave(() => navigate(`/dashboard/mangaka/series/${seriesId}`))
   }
 
   if (notFound) {
@@ -270,7 +270,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
         <h2 className='text-lg font-semibold'>{t('seriesDetail.notFound.title')}</h2>
         <p className='max-w-sm text-sm text-muted-foreground'>{t('seriesDetail.notFound.description')}</p>
         <Link
-          to={`/dashboard/series/${seriesId}`}
+          to={`/dashboard/mangaka/series/${seriesId}`}
           className='mt-2 flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90'
         >
           <ArrowLeft className='h-4 w-4' />
@@ -317,7 +317,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
         <h2 className='text-lg font-semibold'>{t('seriesDetail.editProposal.notEditableTitle')}</h2>
         <p className='text-sm text-muted-foreground'>{t('seriesDetail.editProposal.errorPermission')}</p>
         <Link
-          to={`/dashboard/series/${seriesId}`}
+          to={`/dashboard/mangaka/series/${seriesId}`}
           className='mt-2 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-sm font-medium hover:bg-muted'
         >
           <ArrowLeft className='h-4 w-4' />
@@ -333,7 +333,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
         <h2 className='text-lg font-semibold'>{t('seriesDetail.editProposal.notEditableTitle')}</h2>
         <p className='text-sm text-muted-foreground'>{t('seriesDetail.editProposal.notEditableDescription')}</p>
         <Link
-          to={`/dashboard/series/${seriesId}`}
+          to={`/dashboard/mangaka/series/${seriesId}`}
           className='mt-2 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-sm font-medium hover:bg-muted'
         >
           <ArrowLeft className='h-4 w-4' />

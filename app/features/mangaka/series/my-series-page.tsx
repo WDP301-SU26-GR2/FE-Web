@@ -101,8 +101,7 @@ export function MySeriesPage() {
 
   const handleView = (id: string) => {
     setActiveMenu(null)
-    // TODO: wire to real series detail route once it exists.
-    navigate(`/dashboard/series/${id}`)
+    navigate(`/dashboard/mangaka/series/${id}`)
   }
 
   const statusLabel = (status: SeriesStatus): string => {
@@ -121,7 +120,7 @@ export function MySeriesPage() {
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <button
-            onClick={() => navigate('/dashboard/series/propose')}
+            onClick={() => navigate('/dashboard/mangaka/series/propose')}
             className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:bg-muted cursor-pointer'
           >
             <Pencil className='h-4 w-4' />
@@ -203,7 +202,7 @@ export function MySeriesPage() {
             <SkeletonRows count={perPage} />
           ) : items.length === 0 ? (
             <EmptyState
-              onPropose={() => navigate('/dashboard/series/propose')}
+              onPropose={() => navigate('/dashboard/mangaka/series/propose')}
               proposeLabel={t('mySeries.proposeNewSeries')}
             />
           ) : (

@@ -12,6 +12,17 @@ export interface NavItem {
   label: string
   href: string
   icon: React.ComponentType<{ className?: string }>
+  /**
+   * Khi `true`, item chỉ active khi pathname khớp CHÍNH XÁC với `href`.
+   * Dùng cho các item là ancestor của item khác trong nav (vd Home
+   * `/dashboard/mangaka` — không muốn ăn active khi user đang ở
+   * `/dashboard/mangaka/series`).
+   *
+   * `useDashboardNavConfig` tự suy ra flag này: nếu có item khác nằm dưới
+   * `href` (tức là ancestor) → `endsHere: true`. Nếu không (leaf) → prefix
+   * match bình thường để highlight cả detail sub-route.
+   */
+  endsHere?: boolean
 }
 
 export interface DashboardLayoutProps {
@@ -27,14 +38,19 @@ export interface DashboardLayoutProps {
 }
 
 /**
- * Active state dùng prefix match: '/dashboard/series/abc' highlight 'My Series'
- * (href='/dashboard/series'). Tránh exact match làm mất highlight khi drill
- * xuống sub-route. Đây là behavior mong đợi cho nested dashboard routes.
+ * Active state cho nav item:
+ * - Nếu item có `endsHere: true` → chỉ active khi pathname khớp CHÍNH XÁC href.
+ *   Áp dụng cho ancestor items (vd Home `/dashboard/mangaka`) để tránh ăn active
+ *   khi user đang ở sub-page.
+ * - Ngược lại (mặc định, leaf) → dùng prefix match: '/dashboard/mangaka/series/abc'
+ *   sẽ highlight item "My Series" (href='/dashboard/mangaka/series'). Tránh exact
+ *   match làm mất highlight khi drill xuống detail.
  */
-function isItemActive(itemHref: string, pathname: string): boolean {
-  if (itemHref === pathname) return true
-  if (itemHref === '/') return false
-  return pathname.startsWith(`${itemHref}/`)
+function isItemActive(item: NavItem, pathname: string): boolean {
+  if (item.endsHere) return item.href === pathname
+  if (item.href === pathname) return true
+  if (item.href === '/') return false
+  return pathname.startsWith(`${item.href}/`)
 }
 
 export function DashboardLayout({ children, navItems, profile, headerActions }: DashboardLayoutProps) {
@@ -55,7 +71,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
   const settingsHref = (() => {
     const r = session?.user?.role
     if (r === 'MANGAKA') return '/dashboard/mangaka/profile'
-    if (r === 'ASSISTANT') return '/dashboard/profile'
+    if (r === 'ASSISTANT') return '/dashboard/assistant/profile'
     return null
   })()
 
@@ -96,7 +112,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
         <nav className='flex-1 space-y-1 overflow-y-auto px-4 py-6'>
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = isItemActive(item.href, location.pathname)
+            const isActive = isItemActive(item, location.pathname)
             return (
               <Link
                 key={item.href}

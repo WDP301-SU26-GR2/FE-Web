@@ -188,7 +188,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   }, [names])
 
   if (notFound) {
-    return <NotFoundView backHref='/dashboard/series' />
+    return <NotFoundView backHref='/dashboard/mangaka/series' />
   }
 
   if (isLoading && !series) {
@@ -221,7 +221,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     <div className='space-y-6'>
       {/* Top bar: back to list */}
       <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-        <Link to='/dashboard/series' className='flex items-center gap-1 transition-colors hover:text-foreground'>
+        <Link to='/dashboard/mangaka/series' className='flex items-center gap-1 transition-colors hover:text-foreground'>
           <ArrowLeft className='h-3.5 w-3.5' />
           <span>{t('seriesDetail.back')}</span>
         </Link>
@@ -284,7 +284,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 {canEdit ? (
                   <button
                     type='button'
-                    onClick={() => navigate(`/dashboard/series/${series.id}/edit`)}
+                    onClick={() => navigate(`/dashboard/mangaka/series/${series.id}/edit`)}
                     className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted cursor-pointer'
                   >
                     <Pencil className='h-3.5 w-3.5' />
@@ -424,6 +424,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
           isLoading={isChaptersLoading}
           error={chaptersError}
           chapters={chapters}
+          seriesId={series.id}
           onRefresh={refreshChapters}
           nextChapterNumber={nextChapterNumber}
           onCreateClick={() => setCreateChapterOpen(true)}

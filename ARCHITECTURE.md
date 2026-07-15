@@ -99,21 +99,21 @@ app/
 │   ├── mangaka/                          # layout chung cho role MANGAKA
 │   │   ├── _layout.tsx                   # DashboardLayout (mount 1 lần)
 │   │   ├── index.tsx                     # /dashboard/mangaka
-│   │   ├── series.tsx                    # /dashboard/series (list)
-│   │   ├── propose-series.tsx            # /dashboard/series/propose (wizard)
-│   │   ├── series-detail.tsx             # /dashboard/series/:id
-│   │   ├── series-edit.tsx               # /dashboard/series/:id/edit
-│   │   ├── my-studio.tsx                 # /dashboard/studio
-│   │   ├── assistant-directory.tsx       # /dashboard/assistants
+│   │   ├── series.tsx                    # /dashboard/mangaka/series (list)
+│   │   ├── propose-series.tsx            # /dashboard/mangaka/series/propose (wizard)
+│   │   ├── series-detail.tsx             # /dashboard/mangaka/series/:id
+│   │   ├── series-edit.tsx               # /dashboard/mangaka/series/:id/edit
+│   │   ├── my-studio.tsx                 # /dashboard/mangaka/studio
+│   │   ├── assistant-directory.tsx       # /dashboard/mangaka/assistants
 │   │   └── profile.tsx                   # /dashboard/mangaka/profile
 │   ├── assistant/                        # layout riêng cho role ASSISTANT
 │   │   ├── _layout.tsx
 │   │   ├── index.tsx                     # /dashboard/assistant
-│   │   ├── tasks.tsx                     # /dashboard/tasks
-│   │   ├── invites.tsx                   # /dashboard/invites
-│   │   ├── studio.tsx                    # /dashboard/studio
-│   │   ├── notifications.tsx             # /dashboard/notifications
-│   │   └── profile.tsx
+│   │   ├── tasks.tsx                     # /dashboard/assistant/tasks
+│   │   ├── invites.tsx                   # /dashboard/assistant/invites
+│   │   ├── studio.tsx                    # /dashboard/assistant/studio
+│   │   ├── notifications.tsx             # /dashboard/assistant/notifications
+│   │   └── profile.tsx                   # /dashboard/assistant/profile
 │   ├── editor/, board/, admin/           # role layout (stub — chưa có page)
 │
 ├── features/
@@ -235,7 +235,40 @@ features/mangaka/
 
 Mỗi slice **độc lập**, **test riêng được**, **xoá được** bằng cách xoá 1 folder. Mapping slice ↔ swagger tag ↔ URL prefix giữ codebase **khớp với domain**.
 
-### 3.3 Path alias
+### 3.3 Quy ước URL dashboard (cập nhật 2026-07)
+
+Mọi route dashboard tuân theo pattern thống nhất:
+
+```text
+/dashboard/<role>             → init page (mount tại index của role layout)
+/dashboard/<role>/<nav>       → sub-page trong nav menu của role đó
+/dashboard/<role>/<resource>/:id  → detail page (vd /dashboard/mangaka/series/:id)
+```
+
+Ví dụ mapping thực tế:
+
+| URL | Role | Trang |
+| --- | --- | --- |
+| `/dashboard/mangaka` | MANGAKA | Dashboard tổng quan |
+| `/dashboard/mangaka/series` | MANGAKA | Danh sách series |
+| `/dashboard/mangaka/series/:id` | MANGAKA | Chi tiết series |
+| `/dashboard/mangaka/series/:id/edit` | MANGAKA | Sửa proposal |
+| `/dashboard/mangaka/studio` | MANGAKA | Studio của Mangaka (assignments họ giao) |
+| `/dashboard/mangaka/profile` | MANGAKA | Hồ sơ Mangaka |
+| `/dashboard/assistant` | ASSISTANT | Dashboard tổng quan |
+| `/dashboard/assistant/tasks` | ASSISTANT | Task của Assistant |
+| `/dashboard/assistant/studio` | ASSISTANT | Studio của Assistant (assignment họ nhận) |
+| `/dashboard/editor` | EDITOR | Dashboard Editor |
+| `/dashboard/board` | BOARD | Dashboard Board |
+| `/dashboard/admin` | SUPER_ADMIN | Dashboard Admin |
+
+**Tại sao cần prefix `<role>`?**
+
+- Trước đây URL `/dashboard/studio` được dùng chung cho cả Mangaka & Assistant (cùng URL, nghĩa khác nhau → dễ nhầm khi deep-link từ notification hoặc share link).
+- Tách rời → không trùng, dễ guard theo role, dễ phân biệt "Studio của Mangaka" vs "Studio của Assistant".
+- Active state trong sidebar vẫn dùng prefix match, nên `/dashboard/mangaka/series/123` vẫn highlight "My Series" (href=`/dashboard/mangaka/series`).
+
+### 3.4 Path alias
 
 | Alias | Trỏ đến |
 | --- | --- |

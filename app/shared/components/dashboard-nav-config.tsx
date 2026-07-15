@@ -49,17 +49,36 @@ export function useDashboardNavConfig(role: DashboardRole): DashboardNavConfig {
   }
 }
 
+/**
+ * Với mỗi item trong navItems:
+ * - Nếu có item khác nằm dưới `href` (tức là ancestor) → đánh `endsHere: true`
+ *   để chỉ active khi pathname khớp chính xác href. Tránh ăn active của các
+ *   sub-page (vd Home `/dashboard/mangaka` không highlight khi user ở
+ *   `/dashboard/mangaka/series`).
+ * - Nếu không có item nào nằm dưới (leaf cuối) → giữ prefix match để highlight
+ *   cả khi drill xuống detail (vd `/dashboard/mangaka/series/abc` vẫn highlight
+ *   "My Series"). An toàn vì không có nav item nào "sâu hơn" nó.
+ */
+function annotateAncestorsEndHere(items: NavItem[]): NavItem[] {
+  return items.map((item) => {
+    const hasChild = items.some(
+      (other) => other.href !== item.href && other.href.startsWith(`${item.href}/`)
+    )
+    return hasChild ? { ...item, endsHere: true } : item
+  })
+}
+
 function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): DashboardNavConfig {
   return {
-    navItems: [
+    navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/mangaka', icon: Home },
-      { label: t('nav.mySeries'), href: '/dashboard/series', icon: BookOpen },
-      { label: t('nav.studio'), href: '/dashboard/studio', icon: Pencil },
-      { label: t('nav.assistantDirectory'), href: '/dashboard/assistants', icon: Users },
-      { label: t('nav.ranking'), href: '/dashboard/rankings', icon: TrendingUp },
-      { label: t('nav.contracts'), href: '/dashboard/contracts', icon: FileText },
-      { label: t('nav.notifications'), href: '/dashboard/notifications', icon: Bell }
-    ],
+      { label: t('nav.mySeries'), href: '/dashboard/mangaka/series', icon: BookOpen },
+      { label: t('nav.studio'), href: '/dashboard/mangaka/studio', icon: Pencil },
+      { label: t('nav.assistantDirectory'), href: '/dashboard/mangaka/assistants', icon: Users },
+      { label: t('nav.ranking'), href: '/dashboard/mangaka/rankings', icon: TrendingUp },
+      { label: t('nav.contracts'), href: '/dashboard/mangaka/contracts', icon: FileText },
+      { label: t('nav.notifications'), href: '/dashboard/mangaka/notifications', icon: Bell }
+    ]),
     profile: {
       name: t('profile.mangakaName'),
       role: t('profile.mangakaRole'),
@@ -76,13 +95,13 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
 
 function buildAssistantConfig(t: ReturnType<typeof useTranslation>['t']): DashboardNavConfig {
   return {
-    navItems: [
+    navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/assistant', icon: Home },
-      { label: t('nav.myTasks'), href: '/dashboard/tasks', icon: ClipboardList },
-      { label: t('nav.studio'), href: '/dashboard/studio', icon: Briefcase },
-      { label: t('nav.invites'), href: '/dashboard/invites', icon: Mail },
-      { label: t('nav.notifications'), href: '/dashboard/notifications', icon: Bell }
-    ],
+      { label: t('nav.myTasks'), href: '/dashboard/assistant/tasks', icon: ClipboardList },
+      { label: t('nav.studio'), href: '/dashboard/assistant/studio', icon: Briefcase },
+      { label: t('nav.invites'), href: '/dashboard/assistant/invites', icon: Mail },
+      { label: t('nav.notifications'), href: '/dashboard/assistant/notifications', icon: Bell }
+    ]),
     profile: {
       name: t('profile.assistantName'),
       role: t('profile.assistantRole'),
@@ -94,11 +113,11 @@ function buildAssistantConfig(t: ReturnType<typeof useTranslation>['t']): Dashbo
 
 function buildEditorConfig(t: ReturnType<typeof useTranslation>['t']): DashboardNavConfig {
   return {
-    navItems: [
+    navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/editor', icon: BookOpen },
       { label: t('nav.proposals'), href: '/dashboard/editor/proposals', icon: FileText },
       { label: t('nav.notifications'), href: '/dashboard/editor/notifications', icon: Bell }
-    ],
+    ]),
     profile: {
       name: t('profile.editorName'),
       role: t('profile.editorRole'),
@@ -110,11 +129,11 @@ function buildEditorConfig(t: ReturnType<typeof useTranslation>['t']): Dashboard
 
 function buildBoardConfig(t: ReturnType<typeof useTranslation>['t']): DashboardNavConfig {
   return {
-    navItems: [
+    navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/board', icon: BarChart3 },
       { label: t('nav.proposals'), href: '/dashboard/board/proposals', icon: FileText },
       { label: t('nav.notifications'), href: '/dashboard/board/notifications', icon: Bell }
-    ],
+    ]),
     profile: {
       name: t('profile.boardName'),
       role: t('profile.boardRole'),
@@ -126,12 +145,12 @@ function buildBoardConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
 
 function buildAdminConfig(t: ReturnType<typeof useTranslation>['t']): DashboardNavConfig {
   return {
-    navItems: [
+    navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/admin', icon: Shield },
       { label: t('nav.users'), href: '/dashboard/admin/users', icon: Users },
       { label: t('nav.reports'), href: '/dashboard/admin/reports', icon: BarChart3 },
       { label: t('nav.notifications'), href: '/dashboard/admin/notifications', icon: Bell }
-    ],
+    ]),
     profile: {
       name: t('profile.adminName'),
       role: t('profile.adminRole'),

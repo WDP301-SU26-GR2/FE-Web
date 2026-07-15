@@ -1,4 +1,4 @@
-import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
+import { type RouteConfig, index, layout, prefix, route } from '@react-router/dev/routes'
 
 export default [
   index('routes/home.tsx'),
@@ -8,35 +8,60 @@ export default [
   route('register', 'routes/auth/register.tsx'),
   route('change-password', 'routes/auth/change-password.tsx'),
 
-  // Mangaka dashboard - layout bọc DashboardLayout mount 1 lần cho cả nhóm
-  // (index, series list, propose, series detail/edit, studio). Nav menu + sidebar
-  // KHONG remount khi chuyển sub-route, chỉ <Outlet /> swap body.
-  layout('routes/mangaka/_layout.tsx', [
-    route('dashboard/mangaka', 'routes/mangaka/index.tsx'),
-    route('dashboard/series', 'routes/mangaka/series.tsx'),
-    route('dashboard/series/propose', 'routes/mangaka/propose-series.tsx'),
-    route('dashboard/series/:id/edit', 'routes/mangaka/series-edit.tsx'),
-    route('dashboard/series/:id', 'routes/mangaka/series-detail.tsx'),
-    route('dashboard/studio', 'routes/mangaka/my-studio.tsx'),
-    route('dashboard/assistants', 'routes/mangaka/assistant-directory.tsx'),
-    route('dashboard/mangaka/profile', 'routes/mangaka/profile.tsx')
+  // ─── Dashboard route convention ───────────────────────────────────────────
+  // Mọi dashboard URL đều theo pattern `/dashboard/<role>/<nav>` thống nhất:
+  //   - `/dashboard/<role>`            → init page của role đó (mount tại index)
+  //   - `/dashboard/<role>/<sub>`      → sub-page trong nav menu
+  //
+  // React Router 7: `layout(file, children)` là pathless layout (mount component
+  // nhưng không claim URL). Để nhóm routes có cùng prefix path, dùng
+  // `prefix(path, routes)` — chính là những gì ta cần cho `/dashboard/<role>/...`.
+  // Lợi ích: không trùng URL giữa 2 role (vd Studio của Mangaka vs Assistant),
+  // dễ đọc, dễ guard theo role, dễ deep-link từ notification.
+  // Active state trong sidebar dùng prefix match nên `/dashboard/mangaka/series/123`
+  // vẫn highlight item "My Series" (href=`/dashboard/mangaka/series`).
+
+  // Mangaka dashboard
+  ...prefix('dashboard/mangaka', [
+    layout('routes/mangaka/_layout.tsx', [
+      index('routes/mangaka/index.tsx'),
+      route('series', 'routes/mangaka/series.tsx'),
+      route('series/propose', 'routes/mangaka/propose-series.tsx'),
+      route('series/:id/edit', 'routes/mangaka/series-edit.tsx'),
+      route('series/:id', 'routes/mangaka/series-detail.tsx'),
+      route('studio', 'routes/mangaka/my-studio.tsx'),
+      route('assistants', 'routes/mangaka/assistant-directory.tsx'),
+      route('profile', 'routes/mangaka/profile.tsx')
+    ])
   ]),
 
-  // Assistant dashboard - layout bọc DashboardLayout mount 1 lần cho cả nhóm.
-  // Sub-route URL KHONG prefix `/dashboard/assistant/`, mà dùng `/dashboard/<x>` —
-  // giống pattern của Mangaka (sub-route mount ở `/dashboard/series`, `/dashboard/studio`...).
-  // Active state của nav dùng prefix match (xem isItemActive), nên:
-  //   - pathname '/dashboard/tasks' → chỉ 'My Tasks' active
-  //   - pathname '/dashboard/assistant' → chỉ 'Home' active (vì href khác prefix)
-  layout('routes/assistant/_layout.tsx', [
-    route('dashboard/assistant', 'routes/assistant/index.tsx'),
-    route('dashboard/tasks', 'routes/assistant/tasks.tsx'),
-    route('dashboard/studio', 'routes/assistant/studio.tsx'),
-    route('dashboard/invites', 'routes/assistant/invites.tsx'),
-    route('dashboard/notifications', 'routes/assistant/notifications.tsx'),
-    route('dashboard/profile', 'routes/assistant/profile.tsx')
+  // Assistant dashboard
+  ...prefix('dashboard/assistant', [
+    layout('routes/assistant/_layout.tsx', [
+      index('routes/assistant/index.tsx'),
+      route('tasks', 'routes/assistant/tasks.tsx'),
+      route('studio', 'routes/assistant/studio.tsx'),
+      route('invites', 'routes/assistant/invites.tsx'),
+      route('notifications', 'routes/assistant/notifications.tsx'),
+      route('profile', 'routes/assistant/profile.tsx')
+    ])
   ]),
-  route('dashboard/editor', 'routes/editor/_layout.tsx', [index('routes/editor/index.tsx')]),
-  route('dashboard/board', 'routes/board/_layout.tsx', [index('routes/board/index.tsx')]),
-  route('dashboard/admin', 'routes/admin/_layout.tsx', [index('routes/admin/index.tsx')])
+
+  // Editor dashboard — sub-pages chưa được implement, chỉ mount _layout + index.
+  // Khi thêm sub-page, thêm `route('<sub>', '...')` bên trong layout() dưới đây.
+  ...prefix('dashboard/editor', [layout('routes/editor/_layout.tsx', [index('routes/editor/index.tsx')])]),
+
+  // Board dashboard
+  ...prefix('dashboard/board', [layout('routes/board/_layout.tsx', [index('routes/board/index.tsx')])]),
+
+  // Super Admin dashboard
+  ...prefix('dashboard/admin', [layout('routes/admin/_layout.tsx', [index('routes/admin/index.tsx')])]),
+
+  // Publication workbench — focused work area, intentionally outside the
+  // dashboard layout (no sidebar). Renders its own header with theme +
+  // language controls and a back link to the series detail page.
+  route(
+    'publish/:seriesId/:chapterId',
+    'routes/publish/$seriesId/$chapterId.tsx'
+  )
 ] satisfies RouteConfig

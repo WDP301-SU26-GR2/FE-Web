@@ -392,9 +392,110 @@
     "loading": "Đang tải...",
     "failedToLoad": "Không thể tải hình ảnh"
   },
+  "publication": {
+    "loading": "Đang tải workbench...",
+    "preview": "Xem trước",
+    "close": "Đóng",
+    "cancel": "Huỷ",
+    "noImage": "Chưa có ảnh",
+    "error": {
+      "generic": "Đã xảy ra lỗi. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "notFound": {
+      "title": "Không tìm thấy chapter",
+      "description": "Chapter này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
+      "back": "Về trang series"
+    },
+    "header": {
+      "brandSubtitle": "Workbench Xuất bản",
+      "backToSeries": "Về trang series",
+      "chapterContext": "{{series}} · Chương {{n}}",
+      "workbenchLabel": "Workbench xuất bản"
+    },
+    "workbenchTitle": "Chương {{n}} — Xuất bản",
+    "workbenchSubtitle": "Quản lý Name (storyboard) và các trang production của chapter này.",
+    "nameSection": {
+      "title": "Name (Storyboard)",
+      "empty": "Chapter này chưa có Name.",
+      "emptyHint": "Bấm \"Tạo Name\" để bắt đầu storyboard.",
+      "noPages": "Name chưa có trang nào — hãy upload ít nhất 1 trang.",
+      "pageAlt": "Trang storyboard {{n}}",
+      "pageNumber": "Trang {{n}}",
+      "versionLabel": "Phiên bản {{n}}",
+      "createButton": "Tạo Name",
+      "editButton": "Sửa trang",
+      "resubmitButton": "Nộp lại Name",
+      "create": {
+        "dialogTitle": "Tạo Name (storyboard)",
+        "dialogDescription": "Tải lên một hoặc nhiều trang storyboard. Chúng sẽ được gửi cho Editor review.",
+        "chooseFiles": "Chọn hình ảnh",
+        "allowedHint": "PNG, JPG hoặc WEBP. Tối đa 15MB mỗi file.",
+        "removeFile": "Bỏ hình ảnh này",
+        "submitting": "Đang tải lên...",
+        "confirm": "Tạo Name",
+        "success": "Đã tạo Name và gửi cho Editor review."
+      },
+      "edit": {
+        "dialogTitle": "Sửa các trang Name",
+        "dialogDescription": "Hiện có {{count}} trang. Bỏ những trang không cần, sau đó thêm trang mới. Lưu sẽ gửi một yêu cầu cập nhật duy nhất.",
+        "addMore": "Thêm hình ảnh",
+        "removeExisting": "Bỏ trang {{n}} khỏi Name này",
+        "empty": "Name không còn trang nào. Hãy thêm ít nhất 1 hình trước khi lưu.",
+        "errorEmpty": "Name phải có ít nhất 1 trang.",
+        "submitting": "Đang lưu...",
+        "confirm": "Lưu thay đổi",
+        "success": "Đã cập nhật các trang Name."
+      },
+      "resubmit": {
+        "success": "Đã nộp lại Name cho Editor."
+      }
+    },
+    "pagesSection": {
+      "title": "Pages (Sản xuất)",
+      "subtitle": "Các trang pencil/ink đã upload cho chapter.",
+      "count": "{{count}} trang",
+      "gatedTitle": "Upload page đang bị khoá",
+      "gatedDesc": "Hãy duyệt Name trước — page chỉ upload được khi storyboard đã APPROVED.",
+      "uploadButton": "Upload trang",
+      "empty": "Chapter chưa có trang nào được upload.",
+      "card": {
+        "page": "Trang {{n}}"
+      },
+      "pageAlt": "Trang {{n}}",
+      "upload": {
+        "dialogTitle": "Upload trang",
+        "dialogDescription": "Chọn ảnh pencil/ink để upload làm trang. Trang đầu tiên sẽ đẩy manuscript sang IN_PRODUCTION.",
+        "pageNumberLabel": "Số trang",
+        "fileLabel": "File hình ảnh",
+        "uploading": "Đang tải lên...",
+        "confirm": "Upload trang",
+        "success": "Đã upload trang.",
+        "errorInvalidNumber": "Số trang phải là số nguyên dương."
+      },
+      "update": {
+        "success": "Đã cập nhật trạng thái trang."
+      }
+    },
+    "nameStatus": {
+      "DRAFT": "Bản nháp",
+      "SUBMITTED": "Đã nộp",
+      "IN_REVIEW": "Đang xét duyệt",
+      "REVISION": "Cần chỉnh sửa",
+      "APPROVED": "Đã duyệt"
+    },
+    "pageStatus": {
+      "NOT_STARTED": "Chưa bắt đầu",
+      "IN_PROGRESS": "Đang thực hiện",
+      "COMPOSITE_READY": "Sẵn sàng tổng hợp",
+      "COMPLETED": "Hoàn thành"
+    }
+  },
   "upload": {
     "errors": {
-      "putFailed": "Tải lên R2 thất bại: {{status}} {{statusText}}"
+      "putFailed": "Tải lên R2 thất bại: {{status}} {{statusText}}",
+      "invalidType": "Chỉ chấp nhận hình ảnh PNG, JPG hoặc WEBP.",
+      "tooLarge": "File quá lớn (tối đa 15MB)."
     }
   },
   "wizard": {

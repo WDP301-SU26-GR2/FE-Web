@@ -43,8 +43,7 @@ type DashboardHookState = {
  *  - `GET /tasks?status=ASSIGNED&limit=100`   → upcomingDeadlinesCount (filter client-side)
  *  - `GET /me/assistant-profile`              → ratingAvg / ratingCount
  *  - `GET /notifications?limit=1`             → unreadNotificationsCount
- *  - `GET /studio-assignments?limit=1`        → LRU cache warm for /dashboard/studio
- *  - `GET /collaboration-invites?limit=1`     → LRU cache warm for /dashboard/invites
+ *  - `GET /collaboration-invites?limit=1`     → LRU cache warm for /dashboard/assistant/invites
  *
  * 403/404 on the profile endpoint is expected (assistant hasn't built a
  * profile yet) → we render the rating card with "—".

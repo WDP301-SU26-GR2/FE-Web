@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookPlus, Calendar, ChevronDown, ImageIcon, Loader2 } from 'lucide-react'
+import { BookPlus, Calendar, ChevronDown, ChevronRight, ImageIcon, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
@@ -10,6 +11,8 @@ export type PublicationSectionProps = {
   isLoading: boolean
   error: string | null
   chapters: ChapterListResDtoOutputItemsItem[]
+  /** Series the chapters belong to — used to build the workbench URL. */
+  seriesId: string
   onRefresh: () => void
   /** Total chapters count label (number of approved names etc). */
   nextChapterNumber: number
@@ -72,6 +75,7 @@ export function PublicationSection({
   isLoading,
   error,
   chapters,
+  seriesId,
   onRefresh,
   onCreateClick
 }: PublicationSectionProps) {
@@ -142,7 +146,12 @@ export function PublicationSection({
           ) : (
             <ul className='divide-y divide-border overflow-hidden rounded-lg border border-border'>
               {chapters.map((chapter) => (
-                <ChapterRow key={chapter.id} chapter={chapter} locale={locale} />
+                <ChapterRow
+                  key={chapter.id}
+                  chapter={chapter}
+                  seriesId={seriesId}
+                  locale={locale}
+                />
               ))}
             </ul>
           )}
@@ -154,11 +163,14 @@ export function PublicationSection({
 
 type ChapterRowProps = {
   chapter: ChapterListResDtoOutputItemsItem
+  seriesId: string
   locale: string
 }
 
-function ChapterRow({ chapter, locale }: ChapterRowProps) {
+function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
   const { t } = useTranslation('mangaka')
+  const navigate = useNavigate()
+  const workbenchHref = `/publish/${seriesId}/${chapter.id}`
 
   // Status enums are short literal unions — narrow via string union to keep
   // the lookup maps strict without leaking `as const` keyof types here.
@@ -181,58 +193,67 @@ function ChapterRow({ chapter, locale }: ChapterRowProps) {
   const isOnHold = chapter.hold !== null && chapter.hold !== undefined
 
   return (
-    <li className='flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
-      <div className='min-w-0 flex-1 space-y-1'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <span className='text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
-            {t('seriesDetail.publication.chapterLabel', { n: chapter.chapterNumber })}
-          </span>
-          {chapter.title && <span className='truncate text-sm font-semibold text-foreground'>{chapter.title}</span>}
-          {isOnHold && (
-            <span className='inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600'>
-              {t('seriesDetail.publication.onHold')}
+    <li>
+      <button
+        type='button'
+        onClick={() => navigate(workbenchHref)}
+        className={cn(
+          'flex w-full flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer sm:flex-row sm:items-center sm:justify-between'
+        )}
+      >
+        <div className='min-w-0 flex-1 space-y-1'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+              {t('seriesDetail.publication.chapterLabel', { n: chapter.chapterNumber })}
             </span>
-          )}
+            {chapter.title && <span className='truncate text-sm font-semibold text-foreground'>{chapter.title}</span>}
+            {isOnHold && (
+              <span className='inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600'>
+                {t('seriesDetail.publication.onHold')}
+              </span>
+            )}
+          </div>
+          <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground'>
+            {deadline && (
+              <span className='inline-flex items-center gap-1'>
+                <Calendar className='h-3 w-3' />
+                {formatDate(deadline, locale)}
+              </span>
+            )}
+            {chapter.publishedAt && (
+              <span className='inline-flex items-center gap-1'>
+                {t('seriesDetail.publication.publishedAt', { date: formatDate(chapter.publishedAt, locale) })}
+              </span>
+            )}
+            {typeof chapter.totalPages === 'number' && (
+              <span>{t('seriesDetail.publication.pages', { count: chapter.totalPages })}</span>
+            )}
+          </div>
         </div>
-        <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground'>
-          {deadline && (
-            <span className='inline-flex items-center gap-1'>
-              <Calendar className='h-3 w-3' />
-              {formatDate(deadline, locale)}
-            </span>
-          )}
-          {chapter.publishedAt && (
-            <span className='inline-flex items-center gap-1'>
-              {t('seriesDetail.publication.publishedAt', { date: formatDate(chapter.publishedAt, locale) })}
-            </span>
-          )}
-          {typeof chapter.totalPages === 'number' && (
-            <span>{t('seriesDetail.publication.pages', { count: chapter.totalPages })}</span>
-          )}
-        </div>
-      </div>
 
-      <div className='flex flex-wrap items-center gap-1.5'>
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-            statusMeta.className
-          )}
-        >
-          {t(`seriesDetail.publication.chapterStatus.${statusKey}`, statusKey)}
-        </span>
-        {manuscriptMeta && manuscriptKey && (
+        <div className='flex flex-wrap items-center gap-1.5'>
           <span
             className={cn(
               'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-              manuscriptMeta.className
+              statusMeta.className
             )}
-            title={t('seriesDetail.publication.manuscriptStatusTitle')}
           >
-            {t(`seriesDetail.publication.manuscriptStatus.${manuscriptKey}`, manuscriptKey)}
+            {t(`seriesDetail.publication.chapterStatus.${statusKey}`, statusKey)}
           </span>
-        )}
-      </div>
+          {manuscriptMeta && manuscriptKey && (
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                manuscriptMeta.className
+              )}
+              title={t('seriesDetail.publication.manuscriptStatusTitle')}
+            >
+              {t(`seriesDetail.publication.manuscriptStatus.${manuscriptKey}`, manuscriptKey)}
+            </span>
+          )}
+          <ChevronRight className='h-3.5 w-3.5 text-muted-foreground' />
+        </div>
+      </button>
     </li>
   )
 }

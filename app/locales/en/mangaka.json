@@ -392,9 +392,110 @@
     "loading": "Loading...",
     "failedToLoad": "Failed to load image"
   },
+  "publication": {
+    "loading": "Loading workbench...",
+    "preview": "Preview",
+    "close": "Close",
+    "cancel": "Cancel",
+    "noImage": "No image",
+    "error": {
+      "generic": "Something went wrong. Please try again.",
+      "retry": "Retry"
+    },
+    "notFound": {
+      "title": "Chapter not found",
+      "description": "This chapter may have been removed or you do not have access.",
+      "back": "Back to series"
+    },
+    "header": {
+      "brandSubtitle": "Publication Workbench",
+      "backToSeries": "Back to series",
+      "chapterContext": "{{series}} · Chapter {{n}}",
+      "workbenchLabel": "Publication workbench"
+    },
+    "workbenchTitle": "Chapter {{n}} — Publication",
+    "workbenchSubtitle": "Manage the storyboard (Name) and production pages for this chapter.",
+    "nameSection": {
+      "title": "Name (Storyboard)",
+      "empty": "No Name yet for this chapter.",
+      "emptyHint": "Click \"Create Name\" to start your storyboard.",
+      "noPages": "This Name has no pages yet — upload at least one.",
+      "pageAlt": "Storyboard page {{n}}",
+      "pageNumber": "Page {{n}}",
+      "versionLabel": "Version {{n}}",
+      "createButton": "Create Name",
+      "editButton": "Edit pages",
+      "resubmitButton": "Resubmit for review",
+      "create": {
+        "dialogTitle": "Create Name (storyboard)",
+        "dialogDescription": "Upload one or more storyboard pages. They will be submitted to the Editor for review.",
+        "chooseFiles": "Choose images",
+        "allowedHint": "PNG, JPG or WEBP. Max 15MB per file.",
+        "removeFile": "Remove this image",
+        "submitting": "Uploading...",
+        "confirm": "Create Name",
+        "success": "Name created and submitted for review."
+      },
+      "edit": {
+        "dialogTitle": "Edit Name pages",
+        "dialogDescription": "Currently {{count}} page(s). Remove pages you no longer need, then add new ones. Saves as a single update.",
+        "addMore": "Add more images",
+        "removeExisting": "Remove page {{n}} from this Name",
+        "empty": "This Name has no pages left. Add at least one image before saving.",
+        "errorEmpty": "A Name must have at least one page.",
+        "submitting": "Saving...",
+        "confirm": "Save changes",
+        "success": "Name pages updated."
+      },
+      "resubmit": {
+        "success": "Name resubmitted for review."
+      }
+    },
+    "pagesSection": {
+      "title": "Pages (Production)",
+      "subtitle": "Pencil/ink pages uploaded per chapter.",
+      "count": "{{count}} pages",
+      "gatedTitle": "Pages upload is locked",
+      "gatedDesc": "Approve the Name first — pages can only be uploaded once the storyboard is APPROVED.",
+      "uploadButton": "Upload page",
+      "empty": "No pages uploaded yet for this chapter.",
+      "card": {
+        "page": "Page {{n}}"
+      },
+      "pageAlt": "Page {{n}}",
+      "upload": {
+        "dialogTitle": "Upload page",
+        "dialogDescription": "Choose a pencil/ink image to upload as a page. The first page pushes the manuscript into IN_PRODUCTION.",
+        "pageNumberLabel": "Page number",
+        "fileLabel": "Image file",
+        "uploading": "Uploading...",
+        "confirm": "Upload page",
+        "success": "Page uploaded.",
+        "errorInvalidNumber": "Page number must be a positive integer."
+      },
+      "update": {
+        "success": "Page status updated."
+      }
+    },
+    "nameStatus": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "IN_REVIEW": "In review",
+      "REVISION": "Needs revision",
+      "APPROVED": "Approved"
+    },
+    "pageStatus": {
+      "NOT_STARTED": "Not started",
+      "IN_PROGRESS": "In progress",
+      "COMPOSITE_READY": "Composite ready",
+      "COMPLETED": "Completed"
+    }
+  },
   "upload": {
     "errors": {
-      "putFailed": "Upload to R2 failed: {{status}} {{statusText}}"
+      "putFailed": "Upload to R2 failed: {{status}} {{statusText}}",
+      "invalidType": "Only PNG, JPG or WEBP images are allowed.",
+      "tooLarge": "File is too large (max 15MB)."
     }
   },
   "wizard": {

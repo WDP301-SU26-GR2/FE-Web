@@ -47,7 +47,7 @@ export function MyStudioPage() {
         </div>
         <button
           type='button'
-          onClick={() => navigate('/dashboard/assistants')}
+          onClick={() => navigate('/dashboard/mangaka/assistants')}
           className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted cursor-pointer'
         >
           <Users className='h-3.5 w-3.5' />
@@ -118,7 +118,7 @@ export function MyStudioPage() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <EmptyState onBrowse={() => navigate('/dashboard/assistants')} />
+          <EmptyState onBrowse={() => navigate('/dashboard/mangaka/assistants')} />
         ) : (
           <>
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>

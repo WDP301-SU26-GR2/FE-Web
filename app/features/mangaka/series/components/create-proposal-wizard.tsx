@@ -151,7 +151,7 @@ export function CreateProposalWizard() {
 
   const handleBack = () => {
     if (currentStep === 0) {
-      navigate('/dashboard/series')
+      navigate('/dashboard/mangaka/series')
     } else {
       setCurrentStep((s) => s - 1)
     }
@@ -219,7 +219,7 @@ export function CreateProposalWizard() {
       await seriesControllerCreateProposal(body as unknown as Parameters<typeof seriesControllerCreateProposal>[0])
 
       // 5) Done — go back to My Series
-      navigate('/dashboard/series')
+      navigate('/dashboard/mangaka/series')
     } catch (err) {
       setSubmitError(extractApiErrorMessage(err, t('wizard.errors.submitFailed')))
     } finally {

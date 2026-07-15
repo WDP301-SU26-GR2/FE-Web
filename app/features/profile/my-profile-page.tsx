@@ -64,7 +64,6 @@ const EMPTY_ASSISTANT: MyProfileData = {
  * `/dashboard/mangaka/profile` and `/dashboard/assistant/profile` both render
  * this page. The route supplies the role; everything else (load, view,
  * edit) is identical.
- *
  * The page drives its own data via `useState` + `useEffect` rather than a
  * route loader — this keeps the page embeddable from any layout and avoids
  * coupling to RR7's loader contract. If you later want SSR data here, swap

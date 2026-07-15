@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Sparkles, Layers, Pencil } from 'lucide-react'
 
 import { useLogin } from '~/features/auth/hooks/use-login'
+import { ROLE_DASHBOARD_PATH } from '~/shared/components'
 import { cn } from '~/shared/lib/cn'
 
 export function LoginPage() {
@@ -17,15 +18,6 @@ export function LoginPage() {
   // Inline validation only — real auth errors are surfaced via toast
   // (see useLogin). Keeps the form responsive without blocking submit.
   const [validationError, setValidationError] = useState('')
-
-  /** Route map for each role after login. */
-  const ROLE_DASHBOARD: Record<string, string> = {
-    MANGAKA: '/dashboard/mangaka',
-    ASSISTANT: '/dashboard/assistant',
-    EDITOR: '/dashboard/editor',
-    BOARD_MEMBER: '/dashboard/board',
-    SUPER_ADMIN: '/dashboard/admin'
-  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -48,7 +40,9 @@ export function LoginPage() {
       return
     }
 
-    const target = ROLE_DASHBOARD[result.user.role] ?? '/dashboard/mangaka'
+    // Map role code -> dashboard path qua ROLE_DASHBOARD_PATH (source of truth).
+    // Fallback về Mangaka nếu role không map được.
+    const target = ROLE_DASHBOARD_PATH[result.user.role] ?? '/dashboard/mangaka'
     navigate(target)
   }
 

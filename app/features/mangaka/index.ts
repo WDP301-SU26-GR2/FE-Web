@@ -12,6 +12,10 @@ export { CreateProposalWizard } from './series/components/create-proposal-wizard
 export { CreateChapterDialog } from './chapters/create-chapter-dialog'
 export { PublicationSection } from './chapters/publication-section'
 
+// Publication workbench — focused work area for Name + Page CRUD on a chapter,
+// rendered outside the dashboard sidebar (own header with theme/language toggle).
+export { PublicationWorkbench, PublicationHeader } from './publication'
+
 // Studio (signed image gallery)
 export { MyStudioPage } from './studio/my-studio-page'
 
