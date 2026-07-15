@@ -55,13 +55,16 @@ export default [
   ...prefix('dashboard/board', [layout('routes/board/_layout.tsx', [index('routes/board/index.tsx')])]),
 
   // Super Admin dashboard
-  ...prefix('dashboard/admin', [layout('routes/admin/_layout.tsx', [index('routes/admin/index.tsx')])]),
+  ...prefix('dashboard/admin', [
+    layout('routes/admin/_layout.tsx', [
+      index('routes/admin/index.tsx'),
+      route('users', 'routes/admin/users.tsx'),
+      route('users/:id', 'routes/admin/user-detail.tsx')
+    ])
+  ]),
 
   // Publication workbench — focused work area, intentionally outside the
   // dashboard layout (no sidebar). Renders its own header with theme +
   // language controls and a back link to the series detail page.
-  route(
-    'publish/:seriesId/:chapterId',
-    'routes/publish/$seriesId/$chapterId.tsx'
-  )
+  route('publish/:seriesId/:chapterId', 'routes/publish/$seriesId/$chapterId.tsx')
 ] satisfies RouteConfig

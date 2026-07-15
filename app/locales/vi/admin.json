@@ -1,0 +1,218 @@
+{
+  "dashboard": {
+    "eyebrow": "Trung tâm vận hành",
+    "title": "Tổng quan hệ thống",
+    "subtitle": "Theo dõi người dùng, nội dung xuất bản và khối lượng sản xuất trên toàn nền tảng.",
+    "overview": "Các chỉ số tổng quan",
+    "refresh": "Làm mới dữ liệu",
+    "refreshing": "Đang làm mới...",
+    "loadErrorTitle": "Không thể tải số liệu hệ thống",
+    "loadErrorDescription": "Hãy kiểm tra kết nối hoặc quyền SUPER_ADMIN, sau đó thử làm mới.",
+    "empty": "Chưa có dữ liệu để hiển thị.",
+    "kpis": {
+      "users": {
+        "label": "Người dùng đang hoạt động",
+        "description": "{{deleted}} tài khoản đã bị xoá mềm"
+      },
+      "series": {
+        "label": "Tổng số series",
+        "description": "Tất cả series trong mọi giai đoạn"
+      },
+      "chapters": {
+        "label": "Chương đã xuất bản",
+        "description": "{{rate}}% trên tổng số {{total}} chương"
+      },
+      "tasks": {
+        "label": "Tổng số nhiệm vụ",
+        "description": "Khối lượng công việc trợ lý trên toàn hệ thống"
+      }
+    },
+    "sections": {
+      "roles": {
+        "title": "Phân bố vai trò",
+        "description": "Số tài khoản đang hoạt động theo từng vai trò."
+      },
+      "users": {
+        "title": "Tình trạng tài khoản",
+        "description": "Phân bố trạng thái truy cập của người dùng."
+      },
+      "series": {
+        "title": "Vòng đời series",
+        "description": "Series được nhóm theo trạng thái nghiệp vụ hiện tại."
+      },
+      "tasks": {
+        "title": "Tiến độ nhiệm vụ",
+        "description": "Nhiệm vụ sản xuất được nhóm theo trạng thái xử lý."
+      }
+    },
+    "roles": {
+      "MANGAKA": "Mangaka",
+      "ASSISTANT": "Trợ lý",
+      "EDITOR": "Biên tập viên",
+      "BOARD_MEMBER": "Thành viên Hội đồng",
+      "SUPER_ADMIN": "Quản trị viên cấp cao"
+    },
+    "userStatuses": {
+      "INACTIVE": "Chưa kích hoạt",
+      "ACTIVE": "Đang hoạt động",
+      "BANNED": "Bị cấm",
+      "BLOCKED": "Bị khoá"
+    },
+    "seriesStatuses": {
+      "DRAFT": "Bản nháp",
+      "IN_REVIEW": "Đang duyệt",
+      "READY_TO_PITCH": "Sẵn sàng trình Hội đồng",
+      "PITCHED": "Đã trình Hội đồng",
+      "SERIALIZED": "Đang phát hành",
+      "HIATUS": "Tạm ngưng",
+      "COMPLETING": "Đang hoàn tất",
+      "CANCELLING": "Đang huỷ",
+      "COMPLETED": "Đã hoàn thành",
+      "CANCELLED": "Đã huỷ",
+      "REJECTED": "Bị từ chối",
+      "ABANDONED": "Đã từ bỏ",
+      "WITHDRAWN": "Đã rút"
+    },
+    "taskStatuses": {
+      "ASSIGNED": "Đã giao",
+      "IN_PROGRESS": "Đang thực hiện",
+      "SUBMITTED": "Đã nộp",
+      "UNDER_REVIEW": "Đang duyệt",
+      "APPROVED": "Đã duyệt",
+      "REVISION_REQUESTED": "Yêu cầu sửa",
+      "ON_HOLD": "Tạm dừng",
+      "CANCELLED": "Đã huỷ"
+    }
+  },
+  "users": {
+    "eyebrow": "Quản trị danh tính",
+    "title": "Quản lý người dùng",
+    "subtitle": "Tìm kiếm và quản lý tài khoản Mangaka, Trợ lý, Biên tập viên và Thành viên Hội đồng.",
+    "total": "Tổng cộng {{count}} tài khoản",
+    "restoreMode": "Đang hiển thị cả tài khoản đã xoá",
+    "create": {
+      "button": "Tạo tài khoản nhân sự",
+      "title": "Tạo tài khoản Editor hoặc Board",
+      "description": "Mangaka và Trợ lý tự đăng ký; Super Admin chỉ cấp trực tiếp tài khoản nhân sự NXB.",
+      "passwordNotice": "Mật khẩu tạm chỉ được trả về một lần. Người dùng bắt buộc đổi mật khẩu khi đăng nhập lần đầu.",
+      "submit": "Tạo tài khoản"
+    },
+    "fields": {
+      "name": "Họ và tên",
+      "email": "Email",
+      "phoneNumber": "Số điện thoại E.164",
+      "role": "Vai trò",
+      "status": "Trạng thái mới",
+      "reason": "Lý do",
+      "reasonPlaceholder": "Nhập lý do khoá, cấm hoặc mở lại tài khoản..."
+    },
+    "filters": {
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo tên hoặc email...",
+      "role": "Tất cả vai trò",
+      "status": "Tất cả trạng thái",
+      "apply": "Áp dụng",
+      "includeDeleted": "Bao gồm tài khoản đã xoá mềm"
+    },
+    "table": {
+      "user": "Người dùng",
+      "role": "Vai trò",
+      "status": "Trạng thái",
+      "security": "Bảo mật",
+      "createdAt": "Ngày tạo",
+      "actions": "Thao tác"
+    },
+    "security": {
+      "verified": "Email đã xác thực",
+      "unverified": "Email chưa xác thực",
+      "mustChangePassword": "Phải đổi mật khẩu"
+    },
+    "registrationTypes": {
+      "SELF_REGISTERED": "Tự đăng ký",
+      "ADMIN_CREATED": "Admin cấp tài khoản"
+    },
+    "actions": {
+      "close": "Đóng",
+      "cancel": "Huỷ",
+      "processing": "Đang xử lý...",
+      "viewDetail": "Xem chi tiết",
+      "changeStatus": "Đổi trạng thái",
+      "resetPassword": "Cấp lại mật khẩu tạm",
+      "restore": "Khôi phục tài khoản",
+      "delete": "Xoá mềm tài khoản"
+    },
+    "dialogs": {
+      "status": {
+        "title": "Thay đổi trạng thái tài khoản",
+        "description": "Khoá hoặc cấm sẽ thu hồi các refresh token hiện tại và thông báo cho người dùng.",
+        "submit": "Cập nhật trạng thái"
+      },
+      "delete": {
+        "title": "Xoá mềm tài khoản",
+        "description": "Tài khoản sẽ bị ẩn khỏi danh sách mặc định và toàn bộ refresh token bị thu hồi.",
+        "submit": "Xác nhận xoá"
+      },
+      "restore": {
+        "title": "Khôi phục tài khoản",
+        "description": "Thao tác này khôi phục tài khoản đã bị xoá mềm. API hiện chưa trả cờ deletedAt, vì vậy hãy dùng trong chế độ bao gồm tài khoản đã xoá.",
+        "submit": "Khôi phục"
+      },
+      "resetPassword": {
+        "title": "Cấp lại mật khẩu tạm",
+        "description": "Mọi phiên đăng nhập hiện tại sẽ bị thu hồi và người dùng phải đổi mật khẩu ở lần đăng nhập tiếp theo.",
+        "submit": "Cấp mật khẩu mới"
+      }
+    },
+    "temporaryPassword": {
+      "label": "Mật khẩu tạm cho {{email}}",
+      "notice": "Hãy sao chép ngay. Mật khẩu này không thể xem lại sau khi tải lại trang."
+    },
+    "messages": {
+      "created": "Đã tạo tài khoản thành công.",
+      "statusUpdated": "Đã cập nhật trạng thái tài khoản.",
+      "deleted": "Đã xoá mềm tài khoản.",
+      "restored": "Đã khôi phục tài khoản.",
+      "passwordReset": "Đã cấp mật khẩu tạm mới."
+    },
+    "errors": {
+      "validation": "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
+      "actionFailed": "Không thể hoàn tất thao tác. Vui lòng thử lại.",
+      "invalidAction": "Thao tác không được hỗ trợ.",
+      "emailExists": "Email này đã được sử dụng.",
+      "cannotModifyAdmin": "Không thể thay đổi tài khoản Super Admin.",
+      "alreadyDeleted": "Tài khoản này đã bị xoá.",
+      "notDeleted": "Tài khoản này chưa bị xoá nên không thể khôi phục.",
+      "notFound": "Không tìm thấy tài khoản."
+    },
+    "loadError": {
+      "title": "Không thể tải danh sách người dùng",
+      "description": "Hãy kiểm tra kết nối hoặc quyền SUPER_ADMIN rồi thử lại."
+    },
+    "empty": {
+      "title": "Không tìm thấy người dùng",
+      "description": "Hãy thay đổi từ khoá hoặc bộ lọc để xem kết quả khác."
+    },
+    "pagination": {
+      "label": "Phân trang người dùng",
+      "previous": "Trang trước",
+      "next": "Trang sau",
+      "page": "Trang {{page}} / {{totalPages}}"
+    },
+    "detail": {
+      "back": "Quay lại danh sách người dùng",
+      "eyebrow": "Chi tiết tài khoản",
+      "errorTitle": "Không thể tải thông tin người dùng",
+      "errorDescription": "Tài khoản không tồn tại hoặc bạn không có quyền xem thông tin này.",
+      "accountInfo": "Thông tin tài khoản",
+      "accountInfoDescription": "Thông tin định danh và liên hệ của người dùng.",
+      "security": "Bảo mật và truy cập",
+      "securityDescription": "Trạng thái xác thực và chính sách mật khẩu.",
+      "createdAt": "Thời điểm tạo",
+      "userId": "Mã người dùng",
+      "emailVerification": "Xác thực email",
+      "passwordPolicy": "Chính sách mật khẩu",
+      "passwordReady": "Mật khẩu đã sẵn sàng",
+      "registrationType": "Nguồn đăng ký"
+    }
+  }
+}
