@@ -41,8 +41,13 @@
     "notifications": "Notifications",
     "myTasks": "My Tasks",
     "proposals": "Proposals",
+    "boardWorkflow": "Board workflow",
+    "operations": "Operations",
+    "publication": "Publication",
     "users": "Users",
     "reports": "Reports",
+    "audit": "Audit log",
+    "systemSettings": "System settings",
     "uploadBatch": "Upload Batch",
     "editorSupport": "Editor Support",
     "invites": "Invites"

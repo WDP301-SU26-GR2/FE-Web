@@ -214,5 +214,91 @@
       "passwordReady": "Mật khẩu đã sẵn sàng",
       "registrationType": "Nguồn đăng ký"
     }
+  },
+  "settings": {
+    "eyebrow": "Quản trị chính sách",
+    "title": "Cấu hình hệ thống",
+    "subtitle": "Điều chỉnh các tham số nghiệp vụ runtime, quy tắc biểu quyết Hội đồng và cơ chế chống gian lận bình chọn.",
+    "save": "Lưu cấu hình",
+    "saving": "Đang lưu...",
+    "lastUpdated": "Cập nhật gần nhất: {{date}}",
+    "units": {
+      "days": "ngày",
+      "seconds": "giây"
+    },
+    "app": {
+      "title": "Tham số nghiệp vụ",
+      "description": "Các ngưỡng vận hành dùng chung; thay đổi có thể cần tối đa 30 giây để cache backend làm mới.",
+      "coOwnerApprovalGraceDays": "Thời hạn đồng sở hữu duyệt chương",
+      "nameMaxReviewRounds": "Số vòng review Name tối đa",
+      "reputationRecommendThreshold": "Ngưỡng reputation được đề xuất",
+      "hiatusTooLongDays": "Ngưỡng hiatus quá lâu",
+      "lowVoteReliabilityThreshold": "Ngưỡng vote thiếu tin cậy",
+      "maxUploadBytes": "Dung lượng upload tối đa",
+      "assignmentGraceDays": "Thời gian gia hạn assignment"
+    },
+    "board": {
+      "title": "Quy tắc Hội đồng",
+      "description": "Thiết lập quy mô Hội đồng, quorum tối thiểu và tỷ lệ phiếu thuận để thông qua quyết định.",
+      "boardTotalMembers": "Tổng số thành viên",
+      "quorumMin": "Quorum tối thiểu",
+      "approveMajorityRatio": "Tỷ lệ phiếu thuận",
+      "lockNotice": "Không thể thay đổi cấu hình khi có phiên họp ACTIVE hoặc UPCOMING."
+    },
+    "voting": {
+      "title": "Cấu hình bình chọn độc giả",
+      "description": "Kiểm soát xác thực OTP/CAPTCHA, giới hạn tần suất và điều kiện kích hoạt chống gian lận.",
+      "authMode": "Phương thức xác thực",
+      "maxSeriesPerVote": "Series tối đa mỗi phiếu",
+      "otpExpirySeconds": "Thời gian OTP hết hạn",
+      "otpMaxAttempts": "Số lần nhập OTP tối đa",
+      "ipRateLimit": "Giới hạn request theo IP",
+      "phoneRateLimit": "Giới hạn request theo SĐT",
+      "otpCooldownSeconds": "Thời gian chờ gửi lại OTP",
+      "ipVotesPerPeriod": "Số phiếu mỗi IP trong một kỳ",
+      "captchaThreshold": "Ngưỡng kích hoạt CAPTCHA"
+    },
+    "messages": {
+      "appUpdated": "Đã cập nhật tham số nghiệp vụ.",
+      "boardUpdated": "Đã cập nhật quy tắc Hội đồng.",
+      "votingUpdated": "Đã cập nhật cấu hình bình chọn."
+    },
+    "errors": {
+      "validation": "Giá trị cấu hình không hợp lệ.",
+      "boardLocked": "Cấu hình Hội đồng đang bị khoá vì có phiên họp đang hoặc sắp diễn ra.",
+      "notFound": "Không tìm thấy bản cấu hình hiện hành.",
+      "invalidAction": "Thao tác cấu hình không hợp lệ.",
+      "actionFailed": "Không thể cập nhật cấu hình. Vui lòng thử lại."
+    },
+    "loadError": {
+      "title": "Không thể tải cấu hình hệ thống",
+      "description": "Hãy kiểm tra kết nối và quyền SUPER_ADMIN rồi thử lại."
+    }
+  },
+  "audit": {
+    "eyebrow": "Giám sát và truy vết",
+    "title": "Nhật ký hệ thống",
+    "subtitle": "Theo dõi các thay đổi trạng thái, thao tác quản trị và sự kiện tự động trên toàn nền tảng.",
+    "total": "Tổng cộng {{count}} sự kiện",
+    "actor": "Thực hiện bởi user {{id}}",
+    "systemActor": "Thao tác tự động của hệ thống",
+    "empty": "Không có sự kiện audit phù hợp với bộ lọc.",
+    "filters": {
+      "allEntities": "Tất cả loại đối tượng",
+      "action": "Hành động, ví dụ BAN...",
+      "entityId": "Mã đối tượng",
+      "actorId": "Mã người thực hiện",
+      "apply": "Áp dụng"
+    },
+    "pagination": {
+      "label": "Phân trang nhật ký",
+      "previous": "Trang trước",
+      "next": "Trang sau",
+      "page": "Trang {{page}} / {{totalPages}}"
+    },
+    "loadError": {
+      "title": "Không thể tải nhật ký hệ thống",
+      "description": "Bộ lọc có thể không hợp lệ hoặc dịch vụ audit hiện không khả dụng."
+    }
   }
 }

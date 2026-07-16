@@ -214,5 +214,91 @@
       "passwordReady": "Password is ready",
       "registrationType": "Registration source"
     }
+  },
+  "settings": {
+    "eyebrow": "Policy administration",
+    "title": "System configuration",
+    "subtitle": "Manage runtime business parameters, Board voting rules, and reader-vote fraud protection.",
+    "save": "Save configuration",
+    "saving": "Saving...",
+    "lastUpdated": "Last updated: {{date}}",
+    "units": {
+      "days": "days",
+      "seconds": "sec"
+    },
+    "app": {
+      "title": "Business parameters",
+      "description": "Shared runtime thresholds; backend caches may take up to 30 seconds to refresh.",
+      "coOwnerApprovalGraceDays": "Co-owner approval grace period",
+      "nameMaxReviewRounds": "Maximum Name review rounds",
+      "reputationRecommendThreshold": "Recommendation reputation threshold",
+      "hiatusTooLongDays": "Long-hiatus threshold",
+      "lowVoteReliabilityThreshold": "Low vote reliability threshold",
+      "maxUploadBytes": "Maximum upload size",
+      "assignmentGraceDays": "Assignment grace period"
+    },
+    "board": {
+      "title": "Board rules",
+      "description": "Configure Board size, minimum quorum, and the approval majority required for decisions.",
+      "boardTotalMembers": "Total Board members",
+      "quorumMin": "Minimum quorum",
+      "approveMajorityRatio": "Approval majority",
+      "lockNotice": "Board configuration cannot be changed while a session is ACTIVE or UPCOMING."
+    },
+    "voting": {
+      "title": "Reader voting configuration",
+      "description": "Control OTP/CAPTCHA authentication, request limits, and anti-fraud activation conditions.",
+      "authMode": "Authentication mode",
+      "maxSeriesPerVote": "Maximum series per vote",
+      "otpExpirySeconds": "OTP expiry",
+      "otpMaxAttempts": "Maximum OTP attempts",
+      "ipRateLimit": "IP request limit",
+      "phoneRateLimit": "Phone request limit",
+      "otpCooldownSeconds": "OTP resend cooldown",
+      "ipVotesPerPeriod": "Votes per IP per period",
+      "captchaThreshold": "CAPTCHA threshold"
+    },
+    "messages": {
+      "appUpdated": "Business parameters updated.",
+      "boardUpdated": "Board rules updated.",
+      "votingUpdated": "Voting configuration updated."
+    },
+    "errors": {
+      "validation": "One or more configuration values are invalid.",
+      "boardLocked": "Board configuration is locked because a session is active or upcoming.",
+      "notFound": "The active configuration could not be found.",
+      "invalidAction": "This configuration action is invalid.",
+      "actionFailed": "The configuration could not be updated. Please try again."
+    },
+    "loadError": {
+      "title": "Unable to load system configuration",
+      "description": "Check your connection and SUPER_ADMIN permissions, then try again."
+    }
+  },
+  "audit": {
+    "eyebrow": "Monitoring and traceability",
+    "title": "System audit log",
+    "subtitle": "Track state transitions, administrative actions, and automated events across the platform.",
+    "total": "{{count}} events in total",
+    "actor": "Performed by user {{id}}",
+    "systemActor": "Automated system action",
+    "empty": "No audit events match the current filters.",
+    "filters": {
+      "allEntities": "All entity types",
+      "action": "Action, for example BAN...",
+      "entityId": "Entity ID",
+      "actorId": "Actor ID",
+      "apply": "Apply"
+    },
+    "pagination": {
+      "label": "Audit pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} of {{totalPages}}"
+    },
+    "loadError": {
+      "title": "Unable to load the audit log",
+      "description": "The filters may be invalid or the audit service is currently unavailable."
+    }
   }
 }

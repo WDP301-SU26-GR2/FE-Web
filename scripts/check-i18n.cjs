@@ -22,7 +22,7 @@ function loadAll(dir, ns) {
 }
 
 // Parity
-for (const ns of ['common', 'welcome', 'auth', 'mangaka', 'assistant', 'admin']) {
+for (const ns of ['common', 'welcome', 'auth', 'mangaka', 'assistant', 'admin', 'editor']) {
   const map = loadAll('app/locales', ns)
   const missing = []
   for (const [k, langs] of map.entries()) {
@@ -44,7 +44,8 @@ const enByNs = {
   auth: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/auth.json', 'utf8')))),
   mangaka: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/mangaka.json', 'utf8')))),
   assistant: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/assistant.json', 'utf8')))),
-  admin: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/admin.json', 'utf8'))))
+  admin: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/admin.json', 'utf8')))),
+  editor: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/editor.json', 'utf8'))))
 }
 
 function scan(dir) {
