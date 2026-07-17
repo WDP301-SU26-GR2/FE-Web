@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Bell, Check, Filter, RefreshCw } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { NotificationListResDtoOutputItemsItem } from '~/api/model/notifications'
 import type { NotificationListResDtoOutputItemsItemType } from '~/api/model/notifications/notificationListResDtoOutputItemsItemType'

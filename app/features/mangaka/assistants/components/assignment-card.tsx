@@ -56,7 +56,14 @@ function pickGradient(seed: string): string {
 }
 
 function isKnownTaskType(value: string): value is AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem {
-  return value === 'BACKGROUND' || value === 'SCREENTONE' || value === 'EFFECT_LINES' || value === 'INKING' || value === 'COLORING' || value === 'LETTERING'
+  return (
+    value === 'BACKGROUND' ||
+    value === 'SCREENTONE' ||
+    value === 'EFFECT_LINES' ||
+    value === 'INKING' ||
+    value === 'COLORING' ||
+    value === 'LETTERING'
+  )
 }
 
 /**
@@ -72,7 +79,8 @@ export function AssignmentCard({ assignment, assistant }: AssignmentCardProps) {
   const locale = i18n.language
 
   const statusMeta = STATUS_META[assignment.status] ?? STATUS_META.ACTIVE
-  const displayName = assistant?.displayName ?? t('myStudio.card.unnamedAssistant', { id: formatShortId(assignment.assistantId) })
+  const displayName =
+    assistant?.displayName ?? t('myStudio.card.unnamedAssistant', { id: formatShortId(assignment.assistantId) })
   const fallbackSeed = assistant?.displayName ?? assignment.assistantId
   const hireFrom = formatDate(assignment.hireStart, locale)
   const hireTo = formatDate(assignment.hireEnd, locale)

@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { authControllerLogout } from '~/api/operations/auth/auth'
 import { isFetchError } from '~/api/mutator/custom-fetch'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseLogoutResult = {
   /** Trigger the logout flow. Resolves once the local session has been

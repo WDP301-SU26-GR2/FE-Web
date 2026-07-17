@@ -4,9 +4,13 @@ import { ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Trash2, Eye, Loader2
 import { useNavigate } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
+import { SignedImage } from '~/shared/components/signed-image'
 import { SeriesListResDtoOutputItemsItemStatus } from '~/api/model/series'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { useSeriesList } from './use-series-list'
+import { useProposalActions } from './use-proposal-actions'
+import { ProposalActionDialog } from './components/proposal-action-dialog'
+import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 
 // ─── Status metadata ──────────────────────────────────────────────────────────
 
@@ -69,7 +73,9 @@ export function MySeriesPage() {
   const { t, i18n } = useTranslation('mangaka')
   const navigate = useNavigate()
   const { items, total, page, perPage, isLoading, error, setPage, refresh } = useSeriesList()
+  const { activeAction, deleteDraft } = useProposalActions()
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SeriesListResDtoOutputItemsItem | null>(null)
 
   const totalPages = Math.max(1, Math.ceil(total / perPage))
   const from = total === 0 ? 0 : (page - 1) * perPage + 1
@@ -215,14 +221,32 @@ export function MySeriesPage() {
                 >
                   {/* Series Name + Cover */}
                   <div className='col-span-6 flex items-center gap-3'>
-                    <div
-                      className={cn(
-                        'flex h-10 w-8 shrink-0 items-center justify-center rounded bg-gradient-to-br font-extrabold text-[10px] text-white shadow-sm',
-                        pickGradient(series.id)
-                      )}
-                    >
-                      {getInitials(series.title)}
-                    </div>
+                    {series.coverImage ? (
+                      // Per FE-API-Guide-v3 §14: coverImage is an R2 object key,
+                      // so we render it through SignedImage which calls
+                      // /uploads/sign-download and renders the <img> from the
+                      // resulting presigned GET URL. Gradient/initials stays as
+                      // the fallback when no cover was uploaded yet.
+                      <div className='h-10 w-8 shrink-0 overflow-hidden rounded shadow-sm'>
+                        <SignedImage
+                          r2Key={series.coverImage}
+                          alt={series.title}
+                          aspectClassName='h-full w-full'
+                          className='h-full w-full'
+                          imgClassName='h-full w-full object-cover'
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          'flex h-10 w-8 shrink-0 items-center justify-center rounded bg-gradient-to-br font-extrabold text-[10px] text-white shadow-sm',
+                          pickGradient(series.id)
+                        )}
+                        aria-label={series.title}
+                      >
+                        {getInitials(series.title)}
+                      </div>
+                    )}
                     <div className='min-w-0'>
                       <p className='truncate text-sm font-semibold'>{series.title}</p>
                       {series.genres.length > 0 && (
@@ -274,17 +298,23 @@ export function MySeriesPage() {
                                 <span>{t('mySeries.view')}</span>
                               </button>
                               <button
-                                disabled
-                                title={t('mySeries.editNotImplemented')}
-                                className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground cursor-not-allowed opacity-60'
+                                disabled={series.status !== 'DRAFT' && series.proposal?.status !== 'PROPOSAL_REVISION'}
+                                onClick={() => {
+                                  setActiveMenu(null)
+                                  navigate(`/dashboard/mangaka/series/${series.id}/edit`)
+                                }}
+                                className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-60'
                               >
                                 <Pencil className='h-4 w-4' />
                                 <span>{t('mySeries.edit')}</span>
                               </button>
                               <button
-                                disabled
-                                title={t('mySeries.deleteNotImplemented')}
-                                className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground cursor-not-allowed opacity-60'
+                                disabled={series.status !== 'DRAFT'}
+                                onClick={() => {
+                                  setActiveMenu(null)
+                                  setDeleteTarget(series)
+                                }}
+                                className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-60'
                               >
                                 <Trash2 className='h-4 w-4' />
                                 <span>{t('mySeries.delete')}</span>
@@ -344,6 +374,24 @@ export function MySeriesPage() {
           </span>
         </div>
       </div>
+
+      {deleteTarget && (
+        <ProposalActionDialog
+          mode='delete'
+          open
+          seriesTitle={deleteTarget.title}
+          isSubmitting={activeAction === 'delete'}
+          onCancel={() => {
+            if (!activeAction) setDeleteTarget(null)
+          }}
+          onConfirm={async () => {
+            if (await deleteDraft(deleteTarget.id)) {
+              setDeleteTarget(null)
+              refresh()
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

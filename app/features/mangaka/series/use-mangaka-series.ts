@@ -32,10 +32,10 @@ export function useMangakaSeries(): UseMangakaSeriesResult {
     abortRef.current = controller
     const signal = controller.signal
 
-    setIsLoading(true)
-    setError(null)
-
     ;(async () => {
+      await Promise.resolve()
+      setIsLoading(true)
+      setError(null)
       try {
         const res = await seriesControllerListSeries({ limit: 100, offset: 0 }, { signal })
         if (!signal.aborted) {

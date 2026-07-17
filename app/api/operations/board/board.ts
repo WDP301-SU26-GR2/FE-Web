@@ -21,17 +21,25 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type {
+  AdvancePhaseBodyDto,
   BoardConfigResDtoOutput,
+  BoardControllerAdvancePhasePathParameters,
   BoardControllerCastVotePathParameters,
   BoardControllerConcludeSessionPathParameters,
   BoardControllerGetDecisionDetailsPathParameters,
   BoardControllerGetDecisionVotesPathParameters,
+  BoardControllerGetDecisionsParams,
   BoardControllerGetReportByIdPathParameters,
+  BoardControllerGetReportsParams,
   BoardControllerGetSessionByIdPathParameters,
+  BoardControllerGetSessionMessagesParams,
+  BoardControllerGetSessionMessagesPathParameters,
+  BoardControllerGetSessionsParams,
   BoardControllerStartSessionPathParameters,
   BoardControllerSuggestMembersParams,
   BoardControllerUpdateConfigPathParameters,
   BoardDecisionResDtoOutput,
+  BoardMessageListResDtoOutput,
   BoardSessionResDtoOutput,
   BoardVoteResDtoOutput,
   CastVoteBodyDto,
@@ -114,17 +122,24 @@ export type boardControllerGetSessionsResponseSuccess = (boardControllerGetSessi
 
 export type boardControllerGetSessionsResponse = (boardControllerGetSessionsResponseSuccess)
 
-export const getBoardControllerGetSessionsUrl = () => {
+export const getBoardControllerGetSessionsUrl = (params?: BoardControllerGetSessionsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/board/sessions`
+  return stringifiedParams.length > 0 ? `/board/sessions?${stringifiedParams}` : `/board/sessions`
 }
 
-export const boardControllerGetSessions = async ( options?: RequestInit): Promise<boardControllerGetSessionsResponse> => {
+export const boardControllerGetSessions = async (params?: BoardControllerGetSessionsParams, options?: RequestInit): Promise<boardControllerGetSessionsResponse> => {
   
-  return customFetch<boardControllerGetSessionsResponse>(getBoardControllerGetSessionsUrl(),
+  return customFetch<boardControllerGetSessionsResponse>(getBoardControllerGetSessionsUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -238,11 +253,6 @@ export type boardControllerStartSessionResponse200 = {
   status: 200
 }
 
-export type boardControllerStartSessionResponse400 = {
-  data: void
-  status: 400
-}
-
 export type boardControllerStartSessionResponse404 = {
   data: void
   status: 404
@@ -256,7 +266,7 @@ export type boardControllerStartSessionResponse409 = {
 export type boardControllerStartSessionResponseSuccess = (boardControllerStartSessionResponse200) & {
   headers: Headers;
 };
-export type boardControllerStartSessionResponseError = (boardControllerStartSessionResponse400 | boardControllerStartSessionResponse404 | boardControllerStartSessionResponse409) & {
+export type boardControllerStartSessionResponseError = (boardControllerStartSessionResponse404 | boardControllerStartSessionResponse409) & {
   headers: Headers;
 };
 
@@ -328,6 +338,116 @@ export const boardControllerConcludeSession = async ({ id }: BoardControllerConc
   {      
     ...options,
     method: 'PATCH'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Creator chuyển giai đoạn phiên họp: PRESENTING → QA → VOTING (forward-only, cho nhảy cóc)
+ */
+export type boardControllerAdvancePhaseResponse200 = {
+  data: BoardSessionResDtoOutput
+  status: 200
+}
+
+export type boardControllerAdvancePhaseResponse403 = {
+  data: void
+  status: 403
+}
+
+export type boardControllerAdvancePhaseResponse404 = {
+  data: void
+  status: 404
+}
+
+export type boardControllerAdvancePhaseResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type boardControllerAdvancePhaseResponseSuccess = (boardControllerAdvancePhaseResponse200) & {
+  headers: Headers;
+};
+export type boardControllerAdvancePhaseResponseError = (boardControllerAdvancePhaseResponse403 | boardControllerAdvancePhaseResponse404 | boardControllerAdvancePhaseResponse409) & {
+  headers: Headers;
+};
+
+export type boardControllerAdvancePhaseResponse = (boardControllerAdvancePhaseResponseSuccess | boardControllerAdvancePhaseResponseError)
+
+export const getBoardControllerAdvancePhaseUrl = ({ id }: BoardControllerAdvancePhasePathParameters,) => {
+
+
+  
+
+  return `/board/sessions/${id}/phase`
+}
+
+export const boardControllerAdvancePhase = async ({ id }: BoardControllerAdvancePhasePathParameters,
+    advancePhaseBodyDto: AdvancePhaseBodyDto, options?: RequestInit): Promise<boardControllerAdvancePhaseResponse> => {
+  
+  return customFetch<boardControllerAdvancePhaseResponse>(getBoardControllerAdvancePhaseUrl({ id }),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      advancePhaseBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Lịch sử chat Q&A của phiên họp (creator/roster/Super Admin)
+ */
+export type boardControllerGetSessionMessagesResponse200 = {
+  data: BoardMessageListResDtoOutput
+  status: 200
+}
+
+export type boardControllerGetSessionMessagesResponse403 = {
+  data: void
+  status: 403
+}
+
+export type boardControllerGetSessionMessagesResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type boardControllerGetSessionMessagesResponseSuccess = (boardControllerGetSessionMessagesResponse200) & {
+  headers: Headers;
+};
+export type boardControllerGetSessionMessagesResponseError = (boardControllerGetSessionMessagesResponse403 | boardControllerGetSessionMessagesResponse404) & {
+  headers: Headers;
+};
+
+export type boardControllerGetSessionMessagesResponse = (boardControllerGetSessionMessagesResponseSuccess | boardControllerGetSessionMessagesResponseError)
+
+export const getBoardControllerGetSessionMessagesUrl = ({ id }: BoardControllerGetSessionMessagesPathParameters,
+    params?: BoardControllerGetSessionMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/board/sessions/${id}/messages?${stringifiedParams}` : `/board/sessions/${id}/messages`
+}
+
+export const boardControllerGetSessionMessages = async ({ id }: BoardControllerGetSessionMessagesPathParameters,
+    params?: BoardControllerGetSessionMessagesParams, options?: RequestInit): Promise<boardControllerGetSessionMessagesResponse> => {
+  
+  return customFetch<boardControllerGetSessionMessagesResponse>(getBoardControllerGetSessionMessagesUrl({ id },params),
+  {      
+    ...options,
+    method: 'GET'
     
     
   }
@@ -432,17 +552,24 @@ export type boardControllerGetDecisionsResponseSuccess = (boardControllerGetDeci
 
 export type boardControllerGetDecisionsResponse = (boardControllerGetDecisionsResponseSuccess)
 
-export const getBoardControllerGetDecisionsUrl = () => {
+export const getBoardControllerGetDecisionsUrl = (params?: BoardControllerGetDecisionsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/board/decisions`
+  return stringifiedParams.length > 0 ? `/board/decisions?${stringifiedParams}` : `/board/decisions`
 }
 
-export const boardControllerGetDecisions = async ( options?: RequestInit): Promise<boardControllerGetDecisionsResponse> => {
+export const boardControllerGetDecisions = async (params?: BoardControllerGetDecisionsParams, options?: RequestInit): Promise<boardControllerGetDecisionsResponse> => {
   
-  return customFetch<boardControllerGetDecisionsResponse>(getBoardControllerGetDecisionsUrl(),
+  return customFetch<boardControllerGetDecisionsResponse>(getBoardControllerGetDecisionsUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -544,11 +671,6 @@ export type boardControllerCastVoteResponse201 = {
   status: 201
 }
 
-export type boardControllerCastVoteResponse400 = {
-  data: void
-  status: 400
-}
-
 export type boardControllerCastVoteResponse403 = {
   data: void
   status: 403
@@ -567,7 +689,7 @@ export type boardControllerCastVoteResponse409 = {
 export type boardControllerCastVoteResponseSuccess = (boardControllerCastVoteResponse201) & {
   headers: Headers;
 };
-export type boardControllerCastVoteResponseError = (boardControllerCastVoteResponse400 | boardControllerCastVoteResponse403 | boardControllerCastVoteResponse404 | boardControllerCastVoteResponse409) & {
+export type boardControllerCastVoteResponseError = (boardControllerCastVoteResponse403 | boardControllerCastVoteResponse404 | boardControllerCastVoteResponse409) & {
   headers: Headers;
 };
 
@@ -610,17 +732,24 @@ export type boardControllerGetReportsResponseSuccess = (boardControllerGetReport
 
 export type boardControllerGetReportsResponse = (boardControllerGetReportsResponseSuccess)
 
-export const getBoardControllerGetReportsUrl = () => {
+export const getBoardControllerGetReportsUrl = (params?: BoardControllerGetReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/board/reports`
+  return stringifiedParams.length > 0 ? `/board/reports?${stringifiedParams}` : `/board/reports`
 }
 
-export const boardControllerGetReports = async ( options?: RequestInit): Promise<boardControllerGetReportsResponse> => {
+export const boardControllerGetReports = async (params?: BoardControllerGetReportsParams, options?: RequestInit): Promise<boardControllerGetReportsResponse> => {
   
-  return customFetch<boardControllerGetReportsResponse>(getBoardControllerGetReportsUrl(),
+  return customFetch<boardControllerGetReportsResponse>(getBoardControllerGetReportsUrl(params),
   {      
     ...options,
     method: 'GET'

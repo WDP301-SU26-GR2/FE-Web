@@ -22,30 +22,30 @@ export type PublicationSectionProps = {
 const CHAPTER_STATUS_META: Record<string, { className: string; labelKey: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border', labelKey: 'DRAFT' },
   IN_PRODUCTION: {
-    className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    className: 'bg-warning/10 text-warning border-warning/20',
     labelKey: 'IN_PRODUCTION'
   },
   COMPLETED: {
-    className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    className: 'bg-success/10 text-success border-success/20',
     labelKey: 'COMPLETED'
   },
   PUBLISHED: {
-    className: 'bg-green-500/10 text-green-600 border-green-500/20',
+    className: 'bg-success/10 text-success border-success/20',
     labelKey: 'PUBLISHED'
   }
 }
 
 const MANUSCRIPT_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
-  IN_PRODUCTION: { className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-  COMPOSITE_REVIEW: { className: 'bg-sky-500/10 text-sky-600 border-sky-500/20' },
-  EDITOR_REVIEW: { className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20' },
-  EDITOR_REVISION: { className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
-  READY_FOR_PRINT: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+  IN_PRODUCTION: { className: 'bg-warning/10 text-warning border-warning/20' },
+  COMPOSITE_REVIEW: { className: 'bg-info/10 text-info border-info/20' },
+  EDITOR_REVIEW: { className: 'bg-info/10 text-info border-info/20' },
+  EDITOR_REVISION: { className: 'bg-warning/10 text-warning border-warning/20' },
+  READY_FOR_PRINT: { className: 'bg-success/10 text-success border-success/20' },
   AWAITING_CO_OWNER_APPROVAL: {
-    className: 'bg-violet-500/10 text-violet-600 border-violet-500/20'
+    className: 'bg-info/10 text-info border-info/20'
   },
-  PUBLISHED: { className: 'bg-green-500/10 text-green-600 border-green-500/20' }
+  PUBLISHED: { className: 'bg-success/10 text-success border-success/20' }
 }
 
 function formatDate(iso: string | null, locale: string): string {
@@ -62,13 +62,9 @@ function formatDate(iso: string | null, locale: string): string {
  * - Lists every chapter for the series in chapterNumber order.
  * - Shows the chapter status, optional manuscript status, deadline, and
  *   "On hold" badge when applicable.
- * - "Create chapter" CTA is visible to the series owner. The previous
- *   APPROVED-Name gate was removed when the BE flow changed: POST /chapters
- *   now auto-matches the latest APPROVED Name server-side, so FE no
- *   longer pre-checks the gate (BE still owns the 409 on
- *   `Error.NoApprovedName`).
- * - No click-to-detail for now (no chapter detail route exists yet);
- *   rows are presentation-only.
+ * - "Create chapter" is visible to the series owner. Chapter-first means
+ *   POST /chapters creates the slot before its chapter-scoped Name exists.
+ * - Clicking a row opens the focused publication workbench.
  */
 export function PublicationSection({
   isOwner,
@@ -139,19 +135,12 @@ export function PublicationSection({
             <div className='flex flex-col items-center gap-2 py-10 text-center text-muted-foreground'>
               <ImageIcon className='h-8 w-8 text-muted-foreground/40' />
               <p className='text-sm'>{t('seriesDetail.publication.empty')}</p>
-              {isOwner && (
-                <p className='text-xs text-muted-foreground/80'>{t('seriesDetail.publication.emptyHint')}</p>
-              )}
+              {isOwner && <p className='text-xs text-muted-foreground/80'>{t('seriesDetail.publication.emptyHint')}</p>}
             </div>
           ) : (
             <ul className='divide-y divide-border overflow-hidden rounded-lg border border-border'>
               {chapters.map((chapter) => (
-                <ChapterRow
-                  key={chapter.id}
-                  chapter={chapter}
-                  seriesId={seriesId}
-                  locale={locale}
-                />
+                <ChapterRow key={chapter.id} chapter={chapter} seriesId={seriesId} locale={locale} />
               ))}
             </ul>
           )}
@@ -208,7 +197,7 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
             </span>
             {chapter.title && <span className='truncate text-sm font-semibold text-foreground'>{chapter.title}</span>}
             {isOnHold && (
-              <span className='inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600'>
+              <span className='inline-flex items-center rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning'>
                 {t('seriesDetail.publication.onHold')}
               </span>
             )}

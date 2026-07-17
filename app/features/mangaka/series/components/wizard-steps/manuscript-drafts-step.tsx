@@ -1,16 +1,36 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Upload, X, FileImage } from 'lucide-react'
 import type { ProposalFormData, NamePageEntry } from '../create-proposal-wizard'
+import { SignedImage } from '~/shared/components/signed-image'
+import { cn } from '~/shared/lib/cn'
+
+export type ExistingNamePage = {
+  pageNumber: number
+  fileUrl: string
+}
+
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
+const MAX_FILE_SIZE = 15 * 1024 * 1024
 
 interface Props {
   form: ProposalFormData
   onChange: <K extends keyof ProposalFormData>(key: K, value: ProposalFormData[K]) => void
+  existingPages?: ExistingNamePage[]
+  removedExistingPageKeys?: string[]
+  onToggleExistingPage?: (pageKey: string) => void
 }
 
-export function ManuscriptDraftsStep({ form, onChange }: Props) {
+export function ManuscriptDraftsStep({
+  form,
+  onChange,
+  existingPages = [],
+  removedExistingPageKeys = [],
+  onToggleExistingPage
+}: Props) {
   const { t } = useTranslation('mangaka')
   const inputRef = useRef<HTMLInputElement>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   // `namePages` maps to API `CreateProposalBodyDto.namePages`:
   // [{ pageNumber: number, fileUrl: object key }] — see swagger.json.
@@ -18,10 +38,14 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
   const handleFiles = (files: FileList | null) => {
     if (!files) return
     const startIndex = form.namePages.length
-    const newEntries: NamePageEntry[] = Array.from(files)
-      .filter((f) => f.type.startsWith('image/'))
+    const selectedFiles = Array.from(files)
+    const invalidType = selectedFiles.some((file) => !ALLOWED_TYPES.includes(file.type))
+    const tooLarge = selectedFiles.some((file) => file.size > MAX_FILE_SIZE)
+    setFileError(invalidType ? t('upload.errors.invalidType') : tooLarge ? t('upload.errors.tooLarge') : null)
+    const newEntries: NamePageEntry[] = selectedFiles
+      .filter((file) => ALLOWED_TYPES.includes(file.type) && file.size <= MAX_FILE_SIZE)
       .map((file, idx) => ({
-        id: `${Date.now()}-${file.name}`,
+        id: `${Date.now()}-${idx}-${file.name}`,
         file,
         preview: URL.createObjectURL(file),
         key: '',
@@ -87,14 +111,71 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
         <input
           ref={inputRef}
           type='file'
-          accept='image/*'
+          accept={ALLOWED_TYPES.join(',')}
           multiple
           className='hidden'
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>
 
+      {fileError && (
+        <p role='alert' className='text-sm font-medium text-destructive'>
+          {fileError}
+        </p>
+      )}
+
       {/* Name Pages Grid */}
+      {existingPages.length > 0 && (
+        <div className='space-y-2'>
+          <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
+            {t('seriesDetail.editProposal.existingNamePages')}
+          </p>
+          <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
+            {[...existingPages]
+              .sort((a, b) => a.pageNumber - b.pageNumber)
+              .map((page) => {
+                const pageKey = `${page.pageNumber}:${page.fileUrl}`
+                const removed = removedExistingPageKeys.includes(pageKey)
+                return (
+                  <div
+                    key={pageKey}
+                    className={cn(
+                      'flex flex-col overflow-hidden rounded-xl border bg-background shadow-sm',
+                      removed ? 'border-destructive opacity-50' : 'border-border'
+                    )}
+                  >
+                    <div className='relative aspect-[3/4] w-full overflow-hidden bg-muted'>
+                      <SignedImage
+                        r2Key={page.fileUrl}
+                        alt={t('seriesDetail.names.pageAlt', { n: page.pageNumber })}
+                        className='h-full w-full object-cover'
+                      />
+                      <div className='absolute left-2 top-2 rounded-md bg-foreground/80 px-2 py-1 text-xs font-bold text-background'>
+                        {String(page.pageNumber).padStart(2, '0')}
+                      </div>
+                      <button
+                        type='button'
+                        onClick={() => onToggleExistingPage?.(pageKey)}
+                        className={cn(
+                          'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full shadow cursor-pointer',
+                          removed ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'
+                        )}
+                        aria-label={
+                          removed
+                            ? t('seriesDetail.editProposal.restoreNamePage', { n: page.pageNumber })
+                            : t('seriesDetail.editProposal.removeNamePage', { n: page.pageNumber })
+                        }
+                      >
+                        <X className={cn('h-3.5 w-3.5', removed && 'rotate-45')} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      )}
+
       {form.namePages.length > 0 && (
         <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
           {form.namePages.map((entry) => (
@@ -111,6 +192,7 @@ export function ManuscriptDraftsStep({ form, onChange }: Props) {
                 </div>
                 {/* Delete button */}
                 <button
+                  type='button'
                   onClick={() => handleRemove(entry.id)}
                   className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow transition-all hover:bg-black/80 cursor-pointer'
                   aria-label={t('wizard.removeImage')}

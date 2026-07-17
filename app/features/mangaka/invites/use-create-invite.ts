@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { studioControllerCreateInvite } from '~/api/operations/studio/studio'
 import type { CreateInviteBodyDto, InviteResDtoOutput } from '~/api/model/studio'
 import { isFetchError } from '~/api/mutator/custom-fetch'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseCreateInviteResult = {
   /** Fire POST /collaboration-invites. Returns the new invite on success, null on failure. */

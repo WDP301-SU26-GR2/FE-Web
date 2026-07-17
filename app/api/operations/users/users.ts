@@ -31,6 +31,7 @@ import type {
   AssistantDirectoryListResDtoOutput,
   AssistantProfileBodyDto,
   AssistantProfileResDtoOutput,
+  MangakaDirectoryListResDtoOutput,
   MangakaProfileBodyDto,
   MangakaProfileResDtoOutput,
   MeResDtoOutput,
@@ -44,6 +45,7 @@ import type {
   UsersControllerGetStaffProfilePathParameters,
   UsersControllerGetUserPathParameters,
   UsersControllerListAssistantsParams,
+  UsersControllerListMangakasParams,
   UsersControllerListUsersParams,
   UsersControllerResetUserPasswordPathParameters,
   UsersControllerRestoreUserPathParameters,
@@ -680,6 +682,48 @@ export const usersControllerGetMyAssistantProfile = async ( options?: RequestIni
 
 
 /**
+ * @summary Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level; ưu tiên isRecommended/reputation (ẩn email/phone)
+ */
+export type usersControllerListMangakasResponse200 = {
+  data: MangakaDirectoryListResDtoOutput
+  status: 200
+}
+    
+export type usersControllerListMangakasResponseSuccess = (usersControllerListMangakasResponse200) & {
+  headers: Headers;
+};
+;
+
+export type usersControllerListMangakasResponse = (usersControllerListMangakasResponseSuccess)
+
+export const getUsersControllerListMangakasUrl = (params?: UsersControllerListMangakasParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/mangakas?${stringifiedParams}` : `/mangakas`
+}
+
+export const usersControllerListMangakas = async (params?: UsersControllerListMangakasParams, options?: RequestInit): Promise<usersControllerListMangakasResponse> => {
+  
+  return customFetch<usersControllerListMangakasResponse>(getUsersControllerListMangakasUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
  * @summary Xem hồ sơ Mangaka công khai (kèm reputation)
  */
 export type usersControllerGetMangakaProfileResponse200 = {
@@ -722,7 +766,7 @@ export const usersControllerGetMangakaProfile = async ({ userId }: UsersControll
 
 
 /**
- * @summary Danh bạ trợ lý: lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)
+ * @summary Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)
  */
 export type usersControllerListAssistantsResponse200 = {
   data: AssistantDirectoryListResDtoOutput

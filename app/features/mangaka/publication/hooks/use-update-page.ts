@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { chapterControllerUpdatePage } from '~/api/operations/chapters/chapters'
 import type { PageResDtoOutput, UpdatePageBodyDto } from '~/api/model/chapters'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseUpdatePageResult = {
   updatePage: (input: { pageId: string; body: UpdatePageBodyDto }) => Promise<PageResDtoOutput | null>

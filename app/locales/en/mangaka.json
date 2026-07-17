@@ -160,8 +160,6 @@
     "actionsMenu": "Series actions",
     "previousPage": "Previous page",
     "nextPage": "Next page",
-    "editNotImplemented": "Edit: not implemented yet",
-    "deleteNotImplemented": "Delete: not implemented yet",
     "stats": {
       "scopeNote": "Counts reflect the current page only, not your entire catalogue."
     },
@@ -197,8 +195,46 @@
     "subtitle": "View proposal information and sample Name pages",
     "back": "Back to My Series",
     "loading": "Loading...",
-    "editProposal": "Edit Proposal",
-    "statusReason": "Reason",
+    "editProposal": {
+      "button": "Edit Proposal",
+      "title": "Edit Proposal",
+      "subtitle": "Update your proposal fields. Leave a field unchanged to keep its current value.",
+      "notEditableTitle": "Proposal is not editable",
+      "notEditableDescription": "This proposal can only be edited while the series is DRAFT or while the proposal is awaiting your revisions (PROPOSAL_REVISION).",
+      "sectionBasic": "Basic Information",
+      "sectionSynopsis": "Synopsis",
+      "sectionCharacters": "Character Designs",
+      "sectionName": "Sample Name Pages",
+      "existingNamePages": "Current Name pages",
+      "removeNamePage": "Remove Name page {{n}}",
+      "restoreNamePage": "Restore Name page {{n}}",
+      "newCover": "New cover selected",
+      "keepCover": "Keep current cover",
+      "removeCover": "Remove cover",
+      "noChanges": "No changes to save yet.",
+      "saveChanges": "Save Changes",
+      "saving": "Saving...",
+      "removeExistingCharacter": "Remove existing character design",
+      "removeExistingCharacterConfirm": "Remove this character design? It will be deleted when you save.",
+      "markForRemoval": "Marked for removal",
+      "loading": "Loading proposal...",
+      "loadFailed": "Failed to load the proposal.",
+      "retry": "Retry",
+      "success": "Proposal updated.",
+      "nameSuccess": "Sample Name pages updated.",
+      "nameErrorGeneric": "Failed to update the sample Name pages. Please try again.",
+      "nameMissing": "The proposal's sample Name could not be found. Reload the series and try again.",
+      "nameConflict": "The sample Name can no longer be edited in its current state.",
+      "errorGeneric": "Failed to update proposal. Please try again.",
+      "errorConflict": "This proposal can no longer be edited (status changed).",
+      "errorPermission": "You can only edit proposals you own.",
+      "errorNotFound": "The series no longer exists. Reload your series list.",
+      "unsavedChangesTitle": "Discard unsaved changes?",
+      "unsavedChangesDescription": "You have unsaved changes that will be lost if you leave this page.",
+      "unsavedChangesLeave": "Leave without saving",
+      "unsavedChangesStay": "Stay on page",
+      "back": "Back to series"
+    },
     "demographic": "Demographic",
     "publicationType": "Cadence",
     "editor": "Editor",
@@ -207,6 +243,38 @@
     "inReviewQueue": "In review queue",
     "createdAt": "Created at",
     "reviewStartedAt": "Review started at",
+    "revisions": {
+      "title": "Editor revision requests",
+      "round": "Round {{round}}",
+      "openDrawer": "View revision requests",
+      "target": {
+        "PROPOSAL": "Proposal",
+        "NAME": "Sample Name",
+        "MANUSCRIPT": "Manuscript",
+        "TASK": "Task"
+      },
+      "resolve": "Mark changes addressed",
+      "resolving": "Updating...",
+      "resolveSuccess": "Revision request marked as addressed.",
+      "resolveError": "Could not update the revision request. Please try again.",
+      "drawer": {
+        "subtitle": "All revision request rounds for this series",
+        "close": "Close",
+        "empty": {
+          "title": "No revision requests yet",
+          "description": "When an Editor sends a revision request, it will appear here."
+        },
+        "loading": "Loading...",
+        "error": {
+          "loadFailed": "Could not load revision requests.",
+          "retry": "Retry"
+        },
+        "resolved": "Resolved",
+        "footerHint": "Press ESC or click outside to close",
+        "paginationInfo": "{{from}}-{{to}} of {{total}}",
+        "requestedByEditorFallback": "Requested by Editor"
+      }
+    },
     "relationshipType": "Relationship to parent",
     "enums": {
       "genres": {
@@ -268,6 +336,14 @@
       "title": "Proposal",
       "empty": "This series has no proposal yet.",
       "synopsis": "Synopsis",
+      "synopsisMore": "Read more",
+      "synopsisLess": "Show less",
+      "synopsisReader": {
+        "title": "Synopsis",
+        "close": "Close",
+        "readingTime": "≈ {{minutes}} min read",
+        "wordCount": "{{count}} characters"
+      },
       "characterDesigns": "Character Designs",
       "characterDesignAlt": "Character design {{n}}",
       "estimatedLength": "Estimated length",
@@ -283,7 +359,46 @@
       "altShort": "Name page",
       "sampleLabel": "Sample Name (Proposal)",
       "chapterLabel": "Chapter {{n}}",
-      "versionLabel": "Version {{n}}"
+      "versionLabel": "Version {{n}}",
+      "pageAlt": "Name page {{n}}",
+      "pagesCount_one": "{{count}} page",
+      "pagesCount_other": "{{count}} pages"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "errorGeneric": "The proposal action failed. Reload and try again.",
+      "delete": {
+        "button": "Delete draft",
+        "title": "Delete this draft?",
+        "description": "\"{{title}}\" and its sample Name will be permanently deleted.",
+        "confirm": "Delete draft",
+        "success": "Draft proposal deleted."
+      },
+      "withdraw": {
+        "button": "Withdraw",
+        "title": "Withdraw this proposal?",
+        "description": "\"{{title}}\" will leave the editorial workflow and move to Withdrawn.",
+        "reasonLabel": "Reason (optional)",
+        "reasonPlaceholder": "Tell the Editor why you are withdrawing...",
+        "confirm": "Withdraw proposal",
+        "success": "Proposal withdrawn."
+      },
+      "resubmitProposal": {
+        "button": "Resubmit proposal",
+        "success": "Proposal resubmitted for review."
+      },
+      "resubmitName": {
+        "button": "Resubmit Name",
+        "success": "Sample Name resubmitted for review."
+      },
+      "errors": {
+        "NotSeriesOwner": "You can only change proposals you own.",
+        "ProposalNotEditable": "The proposal is no longer editable in its current state.",
+        "ProposalNotDeletable": "Only a draft proposal can be deleted.",
+        "InvalidProposalState": "The proposal is not waiting for resubmission.",
+        "InvalidNameState": "The sample Name is not waiting for resubmission.",
+        "SeriesNotFound": "The series no longer exists."
+      }
     },
     "error": {
       "loadFailed": "Failed to load series details. Please try again.",
@@ -296,6 +411,7 @@
     },
     "submit": {
       "button": "Submit series",
+      "missingNamePages": "Add at least one sample Name page before submitting.",
       "dialogTitle": "Submit series for editorial review?",
       "dialogDescription": "\"{{title}}\" will move into the review queue. After submitting you will not be able to edit the proposal until the Editor responds.",
       "bullet1": "The proposal moves to In Review.",
@@ -305,39 +421,10 @@
       "confirm": "Submit series",
       "submitting": "Submitting series...",
       "success": "Series submitted for editorial review.",
+      "errorPermission": "Only the series owner can submit this proposal.",
+      "errorConflict": "The series can no longer be submitted in its current state.",
+      "errorFranchiseConsent": "The original Mangaka must approve this franchise proposal before it can be submitted.",
       "errorGeneric": "Failed to submit series. Please try again."
-    },
-    "editProposalNotImplemented": "Edit proposal: route not implemented yet",
-    "editProposal": {
-      "button": "Edit Proposal",
-      "title": "Edit Proposal",
-      "subtitle": "Update your proposal fields. Leave a field unchanged to keep its current value.",
-      "notEditableTitle": "Proposal is not editable",
-      "notEditableDescription": "This proposal can only be edited while the series is DRAFT or while the proposal is awaiting your revisions (PROPOSAL_REVISION).",
-      "sectionBasic": "Basic Information",
-      "sectionSynopsis": "Synopsis",
-      "sectionCharacters": "Character Designs",
-      "newCover": "New cover selected",
-      "keepCover": "Keep current cover",
-      "removeCover": "Remove cover",
-      "noChanges": "No changes to save yet.",
-      "saveChanges": "Save Changes",
-      "saving": "Saving...",
-      "removeExistingCharacter": "Remove existing character design",
-      "removeExistingCharacterConfirm": "Remove this character design? It will be deleted when you save.",
-      "markForRemoval": "Marked for removal",
-      "loading": "Loading proposal...",
-      "loadFailed": "Failed to load the proposal.",
-      "retry": "Retry",
-      "success": "Proposal updated.",
-      "errorGeneric": "Failed to update proposal. Please try again.",
-      "errorConflict": "This proposal can no longer be edited (status changed).",
-      "errorPermission": "You can only edit proposals you own.",
-      "unsavedChangesTitle": "Discard unsaved changes?",
-      "unsavedChangesDescription": "You have unsaved changes that will be lost if you leave this page.",
-      "unsavedChangesLeave": "Leave without saving",
-      "unsavedChangesStay": "Stay on page",
-      "back": "Back to series"
     },
     "publication": {
       "title": "Publication",
@@ -390,7 +477,12 @@
   "lightbox": {
     "closePreview": "Close preview",
     "loading": "Loading...",
-    "failedToLoad": "Failed to load image"
+    "failedToLoad": "Failed to load image",
+    "previous": "Previous image",
+    "next": "Next image",
+    "counter": "{{current}} / {{total}}",
+    "moreCount": "+{{count}} more",
+    "stripGroupLabel": "Image gallery"
   },
   "publication": {
     "loading": "Loading workbench...",
@@ -411,7 +503,10 @@
       "brandSubtitle": "Publication Workbench",
       "backToSeries": "Back to series",
       "chapterContext": "{{series}} · Chapter {{n}}",
-      "workbenchLabel": "Publication workbench"
+      "workbenchLabel": "Publication workbench",
+      "tabName": "Name",
+      "tabPages": "Pages",
+      "tabPagesDisabledHint": "Approve the Name storyboard first to unlock pages."
     },
     "workbenchTitle": "Chapter {{n}} — Publication",
     "workbenchSubtitle": "Manage the storyboard (Name) and production pages for this chapter.",
@@ -425,16 +520,18 @@
       "versionLabel": "Version {{n}}",
       "createButton": "Create Name",
       "editButton": "Edit pages",
+      "submitButton": "Submit Name",
       "resubmitButton": "Resubmit for review",
+      "removeButton": "Delete Name",
       "create": {
         "dialogTitle": "Create Name (storyboard)",
-        "dialogDescription": "Upload one or more storyboard pages. They will be submitted to the Editor for review.",
+        "dialogDescription": "Upload one or more storyboard pages. The Name stays as a draft until you submit it for review.",
         "chooseFiles": "Choose images",
         "allowedHint": "PNG, JPG or WEBP. Max 15MB per file.",
         "removeFile": "Remove this image",
         "submitting": "Uploading...",
         "confirm": "Create Name",
-        "success": "Name created and submitted for review."
+        "success": "Name draft created."
       },
       "edit": {
         "dialogTitle": "Edit Name pages",
@@ -449,6 +546,15 @@
       },
       "resubmit": {
         "success": "Name resubmitted for review."
+      },
+      "submit": {
+        "success": "Name submitted for review.",
+        "error": "Could not submit the Name. Please refresh and try again."
+      },
+      "remove": {
+        "confirm": "Delete this Name draft and all of its storyboard pages?",
+        "success": "Name deleted.",
+        "error": "Could not delete the Name."
       }
     },
     "pagesSection": {
@@ -489,6 +595,113 @@
       "IN_PROGRESS": "In progress",
       "COMPOSITE_READY": "Composite ready",
       "COMPLETED": "Completed"
+    },
+    "statusPill": {
+      "label": "Storyboard"
+    },
+    "name": {
+      "titleWithChapter": "{{chapterTitle}} — Ch.{{n}} storyboard",
+      "subtitle": "Storyboard pages for the Editor to review before production.",
+      "documentLabel": "Storyboard",
+      "version": "Version",
+      "versionValue": "v{{n}}",
+      "status": "Status",
+      "notStarted": "Not started",
+      "deadline": "Deadline",
+      "submittedAt": "Submitted",
+      "pagesCount": "{{n}} pages",
+      "lockedHint": "Create the storyboard on the Name tab first to unlock this workflow.",
+      "timeline": {
+        "title": "Review lifecycle",
+        "draft": "Initial draft uploaded",
+        "submitted": "Submitted for review",
+        "inReview": "Editor reviewing",
+        "revision": "Revision requested",
+        "approved": "Approved — page upload unlocked",
+        "revisionCallout": "The Editor has requested changes. Resubmit when you're done editing pages above."
+      }
+    },
+    "pagesLocked": {
+      "title": "Pages are locked",
+      "description": "Once the Editor approves the storyboard, you'll be able to upload pencil/ink pages and review them here.",
+      "backToName": "Open Name view"
+    },
+    "pages": {
+      "title": "Pages",
+      "subtitle": "Composite reader — TOC, page panels and editor notes."
+    },
+    "pagesReader": {
+      "addPage": "Add page",
+      "compositeLabel": "Composite pages",
+      "title": "{{chapterTitle}} — Ch.{{n}}",
+      "subtitle": "Scroll vertically between pages. The TOC on the left tracks the page in view; editor feedback surfaces on the right.",
+      "emptyTitle": "No pages yet",
+      "emptyDesc": "Upload your first pencil/ink page below to start production.",
+      "backToTop": "Back to top",
+      "compositeBadge": "Composite",
+      "done": "Done",
+      "advance": "Advance → {{to}}",
+      "uploadError": "Could not upload the image.",
+      "composer": {
+        "title": "Upload page {{n}}",
+        "cancel": "Cancel",
+        "dropOrClick": "Drop an image here or click to choose",
+        "submit": "Upload page {{n}}"
+      },
+      "toc": {
+        "title": "Pages",
+        "count": "{{n}} pages",
+        "empty": "No pages yet",
+        "pageLabel": "Page {{n}}"
+      },
+      "notes": {
+        "title": "Editor notes",
+        "forPage": "Showing notes for the current page",
+        "noSelection": "Scroll the centre to pick a page",
+        "empty": "Select a page to see editor feedback.",
+        "noNotes": "No notes on this page yet.",
+        "resolved": "Resolved",
+        "role": {
+          "MANGAKA": "Mangaka",
+          "ASSISTANT": "Assistant",
+          "EDITOR": "Editor",
+          "BOARD_MEMBER": "Board",
+          "SUPER_ADMIN": "Admin"
+        }
+      }
+    },
+    "manuscript": {
+      "label": "Manuscript",
+      "onHold": "On hold",
+      "progress": "{{completed}}/{{total}} pages · {{percent}}%",
+      "completePagesHint": "Complete every page before submitting the manuscript to the Editor.",
+      "status": {
+        "DRAFT": "Draft",
+        "IN_PRODUCTION": "In production",
+        "COMPOSITE_REVIEW": "Composite review",
+        "EDITOR_REVIEW": "Editor review",
+        "EDITOR_REVISION": "Editor revision",
+        "READY_FOR_PRINT": "Ready for print",
+        "AWAITING_CO_OWNER_APPROVAL": "Awaiting co-owner",
+        "PUBLISHED": "Published"
+      },
+      "actions": {
+        "markCompositeReady": {
+          "button": "Start composite review",
+          "success": "Manuscript moved to composite review.",
+          "error": "Could not start composite review."
+        },
+        "submit": {
+          "button": "Submit manuscript",
+          "success": "Manuscript submitted to the Editor.",
+          "error": "Could not submit the manuscript."
+        },
+        "resubmit": {
+          "button": "Resubmit manuscript",
+          "success": "Revised manuscript submitted to the Editor.",
+          "error": "Could not resubmit the manuscript."
+        }
+      }
     }
   },
   "upload": {
@@ -511,7 +724,8 @@
     "step4Desc": "Upload sample Name (storyboard) pages for the first chapter.",
     "back": "Back",
     "next": "Next",
-    "submit": "Submit Proposal",
+    "submit": "Create Draft",
+    "createSuccess": "Proposal draft created. Review it, then submit it to the Editor when ready.",
     "exit": "Exit",
     "seriesTitle": "Series Title",
     "seriesTitlePlaceholder": "Enter your series title",
@@ -573,6 +787,7 @@
     "pageTitlePlaceholder": "Page title...",
     "errors": {
       "unauthenticated": "You must be signed in to create a proposal.",
+      "titleRequired": "Enter a series title before continuing.",
       "submitFailed": "Failed to create proposal. Please try again."
     },
     "toolbar": {
@@ -582,6 +797,278 @@
       "alignLeft": "Align Left",
       "alignCenter": "Align Center",
       "alignRight": "Align Right"
+    }
+  },
+  "tasks": {
+    "title": "Tasks",
+    "composer": {
+      "title": "Assign Task",
+      "fromStudio": "From Studio — select assistant, series, chapter, page",
+      "fromWorkbench": "From Workbench — select assistant for current page",
+      "close": "Close",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Assign Task",
+      "submitting": "Assigning...",
+      "selectAssistant": "Select Assistant",
+      "selectAssistantPlaceholder": "— Select assistant —",
+      "selectSeries": "Select Series",
+      "selectSeriesPlaceholder": "— Select series —",
+      "selectChapter": "Select Chapter",
+      "selectChapterPlaceholder": "— Select chapter —",
+      "selectPage": "Select page",
+      "selectPagePlaceholder": "— Select page —",
+      "selectRegion": "Select region (optional)",
+      "wholePage": "Whole page (no region)",
+      "regionSelected": "Region selected: {{id}}",
+      "regionClear": "Clear",
+      "taskType": "Task type",
+      "taskTypeEnum": {
+        "BACKGROUND": "Background",
+        "SCREENTONE": "Screentone",
+        "EFFECT_LINES": "Effect lines",
+        "INKING": "Inking",
+        "COLORING": "Coloring",
+        "LETTERING": "Lettering"
+      },
+      "deadline": "Deadline (optional)",
+      "deadlineHint": "Leave empty if no specific deadline",
+      "priority": "Priority",
+      "priorityHint": "Lower number = higher priority",
+      "attachments": {
+        "label": "Reference Files (optional)",
+        "dropzoneLabel": "Drag and drop or click to select files"
+      },
+      "steps": {
+        "aria": "Task assignment steps",
+        "context": "Context",
+        "work": "Work",
+        "confirm": "Confirm"
+      },
+      "confirm": {
+        "description": "Review the information before assigning the task.",
+        "taskType": "Task type",
+        "page": "Page",
+        "region": "Region",
+        "deadline": "Deadline",
+        "priority": "Priority",
+        "attachments": "Reference files",
+        "noDeadline": "None",
+        "noAttachments": "None",
+        "attachmentCount": "{{count}} file(s)"
+      }
+    },
+    "status": {
+      "ASSIGNED": "Assigned",
+      "IN_PROGRESS": "In progress",
+      "SUBMITTED": "Submitted",
+      "UNDER_REVIEW": "Under review",
+      "APPROVED": "Approved",
+      "REVISION_REQUESTED": "Revision requested",
+      "ON_HOLD": "On hold",
+      "CANCELLED": "Cancelled"
+    },
+    "errors": {
+      "assistantNotHired": "This assistant no longer has an active collaboration relationship.",
+      "chapterOnHold": "Chapter is on hold. Resume the chapter before assigning tasks.",
+      "notSeriesOwner": "You do not have permission to assign tasks on this page.",
+      "pageNotFound": "Page not found or has been deleted.",
+      "assetNotFound": "A reference file no longer exists. Please re-upload.",
+      "invalidTransition": "Task has changed status. Please reload before proceeding.",
+      "notReassignable": "Task in its current status cannot be reassigned.",
+      "notCancellable": "Task is already completed or cancelled.",
+      "notFound": "Task not found.",
+      "generic": "Could not assign task. Please try again.",
+      "loadFailed": "Could not load tasks.",
+      "approveFailed": "Could not approve the task.",
+      "revisionFailed": "Could not request a task revision.",
+      "cancelFailed": "Could not cancel the task."
+    },
+    "filters": {
+      "allStatuses": "All statuses"
+    },
+    "board": {
+      "empty": "No tasks yet.",
+      "overdue": "Overdue",
+      "deadline": "Deadline",
+      "priority": "Priority",
+      "approve": "Approve",
+      "revision": "Request revision",
+      "cancel": "Cancel",
+      "refresh": "Refresh",
+      "revisionPrompt": "Describe what the Assistant needs to revise:",
+      "cancelPrompt": "Cancellation reason (optional):"
+    },
+    "toast": {
+      "approved": "Task approved.",
+      "revisionRequested": "Revision requested.",
+      "cancelled": "Task cancelled."
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next"
+    }
+  },
+  "studio": {
+    "tasks": {
+      "title": "Tasks",
+      "composer": {
+        "title": "Assign Task",
+        "fromStudio": "From Studio — select assistant, series, chapter, page",
+        "fromWorkbench": "From Workbench — select assistant for current page",
+        "close": "Close",
+        "back": "Back",
+        "next": "Next",
+        "submit": "Assign Task",
+        "submitting": "Assigning...",
+        "selectAssistant": "Select Assistant",
+        "selectAssistantPlaceholder": "— Select assistant —",
+        "selectSeries": "Select Series",
+        "selectSeriesPlaceholder": "— Select series —",
+        "selectChapter": "Select Chapter",
+        "selectChapterPlaceholder": "— Select chapter —",
+        "selectPage": "Select page",
+        "selectPagePlaceholder": "— Select page —",
+        "selectRegion": "Select region (optional)",
+        "wholePage": "Whole page (no region)",
+        "regionSelected": "Region selected: {{id}}",
+        "regionClear": "Clear",
+        "taskType": "Task type",
+        "taskTypeEnum": {
+          "BACKGROUND": "Background",
+          "SCREENTONE": "Screentone",
+          "EFFECT_LINES": "Effect lines",
+          "INKING": "Inking",
+          "COLORING": "Coloring",
+          "LETTERING": "Lettering"
+        },
+        "deadline": "Deadline (optional)",
+        "deadlineHint": "Leave empty if no specific deadline",
+        "priority": "Priority",
+        "priorityHint": "Lower number = higher priority",
+        "attachments": {
+          "label": "Reference Files (optional)",
+          "dropzoneLabel": "Drag and drop or click to select files"
+        },
+        "steps": {
+          "aria": "Task assignment steps",
+          "context": "Context",
+          "work": "Work",
+          "confirm": "Confirm"
+        },
+        "confirm": {
+          "description": "Review the information before assigning the task.",
+          "taskType": "Task type",
+          "page": "Page",
+          "region": "Region",
+          "deadline": "Deadline",
+          "priority": "Priority",
+          "attachments": "Reference files",
+          "noDeadline": "None",
+          "noAttachments": "None",
+          "attachmentCount": "{{count}} file(s)"
+        }
+      },
+      "status": {
+        "ASSIGNED": "Assigned",
+        "IN_PROGRESS": "In progress",
+        "SUBMITTED": "Submitted",
+        "UNDER_REVIEW": "Under review",
+        "APPROVED": "Approved",
+        "REVISION_REQUESTED": "Revision requested",
+        "ON_HOLD": "On hold",
+        "CANCELLED": "Cancelled"
+      },
+      "errors": {
+        "assistantNotHired": "This assistant no longer has an active collaboration relationship.",
+        "chapterOnHold": "Chapter is on hold. Resume the chapter before assigning tasks.",
+        "notSeriesOwner": "You do not have permission to assign tasks on this page.",
+        "pageNotFound": "Page not found or has been deleted.",
+        "assetNotFound": "A reference file no longer exists. Please re-upload.",
+        "invalidTransition": "Task has changed status. Please reload before proceeding.",
+        "notReassignable": "Task in its current status cannot be reassigned.",
+        "notCancellable": "Task is already completed or cancelled.",
+        "notFound": "Task not found.",
+        "generic": "Could not assign task. Please try again."
+      },
+      "filters": {
+        "allStatuses": "All statuses"
+      },
+      "board": {
+        "empty": "No tasks yet.",
+        "overdue": "Overdue",
+        "deadline": "Deadline",
+        "priority": "Priority",
+        "approve": "Approve",
+        "revision": "Request revision",
+        "cancel": "Cancel"
+      },
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next"
+      }
+    },
+    "popup": {
+      "title": "Page {{n}} — regions",
+      "regionCount": "{{count}} regions",
+      "openVisual": "Pick visually",
+      "close": "Close",
+      "noImage": "Page has no image yet",
+      "alt": "Page {{n}}",
+      "drawHint": "Click and drag to draw a new region. Esc to cancel.",
+      "regionType": "Region type",
+      "regionTypes": {
+        "PANEL": "Panel",
+        "BACKGROUND": "Background",
+        "SPEECH_BUBBLE": "Speech bubble",
+        "SFX": "SFX",
+        "CHARACTER": "Character"
+      },
+      "mode": {
+        "view": "View",
+        "draw": "Draw"
+      },
+      "ai": {
+        "start": "AI segment",
+        "running": "Running...",
+        "apply": "Apply",
+        "discard": "Discard",
+        "status": "AI: {{status}} · {{count}} proposed · {{duration}}s"
+      },
+      "list": {
+        "title": "Region list",
+        "loading": "Loading...",
+        "empty": "No regions yet. Switch to Draw."
+      },
+      "detail": {
+        "title": "Region detail",
+        "empty": "Select a region to see details.",
+        "type": "Type",
+        "source": "Source",
+        "coords": "Coords",
+        "confidence": "Confidence: {{value}}%",
+        "confirmAi": "Confirm AI region",
+        "pickThis": "Use this region",
+        "delete": "Delete",
+        "deleteConfirm": "Delete this region? Regions with tasks will fail."
+      },
+      "region": {
+        "label": "{{type}} · {{id}}"
+      },
+      "toast": {
+        "regionCreated": "Region created",
+        "regionConfirmed": "AI region confirmed",
+        "aiApplied": "Applied {{count}} AI regions"
+      },
+      "errors": {
+        "loadFailed": "Could not load regions.",
+        "createFailed": "Could not create region.",
+        "updateFailed": "Could not update region.",
+        "deleteFailed": "Could not delete region.",
+        "aiStartFailed": "Could not start AI segment.",
+        "aiApplyFailed": "Could not apply AI proposal.",
+        "aiTimeout": "AI segment timed out, please retry."
+      }
     }
   }
 }

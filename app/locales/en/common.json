@@ -74,5 +74,6 @@
     "comingSoonBoard": "Dashboard for BOARD_MEMBER role — coming soon.",
     "comingSoonAdmin": "Dashboard for SUPER_ADMIN role — coming soon.",
     "newChapter": "New Chapter"
-  }
+  },
+  "refresh": "Refresh"
 }

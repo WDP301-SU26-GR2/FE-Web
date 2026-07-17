@@ -58,10 +58,22 @@ export default [
   ...prefix('dashboard/admin', [layout('routes/admin/_layout.tsx', [index('routes/admin/index.tsx')])]),
 
   // Publication workbench — focused work area, intentionally outside the
-  // dashboard layout (no sidebar). Renders its own header with theme +
-  // language controls and a back link to the series detail page.
-  route(
-    'publish/:seriesId/:chapterId',
-    'routes/publish/$seriesId/$chapterId.tsx'
-  )
+  // dashboard layout (no sidebar). Uses a nested route tree:
+  //   /publish/:seriesId/:chapterId           → redirect → `name`
+  //   /publish/:seriesId/:chapterId/name     → storyboard Name editor
+  //   /publish/:seriesId/:chapterId/pages    → composite page reader
+  layout('routes/publish/$seriesId/$chapterId/_layout.tsx', [
+    route(
+      'publish/:seriesId/:chapterId',
+      'routes/publish/$seriesId/$chapterId/index.tsx'
+    ),
+    route(
+      'publish/:seriesId/:chapterId/name',
+      'routes/publish/$seriesId/$chapterId/name.tsx'
+    ),
+    route(
+      'publish/:seriesId/:chapterId/pages',
+      'routes/publish/$seriesId/$chapterId/pages.tsx'
+    )
+  ])
 ] satisfies RouteConfig

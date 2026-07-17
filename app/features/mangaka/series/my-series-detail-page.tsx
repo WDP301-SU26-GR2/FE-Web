@@ -10,13 +10,17 @@ import {
   Pencil,
   ScrollText,
   Send,
+  Trash2,
+  Undo2,
+  RefreshCw,
+  MessageSquareWarning,
   UserCheck,
   Users
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { useAuth } from '~/features/auth/context/auth-context'
 import {
   SeriesResDtoOutputProposalStatus as ProposalStatusEnum,
@@ -27,16 +31,25 @@ import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
 
 import { useSeriesDetail } from './use-series-detail'
 import { useSubmitSeries } from './use-submit-series'
+import { useProposalActions } from './use-proposal-actions'
+import { useProposalRevisions } from './use-proposal-revisions'
+import { RevisionRequestsDrawer } from './components/revision-requests-drawer'
 import { useChapterList } from '~/features/mangaka/chapters/use-chapter-list'
 import { useCreateChapter } from '~/features/mangaka/chapters/use-create-chapter'
 import { SignedImage } from '~/shared/components/signed-image'
-import { ImageLightbox } from './components/image-lightbox'
+import { ImageOverflowStrip, type ImageStripItem } from './components/image-overflow-strip'
+import {
+  ImageCarouselViewer,
+  type ImageCarouselItem
+} from './components/image-carousel-viewer'
 import { SubmitSeriesDialog } from './components/submit-series-dialog'
+import { ProposalActionDialog, type ProposalActionDialogMode } from './components/proposal-action-dialog'
+import { SynopsisBlock } from './components/synopsis-block'
 import { CreateChapterDialog } from '~/features/mangaka/chapters/create-chapter-dialog'
 import { PublicationSection } from '~/features/mangaka/chapters/publication-section'
 
 /** Status values that mark the series as being in the publication phase.
- *  Per FE-API-Guide-v2.md §2.2, SERIALIZED begins serialization and the
+ *  Per FE-API-Guide-v3.md §1.2, SERIALIZED begins serialization and the
  *  later lifecycle states are owned by BE-B (B5/Flow 5) but still mean
  *  the series has entered production. We surface the Publication section
  *  for all of them so the Mangaka can keep track of chapters even when
@@ -136,6 +149,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const { series, names, isLoading, error, notFound, refresh } = useSeriesDetail(seriesId)
   const { session } = useAuth()
   const { submit, isSubmitting } = useSubmitSeries()
+  const { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName } = useProposalActions()
   const {
     chapters,
     isLoading: isChaptersLoading,
@@ -143,9 +157,11 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     refresh: refreshChapters
   } = useChapterList(seriesId)
   const { createChapter, isCreating } = useCreateChapter()
-  const [lightbox, setLightbox] = useState<{ key: string; alt: string } | null>(null)
+  const [lightbox, setLightbox] = useState<{ items: ImageCarouselItem[]; startIndex: number } | null>(null)
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
   const [createChapterOpen, setCreateChapterOpen] = useState(false)
+  const [actionDialog, setActionDialog] = useState<ProposalActionDialogMode | null>(null)
+  const [revisionDrawerOpen, setRevisionDrawerOpen] = useState(false)
 
   const seriesStatus = series?.status
   const proposal = series?.proposal ?? null
@@ -159,17 +175,33 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   // Submit is only available to the series owner while it is still DRAFT.
   // BE also enforces both rules (403 / 409), this is just a UI gate so we
   // don't render a misleading button.
-  const canSubmit =
+  const canPrepareSubmit =
     series?.status === SeriesStatusEnum.DRAFT && !!session?.user?.id && session.user.id === series.mangakaId
 
   // Edit is available to the owner while the proposal is editable per §6.1:
   // series DRAFT, OR proposal PROPOSAL_REVISION. BE also enforces (409).
+  const proposalName = useMemo(
+    () => names.find((name) => name.id === proposal?.nameId) ?? names.find((name) => name.kind === 'PROPOSAL') ?? null,
+    [names, proposal?.nameId]
+  )
+  const { revisions, refreshRevisions } = useProposalRevisions(
+    seriesId,
+    proposalName?.id
+  )
+  const canSubmit = canPrepareSubmit && !!proposalName && proposalName.pages.length > 0
+
   const canEdit =
     !!session?.user?.id &&
     session.user.id === series?.mangakaId &&
-    (series?.status === SeriesStatusEnum.DRAFT || proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION)
+    (series?.status === SeriesStatusEnum.DRAFT ||
+      proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION ||
+      proposalName?.status === 'REVISION')
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
+  const canDeleteDraft = isOwner && series?.status === SeriesStatusEnum.DRAFT
+  const canWithdraw = isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'PITCHED'].includes(series?.status ?? '')
+  const canResubmitProposal = isOwner && proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION
+  const canResubmitName = isOwner && proposalName?.status === 'REVISION'
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
   const nextChapterNumber = useMemo(() => {
     if (chapters.length === 0) return 1
@@ -221,7 +253,10 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     <div className='space-y-6'>
       {/* Top bar: back to list */}
       <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-        <Link to='/dashboard/mangaka/series' className='flex items-center gap-1 transition-colors hover:text-foreground'>
+        <Link
+          to='/dashboard/mangaka/series'
+          className='flex items-center gap-1 transition-colors hover:text-foreground'
+        >
           <ArrowLeft className='h-3.5 w-3.5' />
           <span>{t('seriesDetail.back')}</span>
         </Link>
@@ -259,7 +294,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 <h1 className='text-2xl font-bold tracking-tight'>{series.title}</h1>
                 <p className='mt-1 text-sm text-muted-foreground'>{t('seriesDetail.subtitle')}</p>
               </div>
-              <div className='flex items-center gap-2'>
+              <div className='flex flex-wrap items-center justify-end gap-2'>
                 <span
                   className={cn(
                     'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider',
@@ -270,18 +305,20 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 </span>
                 {/* Submit for review — only the owner of a DRAFT series can see this.
                     BE rejects non-owners / wrong status with 403 / 409. */}
-                {canSubmit && (
+                {canPrepareSubmit && (
                   <button
                     type='button'
+                    disabled={!canSubmit}
+                    title={!canSubmit ? t('seriesDetail.submit.missingNamePages') : undefined}
                     onClick={() => setSubmitDialogOpen(true)}
-                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 cursor-pointer'
+                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
                   >
                     <Send className='h-3.5 w-3.5' />
                     <span>{t('seriesDetail.submit.button')}</span>
                   </button>
                 )}
                 {/* Edit Proposal — only the owner can edit while DRAFT or PROPOSAL_REVISION. */}
-                {canEdit ? (
+                {canEdit && (
                   <button
                     type='button'
                     onClick={() => navigate(`/dashboard/mangaka/series/${series.id}/edit`)}
@@ -290,27 +327,79 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     <Pencil className='h-3.5 w-3.5' />
                     <span>{t('seriesDetail.editProposal.button')}</span>
                   </button>
-                ) : (
+                )}
+                {canResubmitProposal && (
                   <button
                     type='button'
-                    disabled
-                    title={t('seriesDetail.editProposalNotImplemented')}
-                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground opacity-60 cursor-not-allowed'
+                    disabled={activeAction !== null}
+                    onClick={async () => {
+                      if (await resubmitProposal(series.id)) {
+                        refresh()
+                        refreshRevisions()
+                      }
+                    }}
+                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
                   >
-                    <Pencil className='h-3.5 w-3.5' />
-                    <span>{t('seriesDetail.editProposal.button')}</span>
+                    <RefreshCw className={cn('h-3.5 w-3.5', activeAction === 'resubmitProposal' && 'animate-spin')} />
+                    {t('seriesDetail.actions.resubmitProposal.button')}
+                  </button>
+                )}
+                {canResubmitName && proposalName && (
+                  <button
+                    type='button'
+                    disabled={activeAction !== null}
+                    onClick={async () => {
+                      if (await resubmitName(series.id, proposalName.id)) {
+                        refresh()
+                        refreshRevisions()
+                      }
+                    }}
+                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+                  >
+                    <RefreshCw className={cn('h-3.5 w-3.5', activeAction === 'resubmitName' && 'animate-spin')} />
+                    {t('seriesDetail.actions.resubmitName.button')}
+                  </button>
+                )}
+                {isOwner && revisions.length > 0 && (
+                  <button
+                    type='button'
+                    onClick={() => setRevisionDrawerOpen(true)}
+                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted cursor-pointer'
+                  >
+                    <MessageSquareWarning className='h-3.5 w-3.5 text-primary' />
+                    <span>{t('seriesDetail.revisions.openDrawer')}</span>
+                    {(() => {
+                      const unresolved = revisions.reduce((n, r) => (r.isResolved ? n : n + 1), 0)
+                      return unresolved > 0 ? (
+                        <span className='inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground'>
+                          {unresolved}
+                        </span>
+                      ) : null
+                    })()}
+                  </button>
+                )}
+                {canWithdraw && (
+                  <button
+                    type='button'
+                    onClick={() => setActionDialog('withdraw')}
+                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted'
+                  >
+                    <Undo2 className='h-3.5 w-3.5' />
+                    {t('seriesDetail.actions.withdraw.button')}
+                  </button>
+                )}
+                {canDeleteDraft && (
+                  <button
+                    type='button'
+                    onClick={() => setActionDialog('delete')}
+                    className='flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20'
+                  >
+                    <Trash2 className='h-3.5 w-3.5' />
+                    {t('seriesDetail.actions.delete.button')}
                   </button>
                 )}
               </div>
             </div>
-
-            {/* Status reason */}
-            {series.statusReason && (
-              <div className='rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700'>
-                <strong className='font-semibold'>{t('seriesDetail.statusReason')}: </strong>
-                {series.statusReason}
-              </div>
-            )}
 
             {/* Genre chips */}
             {series.genres.length > 0 && (
@@ -349,7 +438,13 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
               <MetaItem
                 icon={<UserCheck className='h-3.5 w-3.5' />}
                 label={t('seriesDetail.editor')}
-                value={series.editorId ? t('seriesDetail.editorAssigned') : t('seriesDetail.inReviewQueue')}
+                value={
+                  series.editor?.displayName
+                    ? series.editor.displayName
+                    : series.editorId
+                      ? t('seriesDetail.editorAssigned')
+                      : t('seriesDetail.inReviewQueue')
+                }
               />
               <MetaItem
                 icon={<Calendar className='h-3.5 w-3.5' />}
@@ -396,7 +491,11 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         }
         defaultCollapsed={isLegacyCollapsed}
       >
-        <ProposalBody proposal={proposal} locale={currentLocale} />
+        <ProposalBody
+          proposal={proposal}
+          locale={currentLocale}
+          onOpenStrip={(items, startIndex) => setLightbox({ items, startIndex })}
+        />
       </CollapsibleCard>
 
       {/* NAMES section */}
@@ -410,14 +509,16 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         }
         defaultCollapsed={isLegacyCollapsed}
       >
-        <NamesBody names={sortedNames} locale={currentLocale} onOpen={(key, alt) => setLightbox({ key, alt })} />
+        <NamesBody
+          names={sortedNames}
+          locale={currentLocale}
+          onOpen={(items, startIndex) => setLightbox({ items, startIndex })}
+        />
       </CollapsibleCard>
 
       {/* PUBLICATION section — visible once the series enters the production phase.
-          Per FE-API-Guide-v2.md §6.2 / §7, the Mangaka produces chapters only
-          after the series has been serialized (Board approved). BE auto-matches
-          the latest APPROVED Name server-side, so FE no longer gates the
-          "Create chapter" affordance on hasApprovedName. */}
+          Per FE-API-Guide-v3.md §5, chapter-first creates the chapter slot before
+          its chapter-scoped Name, so no proposal-Name gate belongs here. */}
       {isPublicationPhase && (
         <PublicationSection
           isOwner={isOwner}
@@ -431,9 +532,14 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         />
       )}
 
-      {/* Lightbox */}
+      {/* Image carousel viewer — shared by proposal character designs + name pages */}
       {lightbox && (
-        <ImageLightbox r2Key={lightbox.key} alt={lightbox.alt} open={!!lightbox} onClose={() => setLightbox(null)} />
+        <ImageCarouselViewer
+          items={lightbox.items}
+          startIndex={lightbox.startIndex}
+          open
+          onClose={() => setLightbox(null)}
+        />
       )}
 
       {/* Submit-for-review confirmation */}
@@ -455,8 +561,30 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         }}
       />
 
-      {/* Create-chapter confirmation (publication phase). BE auto-matches the
-          latest APPROVED Name for the series, so FE does not send a nameId. */}
+      {actionDialog && (
+        <ProposalActionDialog
+          mode={actionDialog}
+          open
+          seriesTitle={series.title}
+          isSubmitting={activeAction === actionDialog}
+          onCancel={() => {
+            if (!activeAction) setActionDialog(null)
+          }}
+          onConfirm={async (reason) => {
+            const succeeded =
+              actionDialog === 'delete' ? await deleteDraft(series.id) : await withdraw(series.id, reason)
+            if (!succeeded) return
+            setActionDialog(null)
+            if (actionDialog === 'delete') {
+              navigate('/dashboard/mangaka/series')
+            } else {
+              refresh()
+            }
+          }}
+        />
+      )}
+
+      {/* Create-chapter confirmation (publication phase, chapter-first body has no nameId). */}
       <CreateChapterDialog
         seriesId={series.id}
         nextChapterNumber={nextChapterNumber}
@@ -483,6 +611,16 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
           }
           return false
         }}
+      />
+
+      {/* Revision requests drawer — surfaces every Editor round for the
+          current series (PROPOSAL + proposal-Name), paginated 4/page. The
+          owner can resolve any round where they are the recipient. */}
+      <RevisionRequestsDrawer
+        open={revisionDrawerOpen}
+        onClose={() => setRevisionDrawerOpen(false)}
+        seriesId={series.id}
+        nameId={proposalName?.id ?? null}
       />
     </div>
   )
@@ -549,9 +687,11 @@ function CollapsibleCard({ title, icon, rightSlot, defaultCollapsed = false, chi
 type ProposalBodyProps = {
   proposal: SeriesResDtoOutput['proposal']
   locale: string
+  /** Open the carousel viewer at a given character-design index. */
+  onOpenStrip: (items: ImageCarouselItem[], startIndex: number) => void
 }
 
-function ProposalBody({ proposal, locale }: ProposalBodyProps) {
+function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
   const { t } = useTranslation('mangaka')
 
   if (!proposal) {
@@ -563,39 +703,31 @@ function ProposalBody({ proposal, locale }: ProposalBodyProps) {
     )
   }
 
+  // Build the carousel entry list ONCE — never inline-mapped inside JSX so the
+  // children identity stays stable across renders (matters when the strip's
+  // ResizeObserver effect fires).
+  const characterItems: ImageCarouselItem[] = proposal.characterDesigns.map((key, i) => ({
+    id: `${key}-${i}`,
+    r2Key: key,
+    alt: t('seriesDetail.proposal.characterDesignAlt', { n: i + 1 })
+  }))
+
+  const stripItems: ImageStripItem[] = characterItems.map((c) => ({
+    id: c.id,
+    r2Key: c.r2Key,
+    alt: c.alt
+  }))
+
   return (
     <div className='space-y-6 p-5'>
-      {/* Synopsis */}
-      {proposal.synopsis && (
-        <div>
-          <h3 className='mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-            {t('seriesDetail.proposal.synopsis')}
-          </h3>
-          <p className='whitespace-pre-wrap text-sm leading-relaxed text-foreground'>{proposal.synopsis}</p>
-        </div>
-      )}
+      {/* Synopsis — long-form body collapses with a "Read more" toggle and
+          an "Open reader" link that launches SynopsisReader for comfortable
+          reading of editor-style prose. */}
+      {proposal.synopsis && <SynopsisBlock text={proposal.synopsis} />}
 
-      {/* Character designs */}
-      {proposal.characterDesigns.length > 0 && (
-        <div>
-          <h3 className='mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-            {t('seriesDetail.proposal.characterDesigns')} · {proposal.characterDesigns.length}
-          </h3>
-          <div className='flex gap-3 overflow-x-auto pb-2'>
-            {proposal.characterDesigns.map((key, i) => (
-              <SignedImage
-                key={`${key}-${i}`}
-                r2Key={key}
-                alt={t('seriesDetail.proposal.characterDesignAlt', { n: i + 1 })}
-                aspectClassName='aspect-square'
-                className='h-32 w-32 shrink-0'
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Estimated length + createdAt — proposal-specific fields */}
+      {/* Estimated length + createdAt — proposal-specific fields. Rendered
+          BEFORE the image-heavy character designs so the text metadata
+          reads first and the visual blocks stay grouped at the bottom. */}
       <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
         <MetaItem
           icon={<ScrollText className='h-3.5 w-3.5' />}
@@ -612,6 +744,21 @@ function ProposalBody({ proposal, locale }: ProposalBodyProps) {
           value={formatDateTime(proposal.createdAt, locale)}
         />
       </div>
+
+      {/* Character designs — image strip rendered LAST so all visuals (this
+          plus the Name strip that follows) stay grouped together at the
+          bottom of the proposal card. */}
+      {characterItems.length > 0 && (
+        <div>
+          <h3 className='mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+            {t('seriesDetail.proposal.characterDesigns')} · {characterItems.length}
+          </h3>
+          <ImageOverflowStrip
+            items={stripItems}
+            onOpen={(idx) => onOpenStrip(characterItems, idx)}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -619,11 +766,17 @@ function ProposalBody({ proposal, locale }: ProposalBodyProps) {
 type NamesBodyProps = {
   names: NameListResDtoOutputItemsItem[]
   locale: string
-  onOpen: (r2Key: string, alt: string) => void
+  /** Open the carousel viewer for a given Name's pages at a given page index. */
+  onOpen: (items: ImageCarouselItem[], startIndex: number) => void
 }
 
 function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
   const { t } = useTranslation('mangaka')
+
+  // Split names: the "sample" (proposal) name gets its own full-width row so
+  // its image strip isn't squeezed into a `grid-cols-3` card.
+  const sampleName = names.find((n) => n.chapterNumber === null) ?? null
+  const chapterNames = names.filter((n) => n.chapterNumber !== null)
 
   if (names.length === 0) {
     return (
@@ -635,49 +788,181 @@ function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
   }
 
   return (
-    <div className='grid grid-cols-2 gap-3 p-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
-      {names.map((name) => {
-        const firstPage = name.pages[0]
-        const meta = NAME_STATUS_META[name.status] ?? NAME_STATUS_META.DRAFT
-        const isSample = name.chapterNumber === null
-        const label = isSample
-          ? t('seriesDetail.names.sampleLabel')
-          : t('seriesDetail.names.chapterLabel', { n: name.chapterNumber as number })
-        return (
-          <button
-            key={name.id}
-            type='button'
-            onClick={() => firstPage && onOpen(firstPage.fileUrl, t('seriesDetail.names.alt', { label }))}
-            className='group flex flex-col gap-2 rounded-lg border border-border bg-card p-2 text-left transition-all hover:border-primary hover:shadow-sm cursor-pointer'
-          >
-            <SignedImage
-              r2Key={firstPage?.fileUrl ?? null}
-              alt={t('seriesDetail.names.alt', { label })}
-              aspectClassName='aspect-[3/4]'
-              className='w-full'
-            />
-            <div className='space-y-1 px-1'>
-              <div className='flex items-center justify-between text-[10px] text-muted-foreground'>
-                <span className='truncate font-medium'>{label}</span>
-                <span>{t('seriesDetail.names.versionLabel', { n: name.version })}</span>
-              </div>
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider',
-                  meta.className
-                )}
+    <div className='flex flex-col gap-6 p-5'>
+      {/* Sample / proposal name — full-width horizontal strip */}
+      {sampleName && (
+        <SampleNameRow
+          name={sampleName}
+          locale={locale}
+          onOpen={(items, idx) => onOpen(items, idx)}
+        />
+      )}
+
+      {/* Chapter names — grid cards */}
+      {chapterNames.length > 0 && (
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          {chapterNames.map((name) => {
+            const meta = NAME_STATUS_META[name.status] ?? NAME_STATUS_META.DRAFT
+            const label = t('seriesDetail.names.chapterLabel', { n: name.chapterNumber as number })
+
+            const carouselItems: ImageCarouselItem[] = name.pages.map((page) => ({
+              id: `${name.id}-${page.pageNumber}`,
+              r2Key: page.fileUrl,
+              alt: t('seriesDetail.names.alt', {
+                label: `${label} #${page.pageNumber}`
+              })
+            }))
+
+            return (
+              <article
+                key={name.id}
+                className='flex flex-col gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary'
               >
-                {t(`seriesDetail.nameStatus.${name.status}`, name.status)}
-              </span>
-              {name.submittedAt && (
-                <div className='truncate text-[10px] text-muted-foreground'>
-                  {formatDateTime(name.submittedAt, locale)}
+                {/* Header row: label + version + status pill */}
+                <div className='flex items-center justify-between gap-2'>
+                  <div className='min-w-0 flex-1'>
+                    <p className='truncate text-sm font-semibold text-foreground'>{label}</p>
+                    <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                      {t('seriesDetail.names.versionLabel', { n: name.version })}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                      meta.className
+                    )}
+                  >
+                    {t(`seriesDetail.nameStatus.${name.status}`, name.status)}
+                  </span>
                 </div>
-              )}
-            </div>
-          </button>
-        )
-      })}
+
+                {/* Page grid — tiles match the edit wizard (aspect 3/4), opens carousel on click */}
+                {carouselItems.length > 0 && (
+                  <NamePagesGrid items={carouselItems} onOpen={(idx) => onOpen(carouselItems, idx)} />
+                )}
+
+                {/* Footer timestamp */}
+                {name.submittedAt && (
+                  <p className='text-[10px] text-muted-foreground'>
+                    {formatDateTime(name.submittedAt, locale)}
+                  </p>
+                )}
+              </article>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Full-width row for the proposal/sample name — renders a single horizontal
+ * image strip with a "+N" chip when there are too many pages to fit in one
+ * row. Clicking any tile (or the chip) opens the carousel viewer.
+ */
+function SampleNameRow({
+  name,
+  locale,
+  onOpen
+}: {
+  name: NameListResDtoOutputItemsItem
+  locale: string
+  onOpen: (items: ImageCarouselItem[], startIndex: number) => void
+}) {
+  const { t } = useTranslation('mangaka')
+  const meta = NAME_STATUS_META[name.status] ?? NAME_STATUS_META.DRAFT
+  const label = t('seriesDetail.names.sampleLabel')
+
+  const carouselItems: ImageCarouselItem[] = name.pages.map((page) => ({
+    id: `${name.id}-${page.pageNumber}`,
+    r2Key: page.fileUrl,
+    alt: t('seriesDetail.names.alt', {
+      label: `${label} #${page.pageNumber}`
+    })
+  }))
+  const stripItems: ImageStripItem[] = carouselItems.map((c) => ({
+    id: c.id,
+    r2Key: c.r2Key,
+    alt: c.alt
+  }))
+
+  return (
+    <div className='space-y-3'>
+      {/* Header row */}
+      <div className='flex items-center justify-between gap-3'>
+        <div className='min-w-0 flex-1'>
+          <p className='truncate text-sm font-semibold text-foreground'>{label}</p>
+          <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+            {t('seriesDetail.names.versionLabel', { n: name.version })} · {name.pages.length}{' '}
+            {t('seriesDetail.names.pagesCount', { count: name.pages.length })}
+          </p>
+        </div>
+        <span
+          className={cn(
+            'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+            meta.className
+          )}
+        >
+          {t(`seriesDetail.nameStatus.${name.status}`, name.status)}
+        </span>
+      </div>
+
+      {/* Horizontal strip — single row, "+N" chip on overflow */}
+      {stripItems.length > 0 && (
+        <ImageOverflowStrip
+          items={stripItems}
+          onOpen={(idx) => onOpen(carouselItems, idx)}
+        />
+      )}
+
+      {/* Footer timestamp */}
+      {name.submittedAt && (
+        <p className='text-[10px] text-muted-foreground'>{formatDateTime(name.submittedAt, locale)}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Image grid tiles (used in detail view, matching the edit wizard sizing) ─
+
+/**
+ * Grid of square-ish tiles for character designs. Matches the `aspect-[3/4]`
+ * tile style of the edit wizard's `CharacterDesignStep` so the same images
+ * feel consistent across both pages.
+ */
+
+function NamePagesGrid({
+  items,
+  onOpen
+}: {
+  items: ImageCarouselItem[]
+  onOpen: (index: number) => void
+}) {
+  const { t } = useTranslation('mangaka')
+  return (
+    <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
+      {items.map((item, idx) => (
+        <button
+          key={item.id}
+          type='button'
+          onClick={() => onOpen(idx)}
+          aria-label={item.alt}
+          className='group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-xl border border-border bg-muted shadow-sm transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+        >
+          <SignedImage
+            r2Key={item.r2Key}
+            alt={item.alt}
+            aspectClassName='aspect-[3/4]'
+            className='h-full w-full object-cover'
+          />
+          <div className='absolute left-2 top-2 flex h-7 min-w-[2rem] items-center justify-center rounded-md bg-foreground/80 px-2 text-xs font-bold text-background'>
+            {String(idx + 1).padStart(2, '0')}
+          </div>
+        </button>
+      ))}
+      {/* touch the key so unused-i18n doesn't drop it */}
+      <span className='hidden'>{t('seriesDetail.names.title')}</span>
     </div>
   )
 }

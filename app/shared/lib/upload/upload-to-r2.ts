@@ -1,31 +1,63 @@
 import { storageControllerSignUpload } from '~/api/operations/uploads/uploads'
 import type { SignUploadBodyDtoAssetType, SignUploadResDtoOutput } from '~/api/model/uploads'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 /**
- * Upload a single File to R2 via the presigned PUT flow (§5 of FE-API-Guide-v2.md).
+ * Upload helpers — presigned PUT to Cloudflare R2.
+ *
+ * Two flavors:
+ *   - `uploadToR2(file, assetType?)` → `string` (R2 `key`)
+ *       For assets that only need to be referenced by key
+ *       (cover image, avatar, character design, manuscript page, ...).
+ *
+ *   - `uploadAssetToR2(file, assetType?)` → `{ key, assetId }`
+ *       For assets that need to be linked to a domain entity via `assetId`
+ *       (e.g. `CreateTaskInput.assetIds[]`). The backend's `/uploads/sign`
+ *       always returns both `key` and `assetId`, so this is the same
+ *       presigned-PUT flow — only the return shape differs.
+ *
+ * Both wrappers have a `*WithMessage` variant that swallows errors into a
+ * `{ error }` object suitable for form UIs that prefer non-throwing flow.
  *
  * Flow:
- *   1. POST /uploads/sign → { uploadUrl, key, requiredHeaders, ... }
- *   2. PUT file to uploadUrl with requiredHeaders
- *   3. Return the persisted R2 `key` to be stored in DB via subsequent API calls.
- *
- * Throws the original `FetchError` from step 1 if signing fails, and a plain
- * Error if the R2 PUT itself rejects (e.g. CORS, 403, network).
+ *   1. POST /uploads/sign → { uploadUrl, key, requiredHeaders, assetId }
+ *   2. PUT file bytes to uploadUrl with requiredHeaders
+ *   3. Return persisted identifiers.
  */
-export async function uploadToR2(file: File, assetType?: SignUploadBodyDtoAssetType): Promise<string> {
-  // Step 1: ask BE for a presigned URL.
-  // customFetch throws on non-2xx, so the success branch is the only one we
-  // see at runtime; cast through unknown to keep the call site tight.
+
+const ALLOWED_CONTENT_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/pdf'
+] as const
+
+type ContentType = (typeof ALLOWED_CONTENT_TYPES)[number]
+
+function narrowContentType(file: File): ContentType {
+  if ((ALLOWED_CONTENT_TYPES as readonly string[]).includes(file.type)) {
+    return file.type as ContentType
+  }
+  throw new Error(`Unsupported content type: ${file.type}`)
+}
+
+export interface UploadedAsset {
+  key: string
+  assetId: string
+}
+
+async function signAndPut(
+  file: File,
+  assetType: SignUploadBodyDtoAssetType | undefined
+): Promise<UploadedAsset> {
   const response = await storageControllerSignUpload({
     fileName: file.name,
-    contentType: file.type as 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf',
+    contentType: narrowContentType(file),
     contentLength: file.size,
     ...(assetType ? { assetType } : {})
   })
   const signData = response.data as SignUploadResDtoOutput
 
-  // Step 2: PUT bytes straight to R2.
   const putRes = await fetch(signData.uploadUrl, {
     method: 'PUT',
     headers: signData.requiredHeaders,
@@ -35,12 +67,28 @@ export async function uploadToR2(file: File, assetType?: SignUploadBodyDtoAssetT
     throw new Error(`Upload to R2 failed: ${putRes.status} ${putRes.statusText}`)
   }
 
-  return signData.key
+  return { key: signData.key, assetId: signData.assetId }
+}
+
+// ─── key-only variants ────────────────────────────────────────────────────
+
+/**
+ * Upload and return only the persisted R2 `key`.
+ *
+ * Throws the original `FetchError` if signing fails, or a plain Error if the
+ * R2 PUT itself rejects.
+ */
+export async function uploadToR2(
+  file: File,
+  assetType?: SignUploadBodyDtoAssetType
+): Promise<string> {
+  const { key } = await signAndPut(file, assetType)
+  return key
 }
 
 /**
  * Same as {@link uploadToR2} but translates any thrown error into a readable
- * string for surfacing in the UI.
+ * string for surfacing in the UI without `try/catch`.
  */
 export async function uploadToR2WithMessage(
   file: File,
@@ -52,5 +100,24 @@ export async function uploadToR2WithMessage(
     return { key }
   } catch (err) {
     return { error: extractApiErrorMessage(err, fallback) }
+  }
+}
+
+// ─── key + assetId variants ───────────────────────────────────────────────
+
+/**
+ * Upload and return both the R2 `key` and the backend `assetId`.
+ *
+ * Use when the downstream API expects an `assetIds[]` list
+ * (e.g. `POST /tasks` with `CreateTaskInput.assetIds`).
+ */
+export async function uploadAssetToR2(
+  file: File,
+  assetType?: SignUploadBodyDtoAssetType
+): Promise<UploadedAsset | { error: string }> {
+  try {
+    return await signAndPut(file, assetType)
+  } catch (err) {
+    return { error: extractApiErrorMessage(err, 'Upload failed') }
   }
 }

@@ -27,7 +27,7 @@ export type VoteContextResDtoOutputSeriesItem = {
   id: string;
   title: string;
   /**
-   * Object key R2 — Guest chưa xem được ảnh (public sign chưa có)
+   * Object key R2 — xem catalog public /public/series để lấy signed URL
    * @nullable
    */
   coverImage: string | null;

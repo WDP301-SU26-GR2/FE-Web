@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ClipboardList, Filter, RefreshCw } from 'lucide-react'
 
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { useAssistantTasks } from './use-assistant-tasks'

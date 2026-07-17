@@ -20,10 +20,15 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { SurveyControllerGetVoteResultsPublicationType } from './surveyControllerGetVoteResultsPublicationType';
 
 export type SurveyControllerGetVoteResultsParams = {
 /**
  * @minLength 1
  */
 surveyPeriodId: string;
+/**
+ * Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR
+ */
+publicationType?: SurveyControllerGetVoteResultsPublicationType;
 };

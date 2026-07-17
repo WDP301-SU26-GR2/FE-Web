@@ -1,12 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { ChevronLeft, ChevronRight, Filter, Users, Briefcase } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, Users, Briefcase, Plus } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { StudioControllerListAssignmentsStatus } from '~/api/model/studio/studioControllerListAssignmentsStatus'
 import { AssignmentCard } from '~/features/mangaka/assistants/components/assignment-card'
+import { AssignTaskDialog } from '~/features/mangaka/assistants/components/assign-task-dialog'
 import { useMyStudioAssignments } from './use-my-studio-assignments'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { TaskBoard } from '~/features/mangaka/assistants/components/task-board'
+import { useMangakaTasks } from '~/features/mangaka/assistants/use-mangaka-tasks'
 
 const STATUS_FILTERS: ReadonlyArray<StudioControllerListAssignmentsStatus> = ['ACTIVE', 'COMPLETED', 'TERMINATED']
 
@@ -28,7 +33,11 @@ export function MyStudioPage() {
   const { t } = useTranslation('mangaka')
   const navigate = useNavigate()
 
-  const { items, total, page, perPage, isLoading, error, status, setStatus, setPage, refresh } = useMyStudioAssignments()
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false)
+
+  const { items, total, page, perPage, isLoading, error, status, setStatus, setPage, refresh } =
+    useMyStudioAssignments()
+  const tasks = useMangakaTasks()
 
   const totalPages = Math.max(1, Math.ceil(total / perPage))
   const from = total === 0 ? 0 : (page - 1) * perPage + 1
@@ -45,14 +54,24 @@ export function MyStudioPage() {
           </div>
           <p className='mt-1 text-sm text-muted-foreground'>{t('myStudio.subtitle')}</p>
         </div>
-        <button
-          type='button'
-          onClick={() => navigate('/dashboard/mangaka/assistants')}
-          className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted cursor-pointer'
-        >
-          <Users className='h-3.5 w-3.5' />
-          <span>{t('myStudio.empty.goToDirectory')}</span>
-        </button>
+        <div className='flex items-center gap-2'>
+          <button
+            type='button'
+            onClick={() => setTaskDialogOpen(true)}
+            className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 cursor-pointer'
+          >
+            <Plus className='h-3.5 w-3.5' />
+            <span>{t('studio.tasks.composer.title')}</span>
+          </button>
+          <button
+            type='button'
+            onClick={() => navigate('/dashboard/mangaka/assistants')}
+            className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted cursor-pointer'
+          >
+            <Users className='h-3.5 w-3.5' />
+            <span>{t('myStudio.empty.goToDirectory')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Status filters */}
@@ -172,6 +191,54 @@ export function MyStudioPage() {
           </>
         )}
       </div>
+
+      <section className='rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5'>
+        <h2 className='mb-4 text-sm font-bold uppercase tracking-wider text-foreground'>{t('studio.tasks.title')}</h2>
+        <TaskBoard
+          tasks={tasks.tasks}
+          isLoading={tasks.isLoading}
+          error={tasks.error}
+          onRefresh={tasks.refresh}
+          onApprove={(taskId) => {
+            void tasks.approveTask(taskId).then((result) => {
+              if (result.success) toast.success(t('tasks.toast.approved'))
+              else toast.error(result.error ?? t('tasks.errors.approveFailed'))
+            })
+          }}
+          onRequestRevision={(taskId) => {
+            const note = window.prompt(t('tasks.board.revisionPrompt'))?.trim()
+            if (!note) return
+            void tasks.requestRevision(taskId, note).then((result) => {
+              if (result.success) toast.success(t('tasks.toast.revisionRequested'))
+              else toast.error(result.error ?? t('tasks.errors.revisionFailed'))
+            })
+          }}
+          onCancel={(taskId) => {
+            const reason = window.prompt(t('tasks.board.cancelPrompt'))?.trim()
+            if (reason === undefined) return
+            void tasks.cancelTask(taskId, reason || undefined).then((result) => {
+              if (result.success) toast.success(t('tasks.toast.cancelled'))
+              else toast.error(result.error ?? t('tasks.errors.cancelFailed'))
+            })
+          }}
+          filters={tasks.filters}
+          onFiltersChange={tasks.setFilters}
+          page={tasks.page}
+          totalPages={Math.max(1, Math.ceil(tasks.total / tasks.perPage))}
+          onPageChange={tasks.setPage}
+        />
+      </section>
+
+      {/* Task Assignment Dialog */}
+      <AssignTaskDialog
+        open={taskDialogOpen}
+        openFrom='studio'
+        onClose={() => setTaskDialogOpen(false)}
+        onSuccess={() => {
+          refresh()
+          tasks.refresh()
+        }}
+      />
     </div>
   )
 }

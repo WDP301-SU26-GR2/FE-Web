@@ -26,6 +26,7 @@ export interface BoardConfigResDtoOutput {
   /** @nullable */
   updatedBy?: string | null;
   boardTotalMembers: number;
+  /** Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu */
   quorumMin: number;
   approveMajorityRatio: number;
   isDefault?: boolean;

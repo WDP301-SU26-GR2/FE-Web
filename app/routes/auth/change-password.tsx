@@ -5,7 +5,7 @@ import { Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-reac
 import { toast } from 'sonner'
 
 import { authControllerChangePassword } from '~/api/operations/auth/auth'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { cn } from '~/shared/lib/cn'
 import { removeStorage } from '~/shared/lib/storage'

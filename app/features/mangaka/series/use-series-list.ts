@@ -21,8 +21,9 @@ type UseSeriesListResult = {
  * Paginated fetch for `GET /series`. Page size is fixed at 4 (per UX spec).
  *
  * NOTE on `coverImage`: the API returns an R2 object key, not a displayable URL.
- * Display of actual cover images is intentionally out of scope here — the page
- * renders initials/gradient placeholders. Wire `/uploads/sign-download` later.
+ * The list page (`my-series-page`) renders each cover through `<SignedImage>`,
+ * which calls `POST /uploads/sign-download` (per FE-API-Guide-v3 §14) to resolve
+ * the key into a presigned GET URL on demand.
  */
 export function useSeriesList(): UseSeriesListResult {
   const { t } = useTranslation('common')

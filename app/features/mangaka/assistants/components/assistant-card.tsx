@@ -174,7 +174,9 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
             variant='primary'
             size='sm'
             onClick={() => onInvite(assistant)}
-            aria-label={t('assistantDirectory.card.inviteAriaLabel', { name: assistant.displayName ?? assistant.userId })}
+            aria-label={t('assistantDirectory.card.inviteAriaLabel', {
+              name: assistant.displayName ?? assistant.userId
+            })}
           >
             <UserPlus className='h-3.5 w-3.5' />
             {t('assistantDirectory.card.invite')}

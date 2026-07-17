@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { chapterControllerCreate } from '~/api/operations/chapters/chapters'
 import type { ChapterResDtoOutput } from '~/api/model/chapters'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export type CreateChapterInput = {
   seriesId: string
@@ -22,9 +22,9 @@ type UseCreateChapterResult = {
  * Hook for the Mangaka "Create new chapter" action (publication phase).
  *
  * Calls POST /chapters (orval-generated `chapterControllerCreate`).
- * BE auto-matches the latest APPROVED Name for the series to seed the
- * Manuscript (DRAFT) + Schedule, so FE only sends seriesId + chapterNumber
- * + optional title. On success surfaces a translated success toast and
+ * Chapter-first creates the Manuscript (DRAFT) + Schedule before its Name,
+ * so FE only sends seriesId + chapterNumber + optional title. On success
+ * surfaces a translated success toast and
  * returns the new Chapter. On failure surfaces a translated error toast
  * (BE message preferred) and returns null.
  */

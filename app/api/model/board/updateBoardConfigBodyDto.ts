@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 
 export interface UpdateBoardConfigBodyDto {
   boardTotalMembers: number;
+  /** Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu */
   quorumMin: number;
   approveMajorityRatio: number;
   updatedBy: string;

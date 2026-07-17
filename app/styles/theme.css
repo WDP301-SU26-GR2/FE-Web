@@ -35,6 +35,14 @@
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
 
+  /* Status tones — semantic tokens for info / success / warning */
+  --color-info: #0ea5e9;
+  --color-info-foreground: #ffffff;
+  --color-success: #16a34a;
+  --color-success-foreground: #ffffff;
+  --color-warning: #d97706;
+  --color-warning-foreground: #ffffff;
+
   /* Radius tokens — đổi 1 chỗ, áp cho mọi component qua rounded-* */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
@@ -68,4 +76,12 @@
 
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
+
+  /* Status tones — semantic tokens for info / success / warning */
+  --color-info: #38bdf8;
+  --color-info-foreground: #0b1220;
+  --color-success: #4ade80;
+  --color-success-foreground: #0b1220;
+  --color-warning: #fbbf24;
+  --color-warning-foreground: #0b1220;
 }

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { chapterNameControllerResubmit } from '~/api/operations/names/names'
 import type { NameResDtoOutput } from '~/api/model/names'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseResubmitNameResult = {
   resubmit: (input: { chapterId: string; nameId: string }) => Promise<NameResDtoOutput | null>

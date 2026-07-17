@@ -24,6 +24,12 @@ import type { UsersControllerListAssistantsSpecialization } from './usersControl
 
 export type UsersControllerListAssistantsParams = {
 /**
+ * Tìm theo tên: khớp User.name hoặc User.displayName (không phân biệt hoa thường)
+ * @minLength 1
+ * @maxLength 100
+ */
+q?: string;
+/**
  * Assistant specialization/task type. Values: BACKGROUND, SCREENTONE, EFFECT_LINES, INKING, COLORING, LETTERING
  */
 specialization?: UsersControllerListAssistantsSpecialization;

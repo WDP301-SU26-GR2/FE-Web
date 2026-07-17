@@ -11,7 +11,7 @@ import type { StudioControllerListInvitesParams } from '~/api/model/studio/studi
 import type { StudioControllerListInvitesStatus } from '~/api/model/studio/studioControllerListInvitesStatus'
 import type { InviteListResDtoOutputItemsItem } from '~/api/model/studio'
 import { isFetchError } from '~/api/mutator/custom-fetch'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export const INVITES_PAGE_SIZE = 8
 

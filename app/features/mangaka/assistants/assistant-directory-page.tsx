@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Filter, Search, Users } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import type { AssistantDirectoryListResDtoOutputItemsItemSpecializationsItem } from '~/api/model/users'
 import { AssistantCard } from './components/assistant-card'

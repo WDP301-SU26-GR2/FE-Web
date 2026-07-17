@@ -11,7 +11,7 @@ import type { NotificationControllerListParams } from '~/api/model/notifications
 import type { NotificationControllerListIsRead } from '~/api/model/notifications/notificationControllerListIsRead'
 import type { NotificationListResDtoOutputItemsItem } from '~/api/model/notifications'
 import { isFetchError } from '~/api/mutator/custom-fetch'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export const NOTIFICATION_PAGE_SIZE = 12
 

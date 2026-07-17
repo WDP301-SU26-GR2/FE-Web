@@ -160,8 +160,6 @@
     "actionsMenu": "Thao tác với series",
     "previousPage": "Trang trước",
     "nextPage": "Trang sau",
-    "editNotImplemented": "Sửa: chưa được hỗ trợ",
-    "deleteNotImplemented": "Xoá: chưa được hỗ trợ",
     "stats": {
       "scopeNote": "Số liệu dựa trên trang hiện tại, không phải toàn bộ series."
     },
@@ -197,8 +195,46 @@
     "subtitle": "Xem thông tin proposal và các trang Name mẫu",
     "back": "Về My Series",
     "loading": "Đang tải...",
-    "editProposal": "Sửa Proposal",
-    "statusReason": "Lý do",
+    "editProposal": {
+      "button": "Sửa Proposal",
+      "title": "Sửa Proposal",
+      "subtitle": "Cập nhật các trường của proposal. Giữ nguyên trường nào thì trường đó không đổi.",
+      "notEditableTitle": "Không thể sửa proposal",
+      "notEditableDescription": "Chỉ sửa được proposal khi series đang ở DRAFT hoặc khi proposal đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
+      "sectionBasic": "Thông tin cơ bản",
+      "sectionSynopsis": "Tóm tắt cốt truyện",
+      "sectionCharacters": "Thiết kế nhân vật",
+      "sectionName": "Các trang Name mẫu",
+      "existingNamePages": "Các trang Name hiện tại",
+      "removeNamePage": "Xoá trang Name {{n}}",
+      "restoreNamePage": "Khôi phục trang Name {{n}}",
+      "newCover": "Đã chọn ảnh bìa mới",
+      "keepCover": "Giữ ảnh bìa hiện tại",
+      "removeCover": "Xoá ảnh bìa",
+      "noChanges": "Chưa có thay đổi nào để lưu.",
+      "saveChanges": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "removeExistingCharacter": "Xoá ảnh thiết kế nhân vật này",
+      "removeExistingCharacterConfirm": "Xoá ảnh thiết kế nhân vật này? Ảnh sẽ bị xoá khi bạn lưu.",
+      "markForRemoval": "Đã đánh dấu xoá",
+      "loading": "Đang tải proposal...",
+      "loadFailed": "Không thể tải proposal.",
+      "retry": "Thử lại",
+      "success": "Đã cập nhật proposal.",
+      "nameSuccess": "Đã cập nhật các trang Name mẫu.",
+      "nameErrorGeneric": "Không thể cập nhật Name mẫu. Vui lòng thử lại.",
+      "nameMissing": "Không tìm thấy Name mẫu của proposal. Hãy tải lại series rồi thử lại.",
+      "nameConflict": "Name mẫu không còn sửa được ở trạng thái hiện tại.",
+      "errorGeneric": "Không thể cập nhật proposal. Vui lòng thử lại.",
+      "errorConflict": "Proposal này không còn sửa được (trạng thái đã đổi).",
+      "errorPermission": "Bạn chỉ có thể sửa proposal của chính mình.",
+      "errorNotFound": "Series không còn tồn tại. Hãy tải lại danh sách series.",
+      "unsavedChangesTitle": "Bỏ các thay đổi chưa lưu?",
+      "unsavedChangesDescription": "Bạn có những thay đổi chưa lưu — chúng sẽ bị mất nếu rời trang.",
+      "unsavedChangesLeave": "Rời trang",
+      "unsavedChangesStay": "Ở lại",
+      "back": "Về trang series"
+    },
     "demographic": "Nhóm độc giả",
     "publicationType": "Tần suất",
     "editor": "Biên tập viên",
@@ -207,6 +243,38 @@
     "inReviewQueue": "Đang ở hàng đợi",
     "createdAt": "Ngày tạo",
     "reviewStartedAt": "Bắt đầu review",
+    "revisions": {
+      "title": "Yêu cầu chỉnh sửa từ Editor",
+      "round": "Vòng {{round}}",
+      "openDrawer": "Xem yêu cầu chỉnh sửa",
+      "target": {
+        "PROPOSAL": "Proposal",
+        "NAME": "Name mẫu",
+        "MANUSCRIPT": "Manuscript",
+        "TASK": "Task"
+      },
+      "resolve": "Đánh dấu đã chỉnh sửa",
+      "resolving": "Đang cập nhật...",
+      "resolveSuccess": "Đã đánh dấu hoàn tất yêu cầu chỉnh sửa.",
+      "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại.",
+      "drawer": {
+        "subtitle": "Các vòng yêu cầu sửa proposal / Name / manuscript của series này",
+        "close": "Đóng",
+        "empty": {
+          "title": "Chưa có yêu cầu chỉnh sửa nào",
+          "description": "Khi Editor gửi yêu cầu chỉnh sửa, danh sách sẽ hiển thị ở đây."
+        },
+        "loading": "Đang tải...",
+        "error": {
+          "loadFailed": "Không thể tải yêu cầu chỉnh sửa.",
+          "retry": "Thử lại"
+        },
+        "resolved": "Đã xử lý",
+        "footerHint": "Bấm ESC hoặc click ra ngoài để đóng",
+        "paginationInfo": "{{from}}-{{to}} trong {{total}}",
+        "requestedByEditorFallback": "Yêu cầu bởi Editor"
+      }
+    },
     "relationshipType": "Quan hệ với series gốc",
     "enums": {
       "genres": {
@@ -268,6 +336,14 @@
       "title": "Proposal",
       "empty": "Series chưa có proposal.",
       "synopsis": "Tóm tắt cốt truyện",
+      "synopsisMore": "Xem thêm",
+      "synopsisLess": "Thu gọn",
+      "synopsisReader": {
+        "title": "Tóm tắt cốt truyện",
+        "close": "Đóng",
+        "readingTime": "≈ {{minutes}} phút đọc",
+        "wordCount": "{{count}} ký tự"
+      },
       "characterDesigns": "Thiết kế nhân vật",
       "characterDesignAlt": "Thiết kế nhân vật {{n}}",
       "estimatedLength": "Số chương ước tính",
@@ -283,7 +359,46 @@
       "altShort": "Trang Name",
       "sampleLabel": "Name mẫu (Proposal)",
       "chapterLabel": "Chương {{n}}",
-      "versionLabel": "Phiên bản {{n}}"
+      "versionLabel": "Phiên bản {{n}}",
+      "pageAlt": "Trang Name {{n}}",
+      "pagesCount_one": "{{count}} trang",
+      "pagesCount_other": "{{count}} trang"
+    },
+    "actions": {
+      "cancel": "Huỷ",
+      "errorGeneric": "Không thể thực hiện thao tác với proposal. Hãy tải lại và thử lại.",
+      "delete": {
+        "button": "Xoá bản nháp",
+        "title": "Xoá bản nháp này?",
+        "description": "\"{{title}}\" và Name mẫu đi kèm sẽ bị xoá vĩnh viễn.",
+        "confirm": "Xoá bản nháp",
+        "success": "Đã xoá proposal nháp."
+      },
+      "withdraw": {
+        "button": "Rút hồ sơ",
+        "title": "Rút proposal này?",
+        "description": "\"{{title}}\" sẽ rời luồng biên tập và chuyển sang trạng thái Đã rút.",
+        "reasonLabel": "Lý do (không bắt buộc)",
+        "reasonPlaceholder": "Cho Editor biết lý do bạn rút hồ sơ...",
+        "confirm": "Rút proposal",
+        "success": "Đã rút proposal."
+      },
+      "resubmitProposal": {
+        "button": "Nộp lại proposal",
+        "success": "Đã nộp lại proposal để xét duyệt."
+      },
+      "resubmitName": {
+        "button": "Nộp lại Name",
+        "success": "Đã nộp lại Name mẫu để xét duyệt."
+      },
+      "errors": {
+        "NotSeriesOwner": "Bạn chỉ có thể thay đổi proposal của chính mình.",
+        "ProposalNotEditable": "Proposal không còn sửa được ở trạng thái hiện tại.",
+        "ProposalNotDeletable": "Chỉ proposal nháp mới có thể bị xoá.",
+        "InvalidProposalState": "Proposal hiện không chờ được nộp lại.",
+        "InvalidNameState": "Name mẫu hiện không chờ được nộp lại.",
+        "SeriesNotFound": "Series không còn tồn tại."
+      }
     },
     "error": {
       "loadFailed": "Không thể tải chi tiết series. Vui lòng thử lại.",
@@ -296,6 +411,7 @@
     },
     "submit": {
       "button": "Nộp series",
+      "missingNamePages": "Hãy thêm ít nhất một trang Name mẫu trước khi nộp.",
       "dialogTitle": "Nộp series để biên tập viên xét duyệt?",
       "dialogDescription": "Series \"{{title}}\" sẽ được chuyển sang trạng thái Đang xét duyệt. Sau khi nộp, bạn sẽ không thể sửa proposal cho tới khi Editor phản hồi.",
       "bullet1": "Proposal chuyển sang trạng thái Đang xét duyệt.",
@@ -305,39 +421,10 @@
       "confirm": "Nộp series",
       "submitting": "Đang nộp series...",
       "success": "Đã nộp series để biên tập xét duyệt.",
+      "errorPermission": "Chỉ chủ sở hữu series mới có thể nộp proposal này.",
+      "errorConflict": "Series không còn có thể nộp ở trạng thái hiện tại.",
+      "errorFranchiseConsent": "Mangaka của series gốc phải đồng ý proposal nhượng quyền trước khi có thể nộp.",
       "errorGeneric": "Không thể nộp series. Vui lòng thử lại."
-    },
-    "editProposalNotImplemented": "Sửa proposal: chưa triển khai route",
-    "editProposal": {
-      "button": "Sửa Proposal",
-      "title": "Sửa Proposal",
-      "subtitle": "Cập nhật các trường của proposal. Giữ nguyên trường nào thì trường đó không đổi.",
-      "notEditableTitle": "Không thể sửa proposal",
-      "notEditableDescription": "Chỉ sửa được proposal khi series đang ở DRAFT hoặc khi proposal đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
-      "sectionBasic": "Thông tin cơ bản",
-      "sectionSynopsis": "Tóm tắt cốt truyện",
-      "sectionCharacters": "Thiết kế nhân vật",
-      "newCover": "Đã chọn ảnh bìa mới",
-      "keepCover": "Giữ ảnh bìa hiện tại",
-      "removeCover": "Xoá ảnh bìa",
-      "noChanges": "Chưa có thay đổi nào để lưu.",
-      "saveChanges": "Lưu thay đổi",
-      "saving": "Đang lưu...",
-      "removeExistingCharacter": "Xoá ảnh thiết kế nhân vật này",
-      "removeExistingCharacterConfirm": "Xoá ảnh thiết kế nhân vật này? Ảnh sẽ bị xoá khi bạn lưu.",
-      "markForRemoval": "Đã đánh dấu xoá",
-      "loading": "Đang tải proposal...",
-      "loadFailed": "Không thể tải proposal.",
-      "retry": "Thử lại",
-      "success": "Đã cập nhật proposal.",
-      "errorGeneric": "Không thể cập nhật proposal. Vui lòng thử lại.",
-      "errorConflict": "Proposal này không còn sửa được (trạng thái đã đổi).",
-      "errorPermission": "Bạn chỉ có thể sửa proposal của chính mình.",
-      "unsavedChangesTitle": "Bỏ các thay đổi chưa lưu?",
-      "unsavedChangesDescription": "Bạn có những thay đổi chưa lưu — chúng sẽ bị mất nếu rời trang.",
-      "unsavedChangesLeave": "Rời trang",
-      "unsavedChangesStay": "Ở lại",
-      "back": "Về trang series"
     },
     "publication": {
       "title": "Xuất bản",
@@ -390,7 +477,12 @@
   "lightbox": {
     "closePreview": "Đóng xem trước",
     "loading": "Đang tải...",
-    "failedToLoad": "Không thể tải hình ảnh"
+    "failedToLoad": "Không thể tải hình ảnh",
+    "previous": "Ảnh trước",
+    "next": "Ảnh sau",
+    "counter": "{{current}} / {{total}}",
+    "moreCount": "+{{count}} nữa",
+    "stripGroupLabel": "Thư viện ảnh"
   },
   "publication": {
     "loading": "Đang tải workbench...",
@@ -411,7 +503,10 @@
       "brandSubtitle": "Workbench Xuất bản",
       "backToSeries": "Về trang series",
       "chapterContext": "{{series}} · Chương {{n}}",
-      "workbenchLabel": "Workbench xuất bản"
+      "workbenchLabel": "Workbench xuất bản",
+      "tabName": "Name",
+      "tabPages": "Pages",
+      "tabPagesDisabledHint": "Duyệt Name storyboard trước để mở khoá Pages."
     },
     "workbenchTitle": "Chương {{n}} — Xuất bản",
     "workbenchSubtitle": "Quản lý Name (storyboard) và các trang production của chapter này.",
@@ -425,16 +520,18 @@
       "versionLabel": "Phiên bản {{n}}",
       "createButton": "Tạo Name",
       "editButton": "Sửa trang",
+      "submitButton": "Nộp Name",
       "resubmitButton": "Nộp lại Name",
+      "removeButton": "Xoá Name",
       "create": {
         "dialogTitle": "Tạo Name (storyboard)",
-        "dialogDescription": "Tải lên một hoặc nhiều trang storyboard. Chúng sẽ được gửi cho Editor review.",
+        "dialogDescription": "Tải lên một hoặc nhiều trang storyboard. Name vẫn là bản nháp cho đến khi bạn chủ động nộp để review.",
         "chooseFiles": "Chọn hình ảnh",
         "allowedHint": "PNG, JPG hoặc WEBP. Tối đa 15MB mỗi file.",
         "removeFile": "Bỏ hình ảnh này",
         "submitting": "Đang tải lên...",
         "confirm": "Tạo Name",
-        "success": "Đã tạo Name và gửi cho Editor review."
+        "success": "Đã tạo bản nháp Name."
       },
       "edit": {
         "dialogTitle": "Sửa các trang Name",
@@ -449,6 +546,15 @@
       },
       "resubmit": {
         "success": "Đã nộp lại Name cho Editor."
+      },
+      "submit": {
+        "success": "Đã nộp Name cho Editor review.",
+        "error": "Không thể nộp Name. Hãy tải lại và thử lại."
+      },
+      "remove": {
+        "confirm": "Xoá bản nháp Name này cùng toàn bộ trang storyboard?",
+        "success": "Đã xoá Name.",
+        "error": "Không thể xoá Name."
       }
     },
     "pagesSection": {
@@ -489,6 +595,113 @@
       "IN_PROGRESS": "Đang thực hiện",
       "COMPOSITE_READY": "Sẵn sàng tổng hợp",
       "COMPLETED": "Hoàn thành"
+    },
+    "statusPill": {
+      "label": "Storyboard"
+    },
+    "name": {
+      "titleWithChapter": "{{chapterTitle}} — Storyboard ch.{{n}}",
+      "subtitle": "Các trang storyboard để Editor duyệt trước khi đi vào sản xuất.",
+      "documentLabel": "Storyboard",
+      "version": "Phiên bản",
+      "versionValue": "v{{n}}",
+      "status": "Trạng thái",
+      "notStarted": "Chưa bắt đầu",
+      "deadline": "Deadline",
+      "submittedAt": "Ngày nộp",
+      "pagesCount": "{{n}} trang",
+      "lockedHint": "Tạo storyboard ở tab Name trước để mở khoá quy trình.",
+      "timeline": {
+        "title": "Vòng duyệt",
+        "draft": "Bản thảo đầu tiên",
+        "submitted": "Đã nộp cho Editor",
+        "inReview": "Editor đang xem",
+        "revision": "Yêu cầu sửa",
+        "approved": "Đã duyệt — mở khoá upload trang",
+        "revisionCallout": "Editor đã yêu cầu chỉnh sửa. Bạn chỉnh sửa các trang phía trên rồi nhấn Resubmit."
+      }
+    },
+    "pagesLocked": {
+      "title": "Trang production đang khoá",
+      "description": "Sau khi Editor duyệt storyboard, bạn sẽ upload được trang pencil/ink và xem tại đây.",
+      "backToName": "Mở tab Name"
+    },
+    "pages": {
+      "title": "Pages",
+      "subtitle": "Trình đọc composite — mục lục trái, ảnh trang giữa, nhận xét của Editor phải."
+    },
+    "pagesReader": {
+      "addPage": "Thêm trang",
+      "compositeLabel": "Trang composite",
+      "title": "{{chapterTitle}} — Ch.{{n}}",
+      "subtitle": "Cuộn dọc giữa các trang. Mục lục bên trái theo dõi trang đang xem; nhận xét Editor hiện bên phải.",
+      "emptyTitle": "Chưa có trang nào",
+      "emptyDesc": "Upload trang pencil/ink đầu tiên để bắt đầu production.",
+      "backToTop": "Về đầu trang",
+      "compositeBadge": "Composite",
+      "done": "Hoàn tất",
+      "advance": "Chuyển → {{to}}",
+      "uploadError": "Không thể upload ảnh.",
+      "composer": {
+        "title": "Upload trang {{n}}",
+        "cancel": "Huỷ",
+        "dropOrClick": "Thả ảnh vào đây hoặc bấm để chọn",
+        "submit": "Upload trang {{n}}"
+      },
+      "toc": {
+        "title": "Trang",
+        "count": "{{n}} trang",
+        "empty": "Chưa có trang nào",
+        "pageLabel": "Trang {{n}}"
+      },
+      "notes": {
+        "title": "Ghi chú Editor",
+        "forPage": "Hiện ghi chú của trang đang xem",
+        "noSelection": "Cuộn giữa để chọn trang",
+        "empty": "Chọn trang để xem nhận xét của Editor.",
+        "noNotes": "Trang này chưa có ghi chú.",
+        "resolved": "Đã xử lý",
+        "role": {
+          "MANGAKA": "Mangaka",
+          "ASSISTANT": "Assistant",
+          "EDITOR": "Editor",
+          "BOARD_MEMBER": "Board",
+          "SUPER_ADMIN": "Admin"
+        }
+      }
+    },
+    "manuscript": {
+      "label": "Bản thảo",
+      "onHold": "Đang tạm dừng",
+      "progress": "{{completed}}/{{total}} trang · {{percent}}%",
+      "completePagesHint": "Hoàn tất tất cả trang trước khi nộp bản thảo cho Editor.",
+      "status": {
+        "DRAFT": "Bản nháp",
+        "IN_PRODUCTION": "Đang sản xuất",
+        "COMPOSITE_REVIEW": "Duyệt bản tổng hợp",
+        "EDITOR_REVIEW": "Editor đang duyệt",
+        "EDITOR_REVISION": "Editor yêu cầu sửa",
+        "READY_FOR_PRINT": "Sẵn sàng phát hành",
+        "AWAITING_CO_OWNER_APPROVAL": "Chờ đồng sở hữu",
+        "PUBLISHED": "Đã xuất bản"
+      },
+      "actions": {
+        "markCompositeReady": {
+          "button": "Bắt đầu duyệt composite",
+          "success": "Bản thảo đã chuyển sang duyệt composite.",
+          "error": "Không thể bắt đầu duyệt composite."
+        },
+        "submit": {
+          "button": "Nộp bản thảo",
+          "success": "Đã nộp bản thảo cho Editor.",
+          "error": "Không thể nộp bản thảo."
+        },
+        "resubmit": {
+          "button": "Nộp lại bản thảo",
+          "success": "Đã nộp lại bản thảo đã sửa cho Editor.",
+          "error": "Không thể nộp lại bản thảo."
+        }
+      }
     }
   },
   "upload": {
@@ -511,7 +724,8 @@
     "step4Desc": "Tải lên hình ảnh các trang Name mẫu (storyboard) cho chương đầu tiên.",
     "back": "Quay lại",
     "next": "Tiếp theo",
-    "submit": "Gửi Proposal",
+    "submit": "Tạo bản nháp",
+    "createSuccess": "Đã tạo proposal nháp. Hãy kiểm tra lại rồi nộp cho Editor khi sẵn sàng.",
     "exit": "Thoát",
     "seriesTitle": "Tiêu đề Series",
     "seriesTitlePlaceholder": "Nhập tiêu đề series của bạn",
@@ -573,6 +787,7 @@
     "pageTitlePlaceholder": "Tiêu đề trang...",
     "errors": {
       "unauthenticated": "Bạn cần đăng nhập để tạo proposal.",
+      "titleRequired": "Hãy nhập tiêu đề series trước khi tiếp tục.",
       "submitFailed": "Không thể tạo proposal. Vui lòng thử lại."
     },
     "toolbar": {
@@ -582,6 +797,278 @@
       "alignLeft": "Căn trái",
       "alignCenter": "Căn giữa",
       "alignRight": "Căn phải"
+    }
+  },
+  "tasks": {
+    "title": "Nhiệm vụ",
+    "composer": {
+      "title": "Giao nhiệm vụ",
+      "fromStudio": "Từ Studio — chọn trợ lý, series, chương, trang",
+      "fromWorkbench": "Từ Workbench — chọn trợ lý cho trang hiện tại",
+      "close": "Đóng",
+      "back": "Quay lại",
+      "next": "Tiếp tục",
+      "submit": "Giao nhiệm vụ",
+      "submitting": "Đang giao...",
+      "selectAssistant": "Chọn trợ lý",
+      "selectAssistantPlaceholder": "— Chọn trợ lý —",
+      "selectSeries": "Chọn series",
+      "selectSeriesPlaceholder": "— Chọn series —",
+      "selectChapter": "Chọn chương",
+      "selectChapterPlaceholder": "— Chọn chương —",
+      "selectPage": "Chọn trang",
+      "selectPagePlaceholder": "— Chọn trang —",
+      "selectRegion": "Chọn vùng (tuỳ chọn)",
+      "wholePage": "Cả trang (không chọn vùng)",
+      "regionSelected": "Đã chọn vùng: {{id}}",
+      "regionClear": "Bỏ chọn",
+      "taskType": "Loại công việc",
+      "taskTypeEnum": {
+        "BACKGROUND": "Vẽ nền",
+        "SCREENTONE": "Dán tone",
+        "EFFECT_LINES": "Hiệu ứng đường",
+        "INKING": "Tô mực",
+        "COLORING": "Tô màu",
+        "LETTERING": "Chèn thoại"
+      },
+      "deadline": "Deadline (tuỳ chọn)",
+      "deadlineHint": "Để trống nếu không có hạn cụ thể",
+      "priority": "Độ ưu tiên",
+      "priorityHint": "Số nhỏ hơn = ưu tiên cao hơn",
+      "attachments": {
+        "label": "Tài liệu tham khảo (tuỳ chọn)",
+        "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file"
+      },
+      "steps": {
+        "aria": "Các bước giao nhiệm vụ",
+        "context": "Ngữ cảnh",
+        "work": "Công việc",
+        "confirm": "Xác nhận"
+      },
+      "confirm": {
+        "description": "Kiểm tra thông tin trước khi giao nhiệm vụ.",
+        "taskType": "Loại công việc",
+        "page": "Trang",
+        "region": "Vùng",
+        "deadline": "Deadline",
+        "priority": "Độ ưu tiên",
+        "attachments": "Tài liệu tham khảo",
+        "noDeadline": "Không có",
+        "noAttachments": "Không có",
+        "attachmentCount": "{{count}} file"
+      }
+    },
+    "status": {
+      "ASSIGNED": "Đã giao",
+      "IN_PROGRESS": "Đang làm",
+      "SUBMITTED": "Đã nộp",
+      "UNDER_REVIEW": "Đang review",
+      "APPROVED": "Đã duyệt",
+      "REVISION_REQUESTED": "Yêu cầu sửa",
+      "ON_HOLD": "Tạm dừng",
+      "CANCELLED": "Đã huỷ"
+    },
+    "errors": {
+      "assistantNotHired": "Trợ lý này không còn quan hệ cộng tác đang hiệu lực.",
+      "chapterOnHold": "Chương đang tạm dừng. Hãy tiếp tục chương trước khi giao việc.",
+      "notSeriesOwner": "Bạn không có quyền giao việc trên trang này.",
+      "pageNotFound": "Không tìm thấy trang hoặc trang đã bị xoá.",
+      "assetNotFound": "Một tài liệu tham khảo không còn tồn tại. Hãy tải lại file.",
+      "invalidTransition": "Nhiệm vụ đã đổi trạng thái. Hãy tải lại trước khi thao tác.",
+      "notReassignable": "Nhiệm vụ ở trạng thái hiện tại không thể giao lại.",
+      "notCancellable": "Nhiệm vụ đã hoàn tất hoặc đã huỷ nên không thể huỷ lại.",
+      "notFound": "Không tìm thấy nhiệm vụ.",
+      "generic": "Không thể giao nhiệm vụ. Vui lòng thử lại.",
+      "loadFailed": "Không thể tải danh sách nhiệm vụ.",
+      "approveFailed": "Không thể duyệt nhiệm vụ.",
+      "revisionFailed": "Không thể yêu cầu sửa nhiệm vụ.",
+      "cancelFailed": "Không thể huỷ nhiệm vụ."
+    },
+    "filters": {
+      "allStatuses": "Tất cả trạng thái"
+    },
+    "board": {
+      "empty": "Chưa có nhiệm vụ nào.",
+      "overdue": "Quá hạn",
+      "deadline": "Hạn",
+      "priority": "Ưu tiên",
+      "approve": "Duyệt",
+      "revision": "Yêu cầu sửa",
+      "cancel": "Huỷ",
+      "refresh": "Tải lại",
+      "revisionPrompt": "Mô tả nội dung Assistant cần sửa:",
+      "cancelPrompt": "Lý do huỷ (không bắt buộc):"
+    },
+    "toast": {
+      "approved": "Đã duyệt nhiệm vụ.",
+      "revisionRequested": "Đã yêu cầu sửa nhiệm vụ.",
+      "cancelled": "Đã huỷ nhiệm vụ."
+    },
+    "pagination": {
+      "prev": "Trước",
+      "next": "Tiếp"
+    }
+  },
+  "studio": {
+    "tasks": {
+      "title": "Nhiệm vụ",
+      "composer": {
+        "title": "Giao nhiệm vụ",
+        "fromStudio": "Từ Studio — chọn trợ lý, series, chương, trang",
+        "fromWorkbench": "Từ Workbench — chọn trợ lý cho trang hiện tại",
+        "close": "Đóng",
+        "back": "Quay lại",
+        "next": "Tiếp tục",
+        "submit": "Giao nhiệm vụ",
+        "submitting": "Đang giao...",
+        "selectAssistant": "Chọn trợ lý",
+        "selectAssistantPlaceholder": "— Chọn trợ lý —",
+        "selectSeries": "Chọn series",
+        "selectSeriesPlaceholder": "— Chọn series —",
+        "selectChapter": "Chọn chương",
+        "selectChapterPlaceholder": "— Chọn chương —",
+        "selectPage": "Chọn trang",
+        "selectPagePlaceholder": "— Chọn trang —",
+        "selectRegion": "Chọn vùng (tuỳ chọn)",
+        "wholePage": "Cả trang (không chọn vùng)",
+        "regionSelected": "Đã chọn vùng: {{id}}",
+        "regionClear": "Bỏ chọn",
+        "taskType": "Loại công việc",
+        "taskTypeEnum": {
+          "BACKGROUND": "Vẽ nền",
+          "SCREENTONE": "Dán tone",
+          "EFFECT_LINES": "Hiệu ứng đường",
+          "INKING": "Tô mực",
+          "COLORING": "Tô màu",
+          "LETTERING": "Chèn thoại"
+        },
+        "deadline": "Deadline (tuỳ chọn)",
+        "deadlineHint": "Để trống nếu không có hạn cụ thể",
+        "priority": "Độ ưu tiên",
+        "priorityHint": "Số nhỏ hơn = ưu tiên cao hơn",
+        "attachments": {
+          "label": "Tài liệu tham khảo (tuỳ chọn)",
+          "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file"
+        },
+        "steps": {
+          "aria": "Các bước giao nhiệm vụ",
+          "context": "Ngữ cảnh",
+          "work": "Công việc",
+          "confirm": "Xác nhận"
+        },
+        "confirm": {
+          "description": "Kiểm tra thông tin trước khi giao nhiệm vụ.",
+          "taskType": "Loại công việc",
+          "page": "Trang",
+          "region": "Vùng",
+          "deadline": "Deadline",
+          "priority": "Độ ưu tiên",
+          "attachments": "Tài liệu tham khảo",
+          "noDeadline": "Không có",
+          "noAttachments": "Không có",
+          "attachmentCount": "{{count}} file"
+        }
+      },
+      "status": {
+        "ASSIGNED": "Đã giao",
+        "IN_PROGRESS": "Đang làm",
+        "SUBMITTED": "Đã nộp",
+        "UNDER_REVIEW": "Đang review",
+        "APPROVED": "Đã duyệt",
+        "REVISION_REQUESTED": "Yêu cầu sửa",
+        "ON_HOLD": "Tạm dừng",
+        "CANCELLED": "Đã huỷ"
+      },
+      "errors": {
+        "assistantNotHired": "Trợ lý này không còn quan hệ cộng tác đang hiệu lực.",
+        "chapterOnHold": "Chương đang tạm dừng. Hãy tiếp tục chương trước khi giao việc.",
+        "notSeriesOwner": "Bạn không có quyền giao việc trên trang này.",
+        "pageNotFound": "Không tìm thấy trang hoặc trang đã bị xoá.",
+        "assetNotFound": "Một tài liệu tham khảo không còn tồn tại. Hãy tải lại file.",
+        "invalidTransition": "Nhiệm vụ đã đổi trạng thái. Hãy tải lại trước khi thao tác.",
+        "notReassignable": "Nhiệm vụ ở trạng thái hiện tại không thể giao lại.",
+        "notCancellable": "Nhiệm vụ đã hoàn tất hoặc đã huỷ nên không thể huỷ lại.",
+        "notFound": "Không tìm thấy nhiệm vụ.",
+        "generic": "Không thể giao nhiệm vụ. Vui lòng thử lại."
+      },
+      "filters": {
+        "allStatuses": "Tất cả trạng thái"
+      },
+      "board": {
+        "empty": "Chưa có nhiệm vụ nào.",
+        "overdue": "Quá hạn",
+        "deadline": "Hạn",
+        "priority": "Ưu tiên",
+        "approve": "Duyệt",
+        "revision": "Yêu cầu sửa",
+        "cancel": "Huỷ"
+      },
+      "pagination": {
+        "prev": "Trước",
+        "next": "Tiếp"
+      }
+    },
+    "popup": {
+      "title": "Phân vùng trang {{n}}",
+      "regionCount": "{{count}} vùng",
+      "openVisual": "Chọn vùng trên ảnh",
+      "close": "Đóng",
+      "noImage": "Trang chưa có ảnh gốc",
+      "alt": "Trang {{n}}",
+      "drawHint": "Bấm và kéo để vẽ vùng mới. Esc để huỷ.",
+      "regionType": "Loại vùng",
+      "regionTypes": {
+        "PANEL": "Khung truyện",
+        "BACKGROUND": "Nền",
+        "SPEECH_BUBBLE": "Bóng thoại",
+        "SFX": "Hiệu ứng",
+        "CHARACTER": "Nhân vật"
+      },
+      "mode": {
+        "view": "Xem",
+        "draw": "Vẽ vùng"
+      },
+      "ai": {
+        "start": "AI segment",
+        "running": "Đang chạy...",
+        "apply": "Áp dụng",
+        "discard": "Bỏ",
+        "status": "AI: {{status}} · {{count}} vùng đề xuất · {{duration}}s"
+      },
+      "list": {
+        "title": "Danh sách vùng",
+        "loading": "Đang tải...",
+        "empty": "Chưa có vùng nào. Chuyển sang chế độ Vẽ."
+      },
+      "detail": {
+        "title": "Chi tiết vùng",
+        "empty": "Chọn một vùng để xem chi tiết.",
+        "type": "Loại",
+        "source": "Nguồn",
+        "coords": "Toạ độ",
+        "confidence": "Độ tin cậy: {{value}}%",
+        "confirmAi": "Duyệt vùng AI",
+        "pickThis": "Dùng vùng này",
+        "delete": "Xoá vùng",
+        "deleteConfirm": "Xoá vùng này? Vùng có task sẽ trả về lỗi."
+      },
+      "region": {
+        "label": "{{type}} · {{id}}"
+      },
+      "toast": {
+        "regionCreated": "Đã tạo vùng mới",
+        "regionConfirmed": "Đã duyệt vùng AI",
+        "aiApplied": "Đã áp dụng {{count}} vùng AI"
+      },
+      "errors": {
+        "loadFailed": "Không tải được danh sách vùng.",
+        "createFailed": "Không tạo được vùng.",
+        "updateFailed": "Không cập nhật được vùng.",
+        "deleteFailed": "Không xoá được vùng.",
+        "aiStartFailed": "Không khởi động được AI segment.",
+        "aiApplyFailed": "Không áp dụng được đề xuất AI.",
+        "aiTimeout": "AI segment chạy quá lâu, vui lòng thử lại."
+      }
     }
   }
 }

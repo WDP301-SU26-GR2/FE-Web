@@ -18,7 +18,8 @@ type UseSeriesDetailResult = {
 
 /**
  * Fetch `/series/:id` (proposal-inclusive detail) and `/series/:id/names`
- * (chapter storyboards) in parallel.
+ * (proposal-scoped sample Name only) in parallel. Chapter Names use the
+ * `/chapters/:id/names` clients in the publication slice.
  *
  * - Stale requests are cancelled via AbortController when the `id` changes
  *   or the component unmounts.

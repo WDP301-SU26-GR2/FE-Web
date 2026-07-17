@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem } from '~/api/model/studio/assignmentListResDtoOutputItemsItemAssignedTaskTypesItem'

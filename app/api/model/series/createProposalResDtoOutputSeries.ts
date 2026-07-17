@@ -20,6 +20,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { CreateProposalResDtoOutputSeriesMangaka } from './createProposalResDtoOutputSeriesMangaka';
+import type { CreateProposalResDtoOutputSeriesEditor } from './createProposalResDtoOutputSeriesEditor';
 import type { CreateProposalResDtoOutputSeriesGenresItem } from './createProposalResDtoOutputSeriesGenresItem';
 import type { CreateProposalResDtoOutputSeriesDemographic } from './createProposalResDtoOutputSeriesDemographic';
 import type { CreateProposalResDtoOutputSeriesPublicationType } from './createProposalResDtoOutputSeriesPublicationType';
@@ -38,6 +40,13 @@ export type CreateProposalResDtoOutputSeries = {
    * @nullable
    */
   editorId: string | null;
+  /** Thông tin hiển thị chủ series — CÓ ở GET /series + GET /series/:id */
+  mangaka?: CreateProposalResDtoOutputSeriesMangaka;
+  /**
+   * Thông tin hiển thị editor; null = hàng đợi — CÓ ở GET /series + GET /series/:id
+   * @nullable
+   */
+  editor?: CreateProposalResDtoOutputSeriesEditor;
   /**
    * Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có
    * @nullable

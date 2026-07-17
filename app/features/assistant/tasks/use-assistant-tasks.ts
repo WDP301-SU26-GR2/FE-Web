@@ -7,7 +7,7 @@ import type { TaskControllerListTasksParams } from '~/api/model/task/taskControl
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task'
 import { isFetchError } from '~/api/mutator/custom-fetch'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export const TASK_PAGE_SIZE = 8
 

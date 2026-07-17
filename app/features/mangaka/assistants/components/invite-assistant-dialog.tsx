@@ -59,7 +59,13 @@ export type InviteAssistantDialogProps = {
  * since inviting against them makes no sense. Pre-selected specializations
  * from the assistant's profile to reduce friction.
  */
-export function InviteAssistantDialog({ assistant, isSubmitting, open, onCancel, onConfirm }: InviteAssistantDialogProps) {
+export function InviteAssistantDialog({
+  assistant,
+  isSubmitting,
+  open,
+  onCancel,
+  onConfirm
+}: InviteAssistantDialogProps) {
   const { t } = useTranslation('mangaka')
   const cancelRef = useRef<HTMLButtonElement>(null)
 
@@ -85,12 +91,14 @@ export function InviteAssistantDialog({ assistant, isSubmitting, open, onCancel,
     const now = new Date()
     const oneMonthLater = new Date(now)
     oneMonthLater.setDate(oneMonthLater.getDate() + 30)
-    setSeriesId(hireableSeries[0]?.id ?? '')
-    setHireStart(toLocalDateInputValue(now))
-    setHireEnd(toLocalDateInputValue(oneMonthLater))
-    setTaskTypes(
-      assistant.specializations.filter((s): s is TaskType => (TASK_TYPES as readonly string[]).includes(s))
-    )
+    void Promise.resolve().then(() => {
+      setSeriesId(hireableSeries[0]?.id ?? '')
+      setHireStart(toLocalDateInputValue(now))
+      setHireEnd(toLocalDateInputValue(oneMonthLater))
+      setTaskTypes(
+        assistant.specializations.filter((s): s is TaskType => (TASK_TYPES as readonly string[]).includes(s))
+      )
+    })
   }, [open, assistant, hireableSeries])
 
   // Escape closes the dialog when not submitting.
@@ -120,8 +128,10 @@ export function InviteAssistantDialog({ assistant, isSubmitting, open, onCancel,
     const start = hireStart ? new Date(hireStart) : null
     const end = hireEnd ? new Date(hireEnd) : null
     const now = new Date()
-    if (!start || Number.isNaN(start.getTime())) return { ok: false, errorKey: 'assistantDirectory.invite.errorInvalidHire' }
-    if (!end || Number.isNaN(end.getTime())) return { ok: false, errorKey: 'assistantDirectory.invite.errorInvalidHire' }
+    if (!start || Number.isNaN(start.getTime()))
+      return { ok: false, errorKey: 'assistantDirectory.invite.errorInvalidHire' }
+    if (!end || Number.isNaN(end.getTime()))
+      return { ok: false, errorKey: 'assistantDirectory.invite.errorInvalidHire' }
     if (start >= end) return { ok: false, errorKey: 'assistantDirectory.invite.errorHireOrder' }
     if (end <= now) return { ok: false, errorKey: 'assistantDirectory.invite.errorHirePast' }
     if (taskTypes.length === 0) return { ok: false, errorKey: 'assistantDirectory.invite.errorNoTaskType' }

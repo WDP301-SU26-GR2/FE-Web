@@ -2,11 +2,13 @@ import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
+import { toast } from 'sonner'
 
 import { cn } from '~/shared/lib/cn'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { seriesControllerCreateProposal } from '~/api/operations/series/series'
+import type { CreateProposalResDtoOutput } from '~/api/model/series'
 import { BasicInfoStep } from './wizard-steps/basic-info-step'
 import { StorySummaryStep } from './wizard-steps/story-summary-step'
 import { CharacterDesignStep } from './wizard-steps/character-design-step'
@@ -48,7 +50,7 @@ export interface CoverImageValue {
 
 export interface ProposalFormData {
   // Step 1 – Basic Info
-  // Matches `CreateProposalBodyDto` §6.1 of FE-API-Guide-v2.md
+  // Matches `CreateProposalBodyDto` in FE-API-Guide-v3 §3.
   seriesTitle: string
   coverImage: CoverImageValue | null
   genres: string[]
@@ -162,6 +164,10 @@ export function CreateProposalWizard() {
 
     // Mid-step navigation
     if (currentStep < STEPS.length - 1) {
+      if (currentStep === 0 && !formData.seriesTitle.trim()) {
+        setSubmitError(t('wizard.errors.titleRequired'))
+        return
+      }
       setCurrentStep((s) => s + 1)
       return
     }
@@ -194,13 +200,6 @@ export function CreateProposalWizard() {
       )
 
       // 4) Build API body — matches `CreateProposalBodyDto` in swagger.json.
-      // NOTE: the orval-generated `CreateProposalBodyDto` type in this repo
-      // is stale (lists `genre?: string` instead of the swagger-defined
-      // `genres: string[]`). We construct the body in the correct shape
-      // and cast on the boundary so the call site still goes through
-      // `seriesControllerCreateProposal` (preserves auth/refresh/error
-      // unwrapping in `customFetch`). Run `npm run orval` to regenerate
-      // types from the current swagger and this cast can be dropped.
       const body = {
         title: formData.seriesTitle.trim(),
         coverImage: coverKey || undefined,
@@ -216,10 +215,13 @@ export function CreateProposalWizard() {
         }))
       }
 
-      await seriesControllerCreateProposal(body as unknown as Parameters<typeof seriesControllerCreateProposal>[0])
+      const response = await seriesControllerCreateProposal(
+        body as unknown as Parameters<typeof seriesControllerCreateProposal>[0]
+      )
 
       // 5) Done — go back to My Series
-      navigate('/dashboard/mangaka/series')
+      toast.success(t('wizard.createSuccess'))
+      navigate(`/dashboard/mangaka/series/${(response.data as CreateProposalResDtoOutput).series.id}`)
     } catch (err) {
       setSubmitError(extractApiErrorMessage(err, t('wizard.errors.submitFailed')))
     } finally {

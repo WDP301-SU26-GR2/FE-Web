@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { authControllerLogin } from '~/api/operations/auth/auth'
 import type { LoginResDtoOutput, LoginResDtoOutputUser } from '~/api/model/auth'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 import type { LoginBodyDto } from '~/api/model/auth'
 

@@ -36,9 +36,6 @@ export interface ReaderVoteBodyDto {
    * @maxItems 3
    */
   seriesIds: string[];
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  captchaScore?: number;
+  /** @minLength 1 */
+  captchaToken: string;
 }

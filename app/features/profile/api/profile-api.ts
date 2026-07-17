@@ -12,7 +12,7 @@ import {
   type MangakaProfileResDtoOutput
 } from '~/api/model/users'
 
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 /**
  * Tag value matters: form submit + view use this discriminated union to know

@@ -17,10 +17,12 @@ interface Props {
    * field goes back to "no cover" (which on submit sends `coverImage: null`).
    */
   existingCoverKey?: string | null
+  existingCoverRemoved?: boolean
+  onExistingCoverRemovedChange?: (removed: boolean) => void
 }
 
 // API enum values — MUST match `CreateProposalBodyDto` in swagger.json
-// and §2.2 of FE-API-Guide-v2.md. Display labels are translated via
+// and §3 of FE-API-Guide-v3.md. Display labels are translated via
 // `wizard.enums.{genres|demographic|publicationType}.<KEY>` in the locale.
 const GENRE_VALUES = [
   'ACTION',
@@ -46,7 +48,13 @@ const DEMOGRAPHIC_VALUES = ['SHONEN', 'SEINEN', 'SHOJO', 'JOSEI', 'KODOMO'] as c
 
 const PUBLICATION_TYPE_VALUES = ['WEEKLY', 'MONTHLY', 'IRREGULAR'] as const
 
-export function BasicInfoStep({ form, onChange, existingCoverKey }: Props) {
+export function BasicInfoStep({
+  form,
+  onChange,
+  existingCoverKey,
+  existingCoverRemoved = false,
+  onExistingCoverRemovedChange
+}: Props) {
   const { t } = useTranslation('mangaka')
   const coverInputRef = useRef<HTMLInputElement>(null)
 
@@ -56,20 +64,27 @@ export function BasicInfoStep({ form, onChange, existingCoverKey }: Props) {
     // The R2 upload happens on submit (see create-proposal-wizard / edit page).
     // Here we only stash the original File + a preview URL.
     onChange('coverImage', { file, preview: URL.createObjectURL(file) })
+    onExistingCoverRemovedChange?.(false)
   }
 
   const clearCover = () => {
     if (form.coverImage?.preview.startsWith('blob:')) {
       URL.revokeObjectURL(form.coverImage.preview)
     }
-    onChange('coverImage', null)
+    if (form.coverImage) {
+      onChange('coverImage', null)
+      return
+    }
+    if (existingCoverKey) {
+      onExistingCoverRemovedChange?.(true)
+    }
   }
 
   // Three states for the cover slot:
   //   1) form.coverImage set        → user picked a new file this session
   //   2) !form.coverImage && existingCoverKey → show BE-stored image (no change)
   //   3) !form.coverImage && !existingCoverKey → empty slot, "upload" affordance
-  const showExistingCover = !form.coverImage && !!existingCoverKey
+  const showExistingCover = !form.coverImage && !!existingCoverKey && !existingCoverRemoved
 
   const toggleGenre = (genre: string) => {
     const next = form.genres.includes(genre) ? form.genres.filter((g) => g !== genre) : [...form.genres, genre]

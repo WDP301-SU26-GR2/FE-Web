@@ -20,9 +20,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { VoteResultsResDtoOutputResultsItemPublicationType } from './voteResultsResDtoOutputResultsItemPublicationType';
 
 export type VoteResultsResDtoOutputResultsItem = {
   /**
+   * Vị trí trên BẢNG TỔNG của kỳ (giữ nguyên khi filter publicationType — FE tự đánh số bảng con)
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    * @nullable
@@ -34,6 +36,11 @@ export type VoteResultsResDtoOutputResultsItem = {
    * @nullable
    */
   seriesTitle: string | null;
+  /**
+   * Nhịp xuất bản của series — Spec 15.2
+   * @nullable
+   */
+  publicationType: VoteResultsResDtoOutputResultsItemPublicationType;
   voteCount: number;
   /**
    * @minimum -9007199254740991

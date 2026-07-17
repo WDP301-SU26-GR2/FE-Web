@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { seriesControllerUpdateProposal } from '~/api/operations/series/series'
 import type { SeriesResDtoOutput, UpdateProposalBodyDto } from '~/api/model/series'
 import { isFetchError } from '~/api/mutator/custom-fetch'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseUpdateProposalResult = {
   /**
@@ -20,7 +20,7 @@ type UseUpdateProposalResult = {
  * Hook for the Mangaka "Edit Proposal" action.
  *
  * Calls `PUT /series/proposals/:id` (orval-generated `seriesControllerUpdateProposal`)
- * per §6.1 of FE-API-Guide-v2.md. Partial-update: omit field = keep current value;
+ * per §3 of FE-API-Guide-v3.md. Partial-update: omit field = keep current value;
  * send `null` to clear (e.g. `coverImage: null`); send `[]` to clear an array
  * (e.g. `characterDesigns: []`). Server enforces editability (DRAFT or
  * PROPOSAL_REVISION) — we map 409 to a domain-specific toast.
@@ -46,6 +46,10 @@ export function useUpdateProposal(): UseUpdateProposalResult {
           }
           if (err.status === 403) {
             toast.error(t('seriesDetail.editProposal.errorPermission'))
+            return null
+          }
+          if (err.status === 404) {
+            toast.error(t('seriesDetail.editProposal.errorNotFound'))
             return null
           }
         }

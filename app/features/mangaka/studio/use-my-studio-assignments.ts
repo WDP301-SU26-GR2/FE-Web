@@ -59,11 +59,7 @@ export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
   const abortRef = useRef<AbortController | null>(null)
 
   const fetchAll = useCallback(
-    async (
-      signal: AbortSignal,
-      targetPage: number,
-      currentStatus: StudioFilterStatus
-    ): Promise<void> => {
+    async (signal: AbortSignal, targetPage: number, currentStatus: StudioFilterStatus): Promise<void> => {
       const offset = (targetPage - 1) * STUDIO_PAGE_SIZE
       const params: { limit: number; offset: number; status?: StudioControllerListAssignmentsStatus } = {
         limit: STUDIO_PAGE_SIZE,
@@ -97,10 +93,10 @@ export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
     abortRef.current = controller
     const signal = controller.signal
 
-    setIsLoading(true)
-    setError(null)
-
     ;(async () => {
+      await Promise.resolve()
+      setIsLoading(true)
+      setError(null)
       try {
         await fetchAll(signal, page, status)
       } catch (err: unknown) {

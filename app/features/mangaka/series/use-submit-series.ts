@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 
 import { seriesControllerSubmit } from '~/api/operations/series/series'
 import type { CreateProposalResDtoOutput, SeriesResDtoOutput } from '~/api/model/series'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseSubmitSeriesResult = {
   /** Fire POST /series/:id/submit. Returns the new series on success, null on failure. */
@@ -36,7 +37,17 @@ export function useSubmitSeries(): UseSubmitSeriesResult {
         toast.success(t('seriesDetail.submit.success'))
         return payload.series
       } catch (err) {
-        toast.error(extractApiErrorMessage(err, t('seriesDetail.submit.errorGeneric')))
+        if (isFetchError(err) && err.data.message === 'Error.FranchiseConsentRequired') {
+          toast.error(t('seriesDetail.submit.errorFranchiseConsent'))
+        } else if (isFetchError(err) && err.status === 403) {
+          toast.error(t('seriesDetail.submit.errorPermission'))
+        } else if (isFetchError(err) && err.status === 409) {
+          toast.error(t('seriesDetail.submit.errorConflict'))
+        } else if (isFetchError(err) && err.status === 404) {
+          toast.error(t('seriesDetail.editProposal.errorNotFound'))
+        } else {
+          toast.error(extractApiErrorMessage(err, t('seriesDetail.submit.errorGeneric')))
+        }
         return null
       } finally {
         setIsSubmitting(false)

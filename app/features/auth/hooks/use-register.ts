@@ -7,7 +7,7 @@ import {
   authControllerSendOtp,
   authControllerVerifyEmail
 } from '~/api/operations/auth/auth'
-import { extractApiErrorMessage } from '~/features/auth/lib/extract-api-error'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 import type {
   RegisterBodyDto,

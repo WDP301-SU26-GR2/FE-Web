@@ -25,8 +25,8 @@ export type CreateChapterDialogProps = {
  * Dialog for "Create new chapter" inside the Publication section.
  *
  * - Body scroll is locked while open; Escape closes when not submitting.
- * - BE auto-matches the latest APPROVED Name of the series to seed the
- *   Manuscript + Schedule, so FE no longer sends a nameId.
+ * - Chapter-first: the API creates the Chapter + Manuscript + Schedule first;
+ *   the Mangaka creates the chapter-scoped Name afterwards.
  * - chapterNumber defaults to `nextChapterNumber` (existing max + 1) and
  *   must be a positive integer ≥ 1.
  */
