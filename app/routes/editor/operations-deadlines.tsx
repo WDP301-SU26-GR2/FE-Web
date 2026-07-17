@@ -13,11 +13,17 @@ import type { Route } from './+types/operations-deadlines'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusChapterId = new URL(request.url).searchParams.get('chapterId') ?? ''
+  const focusRequestId = new URL(request.url).searchParams.get('requestId') ?? ''
   try {
     const response = focusChapterId ? await deadlineControllerList({ chapterId: focusChapterId }) : null
-    return { items: response?.status === 200 ? response.data.items : [], focusChapterId, hasError: false }
+    return {
+      items: response?.status === 200 ? response.data.items : [],
+      focusChapterId,
+      focusRequestId,
+      hasError: false
+    }
   } catch {
-    return { items: [], focusChapterId, hasError: true }
+    return { items: [], focusChapterId, focusRequestId, hasError: true }
   }
 }
 

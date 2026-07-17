@@ -12,8 +12,25 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const [seriesId, setSeriesId] = useState('')
+  const [contractType, setContractType] = useState<'FULL_BUYOUT' | 'REVENUE_SHARE'>('REVENUE_SHARE')
+  const [publisherOwnershipPct, setPublisherOwnershipPct] = useState(50)
+  const [mangakaOwnershipPct, setMangakaOwnershipPct] = useState(50)
+  const [contractStart, setContractStart] = useState('')
+  const [contractEnd, setContractEnd] = useState('')
   const selectedSeries = data.series.find((item) => item.id === seriesId)
   const decisions = data.decisions.filter((item) => item.targetSeriesId === seriesId)
+  const ownershipValid =
+    publisherOwnershipPct + mangakaOwnershipPct === 100 &&
+    (contractType !== 'FULL_BUYOUT' || (publisherOwnershipPct === 100 && mangakaOwnershipPct === 0))
+  const datesValid = Boolean(contractStart && contractEnd && contractEnd > contractStart)
+
+  function selectContractType(value: 'FULL_BUYOUT' | 'REVENUE_SHARE') {
+    setContractType(value)
+    if (value === 'FULL_BUYOUT') {
+      setPublisherOwnershipPct(100)
+      setMangakaOwnershipPct(0)
+    }
+  }
 
   return (
     <div className='space-y-7 pb-12'>
@@ -58,7 +75,12 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               </option>
             ))}
           </select>
-          <select name='contractType' className={inputClass}>
+          <select
+            name='contractType'
+            value={contractType}
+            onChange={(event) => selectContractType(event.target.value as 'FULL_BUYOUT' | 'REVENUE_SHARE')}
+            className={inputClass}
+          >
             <option value='REVENUE_SHARE'>REVENUE_SHARE</option>
             <option value='FULL_BUYOUT'>FULL_BUYOUT</option>
           </select>
@@ -76,6 +98,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             min={0}
             max={100}
             required
+            readOnly={contractType === 'FULL_BUYOUT'}
+            value={publisherOwnershipPct}
+            onChange={(event) => setPublisherOwnershipPct(Number(event.target.value))}
             className={inputClass}
             placeholder={t('contracts.publisherPct')}
           />
@@ -85,11 +110,33 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             min={0}
             max={100}
             required
+            readOnly={contractType === 'FULL_BUYOUT'}
+            value={mangakaOwnershipPct}
+            onChange={(event) => setMangakaOwnershipPct(Number(event.target.value))}
             className={inputClass}
             placeholder={t('contracts.mangakaPct')}
           />
-          <input name='contractStart' type='datetime-local' required className={inputClass} />
-          <input name='contractEnd' type='datetime-local' required className={inputClass} />
+          <input
+            name='contractStart'
+            type='datetime-local'
+            required
+            value={contractStart}
+            onChange={(event) => {
+              const value = event.target.value
+              setContractStart(value)
+              if (contractEnd && contractEnd <= value) setContractEnd('')
+            }}
+            className={inputClass}
+          />
+          <input
+            name='contractEnd'
+            type='datetime-local'
+            required
+            min={contractStart || undefined}
+            value={contractEnd}
+            onChange={(event) => setContractEnd(event.target.value)}
+            className={inputClass}
+          />
           <textarea
             name='terminationClause'
             required
@@ -97,7 +144,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             placeholder={t('contracts.terminationClause')}
           />
           <button
-            disabled={fetcher.state !== 'idle' || !decisions.length}
+            disabled={fetcher.state !== 'idle' || !decisions.length || !ownershipValid || !datesValid}
             className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50 md:col-span-2 xl:col-span-4'
           >
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}
@@ -107,7 +154,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             <p
               className={`text-xs font-semibold md:col-span-2 xl:col-span-4 ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}
             >
-              {fetcher.data.ok ? t('messages.createContract') : t('errors.actionFailed')}
+              {fetcher.data.ok ? t('messages.createContract') : t(`errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
             </p>
           )}
         </fetcher.Form>

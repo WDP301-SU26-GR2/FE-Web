@@ -17586,6 +17586,11 @@
               "type": "string"
             }
           },
+          "seriesId": {
+            "type": "string",
+            "description": "ObjectId của Series được đưa vào phiên họp",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
           "startTime": {
             "type": "string",
             "description": "ISO 8601 date-time (UTC)",
@@ -17619,6 +17624,7 @@
           "creatorId",
           "status",
           "allowedEditorIds",
+          "seriesId",
           "startTime",
           "createdAt",
           "updatedAt"

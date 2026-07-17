@@ -25,6 +25,7 @@ export type EditorProposalDetailData = {
   coverUrl: string | null
   characterDesignUrls: string[]
   namePageUrls: Array<{ pageNumber: number; url: string | null }>
+  nameAnnotations: AnnotationListResDtoOutputItemsItem[]
 }
 
 export type EditorChapterItem = {
@@ -52,6 +53,7 @@ export type EditorChapterReviewData = {
   namePages: Array<{ pageNumber: number; url: string | null }>
   progress: ChapterProgressResDtoOutput | null
   annotations: AnnotationListResDtoOutputItemsItem[]
+  nameAnnotations: AnnotationListResDtoOutputItemsItem[]
 }
 
 export type EditorContractsData = {

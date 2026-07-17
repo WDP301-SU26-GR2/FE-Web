@@ -73,7 +73,7 @@ export function EditorContractConditionsPage({
                     {t('contractDetail.payoutPct')}: {condition.payoutPct ?? '—'}%
                   </p>
                 </div>
-                {condition.status !== 'DISABLED' && (
+                {condition.status === 'PENDING' && (
                   <fetcher.Form method='post'>
                     <input type='hidden' name='intent' value='disableCondition' />
                     <input type='hidden' name='conditionId' value={condition.id} />

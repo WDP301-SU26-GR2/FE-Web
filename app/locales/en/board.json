@@ -1,0 +1,192 @@
+{
+  "common": {
+    "eyebrow": "Board workspace",
+    "status": "Status",
+    "success": "The operation completed successfully.",
+    "failure": "The operation could not be completed.",
+    "load": "Load data",
+    "loadError": "The data is currently unavailable.",
+    "noDescription": "No description provided."
+  },
+  "nav": {
+    "sessions": "Board sessions",
+    "decisions": "Decisions and voting",
+    "reports": "Series reports",
+    "contracts": "Contracts",
+    "payments": "Payments",
+    "deadlines": "Deadline arbitration",
+    "rankings": "Rankings and risk",
+    "reprints": "Reprint requests",
+    "transfers": "Series transfers",
+    "audit": "Audit history",
+    "notifications": "Notifications",
+    "profile": "Board profile"
+  },
+  "dashboard": {
+    "title": "Board decision center",
+    "description": "Review evidence, vote on decisions, approve commercial workflows and arbitrate publication risks.",
+    "sections": {
+      "sessions": "Review sessions assigned to you and their agenda.",
+      "decisions": "Inspect active decisions and cast your Board vote.",
+      "reports": "Read editorial analysis prepared for the Board.",
+      "contracts": "Approve, request changes and sign contracts or amendments.",
+      "payments": "Approve and confirm contract payouts.",
+      "deadlines": "Resolve deadline disputes that affect publication slots.",
+      "rankings": "Review internal ranking signals and at-risk series.",
+      "reprints": "Create and approve reprint workflows.",
+      "transfers": "Screen transfer requests and sign transfer agreements.",
+      "audit": "Trace business state changes and system actions.",
+      "notifications": "Track items requiring Board attention.",
+      "profile": "Maintain specialties used for session assignment."
+    }
+  },
+  "sessions": {
+    "title": "Board sessions",
+    "description": "View upcoming, active and concluded sessions.",
+    "empty": "No Board sessions are available.",
+    "details": "Session details",
+    "members": "Assigned members",
+    "start": "Start time",
+    "phase": "Meeting phase",
+    "chat": "Meeting discussion",
+    "emptyChat": "No messages have been sent in this session.",
+    "chatPlaceholder": "Write a message...",
+    "chatLocked": "Discussion is locked during voting.",
+    "sendMessage": "Send message",
+    "votingProgress": "Session voting progress",
+    "votedMembers": "{{voted}} of {{total}} members have voted",
+    "quorum": "Quorum",
+    "quorumMet": "Reached",
+    "quorumPending": "Pending",
+    "realtime": {
+      "connecting": "Connecting to live updates...",
+      "connected": "Live updates connected",
+      "disconnected": "Live connection unavailable; periodic refresh remains active"
+    }
+  },
+  "decisions": {
+    "title": "Board decisions",
+    "description": "Review proposals and vote on decisions assigned to your session.",
+    "empty": "No decisions are available.",
+    "series": "Series",
+    "voteCount": "{{count}} votes",
+    "summary": "{{approve}} approve · {{reject}} reject · {{total}} total",
+    "progress": "Voting progress",
+    "castVote": "Cast your vote",
+    "approve": "Approve",
+    "reject": "Reject",
+    "abstain": "Abstain",
+    "note": "Optional explanation",
+    "submitVote": "Submit vote",
+    "votes": "Recorded votes"
+  },
+  "reports": {
+    "title": "Board reports",
+    "description": "Read evidence and editorial analysis attached to decisions.",
+    "empty": "No reports are available."
+  },
+  "contracts": {
+    "title": "Contract review",
+    "description": "Approve negotiated terms, sign agreements and review amendments.",
+    "empty": "No contracts are available.",
+    "series": "Series",
+    "detail": "Contract",
+    "terms": "Commercial terms",
+    "valuation": "Valuation",
+    "ownership": "Publisher / Mangaka ownership",
+    "actions": "Board actions",
+    "approve": "Approve terms",
+    "changes": "Request changes",
+    "otp": "6-digit OTP",
+    "sign": "Sign contract",
+    "signatures": "{{signed}} of {{required}} Board signatures recorded",
+    "amendments": "Contract amendments",
+    "amendment": "Amendment",
+    "emptyAmendments": "No amendments are available.",
+    "signAmendment": "Sign amendment"
+  },
+  "payments": {
+    "title": "Payment approval",
+    "description": "Approve triggered payouts, record payment references or cancel invalid records.",
+    "empty": "No payment records are available.",
+    "approve": "Approve payout",
+    "method": "Payment method",
+    "reference": "Transaction reference",
+    "pay": "Confirm paid",
+    "cancelReason": "Cancellation reason",
+    "cancel": "Cancel payment"
+  },
+  "deadlines": {
+    "title": "Deadline arbitration",
+    "description": "Resolve escalated deadline requests and publication-slot conflicts.",
+    "chapterId": "Enter chapter ID",
+    "empty": "No Board-review deadline requests were found.",
+    "request": "Deadline request",
+    "note": "Board resolution note",
+    "approve": "Approve deadline",
+    "reject": "Reject request"
+  },
+  "rankings": {
+    "title": "Board ranking overview",
+    "description": "Review internal risk signals for a reflected survey period.",
+    "periodId": "Enter survey period ID",
+    "series": "Series",
+    "votes": "Votes",
+    "risk": "Risk",
+    "empty": "No ranking data is available for this period."
+  },
+  "reprints": {
+    "title": "Reprint workflow",
+    "description": "Create and approve reprint requests under the ownership rules.",
+    "create": "Create reprint request",
+    "seriesId": "Series ID",
+    "from": "First chapter",
+    "to": "Last chapter",
+    "reason": "Business reason",
+    "empty": "No reprint requests are available.",
+    "reviewReason": "Review note",
+    "approve": "Approve reprint",
+    "reject": "Reject reprint"
+  },
+  "transfers": {
+    "title": "Series transfer screening",
+    "description": "Screen transfer candidates, execute full buyouts and sign transfer contracts.",
+    "empty": "No transfer requests await Board review.",
+    "session": "Select active Board session",
+    "details": "Screening note",
+    "approve": "Approve screening",
+    "reject": "Reject screening",
+    "fullBuyout": "Execute full buyout",
+    "conditionValue": "Milestone value",
+    "conditionDescription": "Payment condition description",
+    "sign": "Sign transfer contract",
+    "contractId": "Transfer contract ID"
+  },
+  "notifications": {
+    "title": "Board notifications",
+    "description": "{{count}} unread notifications",
+    "readAll": "Mark all read",
+    "read": "Mark as read",
+    "empty": "No notifications are available."
+  },
+  "profile": {
+    "title": "Board member profile",
+    "description": "Your specialties are used when forming an appropriate Board roster.",
+    "form": "Professional information",
+    "genres": "Specialty genres, comma separated",
+    "demographics": "Audience demographics, comma separated",
+    "experience": "Years of experience",
+    "bio": "Professional biography",
+    "save": "Save profile"
+  },
+  "audit": {
+    "title": "Audit history",
+    "description": "Review business transitions and actions relevant to Board oversight.",
+    "entityId": "Entity ID",
+    "actorId": "Actor ID",
+    "action": "Action",
+    "filter": "Apply filters",
+    "system": "System",
+    "empty": "No audit records were found."
+  }
+}

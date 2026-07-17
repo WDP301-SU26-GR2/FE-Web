@@ -1,23 +1,22 @@
-import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
+import { chapterControllerListBySeries, chapterControllerListPages } from '~/api/operations/chapters/chapters'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
-import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import type { SeriesControllerListSeriesStatus, SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { EditorPublicationPage, type EditorChapterItem, type EditorPublicationData } from '~/features/editor'
+import type { Route } from './+types/publication'
 
 export function meta() {
   return [{ title: 'Publication Review - MangaStudio Pro' }]
 }
 
-export async function clientLoader() {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const searchParams = new URL(request.url).searchParams
+  const referenceId = searchParams.get('referenceId')
+  const referenceType = searchParams.get('referenceType')
   try {
-    const responses = await Promise.all([
-      seriesControllerListSeries({ status: 'SERIALIZED', limit: 100, offset: 0 }),
-      seriesControllerListSeries({ status: 'HIATUS', limit: 100, offset: 0 }),
-      seriesControllerListSeries({ status: 'COMPLETING', limit: 100, offset: 0 }),
-      seriesControllerListSeries({ status: 'CANCELLING', limit: 100, offset: 0 })
-    ])
-    const series = responses
-      .flatMap((response) => response.data.items)
-      .filter((item) => Boolean(item.editorId)) as SeriesListResDtoOutputItemsItem[]
+    const responses = await Promise.all(
+      (['SERIALIZED', 'HIATUS', 'COMPLETING', 'CANCELLING'] as const).map(listAllSeriesByStatus)
+    )
+    const series = responses.flat().filter((item) => Boolean(item.editorId))
     const chapterResponses = await Promise.all(
       series.map(async (item) => ({
         series: item,
@@ -27,10 +26,34 @@ export async function clientLoader() {
     const chapters: EditorChapterItem[] = chapterResponses.flatMap(({ series: item, response }) =>
       response.data.items.map((chapter) => ({ series: item, chapter }))
     )
+    let focusChapterId = referenceId
+    if (referenceId && referenceType === 'PAGE' && !chapters.some(({ chapter }) => chapter.id === referenceId)) {
+      const pageResponses = await Promise.all(
+        chapters.map(async ({ chapter }) => ({
+          chapterId: chapter.id,
+          response: await chapterControllerListPages({ id: chapter.id }).catch(() => null)
+        }))
+      )
+      focusChapterId =
+        pageResponses.find(({ response }) => response?.data.items.some((page) => page.id === referenceId))?.chapterId ??
+        null
+    }
     const data: EditorPublicationData = { series, chapters }
-    return { data, hasError: false }
+    return { data, referenceId: focusChapterId, hasError: false }
   } catch {
-    return { data: null, hasError: true }
+    return { data: null, referenceId, hasError: true }
+  }
+}
+
+async function listAllSeriesByStatus(status: SeriesControllerListSeriesStatus) {
+  const items: SeriesListResDtoOutputItemsItem[] = []
+  const limit = 100
+  let offset = 0
+  while (true) {
+    const response = await seriesControllerListSeries({ status, limit, offset })
+    items.push(...response.data.items)
+    offset += response.data.items.length
+    if (response.data.items.length < limit || offset >= response.data.total) return items
   }
 }
 
@@ -39,5 +62,11 @@ export default function EditorPublicationRoute({
 }: {
   loaderData: Awaited<ReturnType<typeof clientLoader>>
 }) {
-  return <EditorPublicationPage data={loaderData.data} hasError={loaderData.hasError} />
+  return (
+    <EditorPublicationPage
+      data={loaderData.data}
+      focusReferenceId={loaderData.referenceId}
+      hasError={loaderData.hasError}
+    />
+  )
 }

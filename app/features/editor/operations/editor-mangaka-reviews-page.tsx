@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
@@ -20,6 +21,8 @@ export function EditorMangakaReviewsPage({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
+  const [seriesId, setSeriesId] = useState('')
+  const selectedSeries = series.find((item) => item.id === seriesId)
   return (
     <OperationsLayout
       titleKey='operations.reviews'
@@ -28,8 +31,11 @@ export function EditorMangakaReviewsPage({
     >
       <OperationPanel icon={Star} title={t('operations.reviews')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
-          <SeriesSelect series={series} />
-          <input name='mangakaId' required className={operationInput} placeholder='Mangaka ID' />
+          <SeriesSelect series={series} value={seriesId} onChange={setSeriesId} />
+          <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
+          <div className={`${operationInput} flex items-center text-sm text-muted-foreground`}>
+            {selectedSeries ? t('operations.reviewSeriesOwner') : t('operations.selectSeriesFirst')}
+          </div>
           <input
             name='rating'
             type='number'

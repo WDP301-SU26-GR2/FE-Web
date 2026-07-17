@@ -1,6 +1,6 @@
 import { contractControllerReportRevenue } from '~/api/operations/contracts/contracts'
 import { EditorContractRevenuePage, type EditorActionResult } from '~/features/editor'
-import { loadContractBase, required } from './contract-route-utils'
+import { contractErrorKey, loadContractBase, required } from './contract-route-utils'
 import type { Route } from './+types/contract-revenue'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -17,8 +17,8 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       { revenue: Number(required(form, 'revenue')), period: required(form, 'period') }
     )
     return { ok: true, intent, messageKey: intent }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+  } catch (error) {
+    return { ok: false, intent, errorKey: contractErrorKey(error) }
   }
 }
 

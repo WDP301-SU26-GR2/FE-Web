@@ -57,6 +57,7 @@ export default [
       route('board', 'routes/editor/board.tsx'),
       route('board/pitching', 'routes/editor/board-pitching.tsx'),
       route('board/sessions', 'routes/editor/board-sessions.tsx'),
+      route('board/sessions/:id', 'routes/editor/board-session-detail.tsx'),
       route('board/decisions', 'routes/editor/board-decisions.tsx'),
       route('board/reports', 'routes/editor/board-reports.tsx'),
       route('board/lifecycle', 'routes/editor/board-lifecycle.tsx'),
@@ -84,7 +85,26 @@ export default [
   ]),
 
   // Board dashboard
-  ...prefix('dashboard/board', [layout('routes/board/_layout.tsx', [index('routes/board/index.tsx')])]),
+  ...prefix('dashboard/board', [
+    layout('routes/board/_layout.tsx', [
+      index('routes/board/index.tsx'),
+      route('sessions', 'routes/board/sessions.tsx'),
+      route('sessions/:id', 'routes/board/session-detail.tsx'),
+      route('decisions', 'routes/board/decisions.tsx'),
+      route('decisions/:id', 'routes/board/decision-detail.tsx'),
+      route('reports', 'routes/board/reports.tsx'),
+      route('contracts', 'routes/board/contracts.tsx'),
+      route('contracts/:id', 'routes/board/contract-detail.tsx'),
+      route('payments', 'routes/board/payments.tsx'),
+      route('deadlines', 'routes/board/deadlines.tsx'),
+      route('rankings', 'routes/board/rankings.tsx'),
+      route('reprints', 'routes/board/reprints.tsx'),
+      route('transfers', 'routes/board/transfers.tsx'),
+      route('audit', 'routes/board/audit.tsx'),
+      route('notifications', 'routes/board/notifications.tsx'),
+      route('profile', 'routes/board/profile.tsx')
+    ])
+  ]),
 
   // Super Admin dashboard
   ...prefix('dashboard/admin', [

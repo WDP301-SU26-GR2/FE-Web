@@ -1,7 +1,9 @@
 import { boardControllerGetDecisions } from '~/api/operations/board/board'
 import { contractControllerCreateDraft, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
+import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { EditorContractsPage, type EditorActionResult, type EditorContractsData } from '~/features/editor'
+import { contractErrorKey, datesAreValid, ownershipIsValid, required } from './contract-route-utils'
 
 import type { Route } from './+types/contracts'
 
@@ -13,12 +15,12 @@ export async function clientLoader(): Promise<EditorContractsData & { hasError: 
   try {
     const [contracts, series, decisions] = await Promise.all([
       contractControllerGetContracts(),
-      seriesControllerListSeries({ status: 'SERIALIZED', limit: 100, offset: 0 }),
+      listSerializedSeries(),
       boardControllerGetDecisions()
     ])
     return {
       contracts: contracts.data,
-      series: series.data.items,
+      series,
       decisions: decisions.data.filter((item) => item.decisionType === 'SERIALIZATION' && item.result === 'APPROVED'),
       hasError: false
     }
@@ -33,21 +35,29 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   if (intent !== 'createContract') return { ok: false, intent, errorKey: 'invalidAction' }
   try {
     const seriesId = required(formData, 'seriesId')
+    const contractType = required(formData, 'contractType') as 'FULL_BUYOUT' | 'REVENUE_SHARE'
+    const publisherOwnershipPct = Number(required(formData, 'publisherOwnershipPct'))
+    const mangakaOwnershipPct = Number(required(formData, 'mangakaOwnershipPct'))
+    const contractStart = required(formData, 'contractStart')
+    const contractEnd = required(formData, 'contractEnd')
+    if (!ownershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct))
+      return { ok: false, intent, errorKey: 'ownershipMismatch' }
+    if (!datesAreValid(contractStart, contractEnd)) return { ok: false, intent, errorKey: 'invalidContractDates' }
     await contractControllerCreateDraft({
       seriesId,
       mangakaId: required(formData, 'mangakaId'),
       boardDecisionId: required(formData, 'boardDecisionId'),
-      contractType: required(formData, 'contractType') as 'FULL_BUYOUT' | 'REVENUE_SHARE',
+      contractType,
       valuationAmount: Number(required(formData, 'valuationAmount')),
-      publisherOwnershipPct: Number(required(formData, 'publisherOwnershipPct')),
-      mangakaOwnershipPct: Number(required(formData, 'mangakaOwnershipPct')),
+      publisherOwnershipPct,
+      mangakaOwnershipPct,
       terminationClause: required(formData, 'terminationClause'),
-      contractStart: new Date(required(formData, 'contractStart')).toISOString(),
-      contractEnd: new Date(required(formData, 'contractEnd')).toISOString()
+      contractStart: new Date(contractStart).toISOString(),
+      contractEnd: new Date(contractEnd).toISOString()
     })
     return { ok: true, intent, messageKey: 'createContract' }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+  } catch (error) {
+    return { ok: false, intent, errorKey: contractErrorKey(error) }
   }
 }
 
@@ -55,8 +65,14 @@ export default function EditorContractsRoute({ loaderData }: Route.ComponentProp
   return <EditorContractsPage data={loaderData} hasError={loaderData.hasError} />
 }
 
-function required(formData: FormData, key: string) {
-  const value = String(formData.get(key) ?? '')
-  if (!value) throw new Error(`Missing ${key}`)
-  return value
+async function listSerializedSeries() {
+  const items: SeriesListResDtoOutputItemsItem[] = []
+  const limit = 100
+  let offset = 0
+  while (true) {
+    const response = await seriesControllerListSeries({ status: 'SERIALIZED', limit, offset })
+    items.push(...response.data.items)
+    offset += response.data.items.length
+    if (response.data.items.length < limit || offset >= response.data.total) return items
+  }
 }

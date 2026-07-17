@@ -1,7 +1,9 @@
 import {
   boardControllerConcludeSession,
   boardControllerCreateSession,
+  boardControllerGetDecisions,
   boardControllerGetSessions,
+  boardControllerSuggestMembers,
   boardControllerStartSession
 } from '~/api/operations/board/board'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
@@ -11,13 +13,27 @@ import type { Route } from './+types/board-sessions'
 
 export async function clientLoader() {
   try {
-    const [series, sessions] = await Promise.all([
-      seriesControllerListSeries({ status: 'PITCHED', limit: 100, offset: 0 }),
-      boardControllerGetSessions()
+    const [seriesResponse, sessions, decisions] = await Promise.all([
+      seriesControllerListSeries({ status: 'READY_TO_PITCH', limit: 100, offset: 0 }),
+      boardControllerGetSessions(),
+      boardControllerGetDecisions()
     ])
-    return { series: series.data.items, sessions: sessions.data, hasError: false }
+    const series = seriesResponse.data.items
+    const suggestionEntries = await Promise.all(
+      series.map(async (item) => {
+        const response = await boardControllerSuggestMembers({ seriesId: item.id, size: 3 }).catch(() => null)
+        return [item.id, response?.status === 200 ? response.data.items : []] as const
+      })
+    )
+    return {
+      series,
+      sessions: sessions.data,
+      decisions: decisions.data,
+      suggestions: Object.fromEntries(suggestionEntries),
+      hasError: false
+    }
   } catch {
-    return { series: [], sessions: [], hasError: true }
+    return { series: [], sessions: [], decisions: [], suggestions: {}, hasError: true }
   }
 }
 
@@ -27,13 +43,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   try {
     if (intent === 'createSession') {
       const endTime = optionalDate(form, 'endTime')
+      const allowedEditorIds = String(form.get('allowedEditorIds') ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
       await boardControllerCreateSession({
         title: required(form, 'title'),
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(required(form, 'startTime')).toISOString(),
         ...(endTime ? { endTime } : {}),
         seriesId: required(form, 'seriesId'),
-        rosterSize: Number(form.get('rosterSize') ?? 3)
+        allowedEditorIds
       })
     } else if (intent === 'startSession') {
       await boardControllerStartSession({ id: required(form, 'sessionId') })

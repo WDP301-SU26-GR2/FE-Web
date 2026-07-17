@@ -1,14 +1,34 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router'
 import { BookCheck, CalendarClock, Eye, Printer } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { EditorPublicationData } from '../types'
 
-const ACTIVE_STATUSES = new Set(['EDITOR_REVIEW', 'READY_FOR_PRINT', 'AWAITING_CO_OWNER_APPROVAL'])
-
-export function EditorPublicationPage({ data, hasError }: { data: EditorPublicationData | null; hasError: boolean }) {
+export function EditorPublicationPage({
+  data,
+  focusReferenceId,
+  hasError
+}: {
+  data: EditorPublicationData | null
+  focusReferenceId: string | null
+  hasError: boolean
+}) {
   const { t } = useTranslation('editor')
   const chapters = data?.chapters ?? []
+  const unpublished = chapters
+    .filter(({ chapter }) => chapter.manuscriptStatus !== 'PUBLISHED')
+    .sort(({ chapter: left }, { chapter: right }) => {
+      if (left.id === focusReferenceId) return -1
+      if (right.id === focusReferenceId) return 1
+      return 0
+    })
+
+  useEffect(() => {
+    if (!focusReferenceId) return
+    document.getElementById(`publication-chapter-${focusReferenceId}`)?.scrollIntoView({ block: 'center' })
+  }, [focusReferenceId])
+
   return (
     <div className='space-y-6 pb-12'>
       <header>
@@ -26,15 +46,15 @@ export function EditorPublicationPage({ data, hasError }: { data: EditorPublicat
       )}
       <ChapterSection
         title={t('publication.awaiting')}
-        items={chapters.filter(({ chapter }) =>
-          Boolean(chapter.manuscriptStatus && ACTIVE_STATUSES.has(chapter.manuscriptStatus))
-        )}
+        items={unpublished}
         empty={t('publication.emptyAwaiting')}
+        focusReferenceId={focusReferenceId}
       />
       <ChapterSection
         title={t('publication.history')}
         items={chapters.filter(({ chapter }) => chapter.manuscriptStatus === 'PUBLISHED')}
         empty={t('publication.emptyHistory')}
+        focusReferenceId={focusReferenceId}
       />
     </div>
   )
@@ -43,11 +63,13 @@ export function EditorPublicationPage({ data, hasError }: { data: EditorPublicat
 function ChapterSection({
   title,
   items,
-  empty
+  empty,
+  focusReferenceId
 }: {
   title: string
   items: EditorPublicationData['chapters']
   empty: string
+  focusReferenceId: string | null
 }) {
   const { t, i18n } = useTranslation('editor')
   return (
@@ -65,7 +87,10 @@ function ChapterSection({
           {items.map(({ series, chapter }) => (
             <article
               key={chapter.id}
-              className='flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between'
+              id={`publication-chapter-${chapter.id}`}
+              className={`flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                chapter.id === focusReferenceId ? 'bg-primary/10 ring-2 ring-inset ring-primary' : ''
+              }`}
             >
               <div className='flex items-start gap-3'>
                 <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>

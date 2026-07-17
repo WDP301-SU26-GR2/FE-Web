@@ -16,7 +16,7 @@ export function EditorContractRevenuePage({
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.sections.revenue')}>
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        {contract.contractType === 'REVENUE_SHARE' ? (
+        {contract.contractType === 'REVENUE_SHARE' && contract.status === 'FULLY_EXECUTED' ? (
           <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-3'>
             <input type='hidden' name='intent' value='reportRevenue' />
             <input name='period' required className={contractInput} placeholder='2026-Q2' />
@@ -24,7 +24,7 @@ export function EditorContractRevenuePage({
               name='revenue'
               required
               type='number'
-              min={1}
+              min={0}
               className={contractInput}
               placeholder={t('contractDetail.revenue')}
             />
@@ -32,8 +32,10 @@ export function EditorContractRevenuePage({
               {t('actions.reportRevenue')}
             </button>
           </fetcher.Form>
-        ) : (
+        ) : contract.contractType !== 'REVENUE_SHARE' ? (
           <p className='text-sm text-muted-foreground'>{t('contractDetail.revenueShareOnly')}</p>
+        ) : (
+          <p className='text-sm text-muted-foreground'>{t('contractDetail.revenueExecutedOnly')}</p>
         )}
         <ContractActionMessage data={fetcher.data} />
       </section>

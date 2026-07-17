@@ -66,16 +66,27 @@ export function OperationPanel({
 export function SeriesSelect({
   series,
   defaultValue,
+  value,
+  onChange,
   name = 'seriesId',
   required = true
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   defaultValue?: string
+  value?: string
+  onChange?: (value: string) => void
   name?: string
   required?: boolean
 }) {
   return (
-    <select name={name} defaultValue={defaultValue} required={required} className={operationInput}>
+    <select
+      name={name}
+      defaultValue={value === undefined ? defaultValue : undefined}
+      value={value}
+      onChange={onChange ? (event) => onChange(event.target.value) : undefined}
+      required={required}
+      className={operationInput}
+    >
       <option value=''>Series</option>
       {series.map((item) => (
         <option key={item.id} value={item.id}>

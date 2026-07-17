@@ -1,18 +1,17 @@
 import { Link, useFetcher } from 'react-router'
-import {
-  ArrowLeft,
-  CalendarClock,
-  Check,
-  Loader2,
-  MessageSquareText,
-  Pause,
-  Play,
-  Printer,
-  RotateCcw
-} from 'lucide-react'
+import { ArrowLeft, CalendarClock, Check, Loader2, Pause, Play, Printer, RotateCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
 
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
+
+const HOLDABLE_MANUSCRIPT_STATUSES = new Set([
+  'IN_PRODUCTION',
+  'COMPOSITE_REVIEW',
+  'EDITOR_REVIEW',
+  'EDITOR_REVISION',
+  'READY_FOR_PRINT'
+])
 
 export function EditorChapterReviewPage({
   data,
@@ -32,6 +31,8 @@ export function EditorChapterReviewPage({
   }
   const { series, chapter, pages } = data
   const busy = fetcher.state !== 'idle'
+  const scheduleEditable = !['AWAITING_CO_OWNER_APPROVAL', 'PUBLISHED'].includes(chapter.manuscriptStatus ?? '')
+  const holdable = Boolean(data.progress?.onHold) || HOLDABLE_MANUSCRIPT_STATUSES.has(chapter.manuscriptStatus ?? '')
   return (
     <div className='space-y-6 pb-12'>
       <Link
@@ -137,6 +138,15 @@ export function EditorChapterReviewPage({
               </button>
             </div>
           </fetcher.Form>
+          <div className='mt-5'>
+            <EditorAnnotationPanel
+              title={t('chapterReview.nameAnnotations')}
+              annotations={data.nameAnnotations}
+              target='NAME'
+              targetId={data.name.id}
+              contextFields={{ chapterId: chapter.id, nameId: data.name.id }}
+            />
+          </div>
         </section>
       )}
       <section className='grid gap-4 xl:grid-cols-2'>
@@ -145,6 +155,14 @@ export function EditorChapterReviewPage({
             <CalendarClock className='size-5 text-primary' />
             {t('chapterReview.production')}
           </h2>
+          {scheduleEditable && (
+            <Link
+              to={`/dashboard/editor/operations/deadlines?chapterId=${encodeURIComponent(chapter.id)}`}
+              className='mt-2 inline-flex text-xs font-bold text-primary'
+            >
+              {t('chapterReview.openDeadlineNegotiation')}
+            </Link>
+          )}
           {data.progress && (
             <div className='mt-4 grid grid-cols-2 gap-3 rounded-lg bg-muted p-4 text-sm'>
               <Metric label={t('chapterReview.progress')} value={`${data.progress.progressPct}%`} />
@@ -165,17 +183,20 @@ export function EditorChapterReviewPage({
               name='deadline'
               type='datetime-local'
               required
+              disabled={!scheduleEditable || busy}
               className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
             />
             <input
               name='reason'
+              disabled={!scheduleEditable || busy}
               className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
               placeholder={t('chapterReview.reason')}
             />
             <button
               name='intent'
               value={chapter.schedule?.currentDeadline ? 'extendSchedule' : 'setSchedule'}
-              className='h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground sm:col-span-2'
+              disabled={!scheduleEditable || busy}
+              className='h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50 sm:col-span-2'
             >
               {chapter.schedule?.currentDeadline ? t('actions.extendDeadline') : t('actions.setDeadline')}
             </button>
@@ -184,83 +205,62 @@ export function EditorChapterReviewPage({
             <input type='hidden' name='chapterId' value={chapter.id} />
             <input
               name='reason'
-              required
+              required={!data.progress?.onHold}
+              disabled={!holdable || busy || Boolean(data.progress?.onHold)}
               className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
               placeholder={t('chapterReview.holdReason')}
             />
             <input
               name='expectedReturnDate'
               type='datetime-local'
+              disabled={!holdable || busy || Boolean(data.progress?.onHold)}
               className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
             />
             <button
               name='intent'
               value={data.progress?.onHold ? 'resumeChapter' : 'holdChapter'}
-              className='inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border px-3 text-sm font-bold text-foreground sm:col-span-2'
+              disabled={!holdable || busy}
+              className='inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border px-3 text-sm font-bold text-foreground disabled:opacity-50 sm:col-span-2'
             >
               {data.progress?.onHold ? <Play className='size-4' /> : <Pause className='size-4' />}
               {data.progress?.onHold ? t('actions.resumeChapter') : t('actions.holdChapter')}
             </button>
           </fetcher.Form>
         </div>
-        <div className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <h2 className='flex items-center gap-2 text-lg font-bold text-foreground'>
-            <MessageSquareText className='size-5 text-primary' />
-            {t('chapterReview.annotations')}
-          </h2>
-          <fetcher.Form method='post' className='mt-4 flex gap-2'>
-            <input type='hidden' name='chapterId' value={chapter.id} />
-            <input
-              name='content'
-              required
-              className='h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground'
-              placeholder={t('chapterReview.annotationPlaceholder')}
-            />
-            <button
-              name='intent'
-              value='createAnnotation'
-              className='rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
-            >
-              {t('actions.add')}
-            </button>
-          </fetcher.Form>
-          <div className='mt-4 space-y-2'>
-            {data.annotations.map((item) => (
-              <article key={item.id} className='rounded-lg border border-border p-3'>
-                <p className={`text-sm ${item.isResolved ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                  {item.content}
-                </p>
-                <fetcher.Form method='post' className='mt-2 flex gap-2'>
-                  <input type='hidden' name='chapterId' value={chapter.id} />
-                  <input type='hidden' name='annotationId' value={item.id} />
-                  {!item.isResolved && (
-                    <button name='intent' value='resolveAnnotation' className='text-xs font-bold text-primary'>
-                      {t('actions.resolve')}
-                    </button>
-                  )}
-                  <button name='intent' value='removeAnnotation' className='text-xs font-bold text-destructive'>
-                    {t('actions.remove')}
-                  </button>
-                </fetcher.Form>
-              </article>
-            ))}
-            {!data.annotations.length && (
-              <p className='text-sm text-muted-foreground'>{t('chapterReview.emptyAnnotations')}</p>
-            )}
-          </div>
-        </div>
-      </section>
-      <fetcher.Form method='post' className='sticky bottom-4 rounded-xl border border-border bg-card p-4 shadow-lg'>
-        <input type='hidden' name='chapterId' value={chapter.id} />
-        <textarea
-          name='reason'
-          maxLength={1000}
-          rows={2}
-          aria-label={t('actions.revisionReason')}
-          placeholder={t('actions.revisionPlaceholder')}
-          className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary'
+        <EditorAnnotationPanel
+          title={t('chapterReview.annotations')}
+          annotations={data.annotations}
+          target='MANUSCRIPT'
+          targetId={chapter.id}
+          contextFields={{ chapterId: chapter.id }}
         />
-        <div className='mt-3 flex flex-wrap gap-2'>
+      </section>
+      <section className='sticky bottom-4 rounded-xl border border-border bg-card p-4 shadow-lg'>
+        <fetcher.Form method='post'>
+          <input type='hidden' name='chapterId' value={chapter.id} />
+          <textarea
+            name='reason'
+            required
+            minLength={1}
+            maxLength={1000}
+            rows={2}
+            disabled={chapter.manuscriptStatus !== 'EDITOR_REVIEW' || busy}
+            aria-label={t('actions.revisionReason')}
+            placeholder={t('actions.revisionPlaceholder')}
+            className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-50'
+          />
+          <button
+            name='intent'
+            value='reviseManuscript'
+            disabled={chapter.manuscriptStatus !== 'EDITOR_REVIEW' || busy}
+            className='mt-3 inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:opacity-50'
+          >
+            <RotateCcw className='size-4' />
+            {t('actions.requestRevision')}
+          </button>
+        </fetcher.Form>
+        <fetcher.Form method='post' className='mt-3 flex flex-wrap gap-2 border-t border-border pt-3'>
+          <input type='hidden' name='chapterId' value={chapter.id} />
           <button
             name='intent'
             value='approveManuscript'
@@ -272,15 +272,6 @@ export function EditorChapterReviewPage({
           </button>
           <button
             name='intent'
-            value='reviseManuscript'
-            disabled={chapter.manuscriptStatus !== 'EDITOR_REVIEW' || busy}
-            className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:opacity-50'
-          >
-            <RotateCcw className='size-4' />
-            {t('actions.requestRevision')}
-          </button>
-          <button
-            name='intent'
             value='publishChapter'
             disabled={chapter.manuscriptStatus !== 'READY_FOR_PRINT' || busy}
             className='inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-bold text-background disabled:opacity-50'
@@ -288,9 +279,9 @@ export function EditorChapterReviewPage({
             <Printer className='size-4' />
             {t('actions.publish')}
           </button>
-        </div>
+        </fetcher.Form>
         <p className='mt-2 text-xs text-muted-foreground'>{t('chapterReview.publishGate')}</p>
-      </fetcher.Form>
+      </section>
     </div>
   )
 }
