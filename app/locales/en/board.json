@@ -53,6 +53,15 @@
     "chatPlaceholder": "Write a message...",
     "chatLocked": "Discussion is locked during voting.",
     "sendMessage": "Send message",
+    "chatErrors": {
+      "NOT_PARTICIPANT": "You are not a participant in this session.",
+      "SESSION_NOT_ACTIVE": "Chat is only available while the session is active.",
+      "VOTING_PHASE": "Chat is locked because voting has started.",
+      "INVALID_INPUT": "The message must contain between 1 and 1000 characters.",
+      "DISCONNECTED": "The live connection is unavailable. Please reconnect and try again.",
+      "TIMEOUT": "The server did not acknowledge the message in time.",
+      "UNKNOWN": "The message could not be sent. Please try again."
+    },
     "votingProgress": "Session voting progress",
     "votedMembers": "{{voted}} of {{total}} members have voted",
     "quorum": "Quorum",
@@ -78,7 +87,14 @@
     "abstain": "Abstain",
     "note": "Optional explanation",
     "submitVote": "Submit vote",
-    "votes": "Recorded votes"
+    "votes": "Recorded votes",
+    "voteUnavailable": {
+      "closed": "This decision is already closed.",
+      "alreadyVoted": "You have already voted on this decision.",
+      "notInRoster": "You are not assigned to this session roster.",
+      "sessionNotActive": "Voting is only available while the session is active.",
+      "votingNotOpen": "The session creator has not opened the voting phase yet."
+    }
   },
   "reports": {
     "title": "Board reports",

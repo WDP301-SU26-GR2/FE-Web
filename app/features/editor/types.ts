@@ -17,6 +17,7 @@ export type EditorActionResult = {
   intent: string
   messageKey?: string
   errorKey?: string
+  phase?: 'PRESENTING' | 'QA' | 'VOTING'
 }
 
 export type EditorProposalDetailData = {

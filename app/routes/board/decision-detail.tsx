@@ -2,8 +2,8 @@ import {
   boardControllerCastVote,
   boardControllerGetDecisionDetails,
   boardControllerGetDecisionVotes,
-  boardControllerGetSessionById,
-  boardControllerGetReports
+  boardControllerGetReports,
+  boardControllerGetSessionById
 } from '~/api/operations/board/board'
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import { BoardDecisionDetailPage, type BoardActionResult } from '~/features/board'
@@ -23,7 +23,8 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     votes: votes.data,
     reports: reports.data.filter((item) => item.boardDecisionId === params.id),
     sessionStatus: session.data.status,
-    sessionPhase: readBoardSessionPhase(session.data)
+    sessionPhase: readBoardSessionPhase(session.data),
+    allowedEditorIds: session.data.allowedEditorIds
   }
 }
 

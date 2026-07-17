@@ -21,6 +21,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { BoardSessionResDtoOutputStatus } from './boardSessionResDtoOutputStatus';
+import type { BoardSessionResDtoOutputPhase } from './boardSessionResDtoOutputPhase';
+import type { BoardSessionResDtoOutputCreator } from './boardSessionResDtoOutputCreator';
+import type { BoardSessionResDtoOutputMembersItem } from './boardSessionResDtoOutputMembersItem';
 
 export interface BoardSessionResDtoOutput {
   id: string;
@@ -30,8 +33,13 @@ export interface BoardSessionResDtoOutput {
   creatorId: string;
   /** Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED */
   status: BoardSessionResDtoOutputStatus;
+  /** Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING */
+  phase: BoardSessionResDtoOutputPhase;
+  /** CÓ ở GET /board/sessions + GET /board/sessions/:id (enrich) */
+  creator?: BoardSessionResDtoOutputCreator;
+  /** Resolve từ allowedEditorIds — CÓ ở list + detail */
+  members?: BoardSessionResDtoOutputMembersItem[];
   allowedEditorIds: string[];
-  seriesId: string;
   /**
    * ISO 8601 date-time (UTC)
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$

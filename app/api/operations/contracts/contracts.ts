@@ -195,13 +195,25 @@ export type contractControllerGetContractByIdResponse200 = {
   data: ContractResDtoOutput
   status: 200
 }
+
+export type contractControllerGetContractByIdResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerGetContractByIdResponse404 = {
+  data: void
+  status: 404
+}
     
 export type contractControllerGetContractByIdResponseSuccess = (contractControllerGetContractByIdResponse200) & {
   headers: Headers;
 };
-;
+export type contractControllerGetContractByIdResponseError = (contractControllerGetContractByIdResponse403 | contractControllerGetContractByIdResponse404) & {
+  headers: Headers;
+};
 
-export type contractControllerGetContractByIdResponse = (contractControllerGetContractByIdResponseSuccess)
+export type contractControllerGetContractByIdResponse = (contractControllerGetContractByIdResponseSuccess | contractControllerGetContractByIdResponseError)
 
 export const getContractControllerGetContractByIdUrl = ({ id }: ContractControllerGetContractByIdPathParameters,) => {
 
@@ -267,13 +279,25 @@ export type contractControllerGetContractVersionsResponse200 = {
   data: ContractVersionResDtoOutput[]
   status: 200
 }
+
+export type contractControllerGetContractVersionsResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerGetContractVersionsResponse404 = {
+  data: void
+  status: 404
+}
     
 export type contractControllerGetContractVersionsResponseSuccess = (contractControllerGetContractVersionsResponse200) & {
   headers: Headers;
 };
-;
+export type contractControllerGetContractVersionsResponseError = (contractControllerGetContractVersionsResponse403 | contractControllerGetContractVersionsResponse404) & {
+  headers: Headers;
+};
 
-export type contractControllerGetContractVersionsResponse = (contractControllerGetContractVersionsResponseSuccess)
+export type contractControllerGetContractVersionsResponse = (contractControllerGetContractVersionsResponseSuccess | contractControllerGetContractVersionsResponseError)
 
 export const getContractControllerGetContractVersionsUrl = ({ id }: ContractControllerGetContractVersionsPathParameters,) => {
 
@@ -302,13 +326,25 @@ export type contractControllerGetContractVersionByIdResponse200 = {
   data: ContractVersionResDtoOutput
   status: 200
 }
+
+export type contractControllerGetContractVersionByIdResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerGetContractVersionByIdResponse404 = {
+  data: void
+  status: 404
+}
     
 export type contractControllerGetContractVersionByIdResponseSuccess = (contractControllerGetContractVersionByIdResponse200) & {
   headers: Headers;
 };
-;
+export type contractControllerGetContractVersionByIdResponseError = (contractControllerGetContractVersionByIdResponse403 | contractControllerGetContractVersionByIdResponse404) & {
+  headers: Headers;
+};
 
-export type contractControllerGetContractVersionByIdResponse = (contractControllerGetContractVersionByIdResponseSuccess)
+export type contractControllerGetContractVersionByIdResponse = (contractControllerGetContractVersionByIdResponseSuccess | contractControllerGetContractVersionByIdResponseError)
 
 export const getContractControllerGetContractVersionByIdUrl = ({ id, versionId }: ContractControllerGetContractVersionByIdPathParameters,) => {
 
@@ -337,13 +373,30 @@ export type contractControllerUpdateStatusResponse200 = {
   data: ContractResDtoOutput
   status: 200
 }
+
+export type contractControllerUpdateStatusResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerUpdateStatusResponse404 = {
+  data: void
+  status: 404
+}
+
+export type contractControllerUpdateStatusResponse409 = {
+  data: void
+  status: 409
+}
     
 export type contractControllerUpdateStatusResponseSuccess = (contractControllerUpdateStatusResponse200) & {
   headers: Headers;
 };
-;
+export type contractControllerUpdateStatusResponseError = (contractControllerUpdateStatusResponse403 | contractControllerUpdateStatusResponse404 | contractControllerUpdateStatusResponse409) & {
+  headers: Headers;
+};
 
-export type contractControllerUpdateStatusResponse = (contractControllerUpdateStatusResponseSuccess)
+export type contractControllerUpdateStatusResponse = (contractControllerUpdateStatusResponseSuccess | contractControllerUpdateStatusResponseError)
 
 export const getContractControllerUpdateStatusUrl = ({ id }: ContractControllerUpdateStatusPathParameters,) => {
 
@@ -372,13 +425,25 @@ export type contractControllerCheckStatusResponse200 = {
   data: ContractStatusProgressResDtoOutput
   status: 200
 }
+
+export type contractControllerCheckStatusResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerCheckStatusResponse404 = {
+  data: void
+  status: 404
+}
     
 export type contractControllerCheckStatusResponseSuccess = (contractControllerCheckStatusResponse200) & {
   headers: Headers;
 };
-;
+export type contractControllerCheckStatusResponseError = (contractControllerCheckStatusResponse403 | contractControllerCheckStatusResponse404) & {
+  headers: Headers;
+};
 
-export type contractControllerCheckStatusResponse = (contractControllerCheckStatusResponseSuccess)
+export type contractControllerCheckStatusResponse = (contractControllerCheckStatusResponseSuccess | contractControllerCheckStatusResponseError)
 
 export const getContractControllerCheckStatusUrl = ({ id }: ContractControllerCheckStatusPathParameters,) => {
 
@@ -559,6 +624,11 @@ export type contractControllerSignMangakaResponse400 = {
   status: 400
 }
 
+export type contractControllerSignMangakaResponse403 = {
+  data: void
+  status: 403
+}
+
 export type contractControllerSignMangakaResponse404 = {
   data: void
   status: 404
@@ -572,7 +642,7 @@ export type contractControllerSignMangakaResponse409 = {
 export type contractControllerSignMangakaResponseSuccess = (contractControllerSignMangakaResponse201) & {
   headers: Headers;
 };
-export type contractControllerSignMangakaResponseError = (contractControllerSignMangakaResponse400 | contractControllerSignMangakaResponse404 | contractControllerSignMangakaResponse409) & {
+export type contractControllerSignMangakaResponseError = (contractControllerSignMangakaResponse400 | contractControllerSignMangakaResponse403 | contractControllerSignMangakaResponse404 | contractControllerSignMangakaResponse409) & {
   headers: Headers;
 };
 
@@ -991,13 +1061,25 @@ export type contractControllerListAmendmentsResponse200 = {
   data: AmendmentResDtoOutput[]
   status: 200
 }
+
+export type contractControllerListAmendmentsResponse403 = {
+  data: void
+  status: 403
+}
+
+export type contractControllerListAmendmentsResponse404 = {
+  data: void
+  status: 404
+}
     
 export type contractControllerListAmendmentsResponseSuccess = (contractControllerListAmendmentsResponse200) & {
   headers: Headers;
 };
-;
+export type contractControllerListAmendmentsResponseError = (contractControllerListAmendmentsResponse403 | contractControllerListAmendmentsResponse404) & {
+  headers: Headers;
+};
 
-export type contractControllerListAmendmentsResponse = (contractControllerListAmendmentsResponseSuccess)
+export type contractControllerListAmendmentsResponse = (contractControllerListAmendmentsResponseSuccess | contractControllerListAmendmentsResponseError)
 
 export const getContractControllerListAmendmentsUrl = ({ contractId }: ContractControllerListAmendmentsPathParameters,) => {
 
@@ -1027,6 +1109,11 @@ export type contractControllerGetAmendmentResponse200 = {
   status: 200
 }
 
+export type contractControllerGetAmendmentResponse403 = {
+  data: void
+  status: 403
+}
+
 export type contractControllerGetAmendmentResponse404 = {
   data: void
   status: 404
@@ -1035,7 +1122,7 @@ export type contractControllerGetAmendmentResponse404 = {
 export type contractControllerGetAmendmentResponseSuccess = (contractControllerGetAmendmentResponse200) & {
   headers: Headers;
 };
-export type contractControllerGetAmendmentResponseError = (contractControllerGetAmendmentResponse404) & {
+export type contractControllerGetAmendmentResponseError = (contractControllerGetAmendmentResponse403 | contractControllerGetAmendmentResponse404) & {
   headers: Headers;
 };
 

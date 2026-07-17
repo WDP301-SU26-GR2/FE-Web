@@ -52,6 +52,7 @@ import type {
   PageListResDtoOutput,
   PageResDtoOutput,
   ReasonBodyDto,
+  RevisionReasonBodyDto,
   SetScheduleBodyDto,
   UpdateChapterBodyDto,
   UpdatePageBodyDto
@@ -841,7 +842,7 @@ export const getChapterControllerRequestRevisionUrl = ({ id }: ChapterController
 }
 
 export const chapterControllerRequestRevision = async ({ id }: ChapterControllerRequestRevisionPathParameters,
-    reasonBodyDto: ReasonBodyDto, options?: RequestInit): Promise<chapterControllerRequestRevisionResponse> => {
+    revisionReasonBodyDto: RevisionReasonBodyDto, options?: RequestInit): Promise<chapterControllerRequestRevisionResponse> => {
   
   return customFetch<chapterControllerRequestRevisionResponse>(getChapterControllerRequestRevisionUrl({ id }),
   {      
@@ -849,7 +850,7 @@ export const chapterControllerRequestRevision = async ({ id }: ChapterController
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      reasonBodyDto,)
+      revisionReasonBodyDto,)
   }
 );}
 

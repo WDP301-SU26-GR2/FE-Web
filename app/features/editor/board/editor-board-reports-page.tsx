@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { FilePlus2, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { BoardDecisionResDtoOutput, SeriesReportResDtoOutput } from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import { orderBoardDecisions } from './board-order'
 import { boardInput, BoardFeedback, BoardPageLayout, BoardPanel, useBoardFetcher } from './components/board-shared'
 
 export function EditorBoardReportsPage({
@@ -46,13 +48,30 @@ function CreateReportForm({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
+  const [selectedSeriesId, setSelectedSeriesId] = useState('')
+  const [selectedDecisionId, setSelectedDecisionId] = useState('')
+  const matchingDecisions = orderBoardDecisions(
+    decisions.filter((decision) => decision.targetSeriesId === selectedSeriesId)
+  )
+
+  function selectSeries(seriesId: string) {
+    setSelectedSeriesId(seriesId)
+    setSelectedDecisionId('')
+  }
+
   return (
     <BoardPanel title={t('board.reportTitle')}>
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createReport' />
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.selectSeries')}
-          <select className={boardInput} name='seriesId' required defaultValue=''>
+          <select
+            className={boardInput}
+            name='seriesId'
+            required
+            value={selectedSeriesId}
+            onChange={(event) => selectSeries(event.target.value)}
+          >
             <option value='' disabled>
               {t('board.selectSeries')}
             </option>
@@ -65,11 +84,18 @@ function CreateReportForm({
         </label>
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.selectDecision')}
-          <select className={boardInput} name='decisionId' required defaultValue=''>
+          <select
+            className={boardInput}
+            name='decisionId'
+            required
+            disabled={!selectedSeriesId}
+            value={selectedDecisionId}
+            onChange={(event) => setSelectedDecisionId(event.target.value)}
+          >
             <option value='' disabled>
               {t('board.selectDecision')}
             </option>
-            {decisions.map((item) => (
+            {matchingDecisions.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.decisionType ?? 'DECISION'} · {item.targetSeriesId?.slice(-6) ?? '—'}
               </option>
@@ -93,7 +119,7 @@ function CreateReportForm({
           />
         </label>
         <button
-          disabled={fetcher.state !== 'idle' || !series.length || !decisions.length}
+          disabled={fetcher.state !== 'idle' || !selectedSeriesId || !selectedDecisionId}
           className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
         >
           {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}

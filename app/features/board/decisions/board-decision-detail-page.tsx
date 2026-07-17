@@ -1,7 +1,8 @@
 import { useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import type { BoardDecisionResDtoOutput, BoardVoteResDtoOutput, SeriesReportResDtoOutput } from '~/api/model/board'
-import type { BoardSessionPhase } from '~/api/manual/board-meeting'
+import type { BoardVoteResDtoOutput, SeriesReportResDtoOutput } from '~/api/model/board'
+import type { BoardMeetingDecision, BoardSessionPhase } from '~/api/manual/board-meeting'
+import { useAuth } from '~/features/auth/context/auth-context'
 import {
   boardInput,
   BoardFeedback,
@@ -11,43 +12,77 @@ import {
   useBoardPolling
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
+import { useSessionVoteProgress } from '../sessions/use-session-vote-progress'
 
 export function BoardDecisionDetailPage({
   decision,
   votes,
   reports,
   sessionStatus,
-  sessionPhase
+  sessionPhase,
+  allowedEditorIds
 }: {
-  decision: BoardDecisionResDtoOutput
+  decision: BoardMeetingDecision
   votes: BoardVoteResDtoOutput[]
   reports: SeriesReportResDtoOutput[]
   sessionStatus: string
   sessionPhase: BoardSessionPhase
+  allowedEditorIds: string[]
 }) {
   const { t } = useTranslation('board')
+  const { session: authSession } = useAuth()
   const fetcher = useFetcher<BoardActionResult>()
   useBoardPolling()
+  const meeting = useSessionVoteProgress({
+    sessionId: decision.boardSessionId,
+    decisions: [decision],
+    initialPhase: sessionPhase,
+    initialMessages: []
+  })
+  const liveDecision = meeting.decisions.find((item) => item.id === decision.id) ?? decision
+  const livePhase = meeting.phase
+  const currentUserId = authSession?.user.id ?? ''
+  const voterAllowed = allowedEditorIds.includes(currentUserId)
+  const alreadyVoted = votes.some((vote) => vote.voterId === currentUserId)
+  const decisionOpen = liveDecision.result === 'PENDING' || liveDecision.result === 'PENDING_QUORUM'
   const canVote =
-    sessionStatus === 'ACTIVE' &&
-    sessionPhase === 'VOTING' &&
-    (decision.result === 'PENDING' || decision.result === 'PENDING_QUORUM')
+    sessionStatus === 'ACTIVE' && livePhase === 'VOTING' && decisionOpen && voterAllowed && !alreadyVoted
+
+  const voteUnavailableReason = !decisionOpen
+    ? t('decisions.voteUnavailable.closed')
+    : alreadyVoted
+      ? t('decisions.voteUnavailable.alreadyVoted')
+      : !voterAllowed
+        ? t('decisions.voteUnavailable.notInRoster')
+        : sessionStatus !== 'ACTIVE'
+          ? t('decisions.voteUnavailable.sessionNotActive')
+          : livePhase !== 'VOTING'
+            ? t('decisions.voteUnavailable.votingNotOpen')
+            : ''
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
         title={decision.decisionType ?? t('decisions.title')}
-        description={`${t('decisions.series')}: ${decision.targetSeriesId ?? '—'}`}
+        description={`${t('decisions.series')}: ${decision.targetSeries?.title ?? decision.targetSeriesId ?? '—'}`}
       />
       <BoardPanel title={t('decisions.progress')}>
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <StatusBadge value={decision.result ?? 'PENDING'} />
+          <StatusBadge value={liveDecision.result ?? 'PENDING'} />
           <strong>
             {t('decisions.summary', {
-              approve: decision.approveCount,
-              reject: decision.rejectCount,
-              total: decision.totalVotes
+              approve: liveDecision.approveCount,
+              reject: liveDecision.rejectCount,
+              total: liveDecision.totalVotes
             })}
           </strong>
+        </div>
+        <div className='mt-4 h-2 overflow-hidden rounded-full bg-muted'>
+          <div
+            className='h-full rounded-full bg-primary transition-[width] duration-300'
+            style={{
+              width: `${allowedEditorIds.length ? Math.min((liveDecision.totalVotes / allowedEditorIds.length) * 100, 100) : 0}%`
+            }}
+          />
         </div>
       </BoardPanel>
       {canVote && (
@@ -66,6 +101,11 @@ export function BoardDecisionDetailPage({
           </fetcher.Form>
           <BoardFeedback data={fetcher.data} />
         </BoardPanel>
+      )}
+      {!canVote && voteUnavailableReason && (
+        <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground'>
+          {voteUnavailableReason}
+        </p>
       )}
       <div className='grid gap-5 xl:grid-cols-2'>
         <BoardPanel title={t('decisions.votes')}>

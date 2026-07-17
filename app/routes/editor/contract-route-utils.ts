@@ -5,7 +5,8 @@ export async function loadContractBase(id: string) {
     contractControllerGetContractById({ id }),
     contractControllerCheckStatus({ id }).catch(() => null)
   ])
-  return { contract: contract.data, progress: progress?.data ?? null }
+  if (contract.status !== 200) throw new Response('Contract not found', { status: contract.status })
+  return { contract: contract.data, progress: progress?.status === 200 ? progress.data : null }
 }
 
 export function required(form: FormData, key: string) {

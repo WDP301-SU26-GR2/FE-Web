@@ -3,7 +3,8 @@ import { Link } from 'react-router'
 import { Radio, Send } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
-import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
+import type { BoardMeetingSession } from '~/api/manual/board-meeting'
+import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import { BoardHeader, BoardPanel, EmptyState, StatusBadge, useBoardPolling } from '../components/board-ui'
 import { useSessionVoteProgress } from './use-session-vote-progress'
 
@@ -13,7 +14,7 @@ export function BoardSessionDetailPage({
   phase,
   messages
 }: {
-  session: BoardSessionResDtoOutput
+  session: BoardMeetingSession
   decisions: BoardDecisionResDtoOutput[]
   phase: BoardSessionPhase
   messages: BoardMessage[]
@@ -56,6 +57,7 @@ export function BoardSessionDetailPage({
       <MeetingChat
         messages={meeting.messages}
         disabled={session.status !== 'ACTIVE' || meeting.phase === 'VOTING'}
+        connectionState={meeting.connectionState}
         sendMessage={meeting.sendMessage}
       />
       <BoardPanel title={t('sessions.votingProgress')}>
@@ -97,24 +99,34 @@ export function BoardSessionDetailPage({
 function MeetingChat({
   messages,
   disabled,
+  connectionState,
   sendMessage
 }: {
   messages: BoardMessage[]
   disabled: boolean
+  connectionState: 'connecting' | 'connected' | 'disconnected'
   sendMessage: (content: string) => Promise<{ status: string; reason?: string }>
 }) {
   const { t } = useTranslation('board')
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const chatDisabled = disabled || connectionState !== 'connected'
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     const value = content.trim()
-    if (!value || disabled || sending) return
+    if (!value || chatDisabled || sending) return
     setSending(true)
-    const result = await sendMessage(value)
-    if (result.status === 'SUCCESS') setContent('')
-    setSending(false)
+    try {
+      const result = await sendMessage(value)
+      if (result.status === 'SUCCESS') {
+        setContent('')
+        setError('')
+      } else setError(t(`sessions.chatErrors.${result.reason ?? 'UNKNOWN'}`))
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -135,19 +147,20 @@ function MeetingChat({
         <input
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          disabled={disabled || sending}
+          disabled={chatDisabled || sending}
           maxLength={1000}
           className='h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm disabled:opacity-50'
-          placeholder={disabled ? t('sessions.chatLocked') : t('sessions.chatPlaceholder')}
+          placeholder={chatDisabled ? t('sessions.chatLocked') : t('sessions.chatPlaceholder')}
         />
         <button
-          disabled={disabled || sending || !content.trim()}
+          disabled={chatDisabled || sending || !content.trim()}
           className='inline-flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50'
           aria-label={t('sessions.sendMessage')}
         >
           <Send className='size-4' />
         </button>
       </form>
+      {error && <p className='mt-2 text-xs font-semibold text-destructive'>{error}</p>}
     </BoardPanel>
   )
 }

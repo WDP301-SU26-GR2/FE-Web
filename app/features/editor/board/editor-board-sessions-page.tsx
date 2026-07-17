@@ -9,6 +9,7 @@ import type {
 } from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { orderBoardDecisions, orderBoardSessions } from './board-order'
 import {
   boardInput,
   BoardFeedback,
@@ -54,7 +55,7 @@ export function EditorBoardSessionsPage({
                 {t(`board.realtime.${voteProgress.connectionState}`)}
               </div>
             )}
-            {sessions.map((session) => (
+            {orderBoardSessions(sessions).map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}
@@ -79,15 +80,15 @@ function CreateSessionForm({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
-  const [seriesId, setSeriesId] = useState('')
+  const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState('')
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const suggestedMembers = suggestions[seriesId] ?? []
+  const suggestedMembers = suggestions[rosterSourceSeriesId] ?? []
   const rosterIsValid = selectedMemberIds.length >= 3 && selectedMemberIds.length % 2 === 1
 
   function selectSeries(nextSeriesId: string) {
-    setSeriesId(nextSeriesId)
+    setRosterSourceSeriesId(nextSeriesId)
     setSelectedMemberIds((suggestions[nextSeriesId] ?? []).map((member) => member.userId))
   }
 
@@ -108,16 +109,16 @@ function CreateSessionForm({
           <input className={boardInput} name='title' minLength={5} required />
         </label>
         <label className='grid gap-1.5 text-sm font-semibold'>
-          {t('board.selectSeries')}
+          {t('board.rosterSourceSeries')}
           <select
             className={boardInput}
-            name='seriesId'
+            name='rosterSourceSeriesId'
             required
-            value={seriesId}
+            value={rosterSourceSeriesId}
             onChange={(event) => selectSeries(event.target.value)}
           >
             <option value='' disabled>
-              {t('board.selectSeries')}
+              {t('board.rosterSourceSeries')}
             </option>
             {series.map((item) => (
               <option key={item.id} value={item.id}>
@@ -125,6 +126,7 @@ function CreateSessionForm({
               </option>
             ))}
           </select>
+          <span className='text-xs font-normal text-muted-foreground'>{t('board.rosterSourceSeriesHint')}</span>
         </label>
         <div className='grid min-w-0 gap-3'>
           <label className='grid min-w-0 gap-1.5 text-sm font-semibold'>
@@ -154,7 +156,7 @@ function CreateSessionForm({
             />
           </label>
         </div>
-        {seriesId && (
+        {rosterSourceSeriesId && (
           <fieldset className='grid gap-2 rounded-lg border border-border p-3'>
             <legend className='px-1 text-sm font-bold text-foreground'>{t('board.selectedRoster')}</legend>
             <p className='text-xs text-muted-foreground'>{t('board.selectedRosterHint')}</p>
@@ -259,7 +261,7 @@ function SessionCard({
       {!!decisions.length && (
         <div className='mt-4 grid gap-3 border-t border-border pt-4'>
           <p className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('board.votingProgress')}</p>
-          {decisions.map((decision) => (
+          {orderBoardDecisions(decisions).map((decision) => (
             <SessionDecisionProgress
               key={decision.id}
               decision={decision}

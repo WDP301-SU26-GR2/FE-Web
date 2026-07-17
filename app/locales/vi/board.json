@@ -53,6 +53,15 @@
     "chatPlaceholder": "Nhập nội dung trao đổi...",
     "chatLocked": "Thảo luận đã khóa trong giai đoạn bỏ phiếu.",
     "sendMessage": "Gửi tin nhắn",
+    "chatErrors": {
+      "NOT_PARTICIPANT": "Bạn không phải người tham gia phiên họp này.",
+      "SESSION_NOT_ACTIVE": "Chỉ có thể chat khi phiên họp đang hoạt động.",
+      "VOTING_PHASE": "Chat đã khóa vì phiên họp bắt đầu bỏ phiếu.",
+      "INVALID_INPUT": "Tin nhắn phải có từ 1 đến 1000 ký tự.",
+      "DISCONNECTED": "Kết nối trực tiếp đang gián đoạn. Hãy kết nối lại và thử lại.",
+      "TIMEOUT": "Máy chủ không xác nhận tin nhắn trong thời gian cho phép.",
+      "UNKNOWN": "Không thể gửi tin nhắn. Vui lòng thử lại."
+    },
     "votingProgress": "Tiến trình bỏ phiếu của phiên họp",
     "votedMembers": "Đã bỏ phiếu {{voted}}/{{total}} thành viên",
     "quorum": "Quorum",
@@ -78,7 +87,14 @@
     "abstain": "Không biểu quyết",
     "note": "Giải thích không bắt buộc",
     "submitVote": "Gửi phiếu",
-    "votes": "Phiếu đã ghi nhận"
+    "votes": "Phiếu đã ghi nhận",
+    "voteUnavailable": {
+      "closed": "Quyết định này đã được chốt.",
+      "alreadyVoted": "Bạn đã bỏ phiếu cho quyết định này.",
+      "notInRoster": "Bạn không thuộc roster của phiên họp này.",
+      "sessionNotActive": "Chỉ có thể bỏ phiếu khi phiên họp đang hoạt động.",
+      "votingNotOpen": "Người tạo phiên chưa mở giai đoạn bỏ phiếu."
+    }
   },
   "reports": {
     "title": "Báo cáo Hội đồng",

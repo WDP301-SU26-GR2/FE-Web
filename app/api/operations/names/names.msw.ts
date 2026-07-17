@@ -58,6 +58,8 @@ export const getChapterNameControllerCreateResponseMock = (overrideResponse: Par
 
 export const getChapterNameControllerListResponseMock = (overrideResponse: Partial< NameListResDtoOutput > = {}): NameListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), chapterNumber: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), kind: faker.helpers.arrayElement(['PROPOSAL','CHAPTER'] as const), status: faker.helpers.arrayElement(['DRAFT','SUBMITTED','IN_REVIEW','REVISION','APPROVED'] as const), version: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), pages: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({pageNumber: faker.number.int({min: 1, max: 9007199254740991}), fileUrl: faker.string.alpha({length: {min: 1, max: 20}})})), submittedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])})), ...overrideResponse})
 
+export const getChapterNameControllerSubmitResponseMock = (overrideResponse: Partial< NameResDtoOutput > = {}): NameResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), chapterNumber: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), kind: faker.helpers.arrayElement(['PROPOSAL','CHAPTER'] as const), status: faker.helpers.arrayElement(['DRAFT','SUBMITTED','IN_REVIEW','REVISION','APPROVED'] as const), version: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), pages: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({pageNumber: faker.number.int({min: 1, max: 9007199254740991}), fileUrl: faker.string.alpha({length: {min: 1, max: 20}})})), submittedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), ...overrideResponse})
+
 export const getChapterNameControllerGetOneResponseMock = (overrideResponse: Partial< NameResDtoOutput > = {}): NameResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), chapterNumber: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), kind: faker.helpers.arrayElement(['PROPOSAL','CHAPTER'] as const), status: faker.helpers.arrayElement(['DRAFT','SUBMITTED','IN_REVIEW','REVISION','APPROVED'] as const), version: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), pages: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({pageNumber: faker.number.int({min: 1, max: 9007199254740991}), fileUrl: faker.string.alpha({length: {min: 1, max: 20}})})), submittedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), ...overrideResponse})
 
 export const getChapterNameControllerRemoveResponseMock = (overrideResponse: Partial< MessageResDtoOutput > = {}): MessageResDtoOutput => ({message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
@@ -181,6 +183,18 @@ export const getChapterNameControllerListMockHandler = (overrideResponse?: NameL
   }, options)
 }
 
+export const getChapterNameControllerSubmitMockHandler = (overrideResponse?: NameResDtoOutput | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<NameResDtoOutput> | NameResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.post('*/chapters/:id/names/:nameId/submit', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getChapterNameControllerSubmitResponseMock()),
+      { status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getChapterNameControllerGetOneMockHandler = (overrideResponse?: NameResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<NameResDtoOutput> | NameResDtoOutput), options?: RequestHandlerOptions) => {
   return http.get('*/chapters/:id/names/:nameId', async (info) => {await delay(1000);
   
@@ -274,6 +288,7 @@ export const getNamesMock = () => [
   getNameControllerAddPageMockHandler(),
   getChapterNameControllerCreateMockHandler(),
   getChapterNameControllerListMockHandler(),
+  getChapterNameControllerSubmitMockHandler(),
   getChapterNameControllerGetOneMockHandler(),
   getChapterNameControllerRemoveMockHandler(),
   getChapterNameControllerRequestRevisionMockHandler(),

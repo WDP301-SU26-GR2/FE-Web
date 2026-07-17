@@ -24,17 +24,20 @@ import type {
   BoardRankingListResDtoOutput,
   CreateSurveyPeriodBodyDto,
   ImportSurveyDataBodyDto,
+  LatestVoteResultsResDtoOutput,
   MessageResDtoOutput,
   RankingRecordListResDtoOutput,
   ReaderVoteBodyDto,
   ReaderVoteResDtoOutput,
   SurveyControllerFinalizeRankingPathParameters,
   SurveyControllerGetBoardRankingParams,
+  SurveyControllerGetLatestVoteResultsParams,
   SurveyControllerGetRankingRecordsPathParameters,
   SurveyControllerGetSeriesTrendParams,
   SurveyControllerGetSurveyPeriodByIdPathParameters,
   SurveyControllerGetSurveyPeriodSurveyDataPathParameters,
   SurveyControllerGetSurveyPeriodVotesPathParameters,
+  SurveyControllerGetVotePeriodsParams,
   SurveyControllerGetVoteResultsParams,
   SurveyControllerUpdateSurveyPeriodStatusPathParameters,
   SurveyDataResDtoOutput,
@@ -42,6 +45,7 @@ import type {
   UpdateSurveyPeriodStatusBodyDto,
   VoteContextResDtoOutput,
   VoteOtpRequestBodyDto,
+  VotePeriodsResDtoOutput,
   VoteResultsResDtoOutput,
   VotingConfigBodyDto,
   VotingConfigResDtoOutput
@@ -57,6 +61,11 @@ export type surveyControllerRequestOtpResponse200 = {
   status: 200
 }
 
+export type surveyControllerRequestOtpResponse403 = {
+  data: void
+  status: 403
+}
+
 export type surveyControllerRequestOtpResponse429 = {
   data: void
   status: 429
@@ -65,7 +74,7 @@ export type surveyControllerRequestOtpResponse429 = {
 export type surveyControllerRequestOtpResponseSuccess = (surveyControllerRequestOtpResponse200) & {
   headers: Headers;
 };
-export type surveyControllerRequestOtpResponseError = (surveyControllerRequestOtpResponse429) & {
+export type surveyControllerRequestOtpResponseError = (surveyControllerRequestOtpResponse403 | surveyControllerRequestOtpResponse429) & {
   headers: Headers;
 };
 
@@ -105,6 +114,11 @@ export type surveyControllerSubmitVoteResponse400 = {
   status: 400
 }
 
+export type surveyControllerSubmitVoteResponse403 = {
+  data: void
+  status: 403
+}
+
 export type surveyControllerSubmitVoteResponse404 = {
   data: void
   status: 404
@@ -128,7 +142,7 @@ export type surveyControllerSubmitVoteResponse429 = {
 export type surveyControllerSubmitVoteResponseSuccess = (surveyControllerSubmitVoteResponse200) & {
   headers: Headers;
 };
-export type surveyControllerSubmitVoteResponseError = (surveyControllerSubmitVoteResponse400 | surveyControllerSubmitVoteResponse404 | surveyControllerSubmitVoteResponse409 | surveyControllerSubmitVoteResponse422 | surveyControllerSubmitVoteResponse429) & {
+export type surveyControllerSubmitVoteResponseError = (surveyControllerSubmitVoteResponse400 | surveyControllerSubmitVoteResponse403 | surveyControllerSubmitVoteResponse404 | surveyControllerSubmitVoteResponse409 | surveyControllerSubmitVoteResponse422 | surveyControllerSubmitVoteResponse429) & {
   headers: Headers;
 };
 
@@ -181,6 +195,104 @@ export const getSurveyControllerGetVoteContextUrl = () => {
 export const surveyControllerGetVoteContext = async ( options?: RequestInit): Promise<surveyControllerGetVoteContextResponse> => {
   
   return customFetch<surveyControllerGetVoteContextResponse>(getSurveyControllerGetVoteContextUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Public — bảng xếp hạng kỳ REFLECTED mới nhất (period null nếu chưa có kỳ nào chốt)
+ */
+export type surveyControllerGetLatestVoteResultsResponse200 = {
+  data: LatestVoteResultsResDtoOutput
+  status: 200
+}
+
+export type surveyControllerGetLatestVoteResultsResponse429 = {
+  data: void
+  status: 429
+}
+    
+export type surveyControllerGetLatestVoteResultsResponseSuccess = (surveyControllerGetLatestVoteResultsResponse200) & {
+  headers: Headers;
+};
+export type surveyControllerGetLatestVoteResultsResponseError = (surveyControllerGetLatestVoteResultsResponse429) & {
+  headers: Headers;
+};
+
+export type surveyControllerGetLatestVoteResultsResponse = (surveyControllerGetLatestVoteResultsResponseSuccess | surveyControllerGetLatestVoteResultsResponseError)
+
+export const getSurveyControllerGetLatestVoteResultsUrl = (params?: SurveyControllerGetLatestVoteResultsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/vote/results/latest?${stringifiedParams}` : `/vote/results/latest`
+}
+
+export const surveyControllerGetLatestVoteResults = async (params?: SurveyControllerGetLatestVoteResultsParams, options?: RequestInit): Promise<surveyControllerGetLatestVoteResultsResponse> => {
+  
+  return customFetch<surveyControllerGetLatestVoteResultsResponse>(getSurveyControllerGetLatestVoteResultsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Public — danh sách kỳ REFLECTED (dropdown lịch sử ranking)
+ */
+export type surveyControllerGetVotePeriodsResponse200 = {
+  data: VotePeriodsResDtoOutput
+  status: 200
+}
+
+export type surveyControllerGetVotePeriodsResponse429 = {
+  data: void
+  status: 429
+}
+    
+export type surveyControllerGetVotePeriodsResponseSuccess = (surveyControllerGetVotePeriodsResponse200) & {
+  headers: Headers;
+};
+export type surveyControllerGetVotePeriodsResponseError = (surveyControllerGetVotePeriodsResponse429) & {
+  headers: Headers;
+};
+
+export type surveyControllerGetVotePeriodsResponse = (surveyControllerGetVotePeriodsResponseSuccess | surveyControllerGetVotePeriodsResponseError)
+
+export const getSurveyControllerGetVotePeriodsUrl = (params?: SurveyControllerGetVotePeriodsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/vote/periods?${stringifiedParams}` : `/vote/periods`
+}
+
+export const surveyControllerGetVotePeriods = async (params?: SurveyControllerGetVotePeriodsParams, options?: RequestInit): Promise<surveyControllerGetVotePeriodsResponse> => {
+  
+  return customFetch<surveyControllerGetVotePeriodsResponse>(getSurveyControllerGetVotePeriodsUrl(params),
   {      
     ...options,
     method: 'GET'

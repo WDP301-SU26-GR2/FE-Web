@@ -13,12 +13,17 @@ import type { Route } from './+types/board-sessions'
 
 export async function clientLoader() {
   try {
-    const [seriesResponse, sessions, decisions] = await Promise.all([
+    const [readySeriesResponse, pitchedSeriesResponse, sessions, decisions] = await Promise.all([
       seriesControllerListSeries({ status: 'READY_TO_PITCH', limit: 100, offset: 0 }),
+      seriesControllerListSeries({ status: 'PITCHED', limit: 100, offset: 0 }),
       boardControllerGetSessions(),
       boardControllerGetDecisions()
     ])
-    const series = seriesResponse.data.items
+    const series = [
+      ...new Map(
+        [...readySeriesResponse.data.items, ...pitchedSeriesResponse.data.items].map((item) => [item.id, item])
+      ).values()
+    ]
     const suggestionEntries = await Promise.all(
       series.map(async (item) => {
         const response = await boardControllerSuggestMembers({ seriesId: item.id, size: 3 }).catch(() => null)
@@ -52,7 +57,6 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(required(form, 'startTime')).toISOString(),
         ...(endTime ? { endTime } : {}),
-        seriesId: required(form, 'seriesId'),
         allowedEditorIds
       })
     } else if (intent === 'startSession') {

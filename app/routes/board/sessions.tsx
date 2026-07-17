@@ -4,7 +4,7 @@ import type { Route } from './+types/sessions'
 
 export async function clientLoader() {
   try {
-    const response = await boardControllerGetSessions()
+    const response = await boardControllerGetSessions({ mine: 'true' })
     return { sessions: response.data, hasError: false }
   } catch {
     return { sessions: [], hasError: true }

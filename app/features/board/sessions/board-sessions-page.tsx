@@ -1,9 +1,9 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import type { BoardSessionResDtoOutput } from '~/api/model/board'
+import type { BoardMeetingSession } from '~/api/manual/board-meeting'
 import { BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
-export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardSessionResDtoOutput[]; hasError: boolean }) {
+export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeetingSession[]; hasError: boolean }) {
   const { t, i18n } = useTranslation('board')
   return (
     <div className='space-y-6 pb-12'>
@@ -18,7 +18,10 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardSessi
           >
             <div className='flex items-start justify-between gap-3'>
               <h2 className='font-bold text-foreground'>{session.title}</h2>
-              <StatusBadge value={session.status} />
+              <div className='flex gap-2'>
+                <StatusBadge value={session.status} />
+                <StatusBadge value={session.phase} />
+              </div>
             </div>
             <p className='mt-2 text-sm text-muted-foreground'>{session.description || t('common.noDescription')}</p>
             <p className='mt-4 text-xs text-muted-foreground'>

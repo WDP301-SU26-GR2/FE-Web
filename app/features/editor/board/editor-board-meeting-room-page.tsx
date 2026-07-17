@@ -1,12 +1,13 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ArrowLeft, MessageSquareText, Radio, Send } from 'lucide-react'
 import { Link, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
-import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
+import type { BoardDecisionResDtoOutput } from '~/api/model/board'
+import type { BoardMeetingSession, BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
 import { useAuth } from '~/features/auth/context/auth-context'
 import type { EditorActionResult } from '../types'
+import { orderBoardDecisions } from './board-order'
 import { BoardFeedback, BoardStatus } from './components/board-shared'
 import { useEditorMeetingRoom } from './hooks/use-editor-meeting-room'
 
@@ -16,7 +17,7 @@ export function EditorBoardMeetingRoomPage({
   messages: initialMessages,
   decisions: initialDecisions
 }: {
-  session: BoardSessionResDtoOutput
+  session: BoardMeetingSession
   phase: BoardSessionPhase
   messages: BoardMessage[]
   decisions: BoardDecisionResDtoOutput[]
@@ -26,24 +27,37 @@ export function EditorBoardMeetingRoomPage({
   const fetcher = useFetcher<EditorActionResult>()
   const [messageText, setMessageText] = useState('')
   const [chatError, setChatError] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
   const meeting = useEditorMeetingRoom({
     sessionId: session.id,
     initialPhase,
     initialMessages,
     initialDecisions
   })
+  const { updatePhase } = meeting
   const isCreator = session.creatorId === authSession?.user.id
   const canChat = session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
+
+  useEffect(() => {
+    if (fetcher.data?.ok && fetcher.data.intent === 'advancePhase' && fetcher.data.phase) {
+      updatePhase(fetcher.data.phase)
+    }
+  }, [fetcher.data, updatePhase])
 
   async function submitMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const content = messageText.trim()
-    if (!content) return
-    const ack = await meeting.sendMessage(content)
-    if (ack.status === 'SUCCESS') {
-      setMessageText('')
-      setChatError('')
-    } else setChatError(ack.reason || t('errors.actionFailed'))
+    if (!content || sendingMessage) return
+    setSendingMessage(true)
+    try {
+      const ack = await meeting.sendMessage(content)
+      if (ack.status === 'SUCCESS') {
+        setMessageText('')
+        setChatError('')
+      } else setChatError(t(`board.meeting.chatErrors.${ack.reason ?? 'UNKNOWN'}`))
+    } finally {
+      setSendingMessage(false)
+    }
   }
 
   return (
@@ -121,12 +135,12 @@ export function EditorBoardMeetingRoomPage({
               value={messageText}
               onChange={(event) => setMessageText(event.target.value)}
               maxLength={1000}
-              disabled={!canChat || meeting.connectionState !== 'connected'}
+              disabled={!canChat || meeting.connectionState !== 'connected' || sendingMessage}
               className='h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm'
               placeholder={canChat ? t('board.meeting.chatPlaceholder') : t('board.meeting.chatLocked')}
             />
             <button
-              disabled={!canChat || !messageText.trim()}
+              disabled={!canChat || meeting.connectionState !== 'connected' || sendingMessage || !messageText.trim()}
               className='rounded-md bg-primary px-3 text-primary-foreground disabled:opacity-50'
             >
               <Send className='size-4' />
@@ -138,7 +152,7 @@ export function EditorBoardMeetingRoomPage({
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='text-lg font-bold'>{t('board.votingProgress')}</h2>
           <div className='mt-4 space-y-3'>
-            {meeting.decisions.map((decision) => (
+            {orderBoardDecisions(meeting.decisions).map((decision) => (
               <article key={decision.id} className='rounded-lg border border-border p-3'>
                 <div className='flex justify-between gap-2'>
                   <strong>{decision.decisionType}</strong>

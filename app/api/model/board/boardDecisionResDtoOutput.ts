@@ -20,6 +20,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { BoardDecisionResDtoOutputTargetSeries } from './boardDecisionResDtoOutputTargetSeries';
 import type { BoardDecisionResDtoOutputDecisionType } from './boardDecisionResDtoOutputDecisionType';
 import type { BoardDecisionResDtoOutputResult } from './boardDecisionResDtoOutputResult';
 import type { BoardDecisionResDtoOutputDetails } from './boardDecisionResDtoOutputDetails';
@@ -29,6 +30,11 @@ export interface BoardDecisionResDtoOutput {
   id: string;
   /** @nullable */
   targetSeriesId?: string | null;
+  /**
+   * CÓ ở GET /board/decisions + /:id (enrich); null nếu decision không gắn series
+   * @nullable
+   */
+  targetSeries?: BoardDecisionResDtoOutputTargetSeries;
   boardSessionId: string;
   /**
    * Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT

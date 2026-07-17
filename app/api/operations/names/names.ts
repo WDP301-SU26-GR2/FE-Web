@@ -30,6 +30,7 @@ import type {
   ChapterNameControllerRemovePathParameters,
   ChapterNameControllerRequestRevisionPathParameters,
   ChapterNameControllerResubmitPathParameters,
+  ChapterNameControllerSubmitPathParameters,
   ChapterNameControllerUpdatePagesPathParameters,
   CreateChapterNameBodyDto,
   MessageResDtoOutput,
@@ -508,6 +509,58 @@ export const chapterNameControllerList = async ({ id }: ChapterNameControllerLis
   {      
     ...options,
     method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Mangaka nộp chapter-Name lên Editor duyệt → DRAFT chuyển SUBMITTED
+ */
+export type chapterNameControllerSubmitResponse201 = {
+  data: NameResDtoOutput
+  status: 201
+}
+
+export type chapterNameControllerSubmitResponse403 = {
+  data: void
+  status: 403
+}
+
+export type chapterNameControllerSubmitResponse404 = {
+  data: void
+  status: 404
+}
+
+export type chapterNameControllerSubmitResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type chapterNameControllerSubmitResponseSuccess = (chapterNameControllerSubmitResponse201) & {
+  headers: Headers;
+};
+export type chapterNameControllerSubmitResponseError = (chapterNameControllerSubmitResponse403 | chapterNameControllerSubmitResponse404 | chapterNameControllerSubmitResponse409) & {
+  headers: Headers;
+};
+
+export type chapterNameControllerSubmitResponse = (chapterNameControllerSubmitResponseSuccess | chapterNameControllerSubmitResponseError)
+
+export const getChapterNameControllerSubmitUrl = ({ id, nameId }: ChapterNameControllerSubmitPathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}/names/${nameId}/submit`
+}
+
+export const chapterNameControllerSubmit = async ({ id, nameId }: ChapterNameControllerSubmitPathParameters, options?: RequestInit): Promise<chapterNameControllerSubmitResponse> => {
+  
+  return customFetch<chapterNameControllerSubmitResponse>(getChapterNameControllerSubmitUrl({ id, nameId }),
+  {      
+    ...options,
+    method: 'POST'
     
     
   }

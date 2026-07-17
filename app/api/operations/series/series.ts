@@ -46,10 +46,12 @@ import type {
   SeriesControllerResumePathParameters,
   SeriesControllerSubmitPathParameters,
   SeriesControllerUpdateProposalPathParameters,
+  SeriesControllerUpdateSeriesMetadataPathParameters,
   SeriesControllerWithdrawPathParameters,
   SeriesListResDtoOutput,
   SeriesResDtoOutput,
-  UpdateProposalBodyDto
+  UpdateProposalBodyDto,
+  UpdateSeriesMetadataBodyDto
 } from '../../model/series';
 
 import { customFetch } from '../../mutator/custom-fetch';
@@ -139,6 +141,60 @@ export const seriesControllerGetSeries = async ({ id }: SeriesControllerGetSerie
     method: 'GET'
     
     
+  }
+);}
+
+
+/**
+ * @summary Sửa metadata series (title/coverImage/synopsis/characterDesigns) — Mangaka chủ hoặc Editor phụ trách
+ */
+export type seriesControllerUpdateSeriesMetadataResponse200 = {
+  data: SeriesResDtoOutput
+  status: 200
+}
+
+export type seriesControllerUpdateSeriesMetadataResponse403 = {
+  data: void
+  status: 403
+}
+
+export type seriesControllerUpdateSeriesMetadataResponse404 = {
+  data: void
+  status: 404
+}
+
+export type seriesControllerUpdateSeriesMetadataResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type seriesControllerUpdateSeriesMetadataResponseSuccess = (seriesControllerUpdateSeriesMetadataResponse200) & {
+  headers: Headers;
+};
+export type seriesControllerUpdateSeriesMetadataResponseError = (seriesControllerUpdateSeriesMetadataResponse403 | seriesControllerUpdateSeriesMetadataResponse404 | seriesControllerUpdateSeriesMetadataResponse409) & {
+  headers: Headers;
+};
+
+export type seriesControllerUpdateSeriesMetadataResponse = (seriesControllerUpdateSeriesMetadataResponseSuccess | seriesControllerUpdateSeriesMetadataResponseError)
+
+export const getSeriesControllerUpdateSeriesMetadataUrl = ({ id }: SeriesControllerUpdateSeriesMetadataPathParameters,) => {
+
+
+  
+
+  return `/series/${id}`
+}
+
+export const seriesControllerUpdateSeriesMetadata = async ({ id }: SeriesControllerUpdateSeriesMetadataPathParameters,
+    updateSeriesMetadataBodyDto: UpdateSeriesMetadataBodyDto, options?: RequestInit): Promise<seriesControllerUpdateSeriesMetadataResponse> => {
+  
+  return customFetch<seriesControllerUpdateSeriesMetadataResponse>(getSeriesControllerUpdateSeriesMetadataUrl({ id }),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateSeriesMetadataBodyDto,)
   }
 );}
 

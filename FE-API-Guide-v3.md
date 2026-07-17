@@ -1,19 +1,19 @@
 # FE API Guide v3 — Manga Creation Workflow System
 
-> **Nguồn sự thật:** sinh + đối chiếu 100% từ Swagger runtime (`GET /api-json`) @ commit `c953e0c` (Spec 12) — **239 route, 60 enum**, đã verify bằng flow-test 2.204 case / 0 FAIL (2026-07-12).
+> **Nguồn sự thật:** bản nền sinh + đối chiếu từ Swagger runtime (`GET /api-json`) — cập nhật mới nhất **2026-07-17 sau Spec 16** (Board Meeting Room): **251 route, 63 enum**, verify bằng flow-test 15/15 file 0 FAIL + smoke-spec16 38/38 (unit 1021/1021). Các mốc trước: Spec 12 @ `c953e0c` (239 route), Spec 14, Spec 15 (public reader/voting — 249 route).
 > **Phạm vi:** TOÀN BỘ backend (BE-A + BE-B), tổ chức theo **flow nghiệp vụ Requiment (Flow 1–13)** — mỗi flow: mô tả nghiệp vụ, các bước happy path (gọi API nào), bảng unhappy case, rồi reference chi tiết từng API (role, field, enum, lỗi).
 > **Thay thế:** `FE-API-Guide-v2.md` (chỉ cover BE-A, đã lỗi thời sau Spec 9/10/11/12 + Fix-1/2). Đọc §16 để biết breaking change so với v2.
 
 ## Mục lục
 
 - §0. Quy ước chung (BẮT BUỘC đọc trước khi gọi API)
-- §1. Từ điển Enum (60 enum — đầy đủ giá trị + ý nghĩa)
+- §1. Từ điển Enum (63 enum — đầy đủ giá trị + ý nghĩa)
 - §2. Auth, Tài khoản & Hồ sơ (Flow 11)
 - §3. Flow 1 — Series Proposal → Serialization (kèm Board engine)
 - §4. Flow 6 — Contract & Payment
 - §5. Flow 2 — Chapter Production (chapter-first)
 - §6. Flow 3 — Region / Task / AI segmentation
-- §7. Flow 9 — Danh bạ trợ lý & Studio (kèm Review/Reputation)
+- §7. Flow 9 — Danh bạ Mangaka/Trợ lý & Studio (kèm Review/Reputation)
 - §8. Flow 10 — Deadline Negotiation
 - §9. Flow 4 — Survey / Guest Voting / Ranking
 - §10. Flow 5 — Series Lifecycle (hiatus / complete / cancel)
@@ -108,15 +108,26 @@ Mọi response **lỗi**:
 | `BOARD_*`, `DECISION_*` | Phiên họp / quyết định Board |
 | `SURVEY_*`, `RANKING_*` | Kỳ khảo sát / bảng xếp hạng |
 | `REVIEW_*`, `INVITE_*`, `ASSIGNMENT_*` | Hồ sơ / lời mời cộng tác |
+| `REVISION_*` | Danh sách vòng yêu cầu sửa (`referenceId` = RevisionRequest id) |
 
 ### 0.7. Realtime
 
 - **Mặc định là polling** (10–30s) cho dashboard tiến độ + notification (badge dùng `unreadCount` của `GET /notifications`).
 - Duy nhất **phiên họp Board** có WebSocket (`/board` namespace, Socket.IO) — xem §15. Kết nối **bắt buộc JWT**.
 
+### 0.8. CORS / Origin (Spec 13 — hạ tầng)
+
+- Backend chỉ chấp nhận request từ các origin trong biến môi trường **`CORS_ORIGINS`** (danh sách phẩy ngăn cách; rỗng = `*` cho dev). Áp cho **cả HTTP lẫn WebSocket `/board`**.
+- ⚠️ **Deploy:** origin của FE (vd `https://mangaka.vercel.app`) **phải** nằm trong `CORS_ORIGINS` của môi trường tương ứng, nếu không browser chặn request (lỗi CORS phía client, không phải lỗi API). Báo BE origin production/preview của FE để thêm vào.
+- Auth bằng **Bearer token** (không dùng cookie) → không cần `credentials: 'include'`; chỉ cần gửi header `Authorization`.
+
+### 0.9. Notification không còn trùng (Spec 13 — hạ tầng)
+
+Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội dung (`dedupeKey`): 2 sự kiện y hệt (vd retry job) chỉ tạo **một** bản ghi. Với FE nghĩa là danh sách `GET /notifications` **không còn bản trùng lặp** cho cùng một hành động — không cần tự dedupe phía client.
+
 ---
 
-## §1. Từ điển Enum (60 enum — nguồn: Prisma schema, đầy đủ 100% giá trị)
+## §1. Từ điển Enum (63 enum — nguồn: Prisma schema, đầy đủ 100% giá trị)
 
 > Field nào trong guide ghi `enum \`X\`` thì **chỉ được gửi/nhận đúng các giá trị liệt kê dưới đây** — gửi giá trị khác → 422. Enum đánh dấu `(read-only)` = chỉ xuất hiện trong response, FE không bao giờ gửi lên.
 
@@ -295,6 +306,8 @@ Mọi response **lỗi**:
 
 **`BoardSessionStatus`**: `UPCOMING` (đã lên lịch, chưa tới giờ — chưa vote được) → `ACTIVE` (đang họp — vote được; auto-start bởi cron khi tới `startTime` hoặc start tay) → `CONCLUDED` (bế mạc — decision còn treo bị sweep sang EXPIRED).
 
+**`BoardSessionPhase`** (read-only trừ route chuyển phase): `PRESENTING` → `QA` → `VOTING`. Phase chỉ đi tới, được phép nhảy `PRESENTING → VOTING`, không được lùi hoặc gửi chat khi đã vào `VOTING`. Phiên `ACTIVE` chỉ nhận phiếu khi phase hiện tại là `VOTING`.
+
 **`DecisionType`** — loại quyết định: `SERIALIZATION` (duyệt serial hóa — Flow 1) · `CANCELLATION` (hủy series) · `FORMAT_CHANGE` (đổi nhịp/tạp chí) · `COMPLETION` (kết thúc tự nhiên) · `CONTINUE`/`CANCEL`/`HIATUS`/`ENDING_ALLOWANCE` (giá trị lifecycle bổ trợ) · `SERIES_CONTRACT_APPROVAL`/`CONTRACT` (liên quan hợp đồng) · `REPRINT` · `TRANSFER`.
 
 **`BoardDecisionResult`** (read-only): `PENDING` (đang vote) · `PENDING_QUORUM` (chưa đủ quorum) · `APPROVED` · `REJECTED` · `EXPIRED` (phiên bế mạc mà chưa chốt — series giữ nguyên trạng thái, Editor mở phiên mới).
@@ -338,6 +351,8 @@ Mọi response **lỗi**:
 **`AnnotationTargetType`** — annotation gắn lên: `PAGE` · `REGION` · `TASK` · `MANUSCRIPT` · `NAME`.
 **`AnnotationType`** — hình thức markup: `TEXT` (ghi chú) · `HIGHLIGHT` (khoanh vùng) · `DRAWING` (vẽ đè).
 
+**`RevisionTargetType`** — loại thực thể của một vòng yêu cầu sửa: `PROPOSAL` (targetId = seriesId) · `NAME` (targetId = nameId) · `MANUSCRIPT` (targetId = chapterId) · `TASK` (targetId = taskId).
+
 **`AssetType`** — phân loại file đính kèm: `REFERENCE` (ảnh tham khảo) · `BACKGROUND` · `SCREENTONE` · `BRUSH` · `OTHER`.
 
 **`NotificationType`** — nhóm thông báo (dùng filter): `SYSTEM` · `CONTRACT` · `TASK` · `DEADLINE` · `SURVEY` · `BOARD` · `REVIEW`.
@@ -376,7 +391,7 @@ Mọi response **lỗi**:
 |---|---|---|
 | Email đã tồn tại | `POST /auth/register` | 409 `Error.EmailAlreadyExists` |
 | Mật khẩu yếu (<8, thiếu hoa/thường/số) / phone sai E.164 | `POST /auth/register` | 422 field-level |
-| Xin OTP dồn dập (quota email/IP, cooldown 60s) | register / send-otp-email | 429 `Error.OtpRateLimited` + `retryAfter` |
+| Xin OTP dồn dập (quota email/IP, cooldown mặc định 30s) | register / send-otp-email | 429 `Error.OtpRateLimited` + `retryAfter` |
 | OTP sai quá số lần | `POST /auth/verify-email` | 422 `Error.OtpLocked` (phải xin OTP mới) |
 | OTP hết hạn (5 phút) | verify-email / forgot-password | 410 `Error.OTPExpired` |
 | Verify lần 2 | `POST /auth/verify-email` | 409 `Error.EmailAlreadyVerified` |
@@ -1305,10 +1320,14 @@ Validation fail (status không nhận INACTIVE) |
 4. **Vòng review proposal:** Editor `POST /series/:id/proposal/request-revision` (kèm lý do) → Mangaka sửa (`PUT /series/proposals/:id`) → `POST /series/:id/proposal/resubmit` → ... → Editor `POST /series/:id/proposal/approve`.
 5. **Vòng review Name mẫu** (route series-scoped — CHỈ proposal-Name): Editor `POST /series/:id/names/:nameId/request-revision` → Mangaka sửa trang (`PUT .../pages` thay toàn bộ hoặc `POST .../pages` thêm 1 trang) → `POST .../resubmit` (version++) → Editor `POST .../approve`.
 6. Proposal APPROVED **và** Name APPROVED → Series tự sang `READY_TO_PITCH`.
-7. **Editor** xem gợi ý roster: `GET /board/suggest-members?seriesId=` (chấm điểm theo `specialtyGenres` khớp genres của series, luôn lẻ ≥3) → `POST /board/sessions` (tạo phiên họp — **truyền roster tay HOẶC bỏ trống `allowedEditorIds` + truyền `seriesId` để hệ thống auto-assign**) → phiên tự `ACTIVE` khi tới `startTime` (hoặc `PATCH /board/sessions/:id/start`).
-8. **Editor** `POST /series/:id/pitch` → Series `PITCHED`; mở quyết định `POST /board/decisions` (type `SERIALIZATION`, kèm slot trong `details`: magazine/startIssueNumber/publicationType). Editor đính hồ sơ `POST /board/reports`.
-9. **Board members** `POST /board/decisions/:id/vote` (APPROVE/REJECT/ABSTAIN — realtime tiến độ vote qua WS §15). Đủ quorum + >50% APPROVE → decision `APPROVED` → **hệ thống tự chuyển Series `SERIALIZED` + set slot** → thông báo Mangaka/Editor → Flow 6 bắt đầu.
-10. Phiên xong → `PATCH /board/sessions/:id/conclude` (hoặc cron auto khi quá `endTime`).
+7. **Editor** xem gợi ý roster: `GET /board/suggest-members?seriesId=` (chấm điểm theo `specialtyGenres` khớp genres của series, luôn lẻ ≥3) → `POST /board/sessions` (tạo phiên họp — **truyền roster tay HOẶC bỏ trống `allowedEditorIds` + truyền `seriesId` để hệ thống auto-assign**) → phiên tự `ACTIVE` khi tới `startTime` (hoặc `PATCH /board/sessions/:id/start`). Session sinh ra ở **phase `PRESENTING`**.
+8. **Editor** `POST /series/:id/pitch` → Series `PITCHED`; mở quyết định `POST /board/decisions` (type `SERIALIZATION`, **`details` BẮT BUỘC đủ slot**: magazine/startIssueNumber/publicationType — thiếu → 422). Editor đính hồ sơ `POST /board/reports`.
+9. **🆕 PHÒNG HỌP (Spec 16) — 3 giai đoạn, creator điều khiển:** mọi người trong roster join room WS `/board` (`joinSession` — rejoin lại được vô hạn khi rớt mạng, resync bằng `GET /board/sessions/:id` + `GET .../messages` + `GET /board/decisions?boardSessionId=`):
+   - **`PRESENTING`** — Editor trình bày (Board đọc decision details + reports; tra tài liệu cũ của series: `GET /board/reports?seriesId=`).
+   - **Creator** `PATCH /board/sessions/:id/phase {phase:'QA'}` → **Q&A**: chat qua WS `sendMessage` → mọi người nhận `messageReceived` (lịch sử lưu DB). Phase forward-only, được nhảy cóc PRESENTING→VOTING nếu không có câu hỏi.
+   - **Creator** `PATCH .../phase {phase:'VOTING'}` → room nhận `phaseChanged`; **từ đây CHAT BỊ KHÓA** (DENIED `VOTING_PHASE`) — chỉ vote.
+10. **Board members** `POST /board/decisions/:id/vote` (APPROVE/REJECT/ABSTAIN — ⚠ **chỉ được khi phase=`VOTING`**, sớm hơn → 409 `Error.VotingNotOpen`; realtime tiến độ qua `voteProgressUpdated`). Đủ quorum + >50% APPROVE → decision `APPROVED` → **hệ thống tự chuyển Series `SERIALIZED` + set slot từ details** → thông báo Mangaka/Editor → Flow 6 bắt đầu.
+11. Phiên xong → `PATCH /board/sessions/:id/conclude` (hoặc cron auto khi quá `endTime`); decision còn treo → `EXPIRED`, Series giữ `PITCHED` — Editor mở phiên mới + decision mới (KHÔNG cần pitch lại; report cũ tra qua `?seriesId=`).
 
 ### Unhappy cases
 
@@ -1331,6 +1350,12 @@ Validation fail (status không nhận INACTIVE) |
 | Auto-assign khi hệ thống < 3 BOARD_MEMBER active | sessions / suggest-members | 422 `Error.NotEnoughBoardMembers` |
 | Vote khi không thuộc roster phiên | `POST /board/decisions/:id/vote` | 403 (VoterNotAllowed) |
 | Vote khi phiên chưa ACTIVE / đã CONCLUDED | vote | 4xx theo trạng thái phiên |
+| 🆕 Vote khi phiên ACTIVE nhưng phase chưa `VOTING` (PRESENTING/QA) | `POST /board/decisions/:id/vote` | 409 `Error.VotingNotOpen` |
+| 🆕 Đổi phase khi không phải creator (Super Admin được) | `PATCH /board/sessions/:id/phase` | 403 `Error.NotSessionCreator` |
+| 🆕 Đổi phase LÙI hoặc giữ nguyên (chỉ tiến: PRESENTING→QA→VOTING, được nhảy cóc) | `PATCH /board/sessions/:id/phase` | 409 `Error.InvalidPhaseTransition` |
+| 🆕 Chat khi phase `VOTING` | WS `sendMessage` | ack `{status:'DENIED', reason:'VOTING_PHASE'}` |
+| 🆕 Đọc lịch sử chat khi ngoài roster/creator | `GET /board/sessions/:id/messages` | 403 `Error.NotSessionParticipant` |
+| 🆕 Tạo decision SERIALIZATION thiếu slot trong `details` | `POST /board/decisions` | 422 field-level (`details.magazine`...) |
 | Phiên bế mạc mà decision chưa đủ quorum | (cron/conclude) | decision → `EXPIRED`, series **giữ `PITCHED`**, Editor được notify mở phiên mới |
 | Board REJECT | (kết quả vote) | Series `REJECTED` + statusReason — Mangaka sửa và nộp lại |
 | Editor từ chối hẳn concept | `POST /series/:id/reject` | Series `ABANDONED` (terminal) |
@@ -1513,6 +1538,8 @@ Validation fail (status không nhận INACTIVE) |
 | `items[].id` | string | ✅ | ObjectId của bản ghi |
 | `items[].mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
 | `items[].editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `items[].mangaka` | `UserMini` | ✅ | `{id, displayName, avatar}` của chủ series; chỉ có ở `GET /series` và `GET /series/:id` |
+| `items[].editor` | `UserMini` | ✅ | `{id, displayName, avatar}` của Editor; `null` khi chưa claim; chỉ có ở hai read route |
 | `items[].coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
 | `items[].parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
 | `items[].title` | string | ✅ | Tiêu đề (FE tự nhập) |
@@ -1548,6 +1575,8 @@ Validation fail (status không nhận INACTIVE) |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | Chủ sở hữu series (Mangaka tạo proposal) |
 | `editorId` | string | ✅ | Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận |
+| `mangaka` | `UserMini` | ✅ | `{id, displayName, avatar}` của chủ series; `displayName` đã fallback sang `name` |
+| `editor` | `UserMini` | ✅ | `{id, displayName, avatar}` của Editor; `null` khi series chưa được claim |
 | `coOwnerId` | string | ✅ | Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có |
 | `parentSeriesId` | string | ✅ | Series gốc nếu là kế nhiệm (sequel/spinoff) |
 | `title` | string | ✅ | Tiêu đề (FE tự nhập) |
@@ -1583,6 +1612,38 @@ Validation fail (status không nhận INACTIVE) |
 |---|---|---|
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
+
+---
+
+#### `PATCH /series/:id`
+> Sửa metadata trình bày của series sau khi tạo proposal, kể cả khi đang SERIALIZED; không đổi state machine hoặc field do Board sở hữu
+
+**Quyền:** MANGAKA chủ series hoặc EDITOR đang phụ trách (Bearer)
+
+**Body** (`UpdateSeriesMetadataBody` — partial update, `.strict()`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `title` | string (1..200 ký tự) ✍ | — | Omit = giữ nguyên |
+| `coverImage` | string ✍ | — | Object key R2; omit/null = giữ nguyên, `''` = xoá ảnh bìa |
+| `synopsis` | string (0..5000 ký tự) ✍ | — | Omit/null = giữ nguyên, `''` = xoá synopsis |
+| `characterDesigns` | string[] ✍ | — | Object key R2; omit/null = giữ nguyên, `[]` = xoá hết |
+
+`genres`, `demographic`, `publicationType`, slot xuất bản và mọi field ngoài allowlist không được nhận; gửi field lạ → 422. Series ở `COMPLETED`, `CANCELLED`, `ABANDONED`, `WITHDRAWN` hoặc `REJECTED` là hồ sơ đã đóng → không sửa được. Cập nhật idempotent; body không làm thay đổi dữ liệu trả 200 nhưng không phát audit/notification mới.
+
+**Response 200:** `SeriesRes` — cùng shape `GET /series/:id`.
+
+Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effort cho phía còn lại bằng `referenceType=SERIES_METADATA_UPDATED`. Ghi composite proposal dùng optimistic CAS có guard quyền + trạng thái ngay tại write để tránh lost update/TOCTOU khi có request cạnh tranh.
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.SeriesAccessDenied` | caller không phải Mangaka chủ hoặc Editor đang phụ trách, kể cả Editor vừa bị reassign trước lúc ghi |
+| 404 | `Error.SeriesNotFound` | series không tồn tại hoặc id không hợp lệ |
+| 409 | `Error.SeriesNotEditable` | series đã ở trạng thái terminal |
+| 409 | `Error.SeriesMetadataConflict` | metadata bị cập nhật cạnh tranh quá số lần CAS retry; reload series mới nhất rồi gửi lại PATCH |
+| 422 | — | body sai kiểu hoặc có field ngoài allowlist |
 
 ---
 
@@ -1747,7 +1808,7 @@ Validation fail (status không nhận INACTIVE) |
 
 | Field | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
-| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do bắt buộc; được lưu vào lịch sử RevisionRequest và hiển thị cho bên phải sửa |
 
 **Response 201** (`SeriesRes` — đọc `res.data`):
 
@@ -2356,6 +2417,8 @@ Validation fail (status không nhận INACTIVE) |
 
 **Response 201** (`BoardSessionRes` — đọc `res.data`):
 
+> Mọi `BoardSessionRes` đều có `phase`; `creator`/`members` chỉ được enrich ở hai route GET list/detail.
+
 | Field | Kiểu | Có mặt | Mô tả |
 |---|---|---|---|
 | `id` | string | ✅ | ObjectId của bản ghi |
@@ -2363,6 +2426,7 @@ Validation fail (status không nhận INACTIVE) |
 | `description` | string | ✅ |  |
 | `creatorId` | string | ✅ | ObjectId User đã tạo |
 | `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `phase` | enum `BoardSessionPhase` | ✅ | Phase hiện tại: PRESENTING, QA, VOTING |
 | `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
 | `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
@@ -2386,9 +2450,22 @@ Validation fail (status không nhận INACTIVE) |
 
 **Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
 
-**Response 200** :
+**Query params:**
 
-_(xem envelope §0 — data có thể null)_
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `mine` | boolean (`true`/`false`) | — | `true` = chỉ phiên caller là creator hoặc thuộc `allowedEditorIds` |
+| `status` | enum `BoardSessionStatus` | — | Lọc theo `UPCOMING`, `ACTIVE`, `CONCLUDED` |
+
+**Response 200** (`BoardSessionRes[]` — đọc `res.data`): mỗi item có `phase`. Riêng hai route đọc `GET /board/sessions` và `GET /board/sessions/:id` còn có enrichment:
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `phase` | enum `BoardSessionPhase` | ✅ | Phase hiện tại: `PRESENTING`, `QA`, `VOTING` |
+| `creator` | `UserMini` | ✅ | `{id, displayName, avatar}` của người tạo; `displayName` đã fallback sang `name` |
+| `members` | `UserMini[]` | ✅ | Roster đã resolve theo thứ tự `allowedEditorIds` |
+
+> `creator`/`members` chỉ được bảo đảm ở hai route read trên; response mutation create/start/conclude/phase có thể không chứa hai field enrichment này.
 
 ---
 
@@ -2406,6 +2483,9 @@ _(xem envelope §0 — data có thể null)_
 | `description` | string | ✅ |  |
 | `creatorId` | string | ✅ | ObjectId User đã tạo |
 | `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `phase` | enum `BoardSessionPhase` | ✅ | Phase hiện tại: PRESENTING, QA, VOTING |
+| `creator` | `UserMini` | ✅ | `{id, displayName, avatar}` của người tạo |
+| `members` | `UserMini[]` | ✅ | Roster đã resolve từ `allowedEditorIds` |
 | `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
 | `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
@@ -2417,6 +2497,64 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+
+---
+
+#### `PATCH /board/sessions/:id/phase`
+> Creator hoặc Super Admin chuyển phần của phiên họp theo chiều tiến: `PRESENTING → QA → VOTING` (được phép bỏ qua QA)
+
+**Quyền:** EDITOR, SUPER_ADMIN (Bearer). EDITOR phải là creator của session.
+
+**Body** (`AdvancePhaseBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `phase` | enum `BoardSessionPhase` | ✅ | Phase đích: `QA` hoặc `VOTING`; không được giữ nguyên/lùi |
+
+**Response 200:** `BoardSessionRes` với `phase` mới. Server đồng thời broadcast WS `phaseChanged` sau khi DB update thành công.
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSessionCreator` | caller không phải creator và không phải SUPER_ADMIN |
+| 404 | `Error.BoardSessionNotFound` | session không tồn tại hoặc id không hợp lệ |
+| 409 | `Error.BoardSessionNotOpen` | session không ở trạng thái ACTIVE |
+| 409 | `Error.InvalidPhaseTransition` | phase đích bằng hoặc đứng trước phase hiện tại |
+
+---
+
+#### `GET /board/sessions/:id/messages`
+> Đọc lịch sử chat Q&A để đồng bộ lại sau reconnect; sắp xếp `createdAt` tăng dần
+
+**Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer). Service chỉ cho creator, roster hoặc SUPER_ADMIN đọc.
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `limit` | integer (1..200) | — | Mặc định `50` |
+| `offset` | integer (≥ 0) | — | Mặc định `0` |
+
+**Response 200** (`BoardMessageListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | `BoardMessageRes[]` | ✅ | Tin nhắn theo thứ tự thời gian tăng dần |
+| `items[].id` | string | ✅ | ObjectId tin nhắn |
+| `items[].sessionId` | string | ✅ | Session chứa tin nhắn |
+| `items[].sender` | `UserMini` | ✅ | `{id, displayName, avatar}` đã resolve |
+| `items[].content` | string | ✅ | Nội dung đã trim, tối đa 1000 ký tự |
+| `items[].phase` | enum `BoardSessionPhase` | ✅ | Snapshot phase tại lúc gửi |
+| `items[].createdAt` | string (ISO 8601) | ✅ | Thời điểm gửi |
+| `total` | integer | ✅ | Tổng số tin nhắn của session |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSessionParticipant` | caller không phải creator, roster hoặc SUPER_ADMIN |
+| 404 | `Error.BoardSessionNotFound` | session không tồn tại hoặc id không hợp lệ |
 
 ---
 
@@ -2434,6 +2572,7 @@ _(xem envelope §0 — data có thể null)_
 | `description` | string | ✅ |  |
 | `creatorId` | string | ✅ | ObjectId User đã tạo |
 | `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `phase` | enum `BoardSessionPhase` | ✅ | Phase hiện tại; khi mới bắt đầu mặc định là PRESENTING |
 | `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
 | `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
@@ -2444,7 +2583,7 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 400 | `Error.BoardSessionNotOpen` | board session is not ACTIVE; voting/config update not allowed |
+| 409 | `Error.BoardSessionNotOpen` | board session is not ACTIVE |
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 | 409 | `Error.InvalidBoardSessionTransition` | board session status transition is not allowed by BOARD_SESSION_TRANSITIONS |
 
@@ -2464,6 +2603,7 @@ _(xem envelope §0 — data có thể null)_
 | `description` | string | ✅ |  |
 | `creatorId` | string | ✅ | ObjectId User đã tạo |
 | `status` | enum `BoardSessionStatus` | ✅ | Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc) |
+| `phase` | enum `BoardSessionPhase` | ✅ | Phase cuối cùng trước khi bế mạc |
 | `allowedEditorIds` | string[] | ✅ | Roster Board member được vote trong session |
 | `startTime` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `endTime` | string (regex, ISO 8601) | — | ISO 8601 date-time (UTC) |
@@ -2492,7 +2632,7 @@ _(xem envelope §0 — data có thể null)_
 | `boardSessionId` | string (1..∞ ký tự) ✍ | ✅ |  |
 | `targetSeriesId` | string ✍ | ✅ |  |
 | `decisionType` | enum `DecisionType` | ✅ | Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER |
-| `details` | object | ✅ |  |
+| `details` | object | ✅ | Với `SERIALIZATION`, bắt buộc có `magazine` (string không rỗng), `startIssueNumber` (integer ≥ 1), `publicationType` (`WEEKLY`/`MONTHLY`/`IRREGULAR`) |
 
 **Response 201** (`BoardDecisionRes` — đọc `res.data`):
 
@@ -2524,6 +2664,7 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 | 422 | `Error.InvalidBoardMembers` | board member count must be odd to prevent tie votes |
+| 422 | — | `SERIALIZATION` thiếu/sai `details.magazine`, `startIssueNumber` hoặc `publicationType` |
 
 ---
 
@@ -2532,9 +2673,15 @@ _(xem envelope §0 — data có thể null)_
 
 **Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
 
-**Response 200** :
+**Query params:**
 
-_(xem envelope §0 — data có thể null)_
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `boardSessionId` | string | — | Lọc decision theo session; id không hợp lệ trả mảng rỗng |
+
+**Response 200** (`BoardDecisionRes[]` — đọc `res.data`): mỗi item có thêm `targetSeries: {id, title} | null`, chỉ được bảo đảm ở route list/detail decision.
+
+> `targetSeries` là field enrichment cho read route; response tạo decision có thể không chứa field này.
 
 ---
 
@@ -2549,6 +2696,7 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|---|
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `targetSeriesId` | string | — |  |
+| `targetSeries` | object | — | `{id, title}` ở GET list/detail; `null` nếu decision không gắn series hoặc series không resolve được |
 | `boardSessionId` | string | ✅ |  |
 | `decisionType` | enum `DecisionType` | — | Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER |
 | `result` | enum `BoardDecisionResult` | — | Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới) |
@@ -2597,10 +2745,11 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 400 | `Error.BoardSessionNotOpen` | board session is not ACTIVE; voting/config update not allowed |
+| 409 | `Error.BoardSessionNotOpen` | board session is not ACTIVE |
 | 403 | `Error.VoterNotAllowed` | caller is not in session.allowedEditorIds |
 | 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
+| 409 | `Error.VotingNotOpen` | session ACTIVE nhưng phase chưa phải `VOTING` (roster được kiểm tra trước phase) |
 | 409 | `Error.VoterAlreadyVoted` | voter has already cast a vote on this decision |
 
 ---
@@ -2665,6 +2814,15 @@ _(xem envelope §0 — data có thể null)_
 > Danh sách báo cáo Hội đồng
 
 **Quyền:** EDITOR, SUPER_ADMIN, BOARD_MEMBER (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `seriesId` | string | — | Lọc toàn bộ report theo series; hữu ích khi mở phiên/decision mới |
+| `boardDecisionId` | string | — | Lọc report theo decision |
+
+Id filter không hợp lệ trả mảng rỗng, không phải 404.
 
 **Response 200** :
 
@@ -3030,7 +3188,7 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 403 | `Error.NotContractMangaka` | caller không phải Mangaka của hợp đồng (⚠ đổi từ ONLY_ASSIGNED_EDITOR_CAN_EDIT — 2026-07-17) |
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
 
@@ -3146,6 +3304,7 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 400 | — | CONTRACT_ALREADY_SIGNED_BY_THIS_PARTY |
+| 403 | `Error.NotContractMangaka` | caller không phải Mangaka của hợp đồng này (mới 2026-07-17) |
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.ContractNotSignableYet` | contract must reach BOARD_APPROVED before it can be signed (B-CON-02) |
 
@@ -3660,7 +3819,7 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 403 | `Error.NotContractMangaka` | caller không phải Mangaka của hợp đồng (⚠ đổi từ ONLY_ASSIGNED_EDITOR_CAN_EDIT — 2026-07-17) |
 | 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
 | 409 | — | MangakaSignNotRequired |
 
@@ -3760,7 +3919,7 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 403 | — | ONLY_ASSIGNED_EDITOR_CAN_EDIT |
+| 403 | `Error.NotContractMangaka` | caller không phải Mangaka của hợp đồng (⚠ đổi từ ONLY_ASSIGNED_EDITOR_CAN_EDIT — 2026-07-17) |
 | 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
 | 409 | — | MangakaSignNotRequired |
 
@@ -4154,7 +4313,7 @@ _(xem envelope §0 — data có thể null)_
 
 1. **Mangaka** `POST /chapters` `{seriesId, chapterNumber, title?}` → Chapter `DRAFT` + Manuscript `DRAFT` + Schedule. (Sửa `PATCH /chapters/:id`; xoá slot nhầm `DELETE /chapters/:id` — chỉ DRAFT, cascade.)
 2. **Editor** đặt deadline: `PUT /chapters/:id/schedule`; gia hạn đơn phương: `PATCH /chapters/:id/schedule/extend` (giữ lịch sử). *(Thương lượng 2 chiều → Flow 10, §8.)*
-3. **Mangaka** tạo Name: `POST /chapters/:id/names` (tự SUBMITTED, derive chapterNumber). Vẽ hỏng chưa duyệt → `DELETE /chapters/:id/names/:nameId` rồi tạo lại.
+3. **Mangaka** tạo Name: `POST /chapters/:id/names` → Name **`DRAFT`** (derive chapterNumber). ⚠ **Đổi hành vi:** chapter-Name **KHÔNG còn tự SUBMITTED** — sinh ở `DRAFT` để Mangaka sửa trang thoải mái (`PUT/POST /chapters/:id/names/:nameId/pages`), sửa cả `title`/`chapterNumber` qua `PATCH /chapters/:id`; **bấm `POST /chapters/:id/names/:nameId/submit`** mới sang `SUBMITTED` (vào tầm Editor). Vẽ hỏng chưa duyệt cũng có thể `DELETE /chapters/:id/names/:nameId` rồi tạo lại.
 4. **Vòng duyệt Name** (route chapter-scoped): Editor `POST /chapters/:id/names/:nameId/request-revision` → Mangaka sửa trang (`PUT/POST .../pages`) → `.../resubmit` → Editor `.../approve` → **mở gate page**.
 5. **Mangaka** upload trang: `POST /chapters/:id/pages` (object key từ §14) — trang đầu tiên đẩy Manuscript `IN_PRODUCTION`. Vòng đời Page chuyển tự động theo cascade task (Flow 3); fallback tay: `PATCH /pages/:pageId`.
 6. Mọi task nộp xong → Manuscript auto `COMPOSITE_REVIEW` (fallback tay: `POST /chapters/:id/manuscript/mark-composite-ready`). Mangaka duyệt composite từng trang (annotation §5-cuối + approve task ở Flow 3).
@@ -4391,6 +4550,8 @@ _(xem envelope §0 — data có thể null)_
 
 **Quyền:** MANGAKA (Bearer)
 
+> ⚠️ **Đổi hành vi (Spec 14 / Option A):** chapter-Name sinh ở trạng thái **`DRAFT`** (KHÔNG còn tự `SUBMITTED`). Ở `DRAFT`, Mangaka **sửa trang thoải mái** (`PUT/POST .../pages`) + sửa `title`/`chapterNumber` chương qua `PATCH /chapters/:id`; xong bấm **`POST /chapters/:id/names/:nameId/submit`** mới sang `SUBMITTED` (vào tầm Editor). FE cần bổ sung nút **"Nộp Name"**.
+
 **Body** (`CreateChapterNameBody`):
 
 | Field | Kiểu | Bắt buộc | Mô tả |
@@ -4423,6 +4584,26 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.ChapterNotDraftForName` | chapter must be in DRAFT status to create a Name |
 | 409 | `Error.ChapterNameAlreadyExists` | this chapter already has a Name assigned |
+
+---
+
+#### `POST /chapters/:id/names/:nameId/submit`
+> Mangaka nộp chapter-Name lên Editor duyệt → `DRAFT` chuyển `SUBMITTED` (Option A, Spec 14)
+
+**Quyền:** MANGAKA (Bearer)
+
+Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`, Editor mới thao tác được (request-revision/approve) và trang bị khóa sửa (`.../pages` → 409).
+
+**Response 201** (`NameRes` — đọc `res.data`): shape y hệt `POST /chapters/:id/names` ở trên; `status` = `SUBMITTED`, `submittedAt` được set.
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | không phải Mangaka chủ series |
+| 404 | `Error.ChapterNotFound` | chapter không tồn tại / id rác |
+| 404 | `Error.NameNotFound` | Name không thuộc chapter này (hoặc id rác) |
+| 409 | `Error.InvalidNameState` | Name không ở `DRAFT` (đã nộp/đang duyệt/đã duyệt) |
 
 ---
 
@@ -4869,11 +5050,11 @@ _(xem envelope §0 — data có thể null)_
 
 **Quyền:** EDITOR (Bearer)
 
-**Body** (`ReasonBody`):
+**Body** (`RevisionReasonBody`):
 
 | Field | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
-| `reason` | string (0..1000 ký tự) ✍ | — | Lý do (text tự do, hiển thị cho bên liên quan) |
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do bắt buộc; được lưu vào lịch sử RevisionRequest và hiển thị cho bên phải sửa |
 
 **Response 201** (`ChapterRes` — đọc `res.data`):
 
@@ -6289,13 +6470,13 @@ Validation fail |
 | 422 | — | Validation fail |
 ---
 
-## §7. Flow 9 — Danh bạ trợ lý & Studio (kèm Review/Reputation)
+## §7. Flow 9 — Danh bạ Mangaka/Trợ lý & Studio (kèm Review/Reputation)
 
-**Nghiệp vụ:** hệ thống là **danh bạ tìm trợ lý** — lương/điều kiện deal **NGOÀI hệ thống** (không quản lý lương). Mangaka lọc danh bạ theo chuyên môn + lịch rảnh + rating → deal ngoài → gửi **CollaborationInvite** (bắt buộc khai thời hạn thuê hireStart–hireEnd + loại việc) → Assistant accept → sinh **StudioAssignment ACTIVE** → từ đó Flow 3 mới cho giao task. Hết hạn thuê tự coi như kết thúc (không cron). Sau khi hợp tác kết thúc, Mangaka đánh giá Assistant (và Editor đánh giá Mangaka) → nuôi **reputation** (Bayesian) → xếp hạng danh bạ.
+**Nghiệp vụ:** hệ thống có danh bạ Mangaka và **danh bạ tìm trợ lý**; lương/điều kiện cộng tác được deal **NGOÀI hệ thống** (không quản lý lương). Mangaka lọc Assistant theo tên/chuyên môn/lịch rảnh/rating → deal ngoài → gửi **CollaborationInvite** (bắt buộc khai thời hạn thuê hireStart–hireEnd + loại việc) → Assistant accept → sinh **StudioAssignment ACTIVE** → từ đó Flow 3 mới cho giao task. Hết hạn thuê tự coi như kết thúc (không cron). Sau khi hợp tác kết thúc, Mangaka đánh giá Assistant (và Editor đánh giá Mangaka) → nuôi **reputation** (Bayesian) → xếp hạng danh bạ.
 
 ### Happy path
 
-1. **Mangaka** `GET /assistants?specialization=&availableFrom=&availableTo=&level=` — danh bạ xếp theo isRecommended/reputation, ẨN email/phone.
+1. **Mangaka** `GET /assistants?q=&specialization=&availableFrom=&availableTo=&level=` — tìm Assistant theo tên, danh bạ xếp theo isRecommended/reputation, ẨN email/phone. Editor/Board/Mangaka cũng có thể dùng `GET /mangakas?q=&genre=&level=` để tìm Mangaka theo tên/penName.
 2. Deal ngoài hệ thống xong → `POST /collaboration-invites` (assistantId + seriesId + hireStart/hireEnd + taskTypes).
 3. **Assistant** `POST /collaboration-invites/:id/accept` → StudioAssignment `ACTIVE` (hoặc `/decline`; Mangaka đổi ý → `/cancel`).
 4. Làm việc theo Flow 3. Xem quan hệ: `GET /studio-assignments` (2 phía); Mangaka tổng quan xưởng: `GET /studio/overview`.
@@ -6321,8 +6502,8 @@ Validation fail |
 
 ### API Reference
 
-#### `GET /assistants`
-> Danh bạ trợ lý: lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)
+#### `GET /mangakas`
+> Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level, ưu tiên isRecommended/reputation (ẩn email/phone)
 
 **Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
 
@@ -6330,11 +6511,50 @@ Validation fail |
 
 | Param | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
+| `q` | string (1..100 ký tự) | — | Trim trước khi tìm; khớp `User.name`, `User.displayName` hoặc `MangakaProfile.penName`, không phân biệt hoa thường |
+| `genre` | enum `Genre` | — | Lọc Mangaka có thể loại này trong `genres[]` |
+| `level` | string (1..100 ký tự) | — | Lọc chính xác theo experienceLevel |
+| `limit` | integer (1..100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (default: `0`) |
+
+**Response 200** (`MangakaDirectoryListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Mảng Mangaka đã có profile, xếp theo isRecommended/reputation |
+| `items[].userId` | string | ✅ | ObjectId User |
+| `items[].displayName` | string \| null | ✅ | Tên hiển thị |
+| `items[].avatar` | string \| null | ✅ | Object key R2 |
+| `items[].penName` | string | ✅ | Bút danh |
+| `items[].genres` | enum `Genre`[] | ✅ | Thể loại hồ sơ |
+| `items[].experienceLevel` | string \| null | ✅ | Cấp kinh nghiệm |
+| `items[].bio` | string \| null | ✅ | Giới thiệu |
+| `items[].portfolioFiles` | string[] | ✅ | Object key portfolio |
+| `items[].reputationScore` | number | ✅ | Điểm uy tín Bayesian-weighted |
+| `items[].ratingAvg` | number | ✅ | Điểm đánh giá trung bình |
+| `items[].ratingCount` | number | ✅ | Số lượt đánh giá |
+| `items[].isRecommended` | boolean | ✅ | Nhãn đề xuất hệ thống |
+| `total` | number | ✅ | Tổng số bản ghi khớp filter |
+| `limit` | number | ✅ | Số bản ghi mỗi trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua |
+
+---
+
+#### `GET /assistants`
+> Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)
+
+**Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params:**
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `q` | string (1..100 ký tự) | — | Trim trước khi tìm; khớp `User.name` hoặc `User.displayName`, không phân biệt hoa thường |
 | `specialization` | enum `Specialization` | — | Assistant specialization/task type |
 | `level` | string (1..100 ký tự) | — |  |
 | `availableFrom` | string (regex, ISO 8601) | — |  |
 | `availableTo` | string (regex, ISO 8601) | — |  |
-| `limit` | integer (≥ 0, ≤ 100) | — | Số bản ghi mỗi trang (default: `20`) |
+| `limit` | integer (1..100) | — | Số bản ghi mỗi trang (default: `20`) |
 | `offset` | integer (≥ 0) | — | Số bản ghi bỏ qua (phân trang) (default: `0`) |
 
 **Response 200** (`AssistantDirectoryListRes` — đọc `res.data`):
@@ -7181,12 +7401,20 @@ Validation fail |
 
 **Nghiệp vụ:** mỗi kỳ phát hành, Editor/Admin **mở kỳ bình chọn** (SurveyPeriod — mở TAY theo lịch tạp chí, không auto). Độc giả (**Guest — KHÔNG cần tài khoản**) vào trang public, xác thực email OTP, chọn tối đa 3 series → 1 danh tính = 1 phiếu/kỳ (BE chỉ lưu HMAC hash, không lưu email gốc). Kỳ đóng → Editor **finalize**: gộp phiếu online (có trọng số 0–1) + phiếu offline nhập tay (postcard, trọng số 1.0) → xếp hạng + tie-break → RankingRecord + đánh dấu **at-risk** (bottom 1/3; loại trừ series <8 chương published và series HIATUS) → notify Mangaka/Editor/Board. SEVERE (≥5 kỳ liên tiếp) → feed Board xem xét hủy (Flow 5).
 
-### Happy path — phía Guest (public, không token)
+### Happy path — phía Guest (public, không token) — CẬP NHẬT Spec 15
 
+0. **Khám phá & đọc truyện (Spec 15 — route public mới, rate-limit IP `PUBLIC_RL_IP_MAX`/`WINDOW`, 429 kèm `retryAfter`):**
+   - `GET /public/series?q=&genre=&demographic=&publicationType=&limit=&offset=` → catalog series hậu-serialize (SERIALIZED/HIATUS/COMPLETING/CANCELLING/COMPLETED/CANCELLED); filter `publicationType` = WEEKLY/MONTHLY/IRREGULAR; mỗi item kèm `coverImageUrl` (**signed URL TTL ngắn — đừng cache URL**), `synopsis`, `publicationType`, `magazine`, `publishedChapterCount`.
+   - `GET /public/series/:id` → chi tiết + danh sách chapter **PUBLISHED** (id, chapterNumber, title, publishedAt). Series tiền-serialize/id rác → 404 `Error.PublicSeriesNotFound`.
+   - `GET /public/chapters/:id/pages` → đọc chapter: `{series, chapter, pages[{pageNumber, imageUrl}], prevChapterId, nextChapterId}`; `imageUrl` ký sẵn TTL ngắn — hết hạn thì gọi lại API. Chapter chưa PUBLISHED/id rác → 404 `Error.PublicChapterNotFound`.
 1. `GET /vote/context` → kỳ `OPEN` hiện tại + danh sách series được vote (chỉ field public-safe) + `maxSeriesPerVote`. Không có kỳ mở → `{period:null, series:[]}` (200).
-2. `POST /vote/otp` `{identity: email}` → OTP gửi email (rate-limit: 3/danh tính/24h, 10/IP/24h, cooldown 60s).
-3. `POST /vote` `{surveyPeriodId, identity, otp, seriesIds[≤3], captchaScore?}` → 201. Cookie "đã vote" chỉ là UX — chống trùng thật nằm ở server.
-4. Sau khi kỳ `REFLECTED`: `GET /vote/results?surveyPeriodId=` → bảng xếp hạng public (KHÔNG lộ isAtRisk/riskLevel/isReliable).
+2. `POST /vote/otp` `{identity: email, captchaToken}` → OTP gửi email (rate-limit: 3/danh tính/24h, 10/IP/24h, cooldown 60s). **Spec 15: `captchaToken` được verify THẬT server-side (Google siteverify)** khi env `RECAPTCHA_SECRET` được set — token sai/score < threshold → **403 `Error.CaptchaRejected`, KHÔNG gửi OTP**. Secret rỗng (dev) = bỏ qua verify.
+3. `POST /vote` `{surveyPeriodId, identity, otpCode, seriesIds[≤3], captchaToken}` → 200. **⚠ BREAKING Spec 15: body đổi `captchaScore` → `captchaToken` (required)** — server verify và tự tính score (score thấp → phiếu vẫn nhận nhưng weight 0.5 + flag). Cookie "đã vote" chỉ là UX — chống trùng thật nằm ở server. IP quota/kỳ nay **nguyên tử** (Redis reservation — hết race vượt trần khi request song song).
+4. Sau khi kỳ `REFLECTED`:
+   - `GET /vote/results/latest?publicationType=` → bảng xếp hạng **kỳ REFLECTED mới nhất** `{period, results[]}` — không cần biết id kỳ; chưa có kỳ nào chốt → `{period:null, results:[]}` (200).
+   - `GET /vote/periods?limit=` → danh sách kỳ REFLECTED (dropdown lịch sử).
+   - `GET /vote/results?surveyPeriodId=&publicationType=` → bảng xếp hạng kỳ cụ thể (KHÔNG lộ isAtRisk/riskLevel/isReliable).
+   - **Filter `publicationType` (Spec 15.2 — bảng con WEEKLY/MONTHLY):** omit = bảng tổng; truyền WEEKLY/MONTHLY/IRREGULAR → chỉ trả series đúng nhịp đó. Mỗi item nay kèm `publicationType`. ⚠ `rankPosition` GIỮ NGUYÊN vị trí trên **bảng tổng** của kỳ (1 kỳ = 1 bảng chung, đúng mô hình tạp chí) — FE muốn hiển thị "hạng 1-2-3 của bảng WEEKLY" thì tự đánh số theo index (list đã sort).
 
 ### Happy path — phía vận hành (Editor/Board/Admin)
 
@@ -7201,6 +7429,11 @@ Validation fail |
 | Tình huống | API | Kết quả |
 |---|---|---|
 | `identity` không phải email hợp lệ | `POST /vote/otp` / `/vote` | 422 |
+| Thiếu `captchaToken` (breaking Spec 15) | `POST /vote/otp` / `/vote` | 422 |
+| Captcha token sai / score < threshold (khi `RECAPTCHA_SECRET` set) | `POST /vote/otp` / `/vote` | 403 `Error.CaptchaRejected` |
+| IP vượt trần request route public đọc | `GET /public/*`, `/vote/results/latest`, `/vote/periods` | 429 `code: PUBLIC_RATE_LIMITED` + `retryAfter` |
+| Series ngoài public set / id rác | `GET /public/series/:id` | 404 `Error.PublicSeriesNotFound` |
+| Chapter chưa PUBLISHED / id rác | `GET /public/chapters/:id/pages` | 404 `Error.PublicChapterNotFound` |
 | Xin OTP lại trong 60s / vượt quota | `POST /vote/otp` | 429 `code: VOTE_OTP_RATE_LIMITED` + `retryAfter` |
 | OTP sai / hết hạn (5') | `POST /vote` | 422 / 410 |
 | Danh tính đã vote kỳ này | `POST /vote` | 409 (unique identity+period) |
@@ -9108,7 +9341,13 @@ Unhappy: contentType ngoài allowlist → 422 `Error.UnsupportedFileType`; quá 
 
 - `GET /notifications?isRead=&type=&limit=&offset=` — filter `isRead` 3 trạng thái (omit=tất cả), response luôn kèm `unreadCount` (badge — độc lập filter). Scope cứng theo user hiện tại.
 - `PATCH /notifications/:id/read` (idempotent; của người khác/không tồn tại → 404 `Error.NotificationNotFound`) · `PATCH /notifications/read-all` → `{updated}`.
+- Các notification review lặp có định danh vòng/bản nộp trong `content`: proposal/Name/manuscript/task request-revision và resubmit dùng `(round N)`; `TASK_SUBMITTED` dùng `(version N)`. Vì dedupe key có hash content, mỗi vòng/version sinh notification mới nhưng retry cùng payload vẫn được dedupe.
+- Name resubmit nay phát `NAME_RESUBMITTED` cho Editor đang phụ trách; người yêu cầu sửa nhận `REVISION_RESOLVED` khi recipient đánh dấu vòng đó đã xử lý.
 - Realtime = polling. Deep-link theo `referenceType` prefix — xem §0.6.
+
+### Revision tracking (người trong vòng review)
+
+Mỗi action request-revision của proposal, Name, manuscript hoặc task tự sinh một `RevisionRequest` có `reason`, `round`, người yêu cầu và người phải sửa. Đây là checklist lịch sử, **không phải gate resubmit**: còn vòng chưa resolve vẫn được tiếp tục flow. Mangaka/Assistant chỉ resolve vòng mà mình là `recipientId`; Editor theo dõi các vòng mình đã yêu cầu; Board/Admin có quyền xem toàn bộ.
 
 ### Audit log (SUPER_ADMIN + BOARD_MEMBER)
 
@@ -9251,6 +9490,64 @@ Unhappy: contentType ngoài allowlist → 422 `Error.UnsupportedFileType`; quá 
 
 ---
 
+#### `GET /revision-requests`
+> List lịch sử vòng yêu cầu sửa; scope theo người trong cuộc, Board/Admin xem tất cả
+
+**Quyền:** MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
+
+**Query params** (`ListRevisionRequestsQuery`, `.strict()`):
+
+| Param | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `targetType` | enum `RevisionTargetType` | — | `PROPOSAL`, `NAME`, `MANUSCRIPT`, `TASK` |
+| `targetId` | string | — | seriesId / nameId / chapterId / taskId theo targetType; id không phải 24-hex trả danh sách rỗng, không 500 |
+| `isResolved` | enum(`true`, `false`) | — | Omit = tất cả; `true` = đã xử lý; `false` = còn tồn |
+| `limit` | integer (1..100) | — | Default `20` |
+| `offset` | integer (≥ 0) | — | Default `0` |
+
+MANGAKA/ASSISTANT/EDITOR chỉ thấy row có `recipientId = mình` hoặc `requestedBy = mình`; BOARD_MEMBER/SUPER_ADMIN thấy tất cả.
+
+**Response 200** (`RevisionRequestListRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `items` | object[] | ✅ | Sắp xếp mới nhất trước |
+| `items[].id` | string | ✅ | ObjectId RevisionRequest |
+| `items[].targetType` | enum `RevisionTargetType` | ✅ | Loại target |
+| `items[].targetId` | string | ✅ | ID target nghiệp vụ |
+| `items[].seriesId` | string \| null | ✅ | null với TASK |
+| `items[].round` | number | ✅ | Số vòng trên cùng `(targetType,targetId)`, bắt đầu từ 1 |
+| `items[].reason` | string | ✅ | Nội dung cần sửa |
+| `items[].requestedBy` | string | ✅ | User yêu cầu sửa |
+| `items[].recipientId` | string | ✅ | User phải sửa; chỉ user này resolve được |
+| `items[].isResolved` | boolean | ✅ | Đã đánh dấu xử lý xong hay chưa |
+| `items[].resolvedAt` | string \| null | ✅ | ISO 8601 |
+| `items[].resolvedBy` | string \| null | ✅ | User đã resolve |
+| `items[].createdAt` | string | ✅ | ISO 8601 |
+| `total` | number | ✅ | Tổng bản ghi khớp filter/scope |
+| `limit` | number | ✅ | Kích thước trang |
+| `offset` | number | ✅ | Số bản ghi bỏ qua |
+
+---
+
+#### `PATCH /revision-requests/:id/resolve`
+> Người phải sửa đánh dấu một vòng đã xử lý xong; idempotent
+
+**Quyền:** MANGAKA, ASSISTANT (Bearer), đồng thời caller phải đúng `recipientId`
+
+**Body:** không có.
+
+**Response 200:** `RevisionRequestRes` — cùng shape một phần tử ở route list. Nếu đã resolve, trả nguyên bản ghi và không phát notification lặp. Resolve cạnh tranh dùng compare-and-set: đúng một request đổi state và phát `REVISION_RESOLVED` cho `requestedBy`.
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotRevisionRecipient` | caller không phải người phải sửa của vòng này |
+| 404 | `Error.RevisionRequestNotFound` | revision request không tồn tại hoặc id không hợp lệ |
+
+---
+
 #### `GET /audit`
 > List audit logs for privileged audit viewers
 
@@ -9368,7 +9665,33 @@ const socket = io(`${API_ORIGIN}/board`, {
 
 - Thiếu/sai token → server `disconnect` ngay khi handshake.
 - Join room phiên họp: `socket.emit('joinSession', { sessionId })` → chỉ **creator / thành viên roster (`allowedEditorIds`) / SUPER_ADMIN** được vào; ngoài danh sách → `{status: 'DENIED'}`; sessionId rác → từ chối.
+- Gửi chat Q&A: `socket.emit('sendMessage', {sessionId, content}, ack)`; `content` được trim, dài 1..1000. Ack thành công: `{status:'SUCCESS', message: BoardMessageRes}`. Ack bị từ chối: `{status:'DENIED', reason}` với `NOT_PARTICIPANT`, `SESSION_NOT_ACTIVE`, `VOTING_PHASE`, `INVALID_INPUT`. Lỗi persist ngoài dự kiến trả `{status:'ERROR'}` và không làm crash socket.
+- Sự kiện nhận **`messageReceived`**: payload `BoardMessageRes = {id, sessionId, sender:{id,displayName,avatar}, content, phase, createdAt}`; server broadcast vào room `session_<id>` sau khi lưu thành công.
+- Sự kiện nhận **`phaseChanged`**: payload `{sessionId, phase}`; server broadcast sau `PATCH /board/sessions/:id/phase` thành công.
 - Sự kiện nhận: **`voteProgressUpdated`** — bắn mỗi khi có phiếu mới (payload: tiến độ vote của decision trong phiên) → FE cập nhật màn hình họp trực tiếp. Kết quả chốt (APPROVED/REJECTED) vẫn nên đối chiếu bằng `GET /board/decisions/:id`.
+- **Origin (Spec 13):** namespace `/board` dùng chung whitelist `CORS_ORIGINS` với HTTP (§0.8). Origin FE phải nằm trong danh sách, nếu không handshake WebSocket bị browser chặn. (Nội bộ: adapter Redis của Socket.IO nay dùng connection riêng, không ảnh hưởng contract FE.)
+
+**Ví dụ đầy đủ (socket.io-client):**
+
+```js
+import { io } from 'socket.io-client'
+
+const socket = io(`${API_ORIGIN}/board`, { auth: { token: accessToken } })
+
+socket.on('connect', () => {
+  socket.emit('joinSession', { sessionId })
+  // Sau reconnect: refetch GET session + messages + decisions?boardSessionId=...
+})
+socket.emit('sendMessage', { sessionId, content: 'Câu hỏi cho người trình bày' }, (ack) => {
+  if (ack.status === 'DENIED') showChatDeniedReason(ack.reason)
+})
+socket.on('messageReceived', (message) => appendBoardMessage(message))
+socket.on('phaseChanged', ({ phase }) => updateMeetingPhase(phase))
+socket.on('voteProgressUpdated', (payload) => updateBoardScreen(payload))
+socket.on('disconnect', (reason) => {
+  // reason 'io server disconnect' + ngay lúc handshake ⇒ token thiếu/sai
+})
+```
 
 ## §16. Changelog v2 → v3 (FE PHẢI đọc nếu đã code theo v2)
 
@@ -9383,6 +9706,8 @@ const socket = io(`${API_ORIGIN}/board`, {
 | 5 | Reprint/Board đổi error shape | SCREAMING_SNAKE cũ → chuẩn `Error.PascalCase` toàn hệ |
 | 6 | Guest voting đổi field | `phoneNumber` → **`identity`** (email); response ghi `authMethod: EMAIL_OTP` |
 | 7 | `POST /chapters` body | `{seriesId, chapterNumber, title?}` — KHÔNG còn `nameId` (chapter-first, Spec 10) |
+| 8 | **Manuscript request-revision bắt buộc reason (Spec 14)** | `POST /chapters/:id/manuscript/request-revision` thiếu/rỗng `reason` nay trả 422 (trước đây field optional) |
+| 9 | **Chapter-Name sinh ở `DRAFT` (Spec 14 / Option A)** | `POST /chapters/:id/names` nay trả Name `DRAFT` (không còn tự `SUBMITTED`). FE **phải thêm bước** `POST /chapters/:id/names/:nameId/submit` để nộp. Ở `DRAFT` mới sửa được trang (`.../pages`); sau `SUBMITTED` sửa trang → 409. |
 
 **Mới (chưa có trong v2):**
 
@@ -9393,10 +9718,40 @@ const socket = io(`${API_ORIGIN}/board`, {
 - `POST /series/:id/propose-completion` / `force-cancel` / `finalize-ending` / `hiatus` / `resume` / `franchise-consent`.
 - Toàn bộ BE-B: contracts + amendments + payments, board engine, survey/vote/rankings (2 route public `GET /vote/context`, `GET /vote/results`), reprint, transfer, publication-versions, tankobon + defense-dashboard.
 - Notification `referenceType` action-specific (`<ENTITY>_<ACTION>`) — deep-link theo prefix (§0.6).
-- WS `/board` bắt buộc JWT (v2 chưa có auth contract).
+- Spec 14: `GET /revision-requests`, `PATCH /revision-requests/:id/resolve`, `PATCH /series/:id`, `GET /mangakas`; `GET /assistants` thêm query `q` tìm theo tên.
+- Notification review nay có `round`/`version` trong content; Name resubmit phát `NAME_RESUBMITTED`, resolve vòng phát `REVISION_RESOLVED`.
+- WS `/board` bắt buộc JWT (v2 chưa có auth contract); origin WS dùng chung whitelist `CORS_ORIGINS` (§0.8).
+- **Spec 13 (hạ tầng):** CORS env-driven `CORS_ORIGINS` — origin FE phải được whitelist (§0.8); notification đã chống trùng (không còn bản lặp, §0.9); route auth/OTP thất bại (422/409) **không còn** đốt cooldown → đăng ký lại ngay không dính 429 oan (cooldown default 60s→30s).
+- **Option A (Spec 14):** `POST /chapters/:id/names/:nameId/submit` (chapter-Name `DRAFT→SUBMITTED`) — xem breaking #9.
 - Swagger: field ngày giờ đã có `format: date-time` (đọc type chính xác từ `/api-json`).
-- 3 mã lỗi mới: `Error.NotEnoughBoardMembers`, `Error.RosterSourceRequired`, `Error.NameNotDeletable`; vote thêm `Error.DuplicateSeriesInVote`, `Error.SeriesNotVotable`; transfer thêm `Error.InvalidOwnershipSplit`; reviews thêm `Error.ProfileNotFound`.
+- 4 mã lỗi mới của Spec 14: `Error.RevisionRequestNotFound`, `Error.NotRevisionRecipient`, `Error.SeriesNotEditable`, `Error.SeriesMetadataConflict`. Các mã mới trước đó: `Error.NotEnoughBoardMembers`, `Error.RosterSourceRequired`, `Error.NameNotDeletable`; vote thêm `Error.DuplicateSeriesInVote`, `Error.SeriesNotVotable`; transfer thêm `Error.InvalidOwnershipSplit`; reviews thêm `Error.ProfileNotFound`.
 
 ---
 
-*Sinh + đối chiếu từ Swagger runtime commit `c953e0c` — 2026-07-12. Khi BE đổi contract, regenerate phần reference thay vì sửa tay.*
+*Bản nền sinh + đối chiếu từ Swagger runtime commit `c953e0c` — 2026-07-12; đồng bộ Spec 13 (Infra Hardening: CORS/notification-dedupe/WS) + Spec 14 (Revision/Series-metadata/Directory-search/OTP-rate-limit) + Option A (chapter-Name `DRAFT`+submit) từ schema/controller ngày 2026-07-15 (branch `feat/background_jobs-track`). Khi hoàn tất verify tích hợp, regenerate phần reference để chốt lại route count và Swagger contract toàn hệ.*
+
+### Spec 15 (2026-07-16) — Public Reader & Voting Completion ⚠ FE PHẢI đọc
+
+1. **⚠ BREAKING `POST /vote`:** body bỏ `captchaScore`, thêm **`captchaToken` (required)** — server verify reCAPTCHA thật (Google siteverify) và tự tính score. Thiếu token → 422; token sai/score thấp (khi BE bật `RECAPTCHA_SECRET`) → 403 `Error.CaptchaRejected`. `POST /vote/otp` cũng verify token thật (trước chỉ nhận rồi bỏ qua).
+2. **5 route public MỚI (không token, rate-limit IP — 429 `code: PUBLIC_RATE_LIMITED` + `retryAfter`):**
+   - `GET /public/series` — catalog (q/genre/demographic/**publicationType**/limit/offset), trả `coverImageUrl` **đã ký sẵn TTL ngắn** + `synopsis` + `publishedChapterCount`.
+   - `GET /public/series/:id` — chi tiết + danh sách chapter PUBLISHED. 404 `Error.PublicSeriesNotFound`.
+   - `GET /public/chapters/:id/pages` — đọc chapter: pages (imageUrl ký sẵn) + prev/nextChapterId. 404 `Error.PublicChapterNotFound`.
+   - `GET /vote/results/latest` — bảng xếp hạng kỳ REFLECTED mới nhất `{period, results[]}`; chưa có kỳ → `{period:null, results:[]}`.
+   - `GET /vote/periods?limit=` — lịch sử kỳ REFLECTED (dropdown).
+3. **IP vote quota nguyên tử (Spec 15.1):** hết race vượt trần khi 2 request song song; hành vi FE không đổi (vẫn 429 `Error.VoteIpLimitExceeded`).
+4. Ảnh public là **signed URL TTL ngắn** (`PUBLIC_SIGN_TTL_SECONDS`, default 900s) — cache theo key+TTL, hết hạn gọi lại API; KHÔNG lưu URL vào state lâu dài.
+5. **Spec 15.2 (2026-07-16):** `GET /vote/results` + `GET /vote/results/latest` thêm query optional **`publicationType`** (WEEKLY/MONTHLY/IRREGULAR — bảng xếp hạng con theo nhịp); mỗi `results[]` item thêm field **`publicationType`** (additive, không breaking). `rankPosition` giữ vị trí bảng tổng — FE đánh số bảng con theo index.
+
+### Spec 16 (2026-07-17) — Board Meeting Room & response enrichment
+
+1. **Additive REST routes:** `PATCH /board/sessions/:id/phase` và `GET /board/sessions/:id/messages`; thêm query `mine/status` cho sessions, `boardSessionId` cho decisions, `seriesId/boardDecisionId` cho reports.
+2. **Additive response fields:** mọi `BoardSessionRes` có `phase`; hai read routes session có thêm `creator`, `members`; read routes của `BoardDecisionRes` có `targetSeries`; `GET /series` và `GET /series/:id` có `mangaka`, `editor`. Các field enrichment chỉ được bảo đảm ở route read, FE không nên trông chờ chúng trong mutation response.
+3. **WebSocket additive:** thêm `sendMessage`, `messageReceived`, `phaseChanged`; chat bị khóa trong phase `VOTING` với reason `VOTING_PHASE`.
+4. **Validation chặt hơn:** decision `SERIALIZATION` bắt buộc `details.magazine`, `details.startIssueNumber`, `details.publicationType`.
+5. **Mã lỗi mới:** 409 `Error.InvalidPhaseTransition`, 409 `Error.VotingNotOpen`, 403 `Error.NotSessionParticipant`; `Error.BoardSessionNotOpen` giữ status 409.
+6. **Tương thích:** không breaking REST về route/field cũ; thay đổi hành vi duy nhất FE Board phải xử lý là vote nay chỉ hợp lệ khi session `ACTIVE` **và** phase `VOTING`. UI creator cần nút chuyển phase trước khi mở biểu quyết.
+7. **(polish 2026-07-17) Mã lỗi contract tách đúng ngữ nghĩa — ⚠ FE map lỗi contract cần cập nhật:**
+   - **`Error.NotContractMangaka`** (403, path `mangakaId`) — thay `ONLY_ASSIGNED_EDITOR_CAN_EDIT` ở các path SAI-MANGAKA: `PATCH /contracts/:id/status` (nhánh mangaka approve), `POST /contracts/:id/request-changes`, `POST /contracts/:id/signatures/mangaka`, `GET /contracts/:id/status` (mangaka xem HĐ người khác), `POST .../amendments/:id/sign/mangaka`, `POST .../amendments/:id/reject`.
+   - **`Error.ContractAccessDenied`** (403, path `id`) — thay `ONLY_ASSIGNED_EDITOR_CAN_EDIT` ở guard XEM hợp đồng/phụ lục ngoài scope: `GET /contracts/:id`, `GET /contracts/:id/versions[/:versionId]`, `GET /contracts/:contractId/amendments[/:id]`.
+   - `ONLY_ASSIGNED_EDITOR_CAN_EDIT` **vẫn giữ** cho các path editor-semantic (editor khác sửa/gửi HĐ, tạo/sửa amendment, revenue nhánh editor).

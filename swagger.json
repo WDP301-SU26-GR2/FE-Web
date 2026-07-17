@@ -512,6 +512,12 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.ContractAccessDenied (id) - contract is outside the caller view scope (mangaka: own, editor: assigned, board: all)"
+          },
+          "404": {
+            "description": "CONTRACT_NOT_FOUND"
           }
         },
         "security": [
@@ -595,6 +601,12 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.ContractAccessDenied (id) - contract is outside the caller view scope (mangaka: own, editor: assigned, board: all)"
+          },
+          "404": {
+            "description": "CONTRACT_NOT_FOUND"
           }
         },
         "security": [
@@ -639,6 +651,12 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.ContractAccessDenied (id) - contract is outside the caller view scope (mangaka: own, editor: assigned, board: all)"
+          },
+          "404": {
+            "description": "CONTRACT_NOT_FOUND"
           }
         },
         "security": [
@@ -675,6 +693,15 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "ONLY_ASSIGNED_EDITOR_CAN_EDIT | Error.NotContractMangaka (mangakaId) - caller is not the mangaka of this contract (approve / request-changes / sign / signing progress)"
+          },
+          "404": {
+            "description": "CONTRACT_NOT_FOUND"
+          },
+          "409": {
+            "description": "Error.InvalidContractTransition (status) - contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6)"
           }
         },
         "security": [
@@ -709,6 +736,12 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.NotContractMangaka (mangakaId) - caller is not the mangaka of this contract (approve / request-changes / sign / signing progress)"
+          },
+          "404": {
+            "description": "CONTRACT_NOT_FOUND"
           }
         },
         "security": [
@@ -747,7 +780,7 @@
             }
           },
           "403": {
-            "description": "ONLY_ASSIGNED_EDITOR_CAN_EDIT"
+            "description": "Error.NotContractMangaka (mangakaId) - caller is not the mangaka of this contract (approve / request-changes / sign / signing progress)"
           },
           "404": {
             "description": "CONTRACT_NOT_FOUND"
@@ -887,6 +920,9 @@
           },
           "400": {
             "description": "CONTRACT_ALREADY_SIGNED_BY_THIS_PARTY"
+          },
+          "403": {
+            "description": "Error.NotContractMangaka (mangakaId) - caller is not the mangaka of this contract (approve / request-changes / sign / signing progress)"
           },
           "404": {
             "description": "CONTRACT_NOT_FOUND"
@@ -1315,6 +1351,12 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.ContractAccessDenied (id) - contract is outside the caller view scope (mangaka: own, editor: assigned, board: all)"
+          },
+          "404": {
+            "description": "CONTRACT_NOT_FOUND"
           }
         },
         "security": [
@@ -1359,6 +1401,9 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.ContractAccessDenied (id) - contract is outside the caller view scope (mangaka: own, editor: assigned, board: all)"
           },
           "404": {
             "description": "Error.AmendmentNotFound (id) - amendment id not found under this contract"
@@ -1532,7 +1577,7 @@
             }
           },
           "403": {
-            "description": "ONLY_ASSIGNED_EDITOR_CAN_EDIT"
+            "description": "Error.NotContractMangaka (mangakaId) - caller is not the mangaka of this contract (approve / request-changes / sign / signing progress)"
           },
           "409": {
             "description": "Error.AmendmentNotPendingSignatures (status) - amendment must be PENDING_SIGNATURES to sign/reject | MangakaSignNotRequired"
@@ -1655,7 +1700,7 @@
             }
           },
           "403": {
-            "description": "ONLY_ASSIGNED_EDITOR_CAN_EDIT"
+            "description": "Error.NotContractMangaka (mangakaId) - caller is not the mangaka of this contract (approve / request-changes / sign / signing progress)"
           },
           "409": {
             "description": "Error.AmendmentNotPendingSignatures (status) - amendment must be PENDING_SIGNATURES to sign/reject | MangakaSignNotRequired"
@@ -2899,6 +2944,106 @@
         ]
       }
     },
+    "/mangakas": {
+      "get": {
+        "operationId": "UsersController_listMangakas",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Tìm theo User.name / User.displayName / MangakaProfile.penName (không phân biệt hoa thường)",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "genre",
+            "required": false,
+            "in": "query",
+            "description": "Lọc mangaka có thể loại này trong genres[]",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTION",
+                "ADVENTURE",
+                "COMEDY",
+                "DRAMA",
+                "FANTASY",
+                "HORROR",
+                "MYSTERY",
+                "ROMANCE",
+                "SCI_FI",
+                "SLICE_OF_LIFE",
+                "SPORTS",
+                "SUPERNATURAL",
+                "THRILLER",
+                "HISTORICAL",
+                "ISEKAI",
+                "MECHA",
+                "PSYCHOLOGICAL"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "exclusiveMinimum": true,
+              "default": 20,
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MangakaDirectoryListResDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level; ưu tiên isRecommended/reputation (ẩn email/phone)",
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/mangakas/{userId}": {
       "get": {
         "operationId": "UsersController_getMangakaProfile",
@@ -2942,6 +3087,17 @@
       "get": {
         "operationId": "UsersController_listAssistants",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Tìm theo tên: khớp User.name hoặc User.displayName (không phân biệt hoa thường)",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
           {
             "name": "specialization",
             "required": false,
@@ -3030,7 +3186,7 @@
             "bearer": []
           }
         ],
-        "summary": "Danh bạ trợ lý: lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)",
+        "summary": "Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)",
         "tags": [
           "users"
         ]
@@ -3951,6 +4107,59 @@
           }
         ],
         "summary": "Chi tiết 1 series (kèm proposal)",
+        "tags": [
+          "series"
+        ]
+      },
+      "patch": {
+        "operationId": "SeriesController_updateSeriesMetadata",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeriesMetadataBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesAccessDenied - current user cannot access this series"
+          },
+          "404": {
+            "description": "Error.SeriesNotFound - series does not exist"
+          },
+          "409": {
+            "description": "Error.SeriesNotEditable (status) - series đã kết thúc (COMPLETED/CANCELLED/ABANDONED/WITHDRAWN/REJECTED) — không sửa metadata được | Error.SeriesMetadataConflict (metadata) - series metadata changed concurrently too many times; reload the latest series and retry the patch"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sửa metadata series (title/coverImage/synopsis/characterDesigns) — Mangaka chủ hoặc Editor phụ trách",
         "tags": [
           "series"
         ]
@@ -5320,6 +5529,59 @@
         ]
       }
     },
+    "/chapters/{id}/names/{nameId}/submit": {
+      "post": {
+        "operationId": "ChapterNameController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nameId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NameResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner"
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) | Error.NameNotFound - name does not exist"
+          },
+          "409": {
+            "description": "Error.InvalidNameState (status) - name state does not allow this action"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka nộp chapter-Name lên Editor duyệt → DRAFT chuyển SUBMITTED",
+        "tags": [
+          "names"
+        ]
+      }
+    },
     "/chapters/{id}/names/{nameId}": {
       "get": {
         "operationId": "ChapterNameController_getOne",
@@ -6510,7 +6772,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReasonBodyDto"
+                "$ref": "#/components/schemas/RevisionReasonBodyDto"
               }
             }
           }
@@ -7024,7 +7286,35 @@
       },
       "get": {
         "operationId": "BoardController_getSessions",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "mine",
+            "required": false,
+            "in": "query",
+            "description": "'true' = chỉ phiên caller là creator hoặc trong roster",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "UPCOMING",
+                "ACTIVE",
+                "CONCLUDED"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -7167,14 +7457,11 @@
               }
             }
           },
-          "400": {
-            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed"
-          },
           "404": {
             "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)"
           },
           "409": {
-            "description": "Error.InvalidBoardSessionTransition (status) - board session status transition is not allowed by BOARD_SESSION_TRANSITIONS"
+            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.InvalidBoardSessionTransition (status) - board session status transition is not allowed by BOARD_SESSION_TRANSITIONS"
           }
         },
         "security": [
@@ -7228,6 +7515,126 @@
           }
         ],
         "summary": "Kết thúc phiên họp Hội đồng → CONCLUDED; quyết định treo → EXPIRED",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}/phase": {
+      "patch": {
+        "operationId": "BoardController_advancePhase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvancePhaseBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSessionCreator (sessionId) - only the board session creator or a Super Admin can conclude the session"
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)"
+          },
+          "409": {
+            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.InvalidPhaseTransition (phase) - session phase only moves forward: PRESENTING -> QA -> VOTING (skipping allowed)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creator chuyển giai đoạn phiên họp: PRESENTING → QA → VOTING (forward-only, cho nhảy cóc)",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}/messages": {
+      "get": {
+        "operationId": "BoardController_getSessionMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 200,
+              "exclusiveMinimum": true,
+              "default": 50,
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardMessageListResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSessionParticipant (id) - only the session creator, roster members, or a Super Admin can read meeting messages"
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lịch sử chat Q&A của phiên họp (creator/roster/Super Admin)",
         "tags": [
           "board"
         ]
@@ -7304,7 +7711,26 @@
       },
       "get": {
         "operationId": "BoardController_getDecisions",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "boardSessionId",
+            "required": false,
+            "in": "query",
+            "description": "Lọc decision theo phiên họp",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetSeriesId",
+            "required": false,
+            "in": "query",
+            "description": "Lọc decision theo series mục tiêu",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -7446,9 +7872,6 @@
               }
             }
           },
-          "400": {
-            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed"
-          },
           "403": {
             "description": "Error.VoterNotAllowed (voterId) - caller is not in session.allowedEditorIds"
           },
@@ -7456,7 +7879,7 @@
             "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)"
           },
           "409": {
-            "description": "Error.VoterAlreadyVoted (voterId) - voter has already cast a vote on this decision"
+            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.VotingNotOpen (id) - castVote requires session.phase = VOTING - the session creator must advance the phase first | Error.DecisionAlreadyFinalized (id) - decision already APPROVED/REJECTED/EXPIRED — voting closed | Error.VoterAlreadyVoted (voterId) - voter has already cast a vote on this decision"
           }
         },
         "security": [
@@ -7473,7 +7896,25 @@
     "/board/reports": {
       "get": {
         "operationId": "BoardController_getReports",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": false,
+            "in": "query",
+            "description": "Toàn bộ report của series — dùng khi mở phiên mới",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "boardDecisionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -7660,6 +8101,9 @@
               }
             }
           },
+          "403": {
+            "description": "Error.CaptchaRejected - reCAPTCHA verification failed or score is below VotingConfig.captchaThreshold when RECAPTCHA_SECRET is enabled"
+          },
           "429": {
             "description": "Error.VoteOtpRateLimit"
           }
@@ -7702,6 +8146,9 @@
           },
           "400": {
             "description": "Error.SurveyPeriodNotOpen | Error.VoteOtpNotFound"
+          },
+          "403": {
+            "description": "Error.CaptchaRejected - reCAPTCHA verification failed or score is below VotingConfig.captchaThreshold when RECAPTCHA_SECRET is enabled"
           },
           "404": {
             "description": "Error.SurveyPeriodNotFound"
@@ -7754,6 +8201,85 @@
         ]
       }
     },
+    "/vote/results/latest": {
+      "get": {
+        "operationId": "SurveyController_getLatestVoteResults",
+        "parameters": [
+          {
+            "name": "publicationType",
+            "required": false,
+            "in": "query",
+            "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WEEKLY",
+                "MONTHLY",
+                "IRREGULAR"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LatestVoteResultsResDto_Output"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error.PublicRateLimited - IP exceeded the public route quota; retry after the response retryAfter duration"
+          }
+        },
+        "security": [],
+        "summary": "Public — bảng xếp hạng kỳ REFLECTED mới nhất (period null nếu chưa có kỳ nào chốt)",
+        "tags": [
+          "survey"
+        ]
+      }
+    },
+    "/vote/periods": {
+      "get": {
+        "operationId": "SurveyController_getVotePeriods",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 24,
+              "default": 12,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VotePeriodsResDto_Output"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error.PublicRateLimited - IP exceeded the public route quota; retry after the response retryAfter duration"
+          }
+        },
+        "security": [],
+        "summary": "Public — danh sách kỳ REFLECTED (dropdown lịch sử ranking)",
+        "tags": [
+          "survey"
+        ]
+      }
+    },
     "/vote/results": {
       "get": {
         "operationId": "SurveyController_getVoteResults",
@@ -7765,6 +8291,20 @@
             "schema": {
               "minLength": 1,
               "type": "string"
+            }
+          },
+          {
+            "name": "publicationType",
+            "required": false,
+            "in": "query",
+            "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WEEKLY",
+                "MONTHLY",
+                "IRREGULAR"
+              ]
             }
           }
         ],
@@ -10350,7 +10890,7 @@
             "name": "entityType",
             "required": false,
             "in": "query",
-            "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION",
+            "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION, BOARD_SESSION",
             "schema": {
               "type": "string",
               "enum": [
@@ -10369,7 +10909,8 @@
                 "TRANSFER_REQUEST",
                 "PAYMENT_RECORD",
                 "SURVEY_PERIOD",
-                "PUBLICATION_VERSION"
+                "PUBLICATION_VERSION",
+                "BOARD_SESSION"
               ]
             }
           },
@@ -11025,6 +11566,139 @@
         ]
       }
     },
+    "/revision-requests": {
+      "get": {
+        "operationId": "RevisionController_list",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "description": "Đối tượng của vòng yêu cầu sửa: PROPOSAL, NAME, MANUSCRIPT, TASK. Values: PROPOSAL, NAME, MANUSCRIPT, TASK",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PROPOSAL",
+                "NAME",
+                "MANUSCRIPT",
+                "TASK"
+              ]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": false,
+            "in": "query",
+            "description": "seriesId | nameId | chapterId | taskId theo targetType",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isResolved",
+            "required": false,
+            "in": "query",
+            "description": "omit = tất cả; true = đã xử lý; false = còn tồn",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "exclusiveMinimum": true,
+              "default": 20,
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionRequestListResDto_Output"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation fail"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Liệt kê vòng yêu cầu sửa (scope: mình yêu cầu hoặc mình phải sửa; Board/Admin xem tất cả)",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/revision-requests/{id}/resolve": {
+      "patch": {
+        "operationId": "RevisionController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionRequestResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotRevisionRecipient - only the person asked to make the fix (recipientId) can resolve this revision round"
+          },
+          "404": {
+            "description": "Error.RevisionRequestNotFound - revision request does not exist (or malformed id)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Người phải sửa đánh dấu vòng yêu cầu sửa đã hoàn thành (idempotent)",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
     "/admin/app-config": {
       "get": {
         "operationId": "AppConfigController_get",
@@ -11311,6 +11985,197 @@
         "summary": "Xóa phiên bản phát hành",
         "tags": [
           "publication-versions"
+        ]
+      }
+    },
+    "/public/series": {
+      "get": {
+        "operationId": "PublicController_listSeries",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search by title (case-insensitive contains match)",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "genre",
+            "required": false,
+            "in": "query",
+            "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTION",
+                "ADVENTURE",
+                "COMEDY",
+                "DRAMA",
+                "FANTASY",
+                "HORROR",
+                "MYSTERY",
+                "ROMANCE",
+                "SCI_FI",
+                "SLICE_OF_LIFE",
+                "SPORTS",
+                "SUPERNATURAL",
+                "THRILLER",
+                "HISTORICAL",
+                "ISEKAI",
+                "MECHA",
+                "PSYCHOLOGICAL"
+              ]
+            }
+          },
+          {
+            "name": "demographic",
+            "required": false,
+            "in": "query",
+            "description": "Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO. Values: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SHONEN",
+                "SEINEN",
+                "SHOJO",
+                "JOSEI",
+                "KODOMO"
+              ]
+            }
+          },
+          {
+            "name": "publicationType",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo nhịp xuất bản: WEEKLY / MONTHLY / IRREGULAR",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WEEKLY",
+                "MONTHLY",
+                "IRREGULAR"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSeriesListResDto_Output"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error.PublicRateLimited - IP exceeded the public route quota; retry after the response retryAfter duration"
+          }
+        },
+        "summary": "Public catalog of post-serialization series with signed covers and chapter counts",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/public/series/{id}": {
+      "get": {
+        "operationId": "PublicController_getSeriesDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSeriesDetailResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.PublicSeriesNotFound - series does not exist, id is malformed, or the series is outside the post-serialization public status set"
+          },
+          "429": {
+            "description": "Error.PublicRateLimited - IP exceeded the public route quota; retry after the response retryAfter duration"
+          }
+        },
+        "summary": "Public series detail with PUBLISHED chapters",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/public/chapters/{id}/pages": {
+      "get": {
+        "operationId": "PublicController_getChapterPages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicChapterPagesResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.PublicChapterNotFound - chapter does not exist, id is malformed, chapter is not PUBLISHED, or its series is not public"
+          },
+          "429": {
+            "description": "Error.PublicRateLimited - IP exceeded the public route quota; retry after the response retryAfter duration"
+          }
+        },
+        "summary": "Read a PUBLISHED chapter using short-lived signed page URLs and prev/next navigation",
+        "tags": [
+          "public"
         ]
       }
     }
@@ -14090,6 +14955,116 @@
         ],
         "additionalProperties": false
       },
+      "MangakaDirectoryListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "avatar": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "penName": {
+                  "type": "string"
+                },
+                "genres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ACTION",
+                      "ADVENTURE",
+                      "COMEDY",
+                      "DRAMA",
+                      "FANTASY",
+                      "HORROR",
+                      "MYSTERY",
+                      "ROMANCE",
+                      "SCI_FI",
+                      "SLICE_OF_LIFE",
+                      "SPORTS",
+                      "SUPERNATURAL",
+                      "THRILLER",
+                      "HISTORICAL",
+                      "ISEKAI",
+                      "MECHA",
+                      "PSYCHOLOGICAL"
+                    ],
+                    "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
+                  }
+                },
+                "experienceLevel": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "bio": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "portfolioFiles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reputationScore": {
+                  "type": "number"
+                },
+                "ratingAvg": {
+                  "type": "number"
+                },
+                "ratingCount": {
+                  "type": "number"
+                },
+                "isRecommended": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "userId",
+                "displayName",
+                "avatar",
+                "penName",
+                "genres",
+                "experienceLevel",
+                "bio",
+                "portfolioFiles",
+                "reputationScore",
+                "ratingAvg",
+                "ratingCount",
+                "isRecommended"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
       "AssistantDirectoryListResDto_Output": {
         "type": "object",
         "properties": {
@@ -14923,6 +15898,53 @@
                   "description": "Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận",
                   "nullable": true
                 },
+                "mangaka": {
+                  "description": "Thông tin hiển thị chủ series — CÓ ở GET /series + GET /series/:id",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "displayName ?? name"
+                    },
+                    "avatar": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "displayName",
+                    "avatar"
+                  ],
+                  "additionalProperties": false
+                },
+                "editor": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "displayName ?? name"
+                    },
+                    "avatar": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "displayName",
+                    "avatar"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Thông tin hiển thị editor; null = hàng đợi — CÓ ở GET /series + GET /series/:id",
+                  "nullable": true
+                },
                 "coOwnerId": {
                   "type": "string",
                   "description": "Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có",
@@ -15211,6 +16233,53 @@
             "description": "Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận",
             "nullable": true
           },
+          "mangaka": {
+            "type": "object",
+            "description": "Thông tin hiển thị chủ series — CÓ ở GET /series + GET /series/:id",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "displayName ?? name"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "displayName",
+              "avatar"
+            ],
+            "additionalProperties": false
+          },
+          "editor": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "displayName ?? name"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "displayName",
+              "avatar"
+            ],
+            "additionalProperties": false,
+            "description": "Thông tin hiển thị editor; null = hàng đợi — CÓ ở GET /series + GET /series/:id",
+            "nullable": true
+          },
           "coOwnerId": {
             "type": "string",
             "description": "Đồng sở hữu sau PARTIAL_TRANSFER (BE-B); null nếu không có",
@@ -15465,6 +16534,36 @@
         ],
         "additionalProperties": false
       },
+      "UpdateSeriesMetadataBodyDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "coverImage": {
+            "type": "string",
+            "description": "Object key A7; '' = xoá ảnh bìa",
+            "nullable": true
+          },
+          "synopsis": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "'' = xoá synopsis",
+            "nullable": true
+          },
+          "characterDesigns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Object key A7; [] = xoá hết",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateProposalBodyDto": {
         "type": "object",
         "properties": {
@@ -15597,6 +16696,53 @@
               "editorId": {
                 "type": "string",
                 "description": "Editor phụ trách; null = đang ở hàng đợi review chưa ai nhận",
+                "nullable": true
+              },
+              "mangaka": {
+                "description": "Thông tin hiển thị chủ series — CÓ ở GET /series + GET /series/:id",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "displayName ?? name"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "displayName",
+                  "avatar"
+                ],
+                "additionalProperties": false
+              },
+              "editor": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "displayName ?? name"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "displayName",
+                  "avatar"
+                ],
+                "additionalProperties": false,
+                "description": "Thông tin hiển thị editor; null = hàng đợi — CÓ ở GET /series + GET /series/:id",
                 "nullable": true
               },
               "coOwnerId": {
@@ -17143,6 +18289,20 @@
         },
         "additionalProperties": false
       },
+      "RevisionReasonBodyDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      },
       "StudioOverviewResDto_Output": {
         "type": "object",
         "properties": {
@@ -17580,16 +18740,69 @@
             ],
             "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED"
           },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "PRESENTING",
+              "QA",
+              "VOTING"
+            ],
+            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
+          },
+          "creator": {
+            "type": "object",
+            "description": "CÓ ở GET /board/sessions + GET /board/sessions/:id (enrich)",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "displayName ?? name — tên hiển thị"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "displayName",
+              "avatar"
+            ],
+            "additionalProperties": false
+          },
+          "members": {
+            "type": "array",
+            "description": "Resolve từ allowedEditorIds — CÓ ở list + detail",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string",
+                  "description": "displayName ?? name — tên hiển thị"
+                },
+                "avatar": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "displayName",
+                "avatar"
+              ],
+              "additionalProperties": false
+            }
+          },
           "allowedEditorIds": {
             "type": "array",
             "items": {
               "type": "string"
             }
-          },
-          "seriesId": {
-            "type": "string",
-            "description": "ObjectId của Series được đưa vào phiên họp",
-            "pattern": "^[0-9a-fA-F]{24}$"
           },
           "startTime": {
             "type": "string",
@@ -17623,8 +18836,8 @@
           "description",
           "creatorId",
           "status",
+          "phase",
           "allowedEditorIds",
-          "seriesId",
           "startTime",
           "createdAt",
           "updatedAt"
@@ -17734,6 +18947,102 @@
         ],
         "additionalProperties": false
       },
+      "AdvancePhaseBodyDto": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "enum": [
+              "PRESENTING",
+              "QA",
+              "VOTING"
+            ],
+            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
+          }
+        },
+        "required": [
+          "phase"
+        ],
+        "additionalProperties": false
+      },
+      "BoardMessageListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sessionId": {
+                  "type": "string"
+                },
+                "sender": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "displayName ?? name — tên hiển thị"
+                    },
+                    "avatar": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "displayName",
+                    "avatar"
+                  ],
+                  "additionalProperties": false
+                },
+                "content": {
+                  "type": "string"
+                },
+                "phase": {
+                  "type": "string",
+                  "enum": [
+                    "PRESENTING",
+                    "QA",
+                    "VOTING"
+                  ],
+                  "description": "Phase lúc tin nhắn được gửi"
+                },
+                "createdAt": {
+                  "description": "ISO 8601 date-time (UTC)",
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                }
+              },
+              "required": [
+                "id",
+                "sessionId",
+                "sender",
+                "content",
+                "phase",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "additionalProperties": false
+      },
       "BoardConfigResDto_Output": {
         "type": "object",
         "properties": {
@@ -17748,7 +19057,8 @@
             "type": "number"
           },
           "quorumMin": {
-            "type": "number"
+            "type": "number",
+            "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
           },
           "approveMajorityRatio": {
             "type": "number"
@@ -17825,6 +19135,24 @@
           },
           "targetSeriesId": {
             "type": "string",
+            "nullable": true
+          },
+          "targetSeries": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "additionalProperties": false,
+            "description": "CÓ ở GET /board/decisions + /:id (enrich); null nếu decision không gắn series",
             "nullable": true
           },
           "boardSessionId": {
@@ -18092,7 +19420,8 @@
             "type": "number"
           },
           "quorumMin": {
-            "type": "number"
+            "type": "number",
+            "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
           },
           "approveMajorityRatio": {
             "type": "number"
@@ -18155,17 +19484,17 @@
               "minLength": 1
             }
           },
-          "captchaScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
+          "captchaToken": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [
           "surveyPeriodId",
           "identity",
           "otpCode",
-          "seriesIds"
+          "seriesIds",
+          "captchaToken"
         ],
         "additionalProperties": false
       },
@@ -18225,7 +19554,7 @@
                 },
                 "coverImage": {
                   "type": "string",
-                  "description": "Object key R2 — Guest chưa xem được ảnh (public sign chưa có)",
+                  "description": "Object key R2 — xem catalog public /public/series để lấy signed URL",
                   "nullable": true
                 },
                 "genres": {
@@ -18291,6 +19620,158 @@
         ],
         "additionalProperties": false
       },
+      "LatestVoteResultsResDto_Output": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "issueNumber": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "nullable": true
+              },
+              "reflectedIssueNumber": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "nullable": true
+              },
+              "startDate": {
+                "type": "string",
+                "description": "ISO 8601 UTC",
+                "nullable": true
+              },
+              "endDate": {
+                "type": "string",
+                "description": "ISO 8601 UTC",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "issueNumber",
+              "reflectedIssueNumber",
+              "startDate",
+              "endDate"
+            ],
+            "additionalProperties": false,
+            "description": "null = chưa có kỳ nào REFLECTED",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rankPosition": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "description": "Vị trí trên BẢNG TỔNG của kỳ (giữ nguyên khi filter publicationType — FE tự đánh số bảng con)",
+                  "nullable": true
+                },
+                "seriesId": {
+                  "type": "string"
+                },
+                "seriesTitle": {
+                  "type": "string",
+                  "description": "null nếu series đã bị xóa",
+                  "nullable": true
+                },
+                "publicationType": {
+                  "type": "string",
+                  "enum": [
+                    "WEEKLY",
+                    "MONTHLY",
+                    "IRREGULAR",
+                    null
+                  ],
+                  "description": "Nhịp xuất bản của series — Spec 15.2",
+                  "nullable": true
+                },
+                "voteCount": {
+                  "type": "number"
+                },
+                "rankChange": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "nullable": true
+                }
+              },
+              "required": [
+                "rankPosition",
+                "seriesId",
+                "seriesTitle",
+                "publicationType",
+                "voteCount",
+                "rankChange"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "period",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "VotePeriodsResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "issueNumber": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "nullable": true
+                },
+                "reflectedIssueNumber": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "nullable": true
+                },
+                "startDate": {
+                  "type": "string",
+                  "description": "ISO 8601 UTC",
+                  "nullable": true
+                },
+                "endDate": {
+                  "type": "string",
+                  "description": "ISO 8601 UTC",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "issueNumber",
+                "reflectedIssueNumber",
+                "startDate",
+                "endDate"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
       "VoteResultsResDto_Output": {
         "type": "object",
         "properties": {
@@ -18312,6 +19793,7 @@
                   "type": "integer",
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991,
+                  "description": "Vị trí trên BẢNG TỔNG của kỳ (giữ nguyên khi filter publicationType — FE tự đánh số bảng con)",
                   "nullable": true
                 },
                 "seriesId": {
@@ -18320,6 +19802,17 @@
                 "seriesTitle": {
                   "type": "string",
                   "description": "null nếu series đã bị xóa",
+                  "nullable": true
+                },
+                "publicationType": {
+                  "type": "string",
+                  "enum": [
+                    "WEEKLY",
+                    "MONTHLY",
+                    "IRREGULAR",
+                    null
+                  ],
+                  "description": "Nhịp xuất bản của series — Spec 15.2",
                   "nullable": true
                 },
                 "voteCount": {
@@ -18336,6 +19829,7 @@
                 "rankPosition",
                 "seriesId",
                 "seriesTitle",
+                "publicationType",
                 "voteCount",
                 "rankChange"
               ],
@@ -20807,9 +22301,10 @@
                     "TRANSFER_REQUEST",
                     "PAYMENT_RECORD",
                     "SURVEY_PERIOD",
-                    "PUBLICATION_VERSION"
+                    "PUBLICATION_VERSION",
+                    "BOARD_SESSION"
                   ],
-                  "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION"
+                  "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION, BOARD_SESSION"
                 },
                 "entityId": {
                   "type": "string"
@@ -21329,6 +22824,168 @@
         ],
         "additionalProperties": false
       },
+      "RevisionRequestListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "targetType": {
+                  "type": "string",
+                  "enum": [
+                    "PROPOSAL",
+                    "NAME",
+                    "MANUSCRIPT",
+                    "TASK"
+                  ],
+                  "description": "Đối tượng của vòng yêu cầu sửa: PROPOSAL, NAME, MANUSCRIPT, TASK. Values: PROPOSAL, NAME, MANUSCRIPT, TASK"
+                },
+                "targetId": {
+                  "type": "string"
+                },
+                "seriesId": {
+                  "type": "string",
+                  "description": "null với TASK",
+                  "nullable": true
+                },
+                "round": {
+                  "type": "number",
+                  "description": "lần yêu cầu sửa thứ mấy trên cùng target: 1, 2, 3..."
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "requestedBy": {
+                  "type": "string"
+                },
+                "recipientId": {
+                  "type": "string",
+                  "description": "người phải sửa — CHỈ người này resolve được"
+                },
+                "isResolved": {
+                  "type": "boolean"
+                },
+                "resolvedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "resolvedBy": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "targetType",
+                "targetId",
+                "seriesId",
+                "round",
+                "reason",
+                "requestedBy",
+                "recipientId",
+                "isResolved",
+                "resolvedAt",
+                "resolvedBy",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "RevisionRequestResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "PROPOSAL",
+              "NAME",
+              "MANUSCRIPT",
+              "TASK"
+            ],
+            "description": "Đối tượng của vòng yêu cầu sửa: PROPOSAL, NAME, MANUSCRIPT, TASK. Values: PROPOSAL, NAME, MANUSCRIPT, TASK"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "seriesId": {
+            "type": "string",
+            "description": "null với TASK",
+            "nullable": true
+          },
+          "round": {
+            "type": "number",
+            "description": "lần yêu cầu sửa thứ mấy trên cùng target: 1, 2, 3..."
+          },
+          "reason": {
+            "type": "string"
+          },
+          "requestedBy": {
+            "type": "string"
+          },
+          "recipientId": {
+            "type": "string",
+            "description": "người phải sửa — CHỈ người này resolve được"
+          },
+          "isResolved": {
+            "type": "boolean"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "targetType",
+          "targetId",
+          "seriesId",
+          "round",
+          "reason",
+          "requestedBy",
+          "recipientId",
+          "isResolved",
+          "resolvedAt",
+          "resolvedBy",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
       "AppConfigResDto_Output": {
         "type": "object",
         "properties": {
@@ -21635,6 +23292,383 @@
             "nullable": true
           }
         },
+        "additionalProperties": false
+      },
+      "PublicSeriesListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "synopsis": {
+                  "type": "string",
+                  "description": "Series.proposal.synopsis; null when unavailable",
+                  "nullable": true
+                },
+                "coverImageUrl": {
+                  "type": "string",
+                  "description": "Short-lived signed URL; null when the series has no cover image",
+                  "nullable": true
+                },
+                "genres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ACTION",
+                      "ADVENTURE",
+                      "COMEDY",
+                      "DRAMA",
+                      "FANTASY",
+                      "HORROR",
+                      "MYSTERY",
+                      "ROMANCE",
+                      "SCI_FI",
+                      "SLICE_OF_LIFE",
+                      "SPORTS",
+                      "SUPERNATURAL",
+                      "THRILLER",
+                      "HISTORICAL",
+                      "ISEKAI",
+                      "MECHA",
+                      "PSYCHOLOGICAL"
+                    ],
+                    "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
+                  }
+                },
+                "demographic": {
+                  "type": "string",
+                  "enum": [
+                    "SHONEN",
+                    "SEINEN",
+                    "SHOJO",
+                    "JOSEI",
+                    "KODOMO",
+                    null
+                  ],
+                  "description": "Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO. Values: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "DRAFT",
+                    "IN_REVIEW",
+                    "READY_TO_PITCH",
+                    "PITCHED",
+                    "SERIALIZED",
+                    "HIATUS",
+                    "COMPLETING",
+                    "CANCELLING",
+                    "COMPLETED",
+                    "CANCELLED",
+                    "REJECTED",
+                    "ABANDONED",
+                    "WITHDRAWN"
+                  ],
+                  "description": "Series state machine status. Values: DRAFT, IN_REVIEW, READY_TO_PITCH, PITCHED, SERIALIZED, HIATUS, COMPLETING, CANCELLING, COMPLETED, CANCELLED, REJECTED, ABANDONED, WITHDRAWN"
+                },
+                "publicationType": {
+                  "type": "string",
+                  "enum": [
+                    "WEEKLY",
+                    "MONTHLY",
+                    "IRREGULAR",
+                    null
+                  ],
+                  "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+                  "nullable": true
+                },
+                "magazine": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "publishedChapterCount": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "description": "Number of PUBLISHED chapters; 0 means coming soon"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "synopsis",
+                "coverImageUrl",
+                "genres",
+                "demographic",
+                "status",
+                "publicationType",
+                "magazine",
+                "publishedChapterCount"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "PublicSeriesDetailResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "synopsis": {
+            "type": "string",
+            "description": "Series.proposal.synopsis; null when unavailable",
+            "nullable": true
+          },
+          "coverImageUrl": {
+            "type": "string",
+            "description": "Short-lived signed URL; null when the series has no cover image",
+            "nullable": true
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ACTION",
+                "ADVENTURE",
+                "COMEDY",
+                "DRAMA",
+                "FANTASY",
+                "HORROR",
+                "MYSTERY",
+                "ROMANCE",
+                "SCI_FI",
+                "SLICE_OF_LIFE",
+                "SPORTS",
+                "SUPERNATURAL",
+                "THRILLER",
+                "HISTORICAL",
+                "ISEKAI",
+                "MECHA",
+                "PSYCHOLOGICAL"
+              ],
+              "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
+            }
+          },
+          "demographic": {
+            "type": "string",
+            "enum": [
+              "SHONEN",
+              "SEINEN",
+              "SHOJO",
+              "JOSEI",
+              "KODOMO",
+              null
+            ],
+            "description": "Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO. Values: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "READY_TO_PITCH",
+              "PITCHED",
+              "SERIALIZED",
+              "HIATUS",
+              "COMPLETING",
+              "CANCELLING",
+              "COMPLETED",
+              "CANCELLED",
+              "REJECTED",
+              "ABANDONED",
+              "WITHDRAWN"
+            ],
+            "description": "Series state machine status. Values: DRAFT, IN_REVIEW, READY_TO_PITCH, PITCHED, SERIALIZED, HIATUS, COMPLETING, CANCELLING, COMPLETED, CANCELLED, REJECTED, ABANDONED, WITHDRAWN"
+          },
+          "publicationType": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "MONTHLY",
+              "IRREGULAR",
+              null
+            ],
+            "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+            "nullable": true
+          },
+          "magazine": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedChapterCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Number of PUBLISHED chapters; 0 means coming soon"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "chapterNumber": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "title": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "publishedAt": {
+                  "type": "string",
+                  "description": "ISO 8601 UTC"
+                }
+              },
+              "required": [
+                "id",
+                "chapterNumber",
+                "title",
+                "publishedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "synopsis",
+          "coverImageUrl",
+          "genres",
+          "demographic",
+          "status",
+          "publicationType",
+          "magazine",
+          "publishedChapterCount",
+          "chapters"
+        ],
+        "additionalProperties": false
+      },
+      "PublicChapterPagesResDto_Output": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "additionalProperties": false
+          },
+          "chapter": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "chapterNumber": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "publishedAt": {
+                "type": "string",
+                "description": "ISO 8601 UTC"
+              }
+            },
+            "required": [
+              "id",
+              "chapterNumber",
+              "title",
+              "publishedAt"
+            ],
+            "additionalProperties": false
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pageNumber": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "imageUrl": {
+                  "type": "string",
+                  "description": "Short-lived signed URL; request this endpoint again after expiry"
+                }
+              },
+              "required": [
+                "pageNumber",
+                "imageUrl"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "prevChapterId": {
+            "type": "string",
+            "description": "Previous PUBLISHED chapter by chapterNumber",
+            "nullable": true
+          },
+          "nextChapterId": {
+            "type": "string",
+            "description": "Next PUBLISHED chapter by chapterNumber",
+            "nullable": true
+          }
+        },
+        "required": [
+          "series",
+          "chapter",
+          "pages",
+          "prevChapterId",
+          "nextChapterId"
+        ],
         "additionalProperties": false
       }
     }
