@@ -1,0 +1,208 @@
+{
+  "common": {
+    "eyebrow": "Không gian Hội đồng",
+    "status": "Trạng thái",
+    "success": "Thao tác đã hoàn thành thành công.",
+    "failure": "Không thể hoàn thành thao tác.",
+    "load": "Tải dữ liệu",
+    "loadError": "Dữ liệu hiện không khả dụng.",
+    "noDescription": "Chưa có mô tả."
+  },
+  "nav": {
+    "sessions": "Phiên Hội đồng",
+    "decisions": "Quyết định",
+    "reports": "Báo cáo series",
+    "contracts": "Hợp đồng",
+    "payments": "Thanh toán",
+    "deadlines": "Phân xử deadline",
+    "rankings": "Xếp hạng và rủi ro",
+    "reprints": "Yêu cầu tái bản",
+    "transfers": "Chuyển nhượng series",
+    "audit": "Lịch sử kiểm toán",
+    "notifications": "Thông báo",
+    "profile": "Hồ sơ Hội đồng"
+  },
+  "dashboard": {
+    "title": "Trung tâm quyết định Hội đồng",
+    "description": "Xem xét bằng chứng, bỏ phiếu, duyệt nghiệp vụ thương mại và phân xử rủi ro xuất bản.",
+    "sections": {
+      "sessions": "Xem các phiên được phân công và nội dung phiên họp.",
+      "decisions": "Kiểm tra quyết định đang hoạt động và bỏ phiếu.",
+      "reports": "Đọc báo cáo phân tích do Editor chuẩn bị.",
+      "contracts": "Duyệt, yêu cầu sửa và ký hợp đồng hoặc phụ lục.",
+      "payments": "Duyệt và xác nhận các khoản chi hợp đồng.",
+      "deadlines": "Phân xử deadline ảnh hưởng lịch xuất bản.",
+      "rankings": "Xem tín hiệu xếp hạng nội bộ và series có rủi ro.",
+      "reprints": "Tạo và duyệt quy trình tái bản.",
+      "transfers": "Sàng lọc yêu cầu và ký hợp đồng chuyển nhượng.",
+      "audit": "Theo dõi thay đổi trạng thái và thao tác hệ thống.",
+      "notifications": "Theo dõi công việc cần Hội đồng xử lý.",
+      "profile": "Cập nhật chuyên môn dùng khi phân công phiên."
+    }
+  },
+  "sessions": {
+    "title": "Phiên Hội đồng",
+    "description": "Xem các phiên sắp diễn ra, đang hoạt động và đã kết thúc.",
+    "empty": "Chưa có phiên Hội đồng.",
+    "details": "Chi tiết phiên họp",
+    "members": "Thành viên được phân công",
+    "start": "Thời gian bắt đầu",
+    "phase": "Giai đoạn phiên họp",
+    "chat": "Thảo luận phiên họp",
+    "emptyChat": "Chưa có tin nhắn nào trong phiên họp.",
+    "chatPlaceholder": "Nhập nội dung trao đổi...",
+    "chatLocked": "Thảo luận đã khóa trong giai đoạn bỏ phiếu.",
+    "sendMessage": "Gửi tin nhắn",
+    "chatErrors": {
+      "NOT_PARTICIPANT": "Bạn không phải người tham gia phiên họp này.",
+      "SESSION_NOT_ACTIVE": "Chỉ có thể chat khi phiên họp đang hoạt động.",
+      "VOTING_PHASE": "Chat đã khóa vì phiên họp bắt đầu bỏ phiếu.",
+      "INVALID_INPUT": "Tin nhắn phải có từ 1 đến 1000 ký tự.",
+      "DISCONNECTED": "Kết nối trực tiếp đang gián đoạn. Hãy kết nối lại và thử lại.",
+      "TIMEOUT": "Máy chủ không xác nhận tin nhắn trong thời gian cho phép.",
+      "UNKNOWN": "Không thể gửi tin nhắn. Vui lòng thử lại."
+    },
+    "votingProgress": "Tiến trình bỏ phiếu của phiên họp",
+    "votedMembers": "Đã bỏ phiếu {{voted}}/{{total}} thành viên",
+    "quorum": "Quorum",
+    "quorumMet": "Đã đủ",
+    "quorumPending": "Chưa đủ",
+    "realtime": {
+      "connecting": "Đang kết nối cập nhật trực tiếp...",
+      "connected": "Đang cập nhật trực tiếp",
+      "disconnected": "Mất kết nối trực tiếp, dữ liệu vẫn được làm mới định kỳ"
+    }
+  },
+  "decisions": {
+    "title": "Quyết định Hội đồng",
+    "description": "Xem hồ sơ và bỏ phiếu cho quyết định thuộc phiên được phân công.",
+    "empty": "Chưa có quyết định nào.",
+    "series": "Series",
+    "voteCount": "{{count}} phiếu",
+    "summary": "{{approve}} đồng ý · {{reject}} từ chối · {{total}} tổng",
+    "progress": "Tiến độ bỏ phiếu",
+    "castVote": "Bỏ phiếu",
+    "approve": "Đồng ý",
+    "reject": "Từ chối",
+    "abstain": "Không biểu quyết",
+    "note": "Giải thích không bắt buộc",
+    "submitVote": "Gửi phiếu",
+    "votes": "Phiếu đã ghi nhận",
+    "voteUnavailable": {
+      "closed": "Quyết định này đã được chốt.",
+      "alreadyVoted": "Bạn đã bỏ phiếu cho quyết định này.",
+      "notInRoster": "Bạn không thuộc roster của phiên họp này.",
+      "sessionNotActive": "Chỉ có thể bỏ phiếu khi phiên họp đang hoạt động.",
+      "votingNotOpen": "Người tạo phiên chưa mở giai đoạn bỏ phiếu."
+    }
+  },
+  "reports": {
+    "title": "Báo cáo Hội đồng",
+    "description": "Đọc bằng chứng và phân tích biên tập đính kèm quyết định.",
+    "empty": "Chưa có báo cáo."
+  },
+  "contracts": {
+    "title": "Duyệt hợp đồng",
+    "description": "Duyệt điều khoản, ký thỏa thuận và xem phụ lục.",
+    "empty": "Chưa có hợp đồng.",
+    "series": "Series",
+    "detail": "Hợp đồng",
+    "terms": "Điều khoản thương mại",
+    "valuation": "Định giá",
+    "ownership": "Sở hữu NXB / Mangaka",
+    "actions": "Thao tác Hội đồng",
+    "approve": "Duyệt điều khoản",
+    "changes": "Yêu cầu chỉnh sửa",
+    "otp": "OTP 6 chữ số",
+    "sign": "Ký hợp đồng",
+    "signatures": "Đã có {{signed}}/{{required}} chữ ký Hội đồng",
+    "amendments": "Phụ lục hợp đồng",
+    "amendment": "Phụ lục",
+    "emptyAmendments": "Chưa có phụ lục.",
+    "signAmendment": "Ký phụ lục"
+  },
+  "payments": {
+    "title": "Duyệt thanh toán",
+    "description": "Duyệt khoản chi, ghi nhận tham chiếu thanh toán hoặc hủy bản ghi không hợp lệ.",
+    "empty": "Chưa có khoản thanh toán.",
+    "approve": "Duyệt khoản chi",
+    "method": "Phương thức thanh toán",
+    "reference": "Mã giao dịch",
+    "pay": "Xác nhận đã trả",
+    "cancelReason": "Lý do hủy",
+    "cancel": "Hủy thanh toán"
+  },
+  "deadlines": {
+    "title": "Phân xử deadline",
+    "description": "Giải quyết yêu cầu deadline leo thang hoặc ảnh hưởng slot xuất bản.",
+    "chapterId": "Nhập ID chapter",
+    "empty": "Không có yêu cầu deadline chờ Hội đồng.",
+    "request": "Yêu cầu deadline",
+    "note": "Ghi chú phân xử",
+    "approve": "Duyệt deadline",
+    "reject": "Từ chối yêu cầu"
+  },
+  "rankings": {
+    "title": "Tổng quan xếp hạng",
+    "description": "Xem tín hiệu rủi ro nội bộ của một kỳ khảo sát đã chốt.",
+    "periodId": "Nhập ID kỳ khảo sát",
+    "series": "Series",
+    "votes": "Phiếu",
+    "risk": "Rủi ro",
+    "empty": "Kỳ này chưa có dữ liệu xếp hạng."
+  },
+  "reprints": {
+    "title": "Quy trình tái bản",
+    "description": "Tạo và duyệt yêu cầu tái bản theo nguyên tắc sở hữu.",
+    "create": "Tạo yêu cầu tái bản",
+    "seriesId": "ID series",
+    "from": "Từ chương",
+    "to": "Đến chương",
+    "reason": "Lý do nghiệp vụ",
+    "empty": "Chưa có yêu cầu tái bản.",
+    "reviewReason": "Ghi chú duyệt",
+    "approve": "Duyệt tái bản",
+    "reject": "Từ chối tái bản"
+  },
+  "transfers": {
+    "title": "Sàng lọc chuyển nhượng",
+    "description": "Sàng lọc ứng viên, xử lý mua đứt và ký hợp đồng chuyển nhượng.",
+    "empty": "Không có yêu cầu chờ Hội đồng.",
+    "session": "Chọn phiên Hội đồng đang hoạt động",
+    "details": "Ghi chú sàng lọc",
+    "approve": "Duyệt sàng lọc",
+    "reject": "Từ chối sàng lọc",
+    "fullBuyout": "Thực hiện mua đứt",
+    "conditionValue": "Giá trị mốc",
+    "conditionDescription": "Mô tả điều kiện thanh toán",
+    "sign": "Ký hợp đồng chuyển nhượng",
+    "contractId": "ID hợp đồng chuyển nhượng"
+  },
+  "notifications": {
+    "title": "Thông báo Hội đồng",
+    "description": "{{count}} thông báo chưa đọc",
+    "readAll": "Đánh dấu đã đọc tất cả",
+    "read": "Đánh dấu đã đọc",
+    "empty": "Không có thông báo."
+  },
+  "profile": {
+    "title": "Hồ sơ thành viên Hội đồng",
+    "description": "Chuyên môn của bạn được dùng để tạo roster Hội đồng phù hợp.",
+    "form": "Thông tin nghề nghiệp",
+    "genres": "Thể loại chuyên môn, cách nhau bằng dấu phẩy",
+    "demographics": "Nhóm độc giả, cách nhau bằng dấu phẩy",
+    "experience": "Số năm kinh nghiệm",
+    "bio": "Giới thiệu nghề nghiệp",
+    "save": "Lưu hồ sơ"
+  },
+  "audit": {
+    "title": "Lịch sử kiểm toán",
+    "description": "Xem các chuyển trạng thái và thao tác thuộc phạm vi giám sát của Hội đồng.",
+    "entityId": "ID đối tượng",
+    "actorId": "ID người thao tác",
+    "action": "Hành động",
+    "filter": "Áp dụng bộ lọc",
+    "system": "Hệ thống",
+    "empty": "Không tìm thấy bản ghi kiểm toán."
+  }
+}

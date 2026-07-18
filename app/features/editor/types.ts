@@ -17,6 +17,7 @@ export type EditorActionResult = {
   intent: string
   messageKey?: string
   errorKey?: string
+  phase?: 'PRESENTING' | 'QA' | 'VOTING'
 }
 
 export type EditorProposalDetailData = {
@@ -25,6 +26,7 @@ export type EditorProposalDetailData = {
   coverUrl: string | null
   characterDesignUrls: string[]
   namePageUrls: Array<{ pageNumber: number; url: string | null }>
+  nameAnnotations: AnnotationListResDtoOutputItemsItem[]
 }
 
 export type EditorChapterItem = {
@@ -47,11 +49,13 @@ export type SignedPage = {
 export type EditorChapterReviewData = {
   series: SeriesResDtoOutput
   chapter: ChapterResDtoOutput
+  contract: ContractResDtoOutput | null
   pages: SignedPage[]
   name: NameListResDtoOutputItemsItem | null
   namePages: Array<{ pageNumber: number; url: string | null }>
   progress: ChapterProgressResDtoOutput | null
   annotations: AnnotationListResDtoOutputItemsItem[]
+  nameAnnotations: AnnotationListResDtoOutputItemsItem[]
 }
 
 export type EditorContractsData = {

@@ -6,6 +6,7 @@ import enProfile from '~/locales/en/profile.json'
 import enAssistant from '~/locales/en/assistant.json'
 import enAdmin from '~/locales/en/admin.json'
 import enEditor from '~/locales/en/editor.json'
+import enBoard from '~/locales/en/board.json'
 import viCommon from '~/locales/vi/common.json'
 import viWelcome from '~/locales/vi/welcome.json'
 import viAuth from '~/locales/vi/auth.json'
@@ -14,6 +15,7 @@ import viProfile from '~/locales/vi/profile.json'
 import viAssistant from '~/locales/vi/assistant.json'
 import viAdmin from '~/locales/vi/admin.json'
 import viEditor from '~/locales/vi/editor.json'
+import viBoard from '~/locales/vi/board.json'
 
 /**
  * Tập hợp tài nguyên i18n. Mỗi feature 1 namespace riêng để:
@@ -26,7 +28,17 @@ import viEditor from '~/locales/vi/editor.json'
  *   3. Thêm tên namespace vào NAMESPACES
  */
 
-export const NAMESPACES = ['common', 'welcome', 'auth', 'mangaka', 'profile', 'assistant', 'admin', 'editor'] as const
+export const NAMESPACES = [
+  'common',
+  'welcome',
+  'auth',
+  'mangaka',
+  'profile',
+  'assistant',
+  'admin',
+  'editor',
+  'board'
+] as const
 export type Namespace = (typeof NAMESPACES)[number]
 
 export const DEFAULT_NAMESPACE: Namespace = 'common'
@@ -40,7 +52,8 @@ export const resources = {
     profile: enProfile,
     assistant: enAssistant,
     admin: enAdmin,
-    editor: enEditor
+    editor: enEditor,
+    board: enBoard
   },
   vi: {
     common: viCommon,
@@ -50,7 +63,8 @@ export const resources = {
     profile: viProfile,
     assistant: viAssistant,
     admin: viAdmin,
-    editor: viEditor
+    editor: viEditor,
+    board: viBoard
   }
 } as const
 

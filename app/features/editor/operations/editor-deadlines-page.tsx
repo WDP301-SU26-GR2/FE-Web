@@ -13,10 +13,12 @@ import {
 export function EditorDeadlinesPage({
   items,
   focusChapterId,
+  focusRequestId,
   hasError
 }: {
   items: DeadlineRequestListResDtoOutputItemsItem[]
   focusChapterId: string
+  focusRequestId: string
   hasError: boolean
 }) {
   const { t } = useTranslation('editor')
@@ -52,8 +54,19 @@ export function EditorDeadlinesPage({
       </section>
       <OperationPanel icon={CalendarRange} title={t('operations.deadlines')}>
         <fetcher.Form method='post' className='grid gap-3'>
-          <input name='chapterId' className={operationInput} placeholder='Chapter ID' />
-          <input name='requestId' className={operationInput} placeholder='Deadline request ID' />
+          <input name='chapterId' defaultValue={focusChapterId} className={operationInput} placeholder='Chapter ID' />
+          <select name='requestId' defaultValue={focusRequestId} className={operationInput}>
+            <option value=''>{t('operations.selectDeadlineRequest')}</option>
+            {items.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.status.replaceAll('_', ' ')} ·{' '}
+                {item.requestedDeadline ? new Date(item.requestedDeadline).toLocaleString() : '—'}
+              </option>
+            ))}
+            {focusRequestId && !items.some((item) => item.id === focusRequestId) && (
+              <option value={focusRequestId}>{focusRequestId}</option>
+            )}
+          </select>
           <input name='deadline' type='datetime-local' className={operationInput} />
           <input name='reason' className={operationInput} placeholder={t('operations.reason')} />
           <div className='grid grid-cols-2 gap-2'>

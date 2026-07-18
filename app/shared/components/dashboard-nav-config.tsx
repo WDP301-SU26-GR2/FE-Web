@@ -138,7 +138,10 @@ function buildBoardConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
   return {
     navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/board', icon: BarChart3 },
-      { label: t('nav.proposals'), href: '/dashboard/board/proposals', icon: FileText },
+      { label: t('nav.boardWorkflow'), href: '/dashboard/board/sessions', icon: Gavel },
+      { label: t('nav.contracts'), href: '/dashboard/board/contracts', icon: FileText },
+      { label: t('nav.payments'), href: '/dashboard/board/payments', icon: Briefcase },
+      { label: t('nav.operations'), href: '/dashboard/board/deadlines', icon: ClipboardList },
       { label: t('nav.notifications'), href: '/dashboard/board/notifications', icon: Bell }
     ]),
     profile: {

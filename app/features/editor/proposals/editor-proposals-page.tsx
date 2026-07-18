@@ -26,7 +26,7 @@ export function EditorProposalsPage({
       {hasError && <ErrorBanner />}
       <ProposalSection
         title={t('proposals.queue')}
-        items={items.filter((item) => !item.editorId)}
+        items={items.filter((item) => item.status === 'IN_REVIEW' && !item.editorId)}
         empty={t('proposals.emptyQueue')}
       />
       <ProposalSection
@@ -119,24 +119,26 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
           <BookOpen className='size-4' />
           {t('actions.review')}
         </Link>
-        <fetcher.Form method='post'>
-          <input type='hidden' name='seriesId' value={item.id} />
-          <input type='hidden' name='intent' value={item.editorId ? 'release' : 'claim'} />
-          <button
-            type='submit'
-            disabled={busy || Boolean(item.editorId && item.reviewStartedAt)}
-            className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            {busy ? (
-              <Loader2 className='size-4 animate-spin' />
-            ) : item.editorId ? (
-              <Unlock className='size-4' />
-            ) : (
-              <LockKeyhole className='size-4' />
-            )}
-            {item.editorId ? t('actions.release') : t('actions.claim')}
-          </button>
-        </fetcher.Form>
+        {item.status === 'IN_REVIEW' && (
+          <fetcher.Form method='post'>
+            <input type='hidden' name='seriesId' value={item.id} />
+            <input type='hidden' name='intent' value={item.editorId ? 'release' : 'claim'} />
+            <button
+              type='submit'
+              disabled={busy || Boolean(item.editorId && item.reviewStartedAt)}
+              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+            >
+              {busy ? (
+                <Loader2 className='size-4 animate-spin' />
+              ) : item.editorId ? (
+                <Unlock className='size-4' />
+              ) : (
+                <LockKeyhole className='size-4' />
+              )}
+              {item.editorId ? t('actions.release') : t('actions.claim')}
+            </button>
+          </fetcher.Form>
+        )}
       </div>
     </article>
   )

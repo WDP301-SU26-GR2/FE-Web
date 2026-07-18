@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import { Loader2, Vote } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
+import type { BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import { useAuth } from '~/features/auth/context/auth-context'
+import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
+import { orderBoardDecisions, orderBoardSessions } from './board-order'
 import {
   boardInput,
   BoardFeedback,
@@ -16,16 +21,34 @@ export function EditorBoardDecisionsPage({
   series,
   sessions,
   decisions,
+  sessionPhases,
   hasError
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
+  sessionPhases: Record<string, BoardSessionPhase>
   hasError: boolean
 }) {
   const { t } = useTranslation('editor')
+  const { session: authSession } = useAuth()
+  const [selectedSeriesId, setSelectedSeriesId] = useState('')
+  const [selectedSessionId, setSelectedSessionId] = useState('')
   useBoardAutoRefresh()
-  const activeSessions = sessions.filter((item) => item.status === 'ACTIVE')
+  const realtime = useEditorSessionVoteProgress(sessions, decisions)
+  const eligibleSessions = orderBoardSessions(
+    sessions.filter((session) => session.status === 'UPCOMING' || session.status === 'ACTIVE')
+  )
+  const visibleDecisions = orderBoardDecisions(
+    realtime.decisions.filter(
+      (decision) => decision.targetSeriesId === selectedSeriesId && decision.boardSessionId === selectedSessionId
+    )
+  )
+
+  function selectSeries(seriesId: string) {
+    setSelectedSeriesId(seriesId)
+    setSelectedSessionId('')
+  }
 
   return (
     <BoardPageLayout
@@ -33,28 +56,60 @@ export function EditorBoardDecisionsPage({
       descriptionKey='board.sectionDescriptions.decisions'
       hasError={hasError}
     >
-      <div className='grid gap-5 xl:grid-cols-2'>
-        <CreateSerializationDecision series={series} sessions={activeSessions} />
-        <CastVoteForm decisions={decisions.filter((item) => item.result === 'PENDING')} />
+      <div className='max-w-3xl'>
+        <CreateSerializationDecision
+          series={series}
+          sessions={eligibleSessions}
+          selectedSeriesId={selectedSeriesId}
+          selectedSessionId={selectedSessionId}
+          hasExistingDecision={visibleDecisions.length > 0}
+          onSelectSeries={selectSeries}
+          onSelectSession={setSelectedSessionId}
+        />
       </div>
-      <BoardPanel title={t('board.decisionList')}>
-        <div className='grid gap-3 md:grid-cols-2'>
-          {decisions.map((decision) => (
-            <DecisionCard key={decision.id} decision={decision} series={series} />
-          ))}
-          {!decisions.length && <p className='text-sm text-muted-foreground'>{t('board.emptyDecisions')}</p>}
-        </div>
-      </BoardPanel>
+      {selectedSeriesId && selectedSessionId && (
+        <BoardPanel title={t('board.decisionList')}>
+          <div className='grid gap-3 md:grid-cols-2'>
+            {visibleDecisions.map((decision) => (
+              <DecisionCard
+                key={decision.id}
+                decision={decision}
+                series={series}
+                canVote={sessions.some(
+                  (session) =>
+                    session.id === decision.boardSessionId &&
+                    session.status === 'ACTIVE' &&
+                    (realtime.sessionPhases[session.id] ?? sessionPhases[session.id]) === 'VOTING' &&
+                    session.allowedEditorIds.includes(authSession?.user.id ?? '')
+                )}
+              />
+            ))}
+            {!visibleDecisions.length && (
+              <p className='text-sm text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
+            )}
+          </div>
+        </BoardPanel>
+      )}
     </BoardPageLayout>
   )
 }
 
 function CreateSerializationDecision({
   series,
-  sessions
+  sessions,
+  selectedSeriesId,
+  selectedSessionId,
+  hasExistingDecision,
+  onSelectSeries,
+  onSelectSession
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
+  selectedSeriesId: string
+  selectedSessionId: string
+  hasExistingDecision: boolean
+  onSelectSeries: (seriesId: string) => void
+  onSelectSession: (sessionId: string) => void
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
@@ -64,72 +119,48 @@ function CreateSerializationDecision({
       <p className='mb-4 text-sm text-muted-foreground'>{t('board.decisionDescription')}</p>
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createDecision' />
-        <SelectSession sessions={sessions} />
-        <SelectSeries series={series} />
-        <label className='grid gap-1.5 text-sm font-semibold'>
-          {t('board.magazine')}
-          <input className={boardInput} name='magazine' required />
-        </label>
-        <div className='grid gap-3 sm:grid-cols-2'>
-          <label className='grid gap-1.5 text-sm font-semibold'>
-            {t('board.startIssue')}
-            <input className={boardInput} name='startIssueNumber' type='number' min={1} required />
-          </label>
-          <label className='grid gap-1.5 text-sm font-semibold'>
-            {t('proposalDetail.publicationType')}
-            <select className={boardInput} name='publicationType' required defaultValue='WEEKLY'>
-              <option value='WEEKLY'>WEEKLY</option>
-              <option value='BIWEEKLY'>BIWEEKLY</option>
-              <option value='MONTHLY'>MONTHLY</option>
-              <option value='IRREGULAR'>IRREGULAR</option>
-            </select>
-          </label>
-        </div>
-        <SubmitButton
-          label={t('actions.createDecision')}
-          disabled={!series.length || !sessions.length}
-          loading={fetcher.state !== 'idle'}
-        />
-      </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
-    </BoardPanel>
-  )
-}
-
-function CastVoteForm({ decisions }: { decisions: BoardDecisionResDtoOutput[] }) {
-  const { t } = useTranslation('editor')
-  const fetcher = useBoardFetcher()
-
-  return (
-    <BoardPanel title={t('board.voteTitle')}>
-      <fetcher.Form method='post' className='grid gap-3'>
-        <input type='hidden' name='intent' value='castVote' />
-        <label className='grid gap-1.5 text-sm font-semibold'>
-          {t('board.selectDecision')}
-          <select className={boardInput} name='decisionId' required defaultValue=''>
-            <option value='' disabled>
-              {t('board.selectDecision')}
-            </option>
-            {decisions.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.decisionType ?? 'DECISION'} · {item.targetSeriesId?.slice(-6) ?? '—'}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
-          {t('board.voteValue')}
-          <select className={boardInput} name='voteValue' required defaultValue='APPROVE'>
-            <option value='APPROVE'>{t('board.votes.approve')}</option>
-            <option value='REJECT'>{t('board.votes.reject')}</option>
-            <option value='ABSTAIN'>{t('board.votes.abstain')}</option>
-          </select>
-        </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
-          {t('board.voteNote')}
-          <textarea className={`${boardInput} min-h-24 py-2`} name='note' />
-        </label>
-        <SubmitButton label={t('actions.castVote')} disabled={!decisions.length} loading={fetcher.state !== 'idle'} />
+        <SelectSeries series={series} value={selectedSeriesId} onChange={onSelectSeries} />
+        {selectedSeriesId && <SelectSession sessions={sessions} value={selectedSessionId} onChange={onSelectSession} />}
+        {selectedSeriesId && !sessions.length && (
+          <p className='rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground'>
+            {t('board.noEligibleSessions')}
+          </p>
+        )}
+        {selectedSessionId &&
+          (hasExistingDecision ? (
+            <p className='rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground'>
+              {t('board.decisionAlreadyExists')}
+            </p>
+          ) : (
+            <>
+              <label className='grid gap-1.5 text-sm font-semibold'>
+                {t('board.magazine')}
+                <input className={boardInput} name='magazine' required />
+              </label>
+              <div className='grid gap-3 sm:grid-cols-2'>
+                <label className='grid gap-1.5 text-sm font-semibold'>
+                  {t('board.startIssue')}
+                  <input className={boardInput} name='startIssueNumber' type='number' min={1} required />
+                </label>
+                <label className='grid gap-1.5 text-sm font-semibold'>
+                  {t('proposalDetail.publicationType')}
+                  <select className={boardInput} name='publicationType' required defaultValue='WEEKLY'>
+                    <option value='WEEKLY'>WEEKLY</option>
+                    <option value='BIWEEKLY'>BIWEEKLY</option>
+                    <option value='MONTHLY'>MONTHLY</option>
+                    <option value='IRREGULAR'>IRREGULAR</option>
+                  </select>
+                </label>
+              </div>
+            </>
+          ))}
+        {selectedSessionId && !hasExistingDecision && (
+          <SubmitButton
+            label={t('actions.createDecision')}
+            disabled={!selectedSeriesId || !selectedSessionId}
+            loading={fetcher.state !== 'idle'}
+          />
+        )}
       </fetcher.Form>
       <BoardFeedback data={fetcher.data} />
     </BoardPanel>
@@ -138,13 +169,17 @@ function CastVoteForm({ decisions }: { decisions: BoardDecisionResDtoOutput[] })
 
 function DecisionCard({
   decision,
-  series
+  series,
+  canVote
 }: {
   decision: BoardDecisionResDtoOutput
   series: SeriesListResDtoOutputItemsItem[]
+  canVote: boolean
 }) {
   const { t } = useTranslation('editor')
+  const fetcher = useBoardFetcher()
   const seriesTitle = series.find((item) => item.id === decision.targetSeriesId)?.title
+  const open = canVote && (decision.result === 'PENDING' || decision.result === 'PENDING_QUORUM')
 
   return (
     <article className='rounded-lg border border-border p-4'>
@@ -162,22 +197,57 @@ function DecisionCard({
           total: decision.totalVotes
         })}
       </p>
+      {open && (
+        <fetcher.Form method='post' className='mt-4 grid gap-2 border-t border-border pt-3'>
+          <input type='hidden' name='intent' value='castVote' />
+          <input type='hidden' name='decisionId' value={decision.id} />
+          <input name='note' maxLength={300} className={boardInput} placeholder={t('board.voteNote')} />
+          <div className='grid grid-cols-3 gap-2'>
+            {(['APPROVE', 'REJECT', 'ABSTAIN'] as const).map((voteValue) => (
+              <button
+                key={voteValue}
+                name='voteValue'
+                value={voteValue}
+                disabled={fetcher.state !== 'idle'}
+                className='rounded-md border border-border px-2 py-2 text-xs font-bold text-foreground disabled:opacity-50'
+              >
+                {t(`board.voteValues.${voteValue}`)}
+              </button>
+            ))}
+          </div>
+        </fetcher.Form>
+      )}
+      <BoardFeedback data={fetcher.data} />
     </article>
   )
 }
 
-function SelectSession({ sessions }: { sessions: BoardSessionResDtoOutput[] }) {
+function SelectSession({
+  sessions,
+  value,
+  onChange
+}: {
+  sessions: BoardSessionResDtoOutput[]
+  value: string
+  onChange: (sessionId: string) => void
+}) {
   const { t } = useTranslation('editor')
   return (
     <label className='grid gap-1.5 text-sm font-semibold'>
       {t('board.selectSession')}
-      <select className={boardInput} name='sessionId' required defaultValue=''>
+      <select
+        className={boardInput}
+        name='sessionId'
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         <option value='' disabled>
           {t('board.selectSession')}
         </option>
         {sessions.map((item) => (
           <option key={item.id} value={item.id}>
-            {item.title}
+            {item.title} · {item.status}
           </option>
         ))}
       </select>
@@ -185,12 +255,26 @@ function SelectSession({ sessions }: { sessions: BoardSessionResDtoOutput[] }) {
   )
 }
 
-function SelectSeries({ series }: { series: SeriesListResDtoOutputItemsItem[] }) {
+function SelectSeries({
+  series,
+  value,
+  onChange
+}: {
+  series: SeriesListResDtoOutputItemsItem[]
+  value: string
+  onChange: (seriesId: string) => void
+}) {
   const { t } = useTranslation('editor')
   return (
     <label className='grid gap-1.5 text-sm font-semibold'>
       {t('board.selectSeries')}
-      <select className={boardInput} name='seriesId' required defaultValue=''>
+      <select
+        className={boardInput}
+        name='seriesId'
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         <option value='' disabled>
           {t('board.selectSeries')}
         </option>

@@ -14,14 +14,9 @@ export function meta() {
 
 export async function clientLoader() {
   try {
-    const responses = await Promise.all([
-      seriesControllerListSeries({ status: 'IN_REVIEW', limit: 100, offset: 0 }),
-      seriesControllerListSeries({ status: 'READY_TO_PITCH', limit: 100, offset: 0 }),
-      seriesControllerListSeries({ status: 'PITCHED', limit: 100, offset: 0 })
-    ])
-    const items = responses.flatMap((response) => response.data.items)
+    const response = await seriesControllerListSeries({ limit: 100, offset: 0 })
     return {
-      items: Array.from(new Map(items.map((item) => [item.id, item])).values()) as SeriesListResDtoOutputItemsItem[],
+      items: response.data.items as SeriesListResDtoOutputItemsItem[],
       hasError: false
     }
   } catch {

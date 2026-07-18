@@ -209,6 +209,13 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
             <button
               className='relative rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors'
               aria-label={t('layout.notifications')}
+              onClick={() => {
+                const role = session?.user?.role
+                if (role === 'EDITOR') navigate('/dashboard/editor/notifications')
+                else if (role === 'MANGAKA') navigate('/dashboard/mangaka/notifications')
+                else if (role === 'ASSISTANT') navigate('/dashboard/assistant/notifications')
+                else if (role === 'BOARD_MEMBER') navigate('/dashboard/board/notifications')
+              }}
             >
               <Bell className='h-5 w-5' />
               <span className='absolute top-1 right-1 h-2 w-2 rounded-full bg-primary ring-2 ring-card' />

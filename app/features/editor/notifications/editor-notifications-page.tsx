@@ -1,7 +1,7 @@
-import { useFetcher } from 'react-router'
-import { Bell, CheckCheck } from 'lucide-react'
+import { Link, useFetcher } from 'react-router'
+import { ArrowUpRight, Bell, CheckCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { NotificationListResDtoOutput } from '~/api/model/notifications'
+import type { NotificationListResDtoOutput, NotificationListResDtoOutputItemsItem } from '~/api/model/notifications'
 import type { EditorActionResult } from '../types'
 
 export function EditorNotificationsPage({ data }: { data: NotificationListResDtoOutput }) {
@@ -41,14 +41,25 @@ export function EditorNotificationsPage({ data }: { data: NotificationListResDto
               </span>
             </div>
             <p className='mt-2 text-sm text-muted-foreground'>{item.content}</p>
-            {!item.isRead && (
-              <fetcher.Form method='post' className='mt-3'>
-                <input type='hidden' name='id' value={item.id} />
-                <button name='intent' value='markRead' className='text-xs font-bold text-primary'>
-                  {t('actions.markRead')}
-                </button>
-              </fetcher.Form>
-            )}
+            <div className='mt-3 flex flex-wrap items-center gap-4'>
+              {notificationHref(item) && (
+                <Link
+                  to={notificationHref(item)!}
+                  className='inline-flex items-center gap-1 text-xs font-bold text-primary'
+                >
+                  {t('notifications.open')}
+                  <ArrowUpRight className='size-3.5' />
+                </Link>
+              )}
+              {!item.isRead && (
+                <fetcher.Form method='post'>
+                  <input type='hidden' name='id' value={item.id} />
+                  <button name='intent' value='markRead' className='text-xs font-bold text-primary'>
+                    {t('actions.markRead')}
+                  </button>
+                </fetcher.Form>
+              )}
+            </div>
           </article>
         ))}
         {!data.items.length && (
@@ -57,4 +68,24 @@ export function EditorNotificationsPage({ data }: { data: NotificationListResDto
       </div>
     </div>
   )
+}
+
+function notificationHref(item: NotificationListResDtoOutputItemsItem): string | null {
+  if (!item.referenceType || !item.referenceId) return null
+  const prefix = item.referenceType.split('_')[0]
+  const id = encodeURIComponent(item.referenceId)
+
+  if (['PROPOSAL', 'SERIES', 'FRANCHISE'].includes(prefix)) return `/dashboard/editor/proposals/${id}`
+  if (prefix === 'NAME') return `/dashboard/editor/proposals?nameId=${id}`
+  if (prefix === 'CONTRACT') return `/dashboard/editor/contracts/${id}`
+  if (prefix === 'AMENDMENT' || prefix === 'PAYMENT') return `/dashboard/editor/contracts?referenceId=${id}`
+  if (['CHAPTER', 'MANUSCRIPT', 'PAGE'].includes(prefix))
+    return `/dashboard/editor/publication?referenceId=${id}&referenceType=${prefix}`
+  if (prefix === 'DEADLINE') return `/dashboard/editor/operations/deadlines?requestId=${id}`
+  if (prefix === 'BOARD') return `/dashboard/editor/board/sessions?sessionId=${id}`
+  if (prefix === 'DECISION') return `/dashboard/editor/board/decisions?decisionId=${id}`
+  if (prefix === 'SURVEY' || prefix === 'RANKING') return `/dashboard/editor/operations/surveys?referenceId=${id}`
+  if (prefix === 'REVISION') return `/dashboard/editor/proposals?revisionId=${id}`
+  if (prefix === 'REVIEW') return `/dashboard/editor/operations/reviews?reviewId=${id}`
+  return null
 }

@@ -3,6 +3,7 @@ import { ArrowLeft, Ban, Check, FileText, Image, Loader2, RotateCcw } from 'luci
 import { useTranslation } from 'react-i18next'
 
 import type { EditorActionResult, EditorProposalDetailData } from '../types'
+import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
 
 export function EditorProposalDetailPage({
   data,
@@ -123,14 +124,28 @@ export function EditorProposalDetailPage({
             )}
           </div>
           {name && (
-            <ReviewForm
-              fetcher={fetcher}
-              seriesId={series.id}
-              nameId={name.id}
-              approveIntent='approveName'
-              reviseIntent='reviseName'
-              disabled={!assigned || !nameReviewable}
-            />
+            <>
+              <ReviewForm
+                fetcher={fetcher}
+                seriesId={series.id}
+                nameId={name.id}
+                approveIntent='approveName'
+                reviseIntent='reviseName'
+                disabled={!assigned || !nameReviewable}
+              />
+              <div className='mt-5'>
+                <EditorAnnotationPanel
+                  title={t('chapterReview.nameAnnotations')}
+                  annotations={data.nameAnnotations}
+                  target='NAME'
+                  targetId={name.id}
+                  contextFields={{ seriesId: series.id, nameId: name.id }}
+                  createIntent='createNameAnnotation'
+                  resolveIntent='resolveNameAnnotation'
+                  removeIntent='removeNameAnnotation'
+                />
+              </div>
+            </>
           )}
         </ReviewPanel>
       </div>

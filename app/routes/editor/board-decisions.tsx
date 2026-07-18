@@ -1,9 +1,12 @@
 import {
-  boardControllerCastVote,
   boardControllerCreateDecision,
+  boardControllerCastVote,
+  boardControllerGetDecisionDetails,
   boardControllerGetDecisions,
+  boardControllerGetSessionById,
   boardControllerGetSessions
 } from '~/api/operations/board/board'
+import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorBoardDecisionsPage, type EditorActionResult } from '~/features/editor'
 import { required } from './board-route-utils'
@@ -16,9 +19,15 @@ export async function clientLoader() {
       boardControllerGetSessions(),
       boardControllerGetDecisions()
     ])
-    return { series: series.data.items, sessions: sessions.data, decisions: decisions.data, hasError: false }
+    return {
+      series: series.data.items,
+      sessions: sessions.data,
+      decisions: decisions.data,
+      sessionPhases: Object.fromEntries(sessions.data.map((session) => [session.id, readBoardSessionPhase(session)])),
+      hasError: false
+    }
   } catch {
-    return { series: [], sessions: [], decisions: [], hasError: true }
+    return { series: [], sessions: [], decisions: [], sessionPhases: {}, hasError: true }
   }
 }
 
@@ -38,11 +47,21 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         }
       })
     } else if (intent === 'castVote') {
+      const decisionId = required(form, 'decisionId')
+      const decision = await boardControllerGetDecisionDetails({ id: decisionId })
+      if (decision.status !== 200) return { ok: false, intent, errorKey: 'invalidState' }
+      const session = await boardControllerGetSessionById({ id: decision.data.boardSessionId })
+      if (
+        session.status !== 200 ||
+        session.data.status !== 'ACTIVE' ||
+        readBoardSessionPhase(session.data) !== 'VOTING'
+      )
+        return { ok: false, intent, errorKey: 'invalidState' }
       await boardControllerCastVote(
-        { id: required(form, 'decisionId') },
+        { id: decisionId },
         {
           voteValue: required(form, 'voteValue') as 'APPROVE' | 'REJECT' | 'ABSTAIN',
-          note: String(form.get('note') ?? '') || undefined
+          note: String(form.get('note') ?? '').trim() || undefined
         }
       )
     } else {

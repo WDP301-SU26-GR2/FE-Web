@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 export function EditorBoardPage() {
   const { t } = useTranslation('editor')
   const sections = [
-    ['pitching', Send],
     ['sessions', CalendarClock],
+    ['pitching', Send],
     ['decisions', Gavel],
     ['reports', FileText],
     ['lifecycle', BarChart3]

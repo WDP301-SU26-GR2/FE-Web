@@ -79,7 +79,7 @@ export function ContractActionMessage({ data }: { data?: EditorActionResult }) {
   if (!data) return null
   return (
     <p className={`mt-3 text-xs font-semibold ${data.ok ? 'text-primary' : 'text-destructive'}`}>
-      {data.ok ? t(`messages.${data.messageKey}`) : t('errors.actionFailed')}
+      {data.ok ? t(`messages.${data.messageKey}`) : t(`errors.${data.errorKey ?? 'actionFailed'}`)}
     </p>
   )
 }
