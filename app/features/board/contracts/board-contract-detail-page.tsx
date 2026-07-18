@@ -67,8 +67,32 @@ export function BoardContractDetailPage({
                 </button>
               </>
             )}
-            {contract.status === 'MANGAKA_SIGNED' && (
-              <>
+            <div className='w-full rounded-lg border border-border p-4'>
+              <h3 className='text-sm font-bold text-foreground'>
+                {t('contracts.boardSignature', { defaultValue: 'Board signature' })}
+              </h3>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                {contract.status === 'MANGAKA_SIGNED'
+                  ? t('contracts.readyToSign', {
+                      defaultValue: 'Mangaka has signed. Request an OTP to complete the Board signature.'
+                    })
+                  : contract.boardSignedAt
+                    ? `${t('contracts.signed', { defaultValue: 'Signed' })}: ${new Date(contract.boardSignedAt).toLocaleString()}`
+                    : t('contracts.waitingMangakaSignature', {
+                        defaultValue: 'Available after the contract is approved and Mangaka has signed.'
+                      })}
+              </p>
+              <div className='mt-3 flex flex-wrap gap-2'>
+                <button
+                  type='submit'
+                  name='intent'
+                  value='sendOtp'
+                  formNoValidate
+                  disabled={contract.status !== 'MANGAKA_SIGNED'}
+                  className='h-10 rounded-md border border-border px-3 text-sm font-bold'
+                >
+                  {t('contracts.sendOtp', { defaultValue: 'Send OTP' })}
+                </button>
                 <input
                   name='otpCode'
                   className={`${boardInput} max-w-56`}
@@ -76,16 +100,18 @@ export function BoardContractDetailPage({
                   maxLength={6}
                   placeholder={t('contracts.otp')}
                   required
+                  disabled={contract.status !== 'MANGAKA_SIGNED'}
                 />
                 <button
                   name='intent'
                   value='sign'
+                  disabled={contract.status !== 'MANGAKA_SIGNED'}
                   className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
                 >
                   {t('contracts.sign')}
                 </button>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </fetcher.Form>
         <BoardFeedback data={fetcher.data} />
@@ -123,6 +149,15 @@ function AmendmentRow({ contractId, amendment }: { contractId: string; amendment
         <fetcher.Form method='post' className='mt-3 flex flex-wrap gap-2'>
           <input type='hidden' name='contractId' value={contractId} />
           <input type='hidden' name='amendmentId' value={amendment.id} />
+          <button
+            type='submit'
+            name='intent'
+            value='sendOtp'
+            formNoValidate
+            className='h-10 rounded-md border border-border px-3 text-sm font-bold'
+          >
+            {t('contracts.sendOtp', { defaultValue: 'Send OTP' })}
+          </button>
           <input
             className={`${boardInput} max-w-48`}
             name='otpCode'

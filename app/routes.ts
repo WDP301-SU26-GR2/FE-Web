@@ -29,6 +29,8 @@ export default [
       route('series/propose', 'routes/mangaka/propose-series.tsx'),
       route('series/:id/edit', 'routes/mangaka/series-edit.tsx'),
       route('series/:id', 'routes/mangaka/series-detail.tsx'),
+      route('contracts', 'routes/mangaka/contracts.tsx'),
+      route('contracts/:id', 'routes/mangaka/contract-detail.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')

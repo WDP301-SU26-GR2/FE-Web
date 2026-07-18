@@ -14,6 +14,7 @@ import { ImageLightbox } from '~/features/mangaka/series/components/image-lightb
 import { useCreateName } from '../hooks/use-create-name'
 import { useUpdateNamePages } from '../hooks/use-update-name-pages'
 import { useResubmitName } from '../hooks/use-resubmit-name'
+import { useSubmitChapterName } from '../hooks/use-publication-transitions'
 
 export type NameSectionProps = {
   chapter: ChapterListResDtoOutputItemsItem | null
@@ -51,6 +52,7 @@ export function NameSection({ chapter, name, isLoading, onRefresh }: NameSection
   const { createName, isCreating } = useCreateName()
   const { updatePages, isUpdating } = useUpdateNamePages()
   const { resubmit, isResubmitting } = useResubmitName()
+  const { submitName, isSubmittingName } = useSubmitChapterName()
 
   const chapterId = chapter?.id ?? ''
   const nameId = name?.id ?? ''
@@ -58,6 +60,7 @@ export function NameSection({ chapter, name, isLoading, onRefresh }: NameSection
 
   const canCreate = !name && chapterId && chapter?.status === 'DRAFT'
   const canEdit = !!name && NAME_EDITABLE_STATUSES.includes(status as (typeof NAME_EDITABLE_STATUSES)[number])
+  const canSubmit = !!name && status === 'DRAFT' && name.pages.length > 0
   const canResubmit = !!name && status === 'REVISION'
 
   const onCreateConfirm = async (pages: { pageNumber: number; fileUrl: string }[]) => {
@@ -81,6 +84,12 @@ export function NameSection({ chapter, name, isLoading, onRefresh }: NameSection
   const onResubmit = async () => {
     if (!chapterId || !nameId) return
     const next = await resubmit({ chapterId, nameId })
+    if (next) onRefresh()
+  }
+
+  const onSubmit = async () => {
+    if (!chapterId || !nameId) return
+    const next = await submitName({ chapterId, nameId })
     if (next) onRefresh()
   }
 
@@ -129,6 +138,17 @@ export function NameSection({ chapter, name, isLoading, onRefresh }: NameSection
               {t('publication.nameSection.resubmitButton')}
             </button>
           )}
+          {canSubmit && (
+            <button
+              type='button'
+              onClick={() => void onSubmit()}
+              disabled={isSubmittingName}
+              className='flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              {isSubmittingName ? <Loader2 className='h-3.5 w-3.5 animate-spin' /> : <Send className='h-3.5 w-3.5' />}
+              {t('publication.nameSection.submitButton', { defaultValue: 'Nộp Name' })}
+            </button>
+          )}
         </div>
       </header>
 
@@ -141,9 +161,7 @@ export function NameSection({ chapter, name, isLoading, onRefresh }: NameSection
         ) : !name ? (
           <div className='flex flex-col items-center gap-2 py-10 text-center text-muted-foreground'>
             <p className='text-sm'>{t('publication.nameSection.empty')}</p>
-            {canCreate && (
-              <p className='text-xs text-muted-foreground/80'>{t('publication.nameSection.emptyHint')}</p>
-            )}
+            {canCreate && <p className='text-xs text-muted-foreground/80'>{t('publication.nameSection.emptyHint')}</p>}
           </div>
         ) : name.pages.length === 0 ? (
           <div className='flex flex-col items-center gap-2 py-10 text-center text-muted-foreground'>
@@ -187,12 +205,7 @@ export function NameSection({ chapter, name, isLoading, onRefresh }: NameSection
         onCancel={() => setEditOpen(false)}
       />
       {lightbox && (
-        <ImageLightbox
-          r2Key={lightbox.key}
-          alt={lightbox.alt}
-          open={!!lightbox}
-          onClose={() => setLightbox(null)}
-        />
+        <ImageLightbox r2Key={lightbox.key} alt={lightbox.alt} open={!!lightbox} onClose={() => setLightbox(null)} />
       )}
     </section>
   )

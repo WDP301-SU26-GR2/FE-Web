@@ -40,7 +40,14 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
           note: optionalText(form, 'note')
         }
       )
-    } else if (intent === 'advanceContract') await contractControllerUpdateStatus({ id: params.id })
+    } else if (intent === 'advanceContract')
+      await contractControllerUpdateStatus(
+        { id: params.id },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'MANGAKA_REVIEW' })
+        }
+      )
     else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
   } catch (error) {

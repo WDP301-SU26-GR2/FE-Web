@@ -21,3 +21,10 @@ export { MyStudioPage } from './studio/my-studio-page'
 
 // Assistants (directory + invite + assignments)
 export { AssistantDirectoryPage } from './assistants/assistant-directory-page'
+
+// Contracts (review, negotiation and signing)
+export {
+  MangakaContractDetailPage,
+  MangakaContractsPage,
+  type MangakaContractActionResult
+} from './contracts/mangaka-contract-pages'

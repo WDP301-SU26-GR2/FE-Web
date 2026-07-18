@@ -49,6 +49,7 @@ export type SignedPage = {
 export type EditorChapterReviewData = {
   series: SeriesResDtoOutput
   chapter: ChapterResDtoOutput
+  contract: ContractResDtoOutput | null
   pages: SignedPage[]
   name: NameListResDtoOutputItemsItem | null
   namePages: Array<{ pageNumber: number; url: string | null }>

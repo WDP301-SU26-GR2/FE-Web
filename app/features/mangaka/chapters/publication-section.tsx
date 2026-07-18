@@ -7,7 +7,7 @@ import { cn } from '~/shared/lib/cn'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 
 export type PublicationSectionProps = {
-  isOwner: boolean
+  canCreateChapter: boolean
   isLoading: boolean
   error: string | null
   chapters: ChapterListResDtoOutputItemsItem[]
@@ -62,16 +62,13 @@ function formatDate(iso: string | null, locale: string): string {
  * - Lists every chapter for the series in chapterNumber order.
  * - Shows the chapter status, optional manuscript status, deadline, and
  *   "On hold" badge when applicable.
- * - "Create chapter" CTA is visible to the series owner. The previous
- *   APPROVED-Name gate was removed when the BE flow changed: POST /chapters
- *   now auto-matches the latest APPROVED Name server-side, so FE no
- *   longer pre-checks the gate (BE still owns the 409 on
- *   `Error.NoApprovedName`).
+ * - "Create chapter" is shown only when the caller owns the series and the
+ *   series is SERIALIZED, COMPLETING or CANCELLING.
  * - No click-to-detail for now (no chapter detail route exists yet);
  *   rows are presentation-only.
  */
 export function PublicationSection({
-  isOwner,
+  canCreateChapter,
   isLoading,
   error,
   chapters,
@@ -105,7 +102,7 @@ export function PublicationSection({
             className={cn('ml-1 h-3.5 w-3.5 text-muted-foreground transition-transform', !collapsed && 'rotate-180')}
           />
         </button>
-        {isOwner && (
+        {canCreateChapter && (
           <button
             type='button'
             onClick={onCreateClick}
@@ -139,19 +136,14 @@ export function PublicationSection({
             <div className='flex flex-col items-center gap-2 py-10 text-center text-muted-foreground'>
               <ImageIcon className='h-8 w-8 text-muted-foreground/40' />
               <p className='text-sm'>{t('seriesDetail.publication.empty')}</p>
-              {isOwner && (
+              {canCreateChapter && (
                 <p className='text-xs text-muted-foreground/80'>{t('seriesDetail.publication.emptyHint')}</p>
               )}
             </div>
           ) : (
             <ul className='divide-y divide-border overflow-hidden rounded-lg border border-border'>
               {chapters.map((chapter) => (
-                <ChapterRow
-                  key={chapter.id}
-                  chapter={chapter}
-                  seriesId={seriesId}
-                  locale={locale}
-                />
+                <ChapterRow key={chapter.id} chapter={chapter} seriesId={seriesId} locale={locale} />
               ))}
             </ul>
           )}

@@ -1,3 +1,4 @@
+import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   contractControllerBoardApprove,
   contractControllerBoardRequestChanges,
@@ -7,6 +8,7 @@ import {
   contractControllerSignAmendmentBoard,
   contractControllerSignBoard
 } from '~/api/operations/contracts/contracts'
+import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/contract-detail'
 
@@ -28,7 +30,11 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
+    if (intent === 'sendOtp') {
+      const me = await usersControllerGetMe()
+      if (me.status !== 200) throw new Error('Unable to load current user')
+      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
+    } else if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
     else if (intent === 'changes') await contractControllerBoardRequestChanges({ id: params.id })
     else if (intent === 'sign')
       await contractControllerSignBoard({ id: params.id }, { otpCode: required(form, 'otpCode') })

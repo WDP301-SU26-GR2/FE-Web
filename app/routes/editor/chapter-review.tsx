@@ -22,6 +22,7 @@ import {
   annotationControllerResolve
 } from '~/api/operations/annotations/annotations'
 import { seriesControllerGetSeries } from '~/api/operations/series/series'
+import { contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
 import {
   EditorChapterReviewPage,
@@ -39,15 +40,23 @@ export function meta() {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   if (!params.seriesId || !params.chapterId) return { data: null, hasError: true }
   try {
-    const [seriesResponse, chapterResponse, pagesResponse, namesResponse, progressResponse, annotationsResponse] =
-      await Promise.all([
-        seriesControllerGetSeries({ id: params.seriesId }),
-        chapterControllerGetOne({ id: params.chapterId }),
-        chapterControllerListPages({ id: params.chapterId }),
-        chapterNameControllerList({ id: params.chapterId }),
-        chapterControllerProgress({ id: params.chapterId }).catch(() => null),
-        annotationControllerList({ targetType: 'MANUSCRIPT', targetId: params.chapterId }).catch(() => null)
-      ])
+    const [
+      seriesResponse,
+      chapterResponse,
+      pagesResponse,
+      namesResponse,
+      progressResponse,
+      annotationsResponse,
+      contractsResponse
+    ] = await Promise.all([
+      seriesControllerGetSeries({ id: params.seriesId }),
+      chapterControllerGetOne({ id: params.chapterId }),
+      chapterControllerListPages({ id: params.chapterId }),
+      chapterNameControllerList({ id: params.chapterId }),
+      chapterControllerProgress({ id: params.chapterId }).catch(() => null),
+      annotationControllerList({ targetType: 'MANUSCRIPT', targetId: params.chapterId }).catch(() => null),
+      contractControllerGetContracts().catch(() => null)
+    ])
     if (seriesResponse.status !== 200 || chapterResponse.status !== 200 || pagesResponse.status !== 200) {
       return { data: null, hasError: true }
     }
@@ -72,6 +81,12 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     const data: EditorChapterReviewData = {
       series: seriesResponse.data,
       chapter: chapterResponse.data,
+      contract:
+        contractsResponse?.data.find(
+          (contract) => contract.seriesId === params.seriesId && contract.status === 'FULLY_EXECUTED'
+        ) ??
+        contractsResponse?.data.find((contract) => contract.seriesId === params.seriesId) ??
+        null,
       pages,
       name,
       namePages,

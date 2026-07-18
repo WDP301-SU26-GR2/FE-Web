@@ -27,8 +27,13 @@ export type PublicationWorkbenchProps = {
  */
 export function PublicationWorkbench({ seriesId, chapterId }: PublicationWorkbenchProps) {
   const { t } = useTranslation('mangaka')
-  const { chapter, isLoading: chapterLoading, error: chapterError, notFound, refresh: refreshChapter } =
-    useChapter(chapterId)
+  const {
+    chapter,
+    isLoading: chapterLoading,
+    error: chapterError,
+    notFound,
+    refresh: refreshChapter
+  } = useChapter(chapterId)
   const { name, refresh: refreshName } = useChapterName(chapterId)
   const { pages, isLoading: pagesLoading, refresh: refreshPages } = useChapterPages(chapterId)
 
@@ -92,19 +97,8 @@ export function PublicationWorkbench({ seriesId, chapterId }: PublicationWorkben
               <p className='mt-1 text-sm text-muted-foreground'>{t('publication.workbenchSubtitle')}</p>
             </div>
           </div>
-          <NameSection
-            chapter={chapter}
-            name={name}
-            isLoading={!name && chapterLoading}
-            onRefresh={onAnyChange}
-          />
-          <PagesSection
-            chapterId={chapterId}
-            pages={pages}
-            name={name}
-            isLoading={pagesLoading}
-            onRefresh={onAnyChange}
-          />
+          <NameSection chapter={chapter} name={name} isLoading={!name && chapterLoading} onRefresh={onAnyChange} />
+          <PagesSection chapter={chapter} pages={pages} name={name} isLoading={pagesLoading} onRefresh={onAnyChange} />
         </div>
       </main>
     </div>
@@ -149,7 +143,10 @@ function ErrorScreen({ backHref, message, onRetry }: { backHref: string; message
   return (
     <div className='flex h-screen items-center justify-center bg-background p-6 text-foreground'>
       <div className='mx-auto flex max-w-md flex-col items-center gap-3 text-center'>
-        <div role='alert' className='w-full rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive'>
+        <div
+          role='alert'
+          className='w-full rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive'
+        >
           {message}
         </div>
         <div className='flex items-center gap-2'>
@@ -162,7 +159,9 @@ function ErrorScreen({ backHref, message, onRetry }: { backHref: string; message
           </button>
           <a
             href={backHref}
-            className={cn('rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90')}
+            className={cn(
+              'rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90'
+            )}
           >
             {t('publication.notFound.back')}
           </a>

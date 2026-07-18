@@ -51,6 +51,12 @@ const PUBLICATION_PHASE_STATUSES: ReadonlyArray<SeriesResDtoOutput['status']> = 
   'CANCELLED'
 ] as const
 
+const CHAPTER_CREATABLE_STATUSES: ReadonlyArray<SeriesResDtoOutput['status']> = [
+  SeriesStatusEnum.SERIALIZED,
+  'COMPLETING',
+  'CANCELLING'
+] as const
+
 type MySeriesDetailPageProps = {
   seriesId: string
 }
@@ -171,6 +177,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
+  const canCreateChapter = isOwner && !!seriesStatus && CHAPTER_CREATABLE_STATUSES.includes(seriesStatus)
   const nextChapterNumber = useMemo(() => {
     if (chapters.length === 0) return 1
     return chapters.reduce((max, c) => Math.max(max, c.chapterNumber), 0) + 1
@@ -221,7 +228,10 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     <div className='space-y-6'>
       {/* Top bar: back to list */}
       <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-        <Link to='/dashboard/mangaka/series' className='flex items-center gap-1 transition-colors hover:text-foreground'>
+        <Link
+          to='/dashboard/mangaka/series'
+          className='flex items-center gap-1 transition-colors hover:text-foreground'
+        >
           <ArrowLeft className='h-3.5 w-3.5' />
           <span>{t('seriesDetail.back')}</span>
         </Link>
@@ -413,14 +423,11 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         <NamesBody names={sortedNames} locale={currentLocale} onOpen={(key, alt) => setLightbox({ key, alt })} />
       </CollapsibleCard>
 
-      {/* PUBLICATION section — visible once the series enters the production phase.
-          Per FE-API-Guide-v2.md §6.2 / §7, the Mangaka produces chapters only
-          after the series has been serialized (Board approved). BE auto-matches
-          the latest APPROVED Name server-side, so FE no longer gates the
-          "Create chapter" affordance on hasApprovedName. */}
+      {/* Keep publication history visible after serialization, but only allow
+          chapter creation in lifecycle states accepted by the backend. */}
       {isPublicationPhase && (
         <PublicationSection
-          isOwner={isOwner}
+          canCreateChapter={canCreateChapter}
           isLoading={isChaptersLoading}
           error={chaptersError}
           chapters={chapters}
