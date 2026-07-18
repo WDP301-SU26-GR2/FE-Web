@@ -49,13 +49,53 @@ export default [
 
   // Editor dashboard — sub-pages chưa được implement, chỉ mount _layout + index.
   // Khi thêm sub-page, thêm `route('<sub>', '...')` bên trong layout() dưới đây.
-  ...prefix('dashboard/editor', [layout('routes/editor/_layout.tsx', [index('routes/editor/index.tsx')])]),
+  ...prefix('dashboard/editor', [
+    layout('routes/editor/_layout.tsx', [
+      index('routes/editor/index.tsx'),
+      route('proposals', 'routes/editor/proposals.tsx'),
+      route('proposals/:id', 'routes/editor/proposal-detail.tsx'),
+      route('board', 'routes/editor/board.tsx'),
+      route('board/pitching', 'routes/editor/board-pitching.tsx'),
+      route('board/sessions', 'routes/editor/board-sessions.tsx'),
+      route('board/decisions', 'routes/editor/board-decisions.tsx'),
+      route('board/reports', 'routes/editor/board-reports.tsx'),
+      route('board/lifecycle', 'routes/editor/board-lifecycle.tsx'),
+      route('contracts', 'routes/editor/contracts.tsx'),
+      route('contracts/:id', 'routes/editor/contract-detail.tsx'),
+      route('contracts/:id/terms', 'routes/editor/contract-terms.tsx'),
+      route('contracts/:id/conditions', 'routes/editor/contract-conditions.tsx'),
+      route('contracts/:id/history', 'routes/editor/contract-history.tsx'),
+      route('contracts/:id/revenue', 'routes/editor/contract-revenue.tsx'),
+      route('contracts/:id/amendments', 'routes/editor/contract-amendments.tsx'),
+      route('operations', 'routes/editor/operations.tsx'),
+      route('operations/lifecycle', 'routes/editor/operations-lifecycle.tsx'),
+      route('operations/sales', 'routes/editor/operations-sales.tsx'),
+      route('operations/reviews', 'routes/editor/operations-reviews.tsx'),
+      route('operations/deadlines', 'routes/editor/operations-deadlines.tsx'),
+      route('operations/surveys', 'routes/editor/operations-surveys.tsx'),
+      route('operations/reprints', 'routes/editor/operations-reprints.tsx'),
+      route('operations/transfers', 'routes/editor/operations-transfers.tsx'),
+      route('operations/versions', 'routes/editor/operations-versions.tsx'),
+      route('notifications', 'routes/editor/notifications.tsx'),
+      route('profile', 'routes/editor/profile.tsx'),
+      route('publication', 'routes/editor/publication.tsx'),
+      route('publication/:seriesId/:chapterId', 'routes/editor/chapter-review.tsx')
+    ])
+  ]),
 
   // Board dashboard
   ...prefix('dashboard/board', [layout('routes/board/_layout.tsx', [index('routes/board/index.tsx')])]),
 
   // Super Admin dashboard
-  ...prefix('dashboard/admin', [layout('routes/admin/_layout.tsx', [index('routes/admin/index.tsx')])]),
+  ...prefix('dashboard/admin', [
+    layout('routes/admin/_layout.tsx', [
+      index('routes/admin/index.tsx'),
+      route('users', 'routes/admin/users.tsx'),
+      route('users/:id', 'routes/admin/user-detail.tsx'),
+      route('audit', 'routes/admin/audit.tsx'),
+      route('settings', 'routes/admin/settings.tsx')
+    ])
+  ]),
 
   // Publication workbench — focused work area, intentionally outside the
   // dashboard layout (no sidebar). Uses a nested route tree:
@@ -63,17 +103,8 @@ export default [
   //   /publish/:seriesId/:chapterId/name     → storyboard Name editor
   //   /publish/:seriesId/:chapterId/pages    → composite page reader
   layout('routes/publish/$seriesId/$chapterId/_layout.tsx', [
-    route(
-      'publish/:seriesId/:chapterId',
-      'routes/publish/$seriesId/$chapterId/index.tsx'
-    ),
-    route(
-      'publish/:seriesId/:chapterId/name',
-      'routes/publish/$seriesId/$chapterId/name.tsx'
-    ),
-    route(
-      'publish/:seriesId/:chapterId/pages',
-      'routes/publish/$seriesId/$chapterId/pages.tsx'
-    )
+    route('publish/:seriesId/:chapterId', 'routes/publish/$seriesId/$chapterId/index.tsx'),
+    route('publish/:seriesId/:chapterId/name', 'routes/publish/$seriesId/$chapterId/name.tsx'),
+    route('publish/:seriesId/:chapterId/pages', 'routes/publish/$seriesId/$chapterId/pages.tsx')
   ])
 ] satisfies RouteConfig

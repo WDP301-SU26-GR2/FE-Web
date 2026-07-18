@@ -24,7 +24,7 @@ function loadAll(dir, ns) {
 }
 
 // Parity
-for (const ns of ['common', 'welcome', 'auth', 'mangaka', 'assistant']) {
+for (const ns of ['common', 'welcome', 'auth', 'mangaka', 'assistant', 'admin', 'editor']) {
   const map = loadAll('app/locales', ns)
   const missing = []
   for (const [k, langs] of map.entries()) {
@@ -45,7 +45,9 @@ const enByNs = {
   welcome: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/welcome.json', 'utf8')))),
   auth: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/auth.json', 'utf8')))),
   mangaka: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/mangaka.json', 'utf8')))),
-  assistant: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/assistant.json', 'utf8'))))
+  assistant: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/assistant.json', 'utf8')))),
+  admin: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/admin.json', 'utf8')))),
+  editor: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/editor.json', 'utf8'))))
 }
 
 function scan(dir) {
@@ -68,7 +70,7 @@ function scan(dir) {
             : [nsMatch[4]]
         : ['common']
 
-      const re = /t\(\s*['"]([a-zA-Z][\w.]*)['"]/g
+      const re = /\bt\(\s*['"]([a-zA-Z][\w.]*)['"]/g
       let m
       while ((m = re.exec(txt)) !== null) {
         const key = m[1]

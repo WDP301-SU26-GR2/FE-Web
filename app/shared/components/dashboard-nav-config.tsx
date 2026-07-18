@@ -12,7 +12,12 @@ import {
   Shield,
   ClipboardList,
   Briefcase,
-  Mail
+  Mail,
+  Printer,
+  Gavel,
+  Settings2,
+  ScrollText,
+  Wrench
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -61,9 +66,7 @@ export function useDashboardNavConfig(role: DashboardRole): DashboardNavConfig {
  */
 function annotateAncestorsEndHere(items: NavItem[]): NavItem[] {
   return items.map((item) => {
-    const hasChild = items.some(
-      (other) => other.href !== item.href && other.href.startsWith(`${item.href}/`)
-    )
+    const hasChild = items.some((other) => other.href !== item.href && other.href.startsWith(`${item.href}/`))
     return hasChild ? { ...item, endsHere: true } : item
   })
 }
@@ -116,6 +119,10 @@ function buildEditorConfig(t: ReturnType<typeof useTranslation>['t']): Dashboard
     navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/editor', icon: BookOpen },
       { label: t('nav.proposals'), href: '/dashboard/editor/proposals', icon: FileText },
+      { label: t('nav.boardWorkflow'), href: '/dashboard/editor/board', icon: Gavel },
+      { label: t('nav.contracts'), href: '/dashboard/editor/contracts', icon: ScrollText },
+      { label: t('nav.operations'), href: '/dashboard/editor/operations', icon: Wrench },
+      { label: t('nav.publication'), href: '/dashboard/editor/publication', icon: Printer },
       { label: t('nav.notifications'), href: '/dashboard/editor/notifications', icon: Bell }
     ]),
     profile: {
@@ -148,7 +155,8 @@ function buildAdminConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
     navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/admin', icon: Shield },
       { label: t('nav.users'), href: '/dashboard/admin/users', icon: Users },
-      { label: t('nav.reports'), href: '/dashboard/admin/reports', icon: BarChart3 },
+      { label: t('nav.audit'), href: '/dashboard/admin/audit', icon: ScrollText },
+      { label: t('nav.systemSettings'), href: '/dashboard/admin/settings', icon: Settings2 },
       { label: t('nav.notifications'), href: '/dashboard/admin/notifications', icon: Bell }
     ]),
     profile: {

@@ -41,8 +41,13 @@
     "notifications": "Thông báo",
     "myTasks": "Nhiệm vụ của tôi",
     "proposals": "Hồ sơ",
+    "boardWorkflow": "Quy trình Hội đồng",
+    "operations": "Vận hành",
+    "publication": "Xuất bản",
     "users": "Người dùng",
     "reports": "Báo cáo",
+    "audit": "Nhật ký hệ thống",
+    "systemSettings": "Cấu hình hệ thống",
     "uploadBatch": "Tải lên hàng loạt",
     "editorSupport": "Hỗ trợ biên tập",
     "invites": "Lời mời"

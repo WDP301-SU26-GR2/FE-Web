@@ -72,6 +72,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
     const r = session?.user?.role
     if (r === 'MANGAKA') return '/dashboard/mangaka/profile'
     if (r === 'ASSISTANT') return '/dashboard/assistant/profile'
+    if (r === 'EDITOR') return '/dashboard/editor/profile'
     return null
   })()
 
