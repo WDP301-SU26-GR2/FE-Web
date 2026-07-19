@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import type {
   BoardDecisionResDtoOutput,
-  BoardSessionResDtoOutput,
-  SuggestBoardMembersResDtoOutputItemsItem
+  BoardSessionResDtoOutput
 } from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
@@ -26,9 +25,7 @@ export function EditorBoardSessionsPage({
   series,
   sessions,
   decisions,
-  suggestions,
-  preferredMemberCount,
-  quorumMin,
+  suggestedMemberCount,
   hasError,
   manageAll = false,
   backPath = '/dashboard/editor/board',
@@ -37,9 +34,7 @@ export function EditorBoardSessionsPage({
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
-  suggestions: Record<string, SuggestBoardMembersResDtoOutputItemsItem[]>
-  preferredMemberCount: number
-  quorumMin: number
+  suggestedMemberCount: number
   hasError: boolean
   manageAll?: boolean
   backPath?: string
@@ -115,9 +110,7 @@ export function EditorBoardSessionsPage({
       {createDialogOpen && (
         <CreateSessionDialog
           series={series}
-          suggestions={suggestions}
-          preferredMemberCount={preferredMemberCount}
-          quorumMin={quorumMin}
+          suggestedMemberCount={suggestedMemberCount}
           onClose={() => setCreateDialogOpen(false)}
         />
       )}
@@ -127,41 +120,23 @@ export function EditorBoardSessionsPage({
 
 function CreateSessionDialog({
   series,
-  suggestions,
-  preferredMemberCount,
-  quorumMin,
+  suggestedMemberCount,
   onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
-  suggestions: Record<string, SuggestBoardMembersResDtoOutputItemsItem[]>
-  preferredMemberCount: number
-  quorumMin: number
+  suggestedMemberCount: number
   onClose: () => void
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
   const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState('')
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const suggestedMembers = suggestions[rosterSourceSeriesId] ?? []
-  const rosterIsValid = selectedMemberIds.length === preferredMemberCount
   const timeRangeIsValid = Boolean(startTime) && (!endTime || endTime > startTime)
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
   }, [fetcher.data, fetcher.state, onClose])
-
-  function selectSeries(nextSeriesId: string) {
-    setRosterSourceSeriesId(nextSeriesId)
-    setSelectedMemberIds((suggestions[nextSeriesId] ?? []).map((member) => member.userId))
-  }
-
-  function toggleMember(userId: string) {
-    setSelectedMemberIds((current) =>
-      current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]
-    )
-  }
 
   return (
     <Dialog
@@ -175,7 +150,6 @@ function CreateSessionDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='createSession' />
-        <input type='hidden' name='allowedEditorIds' value={selectedMemberIds.join(',')} />
         {!series.length && (
           <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
             {t('board.noEligibleSeriesForSession')}
@@ -186,11 +160,7 @@ function CreateSessionDialog({
             <CircleAlert className='size-4 shrink-0' />
             {t('board.sessionRulesTitle')}
           </div>
-          <ul className='mt-2 list-disc space-y-1 pl-5 text-xs leading-5'>
-            <li>{t('board.sessionRuleMemberCount', { count: preferredMemberCount })}</li>
-            <li>{t('board.sessionRuleRoster')}</li>
-            <li>{t('board.sessionRuleVoting', { count: quorumMin })}</li>
-          </ul>
+          <p className='mt-2 text-xs leading-5'>{t('board.sessionSystemRosterNotice', { count: suggestedMemberCount })}</p>
         </aside>
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.sessionName')}
@@ -203,7 +173,7 @@ function CreateSessionDialog({
             name='rosterSourceSeriesId'
             required
             value={rosterSourceSeriesId}
-            onChange={(event) => selectSeries(event.target.value)}
+            onChange={(event) => setRosterSourceSeriesId(event.target.value)}
           >
             <option value='' disabled>
               {t('board.rosterSourceSeries')}
@@ -244,45 +214,6 @@ function CreateSessionDialog({
             />
           </label>
         </div>
-        {rosterSourceSeriesId && (
-          <fieldset className='grid gap-2 rounded-lg border border-border p-3'>
-            <legend className='px-1 text-sm font-bold text-foreground'>{t('board.selectedRoster')}</legend>
-            <p className='text-xs text-muted-foreground'>{t('board.selectedRosterHint')}</p>
-            {suggestedMembers.map((member) => (
-              <label
-                key={member.userId}
-                className='flex cursor-pointer items-start gap-3 rounded-md border border-border p-3'
-              >
-                <input
-                  type='checkbox'
-                  className='mt-1 size-4 accent-primary'
-                  checked={selectedMemberIds.includes(member.userId)}
-                  onChange={() => toggleMember(member.userId)}
-                />
-                <span className='min-w-0'>
-                  <span className='block text-sm font-bold text-foreground'>{member.displayName || member.userId}</span>
-                  <span className='mt-1 block text-xs text-muted-foreground'>
-                    {t('board.memberMatch', {
-                      score: member.score,
-                      genres: member.matchedGenres.join(', ') || t('common.notAvailable')
-                    })}
-                  </span>
-                  {!member.hasProfile && (
-                    <span className='mt-1 block text-xs font-semibold text-amber-600'>
-                      {t('board.memberWithoutProfile')}
-                    </span>
-                  )}
-                </span>
-              </label>
-            ))}
-            {!suggestedMembers.length && (
-              <p className='text-sm text-destructive'>{t('board.notEnoughSuggestedMembers')}</p>
-            )}
-            <p className={`text-xs font-bold ${rosterIsValid ? 'text-primary' : 'text-destructive'}`}>
-              {t('board.selectedMemberCount', { count: selectedMemberIds.length })}
-            </p>
-          </fieldset>
-        )}
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.sessionNote')}
           <textarea className={`${boardInput} min-h-24 py-2`} name='description' maxLength={500} />
@@ -297,7 +228,7 @@ function CreateSessionDialog({
             {t('actions.cancel')}
           </button>
           <button
-            disabled={fetcher.state !== 'idle' || !series.length || !rosterIsValid || !timeRangeIsValid}
+            disabled={fetcher.state !== 'idle' || !series.length || !rosterSourceSeriesId || !timeRangeIsValid}
             className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? (
@@ -329,10 +260,16 @@ function SessionCard({
 }) {
   const { t, i18n } = useTranslation('editor')
   const fetcher = useBoardFetcher()
-  const intent = session.status === 'UPCOMING' ? 'startSession' : 'concludeSession'
   const isCreator = session.creatorId === currentUserId
-  const canChange = (isCreator || manageAll) && (session.status === 'UPCOMING' || session.status === 'ACTIVE')
+  const canManage = isCreator || manageAll
   const hasDecision = decisions.length > 0
+  const allDecisionsFinal =
+    hasDecision && decisions.every((decision) => ['APPROVED', 'REJECTED', 'EXPIRED'].includes(decision.result ?? ''))
+  const intent = session.status === 'UPCOMING' ? 'startSession' : 'concludeSession'
+  const showStateAction =
+    canManage &&
+    (session.status === 'UPCOMING' ||
+      (session.status === 'ACTIVE' && session.phase === 'VOTING' && allDecisionsFinal))
 
   return (
     <article className='rounded-lg border border-border p-4'>
@@ -372,7 +309,7 @@ function SessionCard({
           ))}
         </div>
       )}
-      {canChange && (
+      {showStateAction && (
         <fetcher.Form method='post' className='mt-3'>
           <input type='hidden' name='intent' value={intent} />
           <input type='hidden' name='sessionId' value={session.id} />

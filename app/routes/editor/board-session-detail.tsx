@@ -1,9 +1,11 @@
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import {
   boardControllerAdvancePhase,
+  boardControllerConcludeSession,
   boardControllerGetDecisions,
   boardControllerGetSessionById,
-  boardControllerGetSessionMessages
+  boardControllerGetSessionMessages,
+  boardControllerStartSession
 } from '~/api/operations/board/board'
 import { EditorBoardMeetingRoomPage, type EditorActionResult } from '~/features/editor'
 import type { Route } from './+types/board-session-detail'
@@ -27,6 +29,16 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
+    if (intent === 'startSession') {
+      const response = await boardControllerStartSession({ id: params.id })
+      if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
+      return { ok: true, intent, messageKey: intent }
+    }
+    if (intent === 'concludeSession') {
+      const response = await boardControllerConcludeSession({ id: params.id })
+      if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
+      return { ok: true, intent, messageKey: intent }
+    }
     if (intent !== 'advancePhase') return { ok: false, intent, errorKey: 'invalidAction' }
     const phase = String(form.get('phase') ?? '')
     if (phase !== 'QA' && phase !== 'VOTING') return { ok: false, intent, errorKey: 'invalidAction' }

@@ -8,11 +8,20 @@ import { Dialog } from '~/shared/ui/dialog'
 
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+const creationBlockingStatuses = new Set([
+  'DRAFT',
+  'MANGAKA_REVIEW',
+  'MANGAKA_APPROVED',
+  'BOARD_APPROVED',
+  'NEGOTIATION',
+  'MANGAKA_SIGNED',
+  'FULLY_EXECUTED'
+])
 
 export function EditorContractsPage({ data, hasError }: { data: EditorContractsData; hasError: boolean }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
-  const [seriesId, setSeriesId] = useState('')
+  const [decisionId, setDecisionId] = useState('')
   const [contractType, setContractType] = useState<'FULL_BUYOUT' | 'REVENUE_SHARE'>('REVENUE_SHARE')
   const [publisherOwnershipPct, setPublisherOwnershipPct] = useState(50)
   const [mangakaOwnershipPct, setMangakaOwnershipPct] = useState(50)
@@ -23,8 +32,19 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const [contractStatus, setContractStatus] = useState('')
   const [listContractType, setListContractType] = useState('')
   const submittedRef = useRef(false)
-  const selectedSeries = data.series.find((item) => item.id === seriesId)
-  const decisions = data.decisions.filter((item) => item.targetSeriesId === seriesId)
+  const eligibleDecisions = data.decisions.filter(
+    (decision) =>
+      decision.targetSeriesId &&
+      data.series.some((series) => series.id === decision.targetSeriesId) &&
+      !data.contracts.some(
+        (contract) =>
+          creationBlockingStatuses.has(contract.status) &&
+          (contract.boardDecisionId === decision.id || contract.seriesId === decision.targetSeriesId)
+      )
+  )
+  const selectedDecision = eligibleDecisions.find((decision) => decision.id === decisionId)
+  const selectedSeries = data.series.find((item) => item.id === selectedDecision?.targetSeriesId)
+  const selectedSession = data.sessions.find((session) => session.id === selectedDecision?.boardSessionId)
   const ownershipValid =
     publisherOwnershipPct + mangakaOwnershipPct === 100 &&
     (contractType !== 'FULL_BUYOUT' || (publisherOwnershipPct === 100 && mangakaOwnershipPct === 0))
@@ -32,7 +52,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const contractStatuses = [...new Set(data.contracts.map((contract) => contract.status))]
   const filteredContracts = data.contracts.filter((contract) => {
     const contractSeries = data.series.find((item) => item.id === contract.seriesId)
-    return (!contractSearch || `${contractSeries?.title ?? ''} ${contract.seriesId}`.toLowerCase().includes(contractSearch.toLowerCase())) &&
+    return (!contractSearch || `${contract.series?.title ?? contractSeries?.title ?? ''}`.toLowerCase().includes(contractSearch.toLowerCase())) &&
       (!contractStatus || contract.status === contractStatus) &&
       (!listContractType || contract.contractType === listContractType)
   })
@@ -75,11 +95,15 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
         <button
           type='button'
           onClick={() => setCreateOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+          disabled={!eligibleDecisions.length}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
         >
           <FilePlus2 className='size-4' />
           {t('actions.createContract')}
         </button>
+        {!eligibleDecisions.length && (
+          <p className='w-full text-xs font-semibold text-muted-foreground'>{t('contracts.noEligibleDecisions')}</p>
+        )}
       </section>
       {createOpen && (
         <Dialog open onClose={() => setCreateOpen(false)} titleId='editor-create-contract-title' title={t('contracts.createTitle')} description={t('contracts.createDescription')} size='xl'>
@@ -91,91 +115,118 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           className='grid gap-3 md:grid-cols-2'
         >
           <input type='hidden' name='intent' value='createContract' />
+          <input type='hidden' name='seriesId' value={selectedSeries?.id ?? ''} />
           <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
-          <select
-            name='seriesId'
-            value={seriesId}
-            onChange={(event) => setSeriesId(event.target.value)}
-            required
-            className={inputClass}
-          >
-            <option value=''>{t('contracts.selectSeries')}</option>
-            {data.series.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title}
-              </option>
-            ))}
-          </select>
-          <select name='boardDecisionId' required className={inputClass}>
-            <option value=''>{t('contracts.selectDecision')}</option>
-            {decisions.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.id}
-              </option>
-            ))}
-          </select>
-          <select
-            name='contractType'
-            value={contractType}
-            onChange={(event) => selectContractType(event.target.value as 'FULL_BUYOUT' | 'REVENUE_SHARE')}
-            className={inputClass}
-          >
-            <option value='REVENUE_SHARE'>REVENUE_SHARE</option>
-            <option value='FULL_BUYOUT'>FULL_BUYOUT</option>
-          </select>
-          <input
-            name='valuationAmount'
-            type='number'
-            min={0}
-            required
-            className={inputClass}
-            placeholder={t('contracts.valuation')}
-          />
-          <input
-            name='publisherOwnershipPct'
-            type='number'
-            min={0}
-            max={100}
-            required
-            readOnly={contractType === 'FULL_BUYOUT'}
-            value={publisherOwnershipPct}
-            onChange={(event) => setPublisherOwnershipPct(Number(event.target.value))}
-            className={inputClass}
-            placeholder={t('contracts.publisherPct')}
-          />
-          <input
-            name='mangakaOwnershipPct'
-            type='number'
-            min={0}
-            max={100}
-            required
-            readOnly={contractType === 'FULL_BUYOUT'}
-            value={mangakaOwnershipPct}
-            onChange={(event) => setMangakaOwnershipPct(Number(event.target.value))}
-            className={inputClass}
-            placeholder={t('contracts.mangakaPct')}
-          />
-          <input
-            name='contractStart'
-            type='datetime-local'
-            required
-            value={contractStart}
-            onChange={(event) => {
-              const value = event.target.value
-              setContractStart(value)
-              if (contractEnd && contractEnd <= value) setContractEnd('')
-            }}
-            className={inputClass}
-          />
-          <input
-            name='contractEnd'
-            type='datetime-local'
-            required
-            min={contractStart || undefined}
-            value={contractEnd}
-            onChange={(event) => setContractEnd(event.target.value)}
-            className={inputClass}
-          />
+          <label className='grid gap-1.5 text-sm font-semibold md:col-span-2'>
+            {t('contracts.selectApprovedDecision')}
+            <select
+              name='boardDecisionId'
+              required
+              value={decisionId}
+              onChange={(event) => setDecisionId(event.target.value)}
+              className={inputClass}
+            >
+              <option value=''>{t('contracts.selectDecision')}</option>
+              {eligibleDecisions.map((decision) => {
+                const series = data.series.find((item) => item.id === decision.targetSeriesId)
+                const session = data.sessions.find((item) => item.id === decision.boardSessionId)
+                return (
+                  <option key={decision.id} value={decision.id}>
+                    {series?.title ?? decision.targetSeries?.title ?? t('contractDecision.unknownSeries')} · {session?.title ?? t('contractDecision.unknownDecision')}
+                  </option>
+                )
+              })}
+            </select>
+          </label>
+          {selectedDecision && selectedSeries && (
+            <aside className='rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm md:col-span-2'>
+              <p className='font-bold text-foreground'>
+                {t('contractDecision.serializationSummary', { series: selectedSeries.title })}
+              </p>
+              <p className='mt-1 text-muted-foreground'>
+                {t('contractDecision.session')}: {selectedSession?.title ?? '—'}
+              </p>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                {t('contractDecision.decidedAt')}:{' '}
+                {selectedDecision.decidedAt
+                  ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(
+                      new Date(selectedDecision.decidedAt)
+                    )
+                  : t('contractDecision.notFinalized')}
+              </p>
+            </aside>
+          )}
+          <label className='grid gap-1.5 text-sm font-semibold'>
+            {t('contracts.contractType')}
+            <select
+              name='contractType'
+              value={contractType}
+              onChange={(event) => selectContractType(event.target.value as 'FULL_BUYOUT' | 'REVENUE_SHARE')}
+              className={inputClass}
+            >
+              <option value='REVENUE_SHARE'>{t('filters.contractTypes.REVENUE_SHARE')}</option>
+              <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
+            </select>
+          </label>
+          <label className='grid gap-1.5 text-sm font-semibold'>
+            {t('contracts.valuation')}
+            <input name='valuationAmount' type='number' min={0} required className={inputClass} />
+          </label>
+          <label className='grid gap-1.5 text-sm font-semibold'>
+            {t('contracts.publisherPct')}
+            <input
+              name='publisherOwnershipPct'
+              type='number'
+              min={0}
+              max={100}
+              required
+              readOnly={contractType === 'FULL_BUYOUT'}
+              value={publisherOwnershipPct}
+              onChange={(event) => setPublisherOwnershipPct(Number(event.target.value))}
+              className={inputClass}
+            />
+          </label>
+          <label className='grid gap-1.5 text-sm font-semibold'>
+            {t('contracts.mangakaPct')}
+            <input
+              name='mangakaOwnershipPct'
+              type='number'
+              min={0}
+              max={100}
+              required
+              readOnly={contractType === 'FULL_BUYOUT'}
+              value={mangakaOwnershipPct}
+              onChange={(event) => setMangakaOwnershipPct(Number(event.target.value))}
+              className={inputClass}
+            />
+          </label>
+          <label className='grid gap-1.5 text-sm font-semibold'>
+            {t('contracts.contractStart')}
+            <input
+              name='contractStart'
+              type='datetime-local'
+              required
+              value={contractStart}
+              onChange={(event) => {
+                const value = event.target.value
+                setContractStart(value)
+                if (contractEnd && contractEnd <= value) setContractEnd('')
+              }}
+              className={inputClass}
+            />
+          </label>
+          <label className='grid gap-1.5 text-sm font-semibold'>
+            {t('contracts.contractEnd')}
+            <input
+              name='contractEnd'
+              type='datetime-local'
+              required
+              min={contractStart || undefined}
+              value={contractEnd}
+              onChange={(event) => setContractEnd(event.target.value)}
+              className={inputClass}
+            />
+          </label>
           <textarea
             name='terminationClause'
             required
@@ -183,7 +234,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             placeholder={t('contracts.terminationClause')}
           />
           <button
-            disabled={fetcher.state !== 'idle' || !decisions.length || !ownershipValid || !datesValid}
+            disabled={
+              fetcher.state !== 'idle' || !selectedDecision || !selectedSeries || !ownershipValid || !datesValid
+            }
             className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50 md:col-span-2'
           >
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}
@@ -228,7 +281,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className='rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/50'
               >
                 <div className='flex items-center justify-between gap-3'>
-                  <h3 className='font-bold text-foreground'>{series?.title ?? contract.seriesId}</h3>
+                  <h3 className='font-bold text-foreground'>
+                    {contract.series?.title ?? series?.title ?? t('contractDecision.unknownSeries')}
+                  </h3>
                   <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
                     {contract.status.replaceAll('_', ' ')}
                   </span>

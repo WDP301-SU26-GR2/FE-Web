@@ -4,7 +4,6 @@ import {
   boardControllerGetConfig,
   boardControllerGetDecisions,
   boardControllerGetSessions,
-  boardControllerSuggestMembers,
   boardControllerStartSession
 } from '~/api/operations/board/board'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
@@ -21,29 +20,18 @@ export async function clientLoader() {
       boardControllerGetDecisions(),
       boardControllerGetConfig()
     ])
-    const configuredMemberCount = Math.max(3, Math.trunc(configResponse.data.boardTotalMembers))
-    const preferredMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount - 1 : configuredMemberCount
+    const configuredMemberCount = Math.max(3, Math.trunc(configResponse.data.quorumMin))
+    const suggestedMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount + 1 : configuredMemberCount
     const series = [
       ...new Map(
         [...readySeriesResponse.data.items, ...pitchedSeriesResponse.data.items].map((item) => [item.id, item])
       ).values()
     ]
-    const suggestionEntries = await Promise.all(
-      series.map(async (item) => {
-        const response = await boardControllerSuggestMembers({
-          seriesId: item.id,
-          size: preferredMemberCount
-        }).catch(() => null)
-        return [item.id, response?.status === 200 ? response.data.items : []] as const
-      })
-    )
     return {
       series,
       sessions: sessions.data,
       decisions: decisions.data,
-      suggestions: Object.fromEntries(suggestionEntries),
-      preferredMemberCount,
-      quorumMin: configResponse.data.quorumMin,
+      suggestedMemberCount,
       hasError: false
     }
   } catch {
@@ -51,9 +39,7 @@ export async function clientLoader() {
       series: [],
       sessions: [],
       decisions: [],
-      suggestions: {},
-      preferredMemberCount: 3,
-      quorumMin: 3,
+      suggestedMemberCount: 3,
       hasError: true
     }
   }
@@ -65,21 +51,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   try {
     if (intent === 'createSession') {
       const endTime = optionalDate(form, 'endTime')
-      const allowedEditorIds = String(form.get('allowedEditorIds') ?? '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-      const configResponse = await boardControllerGetConfig()
-      const configuredMemberCount = Math.max(3, Math.trunc(configResponse.data.boardTotalMembers))
-      const requiredMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount - 1 : configuredMemberCount
-      if (new Set(allowedEditorIds).size !== requiredMemberCount)
-        return { ok: false, intent, errorKey: 'invalidState' }
       await boardControllerCreateSession({
         title: required(form, 'title'),
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(required(form, 'startTime')).toISOString(),
         ...(endTime ? { endTime } : {}),
-        allowedEditorIds
+        seriesId: required(form, 'rosterSourceSeriesId')
       })
     } else if (intent === 'startSession') {
       await boardControllerStartSession({ id: required(form, 'sessionId') })

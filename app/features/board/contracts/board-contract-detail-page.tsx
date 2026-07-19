@@ -12,6 +12,7 @@ import type {
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
+import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
 
 export function BoardContractDetailPage({
   contract,
@@ -34,9 +35,10 @@ export function BoardContractDetailPage({
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
-        title={`${t('contracts.detail')} ${contract.id.slice(-6)}`}
-        description={`${contract.contractType} · ${contract.series?.title ?? contract.seriesId}`}
+        title={`${t('contracts.detail')} — ${contract.series?.title ?? t('contracts.unknownSeries')}`}
+        description={t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
       />
+      <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
       {hasSupplementaryDataError && (
         <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
           {t('contracts.partialLoadError')}

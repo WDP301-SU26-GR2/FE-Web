@@ -1,7 +1,7 @@
 import type { ChapterListResDtoOutputItemsItem, ChapterResDtoOutput } from '~/api/model/chapters'
 import type { ChapterProgressResDtoOutput } from '~/api/model/chapters'
 import type { AnnotationListResDtoOutputItemsItem } from '~/api/model/annotations'
-import type { BoardDecisionResDtoOutput } from '~/api/model/board'
+import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
 import type {
   ContractResDtoOutput,
   ContractStatusProgressResDtoOutput,
@@ -62,6 +62,7 @@ export type EditorContractsData = {
   contracts: ContractResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
   decisions: BoardDecisionResDtoOutput[]
+  sessions: BoardSessionResDtoOutput[]
 }
 
 export type EditorContractDetailData = {

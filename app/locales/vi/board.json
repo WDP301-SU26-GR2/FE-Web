@@ -133,6 +133,7 @@
     "empty": "Chưa có phiên Hội đồng.",
     "details": "Chi tiết phiên họp",
     "members": "Thành viên được phân công",
+    "participants": "Thành viên tham gia",
     "start": "Thời gian bắt đầu",
     "phase": "Giai đoạn phiên họp",
     "chat": "Thảo luận phiên họp",
@@ -177,12 +178,13 @@
     "voteConfirmation": "Hãy kiểm tra kỹ lựa chọn. Mỗi thành viên chỉ được bỏ phiếu một lần cho quyết định này.",
     "votes": "Phiếu đã ghi nhận",
     "voteUnavailable": {
-      "closed": "Quyết định này đã được chốt.",
+      "closed": "Quyết định đã được chốt sau khi toàn bộ thành viên trong roster hoàn tất bỏ phiếu.",
       "alreadyVoted": "Bạn đã bỏ phiếu cho quyết định này.",
       "notInRoster": "Bạn không thuộc roster của phiên họp này.",
       "sessionNotActive": "Chỉ có thể bỏ phiếu khi phiên họp đang hoạt động.",
       "votingNotOpen": "Người tạo phiên chưa mở giai đoạn bỏ phiếu."
-    }
+    },
+    "finalizedSessionHint": "Phiên họp vẫn đang hoạt động ở giai đoạn {{phase}}. Kết quả biểu quyết đã khóa; người tạo phiên cần bế mạc để chuyển trạng thái phiên sang Đã kết thúc."
   },
   "reports": {
     "title": "Báo cáo Hội đồng",
@@ -196,6 +198,7 @@
     "partialLoadError": "Không thể tải một phần dữ liệu hợp đồng. Các mục trống bên dưới có thể chưa phản ánh dữ liệu mới nhất.",
     "series": "Series",
     "detail": "Hợp đồng",
+    "unknownSeries": "Chưa xác định bộ truyện",
     "terms": "Điều khoản thương mại",
     "valuation": "Định giá",
     "ownership": "Sở hữu NXB / Mangaka",

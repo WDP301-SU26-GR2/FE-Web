@@ -244,9 +244,9 @@
     },
     "board": {
       "title": "Quy tắc Hội đồng",
-      "description": "Thiết lập quy mô Hội đồng, quorum tối thiểu và tỷ lệ phiếu thuận để thông qua quyết định.",
+      "description": "Thiết lập tổng số thành viên, sĩ số roster mặc định và tỷ lệ phiếu thuận. Quorum của từng phiên được tính tự động bằng 2/3 roster.",
       "boardTotalMembers": "Tổng số thành viên",
-      "quorumMin": "Quorum tối thiểu",
+      "quorumMin": "Sĩ số roster mặc định",
       "approveMajorityRatio": "Tỷ lệ phiếu thuận",
       "lockNotice": "Không thể thay đổi cấu hình khi có phiên họp ACTIVE hoặc UPCOMING."
     },

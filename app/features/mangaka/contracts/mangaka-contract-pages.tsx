@@ -2,6 +2,7 @@ import { ArrowLeft, FileSignature, KeyRound, Loader2 } from 'lucide-react'
 import { Link, useFetcher } from 'react-router'
 import type { ReactNode } from 'react'
 import type { AmendmentResDtoOutput, ContractResDtoOutput, PaymentConditionResDtoOutput } from '~/api/model/contracts'
+import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
 
 export type MangakaContractActionResult = {
   ok: boolean
@@ -33,8 +34,8 @@ export function MangakaContractsPage({ contracts }: { contracts: ContractResDtoO
           >
             <div className='flex items-start justify-between gap-3'>
               <div>
-                <h2 className='font-bold text-foreground'>Hợp đồng #{contract.id.slice(-6)}</h2>
-                <p className='mt-1 text-xs text-muted-foreground'>Series: {contract.seriesId}</p>
+                <h2 className='font-bold text-foreground'>Hợp đồng — {contract.series?.title ?? 'Chưa xác định bộ truyện'}</h2>
+                <p className='mt-1 text-xs text-muted-foreground'>Bộ truyện: {contract.series?.title ?? 'Chưa xác định'}</p>
               </div>
               <StatusBadge value={contract.status} />
             </div>
@@ -77,12 +78,14 @@ export function MangakaContractDetailPage({
         </Link>
         <div className='mt-4 flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <h1 className='text-2xl font-bold text-foreground'>Hợp đồng #{contract.id.slice(-6)}</h1>
-            <p className='mt-1 text-sm text-muted-foreground'>Series: {contract.seriesId}</p>
+            <h1 className='text-2xl font-bold text-foreground'>Hợp đồng — {contract.series?.title ?? 'Chưa xác định bộ truyện'}</h1>
+            <p className='mt-1 text-sm text-muted-foreground'>Bộ truyện: {contract.series?.title ?? 'Chưa xác định'}</p>
           </div>
           <StatusBadge value={contract.status} />
         </div>
       </header>
+
+      <ContractDecisionBasis contract={contract} />
 
       <Panel title='Điều khoản hợp đồng'>
         <div className='grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4'>

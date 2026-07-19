@@ -129,13 +129,20 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
         </p>
       )}
       <div className='mt-5 flex flex-wrap gap-2 border-t border-border pt-4'>
-        <Link
-          to={`/dashboard/editor/proposals/${item.id}`}
-          className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-bold text-foreground hover:bg-muted'
-        >
-          <BookOpen className='size-4' />
-          {t('actions.review')}
-        </Link>
+        {item.editorId ? (
+          <Link
+            to={`/dashboard/editor/proposals/${item.id}`}
+            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-bold text-foreground hover:bg-muted'
+          >
+            <BookOpen className='size-4' />
+            {t('actions.review')}
+          </Link>
+        ) : (
+          <span className='inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
+            <LockKeyhole className='size-4' />
+            {t('proposals.claimToReview')}
+          </span>
+        )}
         {item.status === 'IN_REVIEW' && (
           <fetcher.Form method='post'>
             <input type='hidden' name='seriesId' value={item.id} />

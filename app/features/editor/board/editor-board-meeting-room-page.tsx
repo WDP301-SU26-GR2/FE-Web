@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { ArrowLeft, MessageSquareText, Radio, Send } from 'lucide-react'
+import { ArrowLeft, MessageSquareText, Play, Radio, Send, Square, Users } from 'lucide-react'
 import { Link, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
@@ -43,6 +43,9 @@ export function EditorBoardMeetingRoomPage({
   const { updatePhase } = meeting
   const isCreator = manageAll || session.creatorId === authSession?.user.id
   const canChat = session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
+  const allDecisionsFinal =
+    meeting.decisions.length > 0 &&
+    meeting.decisions.every((decision) => ['APPROVED', 'REJECTED', 'EXPIRED'].includes(decision.result ?? ''))
 
   useEffect(() => {
     if (fetcher.data?.ok && fetcher.data.intent === 'advancePhase' && fetcher.data.phase) {
@@ -90,26 +93,81 @@ export function EditorBoardMeetingRoomPage({
           <Radio className={`size-4 ${meeting.connectionState === 'connected' ? 'text-primary' : ''}`} />
           {t(`board.realtime.${meeting.connectionState}`)}
         </div>
+        <div className='mt-4 border-t border-border pt-4'>
+          <p className='flex items-center gap-2 text-sm font-bold text-foreground'>
+            <Users className='size-4 text-primary' />
+            {t('board.meeting.participants')}
+          </p>
+          <div className='mt-2 flex flex-wrap gap-2'>
+            {(session.members ?? []).map((member) => (
+              <span key={member.id} className='rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold'>
+                {member.displayName || member.id}
+              </span>
+            ))}
+          </div>
+        </div>
       </header>
 
-      {isCreator && session.status === 'ACTIVE' && meeting.phase !== 'VOTING' && (
+      {isCreator && session.status !== 'CONCLUDED' && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='font-bold text-foreground'>{t('board.meeting.phaseControls')}</h2>
-          <fetcher.Form method='post' className='mt-3 flex flex-wrap gap-2'>
-            <input type='hidden' name='intent' value='advancePhase' />
-            {meeting.phase === 'PRESENTING' && (
-              <button name='phase' value='QA' className='rounded-md border border-border px-4 py-2 text-sm font-bold'>
-                {t('board.meeting.openQa')}
-              </button>
+          <div className='mt-3 flex flex-wrap gap-2'>
+            {session.status === 'UPCOMING' && (
+              <fetcher.Form method='post'>
+                <button
+                  name='intent'
+                  value='startSession'
+                  disabled={fetcher.state !== 'idle' || meeting.decisions.length === 0}
+                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                >
+                  <Play className='size-4' />
+                  {t('actions.startSession')}
+                </button>
+              </fetcher.Form>
             )}
-            <button
-              name='phase'
-              value='VOTING'
-              className='rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground'
-            >
-              {t('board.meeting.openVoting')}
-            </button>
-          </fetcher.Form>
+            {session.status === 'ACTIVE' && meeting.phase === 'PRESENTING' && (
+              <fetcher.Form method='post'>
+                <input type='hidden' name='intent' value='advancePhase' />
+                <button
+                  name='phase'
+                  value='QA'
+                  disabled={fetcher.state !== 'idle'}
+                  className='rounded-md border border-border px-4 py-2 text-sm font-bold disabled:opacity-50'
+                >
+                  {t('board.meeting.openQa')}
+                </button>
+              </fetcher.Form>
+            )}
+            {session.status === 'ACTIVE' && meeting.phase === 'QA' && (
+              <fetcher.Form method='post'>
+                <input type='hidden' name='intent' value='advancePhase' />
+                <button
+                  name='phase'
+                  value='VOTING'
+                  disabled={fetcher.state !== 'idle'}
+                  className='rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                >
+                  {t('board.meeting.openVoting')}
+                </button>
+              </fetcher.Form>
+            )}
+            {session.status === 'ACTIVE' && meeting.phase === 'VOTING' && allDecisionsFinal && (
+              <fetcher.Form method='post'>
+                <button
+                  name='intent'
+                  value='concludeSession'
+                  disabled={fetcher.state !== 'idle'}
+                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                >
+                  <Square className='size-4' />
+                  {t('actions.concludeSession')}
+                </button>
+              </fetcher.Form>
+            )}
+          </div>
+          {session.status === 'UPCOMING' && meeting.decisions.length === 0 && (
+            <p className='mt-2 text-xs font-semibold text-muted-foreground'>{t('board.decisionRequiredBeforeStart')}</p>
+          )}
           <BoardFeedback data={fetcher.data} />
         </section>
       )}

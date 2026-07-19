@@ -133,6 +133,7 @@
     "empty": "No Board sessions are available.",
     "details": "Session details",
     "members": "Assigned members",
+    "participants": "Participants",
     "start": "Start time",
     "phase": "Meeting phase",
     "chat": "Meeting discussion",
@@ -177,12 +178,13 @@
     "voteConfirmation": "Review your choice carefully. Each member can vote only once for this decision.",
     "votes": "Recorded votes",
     "voteUnavailable": {
-      "closed": "This decision is already closed.",
+      "closed": "The decision was finalized after every roster member completed voting.",
       "alreadyVoted": "You have already voted on this decision.",
       "notInRoster": "You are not assigned to this session roster.",
       "sessionNotActive": "Voting is only available while the session is active.",
       "votingNotOpen": "The session creator has not opened the voting phase yet."
-    }
+    },
+    "finalizedSessionHint": "The session is still active in the {{phase}} phase. Voting is locked; the session creator must conclude the meeting to move its status to Concluded."
   },
   "reports": {
     "title": "Board reports",
@@ -196,6 +198,7 @@
     "partialLoadError": "Some contract details could not be loaded. Empty sections below may not reflect the latest data.",
     "series": "Series",
     "detail": "Contract",
+    "unknownSeries": "Unknown series",
     "terms": "Commercial terms",
     "valuation": "Valuation",
     "ownership": "Publisher / Mangaka ownership",

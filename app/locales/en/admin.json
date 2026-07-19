@@ -244,9 +244,9 @@
     },
     "board": {
       "title": "Board rules",
-      "description": "Configure Board size, minimum quorum, and the approval majority required for decisions.",
+      "description": "Configure total Board membership, the default roster size and approval majority. Session quorum is calculated automatically as two thirds of its roster.",
       "boardTotalMembers": "Total Board members",
-      "quorumMin": "Minimum quorum",
+      "quorumMin": "Default roster size",
       "approveMajorityRatio": "Approval majority",
       "lockNotice": "Board configuration cannot be changed while a session is ACTIVE or UPCOMING."
     },

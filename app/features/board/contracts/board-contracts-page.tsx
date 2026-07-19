@@ -38,11 +38,11 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
             className='rounded-xl border border-border bg-card p-5 shadow-sm hover:border-primary'
           >
             <div className='flex justify-between gap-3'>
-              <strong>{contract.contractType}</strong>
+              <strong>{contract.series?.title ?? t('contracts.unknownSeries')}</strong>
               <StatusBadge value={contract.status} />
             </div>
             <p className='mt-2 text-xs text-muted-foreground'>
-              {t('contracts.series')}: {contract.series?.title ?? contract.seriesId}
+              {t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
             </p>
             <p className='mt-3 text-sm font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
           </Link>

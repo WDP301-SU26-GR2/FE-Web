@@ -1,4 +1,4 @@
-import { boardControllerGetDecisions } from '~/api/operations/board/board'
+import { boardControllerGetDecisions, boardControllerGetSessions } from '~/api/operations/board/board'
 import { contractControllerCreateDraft, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
@@ -13,19 +13,21 @@ export function meta() {
 
 export async function clientLoader(): Promise<EditorContractsData & { hasError: boolean }> {
   try {
-    const [contracts, series, decisions] = await Promise.all([
+    const [contracts, series, decisions, sessions] = await Promise.all([
       contractControllerGetContracts(),
       listSerializedSeries(),
-      boardControllerGetDecisions()
+      boardControllerGetDecisions(),
+      boardControllerGetSessions()
     ])
     return {
       contracts: contracts.data,
       series,
       decisions: decisions.data.filter((item) => item.decisionType === 'SERIALIZATION' && item.result === 'APPROVED'),
+      sessions: sessions.data,
       hasError: false
     }
   } catch {
-    return { contracts: [], series: [], decisions: [], hasError: true }
+    return { contracts: [], series: [], decisions: [], sessions: [], hasError: true }
   }
 }
 

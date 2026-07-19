@@ -121,6 +121,11 @@ export function BoardDecisionDetailPage({
           {voteUnavailableReason}
         </p>
       )}
+      {!decisionOpen && sessionStatus === 'ACTIVE' && (
+        <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground'>
+          {t('decisions.finalizedSessionHint', { phase: t(`filters.sessionPhases.${livePhase}`) })}
+        </p>
+      )}
       <div className='grid gap-5 xl:grid-cols-2'>
         <BoardPanel title={t('decisions.votes')}>
           <div className='space-y-2'>

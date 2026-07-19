@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { EditorContractDetailData } from '../types'
 import { ContractHeader } from './components/contract-shared'
+import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
 
 export function EditorContractDetailPage({ data }: { data: EditorContractDetailData }) {
   const { t } = useTranslation('editor')
@@ -22,6 +23,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
         {t('actions.backContracts')}
       </Link>
       <ContractHeader contract={data.contract} progress={data.progress} />
+      <ContractDecisionBasis contract={data.contract} decisionPath='/dashboard/editor/board/decisions' />
       <div className='grid gap-4 md:grid-cols-2'>
         {sections.map(([key, Icon]) => (
           <Link

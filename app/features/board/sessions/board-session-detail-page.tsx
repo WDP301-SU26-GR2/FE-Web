@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { Radio, Send } from 'lucide-react'
+import { Radio, Send, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { BoardMeetingSession } from '~/api/manual/board-meeting'
@@ -52,6 +52,16 @@ export function BoardSessionDetailPage({
             <span className='text-muted-foreground'>{t('sessions.start')}</span>
             <p className='mt-1 font-bold'>{new Date(session.startTime).toLocaleString()}</p>
           </div>
+        </div>
+      </BoardPanel>
+      <BoardPanel title={t('sessions.participants')}>
+        <div className='flex flex-wrap gap-2'>
+          {(session.members ?? []).map((member) => (
+            <span key={member.id} className='inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold'>
+              <Users className='size-3.5 text-primary' />
+              {member.displayName || member.id}
+            </span>
+          ))}
         </div>
       </BoardPanel>
       <MeetingChat

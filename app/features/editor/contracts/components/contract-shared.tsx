@@ -45,14 +45,15 @@ export function ContractHeader({
   progress: ContractStatusProgressResDtoOutput | null
 }) {
   const { t } = useTranslation('editor')
+  const seriesTitle = contract.series?.title ?? t('contractDecision.unknownSeries')
   return (
     <header className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <div className='flex flex-wrap items-start justify-between gap-4'>
         <div>
           <p className='text-xs font-bold uppercase tracking-[0.18em] text-primary'>{t('contractDetail.eyebrow')}</p>
-          <h1 className='mt-2 text-2xl font-bold text-foreground'>{contract.id}</h1>
+          <h1 className='mt-2 text-2xl font-bold text-foreground'>{seriesTitle}</h1>
           <p className='mt-2 text-sm text-muted-foreground'>
-            {contract.contractType} · {contract.seriesId}
+            {t('contracts.contractLabel')} · {t(`filters.contractTypes.${contract.contractType}`)}
           </p>
         </div>
         <span className='rounded-full bg-secondary px-3 py-1.5 text-xs font-extrabold text-secondary-foreground'>
