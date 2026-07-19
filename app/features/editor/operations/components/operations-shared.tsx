@@ -1,9 +1,11 @@
+import { useId, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
-import { ArrowLeft, Wrench } from 'lucide-react'
+import { ArrowLeft, Plus, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../../types'
+import { Dialog } from '~/shared/ui/dialog'
 
 export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground'
 
@@ -11,17 +13,19 @@ export function OperationsLayout({
   titleKey,
   descriptionKey,
   hasError,
+  backPath = '/dashboard/editor/operations',
   children
 }: {
   titleKey: string
   descriptionKey: string
   hasError?: boolean
+  backPath?: string
   children: React.ReactNode
 }) {
   const { t } = useTranslation('editor')
   return (
     <div className='space-y-7 pb-12'>
-      <Link to='/dashboard/editor/operations' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('operations.back')}
       </Link>
@@ -60,6 +64,45 @@ export function OperationPanel({
       </h2>
       {children}
     </section>
+  )
+}
+
+export function OperationDialogPanel({
+  icon: Icon,
+  title,
+  children
+}: {
+  icon: typeof Wrench
+  title: string
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const titleId = `operation-dialog-${useId().replaceAll(':', '')}`
+
+  return (
+    <>
+      <section className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div className='flex items-center gap-3'>
+          <span className='rounded-lg bg-primary/10 p-2 text-primary'>
+            <Icon className='size-5' />
+          </span>
+          <h2 className='font-bold text-foreground'>{title}</h2>
+        </div>
+        <button
+          type='button'
+          onClick={() => setOpen(true)}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          <Plus className='size-4' />
+          {title}
+        </button>
+      </section>
+      {open && (
+        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} size='lg'>
+          {children}
+        </Dialog>
+      )}
+    </>
   )
 }
 

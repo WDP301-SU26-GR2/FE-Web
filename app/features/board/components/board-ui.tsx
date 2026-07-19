@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
-import { Gavel, Loader2 } from 'lucide-react'
+import { useEffect, useId, useState } from 'react'
+import { Gavel, Loader2, PencilLine } from 'lucide-react'
 import { useFetcher, useRevalidator } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { BoardActionResult } from '../types'
+import { Dialog } from '~/shared/ui/dialog'
 
 export const boardInput =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -27,6 +28,29 @@ export function BoardPanel({ title, children }: { title: string; children: React
       <h2 className='mb-4 text-lg font-bold text-foreground'>{title}</h2>
       {children}
     </section>
+  )
+}
+
+export function BoardActionDialog({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const titleId = `board-action-${useId().replaceAll(':', '')}`
+
+  return (
+    <>
+      <button
+        type='button'
+        onClick={() => setOpen(true)}
+        className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+      >
+        <PencilLine className='size-4' />
+        {title}
+      </button>
+      {open && (
+        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} size='sm'>
+          {children}
+        </Dialog>
+      )}
+    </>
   )
 }
 

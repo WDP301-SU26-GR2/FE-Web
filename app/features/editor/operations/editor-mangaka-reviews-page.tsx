@@ -5,7 +5,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   SeriesSelect,
   operationInput,
@@ -29,7 +29,7 @@ export function EditorMangakaReviewsPage({
       descriptionKey='operations.descriptions.reviews'
       hasError={hasError}
     >
-      <OperationPanel icon={Star} title={t('operations.reviews')}>
+      <OperationDialogPanel icon={Star} title={t('operations.reviews')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <SeriesSelect series={series} value={seriesId} onChange={setSeriesId} />
           <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
@@ -51,7 +51,7 @@ export function EditorMangakaReviewsPage({
           </div>
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }

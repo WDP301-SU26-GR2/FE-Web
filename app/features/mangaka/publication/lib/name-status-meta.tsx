@@ -32,21 +32,17 @@ const NAME_STATUS_META: Record<NameStatusKey, StatusMeta> = {
 }
 
 const PAGE_STATUS_META: Record<string, StatusMeta> = {
-  NOT_STARTED: {
+  DRAFT: {
     className: 'bg-muted text-muted-foreground border-border',
-    i18nKey: 'NOT_STARTED'
-  },
-  IN_PROGRESS: {
-    className: 'bg-warning/10 text-warning border-warning/20',
-    i18nKey: 'IN_PROGRESS'
-  },
-  COMPOSITE_READY: {
-    className: 'bg-info/10 text-info border-info/20',
-    i18nKey: 'COMPOSITE_READY'
+    i18nKey: 'DRAFT'
   },
   COMPLETED: {
     className: 'bg-success/10 text-success border-success/20',
     i18nKey: 'COMPLETED'
+  },
+  REVISING: {
+    className: 'bg-warning/10 text-warning border-warning/20',
+    i18nKey: 'REVISING'
   }
 }
 
@@ -76,7 +72,7 @@ export function nameStatusClassName(status: string): string {
 }
 
 export function PageStatusBadge({ status, className }: { status: string; className?: string }) {
-  const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.NOT_STARTED
+  const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT
   return (
     <span
       className={cn(
@@ -91,7 +87,7 @@ export function PageStatusBadge({ status, className }: { status: string; classNa
 }
 
 export function pageStatusClassName(status: string): string {
-  return ((PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.NOT_STARTED).className
+  return ((PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT).className
 }
 
 export const NAME_STATUS_KEYS = Object.keys(NAME_STATUS_META) as NameStatusKey[]

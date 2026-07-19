@@ -1,7 +1,7 @@
 import { Form, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
-import { boardInput, BoardFeedback, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
+import { BoardActionDialog, boardInput, BoardFeedback, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 
 export function BoardDeadlinesPage({
@@ -55,6 +55,8 @@ function DeadlineCard({ item }: { item: DeadlineRequestListResDtoOutputItemsItem
         {item.currentDeadline ?? '—'} → {item.requestedDeadline ?? '—'}
       </p>
       {canResolve && (
+        <div className='mt-4'>
+        <BoardActionDialog title={t('deadlines.resolve')}>
         <fetcher.Form method='post' className='mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]'>
           <input type='hidden' name='requestId' value={item.id} />
           <input className={boardInput} name='note' placeholder={t('deadlines.note')} />
@@ -73,8 +75,10 @@ function DeadlineCard({ item }: { item: DeadlineRequestListResDtoOutputItemsItem
             {t('deadlines.reject')}
           </button>
         </fetcher.Form>
+        <BoardFeedback data={fetcher.data} />
+        </BoardActionDialog>
+        </div>
       )}
-      <BoardFeedback data={fetcher.data} />
     </article>
   )
 }

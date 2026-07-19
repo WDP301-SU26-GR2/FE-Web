@@ -89,14 +89,14 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
-    const message =
+    const code =
       error && typeof error === 'object' && 'data' in error
-        ? (error as { data?: { message?: string } }).data?.message
+        ? (error as { data?: { code?: string } }).data?.code
         : undefined
     const errorKey =
-      message === 'Error.NotAssignedEditor'
+      code === 'Error.NotAssignedEditor'
         ? 'notAssigned'
-        : message === 'Error.InvalidProposalState' || message === 'Error.InvalidNameState'
+        : code === 'Error.InvalidProposalState' || code === 'Error.InvalidNameState'
           ? 'invalidState'
           : 'actionFailed'
     return { ok: false, intent, errorKey }

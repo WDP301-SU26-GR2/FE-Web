@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Search, Bell, Settings, LogOut, Menu, X, ChevronRight, Loader2 } from 'lucide-react'
@@ -7,6 +7,7 @@ import { ThemeToggle } from './theme-toggle'
 import { LanguageSwitcher } from './language-switcher'
 import { useLogout } from '~/features/auth/hooks/use-logout'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { notificationControllerList } from '~/api/operations/notifications/notifications'
 
 export interface NavItem {
   label: string
@@ -59,7 +60,29 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
   const navigate = useNavigate()
   const { logout: handleLogout, isLoggingOut } = useLogout()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const { session } = useAuth()
+
+  useEffect(() => {
+    let active = true
+    const refreshUnreadNotifications = () => {
+      notificationControllerList({ limit: 1, offset: 0 })
+        .then((response) => {
+          if (active) setUnreadNotifications(response.data.unreadCount)
+        })
+        .catch(() => {
+          if (active) setUnreadNotifications(0)
+        })
+    }
+    refreshUnreadNotifications()
+    const interval = window.setInterval(refreshUnreadNotifications, 30_000)
+    window.addEventListener('notifications:changed', refreshUnreadNotifications)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+      window.removeEventListener('notifications:changed', refreshUnreadNotifications)
+    }
+  }, [location.pathname])
 
   // The authenticated user's role comes from the persisted session (BE enum,
   // e.g. "MANGAKA"/"ASSISTANT"). We deliberately do NOT use `profile.role`
@@ -73,6 +96,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
     if (r === 'MANGAKA') return '/dashboard/mangaka/profile'
     if (r === 'ASSISTANT') return '/dashboard/assistant/profile'
     if (r === 'EDITOR') return '/dashboard/editor/profile'
+    if (r === 'SUPER_ADMIN') return '/dashboard/admin/settings'
     return null
   })()
 
@@ -215,10 +239,13 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
                 else if (role === 'MANGAKA') navigate('/dashboard/mangaka/notifications')
                 else if (role === 'ASSISTANT') navigate('/dashboard/assistant/notifications')
                 else if (role === 'BOARD_MEMBER') navigate('/dashboard/board/notifications')
+                else if (role === 'SUPER_ADMIN') navigate('/dashboard/admin/notifications')
               }}
             >
               <Bell className='h-5 w-5' />
-              <span className='absolute top-1 right-1 h-2 w-2 rounded-full bg-primary ring-2 ring-card' />
+              {unreadNotifications > 0 && (
+                <span className='absolute top-1 right-1 h-2 w-2 rounded-full bg-primary ring-2 ring-card' />
+              )}
             </button>
             <button
               className='rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors animate-spin-hover'

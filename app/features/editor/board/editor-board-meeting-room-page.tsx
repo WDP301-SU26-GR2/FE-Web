@@ -15,12 +15,18 @@ export function EditorBoardMeetingRoomPage({
   session,
   phase: initialPhase,
   messages: initialMessages,
-  decisions: initialDecisions
+  decisions: initialDecisions,
+  manageAll = false,
+  backPath = '/dashboard/editor/board/sessions',
+  decisionBasePath
 }: {
   session: BoardMeetingSession
   phase: BoardSessionPhase
   messages: BoardMessage[]
   decisions: BoardDecisionResDtoOutput[]
+  manageAll?: boolean
+  backPath?: string
+  decisionBasePath?: string
 }) {
   const { t, i18n } = useTranslation('editor')
   const { session: authSession } = useAuth()
@@ -35,7 +41,7 @@ export function EditorBoardMeetingRoomPage({
     initialDecisions
   })
   const { updatePhase } = meeting
-  const isCreator = session.creatorId === authSession?.user.id
+  const isCreator = manageAll || session.creatorId === authSession?.user.id
   const canChat = session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export function EditorBoardMeetingRoomPage({
   return (
     <div className='space-y-6 pb-12'>
       <Link
-        to='/dashboard/editor/board/sessions'
+        to={backPath}
         className='inline-flex items-center gap-2 text-sm font-bold text-primary'
       >
         <ArrowLeft className='size-4' />
@@ -155,7 +161,13 @@ export function EditorBoardMeetingRoomPage({
             {orderBoardDecisions(meeting.decisions).map((decision) => (
               <article key={decision.id} className='rounded-lg border border-border p-3'>
                 <div className='flex justify-between gap-2'>
-                  <strong>{decision.decisionType}</strong>
+                  {decisionBasePath ? (
+                    <Link className='font-bold hover:text-primary hover:underline' to={`${decisionBasePath}/${decision.id}`}>
+                      {decision.decisionType}
+                    </Link>
+                  ) : (
+                    <strong>{decision.decisionType}</strong>
+                  )}
                   <BoardStatus value={decision.result || 'PENDING'} />
                 </div>
                 <p className='mt-2 text-xs text-muted-foreground'>

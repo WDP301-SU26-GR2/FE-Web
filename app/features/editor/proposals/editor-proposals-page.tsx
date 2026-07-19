@@ -1,6 +1,7 @@
 import { Link, useFetcher } from 'react-router'
 import { BookOpen, Inbox, Loader2, LockKeyhole, Unlock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../types'
@@ -13,6 +14,13 @@ export function EditorProposalsPage({
   hasError: boolean
 }) {
   const { t } = useTranslation('editor')
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('')
+  const statuses = [...new Set(items.map((item) => item.proposal?.status ?? item.status))]
+  const filteredItems = items.filter((item) =>
+    (!search || `${item.title} ${item.proposal?.synopsis ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
+    (!status || (item.proposal?.status ?? item.status) === status)
+  )
   return (
     <div className='space-y-6 pb-12'>
       <header>
@@ -24,19 +32,28 @@ export function EditorProposalsPage({
         <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('proposals.subtitle')}</p>
       </header>
       {hasError && <ErrorBanner />}
+      <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
+        <input className={filterInput} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('filters.searchProposals')} />
+        <select className={filterInput} value={status} onChange={(event) => setStatus(event.target.value)}>
+          <option value=''>{t('filters.allProposalStatuses')}</option>
+          {statuses.map((value) => <option key={value} value={value}>{t(`filters.proposalStatuses.${value}`, { defaultValue: value })}</option>)}
+        </select>
+      </div>
       <ProposalSection
         title={t('proposals.queue')}
-        items={items.filter((item) => item.status === 'IN_REVIEW' && !item.editorId)}
+        items={filteredItems.filter((item) => item.status === 'IN_REVIEW' && !item.editorId)}
         empty={t('proposals.emptyQueue')}
       />
       <ProposalSection
         title={t('proposals.assigned')}
-        items={items.filter((item) => item.editorId)}
+        items={filteredItems.filter((item) => item.editorId)}
         empty={t('proposals.emptyAssigned')}
       />
     </div>
   )
 }
+
+const filterInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
 
 function ProposalSection({
   title,

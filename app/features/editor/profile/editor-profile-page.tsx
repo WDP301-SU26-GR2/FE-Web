@@ -1,13 +1,15 @@
+import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
-import { UserRoundCog } from 'lucide-react'
+import { Pencil, UserRoundCog } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { StaffProfileResDtoOutput } from '~/api/model/users'
 import type { EditorActionResult } from '../types'
+import { Dialog } from '~/shared/ui/dialog'
 
 const input = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground'
 export function EditorProfilePage({ profile }: { profile: StaffProfileResDtoOutput }) {
   const { t } = useTranslation('editor')
-  const fetcher = useFetcher<EditorActionResult>()
+  const [editOpen, setEditOpen] = useState(false)
   return (
     <div className='mx-auto max-w-3xl space-y-6 pb-12'>
       <header>
@@ -18,7 +20,38 @@ export function EditorProfilePage({ profile }: { profile: StaffProfileResDtoOutp
         <h1 className='mt-2 text-3xl font-bold text-foreground'>{t('profile.title')}</h1>
         <p className='mt-2 text-sm text-muted-foreground'>{t('profile.subtitle')}</p>
       </header>
-      <fetcher.Form method='post' className='grid gap-4 rounded-xl border border-border bg-card p-6 shadow-sm'>
+      <section className='rounded-xl border border-border bg-card p-6 shadow-sm'>
+        <div className='grid gap-4 sm:grid-cols-2'>
+          <ProfileValue label={t('profile.genres')} value={profile.specialtyGenres.join(', ') || '—'} />
+          <ProfileValue label={t('profile.demographics')} value={profile.demographics.join(', ') || '—'} />
+          <ProfileValue label={t('profile.experience')} value={String(profile.yearsOfExperience ?? 0)} />
+          <ProfileValue label={t('profile.bio')} value={profile.bio || '—'} />
+        </div>
+        <button
+          type='button'
+          onClick={() => setEditOpen(true)}
+          className='mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          <Pencil className='size-4' />
+          {t('profile.edit')}
+        </button>
+      </section>
+      {editOpen && <EditorProfileDialog profile={profile} onClose={() => setEditOpen(false)} />}
+    </div>
+  )
+}
+
+function EditorProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoOutput; onClose: () => void }) {
+  const { t } = useTranslation('editor')
+  const fetcher = useFetcher<EditorActionResult>()
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
+  }, [fetcher.data, fetcher.state, onClose])
+
+  return (
+    <Dialog open onClose={onClose} titleId='edit-editor-profile' title={t('profile.edit')} size='lg'>
+      <fetcher.Form method='post' className='grid gap-4'>
         <label className='text-sm font-bold text-foreground'>
           {t('profile.genres')}
           <input name='specialtyGenres' defaultValue={profile.specialtyGenres.join(', ')} className={`${input} mt-2`} />
@@ -46,15 +79,29 @@ export function EditorProfilePage({ profile }: { profile: StaffProfileResDtoOutp
             className='mt-2 min-h-32 w-full rounded-md border border-input bg-background p-3 text-sm text-foreground'
           />
         </label>
-        <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
-          {t('actions.saveProfile')}
-        </button>
+        <div className='flex justify-end gap-2 border-t border-border pt-4'>
+          <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+            {t('actions.cancel')}
+          </button>
+          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+            {t('actions.saveProfile')}
+          </button>
+        </div>
         {fetcher.data && (
           <p className={fetcher.data.ok ? 'text-sm text-primary' : 'text-sm text-destructive'}>
             {fetcher.data.ok ? t('messages.operationCompleted') : t('errors.actionFailed')}
           </p>
         )}
       </fetcher.Form>
+    </Dialog>
+  )
+}
+
+function ProfileValue({ label, value }: { label: string; value: string }) {
+  return (
+    <div className='rounded-lg bg-muted/50 p-3'>
+      <p className='text-xs font-bold text-muted-foreground'>{label}</p>
+      <p className='mt-1 whitespace-pre-wrap text-sm text-foreground'>{value}</p>
     </div>
   )
 }

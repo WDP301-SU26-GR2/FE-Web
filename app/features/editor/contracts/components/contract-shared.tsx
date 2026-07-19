@@ -1,8 +1,10 @@
+import { useId, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ContractResDtoOutput, ContractStatusProgressResDtoOutput } from '~/api/model/contracts'
 import type { EditorActionResult } from '../../types'
+import { Dialog } from '~/shared/ui/dialog'
 
 export const contractInput =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -81,6 +83,46 @@ export function ContractActionMessage({ data }: { data?: EditorActionResult }) {
     <p className={`mt-3 text-xs font-semibold ${data.ok ? 'text-primary' : 'text-destructive'}`}>
       {data.ok ? t(`messages.${data.messageKey}`) : t(`errors.${data.errorKey ?? 'actionFailed'}`)}
     </p>
+  )
+}
+
+export function ContractDialogPanel({
+  title,
+  description,
+  disabled = false,
+  children
+}: {
+  title: string
+  description?: string
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const titleId = `contract-dialog-${useId().replaceAll(':', '')}`
+
+  return (
+    <>
+      <section className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div>
+          <h3 className='font-bold text-foreground'>{title}</h3>
+          {description && <p className='mt-1 text-sm text-muted-foreground'>{description}</p>}
+        </div>
+        <button
+          type='button'
+          disabled={disabled}
+          onClick={() => setOpen(true)}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+        >
+          <Plus className='size-4' />
+          {title}
+        </button>
+      </section>
+      {open && (
+        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} description={description} size='lg'>
+          {children}
+        </Dialog>
+      )}
+    </>
   )
 }
 

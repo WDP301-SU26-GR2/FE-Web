@@ -10,14 +10,19 @@ import type { Route } from './+types/operations-reprints'
 
 export async function clientLoader() {
   try {
-    const [series, response] = await Promise.all([
-      loadOperationalSeries(),
-      reprintRequestControllerFindAll({
-        status: undefined as unknown as string,
-        seriesId: undefined as unknown as string
-      })
-    ])
-    return { series, reprints: response.data, hasError: false }
+    const series = await loadOperationalSeries()
+    const responses = await Promise.all(
+      series.map((item) =>
+        reprintRequestControllerFindAll({
+          status: undefined as unknown as string,
+          seriesId: item.id
+        })
+      )
+    )
+    const reprints = Array.from(
+      new Map(responses.flatMap((response) => response.data).map((item) => [item.id, item])).values()
+    )
+    return { series, reprints, hasError: false }
   } catch {
     return { series: [], reprints: [], hasError: true }
   }

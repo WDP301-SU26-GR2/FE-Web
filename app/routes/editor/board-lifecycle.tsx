@@ -22,11 +22,28 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const intent = String(form.get('intent') ?? '')
   try {
     if (intent !== 'createLifecycleDecision') return { ok: false, intent, errorKey: 'invalidAction' }
+    const decisionType = required(form, 'decisionType') as CreateBoardDecisionBodyDtoDecisionType
+    if (!['CONTINUE', 'CANCELLATION', 'FORMAT_CHANGE', 'COMPLETION'].includes(decisionType))
+      return { ok: false, intent, errorKey: 'invalidState' }
+    const note = String(form.get('decisionNote') ?? '').trim() || null
+    const details: Record<string, unknown> = { note }
+    if (decisionType === 'CANCELLATION') {
+      const endingChapterAllowance = Number(required(form, 'endingChapterAllowance'))
+      if (!Number.isInteger(endingChapterAllowance) || endingChapterAllowance < 1)
+        return { ok: false, intent, errorKey: 'invalidState' }
+      details.endingChapterAllowance = endingChapterAllowance
+    }
+    if (decisionType === 'FORMAT_CHANGE') {
+      const publicationType = required(form, 'publicationType')
+      if (!['WEEKLY', 'MONTHLY', 'IRREGULAR'].includes(publicationType))
+        return { ok: false, intent, errorKey: 'invalidState' }
+      details.publicationType = publicationType
+    }
     await boardControllerCreateDecision({
       boardSessionId: required(form, 'sessionId'),
       targetSeriesId: required(form, 'seriesId'),
-      decisionType: required(form, 'decisionType') as CreateBoardDecisionBodyDtoDecisionType,
-      details: { note: String(form.get('decisionNote') ?? '') || null }
+      decisionType,
+      details
     })
     return { ok: true, intent, messageKey: intent }
   } catch {

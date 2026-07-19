@@ -26,6 +26,8 @@ export * from './reprintRequestControllerUpdateChapterManuscriptPathParameters'
 export * from './reprintRequestResDtoOutput'
 export * from './reprintRequestResDtoOutputChaptersItem'
 export * from './reprintRequestResDtoOutputChaptersItemStatus'
+export * from './reprintRequestResDtoOutputRequester'
 export * from './reprintRequestResDtoOutputRevisionMode'
+export * from './reprintRequestResDtoOutputSeries'
 export * from './submitChapterManuscriptBodyDto'
 

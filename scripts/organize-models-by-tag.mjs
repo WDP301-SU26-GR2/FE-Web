@@ -194,6 +194,23 @@ function collectRelativeDeps(filePath, seen) {
 
 const expandedSchemaToTag = new Map(schemaToTag)
 
+// When the tree is already organized, phase 1 cannot recover ownership from
+// flat imports. Rebuild the ownership map from the existing tag folders so
+// phase 4 can still emit cross-tag re-exports for shared response schemas.
+if (typeof _fallbackTagFolders !== 'undefined') {
+  for (const tag of _fallbackTagFolders) {
+    const tagDir = join(MODEL_DIR, tag)
+    for (const file of readdirSync(tagDir)) {
+      if (!file.endsWith('.ts') || file === 'index.ts') continue
+      const base = basename(file, '.ts')
+      const inferredType = base.charAt(0).toUpperCase() + base.slice(1)
+      if (!expandedSchemaToTag.has(inferredType)) {
+        expandedSchemaToTag.set(inferredType, tag)
+      }
+    }
+  }
+}
+
 for (const [typeName, tag] of [...schemaToTag]) {
   const fileName = typeToFileName(typeName) + '.ts'
   const src = join(MODEL_DIR, fileName)

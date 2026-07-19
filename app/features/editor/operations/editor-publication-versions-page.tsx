@@ -5,7 +5,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   SeriesSelect,
   operationInput,
@@ -16,12 +16,14 @@ export function EditorPublicationVersionsPage({
   series,
   versions,
   focusSeriesId,
-  hasError
+  hasError,
+  backPath = '/dashboard/editor/operations'
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   versions: PublicationVersionListResDtoOutputItemsItem[]
   focusSeriesId: string
   hasError: boolean
+  backPath?: string
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
@@ -30,6 +32,7 @@ export function EditorPublicationVersionsPage({
       titleKey='operations.versions'
       descriptionKey='operations.descriptions.versions'
       hasError={hasError}
+      backPath={backPath}
     >
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <form method='get' className='grid gap-3 sm:grid-cols-[1fr_auto]'>
@@ -53,7 +56,7 @@ export function EditorPublicationVersionsPage({
           ))}
         </div>
       </section>
-      <OperationPanel icon={Library} title={t('operations.createVersionSection')}>
+      <OperationDialogPanel icon={Library} title={t('operations.createVersionSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
           <SeriesSelect series={series} />
           <input name='language' required className={operationInput} placeholder='JA / EN / VI' />
@@ -69,10 +72,18 @@ export function EditorPublicationVersionsPage({
           <input name='notes' className={operationInput} placeholder={t('operations.notes')} />
           <OperationAction intent='createPublicationVersion' label={t('actions.createVersion')} />
         </fetcher.Form>
-      </OperationPanel>
-      <OperationPanel icon={Library} title={t('operations.updateVersionSection')}>
+        <OperationFeedback data={fetcher.data} />
+      </OperationDialogPanel>
+      <OperationDialogPanel icon={Library} title={t('operations.updateVersionSection')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
-          <input name='versionId' required className={operationInput} placeholder='Publication version ID' />
+          <select name='versionId' required className={operationInput} defaultValue=''>
+            <option value='' disabled>{t('operations.selectPublicationVersion')}</option>
+            {versions.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.language} · {item.versionType ?? item.readingDirection}
+              </option>
+            ))}
+          </select>
           <input name='language' className={operationInput} placeholder='JA / EN / VI' />
           <select name='readingDirection' className={operationInput} defaultValue=''>
             <option value=''>{t('operations.keepCurrent')}</option>
@@ -92,7 +103,7 @@ export function EditorPublicationVersionsPage({
           </div>
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }

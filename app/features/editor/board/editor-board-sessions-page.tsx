@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { CalendarClock, Loader2, Play, Radio, Square } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { CalendarClock, CircleAlert, Loader2, Play, Plus, Radio, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import type {
@@ -9,6 +9,7 @@ import type {
 } from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { Dialog } from '~/shared/ui/dialog'
 import { orderBoardDecisions, orderBoardSessions } from './board-order'
 import {
   boardInput,
@@ -26,57 +27,116 @@ export function EditorBoardSessionsPage({
   sessions,
   decisions,
   suggestions,
-  hasError
+  preferredMemberCount,
+  quorumMin,
+  hasError,
+  manageAll = false,
+  backPath = '/dashboard/editor/board',
+  detailBasePath = '/dashboard/editor/board/sessions'
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
   suggestions: Record<string, SuggestBoardMembersResDtoOutputItemsItem[]>
+  preferredMemberCount: number
+  quorumMin: number
   hasError: boolean
+  manageAll?: boolean
+  backPath?: string
+  detailBasePath?: string
 }) {
   const { t } = useTranslation('editor')
   const { session: authSession } = useAuth()
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [sessionSearch, setSessionSearch] = useState('')
+  const [sessionStatus, setSessionStatus] = useState('')
   useBoardAutoRefresh()
   const voteProgress = useEditorSessionVoteProgress(sessions, decisions)
+  const filteredSessions = orderBoardSessions(
+    sessions.filter(
+      (session) =>
+        (!sessionStatus || session.status === sessionStatus) &&
+        (!sessionSearch || session.title.toLowerCase().includes(sessionSearch.toLowerCase()))
+    )
+  )
 
   return (
     <BoardPageLayout
       titleKey='board.sections.sessions'
       descriptionKey='board.sectionDescriptions.sessions'
       hasError={hasError}
+      backPath={backPath}
     >
-      <div className='grid gap-5 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]'>
-        <CreateSessionForm series={series} suggestions={suggestions} />
-        <BoardPanel title={t('board.sessions')}>
-          <div className='grid gap-3'>
-            {!!sessions.some((session) => session.status === 'ACTIVE') && (
-              <div className='flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
-                <Radio className={`size-4 ${voteProgress.connectionState === 'connected' ? 'text-primary' : ''}`} />
-                {t(`board.realtime.${voteProgress.connectionState}`)}
-              </div>
-            )}
-            {orderBoardSessions(sessions).map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                decisions={voteProgress.decisions.filter((decision) => decision.boardSessionId === session.id)}
-                currentUserId={authSession?.user.id ?? ''}
-              />
-            ))}
-            {!sessions.length && <p className='text-sm text-muted-foreground'>{t('board.emptySessions')}</p>}
-          </div>
-        </BoardPanel>
+      <div className='flex justify-end'>
+        <button
+          type='button'
+          onClick={() => setCreateDialogOpen(true)}
+          className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          <Plus className='size-4' />
+          {t('actions.createSession')}
+        </button>
       </div>
+      <BoardPanel title={t('board.sessions')}>
+        <div className='grid gap-3'>
+          <div className='grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>
+              <input
+                className={boardInput}
+                value={sessionSearch}
+                onChange={(event) => setSessionSearch(event.target.value)}
+                placeholder={t('board.filters.searchSessions')}
+              />
+              <select className={boardInput} value={sessionStatus} onChange={(event) => setSessionStatus(event.target.value)}>
+                <option value=''>{t('board.filters.allStatuses')}</option>
+                <option value='UPCOMING'>{t('board.sessionStatuses.UPCOMING')}</option>
+                <option value='ACTIVE'>{t('board.sessionStatuses.ACTIVE')}</option>
+                <option value='CONCLUDED'>{t('board.sessionStatuses.CONCLUDED')}</option>
+              </select>
+          </div>
+          {!!sessions.some((session) => session.status === 'ACTIVE') && (
+            <div className='flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
+              <Radio className={`size-4 ${voteProgress.connectionState === 'connected' ? 'text-primary' : ''}`} />
+              {t(`board.realtime.${voteProgress.connectionState}`)}
+            </div>
+          )}
+          {filteredSessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              decisions={voteProgress.decisions.filter((decision) => decision.boardSessionId === session.id)}
+              currentUserId={authSession?.user.id ?? ''}
+              manageAll={manageAll}
+              detailBasePath={detailBasePath}
+            />
+          ))}
+          {!filteredSessions.length && <p className='text-sm text-muted-foreground'>{t('board.emptySessions')}</p>}
+        </div>
+      </BoardPanel>
+      {createDialogOpen && (
+        <CreateSessionDialog
+          series={series}
+          suggestions={suggestions}
+          preferredMemberCount={preferredMemberCount}
+          quorumMin={quorumMin}
+          onClose={() => setCreateDialogOpen(false)}
+        />
+      )}
     </BoardPageLayout>
   )
 }
 
-function CreateSessionForm({
+function CreateSessionDialog({
   series,
-  suggestions
+  suggestions,
+  preferredMemberCount,
+  quorumMin,
+  onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   suggestions: Record<string, SuggestBoardMembersResDtoOutputItemsItem[]>
+  preferredMemberCount: number
+  quorumMin: number
+  onClose: () => void
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
@@ -85,7 +145,12 @@ function CreateSessionForm({
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const suggestedMembers = suggestions[rosterSourceSeriesId] ?? []
-  const rosterIsValid = selectedMemberIds.length >= 3 && selectedMemberIds.length % 2 === 1
+  const rosterIsValid = selectedMemberIds.length === preferredMemberCount
+  const timeRangeIsValid = Boolean(startTime) && (!endTime || endTime > startTime)
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
+  }, [fetcher.data, fetcher.state, onClose])
 
   function selectSeries(nextSeriesId: string) {
     setRosterSourceSeriesId(nextSeriesId)
@@ -99,11 +164,34 @@ function CreateSessionForm({
   }
 
   return (
-    <BoardPanel title={t('board.sessionTitle')}>
-      <p className='mb-4 text-sm text-muted-foreground'>{t('board.sessionDescription')}</p>
-      <fetcher.Form method='post' className='grid gap-3'>
+    <Dialog
+      open
+      onClose={onClose}
+      titleId='create-board-session-title'
+      descriptionId='create-board-session-description'
+      title={t('board.sessionTitle')}
+      description={t('board.sessionDescription')}
+      size='xl'
+    >
+      <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='createSession' />
         <input type='hidden' name='allowedEditorIds' value={selectedMemberIds.join(',')} />
+        {!series.length && (
+          <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+            {t('board.noEligibleSeriesForSession')}
+          </p>
+        )}
+        <aside className='rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100'>
+          <div className='flex items-center gap-2 text-sm font-bold'>
+            <CircleAlert className='size-4 shrink-0' />
+            {t('board.sessionRulesTitle')}
+          </div>
+          <ul className='mt-2 list-disc space-y-1 pl-5 text-xs leading-5'>
+            <li>{t('board.sessionRuleMemberCount', { count: preferredMemberCount })}</li>
+            <li>{t('board.sessionRuleRoster')}</li>
+            <li>{t('board.sessionRuleVoting', { count: quorumMin })}</li>
+          </ul>
+        </aside>
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.sessionName')}
           <input className={boardInput} name='title' minLength={5} required />
@@ -140,7 +228,7 @@ function CreateSessionForm({
               onChange={(event) => {
                 const nextStartTime = event.target.value
                 setStartTime(nextStartTime)
-                if (endTime && endTime < nextStartTime) setEndTime('')
+                if (endTime && endTime <= nextStartTime) setEndTime('')
               }}
             />
           </label>
@@ -199,46 +287,60 @@ function CreateSessionForm({
           {t('board.sessionNote')}
           <textarea className={`${boardInput} min-h-24 py-2`} name='description' maxLength={500} />
         </label>
-        <button
-          disabled={fetcher.state !== 'idle' || !series.length || !rosterIsValid}
-          className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
-        >
-          {fetcher.state !== 'idle' ? (
-            <Loader2 className='size-4 animate-spin' />
-          ) : (
-            <CalendarClock className='size-4' />
-          )}
-          {t('actions.createSession')}
-        </button>
+        <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
+          <button
+            type='button'
+            onClick={onClose}
+            disabled={fetcher.state !== 'idle'}
+            className='inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-bold text-foreground hover:bg-muted disabled:opacity-50'
+          >
+            {t('actions.cancel')}
+          </button>
+          <button
+            disabled={fetcher.state !== 'idle' || !series.length || !rosterIsValid || !timeRangeIsValid}
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          >
+            {fetcher.state !== 'idle' ? (
+              <Loader2 className='size-4 animate-spin' />
+            ) : (
+              <CalendarClock className='size-4' />
+            )}
+            {t('actions.createSession')}
+          </button>
+        </div>
       </fetcher.Form>
       <BoardFeedback data={fetcher.data} />
-    </BoardPanel>
+    </Dialog>
   )
 }
 
 function SessionCard({
   session,
   decisions,
-  currentUserId
+  currentUserId,
+  manageAll,
+  detailBasePath
 }: {
   session: BoardSessionResDtoOutput
   decisions: BoardDecisionResDtoOutput[]
   currentUserId: string
+  manageAll: boolean
+  detailBasePath: string
 }) {
   const { t, i18n } = useTranslation('editor')
   const fetcher = useBoardFetcher()
   const intent = session.status === 'UPCOMING' ? 'startSession' : 'concludeSession'
   const isCreator = session.creatorId === currentUserId
-  const canChange = isCreator && (session.status === 'UPCOMING' || session.status === 'ACTIVE')
+  const canChange = (isCreator || manageAll) && (session.status === 'UPCOMING' || session.status === 'ACTIVE')
   const hasDecision = decisions.length > 0
 
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
-          {isCreator ? (
+          {isCreator || manageAll ? (
             <Link
-              to={`/dashboard/editor/board/sessions/${session.id}`}
+              to={`${detailBasePath}/${session.id}`}
               className='font-bold text-primary hover:underline'
             >
               {session.title}
@@ -289,7 +391,7 @@ function SessionCard({
           </button>
         </fetcher.Form>
       )}
-      {isCreator && session.status === 'UPCOMING' && !hasDecision && (
+      {(isCreator || manageAll) && session.status === 'UPCOMING' && !hasDecision && (
         <p className='mt-2 text-xs font-semibold text-muted-foreground'>{t('board.decisionRequiredBeforeStart')}</p>
       )}
       <BoardFeedback data={fetcher.data} />

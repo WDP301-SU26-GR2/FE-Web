@@ -6,7 +6,7 @@ import type { SurveyPeriodResDtoOutput } from '~/api/model/survey'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   SeriesSelect,
   operationInput,
@@ -16,22 +16,32 @@ import {
 export function EditorSurveysPage({
   series,
   surveys,
-  hasError
+  hasError,
+  focusSurveyId = '',
+  backPath = '/dashboard/editor/operations'
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   surveys: SurveyPeriodResDtoOutput[]
   hasError: boolean
+  focusSurveyId?: string
+  backPath?: string
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const [rows, setRows] = useState([0])
+  const [selectedSurveyId, setSelectedSurveyId] = useState(
+    surveys.some((survey) => survey.id === focusSurveyId) ? focusSurveyId : (surveys[0]?.id ?? '')
+  )
+  const selectedSurvey = surveys.find((survey) => survey.id === selectedSurveyId)
+
   return (
     <OperationsLayout
       titleKey='operations.surveys'
       descriptionKey='operations.descriptions.surveys'
       hasError={hasError}
+      backPath={backPath}
     >
-      <OperationPanel icon={BarChart3} title={t('operations.createSurveySection')}>
+      <OperationDialogPanel icon={BarChart3} title={t('operations.createSurveySection')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <input
             name='issueNumber'
@@ -54,66 +64,100 @@ export function EditorSurveysPage({
             <OperationAction intent='createSurvey' label={t('actions.createSurvey')} />
           </div>
         </fetcher.Form>
-      </OperationPanel>
-      <OperationPanel icon={BarChart3} title={t('operations.surveyStatusSection')}>
+      </OperationDialogPanel>
+
+      <OperationDialogPanel icon={BarChart3} title={t('operations.surveyStatusSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
-          <SurveySelect items={surveys} />
-          <select name='status' className={operationInput}>
-            <option>OPEN</option>
-            <option>CLOSED</option>
-            <option>REFLECTED</option>
-          </select>
-          <div className='grid grid-cols-2 gap-2'>
-            <OperationAction intent='surveyStatus' label={t('actions.updateStatus')} />
+          <SurveySelect items={surveys} value={selectedSurveyId} onChange={setSelectedSurveyId} />
+          {selectedSurvey?.status === 'DRAFT' && (
+            <>
+              <input type='hidden' name='status' value='OPEN' />
+              <OperationAction intent='surveyStatus' label={t('actions.openSurvey')} />
+            </>
+          )}
+          {selectedSurvey?.status === 'OPEN' && (
+            <>
+              <input type='hidden' name='status' value='CLOSED' />
+              <OperationAction intent='surveyStatus' label={t('actions.closeSurvey')} />
+            </>
+          )}
+          {selectedSurvey?.status === 'CLOSED' && (
             <OperationAction intent='finalizeRanking' label={t('actions.finalizeRanking')} />
-          </div>
+          )}
+          {selectedSurvey?.status === 'REFLECTED' && (
+            <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground'>
+              {t('operations.surveyReflectedNotice')}
+            </p>
+          )}
+          {!selectedSurvey && <p className='text-sm text-muted-foreground'>{t('operations.surveyEmpty')}</p>}
         </fetcher.Form>
-      </OperationPanel>
-      <OperationPanel icon={BarChart3} title={t('operations.offlineVoteEntries')}>
-        <fetcher.Form method='post' className='grid gap-3'>
-          <SurveySelect items={surveys} />
-          {rows.map((row, index) => (
-            <div key={row} className='grid grid-cols-[1fr_8rem_auto] gap-2'>
-              <SeriesSelect series={series} name='voteSeriesId' />
-              <input
-                name='voteCount'
-                type='number'
-                min={0}
-                required
-                className={operationInput}
-                placeholder={t('operations.voteCount')}
-              />
-              <button
-                type='button'
-                disabled={rows.length === 1}
-                onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
-                className='rounded-md border border-border px-3 text-sm'
-              >
-                {t('actions.remove')}
-              </button>
-            </div>
-          ))}
-          <button
-            type='button'
-            onClick={() => setRows((current) => [...current, Math.max(...current) + 1])}
-            className='h-9 rounded-md border border-dashed border-border text-sm font-bold'
-          >
-            {t('actions.addVoteRow')}
-          </button>
-          <OperationAction intent='importVotes' label={t('actions.importVotes')} />
-        </fetcher.Form>
-        <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
+
+      {selectedSurvey?.status === 'CLOSED' && (
+        <OperationDialogPanel icon={BarChart3} title={t('operations.offlineVoteEntries')}>
+          <fetcher.Form method='post' className='grid gap-3'>
+            <input type='hidden' name='surveyId' value={selectedSurveyId} />
+            {rows.map((row, index) => (
+              <div key={row} className='grid grid-cols-[1fr_8rem_auto] gap-2'>
+                <SeriesSelect series={series} name='voteSeriesId' />
+                <input
+                  name='voteCount'
+                  type='number'
+                  min={0}
+                  required
+                  className={operationInput}
+                  placeholder={t('operations.voteCount')}
+                />
+                <button
+                  type='button'
+                  disabled={rows.length === 1}
+                  onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
+                  className='rounded-md border border-border px-3 text-sm'
+                >
+                  {t('actions.remove')}
+                </button>
+              </div>
+            ))}
+            <button
+              type='button'
+              onClick={() => setRows((current) => [...current, Math.max(...current) + 1])}
+              className='h-9 rounded-md border border-dashed border-border text-sm font-bold'
+            >
+              {t('actions.addVoteRow')}
+            </button>
+            <OperationAction intent='importVotes' label={t('actions.importVotes')} />
+          </fetcher.Form>
+          <OperationFeedback data={fetcher.data} />
+        </OperationDialogPanel>
+      )}
     </OperationsLayout>
   )
 }
 
-function SurveySelect({ items }: { items: SurveyPeriodResDtoOutput[] }) {
+function SurveySelect({
+  items,
+  value,
+  onChange
+}: {
+  items: SurveyPeriodResDtoOutput[]
+  value: string
+  onChange: (value: string) => void
+}) {
+  const { t } = useTranslation('editor')
   return (
-    <select name='surveyId' required className={operationInput}>
+    <select
+      name='surveyId'
+      required
+      className={operationInput}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <option value='' disabled>
+        {t('operations.selectSurvey')}
+      </option>
       {items.map((item) => (
         <option key={item.id} value={item.id}>
-          #{item.issueNumber} · {item.status}
+          #{item.issueNumber} · {t(`operations.surveyStatuses.${item.status}`, { defaultValue: item.status })}
         </option>
       ))}
     </select>

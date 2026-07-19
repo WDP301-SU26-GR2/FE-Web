@@ -6,7 +6,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   SeriesSelect,
   operationInput,
@@ -49,7 +49,7 @@ export function EditorLifecyclePage({
           </div>
         )}
       </section>
-      <OperationPanel icon={RefreshCcw} title={t('operations.lifecycle')}>
+      <OperationDialogPanel icon={RefreshCcw} title={t('operations.lifecycle')}>
         <fetcher.Form method='post' className='grid gap-3'>
           <SeriesSelect series={series} />
           <input name='reason' className={operationInput} placeholder={t('operations.reason')} />
@@ -69,7 +69,7 @@ export function EditorLifecyclePage({
           </div>
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }

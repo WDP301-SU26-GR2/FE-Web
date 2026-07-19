@@ -1,5 +1,7 @@
-import { useFetcher } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { ArrowLeft, Vote } from 'lucide-react'
 import type { BoardVoteResDtoOutput, SeriesReportResDtoOutput } from '~/api/model/board'
 import type { BoardMeetingDecision, BoardSessionPhase } from '~/api/manual/board-meeting'
 import { useAuth } from '~/features/auth/context/auth-context'
@@ -13,6 +15,7 @@ import {
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { useSessionVoteProgress } from '../sessions/use-session-vote-progress'
+import { Dialog } from '~/shared/ui/dialog'
 
 export function BoardDecisionDetailPage({
   decision,
@@ -20,7 +23,9 @@ export function BoardDecisionDetailPage({
   reports,
   sessionStatus,
   sessionPhase,
-  allowedEditorIds
+  allowedEditorIds,
+  readOnly = false,
+  backPath
 }: {
   decision: BoardMeetingDecision
   votes: BoardVoteResDtoOutput[]
@@ -28,10 +33,12 @@ export function BoardDecisionDetailPage({
   sessionStatus: string
   sessionPhase: BoardSessionPhase
   allowedEditorIds: string[]
+  readOnly?: boolean
+  backPath?: string
 }) {
   const { t } = useTranslation('board')
   const { session: authSession } = useAuth()
-  const fetcher = useFetcher<BoardActionResult>()
+  const [voteOpen, setVoteOpen] = useState(false)
   useBoardPolling()
   const meeting = useSessionVoteProgress({
     sessionId: decision.boardSessionId,
@@ -46,9 +53,16 @@ export function BoardDecisionDetailPage({
   const alreadyVoted = votes.some((vote) => vote.voterId === currentUserId)
   const decisionOpen = liveDecision.result === 'PENDING' || liveDecision.result === 'PENDING_QUORUM'
   const canVote =
-    sessionStatus === 'ACTIVE' && livePhase === 'VOTING' && decisionOpen && voterAllowed && !alreadyVoted
+    !readOnly &&
+    sessionStatus === 'ACTIVE' &&
+    livePhase === 'VOTING' &&
+    decisionOpen &&
+    voterAllowed &&
+    !alreadyVoted
 
-  const voteUnavailableReason = !decisionOpen
+  const voteUnavailableReason = readOnly
+    ? ''
+    : !decisionOpen
     ? t('decisions.voteUnavailable.closed')
     : alreadyVoted
       ? t('decisions.voteUnavailable.alreadyVoted')
@@ -61,6 +75,12 @@ export function BoardDecisionDetailPage({
             : ''
   return (
     <div className='space-y-6 pb-12'>
+      {backPath && (
+        <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+          <ArrowLeft className='size-4' />
+          {t('common.back')}
+        </Link>
+      )}
       <BoardHeader
         title={decision.decisionType ?? t('decisions.title')}
         description={`${t('decisions.series')}: ${decision.targetSeries?.title ?? decision.targetSeriesId ?? '—'}`}
@@ -86,22 +106,16 @@ export function BoardDecisionDetailPage({
         </div>
       </BoardPanel>
       {canVote && (
-        <BoardPanel title={t('decisions.castVote')}>
-          <fetcher.Form method='post' className='grid gap-3'>
-            <input type='hidden' name='intent' value='vote' />
-            <select name='voteValue' className={boardInput} defaultValue='APPROVE'>
-              <option value='APPROVE'>{t('decisions.approve')}</option>
-              <option value='REJECT'>{t('decisions.reject')}</option>
-              <option value='ABSTAIN'>{t('decisions.abstain')}</option>
-            </select>
-            <textarea name='note' className={`${boardInput} min-h-24 py-2`} placeholder={t('decisions.note')} />
-            <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
-              {t('decisions.submitVote')}
-            </button>
-          </fetcher.Form>
-          <BoardFeedback data={fetcher.data} />
-        </BoardPanel>
+        <button
+          type='button'
+          onClick={() => setVoteOpen(true)}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          <Vote className='h-4 w-4' />
+          {t('decisions.castVote')}
+        </button>
       )}
+      {voteOpen && <VoteDialog onClose={() => setVoteOpen(false)} />}
       {!canVote && voteUnavailableReason && (
         <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground'>
           {voteUnavailableReason}
@@ -133,5 +147,47 @@ export function BoardDecisionDetailPage({
         </BoardPanel>
       </div>
     </div>
+  )
+}
+
+function VoteDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('board')
+  const fetcher = useFetcher<BoardActionResult>()
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
+  }, [fetcher.data, fetcher.state, onClose])
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      titleId='board-vote-dialog-title'
+      title={t('decisions.castVote')}
+      description={t('decisions.voteConfirmation')}
+      size='sm'
+    >
+      <fetcher.Form method='post' className='grid gap-3'>
+        <input type='hidden' name='intent' value='vote' />
+        <select name='voteValue' className={boardInput} defaultValue='APPROVE'>
+          <option value='APPROVE'>{t('decisions.approve')}</option>
+          <option value='REJECT'>{t('decisions.reject')}</option>
+          <option value='ABSTAIN'>{t('decisions.abstain')}</option>
+        </select>
+        <textarea name='note' className={`${boardInput} min-h-24 py-2`} placeholder={t('decisions.note')} />
+        <div className='flex justify-end gap-2'>
+          <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+            {t('common.cancel')}
+          </button>
+          <button
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60'
+          >
+            {t('decisions.submitVote')}
+          </button>
+        </div>
+      </fetcher.Form>
+      <BoardFeedback data={fetcher.data} />
+    </Dialog>
   )
 }

@@ -10,7 +10,6 @@ import { usePublicationContext } from './publication-shell-context'
 import { PageStatusBadge } from './lib/name-status-meta'
 import { SignedImage } from '~/shared/components/signed-image'
 import { useCreatePage } from './hooks/use-create-page'
-import { useUpdatePage } from './hooks/use-update-page'
 import { usePageAnnotations } from './hooks/use-page-annotations'
 import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
 import { ManuscriptActionPanel } from './components/manuscript-action-panel'
@@ -41,7 +40,7 @@ import { ManuscriptActionPanel } from './components/manuscript-action-panel'
  */
 export function PublicationPagesReaderView() {
   const { t } = useTranslation('mangaka')
-  const { chapter, name, pages, refreshAll, refreshPages } = usePublicationContext()
+  const { chapter, name, pages, refreshAll } = usePublicationContext()
 
   // The page that's currently in-view on the centre stack.
   const [activePageId, setActivePageId] = useState<string | null>(null)
@@ -108,7 +107,7 @@ export function PublicationPagesReaderView() {
   const canMutateProduction =
     !chapter.hold &&
     chapter.manuscriptStatus !== null &&
-    ['DRAFT', 'IN_PRODUCTION', 'COMPOSITE_REVIEW', 'EDITOR_REVISION'].includes(chapter.manuscriptStatus)
+    ['DRAFT', 'IN_PRODUCTION', 'EDITOR_REVISION'].includes(chapter.manuscriptStatus)
 
   const nextPageNumber = sortedPages.length === 0 ? 1 : Math.max(...sortedPages.map((p) => p.pageNumber)) + 1
 
@@ -211,10 +210,6 @@ export function PublicationPagesReaderView() {
                 key={p.id}
                 page={p}
                 setRef={setPageRef(p.id)}
-                onChange={() => {
-                  refreshPages()
-                  refreshAll()
-                }}
                 readOnly={!canMutateProduction}
               />
             ))}
@@ -260,40 +255,19 @@ export function PublicationPagesReaderView() {
 function PageCard({
   page,
   setRef,
-  onChange,
   readOnly
 }: {
   page: PageListResDtoOutputItemsItem
   setRef: (el: HTMLDivElement | null) => void
-  onChange: () => void
   readOnly: boolean
 }) {
   const { t } = useTranslation('mangaka')
-  const { updatePage, isUpdating } = useUpdatePage()
 
   // For the reader, the "composite" file (if any) is the canonical artwork to
   // show. We fall back to `originalFile` when no composite exists yet.
   // Per FE-API-Guide §5, both file fields are R2 object keys.
   const showKey = page.compositeFile ?? page.originalFile
   const isComposite = !!page.compositeFile
-
-  const advanceStatus = async () => {
-    const nextStatus = (() => {
-      switch (page.status) {
-        case 'NOT_STARTED':
-          return 'IN_PROGRESS'
-        case 'IN_PROGRESS':
-          return 'COMPOSITE_READY'
-        case 'COMPOSITE_READY':
-          return 'COMPLETED'
-        default:
-          return null
-      }
-    })()
-    if (!nextStatus) return
-    await updatePage({ pageId: page.id, body: { status: nextStatus } })
-    onChange()
-  }
 
   return (
     <div ref={setRef} data-page-id={page.id} className='flex flex-col gap-3 scroll-mt-24'>
@@ -310,36 +284,12 @@ function PageCard({
             </span>
           ) : null}
         </div>
-        <button
-          type='button'
-          disabled={readOnly || isUpdating || page.status === 'COMPLETED'}
-          onClick={advanceStatus}
-          className='rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground shadow-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer'
-        >
-          {page.status === 'COMPLETED'
-            ? t('publication.pagesReader.done')
-            : t('publication.pagesReader.advance', { to: nextStatusLabel(page.status) })}
-        </button>
+        {readOnly && <span className='text-[11px] font-medium text-muted-foreground'>{t('publication.pagesReader.done')}</span>}
       </div>
 
       <SignedImage r2Key={showKey} alt={`page-${page.pageNumber}`} aspectClassName='aspect-[3/4]' className='w-full' />
     </div>
   )
-}
-
-function nextStatusLabel(status: string): string {
-  // Reverse-mapping for the small "advance status" button — translated at the
-  // call site via `publication.pages.status.*` (added in Phase 4).
-  switch (status) {
-    case 'NOT_STARTED':
-      return 'IN_PROGRESS'
-    case 'IN_PROGRESS':
-      return 'COMPOSITE_READY'
-    case 'COMPOSITE_READY':
-      return 'COMPLETED'
-    default:
-      return status
-  }
 }
 
 /* -------------------------------------------------------------------------- */

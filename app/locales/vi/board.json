@@ -6,7 +6,9 @@
     "failure": "Không thể hoàn thành thao tác.",
     "load": "Tải dữ liệu",
     "loadError": "Dữ liệu hiện không khả dụng.",
-    "noDescription": "Chưa có mô tả."
+    "noDescription": "Chưa có mô tả.",
+    "back": "Quay lại",
+    "cancel": "Hủy"
   },
   "nav": {
     "sessions": "Phiên Hội đồng",
@@ -22,9 +24,94 @@
     "notifications": "Thông báo",
     "profile": "Hồ sơ Hội đồng"
   },
+  "filters": {
+    "searchReports": "Tìm trong nội dung báo cáo hoặc mã series",
+    "allReportTypes": "Tất cả loại báo cáo",
+    "searchPayments": "Tìm theo series hoặc người nhận",
+    "allStatuses": "Tất cả trạng thái",
+    "allPaymentTypes": "Tất cả loại thanh toán",
+    "allReadStates": "Tất cả thông báo",
+    "unread": "Chưa đọc",
+    "read": "Đã đọc",
+    "allNotificationTypes": "Tất cả loại thông báo",
+    "searchSessions": "Tìm theo tên hoặc mô tả phiên họp",
+    "allSessionStatuses": "Tất cả trạng thái phiên",
+    "allPhases": "Tất cả giai đoạn",
+    "searchDecisions": "Tìm theo tên hoặc mã bộ truyện",
+    "allSessions": "Tất cả phiên họp",
+    "allDecisionTypes": "Tất cả loại quyết định",
+    "allDecisionResults": "Tất cả kết quả biểu quyết",
+    "searchContracts": "Tìm theo tên hoặc mã bộ truyện",
+    "allContractStatuses": "Tất cả trạng thái hợp đồng",
+    "allContractTypes": "Tất cả loại hợp đồng",
+    "allReprintStatuses": "Tất cả trạng thái tái bản",
+    "searchTransfers": "Tìm theo bộ truyện hoặc Mangaka",
+    "allTransferStatuses": "Tất cả trạng thái chuyển nhượng",
+    "reprintStatuses": {
+      "PENDING": "Đang chờ", "PROPOSED": "Đã đề xuất", "MANGAKA_REVIEW": "Mangaka đang xem xét", "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+      "REJECTED_BY_MANGAKA": "Mangaka đã từ chối", "BOARD_APPROVED": "Hội đồng đã duyệt", "APPROVED": "Đã duyệt",
+      "IN_PRODUCTION": "Đang sản xuất", "PUBLISHED": "Đã phát hành", "REJECTED": "Đã từ chối"
+    },
+    "transferStatuses": {
+      "SUBMITTED": "Đã nộp", "UNDER_REVIEW": "Đang xem xét", "REJECTED_BY_BOARD": "Hội đồng đã từ chối",
+      "NEGOTIATING": "Đang thương lượng", "REJECTED_BY_ORIGINAL_MANGAKA": "Mangaka gốc đã từ chối",
+      "PROPOSED": "Đã đề xuất", "ACCEPTED": "Đã chấp nhận", "REJECTED": "Đã từ chối", "CANCELLED": "Đã hủy"
+    },
+    "sessionStatuses": { "UPCOMING": "Sắp diễn ra", "ACTIVE": "Đang họp", "CONCLUDED": "Đã kết thúc" },
+    "sessionPhases": { "PRESENTING": "Trình bày", "QA": "Hỏi đáp", "VOTING": "Biểu quyết" },
+    "decisionTypes": {
+      "SERIALIZATION": "Duyệt đăng dài kỳ", "CANCELLATION": "Hủy bộ truyện", "FORMAT_CHANGE": "Đổi hình thức phát hành",
+      "COMPLETION": "Duyệt kết thúc", "CONTINUE": "Tiếp tục phát hành", "CANCEL": "Hủy bộ truyện", "HIATUS": "Tạm ngưng",
+      "ENDING_ALLOWANCE": "Duyệt số chương kết thúc", "SERIES_CONTRACT_APPROVAL": "Duyệt hợp đồng", "CONTRACT": "Quyết định hợp đồng",
+      "REPRINT": "Duyệt tái bản", "TRANSFER": "Duyệt chuyển nhượng"
+    },
+    "decisionResults": { "PENDING": "Đang chờ biểu quyết", "PENDING_QUORUM": "Chưa đủ túc số", "APPROVED": "Đã thông qua", "REJECTED": "Đã từ chối", "EXPIRED": "Đã hết hiệu lực" },
+    "contractTypes": { "FULL_BUYOUT": "Mua đứt toàn bộ", "REVENUE_SHARE": "Chia sẻ doanh thu" },
+    "contractStatuses": {
+      "DRAFT": "Bản nháp", "MANGAKA_REVIEW": "Mangaka đang xem xét", "NEGOTIATION": "Đang thương lượng",
+      "MANGAKA_APPROVED": "Mangaka đã đồng ý", "BOARD_APPROVED": "Hội đồng đã duyệt", "MANGAKA_SIGNED": "Mangaka đã ký",
+      "FULLY_EXECUTED": "Đã ký hoàn tất", "FULFILLED": "Đã hoàn thành", "TERMINATED": "Đã chấm dứt",
+      "TERMINATED_BY_BREACH": "Chấm dứt do vi phạm", "EXPIRED": "Đã hết hạn", "VOIDED": "Đã hủy hiệu lực"
+    },
+    "paymentStatuses": {
+      "PENDING": "Đang chờ xử lý",
+      "TRIGGERED": "Đã phát sinh",
+      "APPROVED": "Đã duyệt chi",
+      "PAID": "Đã thanh toán",
+      "MISSED": "Không đạt điều kiện",
+      "FAILED": "Thanh toán thất bại",
+      "CANCELLED": "Đã hủy"
+    },
+    "paymentTypes": {
+      "CONDITION_PAYOUT": "Chi theo điều kiện hợp đồng",
+      "REVENUE_SHARE": "Chia sẻ doanh thu",
+      "COMPENSATION": "Khoản bồi thường",
+      "CHAPTER_MILESTONE": "Mốc số chương",
+      "RECURRING_CHAPTER": "Thanh toán theo chu kỳ chương",
+      "RANKING_MILESTONE": "Mốc xếp hạng",
+      "TIME_BOUND": "Mốc có thời hạn",
+      "TRANSFER": "Thanh toán chuyển nhượng"
+    },
+    "notificationTypes": {
+      "SYSTEM": "Hệ thống",
+      "CONTRACT": "Hợp đồng",
+      "TASK": "Công việc",
+      "DEADLINE": "Thời hạn",
+      "SURVEY": "Khảo sát",
+      "BOARD": "Hội đồng",
+      "REVIEW": "Duyệt nội dung"
+    }
+  },
   "dashboard": {
     "title": "Trung tâm quyết định Hội đồng",
     "description": "Xem xét bằng chứng, bỏ phiếu, duyệt nghiệp vụ thương mại và phân xử rủi ro xuất bản.",
+    "liveDataError": "Tạm thời chưa tải được dữ liệu tổng quan. Các lối tắt nghiệp vụ vẫn hoạt động.",
+    "summary": { "pending": "Quyết định chờ xử lý", "upcoming": "Phiên sắp diễn ra", "unread": "Thông báo chưa đọc" },
+    "pendingDecisions": "Quyết định cần xử lý",
+    "severeRisk": "Series có rủi ro nghiêm trọng",
+    "emptyPending": "Không có quyết định đang hoạt động cần bạn xử lý.",
+    "emptyRisk": "Không có series rủi ro nghiêm trọng.",
+    "unranked": "Chưa xếp hạng trong kỳ gần nhất",
     "sections": {
       "sessions": "Xem các phiên được phân công và nội dung phiên họp.",
       "decisions": "Kiểm tra quyết định đang hoạt động và bỏ phiếu.",
@@ -33,7 +120,7 @@
       "payments": "Duyệt và xác nhận các khoản chi hợp đồng.",
       "deadlines": "Phân xử deadline ảnh hưởng lịch xuất bản.",
       "rankings": "Xem tín hiệu xếp hạng nội bộ và series có rủi ro.",
-      "reprints": "Tạo và duyệt quy trình tái bản.",
+      "reprints": "Xem xét và duyệt quy trình tái bản.",
       "transfers": "Sàng lọc yêu cầu và ký hợp đồng chuyển nhượng.",
       "audit": "Theo dõi thay đổi trạng thái và thao tác hệ thống.",
       "notifications": "Theo dõi công việc cần Hội đồng xử lý.",
@@ -87,6 +174,7 @@
     "abstain": "Không biểu quyết",
     "note": "Giải thích không bắt buộc",
     "submitVote": "Gửi phiếu",
+    "voteConfirmation": "Hãy kiểm tra kỹ lựa chọn. Mỗi thành viên chỉ được bỏ phiếu một lần cho quyết định này.",
     "votes": "Phiếu đã ghi nhận",
     "voteUnavailable": {
       "closed": "Quyết định này đã được chốt.",
@@ -105,11 +193,16 @@
     "title": "Duyệt hợp đồng",
     "description": "Duyệt điều khoản, ký thỏa thuận và xem phụ lục.",
     "empty": "Chưa có hợp đồng.",
+    "partialLoadError": "Không thể tải một phần dữ liệu hợp đồng. Các mục trống bên dưới có thể chưa phản ánh dữ liệu mới nhất.",
     "series": "Series",
     "detail": "Hợp đồng",
     "terms": "Điều khoản thương mại",
     "valuation": "Định giá",
     "ownership": "Sở hữu NXB / Mangaka",
+    "conditions": "Điều kiện thanh toán",
+    "emptyConditions": "Chưa cấu hình điều kiện thanh toán.",
+    "versions": "Lịch sử hợp đồng",
+    "emptyVersions": "Chưa có phiên bản hợp đồng trước đó.",
     "actions": "Thao tác Hội đồng",
     "approve": "Duyệt điều khoản",
     "changes": "Yêu cầu chỉnh sửa",
@@ -119,7 +212,13 @@
     "amendments": "Phụ lục hợp đồng",
     "amendment": "Phụ lục",
     "emptyAmendments": "Chưa có phụ lục.",
-    "signAmendment": "Ký phụ lục"
+    "signAmendment": "Ký phụ lục",
+    "boardSignature": "Chữ ký Hội đồng",
+    "readyToSign": "Mangaka đã ký. Hãy hoàn tất chữ ký Hội đồng bằng mã OTP.",
+    "signed": "Đã ký",
+    "waitingMangakaSignature": "Chỉ có thể ký sau khi hợp đồng được duyệt và Mangaka đã ký.",
+    "sendOtp": "Gửi mã OTP",
+    "otpInstruction": "Yêu cầu mã OTP, sau đó nhập mã gồm 6 chữ số để xác nhận chữ ký."
   },
   "payments": {
     "title": "Duyệt thanh toán",
@@ -139,6 +238,7 @@
     "empty": "Không có yêu cầu deadline chờ Hội đồng.",
     "request": "Yêu cầu deadline",
     "note": "Ghi chú phân xử",
+    "resolve": "Phân xử yêu cầu",
     "approve": "Duyệt deadline",
     "reject": "Từ chối yêu cầu"
   },
@@ -153,7 +253,8 @@
   },
   "reprints": {
     "title": "Quy trình tái bản",
-    "description": "Tạo và duyệt yêu cầu tái bản theo nguyên tắc sở hữu.",
+    "description": "Xem xét và duyệt yêu cầu tái bản theo nguyên tắc sở hữu.",
+    "lookup": "Tìm yêu cầu theo series",
     "create": "Tạo yêu cầu tái bản",
     "seriesId": "ID series",
     "from": "Từ chương",
@@ -161,6 +262,7 @@
     "reason": "Lý do nghiệp vụ",
     "empty": "Chưa có yêu cầu tái bản.",
     "reviewReason": "Ghi chú duyệt",
+    "review": "Xem xét yêu cầu tái bản",
     "approve": "Duyệt tái bản",
     "reject": "Từ chối tái bản"
   },
@@ -170,19 +272,23 @@
     "empty": "Không có yêu cầu chờ Hội đồng.",
     "session": "Chọn phiên Hội đồng đang hoạt động",
     "details": "Ghi chú sàng lọc",
+    "review": "Xem xét yêu cầu chuyển nhượng",
     "approve": "Duyệt sàng lọc",
     "reject": "Từ chối sàng lọc",
     "fullBuyout": "Thực hiện mua đứt",
     "conditionValue": "Giá trị mốc",
     "conditionDescription": "Mô tả điều kiện thanh toán",
     "sign": "Ký hợp đồng chuyển nhượng",
-    "contractId": "ID hợp đồng chuyển nhượng"
+    "contractId": "ID hợp đồng chuyển nhượng",
+    "signInstruction": "Nhập ID hợp đồng chuyển nhượng và xác nhận chữ ký bằng mã OTP.",
+    "signatureProgress": "Tiến độ ký hợp đồng chuyển nhượng"
   },
   "notifications": {
     "title": "Thông báo Hội đồng",
     "description": "{{count}} thông báo chưa đọc",
     "readAll": "Đánh dấu đã đọc tất cả",
     "read": "Đánh dấu đã đọc",
+    "open": "Mở nội dung liên quan",
     "empty": "Không có thông báo."
   },
   "profile": {
@@ -193,7 +299,9 @@
     "demographics": "Nhóm độc giả, cách nhau bằng dấu phẩy",
     "experience": "Số năm kinh nghiệm",
     "bio": "Giới thiệu nghề nghiệp",
-    "save": "Lưu hồ sơ"
+    "save": "Lưu hồ sơ",
+    "edit": "Chỉnh sửa hồ sơ",
+    "cancel": "Hủy"
   },
   "audit": {
     "title": "Lịch sử kiểm toán",

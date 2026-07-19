@@ -15,7 +15,7 @@ export { isFetchError, type FetchError } from './axios-client'
  *
  * BE response envelope: { success: true, message: "Success", data: <payload> }
  *   → unwrap: return { data: payload }
- * BE error:           { success: false, message: string, errors?: [] }
+ * BE error:           { success: false, code: string, message: string, errors?: [] }
  *   → throw FetchError
  *
  * Responsibilities (delegated to the axios client + interceptors):
@@ -129,12 +129,22 @@ function normalizeAxiosError(err: unknown): Error {
   const status: number = axiosErr?.response?.status ?? 0
   const raw = axiosErr?.response?.data
 
-  let errorBody: { message: string; errors?: Array<{ message: string; path?: string }> } = {
+  let errorBody: {
+    code?: string
+    message: string
+    errors?: Array<{ code?: string | null; message: string; path?: string }>
+    retryAfter?: number
+  } = {
     message: axiosErr?.message || 'API error'
   }
 
   if (raw && typeof raw === 'object' && typeof raw.message === 'string') {
-    errorBody = { message: raw.message, errors: raw.errors }
+    errorBody = {
+      code: typeof raw.code === 'string' ? raw.code : undefined,
+      message: raw.message,
+      errors: raw.errors,
+      retryAfter: typeof raw.retryAfter === 'number' ? raw.retryAfter : undefined
+    }
   }
 
   if (status === 401) {
@@ -145,7 +155,6 @@ function normalizeAxiosError(err: unknown): Error {
   const fetchError = Object.assign(new Error(errorBody.message), {
     status,
     data: errorBody
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as Error & { status: number; data: typeof errorBody }
 
   return fetchError

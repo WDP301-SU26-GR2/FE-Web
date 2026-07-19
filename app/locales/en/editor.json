@@ -1,9 +1,73 @@
 {
   "common": { "notAvailable": "Not available" },
+  "filters": {
+    "searchProposals": "Search title or proposal content",
+    "allProposalStatuses": "All proposal statuses",
+    "searchContracts": "Search series title or ID",
+    "allContractStatuses": "All contract statuses",
+    "allContractTypes": "All contract types",
+    "searchReports": "Search report content or series title",
+    "allReportTypes": "All report types",
+    "searchNotifications": "Search notification content",
+    "allReadStates": "All notifications",
+    "unread": "Unread",
+    "read": "Read",
+    "allNotificationTypes": "All notification types",
+    "searchPublication": "Search series, chapter title or chapter number",
+    "proposalStatuses": {
+      "DRAFT": "Draft",
+      "PROPOSAL_REVIEW": "Under proposal review",
+      "PROPOSAL_REVISION": "Revision required",
+      "PROPOSAL_APPROVED": "Proposal approved",
+      "PITCHED": "Pitched to Board",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "contractTypes": {
+      "FULL_BUYOUT": "Full buyout",
+      "REVENUE_SHARE": "Revenue share"
+    },
+    "contractStatuses": {
+      "DRAFT": "Draft",
+      "MANGAKA_REVIEW": "Mangaka review",
+      "NEGOTIATION": "Negotiation",
+      "MANGAKA_APPROVED": "Mangaka approved",
+      "BOARD_APPROVED": "Board approved",
+      "MANGAKA_SIGNED": "Mangaka signed",
+      "FULLY_EXECUTED": "Fully executed",
+      "FULFILLED": "Fulfilled",
+      "TERMINATED": "Terminated",
+      "TERMINATED_BY_BREACH": "Terminated by breach",
+      "EXPIRED": "Expired",
+      "VOIDED": "Voided"
+    },
+    "notificationTypes": {
+      "SYSTEM": "System",
+      "CONTRACT": "Contract",
+      "TASK": "Task",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Survey",
+      "BOARD": "Board",
+      "REVIEW": "Review"
+    }
+  },
   "dashboard": {
     "eyebrow": "Editorial workspace",
     "title": "Editorial and publication workflow",
     "subtitle": "Claim series submissions, review proposals and sample Names, then approve chapter manuscripts before release.",
+    "liveDataError": "Live dashboard data is temporarily unavailable. The workflow shortcuts remain available.",
+    "summary": {
+      "reviewQueue": "Review queue",
+      "mySeries": "Assigned series",
+      "pendingContracts": "Pending contracts",
+      "unread": "Unread notifications"
+    },
+    "alerts": {
+      "production": "Production alerts",
+      "atRisk": "At-risk series",
+      "pagesReady": "pages ready"
+    },
     "proposals": {
       "title": "Series submissions",
       "description": "Process new submissions, claim ownership, and review the proposal together with its sample Name.",
@@ -127,7 +191,6 @@
     "workflow": {
       "DRAFT": "Waiting for the chapter Name",
       "IN_PRODUCTION": "Pages are in production",
-      "COMPOSITE_REVIEW": "Mangaka composite review",
       "EDITOR_REVIEW": "Final manuscript review",
       "EDITOR_REVISION": "Waiting for Mangaka revisions",
       "READY_FOR_PRINT": "Check publication requirements",
@@ -137,7 +200,6 @@
     "workflowDescription": {
       "DRAFT": "The Mangaka must complete and submit the chapter Name before page production begins.",
       "IN_PRODUCTION": "Pages and tasks are in progress; monitor production and deadline risk.",
-      "COMPOSITE_REVIEW": "The Mangaka is checking each composite page before submitting the manuscript.",
       "EDITOR_REVIEW": "Inspect the composites, request focused revisions, or approve the manuscript.",
       "EDITOR_REVISION": "A revision request was sent; wait for the Mangaka to update and resubmit.",
       "READY_FOR_PRINT": "The manuscript is approved; verify the contract before publication.",
@@ -170,6 +232,11 @@
     "emptyReady": "No series is ready to pitch.",
     "sessionTitle": "Create a Board session",
     "sessionDescription": "The system automatically suggests an odd-numbered roster from the selected series.",
+    "sessionRulesTitle": "Session creation rules",
+    "sessionRuleMemberCount": "The current system configuration recommends {{count}} members. A session must contain at least 3 members and its total member count must be odd.",
+    "sessionRuleRoster": "The selected series is only used to suggest members by specialty; one session may still review multiple series.",
+    "sessionRuleVoting": "Only roster members may vote. At least {{count}} voters are required for quorum; the session must be active and in the voting phase.",
+    "noEligibleSeriesForSession": "No series is ready to pitch or already pitched. Complete the editorial review and pitching steps before creating a session.",
     "rosterSourceSeries": "Series used for roster suggestions",
     "rosterSourceSeriesHint": "This selection only helps match Board member specialties. The session can review decisions for multiple series.",
     "sessionName": "Session title",
@@ -186,6 +253,40 @@
     "selectedMemberCount": "{{count}} members selected. The roster must contain an odd number of at least 3 members.",
     "selectSeries": "Select a series",
     "sessions": "Board sessions",
+    "filters": {
+      "searchSessions": "Search session title",
+      "allStatuses": "All session statuses",
+      "allSeries": "All series",
+      "allSessions": "All sessions",
+      "allDecisionTypes": "All decision types",
+      "allResults": "All decision results"
+    },
+    "sessionStatuses": {
+      "UPCOMING": "Upcoming",
+      "ACTIVE": "Active",
+      "CONCLUDED": "Concluded"
+    },
+    "decisionTypeLabels": {
+      "SERIALIZATION": "Serialization approval",
+      "CANCELLATION": "Series cancellation",
+      "FORMAT_CHANGE": "Publication format change",
+      "COMPLETION": "Series completion",
+      "CONTINUE": "Continue publication",
+      "CANCEL": "Cancel series",
+      "HIATUS": "Place series on hiatus",
+      "ENDING_ALLOWANCE": "Ending chapter allowance",
+      "SERIES_CONTRACT_APPROVAL": "Series contract approval",
+      "CONTRACT": "Contract decision",
+      "REPRINT": "Reprint approval",
+      "TRANSFER": "Transfer approval"
+    },
+    "decisionResultLabels": {
+      "PENDING": "Pending vote",
+      "PENDING_QUORUM": "Waiting for quorum",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "EXPIRED": "Expired"
+    },
     "sessionsDescription": "Start an upcoming session or conclude an active session.",
     "emptySessions": "No Board sessions have been created.",
     "votingProgress": "Voting progress",
@@ -246,6 +347,13 @@
     "lifecycleDecision": "Lifecycle Board decision",
     "decisionType": "Decision type",
     "decisionNote": "Explain the reason and expected outcome of this decision...",
+    "endingChapterAllowance": "Allowed ending chapters",
+    "newPublicationType": "New publication cadence",
+    "publicationTypes": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "irregular": "Irregular"
+    },
     "decisionTypes": {
       "continue": "Continue serialization",
       "cancel": "Cancel series",
@@ -348,6 +456,7 @@
     "issue": "Issue number",
     "reflectedIssue": "Reflected issue",
     "transferAmount": "Transfer amount",
+    "transferRequestId": "Transfer request ID",
     "coOwner": "Require co-owner chapter approval",
     "notes": "Edition notes",
     "explorer": "Operational data explorer",
@@ -360,6 +469,7 @@
     "reviewSeriesOwner": "The assigned Mangaka will be reviewed",
     "selectSeriesFirst": "Select a series to identify its Mangaka",
     "keepCurrent": "Keep current value",
+    "selectPublicationVersion": "Select a publication version",
     "offlineVoteEntries": "Offline vote totals by series",
     "voteCount": "Number of votes",
     "fullTransfer": "Full ownership transfer",
@@ -375,6 +485,15 @@
     "riskLevel": "Risk level",
     "createSurveySection": "Create survey period",
     "surveyStatusSection": "Survey status and ranking",
+    "selectSurvey": "Select a survey period",
+    "surveyEmpty": "No survey period is available.",
+    "surveyReflectedNotice": "This ranking has been finalized and is now read-only.",
+    "surveyStatuses": {
+      "DRAFT": "Draft",
+      "OPEN": "Open for voting",
+      "CLOSED": "Voting closed",
+      "REFLECTED": "Ranking published"
+    },
     "createReprintSection": "Create reprint request",
     "approveReprintSection": "Approve reprint chapter",
     "assignReviserSection": "Assign chapter reviser",
@@ -412,7 +531,8 @@
     "genres": "Specialty genres",
     "demographics": "Audience demographics",
     "experience": "Years of experience",
-    "bio": "Professional bio"
+    "bio": "Professional bio",
+    "edit": "Edit profile"
   },
   "actions": {
     "review": "View and process",
@@ -427,6 +547,7 @@
     "revisionPlaceholder": "Describe clearly what needs to be revised...",
     "publish": "Publish chapter",
     "pitch": "Pitch to Board",
+    "cancel": "Cancel",
     "createSession": "Create session",
     "startSession": "Start session",
     "concludeSession": "Conclude session",
@@ -466,6 +587,8 @@
     "reject": "Reject",
     "withdraw": "Withdraw",
     "createSurvey": "Create survey period",
+    "openSurvey": "Open voting",
+    "closeSurvey": "Close voting",
     "updateStatus": "Update status",
     "importVotes": "Import offline votes",
     "finalizeRanking": "Finalize ranking",

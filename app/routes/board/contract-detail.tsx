@@ -4,6 +4,8 @@ import {
   contractControllerBoardRequestChanges,
   contractControllerCheckStatus,
   contractControllerGetContractById,
+  contractControllerGetContractVersions,
+  contractControllerGetPaymentConditions,
   contractControllerListAmendments,
   contractControllerSignAmendmentBoard,
   contractControllerSignBoard
@@ -13,16 +15,21 @@ import { BoardContractDetailPage, type BoardActionResult } from '~/features/boar
 import type { Route } from './+types/contract-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [contract, progress, amendments] = await Promise.all([
+  const [contract, progress, amendments, conditions, versions] = await Promise.all([
     contractControllerGetContractById({ id: params.id }),
     contractControllerCheckStatus({ id: params.id }).catch(() => null),
-    contractControllerListAmendments({ contractId: params.id }).catch(() => null)
+    contractControllerListAmendments({ contractId: params.id }).catch(() => null),
+    contractControllerGetPaymentConditions({ contractId: params.id }).catch(() => null),
+    contractControllerGetContractVersions({ id: params.id }).catch(() => null)
   ])
   if (contract.status !== 200) throw new Response('Not found', { status: 404 })
   return {
     contract: contract.data,
     progress: progress?.status === 200 ? progress.data : null,
-    amendments: amendments?.status === 200 ? amendments.data : []
+    amendments: amendments?.status === 200 ? amendments.data : [],
+    conditions: conditions?.status === 200 ? conditions.data.data : [],
+    versions: versions?.status === 200 ? versions.data : [],
+    hasSupplementaryDataError: [progress, amendments, conditions, versions].some((response) => response == null)
   }
 }
 

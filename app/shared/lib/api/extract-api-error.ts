@@ -3,7 +3,7 @@ import type { FetchError } from '~/api/mutator/custom-fetch'
 /**
  * Pull a human-readable message out of an error thrown by `customFetch`.
  *
- * BE error envelope: { success: false, message: string, errors?: [{ message, path }] }
+ * BE error envelope: { success: false, code: string, message: string, errors?: [{ message, path }] }
  * - `message` is always a string (never an array).
  * - Field-level validation errors are in `errors[]` (used by form components to map per-field).
  * - Generic/system errors (403, 409, 500…) only have `message`, no `errors`.
@@ -15,15 +15,19 @@ export function extractApiErrorMessage(error: unknown, fallback: string): string
 
   if (error instanceof Error) {
     const fetchError = error as FetchError
-    if (fetchError.data?.message) {
-      return fetchError.data.message.startsWith('Error.') ? fallback : fetchError.data.message
-    }
+    if (fetchError.data?.message) return fetchError.data.message
     if (error.message && error.message !== 'API error') {
       return error.message
     }
   }
 
   return fallback
+}
+
+/** Stable machine-readable BE error code (Spec 21). */
+export function extractApiErrorCode(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined
+  return (error as FetchError).data?.code
 }
 
 /**

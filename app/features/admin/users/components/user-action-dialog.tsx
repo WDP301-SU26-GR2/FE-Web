@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { KeyRound, RotateCcw, ShieldCheck, Trash2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { FetcherWithComponents } from 'react-router'
@@ -22,6 +23,12 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
   const { action, user } = selection
   const Icon = ACTION_ICON[action]
   const isSubmitting = fetcher.state !== 'idle'
+  const submitted = useRef(false)
+
+  useEffect(() => {
+    if (fetcher.state !== 'idle') submitted.current = true
+    if (submitted.current && fetcher.state === 'idle' && fetcher.data?.ok) onClose()
+  }, [fetcher.data, fetcher.state, onClose])
 
   return (
     <div className='fixed inset-0 z-[70] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm'>
@@ -53,7 +60,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
           </button>
         </div>
 
-        <fetcher.Form method='post' className='space-y-4 p-5' onSubmit={onClose}>
+        <fetcher.Form method='post' className='space-y-4 p-5'>
           <input type='hidden' name='intent' value={action} />
           <input type='hidden' name='userId' value={user.id} />
           <input type='hidden' name='userEmail' value={user.email} />

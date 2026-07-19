@@ -5,7 +5,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   SeriesSelect,
   operationInput,
@@ -29,7 +29,7 @@ export function EditorReprintsPage({
       descriptionKey='operations.descriptions.reprints'
       hasError={hasError}
     >
-      <OperationPanel icon={BookCopy} title={t('operations.createReprintSection')}>
+      <OperationDialogPanel icon={BookCopy} title={t('operations.createReprintSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
           <SeriesSelect series={series} />
           <select name='revisionMode' className={operationInput}>
@@ -57,16 +57,16 @@ export function EditorReprintsPage({
           </div>
           <OperationAction intent='createReprint' label={t('actions.createReprint')} />
         </fetcher.Form>
-      </OperationPanel>
-      <OperationPanel icon={BookCopy} title={t('operations.approveReprintSection')}>
+      </OperationDialogPanel>
+      <OperationDialogPanel icon={BookCopy} title={t('operations.approveReprintSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
           <ReprintSelect items={reprints} />
           <input name='reprintChapterId' required className={operationInput} placeholder='Reprint chapter ID' />
           <input name='originalChapterId' required className={operationInput} placeholder='Original chapter ID' />
           <OperationAction intent='approveReprintChapter' label={t('actions.approveReprint')} />
         </fetcher.Form>
-      </OperationPanel>
-      <OperationPanel icon={BookCopy} title={t('operations.assignReviserSection')}>
+      </OperationDialogPanel>
+      <OperationDialogPanel icon={BookCopy} title={t('operations.assignReviserSection')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <ReprintSelect items={reprints} />
           <input name='reprintChapterId' required className={operationInput} placeholder='Reprint chapter ID' />
@@ -80,7 +80,7 @@ export function EditorReprintsPage({
           </div>
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }
@@ -90,7 +90,7 @@ function ReprintSelect({ items }: { items: ReprintRequestResDtoOutput[] }) {
     <select name='reprintId' required className={operationInput}>
       {items.map((item) => (
         <option key={item.id} value={item.id}>
-          {item.id} · {item.status}
+          {item.series?.title ?? item.seriesId} · {item.status}
         </option>
       ))}
     </select>

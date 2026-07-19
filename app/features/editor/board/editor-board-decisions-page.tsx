@@ -1,10 +1,12 @@
-import { useState } from 'react'
-import { Loader2, Vote } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { Loader2, Plus, Vote } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
 import type { BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { Dialog } from '~/shared/ui/dialog'
 import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
 import { orderBoardDecisions, orderBoardSessions } from './board-order'
 import {
@@ -22,18 +24,25 @@ export function EditorBoardDecisionsPage({
   sessions,
   decisions,
   sessionPhases,
-  hasError
+  hasError,
+  backPath = '/dashboard/editor/board',
+  detailBasePath
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
   sessionPhases: Record<string, BoardSessionPhase>
   hasError: boolean
+  backPath?: string
+  detailBasePath?: string
 }) {
   const { t } = useTranslation('editor')
   const { session: authSession } = useAuth()
   const [selectedSeriesId, setSelectedSeriesId] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState('')
+  const [decisionType, setDecisionType] = useState('')
+  const [decisionResult, setDecisionResult] = useState('')
+  const [createOpen, setCreateOpen] = useState(false)
   useBoardAutoRefresh()
   const realtime = useEditorSessionVoteProgress(sessions, decisions)
   const eligibleSessions = orderBoardSessions(
@@ -41,8 +50,15 @@ export function EditorBoardDecisionsPage({
   )
   const visibleDecisions = orderBoardDecisions(
     realtime.decisions.filter(
-      (decision) => decision.targetSeriesId === selectedSeriesId && decision.boardSessionId === selectedSessionId
+      (decision) =>
+        (!selectedSeriesId || decision.targetSeriesId === selectedSeriesId) &&
+        (!selectedSessionId || decision.boardSessionId === selectedSessionId) &&
+        (!decisionType || decision.decisionType === decisionType) &&
+        (!decisionResult || decision.result === decisionResult)
     )
+  )
+  const hasExistingDecision = realtime.decisions.some(
+    (decision) => decision.targetSeriesId === selectedSeriesId && decision.boardSessionId === selectedSessionId
   )
 
   function selectSeries(seriesId: string) {
@@ -55,26 +71,64 @@ export function EditorBoardDecisionsPage({
       titleKey='board.sections.decisions'
       descriptionKey='board.sectionDescriptions.decisions'
       hasError={hasError}
+      backPath={backPath}
     >
-      <div className='max-w-3xl'>
+      <div className='flex justify-end'>
+        <button
+          type='button'
+          onClick={() => setCreateOpen(true)}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          <Plus className='size-4' />
+          {t('actions.createDecision')}
+        </button>
+      </div>
+      {createOpen && (
         <CreateSerializationDecision
           series={series}
           sessions={eligibleSessions}
           selectedSeriesId={selectedSeriesId}
           selectedSessionId={selectedSessionId}
-          hasExistingDecision={visibleDecisions.length > 0}
+          hasExistingDecision={hasExistingDecision}
           onSelectSeries={selectSeries}
           onSelectSession={setSelectedSessionId}
+          onClose={() => setCreateOpen(false)}
         />
-      </div>
-      {selectedSeriesId && selectedSessionId && (
-        <BoardPanel title={t('board.decisionList')}>
+      )}
+      <BoardPanel title={t('board.decisionList')}>
+          <div className='mb-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 md:grid-cols-2 xl:grid-cols-4'>
+              <select className={boardInput} value={selectedSeriesId} onChange={(event) => selectSeries(event.target.value)}>
+                <option value=''>{t('board.filters.allSeries')}</option>
+                {series.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+              </select>
+              <select className={boardInput} value={selectedSessionId} onChange={(event) => setSelectedSessionId(event.target.value)}>
+                <option value=''>{t('board.filters.allSessions')}</option>
+                {sessions.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+              </select>
+              <select className={boardInput} value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
+                <option value=''>{t('board.filters.allDecisionTypes')}</option>
+                {[...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))].map((value) => (
+                  <option key={value} value={value}>
+                    {t(`board.decisionTypeLabels.${value}`, { defaultValue: value })}
+                  </option>
+                ))}
+              </select>
+              <select className={boardInput} value={decisionResult} onChange={(event) => setDecisionResult(event.target.value)}>
+                <option value=''>{t('board.filters.allResults')}</option>
+                {['PENDING', 'PENDING_QUORUM', 'APPROVED', 'REJECTED', 'EXPIRED'].map((value) => (
+                  <option key={value} value={value}>
+                    {t(`board.decisionResultLabels.${value}`, { defaultValue: value })}
+                  </option>
+                ))}
+              </select>
+          </div>
           <div className='grid gap-3 md:grid-cols-2'>
             {visibleDecisions.map((decision) => (
               <DecisionCard
                 key={decision.id}
                 decision={decision}
                 series={series}
+                detailBasePath={detailBasePath}
                 canVote={sessions.some(
                   (session) =>
                     session.id === decision.boardSessionId &&
@@ -88,8 +142,7 @@ export function EditorBoardDecisionsPage({
               <p className='text-sm text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
             )}
           </div>
-        </BoardPanel>
-      )}
+      </BoardPanel>
     </BoardPageLayout>
   )
 }
@@ -101,7 +154,8 @@ function CreateSerializationDecision({
   selectedSessionId,
   hasExistingDecision,
   onSelectSeries,
-  onSelectSession
+  onSelectSession,
+  onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
@@ -110,13 +164,24 @@ function CreateSerializationDecision({
   hasExistingDecision: boolean
   onSelectSeries: (seriesId: string) => void
   onSelectSession: (sessionId: string) => void
+  onClose: () => void
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
 
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
+  }, [fetcher.data, fetcher.state, onClose])
+
   return (
-    <BoardPanel title={t('board.decisionTitle')}>
-      <p className='mb-4 text-sm text-muted-foreground'>{t('board.decisionDescription')}</p>
+    <Dialog
+      open
+      onClose={onClose}
+      titleId='create-serialization-decision'
+      title={t('board.decisionTitle')}
+      description={t('board.decisionDescription')}
+      size='lg'
+    >
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createDecision' />
         <SelectSeries series={series} value={selectedSeriesId} onChange={onSelectSeries} />
@@ -146,7 +211,6 @@ function CreateSerializationDecision({
                   {t('proposalDetail.publicationType')}
                   <select className={boardInput} name='publicationType' required defaultValue='WEEKLY'>
                     <option value='WEEKLY'>WEEKLY</option>
-                    <option value='BIWEEKLY'>BIWEEKLY</option>
                     <option value='MONTHLY'>MONTHLY</option>
                     <option value='IRREGULAR'>IRREGULAR</option>
                   </select>
@@ -155,26 +219,33 @@ function CreateSerializationDecision({
             </>
           ))}
         {selectedSessionId && !hasExistingDecision && (
-          <SubmitButton
-            label={t('actions.createDecision')}
-            disabled={!selectedSeriesId || !selectedSessionId}
-            loading={fetcher.state !== 'idle'}
-          />
+          <div className='flex justify-end gap-2 border-t border-border pt-4'>
+            <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+              {t('actions.cancel')}
+            </button>
+            <SubmitButton
+              label={t('actions.createDecision')}
+              disabled={!selectedSeriesId || !selectedSessionId}
+              loading={fetcher.state !== 'idle'}
+            />
+          </div>
         )}
       </fetcher.Form>
       <BoardFeedback data={fetcher.data} />
-    </BoardPanel>
+    </Dialog>
   )
 }
 
 function DecisionCard({
   decision,
   series,
-  canVote
+  canVote,
+  detailBasePath
 }: {
   decision: BoardDecisionResDtoOutput
   series: SeriesListResDtoOutputItemsItem[]
   canVote: boolean
+  detailBasePath?: string
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
@@ -185,7 +256,15 @@ function DecisionCard({
     <article className='rounded-lg border border-border p-4'>
       <div className='flex items-start justify-between gap-3'>
         <div>
-          <h3 className='font-bold text-foreground'>{seriesTitle ?? decision.targetSeriesId ?? '—'}</h3>
+          <h3 className='font-bold text-foreground'>
+            {detailBasePath ? (
+              <Link className='hover:text-primary hover:underline' to={`${detailBasePath}/${decision.id}`}>
+                {seriesTitle ?? decision.targetSeriesId ?? '—'}
+              </Link>
+            ) : (
+              seriesTitle ?? decision.targetSeriesId ?? '—'
+            )}
+          </h3>
           <p className='mt-1 text-xs font-semibold text-muted-foreground'>{decision.decisionType ?? '—'}</p>
         </div>
         <BoardStatus value={decision.result ?? 'PENDING'} />

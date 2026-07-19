@@ -1,28 +1,52 @@
 import { GitPullRequestArrow } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { TransferRequestResDtoOutput } from '~/api/model/transfer'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
 
-export function EditorTransfersPage() {
+export function EditorTransfersPage({
+  request,
+  requestId,
+  hasError
+}: {
+  request: TransferRequestResDtoOutput | null
+  requestId: string
+  hasError: boolean
+}) {
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   return (
-    <OperationsLayout titleKey='operations.transfers' descriptionKey='operations.descriptions.transfers'>
-      <OperationPanel icon={GitPullRequestArrow} title={t('operations.startTransferSection')}>
+    <OperationsLayout titleKey='operations.transfers' descriptionKey='operations.descriptions.transfers' hasError={hasError}>
+      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_auto]'>
+          <input name='requestId' defaultValue={requestId} required className={operationInput} placeholder={t('operations.transferRequestId')} />
+          <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>{t('actions.load')}</button>
+        </form>
+        {request && (
+          <div className='mt-4 rounded-lg border border-border p-4 text-sm'>
+            <div className='flex flex-wrap justify-between gap-2'>
+              <strong>{request.seriesId}</strong>
+              <span className='font-bold text-primary'>{request.status}</span>
+            </div>
+            <p className='mt-2 text-muted-foreground'>{request.planDescription}</p>
+          </div>
+        )}
+      </section>
+      <OperationDialogPanel icon={GitPullRequestArrow} title={t('operations.startTransferSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
-          <input name='transferRequestId' required className={operationInput} placeholder='Transfer request ID' />
+          <input name='transferRequestId' required readOnly={Boolean(request)} defaultValue={request?.id ?? requestId} className={operationInput} placeholder={t('operations.transferRequestId')} />
           <OperationAction intent='startTransfer' label={t('actions.startNegotiation')} />
         </fetcher.Form>
-      </OperationPanel>
-      <OperationPanel icon={GitPullRequestArrow} title={t('operations.createTransferSection')}>
+      </OperationDialogPanel>
+      <OperationDialogPanel icon={GitPullRequestArrow} title={t('operations.createTransferSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
-          <input name='transferRequestId' required className={operationInput} placeholder='Transfer request ID' />
+          <input name='transferRequestId' required readOnly={Boolean(request)} defaultValue={request?.id ?? requestId} className={operationInput} placeholder={t('operations.transferRequestId')} />
           <input
             name='transferAmount'
             type='number'
@@ -49,7 +73,7 @@ export function EditorTransfersPage() {
           <OperationAction intent='createTransferContract' label={t('actions.createTransferContract')} />
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }

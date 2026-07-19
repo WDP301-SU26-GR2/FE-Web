@@ -1,4 +1,7 @@
 {
+  "navigation": {
+    "backDashboard": "Back to Admin dashboard"
+  },
   "dashboard": {
     "eyebrow": "Operations center",
     "title": "System overview",
@@ -9,6 +12,7 @@
     "loadErrorTitle": "Unable to load system statistics",
     "loadErrorDescription": "Check your connection or SUPER_ADMIN permissions, then try refreshing.",
     "empty": "No data is available yet.",
+    "unreadNotifications": "You have {{count}} unread notifications to review.",
     "kpis": {
       "users": {
         "label": "Active users",
@@ -220,6 +224,7 @@
     "title": "System configuration",
     "subtitle": "Manage runtime business parameters, Board voting rules, and reader-vote fraud protection.",
     "save": "Save configuration",
+    "edit": "Edit configuration",
     "saving": "Saving...",
     "lastUpdated": "Last updated: {{date}}",
     "units": {
@@ -273,6 +278,127 @@
     "loadError": {
       "title": "Unable to load system configuration",
       "description": "Check your connection and SUPER_ADMIN permissions, then try again."
+    }
+  },
+  "operations": {
+    "back": "Back to system operations",
+    "eyebrow": "Operations tools",
+    "title": "System operations",
+    "subtitle": "Business tools that a Super Admin may use to support platform-wide operations.",
+    "notice": {
+      "title": "These actions affect the whole platform",
+      "description": "Verify the target survey period or series before saving. Changes here may affect rankings and publication editions."
+    },
+    "monitoring": {
+      "eyebrow": "Read-only lookup",
+      "title": "Business monitoring",
+      "description": "Inspect series, revision rounds, reprint requests, and deadlines without exposing state-changing actions.",
+      "subtitle": "Read-only operational data for investigation and incident support.",
+      "series": "Platform series",
+      "revisions": "Recent revision rounds",
+      "reprints": "Reprint requests",
+      "deadlines": "Deadline lookup by chapter",
+      "chapterId": "Enter chapter ID",
+      "search": "Search",
+      "deadlineHint": "Enter a chapter ID to review its deadline requests.",
+      "resolved": "Resolved",
+      "open": "Open",
+      "filters": {
+        "searchSeries": "Search series title",
+        "searchReprints": "Search reprint series",
+        "allStatuses": "All statuses",
+        "allRevisionTypes": "All revision types",
+        "allResolutionStates": "All resolution states"
+      },
+      "revisionTypes": {
+        "PROPOSAL": "Series proposal",
+        "NAME": "Storyboard",
+        "MANUSCRIPT": "Manuscript",
+        "TASK": "Production task"
+      },
+      "seriesStatuses": {
+        "DRAFT": "Draft",
+        "IN_REVIEW": "Under review",
+        "READY_TO_PITCH": "Ready for Board presentation",
+        "PITCHED": "Presented to the Board",
+        "SERIALIZED": "Serialized",
+        "HIATUS": "On hiatus",
+        "COMPLETING": "Completing",
+        "CANCELLING": "Being cancelled",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled",
+        "REJECTED": "Rejected by the Board",
+        "ABANDONED": "Abandoned",
+        "WITHDRAWN": "Withdrawn"
+      },
+      "reprintStatuses": {
+        "PENDING": "Pending",
+        "PROPOSED": "Proposed",
+        "MANGAKA_REVIEW": "Waiting for Mangaka review",
+        "MANGAKA_APPROVED": "Approved by Mangaka",
+        "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
+        "BOARD_APPROVED": "Approved by the Board",
+        "APPROVED": "Approved",
+        "IN_PRODUCTION": "In production",
+        "PUBLISHED": "Published",
+        "REJECTED": "Rejected"
+      },
+      "deadlineStatuses": {
+        "PROPOSED": "Proposed",
+        "COUNTER_PROPOSED": "Counter-proposed",
+        "AGREED_BY_PARTIES": "Agreed by both parties",
+        "APPROVED": "Approved",
+        "BOARD_REVIEW": "Under Board review",
+        "ESCALATED": "Escalated",
+        "REJECTED": "Rejected"
+      },
+      "empty": "No matching data is available.",
+      "loadError": "The monitoring data could not be loaded completely. Please try again."
+    },
+    "surveys": {
+      "title": "Survey and ranking",
+      "description": "Create survey periods, control status, import offline votes, and finalize rankings."
+    },
+    "publicationVersions": {
+      "title": "Publication versions",
+      "description": "Create, update, or delete series language editions and reading directions."
+    }
+  },
+  "boardOversight": {
+    "eyebrow": "Business oversight",
+    "title": "Board administration",
+    "subtitle": "Monitor Board activity and use administrative privileges only when the Editor or Board Member workflow encounters a problem.",
+    "notice": {
+      "title": "These are fallback intervention privileges",
+      "description": "A Super Admin does not attend or vote as a Board Member. Let the Editor operate the session and intervene only when the workflow must be restored."
+    },
+    "monitoring": {
+      "title": "Monitoring",
+      "description": "Review session state and supporting material without changing the business workflow."
+    },
+    "intervention": {
+      "title": "Incident intervention",
+      "description": "These tools can change business data and should only be used when necessary."
+    },
+    "sessions": {
+      "title": "Board sessions",
+      "description": "Monitor upcoming, active, and concluded sessions; advance a phase if the session creator cannot act."
+    },
+    "reports": {
+      "title": "Board reports",
+      "description": "Read series analysis reports prepared for Board decisions."
+    },
+    "decisions": {
+      "title": "Serialization decisions",
+      "description": "Inspect and restore a serialization decision flow when the normal workflow is interrupted."
+    },
+    "lifecycle": {
+      "title": "Lifecycle decisions",
+      "description": "Intervene in cancellation, hiatus, completion, or publication-format decisions."
+    },
+    "payments": {
+      "title": "Payment handling",
+      "description": "Monitor and pay or cancel payment records; approval remains a Board Member responsibility."
     }
   },
   "audit": {

@@ -14,14 +14,14 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   if (decision.status !== 200) throw new Response('Not found', { status: 404 })
   const [votes, reports, session] = await Promise.all([
     boardControllerGetDecisionVotes({ id: params.id }),
-    boardControllerGetReports(),
+    boardControllerGetReports({ boardDecisionId: params.id }),
     boardControllerGetSessionById({ id: decision.data.boardSessionId })
   ])
   if (votes.status !== 200 || session.status !== 200) throw new Response('Not found', { status: 404 })
   return {
     decision: decision.data,
     votes: votes.data,
-    reports: reports.data.filter((item) => item.boardDecisionId === params.id),
+    reports: reports.data,
     sessionStatus: session.data.status,
     sessionPhase: readBoardSessionPhase(session.data),
     allowedEditorIds: session.data.allowedEditorIds

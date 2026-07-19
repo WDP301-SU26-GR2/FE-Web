@@ -13,8 +13,13 @@ import { readStorage, writeStorage, removeStorage } from '~/shared/lib/storage'
  */
 export type FetchError = Error & {
   status: number
-  /** Parsed BE error body — follows { message: string, errors?: [] } */
-  data: { message: string; errors?: Array<{ message: string; path?: string }> }
+  /** Parsed BE error body — `code` is stable, `message` is display-ready Vietnamese text. */
+  data: {
+    code?: string
+    message: string
+    errors?: Array<{ code?: string | null; message: string; path?: string }>
+    retryAfter?: number
+  }
 }
 
 /** True when the BE returned an error (non-2xx or { success: false }). */

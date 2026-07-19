@@ -1,10 +1,26 @@
 import {
   transferControllerCreateTransferContract,
+  transferControllerGetTransferRequestById,
   transferControllerStartNegotiation
 } from '~/api/operations/transfer/transfer'
 import { EditorTransfersPage, type EditorActionResult } from '~/features/editor'
 import { required } from './operations-route-utils'
 import type { Route } from './+types/operations-transfers'
+
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const requestId = new URL(request.url).searchParams.get('requestId')?.trim() ?? ''
+  if (!requestId) return { request: null, requestId: '', hasError: false }
+  try {
+    const response = await transferControllerGetTransferRequestById({ id: requestId })
+    return {
+      request: response.status === 200 ? response.data : null,
+      requestId,
+      hasError: response.status !== 200
+    }
+  } catch {
+    return { request: null, requestId, hasError: true }
+  }
+}
 
 export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
   const form = await request.formData()
@@ -34,6 +50,6 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   }
 }
 
-export default function RouteComponent() {
-  return <EditorTransfersPage />
+export default function RouteComponent({ loaderData }: Route.ComponentProps) {
+  return <EditorTransfersPage {...loaderData} />
 }

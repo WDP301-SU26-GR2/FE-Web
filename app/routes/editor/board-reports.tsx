@@ -5,17 +5,19 @@ import {
 } from '~/api/operations/board/board'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorBoardReportsPage, type EditorActionResult } from '~/features/editor'
-import { required } from './board-route-utils'
+import { loadBoardLifecycleSeries, required } from './board-route-utils'
 import type { Route } from './+types/board-reports'
 
 export async function clientLoader() {
   try {
-    const [series, decisions, reports] = await Promise.all([
+    const [pitched, lifecycle, decisions, reports] = await Promise.all([
       seriesControllerListSeries({ status: 'PITCHED', limit: 100, offset: 0 }),
+      loadBoardLifecycleSeries(),
       boardControllerGetDecisions(),
       boardControllerGetReports()
     ])
-    return { series: series.data.items, decisions: decisions.data, reports: reports.data, hasError: false }
+    const series = [...new Map([...pitched.data.items, ...lifecycle].map((item) => [item.id, item])).values()]
+    return { series, decisions: decisions.data, reports: reports.data, hasError: false }
   } catch {
     return { series: [], decisions: [], reports: [], hasError: true }
   }

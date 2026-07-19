@@ -1,28 +1,35 @@
 import { boardControllerGetSessions } from '~/api/operations/board/board'
+import { authControllerSendOtp } from '~/api/operations/auth/auth'
+import { usersControllerGetMe } from '~/api/operations/users/users'
 import {
   transferControllerBoardApproveScreening,
   transferControllerBoardAssignFullBuyout,
   transferControllerBoardRejectScreening,
   transferControllerGetPendingBoardRequests,
+  transferControllerGetSignatures,
   transferControllerSignTransferContract
 } from '~/api/operations/transfer/transfer'
 import type { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
 import { BoardTransfersPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/transfers'
 
-export async function clientLoader() {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const contractId = new URL(request.url).searchParams.get('contractId')?.trim() ?? ''
   try {
-    const [requests, sessions] = await Promise.all([
+    const [requests, sessions, signatures] = await Promise.all([
       transferControllerGetPendingBoardRequests(),
-      boardControllerGetSessions()
+      boardControllerGetSessions(),
+      contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
     ])
     return {
       requests: requests.data.data,
       sessions: sessions.data.filter((item) => item.status === 'ACTIVE'),
+      contractId,
+      signatures: signatures?.status === 200 ? signatures.data.signatures : [],
       hasError: false
     }
   } catch {
-    return { requests: [], sessions: [], hasError: true }
+    return { requests: [], sessions: [], contractId, signatures: [], hasError: true }
   }
 }
 
@@ -30,7 +37,11 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (intent === 'approve' || intent === 'reject') {
+    if (intent === 'sendOtp') {
+      const me = await usersControllerGetMe()
+      if (me.status !== 200) throw new Error('Unable to load current user')
+      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
+    } else if (intent === 'approve' || intent === 'reject') {
       const params = { id: required(form, 'requestId') }
       const body = {
         boardSessionId: required(form, 'sessionId'),

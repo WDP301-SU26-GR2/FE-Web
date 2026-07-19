@@ -170,17 +170,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
                   : 'operationCompleted'
     }
   } catch (error) {
-    const message =
+    const code =
       error && typeof error === 'object' && 'data' in error
-        ? (error as { data?: { message?: string } }).data?.message
+        ? (error as { data?: { code?: string } }).data?.code
         : undefined
     const errorKey =
-      message === 'Error.NotAssignedEditor' || message === 'Error.NotSeriesEditor'
+      code === 'Error.NotAssignedEditor' || code === 'Error.NotSeriesEditor'
         ? 'notAssigned'
-        : message === 'Error.ContractNotExecuted' || message === 'Error.ContractNotFullyExecuted'
+        : code === 'Error.ContractNotExecuted' || code === 'Error.ContractNotFullyExecuted'
           ? 'contractRequired'
           : ['Error.InvalidManuscriptState', 'Error.InvalidManuscriptTransition', 'Error.InvalidNameState'].includes(
-                message ?? ''
+                code ?? ''
               )
             ? 'invalidState'
             : 'actionFailed'

@@ -107,37 +107,41 @@ export function UserTable({ users, includeDeleted, onAction }: UserTableProps) {
                     >
                       <Eye className='size-4' />
                     </Link>
-                    <ActionButton
-                      action='status'
-                      label={t('users.actions.changeStatus')}
-                      icon={ShieldCheck}
-                      user={user}
-                      onAction={onAction}
-                    />
-                    <ActionButton
-                      action='resetPassword'
-                      label={t('users.actions.resetPassword')}
-                      icon={KeyRound}
-                      user={user}
-                      onAction={onAction}
-                    />
-                    {includeDeleted ? (
-                      <ActionButton
-                        action='restore'
-                        label={t('users.actions.restore')}
-                        icon={RotateCcw}
-                        user={user}
-                        onAction={onAction}
-                      />
-                    ) : (
-                      <ActionButton
-                        action='delete'
-                        label={t('users.actions.delete')}
-                        icon={Trash2}
-                        user={user}
-                        onAction={onAction}
-                        destructive
-                      />
+                    {user.role !== 'SUPER_ADMIN' && (
+                      <>
+                        <ActionButton
+                          action='status'
+                          label={t('users.actions.changeStatus')}
+                          icon={ShieldCheck}
+                          user={user}
+                          onAction={onAction}
+                        />
+                        <ActionButton
+                          action='resetPassword'
+                          label={t('users.actions.resetPassword')}
+                          icon={KeyRound}
+                          user={user}
+                          onAction={onAction}
+                        />
+                        {includeDeleted ? (
+                          <ActionButton
+                            action='restore'
+                            label={t('users.actions.restore')}
+                            icon={RotateCcw}
+                            user={user}
+                            onAction={onAction}
+                          />
+                        ) : (
+                          <ActionButton
+                            action='delete'
+                            label={t('users.actions.delete')}
+                            icon={Trash2}
+                            user={user}
+                            onAction={onAction}
+                            destructive
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                 </td>

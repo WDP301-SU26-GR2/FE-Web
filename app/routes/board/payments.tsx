@@ -47,5 +47,5 @@ function required(form: FormData, key: string) {
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardPaymentsPage {...loaderData} />
+  return <BoardPaymentsPage {...loaderData} enableFilters />
 }

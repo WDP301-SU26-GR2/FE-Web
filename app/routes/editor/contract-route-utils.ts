@@ -64,23 +64,21 @@ export function ownershipIsValid(contractType: string, publisher: number, mangak
 }
 
 export function contractErrorKey(error: unknown) {
-  const message =
+  const code =
     error && typeof error === 'object' && 'data' in error
-      ? (error as { data?: { message?: string } }).data?.message
-      : error instanceof Error
-        ? error.message
-        : undefined
+      ? (error as { data?: { code?: string } }).data?.code
+      : undefined
 
-  if (message === 'Error.SeriesNotSerialized') return 'seriesNotSerialized'
-  if (message === 'Error.InvalidContractTransition') return 'invalidContractTransition'
-  if (message === 'Error.ContractNotAmendable') return 'contractNotAmendable'
-  if (message === 'Error.OpenAmendmentExists') return 'openAmendmentExists'
-  if (message === 'Error.OwnershipMismatch') return 'ownershipMismatch'
-  if (message === 'Error.AmendmentNoChanges') return 'amendmentNoChanges'
-  if (message?.includes('PAYMENT_CONDITION_NOT_EDITABLE')) return 'invalidState'
-  if (message?.startsWith('Error.AmendmentNot')) return 'invalidState'
-  if (message?.includes('REVENUE_NOT_APPLICABLE')) return 'revenueNotApplicable'
-  if (message?.includes('ONLY_ASSIGNED_EDITOR')) return 'notAssigned'
+  if (code === 'Error.SeriesNotSerialized') return 'seriesNotSerialized'
+  if (code === 'Error.InvalidContractTransition') return 'invalidContractTransition'
+  if (code === 'Error.ContractNotAmendable') return 'contractNotAmendable'
+  if (code === 'Error.OpenAmendmentExists') return 'openAmendmentExists'
+  if (code === 'Error.OwnershipMismatch') return 'ownershipMismatch'
+  if (code === 'Error.AmendmentNoChanges') return 'amendmentNoChanges'
+  if (code?.includes('PAYMENT_CONDITION_NOT_EDITABLE')) return 'invalidState'
+  if (code?.startsWith('Error.AmendmentNot')) return 'invalidState'
+  if (code?.includes('REVENUE_NOT_APPLICABLE')) return 'revenueNotApplicable'
+  if (code?.includes('ONLY_ASSIGNED_EDITOR')) return 'notAssigned'
   return 'actionFailed'
 }
 

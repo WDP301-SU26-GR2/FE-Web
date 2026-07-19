@@ -1,4 +1,7 @@
 {
+  "navigation": {
+    "backDashboard": "Quay lại tổng quan quản trị"
+  },
   "dashboard": {
     "eyebrow": "Trung tâm vận hành",
     "title": "Tổng quan hệ thống",
@@ -9,6 +12,7 @@
     "loadErrorTitle": "Không thể tải số liệu hệ thống",
     "loadErrorDescription": "Hãy kiểm tra kết nối hoặc quyền SUPER_ADMIN, sau đó thử làm mới.",
     "empty": "Chưa có dữ liệu để hiển thị.",
+    "unreadNotifications": "Bạn có {{count}} thông báo chưa đọc cần kiểm tra.",
     "kpis": {
       "users": {
         "label": "Người dùng đang hoạt động",
@@ -220,6 +224,7 @@
     "title": "Cấu hình hệ thống",
     "subtitle": "Điều chỉnh các tham số nghiệp vụ runtime, quy tắc biểu quyết Hội đồng và cơ chế chống gian lận bình chọn.",
     "save": "Lưu cấu hình",
+    "edit": "Chỉnh sửa cấu hình",
     "saving": "Đang lưu...",
     "lastUpdated": "Cập nhật gần nhất: {{date}}",
     "units": {
@@ -273,6 +278,127 @@
     "loadError": {
       "title": "Không thể tải cấu hình hệ thống",
       "description": "Hãy kiểm tra kết nối và quyền SUPER_ADMIN rồi thử lại."
+    }
+  },
+  "operations": {
+    "back": "Quay lại khu vực vận hành",
+    "eyebrow": "Công cụ vận hành",
+    "title": "Vận hành hệ thống",
+    "subtitle": "Các công cụ nghiệp vụ mà Super Admin được phép sử dụng để hỗ trợ vận hành toàn hệ thống.",
+    "notice": {
+      "title": "Thao tác có ảnh hưởng trên toàn hệ thống",
+      "description": "Hãy kiểm tra kỳ khảo sát hoặc series mục tiêu trước khi lưu. Các thay đổi tại đây có thể ảnh hưởng tới bảng xếp hạng và bản phát hành."
+    },
+    "monitoring": {
+      "eyebrow": "Tra cứu chỉ đọc",
+      "title": "Giám sát nghiệp vụ",
+      "description": "Tra cứu series, vòng yêu cầu sửa, yêu cầu tái bản và deadline mà không thực hiện hành động thay đổi trạng thái.",
+      "subtitle": "Dữ liệu tổng hợp chỉ đọc dành cho việc kiểm tra và hỗ trợ xử lý sự cố.",
+      "series": "Series toàn hệ thống",
+      "revisions": "Vòng yêu cầu sửa gần nhất",
+      "reprints": "Yêu cầu tái bản",
+      "deadlines": "Tra cứu deadline theo chương",
+      "chapterId": "Nhập mã chương",
+      "search": "Tra cứu",
+      "deadlineHint": "Nhập mã chương để xem các yêu cầu deadline liên quan.",
+      "resolved": "Đã xử lý",
+      "open": "Chưa xử lý",
+      "filters": {
+        "searchSeries": "Tìm theo tên series",
+        "searchReprints": "Tìm series tái bản",
+        "allStatuses": "Tất cả trạng thái",
+        "allRevisionTypes": "Tất cả loại yêu cầu sửa",
+        "allResolutionStates": "Tất cả tình trạng xử lý"
+      },
+      "revisionTypes": {
+        "PROPOSAL": "Đề xuất series",
+        "NAME": "Bản phân cảnh",
+        "MANUSCRIPT": "Bản thảo",
+        "TASK": "Công việc sản xuất"
+      },
+      "seriesStatuses": {
+        "DRAFT": "Bản nháp",
+        "IN_REVIEW": "Đang được duyệt",
+        "READY_TO_PITCH": "Sẵn sàng trình Hội đồng",
+        "PITCHED": "Đã trình Hội đồng",
+        "SERIALIZED": "Đã được duyệt đăng dài kỳ",
+        "HIATUS": "Đang tạm ngưng",
+        "COMPLETING": "Đang hoàn tất",
+        "CANCELLING": "Đang hủy",
+        "COMPLETED": "Đã hoàn thành",
+        "CANCELLED": "Đã hủy",
+        "REJECTED": "Bị Hội đồng từ chối",
+        "ABANDONED": "Đã dừng hồ sơ",
+        "WITHDRAWN": "Đã rút hồ sơ"
+      },
+      "reprintStatuses": {
+        "PENDING": "Đang chờ xử lý",
+        "PROPOSED": "Đã đề xuất",
+        "MANGAKA_REVIEW": "Chờ Mangaka xem xét",
+        "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+        "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
+        "BOARD_APPROVED": "Hội đồng đã duyệt",
+        "APPROVED": "Đã duyệt",
+        "IN_PRODUCTION": "Đang sản xuất",
+        "PUBLISHED": "Đã xuất bản",
+        "REJECTED": "Đã từ chối"
+      },
+      "deadlineStatuses": {
+        "PROPOSED": "Đã đề xuất",
+        "COUNTER_PROPOSED": "Đã đề xuất lại",
+        "AGREED_BY_PARTIES": "Hai bên đã đồng ý",
+        "APPROVED": "Đã duyệt",
+        "BOARD_REVIEW": "Hội đồng đang xem xét",
+        "ESCALATED": "Đã chuyển Hội đồng phân xử",
+        "REJECTED": "Đã từ chối"
+      },
+      "empty": "Không có dữ liệu phù hợp.",
+      "loadError": "Không thể tải đầy đủ dữ liệu giám sát. Vui lòng thử lại."
+    },
+    "surveys": {
+      "title": "Khảo sát và xếp hạng",
+      "description": "Tạo kỳ khảo sát, điều khiển trạng thái, nhập phiếu ngoại tuyến và chốt bảng xếp hạng."
+    },
+    "publicationVersions": {
+      "title": "Phiên bản xuất bản",
+      "description": "Tạo, cập nhật hoặc xóa phiên bản ngôn ngữ và hướng đọc của series."
+    }
+  },
+  "boardOversight": {
+    "eyebrow": "Giám sát nghiệp vụ",
+    "title": "Quản trị Hội đồng",
+    "subtitle": "Theo dõi hoạt động của Hội đồng và chỉ sử dụng quyền quản trị khi quy trình của Biên tập viên hoặc Thành viên Hội đồng gặp sự cố.",
+    "notice": {
+      "title": "Đây là quyền can thiệp dự phòng",
+      "description": "Super Admin không tham gia họp hoặc bỏ phiếu như một thành viên Hội đồng. Hãy ưu tiên để Biên tập viên điều hành phiên và chỉ can thiệp khi cần khôi phục quy trình."
+    },
+    "monitoring": {
+      "title": "Theo dõi",
+      "description": "Xem tình trạng phiên họp và tài liệu mà không thay đổi quy trình nghiệp vụ."
+    },
+    "intervention": {
+      "title": "Can thiệp khi có sự cố",
+      "description": "Các công cụ có thể làm thay đổi dữ liệu nghiệp vụ; chỉ sử dụng khi thật sự cần thiết."
+    },
+    "sessions": {
+      "title": "Phiên họp Hội đồng",
+      "description": "Theo dõi phiên sắp diễn ra, đang hoạt động hoặc đã kết thúc; hỗ trợ chuyển giai đoạn khi người tạo phiên không thể thao tác."
+    },
+    "reports": {
+      "title": "Báo cáo Hội đồng",
+      "description": "Đọc báo cáo phân tích series được chuẩn bị cho các quyết định Hội đồng."
+    },
+    "decisions": {
+      "title": "Quyết định serial hóa",
+      "description": "Kiểm tra và khôi phục luồng quyết định serial hóa khi quy trình thông thường bị gián đoạn."
+    },
+    "lifecycle": {
+      "title": "Quyết định vòng đời",
+      "description": "Can thiệp vào quyết định hủy, tạm ngưng, hoàn tất hoặc thay đổi hình thức phát hành."
+    },
+    "payments": {
+      "title": "Xử lý thanh toán",
+      "description": "Theo dõi và xử lý chi hoặc hủy khoản thanh toán; quyền phê duyệt vẫn thuộc Thành viên Hội đồng."
     }
   },
   "audit": {

@@ -9,12 +9,13 @@ import { EditorSurveysPage, type EditorActionResult } from '~/features/editor'
 import { date, loadOperationalSeries, optionalNumber, required } from './operations-route-utils'
 import type { Route } from './+types/operations-surveys'
 
-export async function clientLoader() {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const focusSurveyId = new URL(request.url).searchParams.get('surveyId')?.trim() ?? ''
   try {
     const [series, surveys] = await Promise.all([loadOperationalSeries(), surveyControllerGetSurveyPeriods()])
-    return { series, surveys: surveys.data, hasError: false }
+    return { series, surveys: surveys.data, focusSurveyId, hasError: false }
   } catch {
-    return { series: [], surveys: [], hasError: true }
+    return { series: [], surveys: [], focusSurveyId, hasError: true }
   }
 }
 
@@ -22,20 +23,25 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = required(form, 'intent')
   try {
-    if (intent === 'createSurvey')
+    if (intent === 'createSurvey') {
+      const startDate = date(form, 'startDate')
+      const endDate = date(form, 'endDate')
+      if (new Date(endDate) <= new Date(startDate)) return { ok: false, intent, errorKey: 'invalidState' }
       await surveyControllerCreateSurveyPeriod({
         issueNumber: Number(required(form, 'issueNumber')),
         reflectedIssueNumber: optionalNumber(form, 'reflectedIssueNumber'),
-        startDate: date(form, 'startDate'),
-        endDate: date(form, 'endDate'),
+        startDate,
+        endDate,
         status: 'DRAFT'
       })
-    else if (intent === 'surveyStatus')
+    } else if (intent === 'surveyStatus') {
+      const status = required(form, 'status')
+      if (status !== 'OPEN' && status !== 'CLOSED') return { ok: false, intent, errorKey: 'invalidState' }
       await surveyControllerUpdateSurveyPeriodStatus(
         { id: required(form, 'surveyId') },
-        { status: required(form, 'status') as 'DRAFT' | 'OPEN' | 'CLOSED' | 'REFLECTED' }
+        { status }
       )
-    else if (intent === 'finalizeRanking') await surveyControllerFinalizeRanking({ id: required(form, 'surveyId') })
+    } else if (intent === 'finalizeRanking') await surveyControllerFinalizeRanking({ id: required(form, 'surveyId') })
     else if (intent === 'importVotes') {
       const ids = form.getAll('voteSeriesId').map(String)
       const counts = form.getAll('voteCount').map(Number)

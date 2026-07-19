@@ -43,15 +43,15 @@ export default function EditorProposalsRoute({ loaderData }: Route.ComponentProp
 }
 
 function mapError(error: unknown): string {
-  const message = getErrorMessage(error)
-  if (message === 'Error.SeriesAlreadyClaimed') return 'alreadyClaimed'
-  if (message === 'Error.ReviewAlreadyStarted') return 'reviewStarted'
-  if (message === 'Error.NotAssignedEditor') return 'notAssigned'
+  const code = getErrorCode(error)
+  if (code === 'Error.SeriesAlreadyClaimed') return 'alreadyClaimed'
+  if (code === 'Error.ReviewAlreadyStarted') return 'reviewStarted'
+  if (code === 'Error.NotAssignedEditor') return 'notAssigned'
   return 'actionFailed'
 }
 
-function getErrorMessage(error: unknown) {
+function getErrorCode(error: unknown) {
   return error && typeof error === 'object' && 'data' in error
-    ? (error as { data?: { message?: string } }).data?.message
+    ? (error as { data?: { code?: string } }).data?.code
     : undefined
 }

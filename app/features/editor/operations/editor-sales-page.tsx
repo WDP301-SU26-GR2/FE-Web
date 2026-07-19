@@ -4,7 +4,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   SeriesSelect,
   operationInput,
@@ -22,7 +22,7 @@ export function EditorSalesPage({
   const fetcher = useOperationFetcher()
   return (
     <OperationsLayout titleKey='operations.sales' descriptionKey='operations.descriptions.sales' hasError={hasError}>
-      <OperationPanel icon={TrendingUp} title={t('operations.sales')}>
+      <OperationDialogPanel icon={TrendingUp} title={t('operations.sales')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <SeriesSelect series={series} />
           <input name='period' required className={operationInput} placeholder='2026-Q2' />
@@ -47,7 +47,7 @@ export function EditorSalesPage({
           </div>
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }

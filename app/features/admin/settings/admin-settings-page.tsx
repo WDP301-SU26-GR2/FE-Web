@@ -1,23 +1,29 @@
-import { useFetcher } from 'react-router'
-import { Gavel, Loader2, Save, Settings2, SlidersHorizontal, Vote } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useFetcher } from 'react-router'
+import { ArrowLeft, Gavel, Loader2, Pencil, Save, Settings2, SlidersHorizontal, Vote } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { AdminSettingsActionResult, AdminSettingsData } from './types'
+import { Dialog } from '~/shared/ui/dialog'
 
 export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData | null; hasError: boolean }) {
   const { t } = useTranslation('admin')
 
   if (hasError || !data) {
     return (
-      <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive' role='alert'>
-        <p className='font-bold'>{t('settings.loadError.title')}</p>
-        <p className='mt-1 text-sm'>{t('settings.loadError.description')}</p>
+      <div className='space-y-6'>
+        <AdminDashboardBackLink label={t('navigation.backDashboard')} />
+        <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive' role='alert'>
+          <p className='font-bold'>{t('settings.loadError.title')}</p>
+          <p className='mt-1 text-sm'>{t('settings.loadError.description')}</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className='space-y-6 pb-12'>
+      <AdminDashboardBackLink label={t('navigation.backDashboard')} />
       <header>
         <div className='flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary'>
           <Settings2 className='size-4' />
@@ -38,9 +44,15 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
   const { t } = useTranslation('admin')
   const fetcher = useFetcher<AdminSettingsActionResult>()
   const config = data.appConfig
+  const [open, setOpen] = useState(false)
 
   return (
-    <ConfigCard icon={SlidersHorizontal} title={t('settings.app.title')} description={t('settings.app.description')}>
+    <>
+      <ConfigCard icon={SlidersHorizontal} title={t('settings.app.title')} description={t('settings.app.description')}>
+        <EditConfigButton onClick={() => setOpen(true)} label={t('settings.edit')} />
+      </ConfigCard>
+      {open && (
+      <Dialog open onClose={() => setOpen(false)} titleId='edit-app-config' title={t('settings.app.title')} description={t('settings.app.description')} size='xl'>
       <fetcher.Form method='post'>
         <input type='hidden' name='intent' value='appConfig' />
         <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
@@ -97,7 +109,18 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
         </div>
         <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
       </fetcher.Form>
-    </ConfigCard>
+      </Dialog>
+      )}
+    </>
+  )
+}
+
+function AdminDashboardBackLink({ label }: { label: string }) {
+  return (
+    <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <ArrowLeft className='size-4' />
+      {label}
+    </Link>
   )
 }
 
@@ -105,9 +128,15 @@ function BoardConfigForm({ data }: { data: AdminSettingsData }) {
   const { t } = useTranslation('admin')
   const fetcher = useFetcher<AdminSettingsActionResult>()
   const config = data.boardConfig
+  const [open, setOpen] = useState(false)
 
   return (
-    <ConfigCard icon={Gavel} title={t('settings.board.title')} description={t('settings.board.description')}>
+    <>
+      <ConfigCard icon={Gavel} title={t('settings.board.title')} description={t('settings.board.description')}>
+        <EditConfigButton onClick={() => setOpen(true)} label={t('settings.edit')} />
+      </ConfigCard>
+      {open && (
+      <Dialog open onClose={() => setOpen(false)} titleId='edit-board-config' title={t('settings.board.title')} description={t('settings.board.description')} size='lg'>
       <fetcher.Form method='post'>
         <input type='hidden' name='intent' value='boardConfig' />
         <input type='hidden' name='configId' value={config.id} />
@@ -133,7 +162,9 @@ function BoardConfigForm({ data }: { data: AdminSettingsData }) {
         <p className='mt-3 text-xs text-muted-foreground'>{t('settings.board.lockNotice')}</p>
         <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
       </fetcher.Form>
-    </ConfigCard>
+      </Dialog>
+      )}
+    </>
   )
 }
 
@@ -141,9 +172,15 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
   const { t } = useTranslation('admin')
   const fetcher = useFetcher<AdminSettingsActionResult>()
   const config = data.votingConfig
+  const [open, setOpen] = useState(false)
 
   return (
-    <ConfigCard icon={Vote} title={t('settings.voting.title')} description={t('settings.voting.description')}>
+    <>
+      <ConfigCard icon={Vote} title={t('settings.voting.title')} description={t('settings.voting.description')}>
+        <EditConfigButton onClick={() => setOpen(true)} label={t('settings.edit')} />
+      </ConfigCard>
+      {open && (
+      <Dialog open onClose={() => setOpen(false)} titleId='edit-voting-config' title={t('settings.voting.title')} description={t('settings.voting.description')} size='xl'>
       <fetcher.Form method='post'>
         <input type='hidden' name='intent' value='votingConfig' />
         <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
@@ -205,7 +242,22 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
         </div>
         <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
       </fetcher.Form>
-    </ConfigCard>
+      </Dialog>
+      )}
+    </>
+  )
+}
+
+function EditConfigButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground'
+    >
+      <Pencil className='size-4' />
+      {label}
+    </button>
   )
 }
 

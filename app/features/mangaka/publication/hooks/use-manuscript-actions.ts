@@ -2,15 +2,11 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import {
-  chapterControllerMarkCompositeReady,
-  chapterControllerResubmit,
-  chapterControllerSubmit
-} from '~/api/operations/chapters/chapters'
+import { chapterControllerResubmit, chapterControllerSubmit } from '~/api/operations/chapters/chapters'
 import type { ChapterResDtoOutput } from '~/api/model/chapters'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
-type ManuscriptAction = 'markCompositeReady' | 'submit' | 'resubmit'
+type ManuscriptAction = 'submit' | 'resubmit'
 
 export function useManuscriptActions() {
   const { t } = useTranslation('mangaka')
@@ -21,11 +17,9 @@ export function useManuscriptActions() {
       setActiveAction(action)
       try {
         const res =
-          action === 'markCompositeReady'
-            ? await chapterControllerMarkCompositeReady({ id: chapterId })
-            : action === 'submit'
-              ? await chapterControllerSubmit({ id: chapterId })
-              : await chapterControllerResubmit({ id: chapterId })
+          action === 'submit'
+            ? await chapterControllerSubmit({ id: chapterId })
+            : await chapterControllerResubmit({ id: chapterId })
         toast.success(t(`publication.manuscript.actions.${action}.success`))
         return res.data as ChapterResDtoOutput
       } catch (error) {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AlertCircle, BookCheck, CalendarClock, CheckCircle2, Clock3, Eye, FileCheck2, Printer } from 'lucide-react'
@@ -16,7 +16,6 @@ const STATUS_META: Record<string, { className: string; dotClassName: string }> =
     className: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
     dotClassName: 'bg-amber-500'
   },
-  COMPOSITE_REVIEW: { className: 'border-sky-500/30 bg-sky-500/10 text-sky-700', dotClassName: 'bg-sky-500' },
   EDITOR_REVIEW: {
     className: 'border-primary/30 bg-primary/10 text-primary',
     dotClassName: 'bg-primary'
@@ -49,7 +48,10 @@ export function EditorPublicationPage({
   hasError: boolean
 }) {
   const { t } = useTranslation('editor')
-  const chapters = data?.chapters ?? []
+  const [search, setSearch] = useState('')
+  const chapters = (data?.chapters ?? []).filter(({ series, chapter }) =>
+    !search || `${series.title} ${chapter.title ?? ''} ${chapter.chapterNumber}`.toLowerCase().includes(search.toLowerCase())
+  )
   const awaitingReview = prioritizeFocused(
     chapters.filter(({ chapter }) => REVIEW_STATUSES.has(chapter.manuscriptStatus ?? '')),
     focusReferenceId
@@ -86,6 +88,12 @@ export function EditorPublicationPage({
           {t('errors.loadDescription')}
         </div>
       )}
+      <input
+        className='h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t('filters.searchPublication')}
+      />
       {!hasError && (
         <section className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4' aria-label={t('publicationUx.summary')}>
           <SummaryCard

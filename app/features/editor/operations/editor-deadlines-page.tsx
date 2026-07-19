@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import { CalendarRange } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
 import {
   OperationAction,
   OperationFeedback,
-  OperationPanel,
+  OperationDialogPanel,
   OperationsLayout,
   operationInput,
   useOperationFetcher
@@ -23,6 +24,10 @@ export function EditorDeadlinesPage({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
+  const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId)
+  const selectedRequest = items.find((item) => item.id === selectedRequestId)
+  const editorHasTurn = selectedRequest?.lastProposedBy !== 'EDITOR'
+  const negotiable = selectedRequest?.status === 'PROPOSED' || selectedRequest?.status === 'COUNTER_PROPOSED'
   return (
     <OperationsLayout
       titleKey='operations.deadlines'
@@ -52,10 +57,15 @@ export function EditorDeadlinesPage({
           ))}
         </div>
       </section>
-      <OperationPanel icon={CalendarRange} title={t('operations.deadlines')}>
+      <OperationDialogPanel icon={CalendarRange} title={t('operations.deadlines')}>
         <fetcher.Form method='post' className='grid gap-3'>
           <input name='chapterId' defaultValue={focusChapterId} className={operationInput} placeholder='Chapter ID' />
-          <select name='requestId' defaultValue={focusRequestId} className={operationInput}>
+          <select
+            name='requestId'
+            value={selectedRequestId}
+            onChange={(event) => setSelectedRequestId(event.target.value)}
+            className={operationInput}
+          >
             <option value=''>{t('operations.selectDeadlineRequest')}</option>
             {items.map((item) => (
               <option key={item.id} value={item.id}>
@@ -71,15 +81,23 @@ export function EditorDeadlinesPage({
           <input name='reason' className={operationInput} placeholder={t('operations.reason')} />
           <div className='grid grid-cols-2 gap-2'>
             <OperationAction intent='createDeadline' label={t('actions.createRequest')} />
-            <OperationAction intent='counterDeadline' label={t('actions.counter')} />
-            <OperationAction intent='agreeDeadline' label={t('actions.agree')} />
-            <OperationAction intent='finalizeDeadline' label={t('actions.finalize')} />
-            <OperationAction intent='rejectDeadline' label={t('actions.reject')} destructive />
-            <OperationAction intent='withdrawDeadline' label={t('actions.withdraw')} />
+            {negotiable && editorHasTurn && (
+              <>
+                <OperationAction intent='counterDeadline' label={t('actions.counter')} />
+                <OperationAction intent='agreeDeadline' label={t('actions.agree')} />
+                <OperationAction intent='rejectDeadline' label={t('actions.reject')} destructive />
+              </>
+            )}
+            {selectedRequest?.status === 'AGREED_BY_PARTIES' && (
+              <OperationAction intent='finalizeDeadline' label={t('actions.finalize')} />
+            )}
+            {selectedRequest?.requestedBy === 'EDITOR' && negotiable && (
+              <OperationAction intent='withdrawDeadline' label={t('actions.withdraw')} />
+            )}
           </div>
         </fetcher.Form>
         <OperationFeedback data={fetcher.data} />
-      </OperationPanel>
+      </OperationDialogPanel>
     </OperationsLayout>
   )
 }

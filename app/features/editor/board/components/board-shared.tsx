@@ -11,17 +11,19 @@ export function BoardPageLayout({
   titleKey,
   descriptionKey,
   hasError,
+  backPath = '/dashboard/editor/board',
   children
 }: {
   titleKey: string
   descriptionKey: string
   hasError?: boolean
+  backPath?: string
   children: React.ReactNode
 }) {
   const { t } = useTranslation('editor')
   return (
     <div className='space-y-7 pb-12'>
-      <Link to='/dashboard/editor/board' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('board.back')}
       </Link>

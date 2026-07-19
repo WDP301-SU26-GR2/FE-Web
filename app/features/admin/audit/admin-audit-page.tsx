@@ -1,5 +1,5 @@
 import { Form, Link, useSearchParams } from 'react-router'
-import { Activity, ArrowRight, Filter, Search, ShieldCheck } from 'lucide-react'
+import { Activity, ArrowLeft, ArrowRight, Filter, Search, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { AuditLogListResDtoOutput } from '~/api/model/audit'
@@ -33,6 +33,10 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
 
   return (
     <div className='space-y-6 pb-12'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <ArrowLeft className='size-4' />
+        {t('navigation.backDashboard')}
+      </Link>
       <header>
         <div className='flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary'>
           <ShieldCheck className='size-4' />

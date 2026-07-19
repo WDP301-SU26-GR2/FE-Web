@@ -1,4 +1,4 @@
-import { Loader2, Send, ShieldCheck } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '~/shared/lib/cn'
@@ -15,18 +15,14 @@ export function ManuscriptActionPanel() {
   if (!chapter?.manuscriptStatus) return null
 
   const status = chapter.manuscriptStatus
-  const allPagesCompleted = pages.length > 0 && pages.every((page) => page.status === 'COMPLETED')
-  const allPagesCompositeReady =
-    pages.length > 0 && pages.every((page) => page.status === 'COMPOSITE_READY' || page.status === 'COMPLETED')
+  const readyToSubmit = pages.length > 0 && progress?.pagesPending === 0
 
   const action =
-    status === 'IN_PRODUCTION' && allPagesCompositeReady
-      ? 'markCompositeReady'
-      : status === 'COMPOSITE_REVIEW' && allPagesCompleted
-        ? 'submit'
-        : status === 'EDITOR_REVISION'
-          ? 'resubmit'
-          : null
+    status === 'IN_PRODUCTION' && readyToSubmit
+      ? 'submit'
+      : status === 'EDITOR_REVISION' && readyToSubmit
+        ? 'resubmit'
+        : null
 
   const onAction = async () => {
     if (!action) return
@@ -65,7 +61,7 @@ export function ManuscriptActionPanel() {
               </div>
               <span className='shrink-0 text-xs font-semibold text-foreground'>
                 {t('publication.manuscript.progress', {
-                  completed: progress.pagesCompleted,
+                  completed: progress.pagesReady,
                   total: progress.totalPages,
                   percent: progress.progressPct
                 })}
@@ -86,8 +82,6 @@ export function ManuscriptActionPanel() {
           >
             {activeAction ? (
               <Loader2 className='h-3.5 w-3.5 animate-spin' />
-            ) : action === 'markCompositeReady' ? (
-              <ShieldCheck className='h-3.5 w-3.5' />
             ) : (
               <Send className='h-3.5 w-3.5' />
             )}
@@ -96,7 +90,7 @@ export function ManuscriptActionPanel() {
         )}
       </div>
 
-      {status === 'COMPOSITE_REVIEW' && !allPagesCompleted && (
+      {(status === 'IN_PRODUCTION' || status === 'EDITOR_REVISION') && !readyToSubmit && (
         <p className='mt-2 text-xs text-warning'>{t('publication.manuscript.completePagesHint')}</p>
       )}
     </section>

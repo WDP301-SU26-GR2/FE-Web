@@ -6,7 +6,7 @@ import type {
   ContractStatusProgressResDtoOutput
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { ContractActionMessage, ContractPageLayout, contractInput } from './components/contract-shared'
+import { ContractActionMessage, ContractDialogPanel, ContractPageLayout, contractInput } from './components/contract-shared'
 
 export function EditorContractAmendmentsPage({
   contract,
@@ -23,8 +23,8 @@ export function EditorContractAmendmentsPage({
   const canCreate = contract.status === 'FULLY_EXECUTED' && !hasOpenAmendment
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.sections.amendments')}>
-      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        {canCreate ? (
+      {canCreate ? (
+        <ContractDialogPanel title={t('actions.createAmendment')}>
           <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
             <input type='hidden' name='contractType' value={contract.contractType} />
             <input
@@ -43,12 +43,17 @@ export function EditorContractAmendmentsPage({
               {t('actions.createAmendment')}
             </button>
           </fetcher.Form>
-        ) : (
+          <ContractActionMessage data={fetcher.data} />
+        </ContractDialogPanel>
+      ) : (
+        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <p className='rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground'>
             {t('contractDetail.amendmentCreateUnavailable')}
           </p>
-        )}
-        <div className='mt-5 space-y-3'>
+        </section>
+      )}
+      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div className='space-y-3'>
           {amendments.map((amendment) => (
             <article key={amendment.id} className='rounded-lg border border-border p-4'>
               <div className='flex justify-between gap-3'>

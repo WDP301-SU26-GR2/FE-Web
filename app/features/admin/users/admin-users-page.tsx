@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Form, Link, useFetcher, useSearchParams } from 'react-router'
-import { Filter, Search, UserPlus, Users } from 'lucide-react'
+import { ArrowLeft, Filter, Search, UserPlus, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { AdminUserListResDtoOutput } from '~/api/model/users'
@@ -30,6 +30,10 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
 
   return (
     <div className='space-y-6 pb-12'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <ArrowLeft className='size-4' />
+        {t('navigation.backDashboard')}
+      </Link>
       <header className='flex flex-col justify-between gap-4 lg:flex-row lg:items-start'>
         <div>
           <div className='mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary'>

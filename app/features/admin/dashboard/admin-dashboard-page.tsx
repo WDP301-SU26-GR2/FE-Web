@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRevalidator } from 'react-router'
+import { Link, useRevalidator } from 'react-router'
 import { Activity, BookOpen, CheckCircle2, ListChecks, RefreshCw, ShieldAlert, UserRoundCog, Users } from 'lucide-react'
 
 import type { AdminStatsResDtoOutput } from '~/api/model/users'
@@ -10,10 +10,11 @@ import { DistributionPanel, type DistributionItem } from './components/distribut
 
 export interface AdminDashboardProps {
   stats: AdminStatsResDtoOutput | null
+  unreadNotifications: number
   hasError: boolean
 }
 
-export function AdminDashboard({ stats, hasError }: AdminDashboardProps) {
+export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDashboardProps) {
   const { t, i18n } = useTranslation('admin')
   const revalidator = useRevalidator()
   const numberFormatter = useMemo(() => new Intl.NumberFormat(i18n.language), [i18n.language])
@@ -76,6 +77,7 @@ export function AdminDashboard({ stats, hasError }: AdminDashboardProps) {
           label={t('dashboard.kpis.users.label')}
           value={format(stats?.users.total)}
           description={t('dashboard.kpis.users.description', { deleted: format(stats?.users.deleted) })}
+          href='/dashboard/admin/users'
         />
         <AdminStatCard
           icon={BookOpen}
@@ -83,6 +85,7 @@ export function AdminDashboard({ stats, hasError }: AdminDashboardProps) {
           value={format(stats?.series.total)}
           description={t('dashboard.kpis.series.description')}
           tone='secondary'
+          href='/dashboard/admin/operations/monitoring#series'
         />
         <AdminStatCard
           icon={CheckCircle2}
@@ -93,6 +96,7 @@ export function AdminDashboard({ stats, hasError }: AdminDashboardProps) {
             rate: publishedRate
           })}
           tone='muted'
+          href='/dashboard/admin/audit?entityType=CHAPTER'
         />
         <AdminStatCard
           icon={ListChecks}
@@ -100,8 +104,18 @@ export function AdminDashboard({ stats, hasError }: AdminDashboardProps) {
           value={format(stats?.tasks.total)}
           description={t('dashboard.kpis.tasks.description')}
           tone='destructive'
+          href='/dashboard/admin/audit?entityType=TASK'
         />
       </section>
+
+      {unreadNotifications > 0 && (
+        <Link
+          to='/dashboard/admin/notifications'
+          className='block rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm font-semibold text-foreground hover:border-primary/50'
+        >
+          {t('dashboard.unreadNotifications', { count: unreadNotifications })}
+        </Link>
+      )}
 
       <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
         <DistributionPanel

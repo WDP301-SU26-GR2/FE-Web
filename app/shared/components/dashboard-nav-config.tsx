@@ -158,6 +158,8 @@ function buildAdminConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
     navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/admin', icon: Shield },
       { label: t('nav.users'), href: '/dashboard/admin/users', icon: Users },
+      { label: t('nav.boardOversight'), href: '/dashboard/admin/board', icon: Gavel },
+      { label: t('nav.systemOperations'), href: '/dashboard/admin/operations', icon: Wrench },
       { label: t('nav.audit'), href: '/dashboard/admin/audit', icon: ScrollText },
       { label: t('nav.systemSettings'), href: '/dashboard/admin/settings', icon: Settings2 },
       { label: t('nav.notifications'), href: '/dashboard/admin/notifications', icon: Bell }

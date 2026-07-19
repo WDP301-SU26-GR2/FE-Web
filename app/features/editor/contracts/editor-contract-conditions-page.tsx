@@ -8,7 +8,7 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { ContractActionMessage, ContractPageLayout, contractInput } from './components/contract-shared'
+import { ContractActionMessage, ContractDialogPanel, ContractPageLayout, contractInput } from './components/contract-shared'
 
 export function EditorContractConditionsPage({
   contract,
@@ -24,7 +24,7 @@ export function EditorContractConditionsPage({
   const [conditionType, setConditionType] = useState('CHAPTER_MILESTONE')
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.conditions')}>
-      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+      <ContractDialogPanel title={t('actions.addCondition')}>
         <fetcher.Form method='post' className='grid gap-3 md:grid-cols-2'>
           <input type='hidden' name='intent' value='createCondition' />
           <select
@@ -56,7 +56,9 @@ export function EditorContractConditionsPage({
           </button>
         </fetcher.Form>
         <ContractActionMessage data={fetcher.data} />
-        <div className='mt-5 grid gap-3'>
+      </ContractDialogPanel>
+      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div className='grid gap-3'>
           {conditions.map((condition) => (
             <article key={condition.id} className='rounded-lg border border-border p-4'>
               <div className='flex flex-wrap items-center justify-between gap-3'>
@@ -118,6 +120,7 @@ export function EditorContractConditionsPage({
             </p>
           )}
         </div>
+        <ContractActionMessage data={fetcher.data} />
       </section>
     </ContractPageLayout>
   )

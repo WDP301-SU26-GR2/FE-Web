@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { Link } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
 
@@ -8,6 +9,7 @@ export interface AdminStatCardProps {
   value: string
   description: string
   tone?: 'primary' | 'secondary' | 'destructive' | 'muted'
+  href?: string
 }
 
 const TONE_CLASSES = {
@@ -17,9 +19,9 @@ const TONE_CLASSES = {
   muted: 'bg-muted text-muted-foreground'
 } as const
 
-export function AdminStatCard({ icon: Icon, label, value, description, tone = 'primary' }: AdminStatCardProps) {
-  return (
-    <article className='rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md'>
+export function AdminStatCard({ icon: Icon, label, value, description, tone = 'primary', href }: AdminStatCardProps) {
+  const content = (
+    <article className='h-full rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/50 hover:shadow-md'>
       <div className='flex items-start justify-between gap-4'>
         <div className={cn('flex size-11 items-center justify-center rounded-lg', TONE_CLASSES[tone])}>
           <Icon className='size-5' aria-hidden='true' />
@@ -33,4 +35,5 @@ export function AdminStatCard({ icon: Icon, label, value, description, tone = 'p
       <p className='mt-1 text-xs leading-relaxed text-muted-foreground'>{description}</p>
     </article>
   )
+  return href ? <Link to={href}>{content}</Link> : content
 }

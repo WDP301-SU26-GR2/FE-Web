@@ -6,7 +6,9 @@
     "failure": "The operation could not be completed.",
     "load": "Load data",
     "loadError": "The data is currently unavailable.",
-    "noDescription": "No description provided."
+    "noDescription": "No description provided.",
+    "back": "Back",
+    "cancel": "Cancel"
   },
   "nav": {
     "sessions": "Board sessions",
@@ -22,9 +24,94 @@
     "notifications": "Notifications",
     "profile": "Board profile"
   },
+  "filters": {
+    "searchReports": "Search report content or series ID",
+    "allReportTypes": "All report types",
+    "searchPayments": "Search series or recipient",
+    "allStatuses": "All statuses",
+    "allPaymentTypes": "All payment types",
+    "allReadStates": "All notifications",
+    "unread": "Unread",
+    "read": "Read",
+    "allNotificationTypes": "All notification types",
+    "searchSessions": "Search session title or description",
+    "allSessionStatuses": "All session statuses",
+    "allPhases": "All phases",
+    "searchDecisions": "Search series title or ID",
+    "allSessions": "All sessions",
+    "allDecisionTypes": "All decision types",
+    "allDecisionResults": "All decision results",
+    "searchContracts": "Search series title or ID",
+    "allContractStatuses": "All contract statuses",
+    "allContractTypes": "All contract types",
+    "allReprintStatuses": "All reprint statuses",
+    "searchTransfers": "Search series or Mangaka",
+    "allTransferStatuses": "All transfer statuses",
+    "reprintStatuses": {
+      "PENDING": "Pending", "PROPOSED": "Proposed", "MANGAKA_REVIEW": "Mangaka review", "MANGAKA_APPROVED": "Mangaka approved",
+      "REJECTED_BY_MANGAKA": "Rejected by Mangaka", "BOARD_APPROVED": "Board approved", "APPROVED": "Approved",
+      "IN_PRODUCTION": "In production", "PUBLISHED": "Published", "REJECTED": "Rejected"
+    },
+    "transferStatuses": {
+      "SUBMITTED": "Submitted", "UNDER_REVIEW": "Under review", "REJECTED_BY_BOARD": "Rejected by Board",
+      "NEGOTIATING": "Negotiating", "REJECTED_BY_ORIGINAL_MANGAKA": "Rejected by original Mangaka",
+      "PROPOSED": "Proposed", "ACCEPTED": "Accepted", "REJECTED": "Rejected", "CANCELLED": "Cancelled"
+    },
+    "sessionStatuses": { "UPCOMING": "Upcoming", "ACTIVE": "Active", "CONCLUDED": "Concluded" },
+    "sessionPhases": { "PRESENTING": "Presenting", "QA": "Q&A", "VOTING": "Voting" },
+    "decisionTypes": {
+      "SERIALIZATION": "Serialization approval", "CANCELLATION": "Series cancellation", "FORMAT_CHANGE": "Publication format change",
+      "COMPLETION": "Series completion", "CONTINUE": "Continue publication", "CANCEL": "Cancel series", "HIATUS": "Place on hiatus",
+      "ENDING_ALLOWANCE": "Ending chapter allowance", "SERIES_CONTRACT_APPROVAL": "Series contract approval", "CONTRACT": "Contract decision",
+      "REPRINT": "Reprint approval", "TRANSFER": "Transfer approval"
+    },
+    "decisionResults": { "PENDING": "Pending vote", "PENDING_QUORUM": "Waiting for quorum", "APPROVED": "Approved", "REJECTED": "Rejected", "EXPIRED": "Expired" },
+    "contractTypes": { "FULL_BUYOUT": "Full buyout", "REVENUE_SHARE": "Revenue share" },
+    "contractStatuses": {
+      "DRAFT": "Draft", "MANGAKA_REVIEW": "Mangaka review", "NEGOTIATION": "Negotiation",
+      "MANGAKA_APPROVED": "Mangaka approved", "BOARD_APPROVED": "Board approved", "MANGAKA_SIGNED": "Mangaka signed",
+      "FULLY_EXECUTED": "Fully executed", "FULFILLED": "Fulfilled", "TERMINATED": "Terminated",
+      "TERMINATED_BY_BREACH": "Terminated by breach", "EXPIRED": "Expired", "VOIDED": "Voided"
+    },
+    "paymentStatuses": {
+      "PENDING": "Pending",
+      "TRIGGERED": "Triggered",
+      "APPROVED": "Approved",
+      "PAID": "Paid",
+      "MISSED": "Condition missed",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "paymentTypes": {
+      "CONDITION_PAYOUT": "Contract condition payout",
+      "REVENUE_SHARE": "Revenue share",
+      "COMPENSATION": "Compensation",
+      "CHAPTER_MILESTONE": "Chapter milestone",
+      "RECURRING_CHAPTER": "Recurring chapter payout",
+      "RANKING_MILESTONE": "Ranking milestone",
+      "TIME_BOUND": "Time-bound milestone",
+      "TRANSFER": "Transfer payment"
+    },
+    "notificationTypes": {
+      "SYSTEM": "System",
+      "CONTRACT": "Contract",
+      "TASK": "Task",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Survey",
+      "BOARD": "Board",
+      "REVIEW": "Review"
+    }
+  },
   "dashboard": {
     "title": "Board decision center",
     "description": "Review evidence, vote on decisions, approve commercial workflows and arbitrate publication risks.",
+    "liveDataError": "Live dashboard data is temporarily unavailable. The workflow shortcuts remain available.",
+    "summary": { "pending": "Pending decisions", "upcoming": "Upcoming sessions", "unread": "Unread notifications" },
+    "pendingDecisions": "Decisions requiring attention",
+    "severeRisk": "Severe-risk series",
+    "emptyPending": "No active decision currently requires your attention.",
+    "emptyRisk": "No severe-risk series were reported.",
+    "unranked": "Not ranked in the latest period",
     "sections": {
       "sessions": "Review sessions assigned to you and their agenda.",
       "decisions": "Inspect active decisions and cast your Board vote.",
@@ -33,7 +120,7 @@
       "payments": "Approve and confirm contract payouts.",
       "deadlines": "Resolve deadline disputes that affect publication slots.",
       "rankings": "Review internal ranking signals and at-risk series.",
-      "reprints": "Create and approve reprint workflows.",
+      "reprints": "Review and approve reprint workflows.",
       "transfers": "Screen transfer requests and sign transfer agreements.",
       "audit": "Trace business state changes and system actions.",
       "notifications": "Track items requiring Board attention.",
@@ -87,6 +174,7 @@
     "abstain": "Abstain",
     "note": "Optional explanation",
     "submitVote": "Submit vote",
+    "voteConfirmation": "Review your choice carefully. Each member can vote only once for this decision.",
     "votes": "Recorded votes",
     "voteUnavailable": {
       "closed": "This decision is already closed.",
@@ -105,11 +193,16 @@
     "title": "Contract review",
     "description": "Approve negotiated terms, sign agreements and review amendments.",
     "empty": "No contracts are available.",
+    "partialLoadError": "Some contract details could not be loaded. Empty sections below may not reflect the latest data.",
     "series": "Series",
     "detail": "Contract",
     "terms": "Commercial terms",
     "valuation": "Valuation",
     "ownership": "Publisher / Mangaka ownership",
+    "conditions": "Payment conditions",
+    "emptyConditions": "No payment conditions are configured.",
+    "versions": "Contract history",
+    "emptyVersions": "No prior contract versions are available.",
     "actions": "Board actions",
     "approve": "Approve terms",
     "changes": "Request changes",
@@ -119,7 +212,13 @@
     "amendments": "Contract amendments",
     "amendment": "Amendment",
     "emptyAmendments": "No amendments are available.",
-    "signAmendment": "Sign amendment"
+    "signAmendment": "Sign amendment",
+    "boardSignature": "Board signature",
+    "readyToSign": "Mangaka has signed. Complete the Board signature with an OTP.",
+    "signed": "Signed",
+    "waitingMangakaSignature": "Available after the contract is approved and Mangaka has signed.",
+    "sendOtp": "Send OTP",
+    "otpInstruction": "Request an OTP, then enter the six-digit code to confirm the signature."
   },
   "payments": {
     "title": "Payment approval",
@@ -139,6 +238,7 @@
     "empty": "No Board-review deadline requests were found.",
     "request": "Deadline request",
     "note": "Board resolution note",
+    "resolve": "Resolve request",
     "approve": "Approve deadline",
     "reject": "Reject request"
   },
@@ -153,7 +253,8 @@
   },
   "reprints": {
     "title": "Reprint workflow",
-    "description": "Create and approve reprint requests under the ownership rules.",
+    "description": "Review and approve reprint requests under the ownership rules.",
+    "lookup": "Find requests by series",
     "create": "Create reprint request",
     "seriesId": "Series ID",
     "from": "First chapter",
@@ -161,6 +262,7 @@
     "reason": "Business reason",
     "empty": "No reprint requests are available.",
     "reviewReason": "Review note",
+    "review": "Review reprint request",
     "approve": "Approve reprint",
     "reject": "Reject reprint"
   },
@@ -170,19 +272,23 @@
     "empty": "No transfer requests await Board review.",
     "session": "Select active Board session",
     "details": "Screening note",
+    "review": "Review transfer request",
     "approve": "Approve screening",
     "reject": "Reject screening",
     "fullBuyout": "Execute full buyout",
     "conditionValue": "Milestone value",
     "conditionDescription": "Payment condition description",
     "sign": "Sign transfer contract",
-    "contractId": "Transfer contract ID"
+    "contractId": "Transfer contract ID",
+    "signInstruction": "Enter the transfer contract ID and confirm the signature with an OTP.",
+    "signatureProgress": "Transfer signature progress"
   },
   "notifications": {
     "title": "Board notifications",
     "description": "{{count}} unread notifications",
     "readAll": "Mark all read",
     "read": "Mark as read",
+    "open": "Open related item",
     "empty": "No notifications are available."
   },
   "profile": {
@@ -193,7 +299,9 @@
     "demographics": "Audience demographics, comma separated",
     "experience": "Years of experience",
     "bio": "Professional biography",
-    "save": "Save profile"
+    "save": "Save profile",
+    "edit": "Edit profile",
+    "cancel": "Cancel"
   },
   "audit": {
     "title": "Audit history",

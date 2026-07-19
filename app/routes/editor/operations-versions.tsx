@@ -4,15 +4,16 @@ import {
   publicationControllerRemove,
   publicationControllerUpdate
 } from '~/api/operations/publication-versions/publication-versions'
+import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorPublicationVersionsPage, type EditorActionResult } from '~/features/editor'
-import { loadOperationalSeries, optional, required } from './operations-route-utils'
+import { optional, required } from './operations-route-utils'
 import type { Route } from './+types/operations-versions'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusSeriesId = new URL(request.url).searchParams.get('seriesId') ?? ''
   try {
     const [series, response] = await Promise.all([
-      loadOperationalSeries(),
+      seriesControllerListSeries({ limit: 100, offset: 0 }).then((response) => response.data.items),
       focusSeriesId ? publicationControllerList({ seriesId: focusSeriesId }).catch(() => null) : null
     ])
     return { series, focusSeriesId, versions: response?.status === 200 ? response.data.items : [], hasError: false }

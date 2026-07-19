@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
 import { FilePlus2, FileSignature, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { EditorActionResult, EditorContractsData } from '../types'
+import { Dialog } from '~/shared/ui/dialog'
 
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -17,12 +18,24 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const [mangakaOwnershipPct, setMangakaOwnershipPct] = useState(50)
   const [contractStart, setContractStart] = useState('')
   const [contractEnd, setContractEnd] = useState('')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [contractSearch, setContractSearch] = useState('')
+  const [contractStatus, setContractStatus] = useState('')
+  const [listContractType, setListContractType] = useState('')
+  const submittedRef = useRef(false)
   const selectedSeries = data.series.find((item) => item.id === seriesId)
   const decisions = data.decisions.filter((item) => item.targetSeriesId === seriesId)
   const ownershipValid =
     publisherOwnershipPct + mangakaOwnershipPct === 100 &&
     (contractType !== 'FULL_BUYOUT' || (publisherOwnershipPct === 100 && mangakaOwnershipPct === 0))
   const datesValid = Boolean(contractStart && contractEnd && contractEnd > contractStart)
+  const contractStatuses = [...new Set(data.contracts.map((contract) => contract.status))]
+  const filteredContracts = data.contracts.filter((contract) => {
+    const contractSeries = data.series.find((item) => item.id === contract.seriesId)
+    return (!contractSearch || `${contractSeries?.title ?? ''} ${contract.seriesId}`.toLowerCase().includes(contractSearch.toLowerCase())) &&
+      (!contractStatus || contract.status === contractStatus) &&
+      (!listContractType || contract.contractType === listContractType)
+  })
 
   function selectContractType(value: 'FULL_BUYOUT' | 'REVENUE_SHARE') {
     setContractType(value)
@@ -31,6 +44,13 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
       setMangakaOwnershipPct(0)
     }
   }
+
+  useEffect(() => {
+    if (submittedRef.current && fetcher.state === 'idle' && fetcher.data?.ok) {
+      submittedRef.current = false
+      setCreateOpen(false)
+    }
+  }, [fetcher.data, fetcher.state])
 
   return (
     <div className='space-y-7 pb-12'>
@@ -47,10 +67,29 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           {t('errors.loadDescription')}
         </p>
       )}
-      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <h2 className='text-lg font-bold text-foreground'>{t('contracts.createTitle')}</h2>
-        <p className='mt-1 text-sm text-muted-foreground'>{t('contracts.createDescription')}</p>
-        <fetcher.Form method='post' className='mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
+      <section className='flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div>
+          <h2 className='text-lg font-bold text-foreground'>{t('contracts.createTitle')}</h2>
+          <p className='mt-1 text-sm text-muted-foreground'>{t('contracts.createDescription')}</p>
+        </div>
+        <button
+          type='button'
+          onClick={() => setCreateOpen(true)}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          <FilePlus2 className='size-4' />
+          {t('actions.createContract')}
+        </button>
+      </section>
+      {createOpen && (
+        <Dialog open onClose={() => setCreateOpen(false)} titleId='editor-create-contract-title' title={t('contracts.createTitle')} description={t('contracts.createDescription')} size='xl'>
+        <fetcher.Form
+          method='post'
+          onSubmit={() => {
+            submittedRef.current = true
+          }}
+          className='grid gap-3 md:grid-cols-2'
+        >
           <input type='hidden' name='intent' value='createContract' />
           <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
           <select
@@ -140,34 +179,47 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           <textarea
             name='terminationClause'
             required
-            className='min-h-24 rounded-md border border-input bg-background p-3 text-sm text-foreground md:col-span-2 xl:col-span-4'
+            className='min-h-24 rounded-md border border-input bg-background p-3 text-sm text-foreground md:col-span-2'
             placeholder={t('contracts.terminationClause')}
           />
           <button
             disabled={fetcher.state !== 'idle' || !decisions.length || !ownershipValid || !datesValid}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50 md:col-span-2 xl:col-span-4'
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50 md:col-span-2'
           >
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}
             {t('actions.createContract')}
           </button>
           {fetcher.data && (
             <p
-              className={`text-xs font-semibold md:col-span-2 xl:col-span-4 ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}
+              className={`text-xs font-semibold md:col-span-2 ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}
             >
               {fetcher.data.ok ? t('messages.createContract') : t(`errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
             </p>
           )}
         </fetcher.Form>
-      </section>
+        </Dialog>
+      )}
       <section>
         <div className='mb-3 flex items-center justify-between'>
           <h2 className='text-lg font-bold text-foreground'>{t('contracts.listTitle')}</h2>
           <span className='rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground'>
-            {data.contracts.length}
+            {filteredContracts.length}
           </span>
         </div>
+        <div className='mb-4 grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
+          <input className={inputClass} value={contractSearch} onChange={(event) => setContractSearch(event.target.value)} placeholder={t('filters.searchContracts')} />
+          <select className={inputClass} value={contractStatus} onChange={(event) => setContractStatus(event.target.value)}>
+            <option value=''>{t('filters.allContractStatuses')}</option>
+            {contractStatuses.map((value) => <option key={value} value={value}>{t(`filters.contractStatuses.${value}`, { defaultValue: value })}</option>)}
+          </select>
+          <select className={inputClass} value={listContractType} onChange={(event) => setListContractType(event.target.value)}>
+            <option value=''>{t('filters.allContractTypes')}</option>
+            <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
+            <option value='REVENUE_SHARE'>{t('filters.contractTypes.REVENUE_SHARE')}</option>
+          </select>
+        </div>
         <div className='grid gap-4 xl:grid-cols-2'>
-          {data.contracts.map((contract) => {
+          {filteredContracts.map((contract) => {
             const series = data.series.find((item) => item.id === contract.seriesId)
             return (
               <Link
@@ -190,7 +242,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               </Link>
             )
           })}
-          {!data.contracts.length && (
+          {!filteredContracts.length && (
             <div className='rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground'>
               {t('contracts.empty')}
             </div>

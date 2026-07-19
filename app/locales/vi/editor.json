@@ -1,9 +1,73 @@
 {
   "common": { "notAvailable": "Chưa có" },
+  "filters": {
+    "searchProposals": "Tìm theo tên hoặc nội dung hồ sơ",
+    "allProposalStatuses": "Tất cả trạng thái hồ sơ",
+    "searchContracts": "Tìm theo tên hoặc mã bộ truyện",
+    "allContractStatuses": "Tất cả trạng thái hợp đồng",
+    "allContractTypes": "Tất cả loại hợp đồng",
+    "searchReports": "Tìm theo nội dung hoặc tên bộ truyện",
+    "allReportTypes": "Tất cả loại báo cáo",
+    "searchNotifications": "Tìm trong nội dung thông báo",
+    "allReadStates": "Tất cả thông báo",
+    "unread": "Chưa đọc",
+    "read": "Đã đọc",
+    "allNotificationTypes": "Tất cả loại thông báo",
+    "searchPublication": "Tìm theo tên bộ truyện, chương hoặc số chương",
+    "proposalStatuses": {
+      "DRAFT": "Bản nháp",
+      "PROPOSAL_REVIEW": "Đang duyệt hồ sơ",
+      "PROPOSAL_REVISION": "Cần chỉnh sửa",
+      "PROPOSAL_APPROVED": "Đã duyệt hồ sơ",
+      "PITCHED": "Đã trình Hội đồng",
+      "APPROVED": "Đã thông qua",
+      "REJECTED": "Đã từ chối",
+      "WITHDRAWN": "Đã rút hồ sơ"
+    },
+    "contractTypes": {
+      "FULL_BUYOUT": "Mua đứt toàn bộ",
+      "REVENUE_SHARE": "Chia sẻ doanh thu"
+    },
+    "contractStatuses": {
+      "DRAFT": "Bản nháp",
+      "MANGAKA_REVIEW": "Mangaka đang xem xét",
+      "NEGOTIATION": "Đang thương lượng",
+      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+      "BOARD_APPROVED": "Hội đồng đã duyệt",
+      "MANGAKA_SIGNED": "Mangaka đã ký",
+      "FULLY_EXECUTED": "Đã ký hoàn tất",
+      "FULFILLED": "Đã hoàn thành",
+      "TERMINATED": "Đã chấm dứt",
+      "TERMINATED_BY_BREACH": "Chấm dứt do vi phạm",
+      "EXPIRED": "Đã hết hạn",
+      "VOIDED": "Đã hủy hiệu lực"
+    },
+    "notificationTypes": {
+      "SYSTEM": "Hệ thống",
+      "CONTRACT": "Hợp đồng",
+      "TASK": "Công việc",
+      "DEADLINE": "Thời hạn",
+      "SURVEY": "Khảo sát",
+      "BOARD": "Hội đồng",
+      "REVIEW": "Duyệt nội dung"
+    }
+  },
   "dashboard": {
     "eyebrow": "Không gian biên tập",
     "title": "Quy trình biên tập và xuất bản",
     "subtitle": "Nhận hồ sơ series, kiểm duyệt proposal và Name mẫu, sau đó duyệt bản thảo chương trước khi phát hành.",
+    "liveDataError": "Tạm thời chưa tải được dữ liệu tổng quan. Các lối tắt nghiệp vụ vẫn hoạt động.",
+    "summary": {
+      "reviewQueue": "Hàng đợi duyệt",
+      "mySeries": "Series đang phụ trách",
+      "pendingContracts": "Hợp đồng chờ xử lý",
+      "unread": "Thông báo chưa đọc"
+    },
+    "alerts": {
+      "production": "Cảnh báo sản xuất",
+      "atRisk": "Series có rủi ro",
+      "pagesReady": "trang sẵn sàng"
+    },
     "proposals": {
       "title": "Hồ sơ series",
       "description": "Xử lý hàng đợi hồ sơ mới, nhận phụ trách và review proposal cùng storyboard Name mẫu.",
@@ -127,7 +191,6 @@
     "workflow": {
       "DRAFT": "Chờ hoàn thiện Name",
       "IN_PRODUCTION": "Đang sản xuất trang",
-      "COMPOSITE_REVIEW": "Mangaka đang duyệt composite",
       "EDITOR_REVIEW": "Duyệt bản thảo cuối",
       "EDITOR_REVISION": "Đang chờ Mangaka sửa",
       "READY_FOR_PRINT": "Kiểm tra điều kiện xuất bản",
@@ -137,7 +200,6 @@
     "workflowDescription": {
       "DRAFT": "Mangaka cần hoàn thiện và gửi Name trước khi bắt đầu sản xuất trang.",
       "IN_PRODUCTION": "Các trang và task đang được thực hiện; Editor có thể theo dõi tiến độ và deadline.",
-      "COMPOSITE_REVIEW": "Mangaka đang kiểm tra từng trang composite trước khi nộp bản thảo.",
       "EDITOR_REVIEW": "Kiểm tra các trang composite, ghi chú phần cần sửa hoặc duyệt bản thảo.",
       "EDITOR_REVISION": "Yêu cầu sửa đã được gửi; chờ Mangaka cập nhật và nộp lại.",
       "READY_FOR_PRINT": "Bản thảo đã đạt yêu cầu; xác nhận hợp đồng trước khi xuất bản.",
@@ -158,6 +220,40 @@
       "reports": "Báo cáo Hội đồng",
       "lifecycle": "Quyết định vòng đời"
     },
+    "filters": {
+      "searchSessions": "Tìm theo tên phiên họp",
+      "allStatuses": "Tất cả trạng thái phiên",
+      "allSeries": "Tất cả series",
+      "allSessions": "Tất cả phiên họp",
+      "allDecisionTypes": "Tất cả loại quyết định",
+      "allResults": "Tất cả kết quả biểu quyết"
+    },
+    "sessionStatuses": {
+      "UPCOMING": "Sắp diễn ra",
+      "ACTIVE": "Đang hoạt động",
+      "CONCLUDED": "Đã kết thúc"
+    },
+    "decisionTypeLabels": {
+      "SERIALIZATION": "Duyệt đăng dài kỳ",
+      "CANCELLATION": "Hủy bộ truyện",
+      "FORMAT_CHANGE": "Thay đổi hình thức phát hành",
+      "COMPLETION": "Duyệt kết thúc",
+      "CONTINUE": "Tiếp tục phát hành",
+      "CANCEL": "Hủy bộ truyện",
+      "HIATUS": "Tạm ngưng phát hành",
+      "ENDING_ALLOWANCE": "Duyệt số chương kết thúc",
+      "SERIES_CONTRACT_APPROVAL": "Duyệt hợp đồng bộ truyện",
+      "CONTRACT": "Quyết định hợp đồng",
+      "REPRINT": "Duyệt tái bản",
+      "TRANSFER": "Duyệt chuyển nhượng"
+    },
+    "decisionResultLabels": {
+      "PENDING": "Đang chờ biểu quyết",
+      "PENDING_QUORUM": "Chưa đủ túc số",
+      "APPROVED": "Đã thông qua",
+      "REJECTED": "Đã từ chối",
+      "EXPIRED": "Đã hết hiệu lực"
+    },
     "sectionDescriptions": {
       "pitching": "Trình series đã qua biên tập và xem danh sách thành viên Hội đồng được đề xuất.",
       "sessions": "Tạo, bắt đầu và kết thúc từng phiên Hội đồng.",
@@ -169,30 +265,35 @@
     "readyDescription": "Gửi series đã được Editor duyệt lên Hội đồng.",
     "emptyReady": "Không có series nào sẵn sàng trình duyệt.",
     "sessionTitle": "Tạo phiên Hội đồng",
-    "sessionDescription": "Hệ thống tự đề xuất danh sách thành viên số lẻ dựa trên series đã chọn.",
-    "rosterSourceSeries": "Series dùng để gợi ý roster",
-    "rosterSourceSeriesHint": "Lựa chọn này chỉ dùng để đối chiếu chuyên môn thành viên. Một phiên có thể xem xét quyết định của nhiều series.",
+    "sessionDescription": "Hệ thống tự đề xuất danh sách thành viên Hội đồng dựa trên bộ truyện đã chọn.",
+    "sessionRulesTitle": "Quy tắc tạo phiên",
+    "sessionRuleMemberCount": "Theo cấu hình hiện tại, hệ thống đề xuất {{count}} thành viên. Một phiên phải có ít nhất 3 thành viên và tổng số phải là số lẻ.",
+    "sessionRuleRoster": "Bộ truyện được chọn chỉ dùng để gợi ý thành viên theo chuyên môn; một phiên vẫn có thể xem xét nhiều bộ truyện.",
+    "sessionRuleVoting": "Chỉ thành viên trong danh sách phiên họp mới được bỏ phiếu. Cần ít nhất {{count}} người tham gia biểu quyết để đủ túc số; phiên phải đang diễn ra và ở giai đoạn biểu quyết.",
+    "noEligibleSeriesForSession": "Chưa có bộ truyện ở trạng thái sẵn sàng trình Hội đồng hoặc đã trình Hội đồng. Hãy hoàn tất bước duyệt và trình bộ truyện trước khi tạo phiên.",
+    "rosterSourceSeries": "Bộ truyện dùng để gợi ý thành viên",
+    "rosterSourceSeriesHint": "Lựa chọn này chỉ dùng để đối chiếu chuyên môn thành viên. Một phiên có thể xem xét quyết định của nhiều bộ truyện.",
     "sessionName": "Tên phiên họp",
     "sessionNote": "Nội dung hoặc ghi chú biên tập",
     "startTime": "Thời gian bắt đầu",
     "endTime": "Thời gian kết thúc dự kiến",
     "rosterSize": "Số thành viên Hội đồng",
     "memberCount": "{{count}} thành viên Hội đồng",
-    "selectedRoster": "Danh sách Hội đồng được chọn",
-    "selectedRosterHint": "Backend đề xuất thành viên theo mức độ phù hợp giữa chuyên môn và thể loại series. Editor có thể điều chỉnh trước khi tạo phiên.",
+    "selectedRoster": "Danh sách thành viên được chọn",
+    "selectedRosterHint": "Hệ thống đề xuất thành viên theo mức độ phù hợp giữa chuyên môn và thể loại bộ truyện. Biên tập viên có thể điều chỉnh trước khi tạo phiên.",
     "memberMatch": "Điểm phù hợp: {{score}} · Thể loại trùng: {{genres}}",
     "memberWithoutProfile": "Thành viên này chưa hoàn thành hồ sơ nhân sự.",
-    "notEnoughSuggestedMembers": "Không đủ thành viên Hội đồng đang hoạt động để tạo roster hợp lệ.",
-    "selectedMemberCount": "Đã chọn {{count}} thành viên. Roster phải có ít nhất 3 người và là số lẻ.",
-    "selectSeries": "Chọn series",
+    "notEnoughSuggestedMembers": "Không đủ thành viên Hội đồng đang hoạt động để tạo danh sách hợp lệ.",
+    "selectedMemberCount": "Đã chọn {{count}} thành viên. Danh sách phải có ít nhất 3 người và tổng số phải là số lẻ.",
+    "selectSeries": "Chọn bộ truyện",
     "sessions": "Các phiên Hội đồng",
     "sessionsDescription": "Bắt đầu phiên sắp diễn ra hoặc kết thúc phiên đang hoạt động.",
     "emptySessions": "Chưa có phiên Hội đồng nào.",
     "votingProgress": "Tiến trình bỏ phiếu",
     "votedMembers": "Đã bỏ phiếu {{voted}}/{{total}} thành viên",
     "voteBreakdown": "{{approve}} đồng ý · {{reject}} từ chối · {{abstain}} không biểu quyết",
-    "quorumMet": "Đã đủ quorum",
-    "quorumPending": "Chưa đủ quorum",
+    "quorumMet": "Đã đủ túc số",
+    "quorumPending": "Chưa đủ túc số",
     "realtime": {
       "connecting": "Đang kết nối cập nhật bỏ phiếu trực tiếp...",
       "connected": "Đã kết nối cập nhật bỏ phiếu trực tiếp",
@@ -246,6 +347,13 @@
     "lifecycleDecision": "Quyết định vòng đời của Hội đồng",
     "decisionType": "Loại quyết định",
     "decisionNote": "Giải thích lý do và kết quả mong muốn của quyết định...",
+    "endingChapterAllowance": "Số chương kết thúc được phép thực hiện",
+    "newPublicationType": "Nhịp xuất bản mới",
+    "publicationTypes": {
+      "weekly": "Hàng tuần",
+      "monthly": "Hàng tháng",
+      "irregular": "Không định kỳ"
+    },
     "decisionTypes": {
       "continue": "Tiếp tục phát hành",
       "cancel": "Hủy series",
@@ -348,6 +456,7 @@
     "issue": "Số kỳ",
     "reflectedIssue": "Kỳ phản ánh kết quả",
     "transferAmount": "Giá trị chuyển nhượng",
+    "transferRequestId": "ID yêu cầu chuyển nhượng",
     "coOwner": "Yêu cầu đồng sở hữu duyệt chương",
     "notes": "Ghi chú phiên bản",
     "explorer": "Tra cứu dữ liệu vận hành",
@@ -360,6 +469,7 @@
     "reviewSeriesOwner": "Mangaka phụ trách series sẽ được đánh giá",
     "selectSeriesFirst": "Chọn series để xác định Mangaka",
     "keepCurrent": "Giữ giá trị hiện tại",
+    "selectPublicationVersion": "Chọn phiên bản xuất bản",
     "offlineVoteEntries": "Tổng phiếu offline theo từng series",
     "voteCount": "Số lượng phiếu",
     "fullTransfer": "Chuyển nhượng toàn bộ quyền sở hữu",
@@ -375,6 +485,15 @@
     "riskLevel": "Mức độ rủi ro",
     "createSurveySection": "Tạo kỳ khảo sát",
     "surveyStatusSection": "Trạng thái khảo sát và xếp hạng",
+    "selectSurvey": "Chọn kỳ khảo sát",
+    "surveyEmpty": "Chưa có kỳ khảo sát nào.",
+    "surveyReflectedNotice": "Bảng xếp hạng đã được chốt và hiện chỉ có thể xem.",
+    "surveyStatuses": {
+      "DRAFT": "Bản nháp",
+      "OPEN": "Đang mở bình chọn",
+      "CLOSED": "Đã đóng bình chọn",
+      "REFLECTED": "Đã công bố xếp hạng"
+    },
     "createReprintSection": "Tạo yêu cầu tái bản",
     "approveReprintSection": "Duyệt chương tái bản",
     "assignReviserSection": "Phân công người chỉnh sửa chương",
@@ -412,7 +531,8 @@
     "genres": "Thể loại sở trường",
     "demographics": "Nhóm độc giả",
     "experience": "Số năm kinh nghiệm",
-    "bio": "Giới thiệu nghề nghiệp"
+    "bio": "Giới thiệu nghề nghiệp",
+    "edit": "Chỉnh sửa hồ sơ"
   },
   "actions": {
     "review": "Xem và xử lý",
@@ -427,6 +547,7 @@
     "revisionPlaceholder": "Mô tả rõ nội dung cần chỉnh sửa...",
     "publish": "Xuất bản chương",
     "pitch": "Trình Hội đồng",
+    "cancel": "Hủy",
     "createSession": "Tạo phiên họp",
     "startSession": "Bắt đầu phiên",
     "concludeSession": "Kết thúc phiên",
@@ -466,6 +587,8 @@
     "reject": "Từ chối",
     "withdraw": "Rút yêu cầu",
     "createSurvey": "Tạo kỳ bình chọn",
+    "openSurvey": "Mở bình chọn",
+    "closeSurvey": "Đóng bình chọn",
     "updateStatus": "Cập nhật trạng thái",
     "importVotes": "Nhập phiếu offline",
     "finalizeRanking": "Chốt xếp hạng",

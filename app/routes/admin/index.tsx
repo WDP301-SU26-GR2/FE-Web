@@ -1,4 +1,4 @@
-import { usersControllerGetAdminStats } from '~/api/operations/users/users'
+import { dashboardControllerAdmin } from '~/api/operations/dashboard/dashboard'
 import { AdminDashboard } from '~/features/admin'
 
 import type { Route } from './+types/index'
@@ -9,13 +9,19 @@ export function meta() {
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   try {
-    const response = await usersControllerGetAdminStats()
-    return { stats: response.data, hasError: false }
+    const response = await dashboardControllerAdmin()
+    return { stats: response.data.systemStats, unreadNotifications: response.data.unreadNotifications, hasError: false }
   } catch {
-    return { stats: null, hasError: true }
+    return { stats: null, unreadNotifications: 0, hasError: true }
   }
 }
 
 export default function DashboardAdminRoute({ loaderData }: Route.ComponentProps) {
-  return <AdminDashboard stats={loaderData.stats} hasError={loaderData.hasError} />
+  return (
+    <AdminDashboard
+      stats={loaderData.stats}
+      unreadNotifications={loaderData.unreadNotifications}
+      hasError={loaderData.hasError}
+    />
+  )
 }
