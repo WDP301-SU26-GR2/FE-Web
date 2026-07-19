@@ -1070,5 +1070,46 @@
         "aiTimeout": "AI segment timed out, please retry."
       }
     }
+  },
+  "reprints": {
+    "eyebrow": "Reprint workflow",
+    "title": "Reprint requests",
+    "description": "Respond to revenue-share reprint requests and submit revised manuscripts when required.",
+    "empty": "You have no reprint requests.",
+    "unknownSeries": "Unknown series",
+    "chapterRange": "Chapters {{from}}–{{to}}",
+    "reviewReason": "Optional response note",
+    "accept": "Accept",
+    "reject": "Reject",
+    "fullBuyoutNotice": "A full-buyout contract does not require Mangaka approval. This request is waiting for the Board.",
+    "chapters": "Reprint chapters",
+    "chapter": "Reprint chapter {{number}}",
+    "submitManuscript": "Submit revision",
+    "manuscriptSubmitted": "Revision submitted.",
+    "uploadFailed": "Could not upload the revised manuscript.",
+    "success": "Reprint request updated.",
+    "revisionModes": {
+      "AS_IS": "Reprint as-is",
+      "WITH_REVISION": "Reprint with revisions"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "PROPOSED": "Proposed",
+      "MANGAKA_REVIEW": "Awaiting Mangaka review",
+      "MANGAKA_APPROVED": "Mangaka approved",
+      "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
+      "BOARD_APPROVED": "Board approved",
+      "APPROVED": "Approved",
+      "IN_PRODUCTION": "In production",
+      "PUBLISHED": "Published",
+      "REJECTED": "Rejected"
+    },
+    "chapterStatuses": {
+      "PENDING": "Pending",
+      "IN_REVISION": "In revision",
+      "READY": "Ready for review",
+      "APPROVED": "Approved",
+      "PUBLISHED": "Published"
+    }
   }
 }

@@ -58,7 +58,9 @@ export function EditorContractAmendmentsPage({
             <article key={amendment.id} className='rounded-lg border border-border p-4'>
               <div className='flex justify-between gap-3'>
                 <strong>{amendment.changedClauses.join(', ')}</strong>
-                <span className='rounded-full bg-muted px-2 py-1 text-[10px] font-bold'>{amendment.status}</span>
+                <span className='rounded-full bg-muted px-2 py-1 text-[10px] font-bold'>
+                  {t(`filters.amendmentStatuses.${amendment.status}`)}
+                </span>
               </div>
               <p className='mt-2 text-sm text-muted-foreground'>{amendment.reason}</p>
               {amendment.status === 'DRAFT' && (

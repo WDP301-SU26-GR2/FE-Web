@@ -21,6 +21,7 @@ export function EditorTransfersPage({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
+  const displayRequest = request as TransferRequestWithRelations | null
   return (
     <OperationsLayout titleKey='operations.transfers' descriptionKey='operations.descriptions.transfers' hasError={hasError}>
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
@@ -31,8 +32,8 @@ export function EditorTransfersPage({
         {request && (
           <div className='mt-4 rounded-lg border border-border p-4 text-sm'>
             <div className='flex flex-wrap justify-between gap-2'>
-              <strong>{request.seriesId}</strong>
-              <span className='font-bold text-primary'>{request.status}</span>
+              <strong>{displayRequest?.series?.title ?? t('operations.unknownSeries')}</strong>
+              <span className='font-bold text-primary'>{t(`operations.transferStatuses.${request.status}`)}</span>
             </div>
             <p className='mt-2 text-muted-foreground'>{request.planDescription}</p>
           </div>
@@ -76,6 +77,12 @@ export function EditorTransfersPage({
       </OperationDialogPanel>
     </OperationsLayout>
   )
+}
+
+type TransferRequestWithRelations = TransferRequestResDtoOutput & {
+  series?: { id: string; title: string } | null
+  requestingMangaka?: { id: string; displayName: string; avatar?: string | null } | null
+  originalMangaka?: { id: string; displayName: string; avatar?: string | null } | null
 }
 
 function Share({ name, label, value }: { name: string; label: string; value: number }) {

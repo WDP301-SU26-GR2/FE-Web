@@ -14,6 +14,7 @@ import type {
   UsersControllerListUsersStatus
 } from '~/api/model/users'
 import { AdminUsersPage, type AdminUserActionIntent, type AdminUserActionResult } from '~/features/admin'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 
 import type { Route } from './+types/users'
 
@@ -144,15 +145,11 @@ function failure(intent: AdminUserActionIntent | 'unknown', errorKey: string): A
 }
 
 function mapErrorKey(error: unknown): string {
-  const message =
-    error && typeof error === 'object' && 'data' in error
-      ? (error as { data?: { message?: string } }).data?.message
-      : undefined
-
-  if (message === 'Error.EmailAlreadyExists') return 'emailExists'
-  if (message === 'Error.CannotModifyAdminUser') return 'cannotModifyAdmin'
-  if (message === 'Error.UserAlreadyDeleted') return 'alreadyDeleted'
-  if (message === 'Error.UserNotDeleted') return 'notDeleted'
-  if (message === 'Error.UserNotFound') return 'notFound'
+  const code = extractApiErrorCode(error)
+  if (code === 'Error.EmailAlreadyExists') return 'emailExists'
+  if (code === 'Error.CannotModifyAdminUser') return 'cannotModifyAdmin'
+  if (code === 'Error.UserAlreadyDeleted') return 'alreadyDeleted'
+  if (code === 'Error.UserNotDeleted') return 'notDeleted'
+  if (code === 'Error.UserNotFound') return 'notFound'
   return 'actionFailed'
 }

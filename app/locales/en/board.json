@@ -166,6 +166,7 @@
     "description": "Review proposals and vote on decisions assigned to your session.",
     "empty": "No decisions are available.",
     "series": "Series",
+    "unknownSeries": "Series unavailable",
     "voteCount": "{{count}} votes",
     "summary": "{{approve}} approve · {{reject}} reject · {{total}} total",
     "progress": "Voting progress",
@@ -189,7 +190,8 @@
   "reports": {
     "title": "Board reports",
     "description": "Read evidence and editorial analysis attached to decisions.",
-    "empty": "No reports are available."
+    "empty": "No reports are available.",
+    "unknownSeries": "Unknown series"
   },
   "contracts": {
     "title": "Contract review",
@@ -237,21 +239,47 @@
   "deadlines": {
     "title": "Deadline arbitration",
     "description": "Resolve escalated deadline requests and publication-slot conflicts.",
-    "chapterId": "Enter chapter ID",
+    "chapterId": "Chapter",
+    "selectSeries": "Select a series",
+    "selectChapter": "Select a chapter",
+    "chapterOption": "Chapter {{number}} {{title}}",
     "empty": "No Board-review deadline requests were found.",
     "request": "Deadline request",
     "note": "Board resolution note",
     "resolve": "Resolve request",
     "approve": "Approve deadline",
-    "reject": "Reject request"
+    "reject": "Reject request",
+    "statuses": {
+      "PROPOSED": "Proposed",
+      "COUNTER_PROPOSED": "Counter-proposed",
+      "AGREED_BY_PARTIES": "Agreed by parties",
+      "APPROVED": "Approved",
+      "BOARD_REVIEW": "Awaiting Board review",
+      "ESCALATED": "Escalated to the Board",
+      "REJECTED": "Rejected"
+    }
   },
   "rankings": {
     "title": "Board ranking overview",
     "description": "Review internal risk signals for a reflected survey period.",
-    "periodId": "Enter survey period ID",
+    "periodId": "Survey period",
+    "selectPeriod": "Select a survey period",
+    "issue": "Issue {{issue}}",
+    "statuses": {
+      "DRAFT": "Draft",
+      "OPEN": "Open",
+      "CLOSED": "Closed",
+      "REFLECTED": "Ranking finalized"
+    },
     "series": "Series",
     "votes": "Votes",
     "risk": "Risk",
+    "riskLevels": {
+      "NONE": "No risk",
+      "LOW": "Low risk",
+      "MEDIUM": "Medium risk",
+      "SEVERE": "Severe risk"
+    },
     "empty": "No ranking data is available for this period."
   },
   "reprints": {
@@ -259,7 +287,8 @@
     "description": "Review and approve reprint requests under the ownership rules.",
     "lookup": "Find requests by series",
     "create": "Create reprint request",
-    "seriesId": "Series ID",
+    "seriesId": "Series",
+    "selectSeries": "Select a series",
     "from": "First chapter",
     "to": "Last chapter",
     "reason": "Business reason",
@@ -267,7 +296,29 @@
     "reviewReason": "Review note",
     "review": "Review reprint request",
     "approve": "Approve reprint",
-    "reject": "Reject reprint"
+    "reject": "Reject reprint",
+    "revisionModes": {
+      "AS_IS": "Reprint as-is",
+      "WITH_REVISION": "Reprint with revisions"
+    },
+    "waitingMangaka": "This request uses a revenue-share contract and is waiting for Mangaka approval.",
+    "assignReviser": "Assign a reviser",
+    "selectChapter": "Select a reprint chapter",
+    "chapter": "Reprint chapter {{number}}",
+    "selectReviser": "Select a Mangaka reviser",
+    "unknownMangaka": "Unknown Mangaka",
+    "internalReviserId": "Internal team member ID",
+    "reviserTypes": {
+      "OTHER_MANGAKA": "Another Mangaka",
+      "INTERNAL_TEAM": "Internal team"
+    },
+    "chapterStatuses": {
+      "PENDING": "Pending",
+      "IN_REVISION": "In revision",
+      "READY": "Ready for review",
+      "APPROVED": "Approved",
+      "PUBLISHED": "Published"
+    }
   },
   "transfers": {
     "title": "Series transfer screening",

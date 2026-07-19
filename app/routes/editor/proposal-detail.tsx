@@ -13,6 +13,8 @@ import {
   annotationControllerResolve
 } from '~/api/operations/annotations/annotations'
 import { EditorProposalDetailPage, type EditorActionResult, type EditorProposalDetailData } from '~/features/editor'
+import { customFetch } from '~/api/mutator/custom-fetch'
+import type { SeriesResDtoOutput } from '~/api/model/series'
 
 import type { Route } from './+types/proposal-detail'
 
@@ -79,11 +81,22 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       await annotationControllerRemove({ id: required(formData, 'annotationId') })
     else if (intent === 'rejectSeries')
       await seriesControllerReject({ id: seriesId }, { reason: reason ?? 'Rejected by Editor' })
+    else if (intent === 'reopenReview')
+      await customFetch<{ data: SeriesResDtoOutput; status: number }>(
+        `/series/${encodeURIComponent(seriesId)}/reopen-review`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: required(formData, 'reason') })
+        }
+      )
     else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
       : intent === 'rejectSeries'
         ? 'rejected'
+        : intent === 'reopenReview'
+          ? 'reviewReopened'
         : intent.includes('Annotation')
           ? 'annotationUpdated'
           : 'revisionRequested'
@@ -96,7 +109,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     const errorKey =
       code === 'Error.NotAssignedEditor'
         ? 'notAssigned'
-        : code === 'Error.InvalidProposalState' || code === 'Error.InvalidNameState'
+        : code === 'Error.InvalidProposalState' || code === 'Error.InvalidNameState' || code === 'Error.InvalidSeriesTransition'
           ? 'invalidState'
           : 'actionFailed'
     return { ok: false, intent, errorKey }

@@ -82,8 +82,8 @@ export function BoardDecisionDetailPage({
         </Link>
       )}
       <BoardHeader
-        title={decision.decisionType ?? t('decisions.title')}
-        description={`${t('decisions.series')}: ${decision.targetSeries?.title ?? decision.targetSeriesId ?? '—'}`}
+        title={decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
+        description={`${t('decisions.series')}: ${decision.targetSeries?.title ?? t('decisions.unknownSeries')}`}
       />
       <BoardPanel title={t('decisions.progress')}>
         <div className='flex flex-wrap items-center justify-between gap-3'>

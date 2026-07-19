@@ -303,6 +303,8 @@
       "deadlineHint": "Nhập mã chương để xem các yêu cầu deadline liên quan.",
       "resolved": "Đã xử lý",
       "open": "Chưa xử lý",
+      "unknownSeries": "Chưa xác định bộ truyện",
+      "reprintChapter": "Chương tái bản {{number}}",
       "filters": {
         "searchSeries": "Tìm theo tên series",
         "searchReprints": "Tìm series tái bản",
@@ -342,6 +344,13 @@
         "IN_PRODUCTION": "Đang sản xuất",
         "PUBLISHED": "Đã xuất bản",
         "REJECTED": "Đã từ chối"
+      },
+      "reprintChapterStatuses": {
+        "PENDING": "Đang chờ xử lý",
+        "IN_REVISION": "Đang chỉnh sửa",
+        "READY": "Sẵn sàng duyệt",
+        "APPROVED": "Đã duyệt",
+        "PUBLISHED": "Đã phát hành"
       },
       "deadlineStatuses": {
         "PROPOSED": "Đã đề xuất",

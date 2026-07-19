@@ -4,6 +4,7 @@ import { surveyControllerGetVotingConfig, surveyControllerUpdateVotingConfig } f
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import type { VotingConfigBodyDtoAuthMode } from '~/api/model/survey'
 import { AdminSettingsPage, type AdminSettingsActionResult, type AdminSettingsData } from '~/features/admin'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 
 import type { Route } from './+types/settings'
 
@@ -119,11 +120,8 @@ function failure(intent: string, errorKey: string): AdminSettingsActionResult {
 }
 
 function mapError(error: unknown) {
-  const message =
-    error && typeof error === 'object' && 'data' in error
-      ? (error as { data?: { message?: string } }).data?.message
-      : undefined
-  if (message === 'Error.BoardConfigLocked') return 'boardLocked'
-  if (message === 'Error.BoardConfigNotFound' || message === 'Error.VotingConfigNotFound') return 'notFound'
+  const code = extractApiErrorCode(error)
+  if (code === 'Error.BoardConfigLocked') return 'boardLocked'
+  if (code === 'Error.BoardConfigNotFound' || code === 'Error.VotingConfigNotFound') return 'notFound'
   return 'actionFailed'
 }

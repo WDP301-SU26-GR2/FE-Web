@@ -285,11 +285,11 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                     {contract.series?.title ?? series?.title ?? t('contractDecision.unknownSeries')}
                   </h3>
                   <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-                    {contract.status.replaceAll('_', ' ')}
+                    {t(`filters.contractStatuses.${contract.status}`)}
                   </span>
                 </div>
                 <p className='mt-2 text-sm text-muted-foreground'>
-                  {contract.contractType} · {formatMoney(contract.valuationAmount)}
+                  {t(`filters.contractTypes.${contract.contractType}`)} · {formatMoney(contract.valuationAmount)}
                 </p>
                 <p className='mt-3 text-xs text-muted-foreground'>
                   {contract.publisherOwnershipPct ?? 0}% / {contract.mangakaOwnershipPct ?? 0}%

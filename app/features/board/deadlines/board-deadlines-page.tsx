@@ -1,15 +1,23 @@
 import { Form, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
+import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
+import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { BoardActionDialog, boardInput, BoardFeedback, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 
 export function BoardDeadlinesPage({
   requests,
+  series,
+  chapters,
+  seriesId,
   chapterId,
   hasError
 }: {
   requests: DeadlineRequestListResDtoOutputItemsItem[]
+  series: SeriesListResDtoOutputItemsItem[]
+  chapters: ChapterListResDtoOutputItemsItem[]
+  seriesId: string
   chapterId: string
   hasError: boolean
 }) {
@@ -17,14 +25,17 @@ export function BoardDeadlinesPage({
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('deadlines.title')} description={t('deadlines.description')} />
-      <Form method='get' className='flex gap-2'>
-        <input
-          className={boardInput}
-          name='chapterId'
-          defaultValue={chapterId}
-          placeholder={t('deadlines.chapterId')}
-          required
-        />
+      <Form method='get' className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
+        <select className={boardInput} name='seriesId' defaultValue={seriesId}>
+          <option value=''>{t('deadlines.selectSeries')}</option>
+          {series.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+        </select>
+        <select className={boardInput} name='chapterId' defaultValue={chapterId} disabled={!seriesId}>
+          <option value=''>{t('deadlines.selectChapter')}</option>
+          {chapters.map((item) => (
+            <option key={item.id} value={item.id}>{t('deadlines.chapterOption', { number: item.chapterNumber, title: item.title || '' })}</option>
+          ))}
+        </select>
         <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
           {t('common.load')}
         </button>
@@ -35,7 +46,7 @@ export function BoardDeadlinesPage({
           <DeadlineCard key={item.id} item={item} />
         ))}
       </div>
-      {chapterId && !requests.length && <EmptyState text={t('deadlines.empty')} />}
+      {seriesId && chapterId && !requests.length && <EmptyState text={t('deadlines.empty')} />}
     </div>
   )
 }

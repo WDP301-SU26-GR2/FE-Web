@@ -106,9 +106,10 @@ function notificationHref(item: NotificationListResDtoOutputItemsItem): string |
   if (['CHAPTER', 'MANUSCRIPT', 'PAGE'].includes(prefix))
     return `/dashboard/editor/publication?referenceId=${id}&referenceType=${prefix}`
   if (prefix === 'DEADLINE') return `/dashboard/editor/operations/deadlines?requestId=${id}`
-  if (prefix === 'BOARD') return `/dashboard/editor/board/sessions?sessionId=${id}`
-  if (prefix === 'DECISION') return `/dashboard/editor/board/decisions?decisionId=${id}`
+  if (prefix === 'BOARD') return `/dashboard/editor/board/sessions/${id}`
+  if (prefix === 'DECISION') return `/dashboard/editor/board/decisions/${id}`
   if (prefix === 'SURVEY' || prefix === 'RANKING') return `/dashboard/editor/operations/surveys?referenceId=${id}`
+  if (prefix === 'REPRINT') return `/dashboard/editor/operations/reprints?requestId=${id}`
   if (prefix === 'REVISION') return `/dashboard/editor/proposals?revisionId=${id}`
   if (prefix === 'REVIEW') return `/dashboard/editor/operations/reviews?reviewId=${id}`
   return null

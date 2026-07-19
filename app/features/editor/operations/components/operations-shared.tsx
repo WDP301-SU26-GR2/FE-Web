@@ -167,7 +167,9 @@ export function OperationFeedback({ data }: { data?: EditorActionResult }) {
   if (!data) return null
   return (
     <p className={`mt-3 text-xs font-bold ${data.ok ? 'text-primary' : 'text-destructive'}`}>
-      {data.ok ? t('messages.operationCompleted') : t('errors.actionFailed')}
+      {data.ok
+        ? t(`messages.${data.messageKey ?? 'operationCompleted'}`)
+        : data.message ?? t(`errors.${data.errorKey ?? 'actionFailed'}`)}
     </p>
   )
 }

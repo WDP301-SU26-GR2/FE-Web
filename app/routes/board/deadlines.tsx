@@ -1,28 +1,42 @@
 import {
   deadlineControllerBoardResolve,
+  deadlineControllerGetOne,
   deadlineControllerList
 } from '~/api/operations/deadline-requests/deadline-requests'
+import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
+import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { BoardDeadlinesPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/deadlines'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
-  const chapterId = new URL(request.url).searchParams.get('chapterId') ?? ''
-  if (!chapterId) return { requests: [], chapterId, hasError: false }
+  const searchParams = new URL(request.url).searchParams
+  const requestId = searchParams.get('requestId') ?? ''
+  const requestedChapterId = searchParams.get('chapterId') ?? ''
+  const requestedSeriesId = searchParams.get('seriesId') ?? ''
   try {
-    const [review, escalated] = await Promise.all([
-      deadlineControllerList({ chapterId, status: 'BOARD_REVIEW' }),
-      deadlineControllerList({ chapterId, status: 'ESCALATED' })
+    const focusedRequest = requestId ? await deadlineControllerGetOne({ id: requestId }) : null
+    const focusedDeadline = focusedRequest?.status === 200 ? focusedRequest.data : undefined
+    const seriesId = requestedSeriesId || focusedDeadline?.seriesId || ''
+    const chapterId = requestedChapterId || focusedDeadline?.chapterId || ''
+    const [seriesResponse, chaptersResponse, review, escalated] = await Promise.all([
+      seriesControllerListSeries({ limit: 100, offset: 0 }),
+      seriesId ? chapterControllerListBySeries({ seriesId }) : null,
+      chapterId ? deadlineControllerList({ chapterId, status: 'BOARD_REVIEW' }) : null,
+      chapterId ? deadlineControllerList({ chapterId, status: 'ESCALATED' }) : null
     ])
     return {
       requests: [
-        ...(review.status === 200 ? review.data.items : []),
-        ...(escalated.status === 200 ? escalated.data.items : [])
+        ...(review?.status === 200 ? review.data.items : []),
+        ...(escalated?.status === 200 ? escalated.data.items : [])
       ],
+      series: seriesResponse.data.items,
+      chapters: chaptersResponse?.status === 200 ? chaptersResponse.data.items : [],
+      seriesId,
       chapterId,
-      hasError: review.status !== 200 || escalated.status !== 200
+      hasError: Boolean(chapterId && (review?.status !== 200 || escalated?.status !== 200))
     }
   } catch {
-    return { requests: [], chapterId, hasError: true }
+    return { requests: [], series: [], chapters: [], seriesId: requestedSeriesId, chapterId: requestedChapterId, hasError: true }
   }
 }
 

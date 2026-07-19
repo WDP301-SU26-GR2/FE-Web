@@ -1070,5 +1070,46 @@
         "aiTimeout": "AI segment chạy quá lâu, vui lòng thử lại."
       }
     }
+  },
+  "reprints": {
+    "eyebrow": "Quy trình tái bản",
+    "title": "Yêu cầu tái bản",
+    "description": "Phản hồi yêu cầu tái bản thuộc hợp đồng chia sẻ doanh thu và nộp bản sửa khi cần.",
+    "empty": "Bạn chưa có yêu cầu tái bản nào.",
+    "unknownSeries": "Chưa xác định bộ truyện",
+    "chapterRange": "Chương {{from}}–{{to}}",
+    "reviewReason": "Ghi chú phản hồi (không bắt buộc)",
+    "accept": "Đồng ý",
+    "reject": "Từ chối",
+    "fullBuyoutNotice": "Hợp đồng mua đứt không cần Mangaka xác nhận. Yêu cầu đang chờ Hội đồng xử lý.",
+    "chapters": "Các chương tái bản",
+    "chapter": "Chương tái bản {{number}}",
+    "submitManuscript": "Nộp bản sửa",
+    "manuscriptSubmitted": "Đã nộp bản sửa.",
+    "uploadFailed": "Không thể tải bản sửa lên.",
+    "success": "Đã cập nhật yêu cầu tái bản.",
+    "revisionModes": {
+      "AS_IS": "Tái bản nguyên trạng",
+      "WITH_REVISION": "Tái bản có chỉnh sửa"
+    },
+    "statuses": {
+      "PENDING": "Đang chờ",
+      "PROPOSED": "Đã đề xuất",
+      "MANGAKA_REVIEW": "Chờ Mangaka xem xét",
+      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+      "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
+      "BOARD_APPROVED": "Hội đồng đã duyệt",
+      "APPROVED": "Đã duyệt",
+      "IN_PRODUCTION": "Đang sản xuất",
+      "PUBLISHED": "Đã phát hành",
+      "REJECTED": "Đã từ chối"
+    },
+    "chapterStatuses": {
+      "PENDING": "Đang chờ xử lý",
+      "IN_REVISION": "Đang chỉnh sửa",
+      "READY": "Sẵn sàng duyệt",
+      "APPROVED": "Đã duyệt",
+      "PUBLISHED": "Đã phát hành"
+    }
   }
 }

@@ -303,6 +303,8 @@
       "deadlineHint": "Enter a chapter ID to review its deadline requests.",
       "resolved": "Resolved",
       "open": "Open",
+      "unknownSeries": "Unknown series",
+      "reprintChapter": "Reprint chapter {{number}}",
       "filters": {
         "searchSeries": "Search series title",
         "searchReprints": "Search reprint series",
@@ -342,6 +344,13 @@
         "IN_PRODUCTION": "In production",
         "PUBLISHED": "Published",
         "REJECTED": "Rejected"
+      },
+      "reprintChapterStatuses": {
+        "PENDING": "Pending",
+        "IN_REVISION": "In revision",
+        "READY": "Ready for review",
+        "APPROVED": "Approved",
+        "PUBLISHED": "Published"
       },
       "deadlineStatuses": {
         "PROPOSED": "Proposed",

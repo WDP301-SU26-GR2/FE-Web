@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { CalendarRange } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
+import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
+import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
   OperationAction,
   OperationFeedback,
@@ -13,11 +15,17 @@ import {
 
 export function EditorDeadlinesPage({
   items,
+  series,
+  chapters,
+  focusSeriesId,
   focusChapterId,
   focusRequestId,
   hasError
 }: {
   items: DeadlineRequestListResDtoOutputItemsItem[]
+  series: SeriesListResDtoOutputItemsItem[]
+  chapters: ChapterListResDtoOutputItemsItem[]
+  focusSeriesId: string
   focusChapterId: string
   focusRequestId: string
   hasError: boolean
@@ -35,8 +43,17 @@ export function EditorDeadlinesPage({
       hasError={hasError}
     >
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_auto]'>
-          <input name='chapterId' defaultValue={focusChapterId} className={operationInput} placeholder='Chapter ID' />
+        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
+          <select name='seriesId' defaultValue={focusSeriesId} className={operationInput}>
+            <option value=''>{t('operations.selectSeries')}</option>
+            {series.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+          </select>
+          <select name='chapterId' defaultValue={focusChapterId} className={operationInput} disabled={!focusSeriesId}>
+            <option value=''>{t('operations.selectChapter')}</option>
+            {chapters.map((item) => (
+              <option key={item.id} value={item.id}>{t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}</option>
+            ))}
+          </select>
           <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
             {t('actions.load')}
           </button>
@@ -45,7 +62,7 @@ export function EditorDeadlinesPage({
           {items.map((item) => (
             <article key={item.id} className='rounded-lg border border-border p-3 text-sm'>
               <div className='flex justify-between'>
-                <strong>{item.status.replaceAll('_', ' ')}</strong>
+                <strong>{t(`operations.deadlineStatuses.${item.status}`)}</strong>
                 <span>{item.requestedBy ?? '—'}</span>
               </div>
               <p className='mt-1 text-muted-foreground'>
@@ -59,7 +76,12 @@ export function EditorDeadlinesPage({
       </section>
       <OperationDialogPanel icon={CalendarRange} title={t('operations.deadlines')}>
         <fetcher.Form method='post' className='grid gap-3'>
-          <input name='chapterId' defaultValue={focusChapterId} className={operationInput} placeholder='Chapter ID' />
+          <select name='chapterId' defaultValue={focusChapterId} className={operationInput} required>
+            <option value=''>{t('operations.selectChapter')}</option>
+            {chapters.map((item) => (
+              <option key={item.id} value={item.id}>{t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}</option>
+            ))}
+          </select>
           <select
             name='requestId'
             value={selectedRequestId}
@@ -69,7 +91,7 @@ export function EditorDeadlinesPage({
             <option value=''>{t('operations.selectDeadlineRequest')}</option>
             {items.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.status.replaceAll('_', ' ')} ·{' '}
+                {t(`operations.deadlineStatuses.${item.status}`)} ·{' '}
                 {item.requestedDeadline ? new Date(item.requestedDeadline).toLocaleString() : '—'}
               </option>
             ))}

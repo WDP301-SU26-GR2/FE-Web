@@ -10,12 +10,14 @@ export function BoardReportsPage({
   hasError,
   backPath,
   decisionBasePath,
+  seriesTitles = {},
   enableFilters = false
 }: {
   reports: SeriesReportResDtoOutput[]
   hasError: boolean
   backPath?: string
   decisionBasePath?: string
+  seriesTitles?: Record<string, string>
   enableFilters?: boolean
 }) {
   const { t } = useTranslation('board')
@@ -25,7 +27,7 @@ export function BoardReportsPage({
   const filteredReports = reports.filter(
     (report) =>
       (!reportType || report.reportType === reportType) &&
-      (!search || `${report.content} ${report.seriesId}`.toLowerCase().includes(search.toLowerCase()))
+      (!search || `${report.content} ${seriesTitles[report.seriesId ?? ''] ?? ''}`.toLowerCase().includes(search.toLowerCase()))
   )
   return (
     <div className='space-y-6 pb-12'>
@@ -67,7 +69,7 @@ export function BoardReportsPage({
                 report.reportType ?? t('reports.title')
               )}
             </h2>
-            <p className='mt-1 text-xs text-muted-foreground'>{report.seriesId}</p>
+            <p className='mt-1 text-xs text-muted-foreground'>{seriesTitles[report.seriesId ?? ''] ?? t('reports.unknownSeries')}</p>
             <p className='mt-3 whitespace-pre-wrap text-sm text-muted-foreground'>{report.content}</p>
           </article>
         ))}

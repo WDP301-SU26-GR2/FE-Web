@@ -24,6 +24,28 @@
       "REJECTED": "Rejected",
       "WITHDRAWN": "Withdrawn"
     },
+    "seriesStatuses": {
+      "DRAFT": "Draft",
+      "IN_REVIEW": "Under editorial review",
+      "READY_TO_PITCH": "Ready to pitch",
+      "PITCHED": "Pitched to Board",
+      "SERIALIZED": "Serialized",
+      "HIATUS": "On hiatus",
+      "COMPLETING": "Completing",
+      "CANCELLING": "Cancelling",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "REJECTED": "Rejected by Board",
+      "ABANDONED": "Editorial review ended",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "nameStatuses": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "IN_REVIEW": "Under review",
+      "REVISION": "Revision required",
+      "APPROVED": "Approved"
+    },
     "contractTypes": {
       "FULL_BUYOUT": "Full buyout",
       "REVENUE_SHARE": "Revenue share"
@@ -40,6 +62,20 @@
       "TERMINATED": "Terminated",
       "TERMINATED_BY_BREACH": "Terminated by breach",
       "EXPIRED": "Expired",
+      "VOIDED": "Voided"
+    },
+    "paymentConditionStatuses": {
+      "PENDING": "Tracking",
+      "ACHIEVED": "Condition achieved",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled",
+      "MISSED": "Condition missed",
+      "DISABLED": "Paused"
+    },
+    "amendmentStatuses": {
+      "DRAFT": "Draft",
+      "PENDING_SIGNATURES": "Awaiting signatures",
+      "FULLY_EXECUTED": "Fully executed",
       "VOIDED": "Voided"
     },
     "notificationTypes": {
@@ -119,7 +155,10 @@
     "characterAlt": "Character design {{number}}",
     "rejectTitle": "Reject this concept",
     "rejectDescription": "This permanently closes the current submission as abandoned.",
-    "rejectPlaceholder": "Explain why the concept is being rejected..."
+    "rejectPlaceholder": "Explain why the concept is being rejected...",
+    "reopenTitle": "Reopen editorial review",
+    "reopenDescription": "Move this Board-rejected series back into editorial review so the Mangaka can revise and pitch it again.",
+    "reopenPlaceholder": "Explain what must be revised before the series is pitched again..."
   },
   "publication": {
     "eyebrow": "Publication workflow",
@@ -483,6 +522,18 @@
     "rating": "Mangaka rating (1-5)",
     "comment": "Review comment",
     "selectDeadlineRequest": "Select a deadline request",
+    "selectSeries": "Select a series",
+    "selectChapter": "Select a chapter",
+    "chapterOption": "Chapter {{number}} {{title}}",
+    "deadlineStatuses": {
+      "PROPOSED": "Proposed",
+      "COUNTER_PROPOSED": "Counter-proposed",
+      "AGREED_BY_PARTIES": "Agreed by both parties",
+      "BOARD_REVIEW": "Awaiting Board review",
+      "ESCALATED": "Escalated to the Board",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
     "reviewSeriesOwner": "The assigned Mangaka will be reviewed",
     "selectSeriesFirst": "Select a series to identify its Mangaka",
     "keepCurrent": "Keep current value",
@@ -491,6 +542,17 @@
     "voteCount": "Number of votes",
     "fullTransfer": "Full ownership transfer",
     "partialTransfer": "Partial ownership transfer",
+    "transferStatuses": {
+      "SUBMITTED": "Submitted",
+      "UNDER_REVIEW": "Under Board review",
+      "REJECTED_BY_BOARD": "Rejected by Board",
+      "NEGOTIATING": "Negotiating",
+      "REJECTED_BY_ORIGINAL_MANGAKA": "Rejected by original Mangaka",
+      "PROPOSED": "Proposed",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
     "ownershipSplit": "New revenue ownership percentages",
     "publisherShare": "Publisher (%)",
     "originalMangakaShare": "Original Mangaka (%)",
@@ -514,6 +576,42 @@
     "createReprintSection": "Create reprint request",
     "approveReprintSection": "Approve reprint chapter",
     "assignReviserSection": "Assign chapter reviser",
+    "reprintTrackingSection": "Track reprint requests and chapters",
+    "noReprints": "No reprint requests are available.",
+    "selectReprint": "Select a reprint request",
+    "selectReprintChapter": "Select a chapter in the reprint request",
+    "selectReviser": "Select a Mangaka reviser",
+    "internalReviserId": "Internal team member ID",
+    "unknownSeries": "Series unavailable",
+    "unknownChapter": "Chapter unavailable",
+    "unknownMangaka": "Mangaka unavailable",
+    "revisionModes": {
+      "AS_IS": "Reprint as-is",
+      "WITH_REVISION": "Reprint with revisions"
+    },
+    "reviserTypes": {
+      "INTERNAL_TEAM": "Internal team",
+      "OTHER_MANGAKA": "Another Mangaka"
+    },
+    "reprintStatuses": {
+      "PENDING": "Pending",
+      "PROPOSED": "Proposed",
+      "MANGAKA_REVIEW": "Mangaka review",
+      "MANGAKA_APPROVED": "Mangaka approved",
+      "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
+      "BOARD_APPROVED": "Board approved",
+      "APPROVED": "Approved",
+      "IN_PRODUCTION": "In production",
+      "PUBLISHED": "Published",
+      "REJECTED": "Rejected"
+    },
+    "reprintChapterStatuses": {
+      "PENDING": "Pending",
+      "IN_REVISION": "In revision",
+      "READY": "Ready for review",
+      "APPROVED": "Approved",
+      "PUBLISHED": "Published"
+    },
     "startTransferSection": "Start transfer negotiation",
     "createTransferSection": "Create transfer contract",
     "createVersionSection": "Create publication version",
@@ -576,6 +674,7 @@
     "addCondition": "Add payment condition",
     "disable": "Disable",
     "rejectSeries": "Reject concept",
+    "reopenReview": "Reopen review",
     "approveName": "Approve Name",
     "setDeadline": "Set deadline",
     "extendDeadline": "Extend deadline",
@@ -611,6 +710,7 @@
     "finalizeRanking": "Finalize ranking",
     "createReprint": "Create reprint request",
     "approveReprint": "Approve reprint chapter",
+    "requestReprintRevision": "Request reprint revision",
     "assignReviser": "Assign reviser",
     "startNegotiation": "Start negotiation",
     "createTransferContract": "Create transfer contract",
@@ -652,6 +752,7 @@
     "voidAmendment": "The amendment has been voided.",
     "operationCompleted": "The operation completed successfully.",
     "rejected": "The series has been rejected.",
+    "reviewReopened": "Editorial review has been reopened.",
     "annotationUpdated": "The editorial annotation has been updated.",
     "castVote": "Your vote has been recorded."
   },
@@ -673,6 +774,7 @@
     "openAmendmentExists": "Finish or void the current open amendment before creating another one.",
     "amendmentNoChanges": "Specify at least one changed contract term before submitting the amendment.",
     "revenueNotApplicable": "Revenue reporting requires a fully executed revenue-sharing contract.",
-    "actionFailed": "The action could not be completed. Please try again."
+    "actionFailed": "The action could not be completed. Please try again.",
+    "invalidChapterRange": "The chapter range is invalid. The ending chapter must not precede the starting chapter."
   }
 }

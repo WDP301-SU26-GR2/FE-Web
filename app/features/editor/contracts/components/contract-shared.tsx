@@ -57,7 +57,7 @@ export function ContractHeader({
           </p>
         </div>
         <span className='rounded-full bg-secondary px-3 py-1.5 text-xs font-extrabold text-secondary-foreground'>
-          {contract.status.replaceAll('_', ' ')}
+          {t(`filters.contractStatuses.${contract.status}`)}
         </span>
       </div>
       {progress && (
@@ -70,7 +70,7 @@ export function ContractHeader({
             label={t('contractDetail.boardSigned')}
             value={`${progress.boardProgress.totalSigned}/${progress.boardProgress.totalRequired}`}
           />
-          <Metric label={t('contractDetail.currentStatus')} value={progress.status} />
+          <Metric label={t('contractDetail.currentStatus')} value={t(`filters.contractStatuses.${progress.status}`)} />
         </div>
       )}
     </header>

@@ -166,6 +166,7 @@
     "description": "Xem hồ sơ và bỏ phiếu cho quyết định thuộc phiên được phân công.",
     "empty": "Chưa có quyết định nào.",
     "series": "Series",
+    "unknownSeries": "Bộ truyện không còn khả dụng",
     "voteCount": "{{count}} phiếu",
     "summary": "{{approve}} đồng ý · {{reject}} từ chối · {{total}} tổng",
     "progress": "Tiến độ bỏ phiếu",
@@ -189,7 +190,8 @@
   "reports": {
     "title": "Báo cáo Hội đồng",
     "description": "Đọc bằng chứng và phân tích biên tập đính kèm quyết định.",
-    "empty": "Chưa có báo cáo."
+    "empty": "Chưa có báo cáo.",
+    "unknownSeries": "Chưa xác định bộ truyện"
   },
   "contracts": {
     "title": "Duyệt hợp đồng",
@@ -237,21 +239,47 @@
   "deadlines": {
     "title": "Phân xử deadline",
     "description": "Giải quyết yêu cầu deadline leo thang hoặc ảnh hưởng slot xuất bản.",
-    "chapterId": "Nhập ID chapter",
+    "chapterId": "Chương",
+    "selectSeries": "Chọn bộ truyện",
+    "selectChapter": "Chọn chương",
+    "chapterOption": "Chương {{number}} {{title}}",
     "empty": "Không có yêu cầu deadline chờ Hội đồng.",
     "request": "Yêu cầu deadline",
     "note": "Ghi chú phân xử",
     "resolve": "Phân xử yêu cầu",
     "approve": "Duyệt deadline",
-    "reject": "Từ chối yêu cầu"
+    "reject": "Từ chối yêu cầu",
+    "statuses": {
+      "PROPOSED": "Đã đề xuất",
+      "COUNTER_PROPOSED": "Đã đề xuất lại",
+      "AGREED_BY_PARTIES": "Các bên đã đồng ý",
+      "APPROVED": "Đã duyệt",
+      "BOARD_REVIEW": "Chờ Hội đồng xem xét",
+      "ESCALATED": "Đã chuyển Hội đồng phân xử",
+      "REJECTED": "Đã từ chối"
+    }
   },
   "rankings": {
     "title": "Tổng quan xếp hạng",
     "description": "Xem tín hiệu rủi ro nội bộ của một kỳ khảo sát đã chốt.",
-    "periodId": "Nhập ID kỳ khảo sát",
+    "periodId": "Kỳ khảo sát",
+    "selectPeriod": "Chọn kỳ khảo sát",
+    "issue": "Kỳ số {{issue}}",
+    "statuses": {
+      "DRAFT": "Bản nháp",
+      "OPEN": "Đang nhận phiếu",
+      "CLOSED": "Đã đóng",
+      "REFLECTED": "Đã chốt xếp hạng"
+    },
     "series": "Series",
     "votes": "Phiếu",
     "risk": "Rủi ro",
+    "riskLevels": {
+      "NONE": "Không có rủi ro",
+      "LOW": "Rủi ro thấp",
+      "MEDIUM": "Rủi ro trung bình",
+      "SEVERE": "Rủi ro nghiêm trọng"
+    },
     "empty": "Kỳ này chưa có dữ liệu xếp hạng."
   },
   "reprints": {
@@ -259,7 +287,8 @@
     "description": "Xem xét và duyệt yêu cầu tái bản theo nguyên tắc sở hữu.",
     "lookup": "Tìm yêu cầu theo series",
     "create": "Tạo yêu cầu tái bản",
-    "seriesId": "ID series",
+    "seriesId": "Bộ truyện",
+    "selectSeries": "Chọn bộ truyện",
     "from": "Từ chương",
     "to": "Đến chương",
     "reason": "Lý do nghiệp vụ",
@@ -267,7 +296,29 @@
     "reviewReason": "Ghi chú duyệt",
     "review": "Xem xét yêu cầu tái bản",
     "approve": "Duyệt tái bản",
-    "reject": "Từ chối tái bản"
+    "reject": "Từ chối tái bản",
+    "revisionModes": {
+      "AS_IS": "Tái bản nguyên trạng",
+      "WITH_REVISION": "Tái bản có chỉnh sửa"
+    },
+    "waitingMangaka": "Yêu cầu thuộc hợp đồng chia sẻ doanh thu và đang chờ Mangaka đồng ý.",
+    "assignReviser": "Phân công người chỉnh sửa",
+    "selectChapter": "Chọn chương tái bản",
+    "chapter": "Chương tái bản {{number}}",
+    "selectReviser": "Chọn Mangaka chỉnh sửa",
+    "unknownMangaka": "Mangaka chưa xác định",
+    "internalReviserId": "Mã nhân sự của đội nội bộ",
+    "reviserTypes": {
+      "OTHER_MANGAKA": "Mangaka khác",
+      "INTERNAL_TEAM": "Đội nội bộ"
+    },
+    "chapterStatuses": {
+      "PENDING": "Đang chờ xử lý",
+      "IN_REVISION": "Đang chỉnh sửa",
+      "READY": "Sẵn sàng duyệt",
+      "APPROVED": "Đã duyệt",
+      "PUBLISHED": "Đã phát hành"
+    }
   },
   "transfers": {
     "title": "Sàng lọc chuyển nhượng",

@@ -47,8 +47,8 @@ export function EditorContractTermsPage({
             disabled={!editable}
             className={contractInput}
           >
-            <option value='REVENUE_SHARE'>REVENUE_SHARE</option>
-            <option value='FULL_BUYOUT'>FULL_BUYOUT</option>
+            <option value='REVENUE_SHARE'>{t('filters.contractTypes.REVENUE_SHARE')}</option>
+            <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
           </select>
           <input
             name='valuationAmount'

@@ -65,9 +65,22 @@ export function BoardFeedback({ data }: { data?: EditorActionResult }) {
 }
 
 export function BoardStatus({ value }: { value: string }) {
+  const { t } = useTranslation('editor')
+  const label = t(
+    [
+      `board.sessionStatuses.${value}`,
+      `board.sessionPhases.${value}`,
+      `board.decisionResultLabels.${value}`,
+      `filters.contractStatuses.${value}`,
+      `filters.proposalStatuses.${value}`,
+      `operations.reprintStatuses.${value}`,
+      `operations.transferStatuses.${value}`
+    ],
+    { defaultValue: value.replaceAll('_', ' ') }
+  )
   return (
     <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-      {value.replaceAll('_', ' ')}
+      {label}
     </span>
   )
 }

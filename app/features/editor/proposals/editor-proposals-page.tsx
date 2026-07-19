@@ -95,7 +95,9 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
           <span className='inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-            {(item.proposal?.status ?? item.status).replaceAll('_', ' ')}
+            {item.proposal?.status
+              ? t(`filters.proposalStatuses.${item.proposal.status}`)
+              : t(`filters.seriesStatuses.${item.status}`)}
           </span>
           <h3 className='mt-3 text-lg font-bold text-foreground'>{item.title}</h3>
           <p className='mt-1 text-xs text-muted-foreground'>

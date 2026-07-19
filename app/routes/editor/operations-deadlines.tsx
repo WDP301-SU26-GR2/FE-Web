@@ -3,27 +3,41 @@ import {
   deadlineControllerCounter,
   deadlineControllerCreate,
   deadlineControllerFinalize,
+  deadlineControllerGetOne,
   deadlineControllerList,
   deadlineControllerReject,
   deadlineControllerWithdraw
 } from '~/api/operations/deadline-requests/deadline-requests'
+import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
 import { EditorDeadlinesPage, type EditorActionResult } from '~/features/editor'
-import { date, required } from './operations-route-utils'
+import { date, loadOperationalSeries, required } from './operations-route-utils'
 import type { Route } from './+types/operations-deadlines'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusChapterId = new URL(request.url).searchParams.get('chapterId') ?? ''
   const focusRequestId = new URL(request.url).searchParams.get('requestId') ?? ''
+  const requestedSeriesId = new URL(request.url).searchParams.get('seriesId') ?? ''
   try {
-    const response = focusChapterId ? await deadlineControllerList({ chapterId: focusChapterId }) : null
+    const focusedRequest = focusRequestId ? await deadlineControllerGetOne({ id: focusRequestId }) : null
+    const focusedDeadline = focusedRequest?.status === 200 ? focusedRequest.data : undefined
+    const focusSeriesId = requestedSeriesId || focusedDeadline?.seriesId || ''
+    const resolvedChapterId = focusChapterId || focusedDeadline?.chapterId || ''
+    const [series, chaptersResponse, response] = await Promise.all([
+      loadOperationalSeries(),
+      focusSeriesId ? chapterControllerListBySeries({ seriesId: focusSeriesId }) : null,
+      resolvedChapterId ? deadlineControllerList({ chapterId: resolvedChapterId }) : null
+    ])
     return {
       items: response?.status === 200 ? response.data.items : [],
-      focusChapterId,
+      series,
+      chapters: chaptersResponse?.status === 200 ? chaptersResponse.data.items : [],
+      focusSeriesId,
+      focusChapterId: resolvedChapterId,
       focusRequestId,
       hasError: false
     }
   } catch {
-    return { items: [], focusChapterId, focusRequestId, hasError: true }
+    return { items: [], series: [], chapters: [], focusSeriesId: requestedSeriesId, focusChapterId, focusRequestId, hasError: true }
   }
 }
 

@@ -127,6 +127,8 @@ function notificationHref(
   if (referenceType.startsWith('BOARD_')) return `/dashboard/board/sessions/${referenceId}`
   if (referenceType.startsWith('CONTRACT_')) return `/dashboard/board/contracts/${referenceId}`
   if (referenceType.startsWith('PAYMENT_')) return '/dashboard/board/payments'
+  if (referenceType.startsWith('DEADLINE_'))
+    return `/dashboard/board/deadlines?requestId=${encodeURIComponent(referenceId)}`
   if (referenceType.startsWith('REPRINT_')) return `/dashboard/board/reprints?requestId=${encodeURIComponent(referenceId)}`
   if (referenceType.startsWith('TRANSFER_')) return '/dashboard/board/transfers'
   if (referenceType.startsWith('RANKING_') || referenceType.startsWith('SURVEY_')) return '/dashboard/board/rankings'

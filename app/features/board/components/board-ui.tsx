@@ -55,9 +55,24 @@ export function BoardActionDialog({ title, children }: { title: string; children
 }
 
 export function StatusBadge({ value }: { value: string }) {
+  const { t } = useTranslation('board')
+  const label = t(
+    [
+      `filters.sessionStatuses.${value}`,
+      `filters.sessionPhases.${value}`,
+      `filters.decisionResults.${value}`,
+      `filters.contractStatuses.${value}`,
+      `filters.paymentStatuses.${value}`,
+      `filters.reprintStatuses.${value}`,
+      `filters.transferStatuses.${value}`,
+      `deadlines.statuses.${value}`,
+      `rankings.riskLevels.${value}`
+    ],
+    { defaultValue: value.replaceAll('_', ' ') }
+  )
   return (
     <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-      {value.replaceAll('_', ' ')}
+      {label}
     </span>
   )
 }

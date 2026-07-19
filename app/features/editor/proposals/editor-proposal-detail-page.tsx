@@ -51,7 +51,7 @@ export function EditorProposalDetailPage({
           </div>
           <div className='p-6'>
             <span className='rounded-full bg-secondary px-3 py-1 text-xs font-extrabold text-secondary-foreground'>
-              {series.status.replaceAll('_', ' ')}
+              {t(`filters.seriesStatuses.${series.status}`)}
             </span>
             <h1 className='mt-4 text-3xl font-bold text-foreground'>{series.title}</h1>
             <p className='mt-3 text-sm leading-6 text-muted-foreground'>
@@ -172,6 +172,29 @@ export function EditorProposalDetailPage({
           </button>
         </fetcher.Form>
       )}
+      {series.status === 'REJECTED' && (
+        <fetcher.Form method='post' className='rounded-xl border border-primary/30 bg-primary/10 p-5'>
+          <input type='hidden' name='seriesId' value={series.id} />
+          <h2 className='font-bold text-foreground'>{t('proposalDetail.reopenTitle')}</h2>
+          <p className='mt-1 text-sm text-muted-foreground'>{t('proposalDetail.reopenDescription')}</p>
+          <textarea
+            name='reason'
+            required
+            maxLength={1000}
+            className='mt-4 min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm text-foreground'
+            placeholder={t('proposalDetail.reopenPlaceholder')}
+          />
+          <button
+            name='intent'
+            value='reopenReview'
+            disabled={fetcher.state !== 'idle'}
+            className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          >
+            <RotateCcw className='size-4' />
+            {t('actions.reopenReview')}
+          </button>
+        </fetcher.Form>
+      )}
     </div>
   )
 }
@@ -187,6 +210,11 @@ function ReviewPanel({
   facts: Array<[string, string]>
   children: React.ReactNode
 }) {
+  const { t } = useTranslation('editor')
+  const statusLabel = t(
+    [`filters.proposalStatuses.${status}`, `filters.nameStatuses.${status}`, `filters.seriesStatuses.${status}`],
+    { defaultValue: status.replaceAll('_', ' ') }
+  )
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <div className='flex items-center justify-between gap-3'>
@@ -195,7 +223,7 @@ function ReviewPanel({
           {title}
         </h2>
         <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
-          {status.replaceAll('_', ' ')}
+          {statusLabel}
         </span>
       </div>
       <dl className='my-5 grid grid-cols-2 gap-3 rounded-lg bg-muted p-4'>

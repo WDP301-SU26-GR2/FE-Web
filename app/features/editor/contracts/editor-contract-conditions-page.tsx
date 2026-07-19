@@ -66,7 +66,7 @@ export function EditorContractConditionsPage({
                   <div className='flex items-center gap-2'>
                     <strong>{t(`contractDetail.conditionTypes.${typeKey(condition.conditionType)}`)}</strong>
                     <span className='rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold'>
-                      {condition.status}
+                      {t(`filters.paymentConditionStatuses.${condition.status}`)}
                     </span>
                   </div>
                   <p className='mt-2 text-xs text-muted-foreground'>

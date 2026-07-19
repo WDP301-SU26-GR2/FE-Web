@@ -31,6 +31,7 @@ export default [
       route('series/:id', 'routes/mangaka/series-detail.tsx'),
       route('contracts', 'routes/mangaka/contracts.tsx'),
       route('contracts/:id', 'routes/mangaka/contract-detail.tsx'),
+      route('reprints', 'routes/mangaka/reprints.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')
@@ -61,6 +62,7 @@ export default [
       route('board/sessions', 'routes/editor/board-sessions.tsx'),
       route('board/sessions/:id', 'routes/editor/board-session-detail.tsx'),
       route('board/decisions', 'routes/editor/board-decisions.tsx'),
+      route('board/decisions/:id', 'routes/editor/board-decision-detail.tsx'),
       route('board/reports', 'routes/editor/board-reports.tsx'),
       route('board/lifecycle', 'routes/editor/board-lifecycle.tsx'),
       route('contracts', 'routes/editor/contracts.tsx'),

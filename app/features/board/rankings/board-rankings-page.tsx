@@ -1,14 +1,19 @@
 import { Form } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { BoardRankingListResDtoOutputItemsItem } from '~/api/model/survey'
+import type { SurveyPeriodResDtoOutput } from '~/api/model/survey'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
 export function BoardRankingsPage({
   rankings,
+  periods,
+  seriesTitles,
   surveyPeriodId,
   hasError
 }: {
   rankings: BoardRankingListResDtoOutputItemsItem[]
+  periods: SurveyPeriodResDtoOutput[]
+  seriesTitles: Record<string, string>
   surveyPeriodId: string
   hasError: boolean
 }) {
@@ -17,13 +22,19 @@ export function BoardRankingsPage({
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('rankings.title')} description={t('rankings.description')} />
       <Form method='get' className='flex gap-2'>
-        <input
+        <select
           className={boardInput}
           name='surveyPeriodId'
           defaultValue={surveyPeriodId}
-          placeholder={t('rankings.periodId')}
           required
-        />
+        >
+          <option value='' disabled>{t('rankings.selectPeriod')}</option>
+          {periods.map((period) => (
+            <option key={period.id} value={period.id}>
+              {t('rankings.issue', { issue: period.issueNumber ?? '—' })} · {t(`rankings.statuses.${period.status}`)}
+            </option>
+          ))}
+        </select>
         <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
           {t('common.load')}
         </button>
@@ -42,7 +53,7 @@ export function BoardRankingsPage({
             className='grid grid-cols-[70px_1fr_90px_110px] items-center gap-3 border-b border-border p-3 text-sm last:border-0'
           >
             <strong>{item.rankPosition ?? '—'}</strong>
-            <span className='truncate'>{item.seriesId}</span>
+            <span className='truncate'>{seriesTitles[item.seriesId] ?? t('rankings.unknownSeries')}</span>
             <span>{item.voteCount}</span>
             <StatusBadge value={item.riskLevel} />
           </div>

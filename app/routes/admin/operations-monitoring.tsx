@@ -8,7 +8,7 @@ import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { RevisionRequestListResDtoOutputItemsItem } from '~/api/model/revision'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { deadlineControllerList } from '~/api/operations/deadline-requests/deadline-requests'
-import { reprintRequestControllerFindAll } from '~/api/operations/reprint-requests/reprint-requests'
+import { reprintRequestControllerFindAll, reprintRequestControllerFindById } from '~/api/operations/reprint-requests/reprint-requests'
 import { revisionControllerList } from '~/api/operations/revision/revision'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 
@@ -16,6 +16,7 @@ interface MonitoringData {
   series: SeriesListResDtoOutputItemsItem[]
   revisions: RevisionRequestListResDtoOutputItemsItem[]
   reprints: ReprintRequestResDtoOutput[]
+  selectedReprint: ReprintRequestResDtoOutput | null
   deadlines: DeadlineRequestListResDtoOutputItemsItem[]
   chapterId: string
   hasError: boolean
@@ -23,14 +24,16 @@ interface MonitoringData {
 
 export async function clientLoader({ request }: { request: Request }): Promise<MonitoringData> {
   const chapterId = new URL(request.url).searchParams.get('chapterId')?.trim() ?? ''
-  const [seriesResult, revisionResult, reprintResult, deadlineResult] = await Promise.allSettled([
+  const reprintId = new URL(request.url).searchParams.get('reprintId')?.trim() ?? ''
+  const [seriesResult, revisionResult, reprintResult, deadlineResult, reprintDetailResult] = await Promise.allSettled([
     seriesControllerListSeries({ limit: 100, offset: 0 }),
     revisionControllerList({ limit: 20, offset: 0 }),
     reprintRequestControllerFindAll({
       status: undefined as unknown as string,
       seriesId: undefined as unknown as string
     }),
-    chapterId ? deadlineControllerList({ chapterId }) : null
+    chapterId ? deadlineControllerList({ chapterId }) : null,
+    reprintId ? reprintRequestControllerFindById({ id: reprintId }) : null
   ])
   const seriesOk = seriesResult.status === 'fulfilled' && seriesResult.value.status === 200
   const revisionOk = revisionResult.status === 'fulfilled' && revisionResult.value.status === 200
@@ -46,6 +49,10 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
         ? revisionResult.value.data.items
         : [],
     reprints: reprintOk ? reprintResult.value.data : [],
+    selectedReprint:
+      reprintId && reprintDetailResult.status === 'fulfilled' && reprintDetailResult.value?.status === 200
+        ? reprintDetailResult.value.data
+        : null,
     deadlines:
       chapterId && deadlineResult.status === 'fulfilled' && deadlineResult.value?.status === 200
         ? deadlineResult.value.data.items
@@ -57,7 +64,7 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
 
 export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderData: MonitoringData }) {
   const { t } = useTranslation('admin')
-  const { series, revisions, reprints, deadlines, chapterId, hasError } = loaderData
+  const { series, revisions, reprints, selectedReprint, deadlines, chapterId, hasError } = loaderData
   const [seriesSearch, setSeriesSearch] = useState('')
   const [seriesStatus, setSeriesStatus] = useState('')
   const [revisionType, setRevisionType] = useState('')
@@ -108,6 +115,25 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
         <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
           {t('operations.monitoring.loadError')}
         </p>
+      )}
+
+      {selectedReprint && (
+        <section className='rounded-xl border border-primary/30 bg-card p-5 shadow-sm'>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <h2 className='font-bold text-foreground'>{selectedReprint.series?.title ?? t('operations.monitoring.unknownSeries')}</h2>
+            <span className='rounded-full bg-secondary px-2 py-1 text-xs font-bold'>
+              {localize('reprintStatuses', selectedReprint.status)}
+            </span>
+          </div>
+          <p className='mt-2 text-sm text-muted-foreground'>{selectedReprint.reason}</p>
+          <div className='mt-3 flex flex-wrap gap-2'>
+            {selectedReprint.chapters.map((chapter, index) => (
+              <span key={chapter.originalChapterId} className='rounded-md border border-border px-2 py-1 text-xs'>
+                {t('operations.monitoring.reprintChapter', { number: index + 1 })} · {localize('reprintChapterStatuses', chapter.status)}
+              </span>
+            ))}
+          </div>
+        </section>
       )}
 
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
@@ -189,7 +215,8 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           items={filteredReprints.slice(0, 20).map((item) => ({
             id: item.id,
             title: item.series?.title ?? item.seriesId,
-            description: localize('reprintStatuses', item.status)
+            description: localize('reprintStatuses', item.status),
+            href: `/dashboard/admin/operations/monitoring?reprintId=${encodeURIComponent(item.id)}`
           }))}
           empty={t('operations.monitoring.empty')}
         />
@@ -202,6 +229,7 @@ interface ReadOnlyItem {
   id: string
   title: string
   description: string
+  href?: string
 }
 
 function ReadOnlyPanel({ title, filters, items, empty }: { title: string; filters?: ReactNode; items: ReadOnlyItem[]; empty: string }) {
@@ -225,11 +253,18 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
   return (
     <div className='mt-3 max-h-[32rem] space-y-2 overflow-y-auto'>
       {items.map((item) => (
-        <article key={item.id} className='rounded-lg border border-border bg-background/50 p-3'>
-          <p className='text-sm font-bold text-foreground'>{item.title}</p>
-          <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
-          <p className='mt-1 break-all font-mono text-[10px] text-muted-foreground'>{item.id}</p>
-        </article>
+        item.href ? (
+          <Link key={item.id} to={item.href} className='block rounded-lg border border-border bg-background/50 p-3 hover:border-primary'>
+            <p className='text-sm font-bold text-foreground'>{item.title}</p>
+            <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
+          </Link>
+        ) : (
+          <article key={item.id} className='rounded-lg border border-border bg-background/50 p-3'>
+            <p className='text-sm font-bold text-foreground'>{item.title}</p>
+            <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
+            <p className='mt-1 break-all font-mono text-[10px] text-muted-foreground'>{item.id}</p>
+          </article>
+        )
       ))}
     </div>
   )
