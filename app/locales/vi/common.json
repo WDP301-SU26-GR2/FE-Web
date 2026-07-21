@@ -1,5 +1,5 @@
 {
-  "appName": "Mangaka",
+  "appName": "Manga Creation Workflow and Publishing Management System",
   "language": "Ngôn ngữ",
   "theme": "Giao diện",
   "light": "Sáng",
@@ -20,7 +20,7 @@
     "messageGeneric": "Đã xảy ra lỗi không xác định."
   },
   "layout": {
-    "brand": "Mangaka Studio",
+    "brand": "Manga Creation Workflow and Publishing Management System",
     "brandPro": "Pro",
     "productionEnvironment": "Môi trường sản xuất",
     "supportSection": "Hỗ trợ & Thao tác",
@@ -28,8 +28,20 @@
     "closeMenu": "Đóng menu",
     "openMenu": "Mở menu",
     "notifications": "Thông báo",
+    "notificationsWithCount_one": "Thông báo ({{count}} chưa đọc)",
+    "notificationsWithCount_other": "Thông báo ({{count}} chưa đọc)",
     "settings": "Cài đặt",
     "signOut": "Đăng xuất"
+  },
+  "notificationMenu": {
+    "label": "Thông báo chưa đọc",
+    "title": "Thông báo",
+    "unreadCount_one": "{{count}} thông báo chưa đọc",
+    "unreadCount_other": "{{count}} thông báo chưa đọc",
+    "markAllRead": "Đánh dấu đã đọc",
+    "empty": "Bạn đã xem hết thông báo.",
+    "noContent": "Thông báo mới",
+    "viewAll": "Xem tất cả thông báo"
   },
   "nav": {
     "home": "Trang chủ",
@@ -77,6 +89,13 @@
     "adminName": "Quản trị viên",
     "adminRole": "Quản trị",
     "adminBadge": "SUPER_ADMIN"
+  },
+  "roleEnum": {
+    "MANGAKA": "Mangaka",
+    "ASSISTANT": "Trợ lý",
+    "EDITOR": "Biên tập viên",
+    "BOARD_MEMBER": "Hội đồng",
+    "SUPER_ADMIN": "Quản trị"
   },
   "dashboard": {
     "assistant": "Bảng điều khiển Trợ lý",

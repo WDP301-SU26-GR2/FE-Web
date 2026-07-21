@@ -1,7 +1,11 @@
 {
+  "common": {
+    "retry": "Thử lại"
+  },
   "dashboard": {
     "title": "Bảng điều khiển sản xuất",
     "subtitle": "Chào mừng trở lại. Bạn có {{count}} nhiệm vụ quan trọng cần xử lý ngay lập tức.",
+    "subtitleIdle": "Chào mừng trở lại. Mọi thứ đang ổn định.",
     "criticalDeadlines": "Hạn chót quan trọng",
     "actionRequired": "YÊU CẦU XỬ LÝ",
     "dueInHours": "Hạn còn {{hours}} giờ",
@@ -14,7 +18,33 @@
     "actionInbox": "Hộp thư hành động",
     "uploadBatch": "Tải lên hàng loạt",
     "editorSupport": "Hỗ trợ biên tập",
-    "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Đồng bộ: {{time}} trước"
+    "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Đồng bộ: {{time}} trước",
+    "noCriticalDeadlines": "Không có deadline nguy cơ nào",
+    "noActiveSeries": "Chưa có series đang sản xuất",
+    "noRankings": "Chưa có dữ liệu xếp hạng",
+    "noDeadline": "Không có hạn",
+    "deadline": "Hạn: {{date}}",
+    "refresh": "Làm mới",
+    "viewAllSeries": "Xem tất cả series",
+    "loadError": "Không tải được dashboard",
+    "studio": {
+      "subtitleDraft": "Bản nháp",
+      "subtitleInProduction": "Đang sản xuất",
+      "subtitleEditorReview": "Editor đang duyệt",
+      "subtitleEditorRevision": "Editor yêu cầu sửa",
+      "subtitleReadyForPrint": "Sẵn sàng phát hành",
+      "subtitleAwaitingCoOwner": "Chờ đồng sở hữu duyệt",
+      "subtitlePublished": "Đã xuất bản",
+      "chapterLabel": "Ch.{{number}} {{title}}"
+    },
+    "inbox": {
+      "notifications": "{{count}} thông báo chưa đọc",
+      "notificationsDesc": "Cập nhật từ Editor, Board, và hệ thống",
+      "revisions": "{{count}} yêu cầu sửa đổi mở",
+      "revisionsDesc": "Editor đã yêu cầu chỉnh sửa proposal hoặc manuscript",
+      "allClear": "Mọi thứ đã xong",
+      "allClearDesc": "Không có hành động nào đang chờ"
+    }
   },
   "assistantDirectory": {
     "title": "Danh bạ trợ lý",
@@ -99,10 +129,11 @@
       "activeNow": "Chỉ quan hệ đang hiệu lực"
     },
     "card": {
-      "unnamedAssistant": "Trợ lý #{{id}}",
+      "unnamedAssistant": "Trợ lý chưa đặt tên",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không gắn với series cụ thể",
+      "series": "Series: {{title}}",
       "terminatedReason": "Lý do: {{reason}}",
       "noReason": "Không ghi lý do",
       "ended": "Kết thúc {{date}}",
@@ -243,6 +274,7 @@
     "inReviewQueue": "Đang ở hàng đợi",
     "createdAt": "Ngày tạo",
     "reviewStartedAt": "Bắt đầu review",
+    "statusReason": "Lý do",
     "revisions": {
       "title": "Yêu cầu chỉnh sửa từ Editor",
       "round": "Vòng {{round}}",
@@ -383,6 +415,10 @@
         "confirm": "Rút proposal",
         "success": "Đã rút proposal."
       },
+      "reopen": {
+        "button": "Nộp lại",
+        "success": "Đã mở lại hồ sơ. Về bản nháp để chỉnh sửa và nộp lại."
+      },
       "resubmitProposal": {
         "button": "Nộp lại proposal",
         "success": "Đã nộp lại proposal để xét duyệt."
@@ -397,6 +433,7 @@
         "ProposalNotDeletable": "Chỉ proposal nháp mới có thể bị xoá.",
         "InvalidProposalState": "Proposal hiện không chờ được nộp lại.",
         "InvalidNameState": "Name mẫu hiện không chờ được nộp lại.",
+        "InvalidSeriesTransition": "Series không ở trạng thái cho phép thao tác này.",
         "SeriesNotFound": "Series không còn tồn tại."
       }
     },
@@ -437,6 +474,7 @@
         "loadFailed": "Không thể tải danh sách chương."
       },
       "onHold": "Đang tạm dừng",
+      "deadline": "Hạn: {{date}}",
       "publishedAt": "Xuất bản {{date}}",
       "pages": "{{count}} trang",
       "chapterLabel": "Chương {{n}}",
@@ -591,10 +629,9 @@
       "APPROVED": "Đã duyệt"
     },
     "pageStatus": {
-      "NOT_STARTED": "Chưa bắt đầu",
-      "IN_PROGRESS": "Đang thực hiện",
-      "COMPOSITE_READY": "Sẵn sàng tổng hợp",
-      "COMPLETED": "Hoàn thành"
+      "DRAFT": "Bản nháp",
+      "COMPLETED": "Hoàn thành",
+      "REVISING": "Cần sửa lại"
     },
     "statusPill": {
       "label": "Storyboard"
@@ -638,8 +675,9 @@
       "emptyTitle": "Chưa có trang nào",
       "emptyDesc": "Upload trang pencil/ink đầu tiên để bắt đầu production.",
       "backToTop": "Về đầu trang",
-      "compositeBadge": "Composite",
       "done": "Hoàn tất",
+      "replaceCompositeHint": "Chọn file composite mới. Bản cũ sẽ được thay thế.",
+      "chooseFile": "Chọn file",
       "advance": "Chuyển → {{to}}",
       "uploadError": "Không thể upload ảnh.",
       "accessDeniedTitle": "Không thể mở các trang bản thảo",
@@ -666,7 +704,9 @@
         "title": "Upload trang {{n}}",
         "cancel": "Huỷ",
         "dropOrClick": "Thả ảnh vào đây hoặc bấm để chọn",
-        "submit": "Upload trang {{n}}"
+        "submit": "Upload trang {{n}}",
+        "allowedTypes": "PNG, JPG, WEBP hoặc PDF (tối đa 15MB)",
+        "chooseAnother": "Chọn ảnh khác"
       },
       "toc": {
         "title": "Trang",
@@ -688,17 +728,62 @@
           "BOARD_MEMBER": "Board",
           "SUPER_ADMIN": "Admin"
         }
+      },
+      "delete": {
+        "confirmTitle": "Xoá trang {{n}}?",
+        "confirmDesc": "Hành động này không hoàn tác được. Mọi vùng và nhiệm vụ liên quan sẽ bị xoá cùng.",
+        "confirmButton": "Xoá trang",
+        "cancellingButton": "Huỷ",
+        "success": "Đã xoá trang.",
+        "errorHasApprovedTasks": "Không thể xoá trang có nhiệm vụ đã được duyệt.",
+        "errorPageNotEditable": "Trang đang ở trạng thái khoá và không thể xoá.",
+        "errorChapterOnHold": "Chương đang tạm dừng. Hãy tiếp tục chương trước."
+      },
+      "deleteBulk": {
+        "enterSelectMode": "Chọn trang để xoá",
+        "selectAll": "Chọn tất cả",
+        "deselectAll": "Bỏ chọn tất cả",
+        "selectedCount": "Đã chọn {{count}} trang",
+        "confirmTitle": "Xoá {{count}} trang?",
+        "confirmDesc": "Hành động này không hoàn tác được. Mọi vùng và nhiệm vụ liên quan sẽ bị xoá cùng.",
+        "confirmButton": "Xoá {{count}} trang",
+        "success": "Đã xoá {{pages}} trang, {{regions}} vùng, {{tasks}} nhiệm vụ.",
+        "errorPageNotEditable": "Một số trang đang ở trạng thái khoá và không thể xoá.",
+        "errorHasApprovedTasks": "Một số trang có nhiệm vụ đã được duyệt — không thể xoá.",
+        "errorPageNotFound": "Một số trang không tồn tại hoặc không thuộc chương này.",
+        "errorChapterOnHold": "Chương đang tạm dừng. Hãy tiếp tục chương trước.",
+        "errorAccessDenied": "Bạn không có quyền xoá các trang này."
+      },
+      "updatePage": {
+        "dialogTitle": "Chỉnh sửa trang",
+        "imageLabel": "Ảnh chỉnh sửa",
+        "confirm": "Lưu"
+      },
+      "updatePageNumber": {
+        "dialogTitle": "Đổi số trang",
+        "currentLabel": "Số hiện tại",
+        "newLabel": "Số mới",
+        "cancel": "Huỷ",
+        "confirm": "Lưu",
+        "saving": "Đang lưu...",
+        "success": "Đã đổi số trang.",
+        "errorDuplicate": "Số trang này đã được sử dụng trong chương.",
+        "errorGeneric": "Không thể cập nhật số trang."
       }
     },
     "manuscript": {
       "label": "Bản thảo",
       "onHold": "Đang tạm dừng",
-      "progress": "{{completed}}/{{total}} trang · {{percent}}%",
+      "progress": "{{ready}}/{{total}} sẵn sàng · {{pending}} đang chờ · {{percent}}%",
       "completePagesHint": "Hoàn tất tất cả trang trước khi nộp bản thảo cho Editor.",
+      "noPagesHint": "Tải lên ít nhất 1 trang trước khi nộp bản thảo.",
+      "tasksPendingHint": "Vui lòng hoàn thành tất cả task (được giao cho trợ lý) trước khi nộp bản thảo.",
+      "readyForPrintHint": "Bản thảo đã sẵn sàng. Đang chờ Editor xuất bản.",
+      "coOwnerPending": "Đang chờ đồng sở hữu duyệt trước khi xuất bản.",
+      "publishedHint": "Chương đã được xuất bản thành công.",
       "status": {
         "DRAFT": "Bản nháp",
         "IN_PRODUCTION": "Đang sản xuất",
-        "COMPOSITE_REVIEW": "Duyệt bản tổng hợp",
         "EDITOR_REVIEW": "Editor đang duyệt",
         "EDITOR_REVISION": "Editor yêu cầu sửa",
         "READY_FOR_PRINT": "Sẵn sàng phát hành",
@@ -706,11 +791,6 @@
         "PUBLISHED": "Đã xuất bản"
       },
       "actions": {
-        "markCompositeReady": {
-          "button": "Bắt đầu duyệt composite",
-          "success": "Bản thảo đã chuyển sang duyệt composite.",
-          "error": "Không thể bắt đầu duyệt composite."
-        },
         "submit": {
           "button": "Nộp bản thảo",
           "success": "Đã nộp bản thảo cho Editor.",
@@ -840,7 +920,9 @@
       "selectPagePlaceholder": "— Chọn trang —",
       "selectRegion": "Chọn vùng (tuỳ chọn)",
       "wholePage": "Cả trang (không chọn vùng)",
-      "regionSelected": "Đã chọn vùng: {{id}}",
+      "selectRegions": "Chọn các vùng (tuỳ chọn)",
+      "selectRegionsHint": "Chọn một hoặc nhiều vùng trên trang, hoặc để trống để giao toàn bộ trang.",
+      "regionSelected": "Đã chọn vùng",
       "regionClear": "Bỏ chọn",
       "taskType": "Loại công việc",
       "taskTypeEnum": {
@@ -910,8 +992,8 @@
     "board": {
       "empty": "Chưa có nhiệm vụ nào.",
       "overdue": "Quá hạn",
-      "deadline": "Hạn",
-      "priority": "Ưu tiên",
+      "deadline": "Hạn: {{date}}",
+      "priority": "Ưu tiên: {{value}}",
       "approve": "Duyệt",
       "revision": "Yêu cầu sửa",
       "cancel": "Huỷ",
@@ -920,11 +1002,13 @@
       "cancelPrompt": "Lý do huỷ (không bắt buộc):"
     },
     "toast": {
+      "created": "Đã giao nhiệm vụ.",
       "approved": "Đã duyệt nhiệm vụ.",
       "revisionRequested": "Đã yêu cầu sửa nhiệm vụ.",
       "cancelled": "Đã huỷ nhiệm vụ."
     },
     "pagination": {
+      "showing": "Hiển thị {{from}}-{{to}} / {{total}}",
       "prev": "Trước",
       "next": "Tiếp"
     }
@@ -948,10 +1032,14 @@
         "selectChapter": "Chọn chương",
         "selectChapterPlaceholder": "— Chọn chương —",
         "selectPage": "Chọn trang",
+        "selectMultiplePages": "Chọn một hoặc nhiều trang",
+        "multiplePagesHint": "Chọn nhiều trang sẽ tạo một nhóm task. Chỉ có thể chọn vùng khi giao cho một trang.",
         "selectPagePlaceholder": "— Chọn trang —",
         "selectRegion": "Chọn vùng (tuỳ chọn)",
         "wholePage": "Cả trang (không chọn vùng)",
-        "regionSelected": "Đã chọn vùng: {{id}}",
+        "selectRegions": "Chọn các vùng (tuỳ chọn)",
+        "selectRegionsHint": "Chọn một hoặc nhiều vùng trên trang, hoặc để trống để giao toàn bộ trang.",
+        "regionSelected": "Đã chọn vùng",
         "regionClear": "Bỏ chọn",
         "taskType": "Loại công việc",
         "taskTypeEnum": {
@@ -976,10 +1064,16 @@
           "work": "Công việc",
           "confirm": "Xác nhận"
         },
+        "assignCta": "Giao việc",
+        "assignFor": "Giao việc cho {{name}}",
+        "assignDisabledReason": "Trợ lý này hiện không có quan hệ thuê đang hiệu lực.",
+        "allowedTaskTypesHint": "Trợ lý này được thuê cho: {{types}}. Các loại khác sẽ bị BE từ chối.",
         "confirm": {
           "description": "Kiểm tra thông tin trước khi giao nhiệm vụ.",
+          "assistant": "Trợ lý",
           "taskType": "Loại công việc",
           "page": "Trang",
+          "pages": "Các trang",
           "region": "Vùng",
           "deadline": "Deadline",
           "priority": "Độ ưu tiên",
@@ -1017,8 +1111,9 @@
       "board": {
         "empty": "Chưa có nhiệm vụ nào.",
         "overdue": "Quá hạn",
-        "deadline": "Hạn",
-        "priority": "Ưu tiên",
+        "deadline": "Hạn: {{date}}",
+        "priority": "Ưu tiên: {{value}}",
+        "regions": "Vùng: {{count}}",
         "approve": "Duyệt",
         "revision": "Yêu cầu sửa",
         "cancel": "Huỷ"
@@ -1027,6 +1122,87 @@
         "prev": "Trước",
         "next": "Tiếp"
       }
+    },
+    "tasksTab": {
+      "selectSeries": "Series",
+      "selectSeriesPlaceholder": "-- Chọn series --",
+      "selectChapter": "Chương",
+      "selectChapterPlaceholder": "-- Chọn chương --",
+      "selectPage": "Trang",
+      "selectPagePlaceholder": "-- Chọn trang --",
+      "selectSeriesFirst": "Chọn series trước",
+      "selectChapterFirst": "Chọn chương trước",
+      "loading": "Đang tải...",
+      "seriesNone": "Chưa chọn series",
+      "chapterNone": "Chưa chọn chương",
+      "pageNone": "Chưa chọn trang",
+      "chapterLabel": "Chương {{n}}",
+      "pageLabel": "Trang {{n}}",
+      "viewAll": "Tất cả nhiệm vụ",
+      "enableFilter": "Lọc theo series",
+      "showAll": "Xem tất cả",
+      "allSeries": "Tất cả series",
+      "allChapters": "Tất cả chương",
+      "allPages": "Tất cả trang",
+      "allStatuses": "Tất cả",
+      "clearFilters": "Xoá lọc",
+      "empty": {
+        "pickSeries": "Hãy chọn một series để bắt đầu.",
+        "pickChapter": "Hãy chọn một chương trong series.",
+        "pickPage": "Hãy chọn một trang trong chương để xem nhiệm vụ."
+      },
+      "revisionPrompt": "Lý do yêu cầu sửa:",
+      "cancelPrompt": "Lý do huỷ (có thể để trống):",
+      "revisionRequired": "Hãy mô tả nội dung cần sửa.",
+      "dialog": { "cancel": "Quay lại" },
+      "revisionDialog": {
+        "title": "Yêu cầu chỉnh sửa",
+        "description": "Gửi phản hồi cụ thể để Assistant cập nhật bài nộp.",
+        "label": "Nội dung cần chỉnh sửa",
+        "submit": "Gửi yêu cầu"
+      },
+      "cancelDialog": {
+        "title": "Huỷ nhiệm vụ",
+        "description": "Bạn có thể ghi chú lý do huỷ để Assistant nắm được thông tin.",
+        "label": "Lý do huỷ (không bắt buộc)",
+        "submit": "Huỷ nhiệm vụ"
+      },
+      "toast": {
+        "approved": "Đã duyệt nhiệm vụ.",
+        "approveFailed": "Không thể duyệt.",
+        "revisionRequested": "Đã gửi yêu cầu sửa.",
+        "revisionFailed": "Không thể gửi yêu cầu sửa.",
+        "cancelled": "Đã huỷ nhiệm vụ.",
+        "cancelFailed": "Không thể huỷ nhiệm vụ."
+      },
+      "errors": {
+        "loadSeriesFailed": "Không tải được danh sách series.",
+        "loadChaptersFailed": "Không tải được danh sách chương.",
+        "loadPagesFailed": "Không tải được danh sách trang."
+      },
+      "image": {
+        "original": "Ảnh gốc",
+        "submitted": "Ảnh nộp",
+        "noImage": "Chưa có ảnh"
+      },
+      "assistant": "Trợ lý",
+      "latestSubmission": "Bản nộp mới nhất",
+      "versionHistory": "Lịch sử phiên bản ({{count}})",
+      "reviewStatus": {
+        "PENDING": "Chờ duyệt",
+        "APPROVED": "Đã duyệt",
+        "REVISION_REQUESTED": "Yêu cầu sửa"
+      },
+      "regionType": {
+        "PANEL": "Khung truyện",
+        "BACKGROUND": "Nền",
+        "SPEENTONE": "Tone",
+        "EFFECT_LINES": "Hiệu ứng",
+        "SFX": "Hiệu ứng chữ",
+        "CHARACTER": "Nhân vật"
+      },
+      "download": "Tải về",
+      "viewFullsize": "Xem đầy đủ"
     },
     "popup": {
       "title": "Phân vùng trang {{n}}",
@@ -1091,45 +1267,125 @@
       }
     }
   },
-  "reprints": {
-    "eyebrow": "Quy trình tái bản",
-    "title": "Yêu cầu tái bản",
-    "description": "Phản hồi yêu cầu tái bản thuộc hợp đồng chia sẻ doanh thu và nộp bản sửa khi cần.",
-    "empty": "Bạn chưa có yêu cầu tái bản nào.",
-    "unknownSeries": "Chưa xác định bộ truyện",
-    "chapterRange": "Chương {{from}}–{{to}}",
-    "reviewReason": "Ghi chú phản hồi (không bắt buộc)",
-    "accept": "Đồng ý",
-    "reject": "Từ chối",
-    "fullBuyoutNotice": "Hợp đồng mua đứt không cần Mangaka xác nhận. Yêu cầu đang chờ Hội đồng xử lý.",
-    "chapters": "Các chương tái bản",
-    "chapter": "Chương tái bản {{number}}",
-    "submitManuscript": "Nộp bản sửa",
-    "manuscriptSubmitted": "Đã nộp bản sửa.",
-    "uploadFailed": "Không thể tải bản sửa lên.",
-    "success": "Đã cập nhật yêu cầu tái bản.",
-    "revisionModes": {
-      "AS_IS": "Tái bản nguyên trạng",
-      "WITH_REVISION": "Tái bản có chỉnh sửa"
+  "notifications": {
+    "title": "Thông báo",
+    "subtitle": "Cập nhật về proposal, duyệt series, deadline và hoạt động hợp đồng.",
+    "back": "Quay lại dashboard",
+    "filters": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "read": "Đã đọc"
     },
-    "statuses": {
-      "PENDING": "Đang chờ",
-      "PROPOSED": "Đã đề xuất",
-      "MANGAKA_REVIEW": "Chờ Mangaka xem xét",
-      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
-      "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
-      "BOARD_APPROVED": "Hội đồng đã duyệt",
-      "APPROVED": "Đã duyệt",
-      "IN_PRODUCTION": "Đang sản xuất",
-      "PUBLISHED": "Đã phát hành",
-      "REJECTED": "Đã từ chối"
+    "type": {
+      "SYSTEM": "Hệ thống",
+      "CONTRACT": "Hợp đồng",
+      "TASK": "Nhiệm vụ",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Khảo sát",
+      "BOARD": "Hội đồng",
+      "REVIEW": "Đánh giá"
     },
-    "chapterStatuses": {
-      "PENDING": "Đang chờ xử lý",
-      "IN_REVISION": "Đang chỉnh sửa",
-      "READY": "Sẵn sàng duyệt",
-      "APPROVED": "Đã duyệt",
-      "PUBLISHED": "Đã phát hành"
+    "item": {
+      "noContent": "(không có nội dung)",
+      "openTarget": "Mở series",
+      "openChapter": "Mở chapter",
+      "openTask": "Mở nhiệm vụ",
+      "openContract": "Mở hợp đồng",
+      "openDeadline": "Mở deadline",
+      "openAssistant": "Mở trợ lý",
+      "openRevision": "Mở vòng sửa",
+      "reference": "Tham chiếu: {{type}} • {{id}}"
+    },
+    "actions": {
+      "markRead": "Đánh dấu đã đọc",
+      "markAllRead": "Đánh dấu tất cả đã đọc"
+    },
+    "summary": {
+      "unreadCount_one": "{{count}} chưa đọc",
+      "unreadCount_other": "{{count}} chưa đọc"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
+    },
+    "empty": {
+      "title": "Đã đọc hết thông báo",
+      "description": "Hiện không có thông báo nào."
+    },
+    "error": {
+      "loadFailed": "Không tải được thông báo. Vui lòng thử lại.",
+      "markReadFailed": "Không thể đánh dấu thông báo là đã đọc. Vui lòng thử lại.",
+      "markAllReadFailed": "Không thể đánh dấu tất cả thông báo là đã đọc. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
+    "success": {
+      "markedRead": "Đã đánh dấu thông báo là đã đọc.",
+      "markedAllRead": "Đã đánh dấu tất cả thông báo là đã đọc."
+    }
+  },
+  "rankings": {
+    "title": "Xếp hạng",
+    "subtitle": "Theo dõi thứ hạng series của bạn trong các kỳ xếp hạng mới nhất và trước đó.",
+    "back": "Quay lại dashboard",
+    "refresh": "Làm mới",
+    "latest": {
+      "title": "Kỳ REFLECTED mới nhất",
+      "description": "Bảng xếp hạng mới nhất tổng hợp vote online và phiếu giấy. Dùng chip để lọc theo nhịp xuất bản tuần/tháng/irregular.",
+      "loading": "Đang tải bảng xếp hạng mới nhất…",
+      "empty": "Chưa có kết quả cho kỳ này.",
+      "periodLabel": "Kỳ phát hành {{issue}} · Kỳ phản ánh {{reflected}}"
+    },
+    "history": {
+      "title": "Lịch sử các kỳ",
+      "description": "Chọn một kỳ đã REFLECTED để xem lại bảng xếp hạng tương ứng.",
+      "label": "Kỳ",
+      "selectPlaceholder": "Chọn một kỳ…",
+      "noPeriods": "Chưa có kỳ nào được REFLECTED.",
+      "loading": "Đang tải kỳ này…",
+      "empty": "Chưa có kết quả cho kỳ này.",
+      "prompt": "Chọn một kỳ ở trên để xem bảng xếp hạng."
+    },
+    "trend": {
+      "title": "Xu hướng series của tôi",
+      "description": "Hạng qua 12 kỳ gần nhất, tô màu theo mức nguy cơ. Chỉ series bạn sở hữu hiển thị (giới hạn ở BE).",
+      "label": "Series",
+      "selectPlaceholder": "Chọn một series của bạn…",
+      "noSeries": "Bạn chưa có series đã xuất bản — chưa có gì để vẽ biểu đồ.",
+      "chartLabel": "Biểu đồ hạng theo thời gian",
+      "tooltip": "#{{rank}} · {{date}} · {{votes}} phiếu",
+      "empty": "Series này chưa có kỳ nào được REFLECTED.",
+      "noRanks": "Series này chưa có dữ liệu hạng.",
+      "prompt": "Chọn một series để xem xu hướng.",
+      "promptHint": "Dữ liệu xu hướng được giới hạn ở BE — bạn chỉ xem được series mình sở hữu."
+    },
+    "publicationType": {
+      "label": "Nhịp xuất bản",
+      "ALL": "Tổng",
+      "WEEKLY": "Tuần",
+      "MONTHLY": "Tháng",
+      "IRREGULAR": "Không định kỳ"
+    },
+    "riskLevel": {
+      "NONE": "An toàn",
+      "LOW": "Có nguy cơ",
+      "MEDIUM": "Có nguy cơ (3+ kỳ)",
+      "SEVERE": "Nguy cấp (5+ kỳ)"
+    },
+    "table": {
+      "columns": {
+        "rank": "Hạng",
+        "series": "Series",
+        "publicationType": "Nhịp",
+        "votes": "Phiếu",
+        "change": "Biến động"
+      },
+      "changeStable": "Ổn định",
+      "deletedSeries": "(series đã xoá)"
+    },
+    "error": {
+      "loadFailed": "Không tải được bảng xếp hạng. Vui lòng thử lại.",
+      "retry": "Thử lại"
     }
   }
 }

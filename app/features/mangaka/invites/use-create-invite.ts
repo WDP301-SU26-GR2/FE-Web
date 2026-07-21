@@ -33,7 +33,16 @@ export function useCreateInvite(): UseCreateInviteResult {
 
   const createInvite = useCallback(
     async (body: CreateInviteBodyDto) => {
-      if (!body.assistantId || body.taskTypes.length === 0) return null
+      // Front-end guard: surface a clear error instead of letting the BE
+      // reject with a generic 422 for missing taskTypes.
+      if (!body.assistantId) {
+        toast.error(t('assistantDirectory.invite.errorAssistantNotFound'))
+        return null
+      }
+      if (body.taskTypes.length === 0) {
+        toast.error(t('assistantDirectory.invite.errorNoTaskType'))
+        return null
+      }
       setIsCreating(true)
       try {
         const response = await studioControllerCreateInvite(body)

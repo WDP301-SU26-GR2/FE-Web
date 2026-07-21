@@ -58,7 +58,7 @@ export function AssistantDirectoryPage() {
     specialization,
     refresh
   } = useAssistantDirectory()
-  const { items: enrichedAssignments, refresh: refreshAssignments } = useMyStudioAssignments()
+  const { items: enrichedAssignments } = useMyStudioAssignments()
   const { createInvite, isCreating } = useCreateInvite()
 
   const activeAssistantIds = new Set(enrichedAssignments.map((e) => e.assignment.assistantId))
@@ -88,13 +88,16 @@ export function AssistantDirectoryPage() {
       const invite = await createInvite(body)
       if (invite) {
         setInviteTarget(null)
-        // BE created a pending invite — the assignment indicator flips to
-        // ACTIVE only after Assistant accepts. Pull anyway so we re-sync.
-        refreshAssignments()
+        // Note: we intentionally do NOT refresh assignments here. The BE only
+        // created a PENDING invite; the StudioAssignment flips to ACTIVE only
+        // after the Assistant accepts (which is an async user action outside
+        // our scope). Refreshing here would yield the same data + extra
+        // network traffic. If/when a polling/WebSocket subscription lands,
+        // wire the `activeAssistantIds` set to that source instead.
       }
       return invite !== null
     },
-    [createInvite, refreshAssignments]
+    [createInvite]
   )
 
   return (

@@ -1,20 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import {
-  ArrowLeft,
-  Briefcase,
-  Calendar,
-  Filter,
-  Hash,
-  ListChecks,
-  Mail,
-  RefreshCw,
-  Sparkles,
-  XCircle
-} from 'lucide-react'
+import { Briefcase, BookOpen, Calendar, Filter, ListChecks, RefreshCw, Sparkles, XCircle } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { SignedImage } from '~/shared/components/signed-image'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem } from '~/api/model/studio/assignmentListResDtoOutputItemsItemAssignedTaskTypesItem'
@@ -45,13 +35,6 @@ export function AssistantStudioPage() {
           </div>
           <p className='mt-1 text-sm text-muted-foreground'>{t('studio.subtitle')}</p>
         </div>
-        <a
-          href='/dashboard/assistant'
-          className='inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted'
-        >
-          <ArrowLeft className='h-3.5 w-3.5' />
-          {t('studio.back')}
-        </a>
       </div>
 
       {/* Status filters */}
@@ -119,6 +102,7 @@ export function AssistantStudioPage() {
               to={to}
               total={total}
               tKeyPrefix='studio.pagination'
+              t={t}
             />
           </>
         )}
@@ -146,10 +130,6 @@ function pickGradient(seed: string): string {
   let hash = 0
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
   return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length]
-}
-
-function formatShortId(id: string): string {
-  return id.slice(0, 8)
 }
 
 function formatDate(iso: string | null, locale: string): string {
@@ -182,7 +162,8 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
   const locale = i18n.language
 
   const statusMeta = STATUS_META[assignment.status] ?? STATUS_META.ACTIVE
-  const displayName = t('studio.card.mangakaFallback', { id: formatShortId(assignment.mangakaId) })
+  const mangaka = assignment.mangaka
+  const displayName = mangaka?.displayName ?? t('studio.card.unknownMangaka')
   const hireFrom = formatDate(assignment.hireStart, locale)
   const hireTo = formatDate(assignment.hireEnd, locale)
   const taskTypes = assignment.assignedTaskTypes.filter(isKnownTaskType)
@@ -190,15 +171,24 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
   return (
     <article className='flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md'>
       <header className='flex items-start gap-3'>
-        <div
-          className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
-            pickGradient(assignment.mangakaId)
-          )}
-          aria-hidden='true'
-        >
-          {formatShortId(assignment.mangakaId).slice(0, 2).toUpperCase()}
-        </div>
+        {mangaka?.avatar ? (
+          <SignedImage
+            r2Key={mangaka.avatar}
+            alt={displayName}
+            aspectClassName='aspect-square'
+            className='h-12 w-12 shrink-0 rounded-full shadow-sm'
+          />
+        ) : (
+          <div
+            className={cn(
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
+              pickGradient(assignment.mangakaId)
+            )}
+            aria-hidden='true'
+          >
+            {displayName.slice(0, 2).toUpperCase()}
+          </div>
+        )}
         <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-1.5'>
             <h3 className='truncate text-sm font-bold text-foreground'>{displayName}</h3>
@@ -220,9 +210,6 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
               </span>
             )}
           </div>
-          <p className='mt-0.5 truncate text-[11px] text-muted-foreground'>
-            <Hash className='inline h-3 w-3 align-text-bottom' /> {assignment.id}
-          </p>
         </div>
       </header>
 
@@ -238,8 +225,8 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
           </span>
         </div>
         <div className='flex items-start gap-1.5 text-muted-foreground'>
-          <Mail className='mt-0.5 h-3 w-3 shrink-0' />
-          <span>{assignment.seriesId ?? t('studio.card.seriesNone')}</span>
+          <BookOpen className='mt-0.5 h-3 w-3 shrink-0' />
+          <span>{assignment.series?.title ?? t('studio.card.seriesNone')}</span>
         </div>
       </div>
 
@@ -273,14 +260,13 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
         </div>
       )}
 
-      <footer className='mt-auto flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground'>
+      <footer className='hidden'>
         <span>{t('studio.card.ended', { date: formatDate(assignment.createdAt, locale) || '—' })}</span>
         <span>{t(assignment.activeNow ? 'studio.card.activeNowBadge' : 'studio.card.endedBadge')}</span>
       </footer>
     </article>
   )
 }
-
 
 function CardSkeleton() {
   return (

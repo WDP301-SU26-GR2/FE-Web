@@ -6,6 +6,7 @@ import { cn } from '~/shared/lib/cn'
 import { SITE } from '~/shared/config/site'
 import { ThemeToggle } from '~/shared/components/theme-toggle'
 import { LanguageSwitcher } from '~/shared/components/language-switcher'
+import { BrandLogo } from '~/shared/components/brand-logo'
 import { usePublicationContext, isMissingRecordError } from '../publication-shell-context'
 
 import { PublicationStatusPill } from './publication-status-pill'
@@ -58,11 +59,14 @@ export function PublicationShellHeader() {
       <div className='flex h-16 items-center justify-between px-4 md:px-6'>
         {/* Left: brand + chapter context */}
         <div className='flex min-w-0 items-center gap-3'>
-          <div className='flex shrink-0 flex-col leading-tight'>
-            <span className='text-base font-bold tracking-wider text-primary'>{SITE.name}</span>
-            <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
-              {t('publication.header.brandSubtitle')}
-            </span>
+          <div className='flex shrink-0 items-center gap-2'>
+            <BrandLogo className='h-9 w-9 rounded-lg' />
+            <div className='flex flex-col leading-tight'>
+              <span className='text-sm font-bold tracking-wide text-primary'>{SITE.shortName}</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
+                {t('publication.header.brandSubtitle')}
+              </span>
+            </div>
           </div>
           <div className='hidden h-8 w-px shrink-0 bg-border sm:block' />
           <div className='min-w-0'>
@@ -107,8 +111,8 @@ export function PublicationShellHeader() {
               isActive
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : tab.enabled
-                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                : 'cursor-not-allowed text-muted-foreground/50 hover:bg-transparent'
+                  ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'cursor-not-allowed text-muted-foreground/50 hover:bg-transparent'
             )
             if (tab.enabled) {
               return (

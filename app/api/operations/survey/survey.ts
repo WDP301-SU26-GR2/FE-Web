@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -60,25 +62,13 @@ export type surveyControllerRequestOtpResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type surveyControllerRequestOtpResponse403 = {
-  data: void
-  status: 403
-}
-
-export type surveyControllerRequestOtpResponse429 = {
-  data: void
-  status: 429
-}
     
 export type surveyControllerRequestOtpResponseSuccess = (surveyControllerRequestOtpResponse200) & {
   headers: Headers;
 };
-export type surveyControllerRequestOtpResponseError = (surveyControllerRequestOtpResponse403 | surveyControllerRequestOtpResponse429) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerRequestOtpResponse = (surveyControllerRequestOtpResponseSuccess | surveyControllerRequestOtpResponseError)
+export type surveyControllerRequestOtpResponse = (surveyControllerRequestOtpResponseSuccess)
 
 export const getSurveyControllerRequestOtpUrl = () => {
 
@@ -108,45 +98,13 @@ export type surveyControllerSubmitVoteResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type surveyControllerSubmitVoteResponse400 = {
-  data: void
-  status: 400
-}
-
-export type surveyControllerSubmitVoteResponse403 = {
-  data: void
-  status: 403
-}
-
-export type surveyControllerSubmitVoteResponse404 = {
-  data: void
-  status: 404
-}
-
-export type surveyControllerSubmitVoteResponse409 = {
-  data: void
-  status: 409
-}
-
-export type surveyControllerSubmitVoteResponse422 = {
-  data: void
-  status: 422
-}
-
-export type surveyControllerSubmitVoteResponse429 = {
-  data: void
-  status: 429
-}
     
 export type surveyControllerSubmitVoteResponseSuccess = (surveyControllerSubmitVoteResponse200) & {
   headers: Headers;
 };
-export type surveyControllerSubmitVoteResponseError = (surveyControllerSubmitVoteResponse400 | surveyControllerSubmitVoteResponse403 | surveyControllerSubmitVoteResponse404 | surveyControllerSubmitVoteResponse409 | surveyControllerSubmitVoteResponse422 | surveyControllerSubmitVoteResponse429) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerSubmitVoteResponse = (surveyControllerSubmitVoteResponseSuccess | surveyControllerSubmitVoteResponseError)
+export type surveyControllerSubmitVoteResponse = (surveyControllerSubmitVoteResponseSuccess)
 
 export const getSurveyControllerSubmitVoteUrl = () => {
 
@@ -211,20 +169,13 @@ export type surveyControllerGetLatestVoteResultsResponse200 = {
   data: LatestVoteResultsResDtoOutput
   status: 200
 }
-
-export type surveyControllerGetLatestVoteResultsResponse429 = {
-  data: void
-  status: 429
-}
     
 export type surveyControllerGetLatestVoteResultsResponseSuccess = (surveyControllerGetLatestVoteResultsResponse200) & {
   headers: Headers;
 };
-export type surveyControllerGetLatestVoteResultsResponseError = (surveyControllerGetLatestVoteResultsResponse429) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerGetLatestVoteResultsResponse = (surveyControllerGetLatestVoteResultsResponseSuccess | surveyControllerGetLatestVoteResultsResponseError)
+export type surveyControllerGetLatestVoteResultsResponse = (surveyControllerGetLatestVoteResultsResponseSuccess)
 
 export const getSurveyControllerGetLatestVoteResultsUrl = (params?: SurveyControllerGetLatestVoteResultsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -260,20 +211,13 @@ export type surveyControllerGetVotePeriodsResponse200 = {
   data: VotePeriodsResDtoOutput
   status: 200
 }
-
-export type surveyControllerGetVotePeriodsResponse429 = {
-  data: void
-  status: 429
-}
     
 export type surveyControllerGetVotePeriodsResponseSuccess = (surveyControllerGetVotePeriodsResponse200) & {
   headers: Headers;
 };
-export type surveyControllerGetVotePeriodsResponseError = (surveyControllerGetVotePeriodsResponse429) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerGetVotePeriodsResponse = (surveyControllerGetVotePeriodsResponseSuccess | surveyControllerGetVotePeriodsResponseError)
+export type surveyControllerGetVotePeriodsResponse = (surveyControllerGetVotePeriodsResponseSuccess)
 
 export const getSurveyControllerGetVotePeriodsUrl = (params?: SurveyControllerGetVotePeriodsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -309,25 +253,13 @@ export type surveyControllerGetVoteResultsResponse200 = {
   data: VoteResultsResDtoOutput
   status: 200
 }
-
-export type surveyControllerGetVoteResultsResponse404 = {
-  data: void
-  status: 404
-}
-
-export type surveyControllerGetVoteResultsResponse409 = {
-  data: void
-  status: 409
-}
     
 export type surveyControllerGetVoteResultsResponseSuccess = (surveyControllerGetVoteResultsResponse200) & {
   headers: Headers;
 };
-export type surveyControllerGetVoteResultsResponseError = (surveyControllerGetVoteResultsResponse404 | surveyControllerGetVoteResultsResponse409) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerGetVoteResultsResponse = (surveyControllerGetVoteResultsResponseSuccess | surveyControllerGetVoteResultsResponseError)
+export type surveyControllerGetVoteResultsResponse = (surveyControllerGetVoteResultsResponseSuccess)
 
 export const getSurveyControllerGetVoteResultsUrl = (params: SurveyControllerGetVoteResultsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -539,20 +471,13 @@ export type surveyControllerUpdateSurveyPeriodStatusResponse200 = {
   data: SurveyPeriodResDtoOutput
   status: 200
 }
-
-export type surveyControllerUpdateSurveyPeriodStatusResponse404 = {
-  data: void
-  status: 404
-}
     
 export type surveyControllerUpdateSurveyPeriodStatusResponseSuccess = (surveyControllerUpdateSurveyPeriodStatusResponse200) & {
   headers: Headers;
 };
-export type surveyControllerUpdateSurveyPeriodStatusResponseError = (surveyControllerUpdateSurveyPeriodStatusResponse404) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerUpdateSurveyPeriodStatusResponse = (surveyControllerUpdateSurveyPeriodStatusResponseSuccess | surveyControllerUpdateSurveyPeriodStatusResponseError)
+export type surveyControllerUpdateSurveyPeriodStatusResponse = (surveyControllerUpdateSurveyPeriodStatusResponseSuccess)
 
 export const getSurveyControllerUpdateSurveyPeriodStatusUrl = ({ id }: SurveyControllerUpdateSurveyPeriodStatusPathParameters,) => {
 
@@ -583,25 +508,13 @@ export type surveyControllerImportSurveyDataResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type surveyControllerImportSurveyDataResponse400 = {
-  data: void
-  status: 400
-}
-
-export type surveyControllerImportSurveyDataResponse404 = {
-  data: void
-  status: 404
-}
     
 export type surveyControllerImportSurveyDataResponseSuccess = (surveyControllerImportSurveyDataResponse201) & {
   headers: Headers;
 };
-export type surveyControllerImportSurveyDataResponseError = (surveyControllerImportSurveyDataResponse400 | surveyControllerImportSurveyDataResponse404) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerImportSurveyDataResponse = (surveyControllerImportSurveyDataResponseSuccess | surveyControllerImportSurveyDataResponseError)
+export type surveyControllerImportSurveyDataResponse = (surveyControllerImportSurveyDataResponseSuccess)
 
 export const getSurveyControllerImportSurveyDataUrl = () => {
 
@@ -631,25 +544,13 @@ export type surveyControllerFinalizeRankingResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type surveyControllerFinalizeRankingResponse400 = {
-  data: void
-  status: 400
-}
-
-export type surveyControllerFinalizeRankingResponse404 = {
-  data: void
-  status: 404
-}
     
 export type surveyControllerFinalizeRankingResponseSuccess = (surveyControllerFinalizeRankingResponse200) & {
   headers: Headers;
 };
-export type surveyControllerFinalizeRankingResponseError = (surveyControllerFinalizeRankingResponse400 | surveyControllerFinalizeRankingResponse404) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerFinalizeRankingResponse = (surveyControllerFinalizeRankingResponseSuccess | surveyControllerFinalizeRankingResponseError)
+export type surveyControllerFinalizeRankingResponse = (surveyControllerFinalizeRankingResponseSuccess)
 
 export const getSurveyControllerFinalizeRankingUrl = ({ id }: SurveyControllerFinalizeRankingPathParameters,) => {
 
@@ -713,20 +614,13 @@ export type surveyControllerGetBoardRankingResponse200 = {
   data: BoardRankingListResDtoOutput
   status: 200
 }
-
-export type surveyControllerGetBoardRankingResponse404 = {
-  data: void
-  status: 404
-}
     
 export type surveyControllerGetBoardRankingResponseSuccess = (surveyControllerGetBoardRankingResponse200) & {
   headers: Headers;
 };
-export type surveyControllerGetBoardRankingResponseError = (surveyControllerGetBoardRankingResponse404) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerGetBoardRankingResponse = (surveyControllerGetBoardRankingResponseSuccess | surveyControllerGetBoardRankingResponseError)
+export type surveyControllerGetBoardRankingResponse = (surveyControllerGetBoardRankingResponseSuccess)
 
 export const getSurveyControllerGetBoardRankingUrl = (params: SurveyControllerGetBoardRankingParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -762,25 +656,13 @@ export type surveyControllerGetSeriesTrendResponse200 = {
   data: BoardRankingListResDtoOutput
   status: 200
 }
-
-export type surveyControllerGetSeriesTrendResponse403 = {
-  data: void
-  status: 403
-}
-
-export type surveyControllerGetSeriesTrendResponse404 = {
-  data: void
-  status: 404
-}
     
 export type surveyControllerGetSeriesTrendResponseSuccess = (surveyControllerGetSeriesTrendResponse200) & {
   headers: Headers;
 };
-export type surveyControllerGetSeriesTrendResponseError = (surveyControllerGetSeriesTrendResponse403 | surveyControllerGetSeriesTrendResponse404) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerGetSeriesTrendResponse = (surveyControllerGetSeriesTrendResponseSuccess | surveyControllerGetSeriesTrendResponseError)
+export type surveyControllerGetSeriesTrendResponse = (surveyControllerGetSeriesTrendResponseSuccess)
 
 export const getSurveyControllerGetSeriesTrendUrl = (params: SurveyControllerGetSeriesTrendParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -851,20 +733,13 @@ export type surveyControllerUpdateVotingConfigResponse200 = {
   data: VotingConfigResDtoOutput
   status: 200
 }
-
-export type surveyControllerUpdateVotingConfigResponse404 = {
-  data: void
-  status: 404
-}
     
 export type surveyControllerUpdateVotingConfigResponseSuccess = (surveyControllerUpdateVotingConfigResponse200) & {
   headers: Headers;
 };
-export type surveyControllerUpdateVotingConfigResponseError = (surveyControllerUpdateVotingConfigResponse404) & {
-  headers: Headers;
-};
+;
 
-export type surveyControllerUpdateVotingConfigResponse = (surveyControllerUpdateVotingConfigResponseSuccess | surveyControllerUpdateVotingConfigResponseError)
+export type surveyControllerUpdateVotingConfigResponse = (surveyControllerUpdateVotingConfigResponseSuccess)
 
 export const getSurveyControllerUpdateVotingConfigUrl = () => {
 

@@ -7,21 +7,22 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
-  ApprovePaymentBodyDto,
   CancelPaymentBodyDto,
   PayPaymentBodyDto,
   PaymentControllerApprovePaymentPathParameters,
@@ -81,26 +82,19 @@ export const paymentControllerGetPayments = async (params?: PaymentControllerGet
 
 
 /**
- * @summary Chi tiết một payment record
+ * @summary Chi tiết một payment record (chỉ trong phạm vi sở hữu)
  */
 export type paymentControllerGetPaymentByIdResponse200 = {
   data: PaymentRecordResDtoOutput
   status: 200
 }
-
-export type paymentControllerGetPaymentByIdResponse404 = {
-  data: void
-  status: 404
-}
     
 export type paymentControllerGetPaymentByIdResponseSuccess = (paymentControllerGetPaymentByIdResponse200) & {
   headers: Headers;
 };
-export type paymentControllerGetPaymentByIdResponseError = (paymentControllerGetPaymentByIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type paymentControllerGetPaymentByIdResponse = (paymentControllerGetPaymentByIdResponseSuccess | paymentControllerGetPaymentByIdResponseError)
+export type paymentControllerGetPaymentByIdResponse = (paymentControllerGetPaymentByIdResponseSuccess)
 
 export const getPaymentControllerGetPaymentByIdUrl = ({ id }: PaymentControllerGetPaymentByIdPathParameters,) => {
 
@@ -123,21 +117,11 @@ export const paymentControllerGetPaymentById = async ({ id }: PaymentControllerG
 
 
 /**
- * @summary Board duyệt payment → APPROVED
+ * @summary Board duyệt payment → APPROVED (người duyệt lấy từ token)
  */
 export type paymentControllerApprovePaymentResponse200 = {
   data: PaymentRecordResDtoOutput
   status: 200
-}
-
-export type paymentControllerApprovePaymentResponse400 = {
-  data: void
-  status: 400
-}
-
-export type paymentControllerApprovePaymentResponse404 = {
-  data: void
-  status: 404
 }
 
 export type paymentControllerApprovePaymentResponse422 = {
@@ -148,7 +132,7 @@ export type paymentControllerApprovePaymentResponse422 = {
 export type paymentControllerApprovePaymentResponseSuccess = (paymentControllerApprovePaymentResponse200) & {
   headers: Headers;
 };
-export type paymentControllerApprovePaymentResponseError = (paymentControllerApprovePaymentResponse400 | paymentControllerApprovePaymentResponse404 | paymentControllerApprovePaymentResponse422) & {
+export type paymentControllerApprovePaymentResponseError = (paymentControllerApprovePaymentResponse422) & {
   headers: Headers;
 };
 
@@ -162,16 +146,14 @@ export const getPaymentControllerApprovePaymentUrl = ({ id }: PaymentControllerA
   return `/payments/${id}/approve`
 }
 
-export const paymentControllerApprovePayment = async ({ id }: PaymentControllerApprovePaymentPathParameters,
-    approvePaymentBodyDto: ApprovePaymentBodyDto, options?: RequestInit): Promise<paymentControllerApprovePaymentResponse> => {
+export const paymentControllerApprovePayment = async ({ id }: PaymentControllerApprovePaymentPathParameters, options?: RequestInit): Promise<paymentControllerApprovePaymentResponse> => {
   
   return customFetch<paymentControllerApprovePaymentResponse>(getPaymentControllerApprovePaymentUrl({ id }),
   {      
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      approvePaymentBodyDto,)
+    method: 'PATCH'
+    
+    
   }
 );}
 
@@ -184,16 +166,6 @@ export type paymentControllerPayPaymentResponse200 = {
   status: 200
 }
 
-export type paymentControllerPayPaymentResponse400 = {
-  data: void
-  status: 400
-}
-
-export type paymentControllerPayPaymentResponse404 = {
-  data: void
-  status: 404
-}
-
 export type paymentControllerPayPaymentResponse422 = {
   data: void
   status: 422
@@ -202,7 +174,7 @@ export type paymentControllerPayPaymentResponse422 = {
 export type paymentControllerPayPaymentResponseSuccess = (paymentControllerPayPaymentResponse200) & {
   headers: Headers;
 };
-export type paymentControllerPayPaymentResponseError = (paymentControllerPayPaymentResponse400 | paymentControllerPayPaymentResponse404 | paymentControllerPayPaymentResponse422) & {
+export type paymentControllerPayPaymentResponseError = (paymentControllerPayPaymentResponse422) & {
   headers: Headers;
 };
 
@@ -238,16 +210,6 @@ export type paymentControllerCancelPaymentResponse200 = {
   status: 200
 }
 
-export type paymentControllerCancelPaymentResponse400 = {
-  data: void
-  status: 400
-}
-
-export type paymentControllerCancelPaymentResponse404 = {
-  data: void
-  status: 404
-}
-
 export type paymentControllerCancelPaymentResponse422 = {
   data: void
   status: 422
@@ -256,7 +218,7 @@ export type paymentControllerCancelPaymentResponse422 = {
 export type paymentControllerCancelPaymentResponseSuccess = (paymentControllerCancelPaymentResponse200) & {
   headers: Headers;
 };
-export type paymentControllerCancelPaymentResponseError = (paymentControllerCancelPaymentResponse400 | paymentControllerCancelPaymentResponse404 | paymentControllerCancelPaymentResponse422) & {
+export type paymentControllerCancelPaymentResponseError = (paymentControllerCancelPaymentResponse422) & {
   headers: Headers;
 };
 
@@ -285,7 +247,7 @@ export const paymentControllerCancelPayment = async ({ id }: PaymentControllerCa
 
 
 /**
- * @summary Danh sách payment theo contractId
+ * @summary Danh sách payment theo contractId (chỉ trong phạm vi sở hữu)
  */
 export type paymentControllerGetPaymentsByContractResponse200 = {
   data: PaymentRecordListResDtoOutput
@@ -320,7 +282,7 @@ export const paymentControllerGetPaymentsByContract = async ({ id }: PaymentCont
 
 
 /**
- * @summary Danh sách payment theo seriesId
+ * @summary Danh sách payment theo seriesId (chỉ trong phạm vi sở hữu)
  */
 export type paymentControllerGetPaymentsBySeriesResponse200 = {
   data: PaymentRecordListResDtoOutput
@@ -355,7 +317,7 @@ export const paymentControllerGetPaymentsBySeries = async ({ id }: PaymentContro
 
 
 /**
- * @summary Danh sách payment theo receiverId
+ * @summary Danh sách payment theo receiverId (Mangaka chỉ xem của chính mình)
  */
 export type paymentControllerGetPaymentsByUserResponse200 = {
   data: PaymentRecordListResDtoOutput

@@ -7,27 +7,31 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
   AmendmentResDtoOutput,
+  ContractChangeReasonBodyDto,
   ContractControllerBoardApprovePathParameters,
   ContractControllerBoardRequestChangesPathParameters,
   ContractControllerCheckStatusPathParameters,
   ContractControllerCreateAmendmentPathParameters,
   ContractControllerCreatePaymentConditionPathParameters,
   ContractControllerDisablePaymentConditionPathParameters,
+  ContractControllerExportPdfPathParameters,
   ContractControllerGetAmendmentPathParameters,
   ContractControllerGetContractByIdPathParameters,
   ContractControllerGetContractVersionByIdPathParameters,
@@ -48,6 +52,7 @@ import type {
   ContractControllerUpdateStatusPathParameters,
   ContractControllerVoidAmendmentPathParameters,
   ContractHealthResDtoOutput,
+  ContractPdfResDtoOutput,
   ContractResDtoOutput,
   ContractSignResDtoOutput,
   ContractStatusProgressResDtoOutput,
@@ -148,25 +153,13 @@ export type contractControllerCreateDraftResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
-
-export type contractControllerCreateDraftResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerCreateDraftResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerCreateDraftResponseSuccess = (contractControllerCreateDraftResponse201) & {
   headers: Headers;
 };
-export type contractControllerCreateDraftResponseError = (contractControllerCreateDraftResponse404 | contractControllerCreateDraftResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerCreateDraftResponse = (contractControllerCreateDraftResponseSuccess | contractControllerCreateDraftResponseError)
+export type contractControllerCreateDraftResponse = (contractControllerCreateDraftResponseSuccess)
 
 export const getContractControllerCreateDraftUrl = () => {
 
@@ -190,31 +183,54 @@ export const contractControllerCreateDraft = async (createContractBodyDto: Creat
 
 
 /**
+ * @summary Tải PDF hợp đồng đã ký (từ FULLY_EXECUTED trở đi) — Spec 24
+ */
+export type contractControllerExportPdfResponse200 = {
+  data: ContractPdfResDtoOutput
+  status: 200
+}
+    
+export type contractControllerExportPdfResponseSuccess = (contractControllerExportPdfResponse200) & {
+  headers: Headers;
+};
+;
+
+export type contractControllerExportPdfResponse = (contractControllerExportPdfResponseSuccess)
+
+export const getContractControllerExportPdfUrl = ({ id }: ContractControllerExportPdfPathParameters,) => {
+
+
+  
+
+  return `/contracts/${id}/pdf`
+}
+
+export const contractControllerExportPdf = async ({ id }: ContractControllerExportPdfPathParameters, options?: RequestInit): Promise<contractControllerExportPdfResponse> => {
+  
+  return customFetch<contractControllerExportPdfResponse>(getContractControllerExportPdfUrl({ id }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
  * @summary Chi tiết hợp đồng
  */
 export type contractControllerGetContractByIdResponse200 = {
   data: ContractResDtoOutput
   status: 200
 }
-
-export type contractControllerGetContractByIdResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerGetContractByIdResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerGetContractByIdResponseSuccess = (contractControllerGetContractByIdResponse200) & {
   headers: Headers;
 };
-export type contractControllerGetContractByIdResponseError = (contractControllerGetContractByIdResponse403 | contractControllerGetContractByIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerGetContractByIdResponse = (contractControllerGetContractByIdResponseSuccess | contractControllerGetContractByIdResponseError)
+export type contractControllerGetContractByIdResponse = (contractControllerGetContractByIdResponseSuccess)
 
 export const getContractControllerGetContractByIdUrl = ({ id }: ContractControllerGetContractByIdPathParameters,) => {
 
@@ -280,25 +296,13 @@ export type contractControllerGetContractVersionsResponse200 = {
   data: ContractVersionResDtoOutput[]
   status: 200
 }
-
-export type contractControllerGetContractVersionsResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerGetContractVersionsResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerGetContractVersionsResponseSuccess = (contractControllerGetContractVersionsResponse200) & {
   headers: Headers;
 };
-export type contractControllerGetContractVersionsResponseError = (contractControllerGetContractVersionsResponse403 | contractControllerGetContractVersionsResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerGetContractVersionsResponse = (contractControllerGetContractVersionsResponseSuccess | contractControllerGetContractVersionsResponseError)
+export type contractControllerGetContractVersionsResponse = (contractControllerGetContractVersionsResponseSuccess)
 
 export const getContractControllerGetContractVersionsUrl = ({ id }: ContractControllerGetContractVersionsPathParameters,) => {
 
@@ -327,25 +331,13 @@ export type contractControllerGetContractVersionByIdResponse200 = {
   data: ContractVersionResDtoOutput
   status: 200
 }
-
-export type contractControllerGetContractVersionByIdResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerGetContractVersionByIdResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerGetContractVersionByIdResponseSuccess = (contractControllerGetContractVersionByIdResponse200) & {
   headers: Headers;
 };
-export type contractControllerGetContractVersionByIdResponseError = (contractControllerGetContractVersionByIdResponse403 | contractControllerGetContractVersionByIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerGetContractVersionByIdResponse = (contractControllerGetContractVersionByIdResponseSuccess | contractControllerGetContractVersionByIdResponseError)
+export type contractControllerGetContractVersionByIdResponse = (contractControllerGetContractVersionByIdResponseSuccess)
 
 export const getContractControllerGetContractVersionByIdUrl = ({ id, versionId }: ContractControllerGetContractVersionByIdPathParameters,) => {
 
@@ -374,30 +366,13 @@ export type contractControllerUpdateStatusResponse200 = {
   data: ContractResDtoOutput
   status: 200
 }
-
-export type contractControllerUpdateStatusResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerUpdateStatusResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerUpdateStatusResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerUpdateStatusResponseSuccess = (contractControllerUpdateStatusResponse200) & {
   headers: Headers;
 };
-export type contractControllerUpdateStatusResponseError = (contractControllerUpdateStatusResponse403 | contractControllerUpdateStatusResponse404 | contractControllerUpdateStatusResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerUpdateStatusResponse = (contractControllerUpdateStatusResponseSuccess | contractControllerUpdateStatusResponseError)
+export type contractControllerUpdateStatusResponse = (contractControllerUpdateStatusResponseSuccess)
 
 export const getContractControllerUpdateStatusUrl = ({ id }: ContractControllerUpdateStatusPathParameters,) => {
 
@@ -426,25 +401,13 @@ export type contractControllerCheckStatusResponse200 = {
   data: ContractStatusProgressResDtoOutput
   status: 200
 }
-
-export type contractControllerCheckStatusResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerCheckStatusResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerCheckStatusResponseSuccess = (contractControllerCheckStatusResponse200) & {
   headers: Headers;
 };
-export type contractControllerCheckStatusResponseError = (contractControllerCheckStatusResponse403 | contractControllerCheckStatusResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerCheckStatusResponse = (contractControllerCheckStatusResponseSuccess | contractControllerCheckStatusResponseError)
+export type contractControllerCheckStatusResponse = (contractControllerCheckStatusResponseSuccess)
 
 export const getContractControllerCheckStatusUrl = ({ id }: ContractControllerCheckStatusPathParameters,) => {
 
@@ -473,30 +436,13 @@ export type contractControllerRequestChangesResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
-
-export type contractControllerRequestChangesResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerRequestChangesResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerRequestChangesResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerRequestChangesResponseSuccess = (contractControllerRequestChangesResponse201) & {
   headers: Headers;
 };
-export type contractControllerRequestChangesResponseError = (contractControllerRequestChangesResponse403 | contractControllerRequestChangesResponse404 | contractControllerRequestChangesResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerRequestChangesResponse = (contractControllerRequestChangesResponseSuccess | contractControllerRequestChangesResponseError)
+export type contractControllerRequestChangesResponse = (contractControllerRequestChangesResponseSuccess)
 
 export const getContractControllerRequestChangesUrl = ({ id }: ContractControllerRequestChangesPathParameters,) => {
 
@@ -507,16 +453,15 @@ export const getContractControllerRequestChangesUrl = ({ id }: ContractControlle
 }
 
 export const contractControllerRequestChanges = async ({ id }: ContractControllerRequestChangesPathParameters,
-    requestContractChangesBodyDto: RequestContractChangesBodyDto, options?: RequestInit): Promise<contractControllerRequestChangesResponse> => {
+    contractChangeReasonBodyDto: ContractChangeReasonBodyDto, options?: RequestInit): Promise<contractControllerRequestChangesResponse> => {
   
   return customFetch<contractControllerRequestChangesResponse>(getContractControllerRequestChangesUrl({ id }),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(requestContractChangesBodyDto)
-    
-    
+    body: JSON.stringify(
+      contractChangeReasonBodyDto,)
   }
 );}
 
@@ -528,25 +473,13 @@ export type contractControllerBoardApproveResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
-
-export type contractControllerBoardApproveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerBoardApproveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerBoardApproveResponseSuccess = (contractControllerBoardApproveResponse201) & {
   headers: Headers;
 };
-export type contractControllerBoardApproveResponseError = (contractControllerBoardApproveResponse404 | contractControllerBoardApproveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerBoardApproveResponse = (contractControllerBoardApproveResponseSuccess | contractControllerBoardApproveResponseError)
+export type contractControllerBoardApproveResponse = (contractControllerBoardApproveResponseSuccess)
 
 export const getContractControllerBoardApproveUrl = ({ id }: ContractControllerBoardApprovePathParameters,) => {
 
@@ -575,25 +508,13 @@ export type contractControllerBoardRequestChangesResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
-
-export type contractControllerBoardRequestChangesResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerBoardRequestChangesResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerBoardRequestChangesResponseSuccess = (contractControllerBoardRequestChangesResponse201) & {
   headers: Headers;
 };
-export type contractControllerBoardRequestChangesResponseError = (contractControllerBoardRequestChangesResponse404 | contractControllerBoardRequestChangesResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerBoardRequestChangesResponse = (contractControllerBoardRequestChangesResponseSuccess | contractControllerBoardRequestChangesResponseError)
+export type contractControllerBoardRequestChangesResponse = (contractControllerBoardRequestChangesResponseSuccess)
 
 export const getContractControllerBoardRequestChangesUrl = ({ id }: ContractControllerBoardRequestChangesPathParameters,) => {
 
@@ -604,16 +525,15 @@ export const getContractControllerBoardRequestChangesUrl = ({ id }: ContractCont
 }
 
 export const contractControllerBoardRequestChanges = async ({ id }: ContractControllerBoardRequestChangesPathParameters,
-    requestContractChangesBodyDto: RequestContractChangesBodyDto, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
+    contractChangeReasonBodyDto: ContractChangeReasonBodyDto, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
   
   return customFetch<contractControllerBoardRequestChangesResponse>(getContractControllerBoardRequestChangesUrl({ id }),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(requestContractChangesBodyDto)
-    
-    
+    body: JSON.stringify(
+      contractChangeReasonBodyDto,)
   }
 );}
 
@@ -625,35 +545,13 @@ export type contractControllerSignMangakaResponse201 = {
   data: ContractResDtoOutput
   status: 201
 }
-
-export type contractControllerSignMangakaResponse400 = {
-  data: void
-  status: 400
-}
-
-export type contractControllerSignMangakaResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerSignMangakaResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerSignMangakaResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerSignMangakaResponseSuccess = (contractControllerSignMangakaResponse201) & {
   headers: Headers;
 };
-export type contractControllerSignMangakaResponseError = (contractControllerSignMangakaResponse400 | contractControllerSignMangakaResponse403 | contractControllerSignMangakaResponse404 | contractControllerSignMangakaResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerSignMangakaResponse = (contractControllerSignMangakaResponseSuccess | contractControllerSignMangakaResponseError)
+export type contractControllerSignMangakaResponse = (contractControllerSignMangakaResponseSuccess)
 
 export const getContractControllerSignMangakaUrl = ({ id }: ContractControllerSignMangakaPathParameters,) => {
 
@@ -684,35 +582,13 @@ export type contractControllerSignBoardResponse201 = {
   data: ContractSignResDtoOutput
   status: 201
 }
-
-export type contractControllerSignBoardResponse400 = {
-  data: void
-  status: 400
-}
-
-export type contractControllerSignBoardResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerSignBoardResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerSignBoardResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerSignBoardResponseSuccess = (contractControllerSignBoardResponse201) & {
   headers: Headers;
 };
-export type contractControllerSignBoardResponseError = (contractControllerSignBoardResponse400 | contractControllerSignBoardResponse403 | contractControllerSignBoardResponse404 | contractControllerSignBoardResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerSignBoardResponse = (contractControllerSignBoardResponseSuccess | contractControllerSignBoardResponseError)
+export type contractControllerSignBoardResponse = (contractControllerSignBoardResponseSuccess)
 
 export const getContractControllerSignBoardUrl = ({ id }: ContractControllerSignBoardPathParameters,) => {
 
@@ -743,30 +619,13 @@ export type contractControllerReportRevenueResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type contractControllerReportRevenueResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerReportRevenueResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerReportRevenueResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerReportRevenueResponseSuccess = (contractControllerReportRevenueResponse201) & {
   headers: Headers;
 };
-export type contractControllerReportRevenueResponseError = (contractControllerReportRevenueResponse403 | contractControllerReportRevenueResponse404 | contractControllerReportRevenueResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerReportRevenueResponse = (contractControllerReportRevenueResponseSuccess | contractControllerReportRevenueResponseError)
+export type contractControllerReportRevenueResponse = (contractControllerReportRevenueResponseSuccess)
 
 export const getContractControllerReportRevenueUrl = ({ id }: ContractControllerReportRevenuePathParameters,) => {
 
@@ -798,16 +657,6 @@ export type contractControllerCreatePaymentConditionResponse201 = {
   status: 201
 }
 
-export type contractControllerCreatePaymentConditionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerCreatePaymentConditionResponse404 = {
-  data: void
-  status: 404
-}
-
 export type contractControllerCreatePaymentConditionResponse422 = {
   data: void
   status: 422
@@ -816,7 +665,7 @@ export type contractControllerCreatePaymentConditionResponse422 = {
 export type contractControllerCreatePaymentConditionResponseSuccess = (contractControllerCreatePaymentConditionResponse201) & {
   headers: Headers;
 };
-export type contractControllerCreatePaymentConditionResponseError = (contractControllerCreatePaymentConditionResponse403 | contractControllerCreatePaymentConditionResponse404 | contractControllerCreatePaymentConditionResponse422) & {
+export type contractControllerCreatePaymentConditionResponseError = (contractControllerCreatePaymentConditionResponse422) & {
   headers: Headers;
 };
 
@@ -851,25 +700,13 @@ export type contractControllerGetPaymentConditionsResponse200 = {
   data: PaymentConditionListResDtoOutput
   status: 200
 }
-
-export type contractControllerGetPaymentConditionsResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerGetPaymentConditionsResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerGetPaymentConditionsResponseSuccess = (contractControllerGetPaymentConditionsResponse200) & {
   headers: Headers;
 };
-export type contractControllerGetPaymentConditionsResponseError = (contractControllerGetPaymentConditionsResponse403 | contractControllerGetPaymentConditionsResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerGetPaymentConditionsResponse = (contractControllerGetPaymentConditionsResponseSuccess | contractControllerGetPaymentConditionsResponseError)
+export type contractControllerGetPaymentConditionsResponse = (contractControllerGetPaymentConditionsResponseSuccess)
 
 export const getContractControllerGetPaymentConditionsUrl = ({ contractId }: ContractControllerGetPaymentConditionsPathParameters,) => {
 
@@ -899,21 +736,6 @@ export type contractControllerUpdatePaymentConditionResponse200 = {
   status: 200
 }
 
-export type contractControllerUpdatePaymentConditionResponse400 = {
-  data: void
-  status: 400
-}
-
-export type contractControllerUpdatePaymentConditionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerUpdatePaymentConditionResponse404 = {
-  data: void
-  status: 404
-}
-
 export type contractControllerUpdatePaymentConditionResponse422 = {
   data: void
   status: 422
@@ -922,7 +744,7 @@ export type contractControllerUpdatePaymentConditionResponse422 = {
 export type contractControllerUpdatePaymentConditionResponseSuccess = (contractControllerUpdatePaymentConditionResponse200) & {
   headers: Headers;
 };
-export type contractControllerUpdatePaymentConditionResponseError = (contractControllerUpdatePaymentConditionResponse400 | contractControllerUpdatePaymentConditionResponse403 | contractControllerUpdatePaymentConditionResponse404 | contractControllerUpdatePaymentConditionResponse422) & {
+export type contractControllerUpdatePaymentConditionResponseError = (contractControllerUpdatePaymentConditionResponse422) & {
   headers: Headers;
 };
 
@@ -957,30 +779,13 @@ export type contractControllerDisablePaymentConditionResponse200 = {
   data: PaymentConditionResDtoOutput
   status: 200
 }
-
-export type contractControllerDisablePaymentConditionResponse400 = {
-  data: void
-  status: 400
-}
-
-export type contractControllerDisablePaymentConditionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerDisablePaymentConditionResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerDisablePaymentConditionResponseSuccess = (contractControllerDisablePaymentConditionResponse200) & {
   headers: Headers;
 };
-export type contractControllerDisablePaymentConditionResponseError = (contractControllerDisablePaymentConditionResponse400 | contractControllerDisablePaymentConditionResponse403 | contractControllerDisablePaymentConditionResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerDisablePaymentConditionResponse = (contractControllerDisablePaymentConditionResponseSuccess | contractControllerDisablePaymentConditionResponseError)
+export type contractControllerDisablePaymentConditionResponse = (contractControllerDisablePaymentConditionResponseSuccess)
 
 export const getContractControllerDisablePaymentConditionUrl = ({ contractId, conditionId }: ContractControllerDisablePaymentConditionPathParameters,) => {
 
@@ -1009,35 +814,13 @@ export type contractControllerCreateAmendmentResponse201 = {
   data: AmendmentResDtoOutput
   status: 201
 }
-
-export type contractControllerCreateAmendmentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerCreateAmendmentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerCreateAmendmentResponse409 = {
-  data: void
-  status: 409
-}
-
-export type contractControllerCreateAmendmentResponse422 = {
-  data: void
-  status: 422
-}
     
 export type contractControllerCreateAmendmentResponseSuccess = (contractControllerCreateAmendmentResponse201) & {
   headers: Headers;
 };
-export type contractControllerCreateAmendmentResponseError = (contractControllerCreateAmendmentResponse403 | contractControllerCreateAmendmentResponse404 | contractControllerCreateAmendmentResponse409 | contractControllerCreateAmendmentResponse422) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerCreateAmendmentResponse = (contractControllerCreateAmendmentResponseSuccess | contractControllerCreateAmendmentResponseError)
+export type contractControllerCreateAmendmentResponse = (contractControllerCreateAmendmentResponseSuccess)
 
 export const getContractControllerCreateAmendmentUrl = ({ contractId }: ContractControllerCreateAmendmentPathParameters,) => {
 
@@ -1068,25 +851,13 @@ export type contractControllerListAmendmentsResponse200 = {
   data: AmendmentResDtoOutput[]
   status: 200
 }
-
-export type contractControllerListAmendmentsResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerListAmendmentsResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerListAmendmentsResponseSuccess = (contractControllerListAmendmentsResponse200) & {
   headers: Headers;
 };
-export type contractControllerListAmendmentsResponseError = (contractControllerListAmendmentsResponse403 | contractControllerListAmendmentsResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerListAmendmentsResponse = (contractControllerListAmendmentsResponseSuccess | contractControllerListAmendmentsResponseError)
+export type contractControllerListAmendmentsResponse = (contractControllerListAmendmentsResponseSuccess)
 
 export const getContractControllerListAmendmentsUrl = ({ contractId }: ContractControllerListAmendmentsPathParameters,) => {
 
@@ -1115,25 +886,13 @@ export type contractControllerGetAmendmentResponse200 = {
   data: AmendmentResDtoOutput
   status: 200
 }
-
-export type contractControllerGetAmendmentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerGetAmendmentResponse404 = {
-  data: void
-  status: 404
-}
     
 export type contractControllerGetAmendmentResponseSuccess = (contractControllerGetAmendmentResponse200) & {
   headers: Headers;
 };
-export type contractControllerGetAmendmentResponseError = (contractControllerGetAmendmentResponse403 | contractControllerGetAmendmentResponse404) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerGetAmendmentResponse = (contractControllerGetAmendmentResponseSuccess | contractControllerGetAmendmentResponseError)
+export type contractControllerGetAmendmentResponse = (contractControllerGetAmendmentResponseSuccess)
 
 export const getContractControllerGetAmendmentUrl = ({ contractId, id }: ContractControllerGetAmendmentPathParameters,) => {
 
@@ -1162,30 +921,13 @@ export type contractControllerUpdateAmendmentResponse200 = {
   data: AmendmentResDtoOutput
   status: 200
 }
-
-export type contractControllerUpdateAmendmentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerUpdateAmendmentResponse409 = {
-  data: void
-  status: 409
-}
-
-export type contractControllerUpdateAmendmentResponse422 = {
-  data: void
-  status: 422
-}
     
 export type contractControllerUpdateAmendmentResponseSuccess = (contractControllerUpdateAmendmentResponse200) & {
   headers: Headers;
 };
-export type contractControllerUpdateAmendmentResponseError = (contractControllerUpdateAmendmentResponse404 | contractControllerUpdateAmendmentResponse409 | contractControllerUpdateAmendmentResponse422) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerUpdateAmendmentResponse = (contractControllerUpdateAmendmentResponseSuccess | contractControllerUpdateAmendmentResponseError)
+export type contractControllerUpdateAmendmentResponse = (contractControllerUpdateAmendmentResponseSuccess)
 
 export const getContractControllerUpdateAmendmentUrl = ({ contractId, id }: ContractControllerUpdateAmendmentPathParameters,) => {
 
@@ -1216,30 +958,13 @@ export type contractControllerSubmitAmendmentResponse200 = {
   data: AmendmentResDtoOutput
   status: 200
 }
-
-export type contractControllerSubmitAmendmentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerSubmitAmendmentResponse409 = {
-  data: void
-  status: 409
-}
-
-export type contractControllerSubmitAmendmentResponse422 = {
-  data: void
-  status: 422
-}
     
 export type contractControllerSubmitAmendmentResponseSuccess = (contractControllerSubmitAmendmentResponse200) & {
   headers: Headers;
 };
-export type contractControllerSubmitAmendmentResponseError = (contractControllerSubmitAmendmentResponse404 | contractControllerSubmitAmendmentResponse409 | contractControllerSubmitAmendmentResponse422) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerSubmitAmendmentResponse = (contractControllerSubmitAmendmentResponseSuccess | contractControllerSubmitAmendmentResponseError)
+export type contractControllerSubmitAmendmentResponse = (contractControllerSubmitAmendmentResponseSuccess)
 
 export const getContractControllerSubmitAmendmentUrl = ({ contractId, id }: ContractControllerSubmitAmendmentPathParameters,) => {
 
@@ -1268,25 +993,13 @@ export type contractControllerSignAmendmentMangakaResponse201 = {
   data: AmendmentResDtoOutput
   status: 201
 }
-
-export type contractControllerSignAmendmentMangakaResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerSignAmendmentMangakaResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerSignAmendmentMangakaResponseSuccess = (contractControllerSignAmendmentMangakaResponse201) & {
   headers: Headers;
 };
-export type contractControllerSignAmendmentMangakaResponseError = (contractControllerSignAmendmentMangakaResponse403 | contractControllerSignAmendmentMangakaResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerSignAmendmentMangakaResponse = (contractControllerSignAmendmentMangakaResponseSuccess | contractControllerSignAmendmentMangakaResponseError)
+export type contractControllerSignAmendmentMangakaResponse = (contractControllerSignAmendmentMangakaResponseSuccess)
 
 export const getContractControllerSignAmendmentMangakaUrl = ({ contractId, id }: ContractControllerSignAmendmentMangakaPathParameters,) => {
 
@@ -1317,30 +1030,13 @@ export type contractControllerSignAmendmentBoardResponse201 = {
   data: AmendmentResDtoOutput
   status: 201
 }
-
-export type contractControllerSignAmendmentBoardResponse400 = {
-  data: void
-  status: 400
-}
-
-export type contractControllerSignAmendmentBoardResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerSignAmendmentBoardResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerSignAmendmentBoardResponseSuccess = (contractControllerSignAmendmentBoardResponse201) & {
   headers: Headers;
 };
-export type contractControllerSignAmendmentBoardResponseError = (contractControllerSignAmendmentBoardResponse400 | contractControllerSignAmendmentBoardResponse403 | contractControllerSignAmendmentBoardResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerSignAmendmentBoardResponse = (contractControllerSignAmendmentBoardResponseSuccess | contractControllerSignAmendmentBoardResponseError)
+export type contractControllerSignAmendmentBoardResponse = (contractControllerSignAmendmentBoardResponseSuccess)
 
 export const getContractControllerSignAmendmentBoardUrl = ({ contractId, id }: ContractControllerSignAmendmentBoardPathParameters,) => {
 
@@ -1371,25 +1067,13 @@ export type contractControllerRejectAmendmentResponse200 = {
   data: AmendmentResDtoOutput
   status: 200
 }
-
-export type contractControllerRejectAmendmentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerRejectAmendmentResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerRejectAmendmentResponseSuccess = (contractControllerRejectAmendmentResponse200) & {
   headers: Headers;
 };
-export type contractControllerRejectAmendmentResponseError = (contractControllerRejectAmendmentResponse403 | contractControllerRejectAmendmentResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerRejectAmendmentResponse = (contractControllerRejectAmendmentResponseSuccess | contractControllerRejectAmendmentResponseError)
+export type contractControllerRejectAmendmentResponse = (contractControllerRejectAmendmentResponseSuccess)
 
 export const getContractControllerRejectAmendmentUrl = ({ contractId, id }: ContractControllerRejectAmendmentPathParameters,) => {
 
@@ -1420,30 +1104,13 @@ export type contractControllerVoidAmendmentResponse200 = {
   data: AmendmentResDtoOutput
   status: 200
 }
-
-export type contractControllerVoidAmendmentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type contractControllerVoidAmendmentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type contractControllerVoidAmendmentResponse409 = {
-  data: void
-  status: 409
-}
     
 export type contractControllerVoidAmendmentResponseSuccess = (contractControllerVoidAmendmentResponse200) & {
   headers: Headers;
 };
-export type contractControllerVoidAmendmentResponseError = (contractControllerVoidAmendmentResponse403 | contractControllerVoidAmendmentResponse404 | contractControllerVoidAmendmentResponse409) & {
-  headers: Headers;
-};
+;
 
-export type contractControllerVoidAmendmentResponse = (contractControllerVoidAmendmentResponseSuccess | contractControllerVoidAmendmentResponseError)
+export type contractControllerVoidAmendmentResponse = (contractControllerVoidAmendmentResponseSuccess)
 
 export const getContractControllerVoidAmendmentUrl = ({ contractId, id }: ContractControllerVoidAmendmentPathParameters,) => {
 

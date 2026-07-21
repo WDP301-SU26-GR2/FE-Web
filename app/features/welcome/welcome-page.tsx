@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
 import { WelcomeHeader } from './components/welcome-header'
+import { BrandLogo } from '~/shared/components/brand-logo'
 
 export function WelcomePage() {
   const { t } = useTranslation(['welcome', 'common'])
@@ -82,7 +83,8 @@ export function WelcomePage() {
         <div className='mx-auto flex max-w-7xl items-center justify-between px-6 py-4'>
           {/* Brand */}
           <div className='flex items-center gap-2'>
-            <span className='text-lg font-bold text-foreground dark:text-white'>{t('appName')}</span>
+            <BrandLogo className='h-7 w-7 rounded-md' />
+            <span className='text-lg font-bold text-foreground'>{t('appName')}</span>
             <span className='text-sm text-muted-foreground dark:text-white/40'>{t('layout.brandPro')}</span>
           </div>
 

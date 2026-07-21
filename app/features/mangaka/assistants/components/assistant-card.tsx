@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { Star, Sparkles, CheckCircle2, Calendar, UserPlus } from 'lucide-react'
+import { Star, Sparkles, CheckCircle2, UserPlus } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
+import { SignedImage } from '~/shared/components/signed-image'
 import { Button } from '~/shared/ui'
 import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 
@@ -74,15 +75,24 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
   return (
     <article className='flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md'>
       <header className='flex items-start gap-3'>
-        <div
-          className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
-            pickGradient(fallbackSeed)
-          )}
-          aria-hidden='true'
-        >
-          {getInitials(assistant.displayName, assistant.userId)}
-        </div>
+        {assistant.avatar ? (
+          <SignedImage
+            r2Key={assistant.avatar}
+            alt={assistant.displayName ?? t('assistantDirectory.card.unnamedAssistant')}
+            aspectClassName='aspect-square'
+            className='h-12 w-12 shrink-0 rounded-full shadow-sm'
+          />
+        ) : (
+          <div
+            className={cn(
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
+              pickGradient(fallbackSeed)
+            )}
+            aria-hidden='true'
+          >
+            {getInitials(assistant.displayName, assistant.userId)}
+          </div>
+        )}
         <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-1.5'>
             <h3 className='truncate text-sm font-bold text-foreground'>
@@ -145,8 +155,7 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
       )}
 
       {(assistant.availabilityFrom || assistant.availabilityTo) && (
-        <div className='flex items-center gap-1 text-[11px] text-muted-foreground'>
-          <Calendar className='h-3 w-3' />
+        <div className='text-[11px] text-muted-foreground'>
           <span>
             {t('assistantDirectory.card.availableWindow', {
               from: formatDate(assistant.availabilityFrom, locale),

@@ -8,6 +8,19 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type ManuscriptAction = 'submit' | 'resubmit'
 
+/**
+ * Manuscript actions for the Mangaka workbench.
+ *
+ * Per FE-API-Guide-v3 §5:
+ *   - `submit`    → POST /chapters/{id}/manuscript/submit
+ *                   Manuscript moves IN_PRODUCTION/DRAFT → EDITOR_REVIEW
+ *   - `resubmit`  → POST /chapters/{id}/manuscript/resubmit
+ *                   EDITOR_REVISION → EDITOR_REVIEW (sau khi sửa theo yêu cầu)
+ *
+ * NOTE: Ở spec v3, endpoint `markCompositeReady` đã bị xoá (BE cũ có
+ * COMPOSITE_REVIEW trung gian). Flow mới đi thẳng từ IN_PRODUCTION sang
+ * EDITOR_REVIEW khi tất cả pages đã COMPLETED.
+ */
 export function useManuscriptActions() {
   const { t } = useTranslation('mangaka')
   const [activeAction, setActiveAction] = useState<ManuscriptAction | null>(null)

@@ -25,6 +25,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { ContractResDtoOutputSeries } from './contractResDtoOutputSeries';
 import type { ContractResDtoOutputMangaka } from './contractResDtoOutputMangaka';
 import type { ContractResDtoOutputEditor } from './contractResDtoOutputEditor';
+import type { ContractResDtoOutputBoardDecision } from './contractResDtoOutputBoardDecision';
 import type { ContractResDtoOutputContractType } from './contractResDtoOutputContractType';
 import type { ContractResDtoOutputStatus } from './contractResDtoOutputStatus';
 
@@ -45,6 +46,11 @@ export interface ContractResDtoOutput {
   editor?: ContractResDtoOutputEditor;
   /** @nullable */
   boardDecisionId: string | null;
+  /**
+   * Căn cứ Board Decision và phiên họp nguồn; có ở GET list/detail
+   * @nullable
+   */
+  boardDecision?: ContractResDtoOutputBoardDecision;
   /** @nullable */
   sourceTransferRequestId?: string | null;
   /** Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE */

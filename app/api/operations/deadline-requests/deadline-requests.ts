@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -46,30 +48,13 @@ export type deadlineControllerCreateResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerCreateResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerCreateResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerCreateResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerCreateResponseSuccess = (deadlineControllerCreateResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerCreateResponseError = (deadlineControllerCreateResponse403 | deadlineControllerCreateResponse404 | deadlineControllerCreateResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerCreateResponse = (deadlineControllerCreateResponseSuccess | deadlineControllerCreateResponseError)
+export type deadlineControllerCreateResponse = (deadlineControllerCreateResponseSuccess)
 
 export const getDeadlineControllerCreateUrl = () => {
 
@@ -99,25 +84,13 @@ export type deadlineControllerListResponse200 = {
   data: DeadlineRequestListResDtoOutput
   status: 200
 }
-
-export type deadlineControllerListResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerListResponse404 = {
-  data: void
-  status: 404
-}
     
 export type deadlineControllerListResponseSuccess = (deadlineControllerListResponse200) & {
   headers: Headers;
 };
-export type deadlineControllerListResponseError = (deadlineControllerListResponse403 | deadlineControllerListResponse404) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerListResponse = (deadlineControllerListResponseSuccess | deadlineControllerListResponseError)
+export type deadlineControllerListResponse = (deadlineControllerListResponseSuccess)
 
 export const getDeadlineControllerListUrl = (params: DeadlineControllerListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -153,30 +126,13 @@ export type deadlineControllerCounterResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerCounterResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerCounterResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerCounterResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerCounterResponseSuccess = (deadlineControllerCounterResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerCounterResponseError = (deadlineControllerCounterResponse403 | deadlineControllerCounterResponse404 | deadlineControllerCounterResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerCounterResponse = (deadlineControllerCounterResponseSuccess | deadlineControllerCounterResponseError)
+export type deadlineControllerCounterResponse = (deadlineControllerCounterResponseSuccess)
 
 export const getDeadlineControllerCounterUrl = ({ id }: DeadlineControllerCounterPathParameters,) => {
 
@@ -207,30 +163,13 @@ export type deadlineControllerAgreeResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerAgreeResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerAgreeResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerAgreeResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerAgreeResponseSuccess = (deadlineControllerAgreeResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerAgreeResponseError = (deadlineControllerAgreeResponse403 | deadlineControllerAgreeResponse404 | deadlineControllerAgreeResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerAgreeResponse = (deadlineControllerAgreeResponseSuccess | deadlineControllerAgreeResponseError)
+export type deadlineControllerAgreeResponse = (deadlineControllerAgreeResponseSuccess)
 
 export const getDeadlineControllerAgreeUrl = ({ id }: DeadlineControllerAgreePathParameters,) => {
 
@@ -259,30 +198,13 @@ export type deadlineControllerRejectResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerRejectResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerRejectResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerRejectResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerRejectResponseSuccess = (deadlineControllerRejectResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerRejectResponseError = (deadlineControllerRejectResponse403 | deadlineControllerRejectResponse404 | deadlineControllerRejectResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerRejectResponse = (deadlineControllerRejectResponseSuccess | deadlineControllerRejectResponseError)
+export type deadlineControllerRejectResponse = (deadlineControllerRejectResponseSuccess)
 
 export const getDeadlineControllerRejectUrl = ({ id }: DeadlineControllerRejectPathParameters,) => {
 
@@ -313,30 +235,13 @@ export type deadlineControllerWithdrawResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerWithdrawResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerWithdrawResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerWithdrawResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerWithdrawResponseSuccess = (deadlineControllerWithdrawResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerWithdrawResponseError = (deadlineControllerWithdrawResponse403 | deadlineControllerWithdrawResponse404 | deadlineControllerWithdrawResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerWithdrawResponse = (deadlineControllerWithdrawResponseSuccess | deadlineControllerWithdrawResponseError)
+export type deadlineControllerWithdrawResponse = (deadlineControllerWithdrawResponseSuccess)
 
 export const getDeadlineControllerWithdrawUrl = ({ id }: DeadlineControllerWithdrawPathParameters,) => {
 
@@ -365,30 +270,13 @@ export type deadlineControllerFinalizeResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerFinalizeResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerFinalizeResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerFinalizeResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerFinalizeResponseSuccess = (deadlineControllerFinalizeResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerFinalizeResponseError = (deadlineControllerFinalizeResponse403 | deadlineControllerFinalizeResponse404 | deadlineControllerFinalizeResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerFinalizeResponse = (deadlineControllerFinalizeResponseSuccess | deadlineControllerFinalizeResponseError)
+export type deadlineControllerFinalizeResponse = (deadlineControllerFinalizeResponseSuccess)
 
 export const getDeadlineControllerFinalizeUrl = ({ id }: DeadlineControllerFinalizePathParameters,) => {
 
@@ -417,25 +305,13 @@ export type deadlineControllerBoardResolveResponse201 = {
   data: DeadlineRequestResDtoOutput
   status: 201
 }
-
-export type deadlineControllerBoardResolveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deadlineControllerBoardResolveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type deadlineControllerBoardResolveResponseSuccess = (deadlineControllerBoardResolveResponse201) & {
   headers: Headers;
 };
-export type deadlineControllerBoardResolveResponseError = (deadlineControllerBoardResolveResponse404 | deadlineControllerBoardResolveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerBoardResolveResponse = (deadlineControllerBoardResolveResponseSuccess | deadlineControllerBoardResolveResponseError)
+export type deadlineControllerBoardResolveResponse = (deadlineControllerBoardResolveResponseSuccess)
 
 export const getDeadlineControllerBoardResolveUrl = ({ id }: DeadlineControllerBoardResolvePathParameters,) => {
 
@@ -466,25 +342,13 @@ export type deadlineControllerGetOneResponse200 = {
   data: DeadlineRequestResDtoOutput
   status: 200
 }
-
-export type deadlineControllerGetOneResponse403 = {
-  data: void
-  status: 403
-}
-
-export type deadlineControllerGetOneResponse404 = {
-  data: void
-  status: 404
-}
     
 export type deadlineControllerGetOneResponseSuccess = (deadlineControllerGetOneResponse200) & {
   headers: Headers;
 };
-export type deadlineControllerGetOneResponseError = (deadlineControllerGetOneResponse403 | deadlineControllerGetOneResponse404) & {
-  headers: Headers;
-};
+;
 
-export type deadlineControllerGetOneResponse = (deadlineControllerGetOneResponseSuccess | deadlineControllerGetOneResponseError)
+export type deadlineControllerGetOneResponse = (deadlineControllerGetOneResponseSuccess)
 
 export const getDeadlineControllerGetOneUrl = ({ id }: DeadlineControllerGetOnePathParameters,) => {
 

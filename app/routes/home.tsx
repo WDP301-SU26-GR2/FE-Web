@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { WelcomePage } from '~/features/welcome'
 import { ROLE_DASHBOARD_PATH } from '~/shared/components'
+import { BrandLogo } from '~/shared/components/brand-logo'
+import { SITE } from '~/shared/config/site'
 
 import type { Route } from './+types/home'
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: 'Mangaka' }, { name: 'description', content: 'Welcome to Mangaka' }]
+  return [{ title: SITE.name }, { name: 'description', content: SITE.description }]
 }
 
 function SplashScreen() {
@@ -18,8 +20,10 @@ function SplashScreen() {
   return (
     <main className='flex min-h-screen items-center justify-center bg-background'>
       <div className='flex flex-col items-center gap-4'>
-        {/* Logo / App name */}
-        <h1 className='text-3xl font-bold tracking-tight text-foreground'>{t('appName')}</h1>
+        <div className='flex items-center gap-3'>
+          <BrandLogo className='h-12 w-12 rounded-xl' />
+          <h1 className='text-3xl font-bold tracking-tight text-foreground'>{t('appName')}</h1>
+        </div>
 
         {/* Animated spinner */}
         <div className='relative h-10 w-10'>

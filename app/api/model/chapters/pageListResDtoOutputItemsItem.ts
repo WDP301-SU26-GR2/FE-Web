@@ -38,8 +38,11 @@ export type PageListResDtoOutputItemsItem = {
    * @nullable
    */
   compositeFile: string | null;
-  /** Ảnh nên hiển thị: compositeFile nếu có, nếu không dùng originalFile. */
-  displayFile?: string | null;
+  /**
+   * Ảnh nên HIỂN THỊ = compositeFile ?? originalFile. FE dùng field này để render, khỏi tự fallback
+   * @nullable
+   */
+  displayFile: string | null;
   /** DRAFT: Đang làm — Mangaka vẽ / giao task cho Assistant. Sửa được. | COMPLETED: Đã nộp, đang ở tay Editor. KHÔNG sửa được. | REVISING: Editor (hoặc co-owner) yêu cầu sửa — mở khoá sửa lại.. Values: DRAFT, COMPLETED, REVISING */
   status: PageListResDtoOutputItemsItemStatus;
   createdAt: string;

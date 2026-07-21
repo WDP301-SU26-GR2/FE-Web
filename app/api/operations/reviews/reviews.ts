@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -38,25 +40,13 @@ export type reviewsControllerCreateAssistantReviewResponse201 = {
   data: ReviewResDtoOutput
   status: 201
 }
-
-export type reviewsControllerCreateAssistantReviewResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reviewsControllerCreateAssistantReviewResponse422 = {
-  data: void
-  status: 422
-}
     
 export type reviewsControllerCreateAssistantReviewResponseSuccess = (reviewsControllerCreateAssistantReviewResponse201) & {
   headers: Headers;
 };
-export type reviewsControllerCreateAssistantReviewResponseError = (reviewsControllerCreateAssistantReviewResponse404 | reviewsControllerCreateAssistantReviewResponse422) & {
-  headers: Headers;
-};
+;
 
-export type reviewsControllerCreateAssistantReviewResponse = (reviewsControllerCreateAssistantReviewResponseSuccess | reviewsControllerCreateAssistantReviewResponseError)
+export type reviewsControllerCreateAssistantReviewResponse = (reviewsControllerCreateAssistantReviewResponseSuccess)
 
 export const getReviewsControllerCreateAssistantReviewUrl = () => {
 
@@ -128,25 +118,13 @@ export type reviewsControllerCreateMangakaReviewResponse201 = {
   data: ReviewResDtoOutput
   status: 201
 }
-
-export type reviewsControllerCreateMangakaReviewResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reviewsControllerCreateMangakaReviewResponse422 = {
-  data: void
-  status: 422
-}
     
 export type reviewsControllerCreateMangakaReviewResponseSuccess = (reviewsControllerCreateMangakaReviewResponse201) & {
   headers: Headers;
 };
-export type reviewsControllerCreateMangakaReviewResponseError = (reviewsControllerCreateMangakaReviewResponse404 | reviewsControllerCreateMangakaReviewResponse422) & {
-  headers: Headers;
-};
+;
 
-export type reviewsControllerCreateMangakaReviewResponse = (reviewsControllerCreateMangakaReviewResponseSuccess | reviewsControllerCreateMangakaReviewResponseError)
+export type reviewsControllerCreateMangakaReviewResponse = (reviewsControllerCreateMangakaReviewResponseSuccess)
 
 export const getReviewsControllerCreateMangakaReviewUrl = () => {
 

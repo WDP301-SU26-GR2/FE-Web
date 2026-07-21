@@ -27,6 +27,8 @@ import type {
   ChapterControllerCoOwnerApprovePathParameters,
   ChapterControllerCoOwnerRejectPathParameters,
   ChapterControllerCreatePagePathParameters,
+  ChapterControllerDeletePagePathParameters,
+  ChapterControllerDeletePagesBulkPathParameters,
   ChapterControllerExtendPathParameters,
   ChapterControllerGetOnePathParameters,
   ChapterControllerHoldPathParameters,
@@ -47,6 +49,9 @@ import type {
   ChapterResDtoOutput,
   CreateChapterBodyDto,
   CreatePageBodyDto,
+  DeletePageResDtoOutput,
+  DeletePagesBulkBodyDto,
+  DeletePagesBulkResDtoOutput,
   ExtendDeadlineBodyDto,
   HoldChapterBodyDto,
   MessageResDtoOutput,
@@ -465,7 +470,7 @@ export const chapterControllerCreatePage = async ({ id }: ChapterControllerCreat
 
 
 /**
- * @summary List trang của chapter
+ * @summary List trang của chapter (scoped: chủ sở hữu / editor phụ trách / trợ lý đang cộng tác)
  */
 export type chapterControllerListPagesResponse200 = {
   data: PageListResDtoOutput
@@ -500,7 +505,44 @@ export const chapterControllerListPages = async ({ id }: ChapterControllerListPa
 
 
 /**
- * @summary Mangaka cập nhật file trang; trạng thái do backend lifecycle quản lý
+ * @summary Mangaka xoá nhiều trang trong 1 chapter (all-or-nothing, tối đa 50)
+ */
+export type chapterControllerDeletePagesBulkResponse200 = {
+  data: DeletePagesBulkResDtoOutput
+  status: 200
+}
+    
+export type chapterControllerDeletePagesBulkResponseSuccess = (chapterControllerDeletePagesBulkResponse200) & {
+  headers: Headers;
+};
+;
+
+export type chapterControllerDeletePagesBulkResponse = (chapterControllerDeletePagesBulkResponseSuccess)
+
+export const getChapterControllerDeletePagesBulkUrl = ({ id }: ChapterControllerDeletePagesBulkPathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}/pages`
+}
+
+export const chapterControllerDeletePagesBulk = async ({ id }: ChapterControllerDeletePagesBulkPathParameters,
+    deletePagesBulkBodyDto: DeletePagesBulkBodyDto, options?: RequestInit): Promise<chapterControllerDeletePagesBulkResponse> => {
+  
+  return customFetch<chapterControllerDeletePagesBulkResponse>(getChapterControllerDeletePagesBulkUrl({ id }),
+  {      
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      deletePagesBulkBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Mangaka cập nhật file gốc/composite/số trang; trạng thái do backend lifecycle quản lý
  */
 export type chapterControllerUpdatePageResponse200 = {
   data: PageResDtoOutput
@@ -532,6 +574,41 @@ export const chapterControllerUpdatePage = async ({ pageId }: ChapterControllerU
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updatePageBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Mangaka xoá trang — cascade xoá Region + Task của trang (chặn khi trang đã COMPLETED)
+ */
+export type chapterControllerDeletePageResponse200 = {
+  data: DeletePageResDtoOutput
+  status: 200
+}
+    
+export type chapterControllerDeletePageResponseSuccess = (chapterControllerDeletePageResponse200) & {
+  headers: Headers;
+};
+;
+
+export type chapterControllerDeletePageResponse = (chapterControllerDeletePageResponseSuccess)
+
+export const getChapterControllerDeletePageUrl = ({ pageId }: ChapterControllerDeletePagePathParameters,) => {
+
+
+  
+
+  return `/pages/${pageId}`
+}
+
+export const chapterControllerDeletePage = async ({ pageId }: ChapterControllerDeletePagePathParameters, options?: RequestInit): Promise<chapterControllerDeletePageResponse> => {
+  
+  return customFetch<chapterControllerDeletePageResponse>(getChapterControllerDeletePageUrl({ pageId }),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 

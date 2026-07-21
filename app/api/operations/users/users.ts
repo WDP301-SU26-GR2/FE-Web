@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -62,11 +64,6 @@ export type usersControllerCreateUserResponse201 = {
   status: 201
 }
 
-export type usersControllerCreateUserResponse409 = {
-  data: void
-  status: 409
-}
-
 export type usersControllerCreateUserResponse422 = {
   data: void
   status: 422
@@ -75,7 +72,7 @@ export type usersControllerCreateUserResponse422 = {
 export type usersControllerCreateUserResponseSuccess = (usersControllerCreateUserResponse201) & {
   headers: Headers;
 };
-export type usersControllerCreateUserResponseError = (usersControllerCreateUserResponse409 | usersControllerCreateUserResponse422) & {
+export type usersControllerCreateUserResponseError = (usersControllerCreateUserResponse422) & {
   headers: Headers;
 };
 
@@ -151,20 +148,13 @@ export type usersControllerGetUserResponse200 = {
   data: AdminUserResDtoOutput
   status: 200
 }
-
-export type usersControllerGetUserResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetUserResponseSuccess = (usersControllerGetUserResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetUserResponseError = (usersControllerGetUserResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetUserResponse = (usersControllerGetUserResponseSuccess | usersControllerGetUserResponseError)
+export type usersControllerGetUserResponse = (usersControllerGetUserResponseSuccess)
 
 export const getUsersControllerGetUserUrl = ({ id }: UsersControllerGetUserPathParameters,) => {
 
@@ -193,30 +183,13 @@ export type usersControllerDeleteUserResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type usersControllerDeleteUserResponse404 = {
-  data: void
-  status: 404
-}
-
-export type usersControllerDeleteUserResponse409 = {
-  data: void
-  status: 409
-}
-
-export type usersControllerDeleteUserResponse422 = {
-  data: void
-  status: 422
-}
     
 export type usersControllerDeleteUserResponseSuccess = (usersControllerDeleteUserResponse200) & {
   headers: Headers;
 };
-export type usersControllerDeleteUserResponseError = (usersControllerDeleteUserResponse404 | usersControllerDeleteUserResponse409 | usersControllerDeleteUserResponse422) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerDeleteUserResponse = (usersControllerDeleteUserResponseSuccess | usersControllerDeleteUserResponseError)
+export type usersControllerDeleteUserResponse = (usersControllerDeleteUserResponseSuccess)
 
 export const getUsersControllerDeleteUserUrl = ({ id }: UsersControllerDeleteUserPathParameters,) => {
 
@@ -245,25 +218,13 @@ export type usersControllerUpdateUserStatusResponse200 = {
   data: AdminUserResDtoOutput
   status: 200
 }
-
-export type usersControllerUpdateUserStatusResponse404 = {
-  data: void
-  status: 404
-}
-
-export type usersControllerUpdateUserStatusResponse422 = {
-  data: void
-  status: 422
-}
     
 export type usersControllerUpdateUserStatusResponseSuccess = (usersControllerUpdateUserStatusResponse200) & {
   headers: Headers;
 };
-export type usersControllerUpdateUserStatusResponseError = (usersControllerUpdateUserStatusResponse404 | usersControllerUpdateUserStatusResponse422) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerUpdateUserStatusResponse = (usersControllerUpdateUserStatusResponseSuccess | usersControllerUpdateUserStatusResponseError)
+export type usersControllerUpdateUserStatusResponse = (usersControllerUpdateUserStatusResponseSuccess)
 
 export const getUsersControllerUpdateUserStatusUrl = ({ id }: UsersControllerUpdateUserStatusPathParameters,) => {
 
@@ -294,30 +255,13 @@ export type usersControllerRestoreUserResponse201 = {
   data: AdminUserResDtoOutput
   status: 201
 }
-
-export type usersControllerRestoreUserResponse404 = {
-  data: void
-  status: 404
-}
-
-export type usersControllerRestoreUserResponse409 = {
-  data: void
-  status: 409
-}
-
-export type usersControllerRestoreUserResponse422 = {
-  data: void
-  status: 422
-}
     
 export type usersControllerRestoreUserResponseSuccess = (usersControllerRestoreUserResponse201) & {
   headers: Headers;
 };
-export type usersControllerRestoreUserResponseError = (usersControllerRestoreUserResponse404 | usersControllerRestoreUserResponse409 | usersControllerRestoreUserResponse422) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerRestoreUserResponse = (usersControllerRestoreUserResponseSuccess | usersControllerRestoreUserResponseError)
+export type usersControllerRestoreUserResponse = (usersControllerRestoreUserResponseSuccess)
 
 export const getUsersControllerRestoreUserUrl = ({ id }: UsersControllerRestoreUserPathParameters,) => {
 
@@ -346,25 +290,13 @@ export type usersControllerResetUserPasswordResponse201 = {
   data: AdminResetPasswordResDtoOutput
   status: 201
 }
-
-export type usersControllerResetUserPasswordResponse404 = {
-  data: void
-  status: 404
-}
-
-export type usersControllerResetUserPasswordResponse422 = {
-  data: void
-  status: 422
-}
     
 export type usersControllerResetUserPasswordResponseSuccess = (usersControllerResetUserPasswordResponse201) & {
   headers: Headers;
 };
-export type usersControllerResetUserPasswordResponseError = (usersControllerResetUserPasswordResponse404 | usersControllerResetUserPasswordResponse422) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerResetUserPasswordResponse = (usersControllerResetUserPasswordResponseSuccess | usersControllerResetUserPasswordResponseError)
+export type usersControllerResetUserPasswordResponse = (usersControllerResetUserPasswordResponseSuccess)
 
 export const getUsersControllerResetUserPasswordUrl = ({ id }: UsersControllerResetUserPasswordPathParameters,) => {
 
@@ -428,20 +360,13 @@ export type usersControllerGetMeResponse200 = {
   data: MeResDtoOutput
   status: 200
 }
-
-export type usersControllerGetMeResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetMeResponseSuccess = (usersControllerGetMeResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetMeResponseError = (usersControllerGetMeResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetMeResponse = (usersControllerGetMeResponseSuccess | usersControllerGetMeResponseError)
+export type usersControllerGetMeResponse = (usersControllerGetMeResponseSuccess)
 
 export const getUsersControllerGetMeUrl = () => {
 
@@ -471,11 +396,6 @@ export type usersControllerUpdateMeResponse200 = {
   status: 200
 }
 
-export type usersControllerUpdateMeResponse404 = {
-  data: void
-  status: 404
-}
-
 export type usersControllerUpdateMeResponse422 = {
   data: void
   status: 422
@@ -484,7 +404,7 @@ export type usersControllerUpdateMeResponse422 = {
 export type usersControllerUpdateMeResponseSuccess = (usersControllerUpdateMeResponse200) & {
   headers: Headers;
 };
-export type usersControllerUpdateMeResponseError = (usersControllerUpdateMeResponse404 | usersControllerUpdateMeResponse422) & {
+export type usersControllerUpdateMeResponseError = (usersControllerUpdateMeResponse422) & {
   headers: Headers;
 };
 
@@ -561,20 +481,13 @@ export type usersControllerGetMyMangakaProfileResponse200 = {
   data: MangakaProfileResDtoOutput
   status: 200
 }
-
-export type usersControllerGetMyMangakaProfileResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetMyMangakaProfileResponseSuccess = (usersControllerGetMyMangakaProfileResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetMyMangakaProfileResponseError = (usersControllerGetMyMangakaProfileResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetMyMangakaProfileResponse = (usersControllerGetMyMangakaProfileResponseSuccess | usersControllerGetMyMangakaProfileResponseError)
+export type usersControllerGetMyMangakaProfileResponse = (usersControllerGetMyMangakaProfileResponseSuccess)
 
 export const getUsersControllerGetMyMangakaProfileUrl = () => {
 
@@ -646,20 +559,13 @@ export type usersControllerGetMyAssistantProfileResponse200 = {
   data: AssistantProfileResDtoOutput
   status: 200
 }
-
-export type usersControllerGetMyAssistantProfileResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetMyAssistantProfileResponseSuccess = (usersControllerGetMyAssistantProfileResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetMyAssistantProfileResponseError = (usersControllerGetMyAssistantProfileResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetMyAssistantProfileResponse = (usersControllerGetMyAssistantProfileResponseSuccess | usersControllerGetMyAssistantProfileResponseError)
+export type usersControllerGetMyAssistantProfileResponse = (usersControllerGetMyAssistantProfileResponseSuccess)
 
 export const getUsersControllerGetMyAssistantProfileUrl = () => {
 
@@ -730,20 +636,13 @@ export type usersControllerGetMangakaProfileResponse200 = {
   data: MangakaProfileResDtoOutput
   status: 200
 }
-
-export type usersControllerGetMangakaProfileResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetMangakaProfileResponseSuccess = (usersControllerGetMangakaProfileResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetMangakaProfileResponseError = (usersControllerGetMangakaProfileResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetMangakaProfileResponse = (usersControllerGetMangakaProfileResponseSuccess | usersControllerGetMangakaProfileResponseError)
+export type usersControllerGetMangakaProfileResponse = (usersControllerGetMangakaProfileResponseSuccess)
 
 export const getUsersControllerGetMangakaProfileUrl = ({ userId }: UsersControllerGetMangakaProfilePathParameters,) => {
 
@@ -814,20 +713,13 @@ export type usersControllerGetAssistantProfileResponse200 = {
   data: AssistantProfileResDtoOutput
   status: 200
 }
-
-export type usersControllerGetAssistantProfileResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetAssistantProfileResponseSuccess = (usersControllerGetAssistantProfileResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetAssistantProfileResponseError = (usersControllerGetAssistantProfileResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetAssistantProfileResponse = (usersControllerGetAssistantProfileResponseSuccess | usersControllerGetAssistantProfileResponseError)
+export type usersControllerGetAssistantProfileResponse = (usersControllerGetAssistantProfileResponseSuccess)
 
 export const getUsersControllerGetAssistantProfileUrl = ({ userId }: UsersControllerGetAssistantProfilePathParameters,) => {
 
@@ -899,20 +791,13 @@ export type usersControllerGetMyStaffProfileResponse200 = {
   data: StaffProfileResDtoOutput
   status: 200
 }
-
-export type usersControllerGetMyStaffProfileResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetMyStaffProfileResponseSuccess = (usersControllerGetMyStaffProfileResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetMyStaffProfileResponseError = (usersControllerGetMyStaffProfileResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetMyStaffProfileResponse = (usersControllerGetMyStaffProfileResponseSuccess | usersControllerGetMyStaffProfileResponseError)
+export type usersControllerGetMyStaffProfileResponse = (usersControllerGetMyStaffProfileResponseSuccess)
 
 export const getUsersControllerGetMyStaffProfileUrl = () => {
 
@@ -941,20 +826,13 @@ export type usersControllerGetStaffProfileResponse200 = {
   data: StaffProfileResDtoOutput
   status: 200
 }
-
-export type usersControllerGetStaffProfileResponse404 = {
-  data: void
-  status: 404
-}
     
 export type usersControllerGetStaffProfileResponseSuccess = (usersControllerGetStaffProfileResponse200) & {
   headers: Headers;
 };
-export type usersControllerGetStaffProfileResponseError = (usersControllerGetStaffProfileResponse404) & {
-  headers: Headers;
-};
+;
 
-export type usersControllerGetStaffProfileResponse = (usersControllerGetStaffProfileResponseSuccess | usersControllerGetStaffProfileResponseError)
+export type usersControllerGetStaffProfileResponse = (usersControllerGetStaffProfileResponseSuccess)
 
 export const getUsersControllerGetStaffProfileUrl = ({ userId }: UsersControllerGetStaffProfilePathParameters,) => {
 

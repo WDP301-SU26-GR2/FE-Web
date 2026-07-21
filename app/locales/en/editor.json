@@ -243,7 +243,7 @@
     },
     "workflowDescription": {
       "DRAFT": "The Mangaka must complete and submit the chapter Name before page production begins.",
-      "IN_PRODUCTION": "Pages and tasks are in progress; monitor production and deadline risk.",
+      "IN_PRODUCTION": "Pages and tasks are in progress; monitor production and deadline risk. Once every page is COMPLETED, the Mangaka submits the manuscript for your review.",
       "EDITOR_REVIEW": "Inspect the composites, request focused revisions, or approve the manuscript.",
       "EDITOR_REVISION": "A revision request was sent; wait for the Mangaka to update and resubmit.",
       "READY_FOR_PRINT": "The manuscript is approved; verify the contract before publication.",

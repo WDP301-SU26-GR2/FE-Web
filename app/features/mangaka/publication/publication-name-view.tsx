@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookPlus, CalendarClock, CheckCircle2, Clock, FileCheck2, Loader2, Pencil, Send, Trash2 } from 'lucide-react'
+import { BookPlus, FileCheck2, Loader2, Pencil, Send, Trash2 } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
+import { Button } from '~/shared/ui'
+import { Dialog } from '~/shared/ui/dialog'
 import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
 
 import { usePublicationContext } from './publication-shell-context'
@@ -38,6 +40,7 @@ export function PublicationNameView() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [lightbox, setLightbox] = useState<{ key: string; alt: string } | null>(null)
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
 
   // Reuse the legacy action hooks (already wire to the BE).
   const { createName, isCreating } = useCreateName()
@@ -93,9 +96,11 @@ export function PublicationNameView() {
 
   const onRemove = async () => {
     if (!chapterId || !nameId) return
-    if (!window.confirm(t('publication.nameSection.remove.confirm'))) return
     const removed = await remove({ chapterId, nameId })
-    if (removed) refreshAll()
+    if (removed) {
+      refreshAll()
+      setRemoveConfirmOpen(false)
+    }
   }
 
   return (
@@ -107,7 +112,7 @@ export function PublicationNameView() {
         onEdit={() => setEditOpen(true)}
         onSubmit={onSubmit}
         onResubmit={onResubmit}
-        onRemove={onRemove}
+        onRemove={async () => setRemoveConfirmOpen(true)}
         activeAction={activeAction}
         isResubmitting={isResubmitting}
         canCreate={canCreate}
@@ -147,6 +152,16 @@ export function PublicationNameView() {
       {lightbox && (
         <ImageLightbox r2Key={lightbox.key} alt={lightbox.alt} open={!!lightbox} onClose={() => setLightbox(null)} />
       )}
+      <Dialog
+        open={removeConfirmOpen}
+        onClose={() => setRemoveConfirmOpen(false)}
+        titleId='remove-name-title'
+        title={t('publication.nameSection.removeButton')}
+        description={t('publication.nameSection.remove.confirm')}
+        footer={<div className='flex justify-end gap-2'><Button variant='ghost' size='sm' onClick={() => setRemoveConfirmOpen(false)}>{t('studio.popup.close')}</Button><Button variant='destructive' size='sm' onClick={() => void onRemove()} disabled={activeAction === 'remove'}>{t('publication.nameSection.removeButton')}</Button></div>}
+      >
+        <p className='text-sm text-muted-foreground'>{t('publication.nameSection.remove.confirm')}</p>
+      </Dialog>
     </section>
   )
 }
@@ -276,23 +291,19 @@ function DocumentHeader({
       {/* Metadata strip */}
       <dl className='grid grid-cols-2 gap-px bg-border sm:grid-cols-4'>
         <MetaItem
-          icon={<CheckCircle2 className='h-3.5 w-3.5' />}
           label={t('publication.name.version')}
           value={name ? t('publication.name.versionValue', { n: name.version }) : '—'}
         />
         <MetaItem
-          icon={<Clock className='h-3.5 w-3.5' />}
           label={t('publication.name.status')}
           value={name ? name.status : t('publication.name.notStarted')}
           tone={name ? name.status : 'DRAFT'}
         />
         <MetaItem
-          icon={<CalendarClock className='h-3.5 w-3.5' />}
           label={t('publication.name.deadline')}
           value={formatDate(deadline)}
         />
         <MetaItem
-          icon={<CalendarClock className='h-3.5 w-3.5' />}
           label={t('publication.name.submittedAt')}
           value={formatDate(submittedAt)}
         />
@@ -302,19 +313,16 @@ function DocumentHeader({
 }
 
 function MetaItem({
-  icon,
   label,
   value,
   tone
 }: {
-  icon: React.ReactNode
   label: string
   value: string
   tone?: string
 }) {
   return (
-    <div className='flex items-start gap-2 bg-card px-4 py-3'>
-      <span className='mt-0.5 text-muted-foreground'>{icon}</span>
+    <div className='min-w-0 border-l-2 border-primary/30 bg-card px-4 py-3'>
       <div className='min-w-0'>
         <dt className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>{label}</dt>
         <dd className='mt-0.5 truncate text-sm font-semibold text-foreground'>

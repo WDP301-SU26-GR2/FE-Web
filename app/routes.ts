@@ -35,6 +35,7 @@ export default [
       route('transfers', 'routes/mangaka/transfers.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
+      route('rankings', 'routes/mangaka/rankings.tsx'),
       route('notifications', 'routes/mangaka/notifications.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')
     ])

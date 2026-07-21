@@ -39,6 +39,8 @@ import type {
   ChapterListResDtoOutput,
   ChapterProgressResDtoOutput,
   ChapterResDtoOutput,
+  DeletePageResDtoOutput,
+  DeletePagesBulkResDtoOutput,
   MessageResDtoOutput,
   PageListResDtoOutput,
   PageResDtoOutput
@@ -65,11 +67,15 @@ export const getChapterControllerHoldResponseMock = (overrideResponse: Partial< 
 
 export const getChapterControllerResumeResponseMock = (overrideResponse: Partial< ChapterResDtoOutput > = {}): ChapterResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), nameId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), chapterNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), title: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), totalPages: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), status: faker.helpers.arrayElement(['DRAFT','IN_PRODUCTION','COMPLETED','PUBLISHED'] as const), publishedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hold: {reason: faker.string.alpha({length: {min: 10, max: 20}}), expectedReturnDate: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), heldBy: faker.string.alpha({length: {min: 10, max: 20}}), heldAt: faker.string.alpha({length: {min: 10, max: 20}})}, manuscriptStatus: faker.helpers.arrayElement([faker.helpers.arrayElement(['DRAFT','IN_PRODUCTION','EDITOR_REVIEW','EDITOR_REVISION','READY_FOR_PRINT','AWAITING_CO_OWNER_APPROVAL','PUBLISHED'] as const), null]), schedule: {id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), originalDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), currentDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), extended: faker.datatype.boolean(), extensions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({extendedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), previousDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), newDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reason: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), extendedAt: faker.string.alpha({length: {min: 10, max: 20}})}))}, ...overrideResponse})
 
-export const getChapterControllerCreatePageResponseMock = (overrideResponse: Partial< PageResDtoOutput > = {}): PageResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), pageNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), originalFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), compositeFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','COMPLETED','REVISING'] as const), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+export const getChapterControllerCreatePageResponseMock = (overrideResponse: Partial< PageResDtoOutput > = {}): PageResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), pageNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), originalFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), compositeFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), displayFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','COMPLETED','REVISING'] as const), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getChapterControllerListPagesResponseMock = (overrideResponse: Partial< PageListResDtoOutput > = {}): PageListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), pageNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), originalFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), compositeFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','COMPLETED','REVISING'] as const), createdAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
+export const getChapterControllerListPagesResponseMock = (overrideResponse: Partial< PageListResDtoOutput > = {}): PageListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), pageNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), originalFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), compositeFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), displayFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','COMPLETED','REVISING'] as const), createdAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
 
-export const getChapterControllerUpdatePageResponseMock = (overrideResponse: Partial< PageResDtoOutput > = {}): PageResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), pageNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), originalFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), compositeFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','COMPLETED','REVISING'] as const), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+export const getChapterControllerDeletePagesBulkResponseMock = (overrideResponse: Partial< DeletePagesBulkResDtoOutput > = {}): DeletePagesBulkResDtoOutput => ({deletedPages: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), deletedRegions: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), deletedTasks: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ...overrideResponse})
+
+export const getChapterControllerUpdatePageResponseMock = (overrideResponse: Partial< PageResDtoOutput > = {}): PageResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), pageNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), originalFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), compositeFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), displayFile: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','COMPLETED','REVISING'] as const), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+
+export const getChapterControllerDeletePageResponseMock = (overrideResponse: Partial< DeletePageResDtoOutput > = {}): DeletePageResDtoOutput => ({pageId: faker.string.alpha({length: {min: 10, max: 20}}), deletedRegions: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), deletedTasks: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ...overrideResponse})
 
 export const getChapterControllerSubmitResponseMock = (overrideResponse: Partial< ChapterResDtoOutput > = {}): ChapterResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), nameId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), chapterNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), title: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), totalPages: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), null]), status: faker.helpers.arrayElement(['DRAFT','IN_PRODUCTION','COMPLETED','PUBLISHED'] as const), publishedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), hold: {reason: faker.string.alpha({length: {min: 10, max: 20}}), expectedReturnDate: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), heldBy: faker.string.alpha({length: {min: 10, max: 20}}), heldAt: faker.string.alpha({length: {min: 10, max: 20}})}, manuscriptStatus: faker.helpers.arrayElement([faker.helpers.arrayElement(['DRAFT','IN_PRODUCTION','EDITOR_REVIEW','EDITOR_REVISION','READY_FOR_PRINT','AWAITING_CO_OWNER_APPROVAL','PUBLISHED'] as const), null]), schedule: {id: faker.string.alpha({length: {min: 10, max: 20}}), chapterId: faker.string.alpha({length: {min: 10, max: 20}}), originalDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), currentDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), extended: faker.datatype.boolean(), extensions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({extendedBy: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), previousDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), newDeadline: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reason: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), extendedAt: faker.string.alpha({length: {min: 10, max: 20}})}))}, ...overrideResponse})
 
@@ -230,12 +236,36 @@ export const getChapterControllerListPagesMockHandler = (overrideResponse?: Page
   }, options)
 }
 
+export const getChapterControllerDeletePagesBulkMockHandler = (overrideResponse?: DeletePagesBulkResDtoOutput | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<DeletePagesBulkResDtoOutput> | DeletePagesBulkResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.delete('*/chapters/:id/pages', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getChapterControllerDeletePagesBulkResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getChapterControllerUpdatePageMockHandler = (overrideResponse?: PageResDtoOutput | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<PageResDtoOutput> | PageResDtoOutput), options?: RequestHandlerOptions) => {
   return http.patch('*/pages/:pageId', async (info) => {await delay(1000);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getChapterControllerUpdatePageResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getChapterControllerDeletePageMockHandler = (overrideResponse?: DeletePageResDtoOutput | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<DeletePageResDtoOutput> | DeletePageResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.delete('*/pages/:pageId', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getChapterControllerDeletePageResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -338,7 +368,9 @@ export const getChaptersMock = () => [
   getChapterControllerResumeMockHandler(),
   getChapterControllerCreatePageMockHandler(),
   getChapterControllerListPagesMockHandler(),
+  getChapterControllerDeletePagesBulkMockHandler(),
   getChapterControllerUpdatePageMockHandler(),
+  getChapterControllerDeletePageMockHandler(),
   getChapterControllerSubmitMockHandler(),
   getChapterControllerRequestRevisionMockHandler(),
   getChapterControllerResubmitMockHandler(),

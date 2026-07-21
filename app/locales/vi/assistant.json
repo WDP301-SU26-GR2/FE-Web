@@ -56,21 +56,53 @@
     },
     "card": {
       "taskType": "Loại công việc",
+      "taskTypeNone": "Chưa phân loại",
       "priority": "Độ ưu tiên",
       "deadline": "Deadline",
       "deadlineNone": "Không có deadline",
       "versions": "{{count}} bản nộp",
       "versions_other": "{{count}} bản nộp",
-      "pageIdLabel": "Page ID",
-      "statusReason": "Ghi chú",
-      "regionTitle": "Vùng cần xử lý",
-      "regionType": "Loại vùng",
-      "regionSize": "Kích thước",
-      "resultFile": "Tệp kết quả"
+      "pageLabel": "Trang #{{id}}",
+      "region": "Vùng được giao",
+      "regionAssigned": "Vùng #{{id}}",
+      "fullPage": "Toàn trang (không gắn vùng)",
+      "statusReason": "Ghi chú"
+    },
+    "dialog": {
+      "title": "Chi tiết nhiệm vụ",
+      "description": "Xem ảnh gốc từ Mangaka, bản đã nộp (nếu có), và tải file về máy.",
+      "loading": "Đang tải ảnh...",
+      "loadFailed": "Không tải được ảnh.",
+      "noOriginalFile": "Trang này chưa có file ảnh gốc.",
+      "pageUnavailable": "Không tìm thấy trang này trong các chương bạn đang tham gia.",
+      "imageAlt": "Trang {{n}}",
+      "image": {
+        "original": "Ảnh gốc (Mangaka giao)",
+        "submitted": "Bản đã nộp",
+        "noImage": "Chưa có ảnh"
+      },
+      "regionCount_one": "{{count}} vùng khớp",
+      "regionCount_other": "{{count}} vùng khớp",
+      "fullPageHint": "Nhiệm vụ toàn trang (không gắn vùng cụ thể)",
+      "regionType": {
+        "PANEL": "Khung truyện",
+        "BACKGROUND": "Nền",
+        "SCREEN_TONE": "Tone",
+        "EFFECT_LINES": "Hiệu ứng đường",
+        "SFX": "Hiệu ứng chữ",
+        "CHARACTER": "Nhân vật"
+      },
+      "regionCoords": "Toạ độ: ({{x}}, {{y}}) {{w}}×{{h}}",
+      "downloadOriginal": "Tải ảnh gốc",
+      "downloadSubmitted": "Tải bản nộp",
+      "downloadFailed": "Không tải được file. Vui lòng thử lại.",
+      "viewFullsize": "Xem đầy đủ"
     },
     "actions": {
       "start": "Bắt đầu task",
-      "submit": "Nộp kết quả"
+      "submit": "Nộp kết quả",
+      "resultFile": "File kết quả",
+      "selectedFile": "Đã chọn: {{name}} ({{size}})"
     },
     "pagination": {
       "previousPage": "Trang trước",
@@ -113,7 +145,7 @@
       "LETTERING": "Chữ/thoại"
     },
     "card": {
-      "mangakaFallback": "Mangaka #{{id}}",
+      "unknownMangaka": "Mangaka",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không có series context",
@@ -162,7 +194,7 @@
       "LETTERING": "Chữ/thoại"
     },
     "card": {
-      "mangakaFallback": "Mangaka #{{id}}",
+      "unknownMangaka": "Mangaka",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không có series context",
@@ -214,6 +246,12 @@
     "item": {
       "noContent": "(không có nội dung)",
       "openTarget": "Mở",
+      "openChapter": "Mở chapter",
+      "openTask": "Mở nhiệm vụ",
+      "openContract": "Mở hợp đồng",
+      "openDeadline": "Mở deadline",
+      "openAssistant": "Mở trợ lý",
+      "openRevision": "Mở vòng sửa",
       "reference": "Tham chiếu: {{type}} • {{id}}"
     },
     "actions": {

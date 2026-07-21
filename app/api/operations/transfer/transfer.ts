@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -53,11 +55,6 @@ export type transferControllerCreateTransferRequestResponse201 = {
   status: 201
 }
 
-export type transferControllerCreateTransferRequestResponse400 = {
-  data: void
-  status: 400
-}
-
 export type transferControllerCreateTransferRequestResponse422 = {
   data: void
   status: 422
@@ -66,7 +63,7 @@ export type transferControllerCreateTransferRequestResponse422 = {
 export type transferControllerCreateTransferRequestResponseSuccess = (transferControllerCreateTransferRequestResponse201) & {
   headers: Headers;
 };
-export type transferControllerCreateTransferRequestResponseError = (transferControllerCreateTransferRequestResponse400 | transferControllerCreateTransferRequestResponse422) & {
+export type transferControllerCreateTransferRequestResponseError = (transferControllerCreateTransferRequestResponse422) & {
   headers: Headers;
 };
 
@@ -170,20 +167,13 @@ export type transferControllerGetTransferRequestByIdResponse200 = {
   data: TransferRequestResDtoOutput
   status: 200
 }
-
-export type transferControllerGetTransferRequestByIdResponse404 = {
-  data: void
-  status: 404
-}
     
 export type transferControllerGetTransferRequestByIdResponseSuccess = (transferControllerGetTransferRequestByIdResponse200) & {
   headers: Headers;
 };
-export type transferControllerGetTransferRequestByIdResponseError = (transferControllerGetTransferRequestByIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type transferControllerGetTransferRequestByIdResponse = (transferControllerGetTransferRequestByIdResponseSuccess | transferControllerGetTransferRequestByIdResponseError)
+export type transferControllerGetTransferRequestByIdResponse = (transferControllerGetTransferRequestByIdResponseSuccess)
 
 export const getTransferControllerGetTransferRequestByIdUrl = ({ id }: TransferControllerGetTransferRequestByIdPathParameters,) => {
 
@@ -213,16 +203,6 @@ export type transferControllerBoardApproveScreeningResponse201 = {
   status: 201
 }
 
-export type transferControllerBoardApproveScreeningResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerBoardApproveScreeningResponse404 = {
-  data: void
-  status: 404
-}
-
 export type transferControllerBoardApproveScreeningResponse422 = {
   data: void
   status: 422
@@ -231,7 +211,7 @@ export type transferControllerBoardApproveScreeningResponse422 = {
 export type transferControllerBoardApproveScreeningResponseSuccess = (transferControllerBoardApproveScreeningResponse201) & {
   headers: Headers;
 };
-export type transferControllerBoardApproveScreeningResponseError = (transferControllerBoardApproveScreeningResponse400 | transferControllerBoardApproveScreeningResponse404 | transferControllerBoardApproveScreeningResponse422) & {
+export type transferControllerBoardApproveScreeningResponseError = (transferControllerBoardApproveScreeningResponse422) & {
   headers: Headers;
 };
 
@@ -267,16 +247,6 @@ export type transferControllerBoardRejectScreeningResponse201 = {
   status: 201
 }
 
-export type transferControllerBoardRejectScreeningResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerBoardRejectScreeningResponse404 = {
-  data: void
-  status: 404
-}
-
 export type transferControllerBoardRejectScreeningResponse422 = {
   data: void
   status: 422
@@ -285,7 +255,7 @@ export type transferControllerBoardRejectScreeningResponse422 = {
 export type transferControllerBoardRejectScreeningResponseSuccess = (transferControllerBoardRejectScreeningResponse201) & {
   headers: Headers;
 };
-export type transferControllerBoardRejectScreeningResponseError = (transferControllerBoardRejectScreeningResponse400 | transferControllerBoardRejectScreeningResponse404 | transferControllerBoardRejectScreeningResponse422) & {
+export type transferControllerBoardRejectScreeningResponseError = (transferControllerBoardRejectScreeningResponse422) & {
   headers: Headers;
 };
 
@@ -321,16 +291,6 @@ export type transferControllerBoardAssignFullBuyoutResponse201 = {
   status: 201
 }
 
-export type transferControllerBoardAssignFullBuyoutResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerBoardAssignFullBuyoutResponse404 = {
-  data: void
-  status: 404
-}
-
 export type transferControllerBoardAssignFullBuyoutResponse422 = {
   data: void
   status: 422
@@ -339,7 +299,7 @@ export type transferControllerBoardAssignFullBuyoutResponse422 = {
 export type transferControllerBoardAssignFullBuyoutResponseSuccess = (transferControllerBoardAssignFullBuyoutResponse201) & {
   headers: Headers;
 };
-export type transferControllerBoardAssignFullBuyoutResponseError = (transferControllerBoardAssignFullBuyoutResponse400 | transferControllerBoardAssignFullBuyoutResponse404 | transferControllerBoardAssignFullBuyoutResponse422) & {
+export type transferControllerBoardAssignFullBuyoutResponseError = (transferControllerBoardAssignFullBuyoutResponse422) & {
   headers: Headers;
 };
 
@@ -374,25 +334,13 @@ export type transferControllerStartNegotiationResponse201 = {
   data: TransferRequestResDtoOutput
   status: 201
 }
-
-export type transferControllerStartNegotiationResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerStartNegotiationResponse404 = {
-  data: void
-  status: 404
-}
     
 export type transferControllerStartNegotiationResponseSuccess = (transferControllerStartNegotiationResponse201) & {
   headers: Headers;
 };
-export type transferControllerStartNegotiationResponseError = (transferControllerStartNegotiationResponse400 | transferControllerStartNegotiationResponse404) & {
-  headers: Headers;
-};
+;
 
-export type transferControllerStartNegotiationResponse = (transferControllerStartNegotiationResponseSuccess | transferControllerStartNegotiationResponseError)
+export type transferControllerStartNegotiationResponse = (transferControllerStartNegotiationResponseSuccess)
 
 export const getTransferControllerStartNegotiationUrl = ({ id }: TransferControllerStartNegotiationPathParameters,) => {
 
@@ -421,25 +369,13 @@ export type transferControllerMangakaAcceptTransferResponse201 = {
   data: TransferRequestResDtoOutput
   status: 201
 }
-
-export type transferControllerMangakaAcceptTransferResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerMangakaAcceptTransferResponse404 = {
-  data: void
-  status: 404
-}
     
 export type transferControllerMangakaAcceptTransferResponseSuccess = (transferControllerMangakaAcceptTransferResponse201) & {
   headers: Headers;
 };
-export type transferControllerMangakaAcceptTransferResponseError = (transferControllerMangakaAcceptTransferResponse400 | transferControllerMangakaAcceptTransferResponse404) & {
-  headers: Headers;
-};
+;
 
-export type transferControllerMangakaAcceptTransferResponse = (transferControllerMangakaAcceptTransferResponseSuccess | transferControllerMangakaAcceptTransferResponseError)
+export type transferControllerMangakaAcceptTransferResponse = (transferControllerMangakaAcceptTransferResponseSuccess)
 
 export const getTransferControllerMangakaAcceptTransferUrl = ({ id }: TransferControllerMangakaAcceptTransferPathParameters,) => {
 
@@ -468,25 +404,13 @@ export type transferControllerMangakaRejectTransferResponse201 = {
   data: TransferRequestResDtoOutput
   status: 201
 }
-
-export type transferControllerMangakaRejectTransferResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerMangakaRejectTransferResponse404 = {
-  data: void
-  status: 404
-}
     
 export type transferControllerMangakaRejectTransferResponseSuccess = (transferControllerMangakaRejectTransferResponse201) & {
   headers: Headers;
 };
-export type transferControllerMangakaRejectTransferResponseError = (transferControllerMangakaRejectTransferResponse400 | transferControllerMangakaRejectTransferResponse404) & {
-  headers: Headers;
-};
+;
 
-export type transferControllerMangakaRejectTransferResponse = (transferControllerMangakaRejectTransferResponseSuccess | transferControllerMangakaRejectTransferResponseError)
+export type transferControllerMangakaRejectTransferResponse = (transferControllerMangakaRejectTransferResponseSuccess)
 
 export const getTransferControllerMangakaRejectTransferUrl = ({ id }: TransferControllerMangakaRejectTransferPathParameters,) => {
 
@@ -516,16 +440,6 @@ export type transferControllerCreateTransferContractResponse201 = {
   status: 201
 }
 
-export type transferControllerCreateTransferContractResponse404 = {
-  data: void
-  status: 404
-}
-
-export type transferControllerCreateTransferContractResponse409 = {
-  data: void
-  status: 409
-}
-
 export type transferControllerCreateTransferContractResponse422 = {
   data: void
   status: 422
@@ -534,7 +448,7 @@ export type transferControllerCreateTransferContractResponse422 = {
 export type transferControllerCreateTransferContractResponseSuccess = (transferControllerCreateTransferContractResponse201) & {
   headers: Headers;
 };
-export type transferControllerCreateTransferContractResponseError = (transferControllerCreateTransferContractResponse404 | transferControllerCreateTransferContractResponse409 | transferControllerCreateTransferContractResponse422) & {
+export type transferControllerCreateTransferContractResponseError = (transferControllerCreateTransferContractResponse422) & {
   headers: Headers;
 };
 
@@ -569,16 +483,6 @@ export type transferControllerSignTransferContractResponse201 = {
   status: 201
 }
 
-export type transferControllerSignTransferContractResponse400 = {
-  data: void
-  status: 400
-}
-
-export type transferControllerSignTransferContractResponse404 = {
-  data: void
-  status: 404
-}
-
 export type transferControllerSignTransferContractResponse422 = {
   data: void
   status: 422
@@ -587,7 +491,7 @@ export type transferControllerSignTransferContractResponse422 = {
 export type transferControllerSignTransferContractResponseSuccess = (transferControllerSignTransferContractResponse201) & {
   headers: Headers;
 };
-export type transferControllerSignTransferContractResponseError = (transferControllerSignTransferContractResponse400 | transferControllerSignTransferContractResponse404 | transferControllerSignTransferContractResponse422) & {
+export type transferControllerSignTransferContractResponseError = (transferControllerSignTransferContractResponse422) & {
   headers: Headers;
 };
 
@@ -631,20 +535,13 @@ export type transferControllerGetSignaturesResponse200 = {
   data: TransferSignatureListResDtoOutput
   status: 200
 }
-
-export type transferControllerGetSignaturesResponse404 = {
-  data: void
-  status: 404
-}
     
 export type transferControllerGetSignaturesResponseSuccess = (transferControllerGetSignaturesResponse200) & {
   headers: Headers;
 };
-export type transferControllerGetSignaturesResponseError = (transferControllerGetSignaturesResponse404) & {
-  headers: Headers;
-};
+;
 
-export type transferControllerGetSignaturesResponse = (transferControllerGetSignaturesResponseSuccess | transferControllerGetSignaturesResponseError)
+export type transferControllerGetSignaturesResponse = (transferControllerGetSignaturesResponseSuccess)
 
 export const getTransferControllerGetSignaturesUrl = ({ id }: TransferControllerGetSignaturesPathParameters,) => {
 

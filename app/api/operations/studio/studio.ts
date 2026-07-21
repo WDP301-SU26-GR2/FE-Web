@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -47,30 +49,13 @@ export type studioControllerCreateInviteResponse201 = {
   data: InviteResDtoOutput
   status: 201
 }
-
-export type studioControllerCreateInviteResponse404 = {
-  data: void
-  status: 404
-}
-
-export type studioControllerCreateInviteResponse409 = {
-  data: void
-  status: 409
-}
-
-export type studioControllerCreateInviteResponse422 = {
-  data: void
-  status: 422
-}
     
 export type studioControllerCreateInviteResponseSuccess = (studioControllerCreateInviteResponse201) & {
   headers: Headers;
 };
-export type studioControllerCreateInviteResponseError = (studioControllerCreateInviteResponse404 | studioControllerCreateInviteResponse409 | studioControllerCreateInviteResponse422) & {
-  headers: Headers;
-};
+;
 
-export type studioControllerCreateInviteResponse = (studioControllerCreateInviteResponseSuccess | studioControllerCreateInviteResponseError)
+export type studioControllerCreateInviteResponse = (studioControllerCreateInviteResponseSuccess)
 
 export const getStudioControllerCreateInviteUrl = () => {
 
@@ -142,20 +127,13 @@ export type studioControllerGetInviteResponse200 = {
   data: InviteResDtoOutput
   status: 200
 }
-
-export type studioControllerGetInviteResponse404 = {
-  data: void
-  status: 404
-}
     
 export type studioControllerGetInviteResponseSuccess = (studioControllerGetInviteResponse200) & {
   headers: Headers;
 };
-export type studioControllerGetInviteResponseError = (studioControllerGetInviteResponse404) & {
-  headers: Headers;
-};
+;
 
-export type studioControllerGetInviteResponse = (studioControllerGetInviteResponseSuccess | studioControllerGetInviteResponseError)
+export type studioControllerGetInviteResponse = (studioControllerGetInviteResponseSuccess)
 
 export const getStudioControllerGetInviteUrl = ({ id }: StudioControllerGetInvitePathParameters,) => {
 
@@ -184,30 +162,13 @@ export type studioControllerAcceptInviteResponse201 = {
   data: AssignmentResDtoOutput
   status: 201
 }
-
-export type studioControllerAcceptInviteResponse403 = {
-  data: void
-  status: 403
-}
-
-export type studioControllerAcceptInviteResponse404 = {
-  data: void
-  status: 404
-}
-
-export type studioControllerAcceptInviteResponse409 = {
-  data: void
-  status: 409
-}
     
 export type studioControllerAcceptInviteResponseSuccess = (studioControllerAcceptInviteResponse201) & {
   headers: Headers;
 };
-export type studioControllerAcceptInviteResponseError = (studioControllerAcceptInviteResponse403 | studioControllerAcceptInviteResponse404 | studioControllerAcceptInviteResponse409) & {
-  headers: Headers;
-};
+;
 
-export type studioControllerAcceptInviteResponse = (studioControllerAcceptInviteResponseSuccess | studioControllerAcceptInviteResponseError)
+export type studioControllerAcceptInviteResponse = (studioControllerAcceptInviteResponseSuccess)
 
 export const getStudioControllerAcceptInviteUrl = ({ id }: StudioControllerAcceptInvitePathParameters,) => {
 
@@ -236,30 +197,13 @@ export type studioControllerDeclineInviteResponse201 = {
   data: InviteResDtoOutput
   status: 201
 }
-
-export type studioControllerDeclineInviteResponse403 = {
-  data: void
-  status: 403
-}
-
-export type studioControllerDeclineInviteResponse404 = {
-  data: void
-  status: 404
-}
-
-export type studioControllerDeclineInviteResponse409 = {
-  data: void
-  status: 409
-}
     
 export type studioControllerDeclineInviteResponseSuccess = (studioControllerDeclineInviteResponse201) & {
   headers: Headers;
 };
-export type studioControllerDeclineInviteResponseError = (studioControllerDeclineInviteResponse403 | studioControllerDeclineInviteResponse404 | studioControllerDeclineInviteResponse409) & {
-  headers: Headers;
-};
+;
 
-export type studioControllerDeclineInviteResponse = (studioControllerDeclineInviteResponseSuccess | studioControllerDeclineInviteResponseError)
+export type studioControllerDeclineInviteResponse = (studioControllerDeclineInviteResponseSuccess)
 
 export const getStudioControllerDeclineInviteUrl = ({ id }: StudioControllerDeclineInvitePathParameters,) => {
 
@@ -288,30 +232,13 @@ export type studioControllerCancelInviteResponse201 = {
   data: InviteResDtoOutput
   status: 201
 }
-
-export type studioControllerCancelInviteResponse403 = {
-  data: void
-  status: 403
-}
-
-export type studioControllerCancelInviteResponse404 = {
-  data: void
-  status: 404
-}
-
-export type studioControllerCancelInviteResponse409 = {
-  data: void
-  status: 409
-}
     
 export type studioControllerCancelInviteResponseSuccess = (studioControllerCancelInviteResponse201) & {
   headers: Headers;
 };
-export type studioControllerCancelInviteResponseError = (studioControllerCancelInviteResponse403 | studioControllerCancelInviteResponse404 | studioControllerCancelInviteResponse409) & {
-  headers: Headers;
-};
+;
 
-export type studioControllerCancelInviteResponse = (studioControllerCancelInviteResponseSuccess | studioControllerCancelInviteResponseError)
+export type studioControllerCancelInviteResponse = (studioControllerCancelInviteResponseSuccess)
 
 export const getStudioControllerCancelInviteUrl = ({ id }: StudioControllerCancelInvitePathParameters,) => {
 
@@ -382,20 +309,13 @@ export type studioControllerGetAssignmentResponse200 = {
   data: AssignmentResDtoOutput
   status: 200
 }
-
-export type studioControllerGetAssignmentResponse404 = {
-  data: void
-  status: 404
-}
     
 export type studioControllerGetAssignmentResponseSuccess = (studioControllerGetAssignmentResponse200) & {
   headers: Headers;
 };
-export type studioControllerGetAssignmentResponseError = (studioControllerGetAssignmentResponse404) & {
-  headers: Headers;
-};
+;
 
-export type studioControllerGetAssignmentResponse = (studioControllerGetAssignmentResponseSuccess | studioControllerGetAssignmentResponseError)
+export type studioControllerGetAssignmentResponse = (studioControllerGetAssignmentResponseSuccess)
 
 export const getStudioControllerGetAssignmentUrl = ({ id }: StudioControllerGetAssignmentPathParameters,) => {
 
@@ -425,21 +345,6 @@ export type studioControllerTerminateAssignmentResponse201 = {
   status: 201
 }
 
-export type studioControllerTerminateAssignmentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type studioControllerTerminateAssignmentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type studioControllerTerminateAssignmentResponse409 = {
-  data: void
-  status: 409
-}
-
 export type studioControllerTerminateAssignmentResponse422 = {
   data: void
   status: 422
@@ -448,7 +353,7 @@ export type studioControllerTerminateAssignmentResponse422 = {
 export type studioControllerTerminateAssignmentResponseSuccess = (studioControllerTerminateAssignmentResponse201) & {
   headers: Headers;
 };
-export type studioControllerTerminateAssignmentResponseError = (studioControllerTerminateAssignmentResponse403 | studioControllerTerminateAssignmentResponse404 | studioControllerTerminateAssignmentResponse409 | studioControllerTerminateAssignmentResponse422) & {
+export type studioControllerTerminateAssignmentResponseError = (studioControllerTerminateAssignmentResponse422) & {
   headers: Headers;
 };
 

@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -45,25 +47,15 @@ export type authControllerRegisterResponse201 = {
   status: 201
 }
 
-export type authControllerRegisterResponse409 = {
-  data: void
-  status: 409
-}
-
 export type authControllerRegisterResponse422 = {
   data: void
   status: 422
-}
-
-export type authControllerRegisterResponse429 = {
-  data: void
-  status: 429
 }
     
 export type authControllerRegisterResponseSuccess = (authControllerRegisterResponse201) & {
   headers: Headers;
 };
-export type authControllerRegisterResponseError = (authControllerRegisterResponse409 | authControllerRegisterResponse422 | authControllerRegisterResponse429) & {
+export type authControllerRegisterResponseError = (authControllerRegisterResponse422) & {
   headers: Headers;
 };
 
@@ -97,30 +89,13 @@ export type authControllerVerifyEmailResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type authControllerVerifyEmailResponse409 = {
-  data: void
-  status: 409
-}
-
-export type authControllerVerifyEmailResponse410 = {
-  data: void
-  status: 410
-}
-
-export type authControllerVerifyEmailResponse422 = {
-  data: void
-  status: 422
-}
     
 export type authControllerVerifyEmailResponseSuccess = (authControllerVerifyEmailResponse201) & {
   headers: Headers;
 };
-export type authControllerVerifyEmailResponseError = (authControllerVerifyEmailResponse409 | authControllerVerifyEmailResponse410 | authControllerVerifyEmailResponse422) & {
-  headers: Headers;
-};
+;
 
-export type authControllerVerifyEmailResponse = (authControllerVerifyEmailResponseSuccess | authControllerVerifyEmailResponseError)
+export type authControllerVerifyEmailResponse = (authControllerVerifyEmailResponseSuccess)
 
 export const getAuthControllerVerifyEmailUrl = () => {
 
@@ -150,25 +125,13 @@ export type authControllerSendOtpResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type authControllerSendOtpResponse422 = {
-  data: void
-  status: 422
-}
-
-export type authControllerSendOtpResponse429 = {
-  data: void
-  status: 429
-}
     
 export type authControllerSendOtpResponseSuccess = (authControllerSendOtpResponse201) & {
   headers: Headers;
 };
-export type authControllerSendOtpResponseError = (authControllerSendOtpResponse422 | authControllerSendOtpResponse429) & {
-  headers: Headers;
-};
+;
 
-export type authControllerSendOtpResponse = (authControllerSendOtpResponseSuccess | authControllerSendOtpResponseError)
+export type authControllerSendOtpResponse = (authControllerSendOtpResponseSuccess)
 
 export const getAuthControllerSendOtpUrl = () => {
 
@@ -198,25 +161,13 @@ export type authControllerLoginResponse201 = {
   data: LoginResDtoOutput
   status: 201
 }
-
-export type authControllerLoginResponse403 = {
-  data: void
-  status: 403
-}
-
-export type authControllerLoginResponse422 = {
-  data: void
-  status: 422
-}
     
 export type authControllerLoginResponseSuccess = (authControllerLoginResponse201) & {
   headers: Headers;
 };
-export type authControllerLoginResponseError = (authControllerLoginResponse403 | authControllerLoginResponse422) & {
-  headers: Headers;
-};
+;
 
-export type authControllerLoginResponse = (authControllerLoginResponseSuccess | authControllerLoginResponseError)
+export type authControllerLoginResponse = (authControllerLoginResponseSuccess)
 
 export const getAuthControllerLoginUrl = () => {
 
@@ -246,20 +197,13 @@ export type authControllerLogoutResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type authControllerLogoutResponse401 = {
-  data: void
-  status: 401
-}
     
 export type authControllerLogoutResponseSuccess = (authControllerLogoutResponse201) & {
   headers: Headers;
 };
-export type authControllerLogoutResponseError = (authControllerLogoutResponse401) & {
-  headers: Headers;
-};
+;
 
-export type authControllerLogoutResponse = (authControllerLogoutResponseSuccess | authControllerLogoutResponseError)
+export type authControllerLogoutResponse = (authControllerLogoutResponseSuccess)
 
 export const getAuthControllerLogoutUrl = () => {
 
@@ -289,25 +233,13 @@ export type authControllerRefreshTokenResponse201 = {
   data: RefreshTokenResDtoOutput
   status: 201
 }
-
-export type authControllerRefreshTokenResponse401 = {
-  data: void
-  status: 401
-}
-
-export type authControllerRefreshTokenResponse403 = {
-  data: void
-  status: 403
-}
     
 export type authControllerRefreshTokenResponseSuccess = (authControllerRefreshTokenResponse201) & {
   headers: Headers;
 };
-export type authControllerRefreshTokenResponseError = (authControllerRefreshTokenResponse401 | authControllerRefreshTokenResponse403) & {
-  headers: Headers;
-};
+;
 
-export type authControllerRefreshTokenResponse = (authControllerRefreshTokenResponseSuccess | authControllerRefreshTokenResponseError)
+export type authControllerRefreshTokenResponse = (authControllerRefreshTokenResponseSuccess)
 
 export const getAuthControllerRefreshTokenUrl = () => {
 
@@ -337,25 +269,13 @@ export type authControllerForgotPasswordResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type authControllerForgotPasswordResponse410 = {
-  data: void
-  status: 410
-}
-
-export type authControllerForgotPasswordResponse422 = {
-  data: void
-  status: 422
-}
     
 export type authControllerForgotPasswordResponseSuccess = (authControllerForgotPasswordResponse201) & {
   headers: Headers;
 };
-export type authControllerForgotPasswordResponseError = (authControllerForgotPasswordResponse410 | authControllerForgotPasswordResponse422) & {
-  headers: Headers;
-};
+;
 
-export type authControllerForgotPasswordResponse = (authControllerForgotPasswordResponseSuccess | authControllerForgotPasswordResponseError)
+export type authControllerForgotPasswordResponse = (authControllerForgotPasswordResponseSuccess)
 
 export const getAuthControllerForgotPasswordUrl = () => {
 
@@ -385,30 +305,13 @@ export type authControllerGoogleLoginResponse201 = {
   data: LoginResDtoOutput
   status: 201
 }
-
-export type authControllerGoogleLoginResponse401 = {
-  data: void
-  status: 401
-}
-
-export type authControllerGoogleLoginResponse403 = {
-  data: void
-  status: 403
-}
-
-export type authControllerGoogleLoginResponse409 = {
-  data: void
-  status: 409
-}
     
 export type authControllerGoogleLoginResponseSuccess = (authControllerGoogleLoginResponse201) & {
   headers: Headers;
 };
-export type authControllerGoogleLoginResponseError = (authControllerGoogleLoginResponse401 | authControllerGoogleLoginResponse403 | authControllerGoogleLoginResponse409) & {
-  headers: Headers;
-};
+;
 
-export type authControllerGoogleLoginResponse = (authControllerGoogleLoginResponseSuccess | authControllerGoogleLoginResponseError)
+export type authControllerGoogleLoginResponse = (authControllerGoogleLoginResponseSuccess)
 
 export const getAuthControllerGoogleLoginUrl = () => {
 
@@ -438,20 +341,13 @@ export type authControllerChangePasswordResponse201 = {
   data: MessageResDtoOutput
   status: 201
 }
-
-export type authControllerChangePasswordResponse422 = {
-  data: void
-  status: 422
-}
     
 export type authControllerChangePasswordResponseSuccess = (authControllerChangePasswordResponse201) & {
   headers: Headers;
 };
-export type authControllerChangePasswordResponseError = (authControllerChangePasswordResponse422) & {
-  headers: Headers;
-};
+;
 
-export type authControllerChangePasswordResponse = (authControllerChangePasswordResponseSuccess | authControllerChangePasswordResponseError)
+export type authControllerChangePasswordResponse = (authControllerChangePasswordResponseSuccess)
 
 export const getAuthControllerChangePasswordUrl = () => {
 

@@ -4,9 +4,11 @@
  */
 
 export const SITE = {
-  name: 'Mangaka',
-  shortName: 'Mangaka',
-  description: 'Nền tảng đăng và xuất bản truyện tranh cho tác giả',
+  name: 'Manga Creation Workflow and Publishing Management System',
+  shortName: 'Manga Creation',
+  description: 'Manga creation workflow and publishing management system',
+  logoUrl:
+    'https://res.cloudinary.com/dbsbfvz2f/image/upload/f_auto,q_auto/Gemini_Generated_Image_d713d4d713d4d713_hlbjvd.png',
   url: 'https://mangaka.example.com',
   defaultLocale: 'vi' as const
 } as const

@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import {
@@ -41,15 +43,15 @@ import type {
 
 export const getAnnotationControllerCreateResponseMock = (overrideResponse: Partial< AnnotationResDtoOutput > = {}): AnnotationResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), taskId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authorId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authorRole: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), targetType: faker.helpers.arrayElement([faker.helpers.arrayElement(['PAGE','REGION','TASK','MANUSCRIPT','NAME'] as const), null]), targetId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), annotationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['TEXT','HIGHLIGHT','DRAWING'] as const), null]), reviewStage: faker.helpers.arrayElement([faker.helpers.arrayElement(['ASSISTANT','MANGAKA','EDITOR'] as const), null]), coordinates: {
         [faker.string.alphanumeric(5)]: {}
-      }, content: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), isResolved: faker.datatype.boolean(), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+      }, content: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), isResolved: faker.datatype.boolean(), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), author: {id: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])}, ...overrideResponse})
 
 export const getAnnotationControllerListResponseMock = (overrideResponse: Partial< AnnotationListResDtoOutput > = {}): AnnotationListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), taskId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authorId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authorRole: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), targetType: faker.helpers.arrayElement([faker.helpers.arrayElement(['PAGE','REGION','TASK','MANUSCRIPT','NAME'] as const), null]), targetId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), annotationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['TEXT','HIGHLIGHT','DRAWING'] as const), null]), reviewStage: faker.helpers.arrayElement([faker.helpers.arrayElement(['ASSISTANT','MANGAKA','EDITOR'] as const), null]), coordinates: {
         [faker.string.alphanumeric(5)]: {}
-      }, content: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), isResolved: faker.datatype.boolean(), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
+      }, content: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), isResolved: faker.datatype.boolean(), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), author: {id: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])}})), ...overrideResponse})
 
 export const getAnnotationControllerResolveResponseMock = (overrideResponse: Partial< AnnotationResDtoOutput > = {}): AnnotationResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), taskId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authorId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), authorRole: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), targetType: faker.helpers.arrayElement([faker.helpers.arrayElement(['PAGE','REGION','TASK','MANUSCRIPT','NAME'] as const), null]), targetId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), annotationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['TEXT','HIGHLIGHT','DRAWING'] as const), null]), reviewStage: faker.helpers.arrayElement([faker.helpers.arrayElement(['ASSISTANT','MANGAKA','EDITOR'] as const), null]), coordinates: {
         [faker.string.alphanumeric(5)]: {}
-      }, content: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), isResolved: faker.datatype.boolean(), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+      }, content: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), isResolved: faker.datatype.boolean(), resolvedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), createdAt: faker.string.alpha({length: {min: 10, max: 20}}), author: {id: faker.string.alpha({length: {min: 10, max: 20}}), displayName: faker.string.alpha({length: {min: 10, max: 20}}), avatar: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])}, ...overrideResponse})
 
 
 export const getAnnotationControllerCreateMockHandler = (overrideResponse?: AnnotationResDtoOutput | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<AnnotationResDtoOutput> | AnnotationResDtoOutput), options?: RequestHandlerOptions) => {

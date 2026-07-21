@@ -1,13 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Search, Bell, Settings, LogOut, Menu, X, ChevronRight, Loader2 } from 'lucide-react'
+import { Search, Settings, LogOut, Menu, X, ChevronRight, Loader2 } from 'lucide-react'
 
 import { ThemeToggle } from './theme-toggle'
 import { LanguageSwitcher } from './language-switcher'
+import { NotificationBell } from './notification-bell'
+import { SignedImage } from './signed-image'
 import { useLogout } from '~/features/auth/hooks/use-logout'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { notificationControllerList } from '~/api/operations/notifications/notifications'
+import { useUnreadNotifications } from '~/shared/hooks/use-unread-notifications'
+import { useSidebarProfile } from '~/shared/hooks/use-sidebar-profile'
+import { BrandLogo } from './brand-logo'
 
 export interface NavItem {
   label: string
@@ -24,15 +28,20 @@ export interface NavItem {
    * match bình thường để highlight cả detail sub-route.
    */
   endsHere?: boolean
+  /**
+   * Hiển thị một chấm tròn (unread indicator) bên phải label.
+   * Dùng cho nav item thông báo khi có thông báo chưa đọc.
+   */
+  badge?: boolean
 }
 
 export interface DashboardLayoutProps {
   children: ReactNode
   navItems: NavItem[]
-  profile: {
+  /** Fallback profile data (name, role label) from nav config. Real data loaded via API. */
+  profileFallback: {
     name: string
     role: string
-    avatarUrl?: string
     badge?: string
   }
   headerActions?: ReactNode
@@ -54,7 +63,7 @@ function isItemActive(item: NavItem, pathname: string): boolean {
   return pathname.startsWith(`${item.href}/`)
 }
 
-export function DashboardLayout({ children, navItems, profile, headerActions }: DashboardLayoutProps) {
+export function DashboardLayout({ children, navItems, profileFallback, headerActions }: DashboardLayoutProps) {
   const { t } = useTranslation('common')
   const location = useLocation()
   const navigate = useNavigate()
@@ -62,6 +71,22 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const { session } = useAuth()
+  const { profile: realProfile, isLoading: isProfileLoading } = useSidebarProfile()
+
+  // Polling badge: drives the dot on the Notifications nav item.
+  // Enabled for any authenticated user; silently fails if no role surface.
+  const { unreadCount } = useUnreadNotifications({
+    enabled: Boolean(session),
+    pollIntervalMs: 25_000
+  })
+
+  // Use real profile data from API, fallback to nav config defaults
+  const displayName = realProfile?.displayName ?? profileFallback.name
+  const avatarKey = realProfile?.avatar ?? null
+  const roleLabel = realProfile?.role
+    ? t(`roleEnum.${realProfile.role}`, { defaultValue: realProfile.role })
+    : profileFallback.role
+  const statusBadge = realProfile?.status === 'ACTIVE' ? null : realProfile?.status
 
   useEffect(() => {
     let active = true
@@ -85,9 +110,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
   }, [location.pathname])
 
   // The authenticated user's role comes from the persisted session (BE enum,
-  // e.g. "MANGAKA"/"ASSISTANT"). We deliberately do NOT use `profile.role`
-  // here — that field is a localized display label ("Creator" / "Tác giả"),
-  // not the canonical role code.
+  // e.g. "MANGAKA"/"ASSISTANT").
   //
   // Only Mangaka + Assistant have a `/me/*-profile` endpoint today; for other
   // roles the Settings button is disabled.
@@ -119,11 +142,14 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
       >
         {/* Sidebar Header */}
         <div className='flex h-16 items-center justify-between border-b border-border px-6'>
-          <div className='flex flex-col'>
-            <span className='text-lg font-bold tracking-wider text-primary'>{t('layout.brand')}</span>
-            <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
-              {t('layout.productionEnvironment')}
-            </span>
+          <div className='flex min-w-0 items-center gap-3'>
+            <BrandLogo className='h-9 w-9 shrink-0 rounded-lg' />
+            <div className='flex min-w-0 flex-col'>
+              <span className='truncate text-sm font-bold tracking-wide text-primary'>{t('layout.brand')}</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
+                {t('layout.productionEnvironment')}
+              </span>
+            </div>
           </div>
           <button
             onClick={() => setIsSidebarOpen(false)}
@@ -153,7 +179,12 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
                   <Icon className='h-5 w-5 shrink-0' />
                   <span>{item.label}</span>
                 </div>
-                {isActive && <ChevronRight className='h-4 w-4 shrink-0' />}
+                <div className='flex items-center gap-1.5'>
+                  {item.badge && unreadCount > 0 && (
+                    <span aria-hidden='true' className='h-2 w-2 rounded-full bg-destructive' />
+                  )}
+                  {isActive && <ChevronRight className='h-4 w-4 shrink-0' />}
+                </div>
               </Link>
             )
           })}
@@ -170,23 +201,30 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
           <div className='flex items-center justify-between gap-3'>
             <div className='flex items-center gap-3'>
               <div className='relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-primary/25 bg-muted'>
-                {profile.avatarUrl ? (
-                  <img src={profile.avatarUrl} alt={profile.name} className='h-full w-full object-cover' />
+                {isProfileLoading ? (
+                  <div className='flex h-full w-full items-center justify-center'>
+                    <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+                  </div>
+                ) : avatarKey ? (
+                  <SignedImage
+                    r2Key={avatarKey}
+                    alt={displayName}
+                    aspectClassName='h-full w-full'
+                    className='h-full w-full object-cover'
+                  />
                 ) : (
                   <div className='flex h-full w-full items-center justify-center font-bold text-muted-foreground uppercase bg-primary/10 text-primary'>
-                    {profile.name.charAt(0)}
+                    {displayName.charAt(0)}
                   </div>
                 )}
               </div>
               <div className='min-w-0'>
-                <p className='truncate text-sm font-semibold'>{profile.name}</p>
+                <p className='truncate text-sm font-semibold'>{displayName}</p>
                 <div className='flex items-center gap-1.5'>
-                  <span className='truncate text-[11px] text-muted-foreground uppercase font-medium'>
-                    {profile.role}
-                  </span>
-                  {profile.badge && (
-                    <span className='inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-primary uppercase'>
-                      {profile.badge}
+                  <span className='truncate text-[11px] text-muted-foreground uppercase font-medium'>{roleLabel}</span>
+                  {statusBadge && (
+                    <span className='inline-flex items-center rounded bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-destructive uppercase'>
+                      {statusBadge}
                     </span>
                   )}
                 </div>
@@ -231,24 +269,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
 
           {/* Right Actions */}
           <div className='flex items-center gap-4'>
-            <button
-              className='relative rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors'
-              aria-label={t('layout.notifications')}
-              title={t('layout.notifications')}
-              onClick={() => {
-                const role = session?.user?.role
-                if (role === 'EDITOR') navigate('/dashboard/editor/notifications')
-                else if (role === 'MANGAKA') navigate('/dashboard/mangaka/notifications')
-                else if (role === 'ASSISTANT') navigate('/dashboard/assistant/notifications')
-                else if (role === 'BOARD_MEMBER') navigate('/dashboard/board/notifications')
-                else if (role === 'SUPER_ADMIN') navigate('/dashboard/admin/notifications')
-              }}
-            >
-              <Bell className='h-5 w-5' />
-              {unreadNotifications > 0 && (
-                <span className='absolute top-1 right-1 h-2 w-2 rounded-full bg-primary ring-2 ring-card' />
-              )}
-            </button>
+            <NotificationBell />
             <button
               className='rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors animate-spin-hover'
               aria-label={t('layout.settings')}

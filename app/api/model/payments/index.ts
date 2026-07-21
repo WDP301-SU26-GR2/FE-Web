@@ -5,7 +5,6 @@
  * Local files are exported directly. Types that belong to OTHER tags
  * but are used here are re-exported as named types for convenience.
  */
-export * from './approvePaymentBodyDto'
 export * from './cancelPaymentBodyDto'
 export * from './payPaymentBodyDto'
 export * from './paymentControllerApprovePaymentPathParameters'
@@ -28,7 +27,10 @@ export * from './paymentRecordListResDtoOutputDataItemReceiver'
 export * from './paymentRecordListResDtoOutputDataItemSeries'
 export * from './paymentRecordListResDtoOutputDataItemStatus'
 export * from './paymentRecordResDtoOutput'
+export * from './paymentRecordResDtoOutputApprover'
 export * from './paymentRecordResDtoOutputPaymentSource'
 export * from './paymentRecordResDtoOutputPaymentType'
+export * from './paymentRecordResDtoOutputReceiver'
+export * from './paymentRecordResDtoOutputSeries'
 export * from './paymentRecordResDtoOutputStatus'
 

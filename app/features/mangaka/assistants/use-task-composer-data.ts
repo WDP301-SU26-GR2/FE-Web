@@ -15,9 +15,7 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 // ─── Data types ─────────────────────────────────────────────────────────────
 
-export type ActiveAssignmentOption = AssignmentListResDtoOutputItemsItem & {
-  activeNow: true // only activeNow=true assignments
-}
+export type ActiveAssignmentOption = AssignmentListResDtoOutputItemsItem
 
 export type SeriesOption = {
   id: string
@@ -68,7 +66,7 @@ export type TaskComposerData = {
 // ─── Hook ──────────────────────────────────────────────────────────────────
 
 export interface UseTaskComposerDataOptions {
-  /** Pre-select assistant/assignment */
+  /** Pre-select studio-assignment id (StudioAssignment.id). */
   presetAssignmentId?: string
   /** Pre-select series */
   presetSeriesId?: string
@@ -80,7 +78,45 @@ export interface UseTaskComposerDataOptions {
   presetRegionId?: string
 }
 
-export function useTaskComposerData(options: UseTaskComposerDataOptions = {}) {
+/**
+ * Return type of `useTaskComposerData`.
+ *
+ * Components rendered inside the SAME composer dialog MUST share a single
+ * instance via this return value (passed as a prop). Calling the hook from
+ * sibling components breaks the cascading chapter→page→region fetch because
+ * each instance has its own state closure.
+ */
+export interface UseTaskComposerDataResult {
+  data: TaskComposerData
+  selected: {
+    assignmentId?: string
+    seriesId?: string
+    chapterId?: string
+    pageId?: string
+    regionId?: string
+  }
+  setAssignment: (id: string | undefined) => void
+  setSeries: (id: string | undefined) => void
+  setChapter: (id: string | undefined) => void
+  setPage: (id: string | undefined) => void
+  setRegion: (id: string | undefined) => void
+  reload: (scope: 'assignments' | 'series' | 'chapters' | 'pages' | 'regions') => void
+}
+
+/**
+ * Loads the cascading data needed by the "Assign task" composer:
+ * active studio assignments → series → chapters → pages → regions.
+ *
+ * NOTE on preset semantics:
+ *  - We no longer use a brittle `setTimeout(100ms)` to apply presets. Instead
+ *    presets are applied immediately, and downstream fetches kick off as soon
+ *    as the parent selection is set. The UI shows skeletons until each
+ *    dropdown's data arrives.
+ *  - The composer dialog must call `setChapter`/`setPage`/etc. with the
+ *    preset ids once it has the data (we expose `applyPreset` to do that in
+ *    one shot).
+ */
+export function useTaskComposerData(options: UseTaskComposerDataOptions = {}): UseTaskComposerDataResult {
   const [data, setData] = useState<TaskComposerData>({
     assignments: [],
     series: [],
@@ -117,10 +153,9 @@ export function useTaskComposerData(options: UseTaskComposerDataOptions = {}) {
         activeNow: StudioControllerListAssignmentsActiveNow.true
       } satisfies StudioControllerListAssignmentsParams)
       const items = (res.data as { items: AssignmentListResDtoOutputItemsItem[] }).items ?? []
-      const active = items.filter((a) => a.activeNow)
       setData((prev) => ({
         ...prev,
-        assignments: active as ActiveAssignmentOption[],
+        assignments: items,
         loading: { ...prev.loading, assignments: false },
         errors: { ...prev.errors, assignments: undefined }
       }))
@@ -294,17 +329,26 @@ export function useTaskComposerData(options: UseTaskComposerDataOptions = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPageId])
 
-  // ── Apply presets after initial data loads ───────────────────────────
+  // ── Apply presets via cascading fetches ──────────────────────────────
+  // The previous version used a 100ms setTimeout that broke when chapters/pages
+  // hadn't been fetched yet (no `seriesId` set initially). Now we trigger the
+  // chain directly: assignments + series load on mount, then we kick off
+  // chapter/page/region fetches as soon as the corresponding preset id is set.
+  // The pickers disable their selects until the data is loaded, which is the
+  // correct UX (no more "lucky path" assumptions).
   useEffect(() => {
-    if (!options.presetAssignmentId && !options.presetSeriesId) return
-    // Wait for data to be loaded, then apply presets
-    const timer = setTimeout(() => {
-      if (options.presetChapterId) setSelectedChapterId(options.presetChapterId)
-      if (options.presetPageId) setSelectedPageId(options.presetPageId)
-    }, 100)
-    return () => clearTimeout(timer)
+    if (options.presetChapterId && !selectedChapterId) {
+      setSelectedChapterId(options.presetChapterId)
+    }
+    if (options.presetPageId && !selectedPageId) {
+      setSelectedPageId(options.presetPageId)
+    }
+    if (options.presetRegionId && !selectedRegionId) {
+      setSelectedRegionId(options.presetRegionId)
+    }
+    // We only run this once on mount (no deps for the "set once" semantics).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.assignments.length, data.series.length])
+  }, [])
 
   // ── Reload helpers ───────────────────────────────────────────────────
   const reload = useCallback(

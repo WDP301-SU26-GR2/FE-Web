@@ -5,12 +5,13 @@ import { toast } from 'sonner'
 import {
   seriesControllerDeleteProposal,
   seriesControllerResubmitProposal,
+  seriesControllerReopen,
   seriesControllerWithdraw
 } from '~/api/operations/series/series'
 import { nameControllerResubmit } from '~/api/operations/names/names'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
-type ProposalAction = 'delete' | 'withdraw' | 'resubmitProposal' | 'resubmitName'
+type ProposalAction = 'delete' | 'withdraw' | 'resubmitProposal' | 'resubmitName' | 'reopen'
 
 type UseProposalActionsResult = {
   activeAction: ProposalAction | null
@@ -18,6 +19,7 @@ type UseProposalActionsResult = {
   withdraw: (seriesId: string, reason?: string) => Promise<boolean>
   resubmitProposal: (seriesId: string) => Promise<boolean>
   resubmitName: (seriesId: string, nameId: string) => Promise<boolean>
+  reopen: (seriesId: string) => Promise<boolean>
 }
 
 export function useProposalActions(): UseProposalActionsResult {
@@ -68,5 +70,10 @@ export function useProposalActions(): UseProposalActionsResult {
     [run]
   )
 
-  return { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName }
+  const reopen = useCallback(
+    (seriesId: string) => run('reopen', () => seriesControllerReopen({ id: seriesId })),
+    [run]
+  )
+
+  return { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen }
 }

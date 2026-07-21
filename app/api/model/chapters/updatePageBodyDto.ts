@@ -30,6 +30,11 @@ export interface UpdatePageBodyDto {
    * @nullable
    */
   compositeFile?: string | null;
-  /** Đổi thứ tự trang trong cùng chapter. */
+  /**
+   * Đổi số trang; trùng số trong cùng chapter → 409
+   * @minimum 1
+   * @maximum 9007199254740991
+   * @nullable
+   */
   pageNumber?: number | null;
 }

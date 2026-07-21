@@ -5,6 +5,7 @@ import { studioControllerListAssignments } from '~/api/operations/studio/studio'
 import type { StudioControllerListAssignmentsParams } from '~/api/model/studio/studioControllerListAssignmentsParams'
 import type { StudioControllerListAssignmentsStatus } from '~/api/model/studio/studioControllerListAssignmentsStatus'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
+import { StudioControllerListAssignmentsActiveNow } from '~/api/model/studio/studioControllerListAssignmentsActiveNow'
 import { isFetchError } from '~/api/mutator/custom-fetch'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
@@ -58,6 +59,10 @@ export function useAssistantStudio(): UseAssistantStudioResult {
         offset
       }
       if (currentStatus) params.status = currentStatus
+      // When the Assistant views their "ACTIVE" tab we additionally ask the BE
+      // to enforce the lazy hire-window check, so a stale ACTIVE row whose
+      // hireEnd has lapsed won't appear.
+      if (currentStatus === 'ACTIVE') params.activeNow = StudioControllerListAssignmentsActiveNow.true
 
       const res = await studioControllerListAssignments(params, { signal })
       if (signal.aborted) return
