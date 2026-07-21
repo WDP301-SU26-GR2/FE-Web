@@ -92,7 +92,21 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         { signerRole: 'BOARD' }
       )
     } else return { ok: false, intent }
-    return { ok: true, intent, requestId: String(form.get('requestId') ?? '') || undefined }
+    return {
+      ok: true,
+      intent,
+      messageKey:
+        intent === 'sendOtp'
+          ? 'transferOtpSent'
+          : intent === 'approve'
+            ? 'transferScreeningApproved'
+            : intent === 'reject'
+              ? 'transferScreeningRejected'
+              : intent === 'fullBuyout'
+                ? 'fullBuyoutAssigned'
+                : 'transferContractSigned',
+      requestId: String(form.get('requestId') ?? '') || undefined
+    }
   } catch (error) {
     return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.') }
   }

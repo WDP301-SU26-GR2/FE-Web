@@ -35,7 +35,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     } else if (intent === 'cancel') {
       await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
     } else return { ok: false, intent }
-    return { ok: true, intent }
+    return { ok: true, intent, messageKey: intent === 'pay' ? 'paymentPaid' : 'paymentCancelled' }
   } catch (error) {
     return {
       ok: false,

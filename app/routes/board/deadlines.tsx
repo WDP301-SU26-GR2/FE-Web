@@ -49,7 +49,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       { id: required(form, 'requestId') },
       { decision: intent === 'approve' ? 'APPROVE' : 'REJECT', note: String(form.get('note') ?? '') || null }
     )
-    return { ok: true, intent }
+    return { ok: true, intent, messageKey: intent === 'approve' ? 'deadlineApproved' : 'deadlineRejected' }
   } catch {
     return { ok: false, intent }
   }

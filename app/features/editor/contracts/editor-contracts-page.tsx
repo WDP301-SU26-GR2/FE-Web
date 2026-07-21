@@ -88,6 +88,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           {t('errors.loadDescription')}
         </p>
       )}
+      <EditorActionToast data={fetcher.data} scope='editor-create-contract' />
       <section className='flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm'>
         <div>
           <h2 className='text-lg font-bold text-foreground'>{t('contracts.createTitle')}</h2>
@@ -243,7 +244,6 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}
             {t('actions.createContract')}
           </button>
-          <EditorActionToast data={fetcher.data} scope='editor-create-contract' />
         </fetcher.Form>
         </Dialog>
       )}

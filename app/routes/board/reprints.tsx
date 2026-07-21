@@ -77,7 +77,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         }
       )
     } else return { ok: false, intent }
-    return { ok: true, intent }
+    return {
+      ok: true,
+      intent,
+      messageKey:
+        intent === 'assignReviser' ? 'reviserAssigned' : intent === 'approve' ? 'reprintApproved' : 'reprintRejected'
+    }
   } catch (error) {
     return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác tái bản.') }
   }

@@ -29,7 +29,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       yearsOfExperience: Number(form.get('yearsOfExperience') ?? 0),
       bio: String(form.get('bio') ?? '')
     })
-    return { ok: true, intent }
+    return { ok: true, intent, messageKey: 'profileUpdated' }
   } catch {
     return { ok: false, intent }
   }

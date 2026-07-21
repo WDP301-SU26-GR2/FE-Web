@@ -188,7 +188,7 @@ function FilterSelect({ name, label, defaultValue, options }: FilterSelectProps)
 
 function ActionFeedback({ result }: { result: AdminUserActionResult }) {
   const { t } = useTranslation('admin')
-  const lastResult = useRef<AdminUserActionResult>()
+  const lastResult = useRef<AdminUserActionResult | undefined>(undefined)
 
   useEffect(() => {
     if (lastResult.current === result) return

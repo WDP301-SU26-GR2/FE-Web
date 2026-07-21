@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { Pencil, UserRoundCog } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -46,10 +46,6 @@ function EditorProfileDialog({ profile, onClose }: { profile: StaffProfileResDto
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
 
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
-  }, [fetcher.data, fetcher.state, onClose])
-
   return (
     <Dialog open onClose={onClose} titleId='edit-editor-profile' title={t('profile.edit')} size='lg'>
       <fetcher.Form method='post' className='grid gap-4'>
@@ -88,7 +84,7 @@ function EditorProfileDialog({ profile, onClose }: { profile: StaffProfileResDto
             {t('actions.saveProfile')}
           </button>
         </div>
-        <EditorActionToast data={fetcher.data} scope='editor-profile' />
+        <EditorActionToast data={fetcher.data} scope='editor-profile' closeOnSuccess />
       </fetcher.Form>
     </Dialog>
   )

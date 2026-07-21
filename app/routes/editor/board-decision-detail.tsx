@@ -49,7 +49,7 @@ export async function clientAction({ request, params }: ClientActionFunctionArgs
         note: String(form.get('note') ?? '') || undefined
       }
     )
-    return { ok: true, intent }
+    return { ok: true, intent, messageKey: 'voteSubmitted' }
   } catch {
     return { ok: false, intent }
   }

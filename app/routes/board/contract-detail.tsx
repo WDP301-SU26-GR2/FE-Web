@@ -65,7 +65,22 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
         { revenue: positiveNumber(form, 'revenue'), period: required(form, 'period') }
       )
     else return { ok: false, intent }
-    return { ok: true, intent }
+    return {
+      ok: true,
+      intent,
+      messageKey:
+        intent === 'sendOtp'
+          ? 'contractOtpSent'
+          : intent === 'approve'
+            ? 'contractApproved'
+            : intent === 'changes'
+              ? 'contractChangesRequested'
+              : intent === 'sign'
+                ? 'contractSigned'
+                : intent === 'signAmendment'
+                  ? 'amendmentSigned'
+                  : 'revenueReported'
+    }
   } catch (error) {
     return {
       ok: false,
