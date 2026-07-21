@@ -8,12 +8,10 @@ export { EditorPublicationPage } from './publication/editor-publication-page'
 export { EditorChapterReviewPage } from './publication/editor-chapter-review-page'
 
 export { EditorBoardPage } from './board/editor-board-page'
-export { EditorBoardPitchingPage } from './board/editor-board-pitching-page'
 export { EditorBoardSessionsPage } from './board/editor-board-sessions-page'
 export { EditorBoardMeetingRoomPage } from './board/editor-board-meeting-room-page'
 export { EditorBoardDecisionsPage } from './board/editor-board-decisions-page'
 export { EditorBoardReportsPage } from './board/editor-board-reports-page'
-export { EditorBoardLifecyclePage } from './board/editor-board-lifecycle-page'
 
 export { EditorContractsPage } from './contracts/editor-contracts-page'
 export { EditorContractDetailPage } from './contracts/editor-contract-detail-page'

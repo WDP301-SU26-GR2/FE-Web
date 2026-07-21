@@ -1,5 +1,4 @@
 import {
-  boardControllerCreateDecision,
   boardControllerCastVote,
   boardControllerGetDecisionDetails,
   boardControllerGetDecisions,
@@ -35,18 +34,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (intent === 'createDecision') {
-      await boardControllerCreateDecision({
-        boardSessionId: required(form, 'sessionId'),
-        targetSeriesId: required(form, 'seriesId'),
-        decisionType: 'SERIALIZATION',
-        details: {
-          magazine: required(form, 'magazine'),
-          startIssueNumber: Number(required(form, 'startIssueNumber')),
-          publicationType: required(form, 'publicationType')
-        }
-      })
-    } else if (intent === 'castVote') {
+    if (intent === 'castVote') {
       const decisionId = required(form, 'decisionId')
       const decision = await boardControllerGetDecisionDetails({ id: decisionId })
       if (decision.status !== 200) return { ok: false, intent, errorKey: 'invalidState' }

@@ -5,6 +5,7 @@ import { useState } from 'react'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../types'
+import { EditorActionToast } from '../components/editor-action-toast'
 
 export function EditorProposalsPage({
   items,
@@ -123,13 +124,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
           </span>
         ))}
       </div>
-      {fetcher.data && (
-        <p className={`mt-4 text-xs font-semibold ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}>
-          {fetcher.data.ok
-            ? t(`messages.${fetcher.data.messageKey}`)
-            : t(`errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
-        </p>
-      )}
+      <EditorActionToast data={fetcher.data} scope={`editor-proposal-${item.id}`} />
       <div className='mt-5 flex flex-wrap gap-2 border-t border-border pt-4'>
         {item.editorId ? (
           <Link

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Form, Link, useFetcher, useSearchParams } from 'react-router'
 import { ArrowLeft, Filter, Search, UserPlus, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import type { AdminUserListResDtoOutput } from '~/api/model/users'
 import { CreateUserDialog } from './components/create-user-dialog'
@@ -187,27 +188,27 @@ function FilterSelect({ name, label, defaultValue, options }: FilterSelectProps)
 
 function ActionFeedback({ result }: { result: AdminUserActionResult }) {
   const { t } = useTranslation('admin')
+  const lastResult = useRef<AdminUserActionResult>()
+
+  useEffect(() => {
+    if (lastResult.current === result) return
+    lastResult.current = result
+    const message = result.ok ? t(`users.messages.${result.messageKey}`) : t(`users.errors.${result.errorKey}`)
+    const id = `admin-user-${result.intent}-${result.ok ? 'success' : 'error'}-${result.ok ? result.messageKey : result.errorKey}`
+    if (result.ok) toast.success(message, { id })
+    else toast.error(message, { id })
+  }, [result, t])
+
+  if (!result.ok || !result.temporaryPassword) return null
+
   return (
-    <div
-      className={
-        result.ok
-          ? 'rounded-xl border border-primary/25 bg-primary/10 p-4 text-primary'
-          : 'rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive'
-      }
-      role='status'
-    >
-      <p className='text-sm font-bold'>
-        {result.ok ? t(`users.messages.${result.messageKey}`) : t(`users.errors.${result.errorKey}`)}
-      </p>
-      {result.ok && result.temporaryPassword && (
-        <div className='mt-3 rounded-lg border border-border bg-card p-3 text-foreground'>
-          <p className='text-xs text-muted-foreground'>{t('users.temporaryPassword.label', { email: result.email })}</p>
-          <code className='mt-1 block break-all text-base font-extrabold tracking-wider'>
-            {result.temporaryPassword}
-          </code>
-          <p className='mt-2 text-[11px] text-muted-foreground'>{t('users.temporaryPassword.notice')}</p>
-        </div>
-      )}
+    <div className='rounded-xl border border-primary/25 bg-primary/10 p-4 text-primary' role='status'>
+      <p className='text-sm font-bold'>{t(`users.messages.${result.messageKey}`)}</p>
+      <div className='mt-3 rounded-lg border border-border bg-card p-3 text-foreground'>
+        <p className='text-xs text-muted-foreground'>{t('users.temporaryPassword.label', { email: result.email })}</p>
+        <code className='mt-1 block break-all text-base font-extrabold tracking-wider'>{result.temporaryPassword}</code>
+        <p className='mt-2 text-[11px] text-muted-foreground'>{t('users.temporaryPassword.notice')}</p>
+      </div>
     </div>
   )
 }

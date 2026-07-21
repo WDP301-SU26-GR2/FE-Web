@@ -6,27 +6,20 @@ import {
   boardControllerGetSessions,
   boardControllerStartSession
 } from '~/api/operations/board/board'
-import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorBoardSessionsPage, type EditorActionResult } from '~/features/editor'
-import { optionalDate, required } from './board-route-utils'
+import { loadBoardSessionSeries, optionalDate, required } from './board-route-utils'
 import type { Route } from './+types/board-sessions'
 
 export async function clientLoader() {
   try {
-    const [readySeriesResponse, pitchedSeriesResponse, sessions, decisions, configResponse] = await Promise.all([
-      seriesControllerListSeries({ status: 'READY_TO_PITCH', limit: 100, offset: 0 }),
-      seriesControllerListSeries({ status: 'PITCHED', limit: 100, offset: 0 }),
+    const [series, sessions, decisions, configResponse] = await Promise.all([
+      loadBoardSessionSeries(),
       boardControllerGetSessions(),
       boardControllerGetDecisions(),
       boardControllerGetConfig()
     ])
     const configuredMemberCount = Math.max(3, Math.trunc(configResponse.data.quorumMin))
     const suggestedMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount + 1 : configuredMemberCount
-    const series = [
-      ...new Map(
-        [...readySeriesResponse.data.items, ...pitchedSeriesResponse.data.items].map((item) => [item.id, item])
-      ).values()
-    ]
     return {
       series,
       sessions: sessions.data,

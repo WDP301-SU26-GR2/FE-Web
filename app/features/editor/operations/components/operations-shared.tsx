@@ -1,11 +1,12 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
 import { ArrowLeft, Plus, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../../types'
-import { Dialog } from '~/shared/ui/dialog'
+import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground'
 
@@ -178,14 +179,23 @@ export function OperationAction({
 
 export function OperationFeedback({ data }: { data?: EditorActionResult }) {
   const { t } = useTranslation('editor')
-  if (!data) return null
-  return (
-    <p className={`mt-3 text-xs font-bold ${data.ok ? 'text-primary' : 'text-destructive'}`}>
-      {data.ok
-        ? t(`messages.${data.messageKey ?? 'operationCompleted'}`)
-        : (data.message ?? t(`errors.${data.errorKey ?? 'actionFailed'}`))}
-    </p>
-  )
+  const closeDialog = useDialogClose()
+  const lastData = useRef<EditorActionResult | undefined>(data)
+
+  useEffect(() => {
+    if (!data || lastData.current === data) return
+    lastData.current = data
+    const message = data.ok
+      ? data.message || t(`messages.${data.messageKey ?? 'operationCompleted'}`)
+      : data.message || t(`errors.${data.errorKey ?? 'actionFailed'}`)
+    const id = `editor-operation-${data.intent}-${data.ok ? 'success' : 'error'}-${data.messageKey ?? data.errorKey ?? ''}`
+    if (data.ok) {
+      toast.success(message, { id })
+      closeDialog?.()
+    } else toast.error(message, { id })
+  }, [closeDialog, data, t])
+
+  return null
 }
 
 export function useOperationFetcher() {

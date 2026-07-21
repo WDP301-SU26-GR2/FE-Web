@@ -1,15 +1,13 @@
 import { Link } from 'react-router'
-import { BarChart3, CalendarClock, ChevronRight, FileText, Gavel, Send } from 'lucide-react'
+import { CalendarClock, ChevronRight, FileText, Gavel } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 export function EditorBoardPage() {
   const { t } = useTranslation('editor')
   const sections = [
     ['sessions', CalendarClock],
-    ['pitching', Send],
     ['decisions', Gavel],
-    ['reports', FileText],
-    ['lifecycle', BarChart3]
+    ['reports', FileText]
   ] as const
   return (
     <div className='space-y-7 pb-12'>

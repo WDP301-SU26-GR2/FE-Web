@@ -80,7 +80,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         }
       )
     else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch (error) {
     return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác tái bản.') }
   }

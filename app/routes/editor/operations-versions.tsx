@@ -49,7 +49,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'removePublicationVersion')
       await publicationControllerRemove({ id: required(form, 'versionId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch {
     return { ok: false, intent, errorKey: 'actionFailed' }
   }

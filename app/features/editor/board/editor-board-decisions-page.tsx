@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { Loader2, Plus, Vote } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
 import type { BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { Dialog } from '~/shared/ui/dialog'
 import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
-import { orderBoardDecisions, orderBoardSessions } from './board-order'
+import { orderBoardDecisions } from './board-order'
 import {
   boardInput,
   BoardFeedback,
@@ -42,12 +40,8 @@ export function EditorBoardDecisionsPage({
   const [selectedSessionId, setSelectedSessionId] = useState('')
   const [decisionType, setDecisionType] = useState('')
   const [decisionResult, setDecisionResult] = useState('')
-  const [createOpen, setCreateOpen] = useState(false)
   useBoardAutoRefresh()
   const realtime = useEditorSessionVoteProgress(sessions, decisions)
-  const eligibleSessions = orderBoardSessions(
-    sessions.filter((session) => session.status === 'UPCOMING' || session.status === 'ACTIVE')
-  )
   const visibleDecisions = orderBoardDecisions(
     realtime.decisions.filter(
       (decision) =>
@@ -56,9 +50,6 @@ export function EditorBoardDecisionsPage({
         (!decisionType || decision.decisionType === decisionType) &&
         (!decisionResult || decision.result === decisionResult)
     )
-  )
-  const hasExistingDecision = realtime.decisions.some(
-    (decision) => decision.targetSeriesId === selectedSeriesId && decision.boardSessionId === selectedSessionId
   )
 
   function selectSeries(seriesId: string) {
@@ -73,28 +64,6 @@ export function EditorBoardDecisionsPage({
       hasError={hasError}
       backPath={backPath}
     >
-      <div className='flex justify-end'>
-        <button
-          type='button'
-          onClick={() => setCreateOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
-        >
-          <Plus className='size-4' />
-          {t('actions.createDecision')}
-        </button>
-      </div>
-      {createOpen && (
-        <CreateSerializationDecision
-          series={series}
-          sessions={eligibleSessions}
-          selectedSeriesId={selectedSeriesId}
-          selectedSessionId={selectedSessionId}
-          hasExistingDecision={hasExistingDecision}
-          onSelectSeries={selectSeries}
-          onSelectSession={setSelectedSessionId}
-          onClose={() => setCreateOpen(false)}
-        />
-      )}
       <BoardPanel title={t('board.decisionList')}>
         <div className='mb-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 md:grid-cols-2 xl:grid-cols-4'>
           <select
@@ -167,99 +136,6 @@ export function EditorBoardDecisionsPage({
         </div>
       </BoardPanel>
     </BoardPageLayout>
-  )
-}
-
-function CreateSerializationDecision({
-  series,
-  sessions,
-  selectedSeriesId,
-  selectedSessionId,
-  hasExistingDecision,
-  onSelectSeries,
-  onSelectSession,
-  onClose
-}: {
-  series: SeriesListResDtoOutputItemsItem[]
-  sessions: BoardSessionResDtoOutput[]
-  selectedSeriesId: string
-  selectedSessionId: string
-  hasExistingDecision: boolean
-  onSelectSeries: (seriesId: string) => void
-  onSelectSession: (sessionId: string) => void
-  onClose: () => void
-}) {
-  const { t } = useTranslation('editor')
-  const fetcher = useBoardFetcher()
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
-  }, [fetcher.data, fetcher.state, onClose])
-
-  return (
-    <Dialog
-      open
-      onClose={onClose}
-      titleId='create-serialization-decision'
-      title={t('board.decisionTitle')}
-      description={t('board.decisionDescription')}
-      size='lg'
-    >
-      <fetcher.Form method='post' className='grid gap-3'>
-        <input type='hidden' name='intent' value='createDecision' />
-        <SelectSeries series={series} value={selectedSeriesId} onChange={onSelectSeries} />
-        {selectedSeriesId && <SelectSession sessions={sessions} value={selectedSessionId} onChange={onSelectSession} />}
-        {selectedSeriesId && !sessions.length && (
-          <p className='rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground'>
-            {t('board.noEligibleSessions')}
-          </p>
-        )}
-        {selectedSessionId &&
-          (hasExistingDecision ? (
-            <p className='rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground'>
-              {t('board.decisionAlreadyExists')}
-            </p>
-          ) : (
-            <>
-              <label className='grid gap-1.5 text-sm font-semibold'>
-                {t('board.magazine')}
-                <input className={boardInput} name='magazine' required />
-              </label>
-              <div className='grid gap-3 sm:grid-cols-2'>
-                <label className='grid gap-1.5 text-sm font-semibold'>
-                  {t('board.startIssue')}
-                  <input className={boardInput} name='startIssueNumber' type='number' min={1} required />
-                </label>
-                <label className='grid gap-1.5 text-sm font-semibold'>
-                  {t('proposalDetail.publicationType')}
-                  <select className={boardInput} name='publicationType' required defaultValue='WEEKLY'>
-                    <option value='WEEKLY'>WEEKLY</option>
-                    <option value='MONTHLY'>MONTHLY</option>
-                    <option value='IRREGULAR'>IRREGULAR</option>
-                  </select>
-                </label>
-              </div>
-            </>
-          ))}
-        {selectedSessionId && !hasExistingDecision && (
-          <div className='flex justify-end gap-2 border-t border-border pt-4'>
-            <button
-              type='button'
-              onClick={onClose}
-              className='h-10 rounded-md border border-border px-4 text-sm font-bold'
-            >
-              {t('actions.cancel')}
-            </button>
-            <SubmitButton
-              label={t('actions.createDecision')}
-              disabled={!selectedSeriesId || !selectedSessionId}
-              loading={fetcher.state !== 'idle'}
-            />
-          </div>
-        )}
-      </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
-    </Dialog>
   )
 }
 
@@ -341,83 +217,5 @@ function DecisionCard({
       )}
       <BoardFeedback data={fetcher.data} />
     </article>
-  )
-}
-
-function SelectSession({
-  sessions,
-  value,
-  onChange
-}: {
-  sessions: BoardSessionResDtoOutput[]
-  value: string
-  onChange: (sessionId: string) => void
-}) {
-  const { t } = useTranslation('editor')
-  return (
-    <label className='grid gap-1.5 text-sm font-semibold'>
-      {t('board.selectSession')}
-      <select
-        className={boardInput}
-        name='sessionId'
-        required
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value='' disabled>
-          {t('board.selectSession')}
-        </option>
-        {sessions.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.title} · {item.status}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
-
-function SelectSeries({
-  series,
-  value,
-  onChange
-}: {
-  series: SeriesListResDtoOutputItemsItem[]
-  value: string
-  onChange: (seriesId: string) => void
-}) {
-  const { t } = useTranslation('editor')
-  return (
-    <label className='grid gap-1.5 text-sm font-semibold'>
-      {t('board.selectSeries')}
-      <select
-        className={boardInput}
-        name='seriesId'
-        required
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value='' disabled>
-          {t('board.selectSeries')}
-        </option>
-        {series.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.title}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
-
-function SubmitButton({ label, disabled, loading }: { label: string; disabled: boolean; loading: boolean }) {
-  return (
-    <button
-      disabled={disabled || loading}
-      className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
-    >
-      {loading ? <Loader2 className='size-4 animate-spin' /> : <Vote className='size-4' />}
-      {label}
-    </button>
   )
 }

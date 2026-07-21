@@ -1,13 +1,10 @@
-import { EditorBoardLifecyclePage } from '~/features/editor'
-import {
-  clientAction as editorBoardLifecycleAction,
-  clientLoader as editorBoardLifecycleLoader
-} from '../editor/board-lifecycle'
-import type { Route } from './+types/board-lifecycle'
+import { redirect } from 'react-router'
 
-export const clientLoader = editorBoardLifecycleLoader
-export const clientAction = editorBoardLifecycleAction
+/** Legacy entry point. Lifecycle decisions are now prepared inside their Board session. */
+export function clientLoader() {
+  return redirect('/dashboard/admin/board/sessions')
+}
 
-export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <EditorBoardLifecyclePage {...loaderData} backPath='/dashboard/admin/board' />
+export default function RouteComponent() {
+  return null
 }

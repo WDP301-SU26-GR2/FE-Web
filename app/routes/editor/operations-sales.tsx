@@ -22,7 +22,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       unitsSold: Number(required(form, 'unitsSold')),
       period: required(form, 'period')
     })
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch {
     return { ok: false, intent, errorKey: 'actionFailed' }
   }

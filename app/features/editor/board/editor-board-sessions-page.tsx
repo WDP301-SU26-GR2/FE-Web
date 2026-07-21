@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import { CalendarClock, CircleAlert, Loader2, Play, Plus, Radio, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import type {
-  BoardDecisionResDtoOutput,
-  BoardSessionResDtoOutput
-} from '~/api/model/board'
+import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
@@ -75,18 +72,22 @@ export function EditorBoardSessionsPage({
       <BoardPanel title={t('board.sessions')}>
         <div className='grid gap-3'>
           <div className='grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>
-              <input
-                className={boardInput}
-                value={sessionSearch}
-                onChange={(event) => setSessionSearch(event.target.value)}
-                placeholder={t('board.filters.searchSessions')}
-              />
-              <select className={boardInput} value={sessionStatus} onChange={(event) => setSessionStatus(event.target.value)}>
-                <option value=''>{t('board.filters.allStatuses')}</option>
-                <option value='UPCOMING'>{t('board.sessionStatuses.UPCOMING')}</option>
-                <option value='ACTIVE'>{t('board.sessionStatuses.ACTIVE')}</option>
-                <option value='CONCLUDED'>{t('board.sessionStatuses.CONCLUDED')}</option>
-              </select>
+            <input
+              className={boardInput}
+              value={sessionSearch}
+              onChange={(event) => setSessionSearch(event.target.value)}
+              placeholder={t('board.filters.searchSessions')}
+            />
+            <select
+              className={boardInput}
+              value={sessionStatus}
+              onChange={(event) => setSessionStatus(event.target.value)}
+            >
+              <option value=''>{t('board.filters.allStatuses')}</option>
+              <option value='UPCOMING'>{t('board.sessionStatuses.UPCOMING')}</option>
+              <option value='ACTIVE'>{t('board.sessionStatuses.ACTIVE')}</option>
+              <option value='CONCLUDED'>{t('board.sessionStatuses.CONCLUDED')}</option>
+            </select>
           </div>
           {!!sessions.some((session) => session.status === 'ACTIVE') && (
             <div className='flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
@@ -160,7 +161,9 @@ function CreateSessionDialog({
             <CircleAlert className='size-4 shrink-0' />
             {t('board.sessionRulesTitle')}
           </div>
-          <p className='mt-2 text-xs leading-5'>{t('board.sessionSystemRosterNotice', { count: suggestedMemberCount })}</p>
+          <p className='mt-2 text-xs leading-5'>
+            {t('board.sessionSystemRosterNotice', { count: suggestedMemberCount })}
+          </p>
         </aside>
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.sessionName')}
@@ -180,7 +183,7 @@ function CreateSessionDialog({
             </option>
             {series.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.title}
+                {item.title} · {t(`seriesStatuses.${item.status}`, { defaultValue: item.status })}
               </option>
             ))}
           </select>
@@ -268,18 +271,14 @@ function SessionCard({
   const intent = session.status === 'UPCOMING' ? 'startSession' : 'concludeSession'
   const showStateAction =
     canManage &&
-    (session.status === 'UPCOMING' ||
-      (session.status === 'ACTIVE' && session.phase === 'VOTING' && allDecisionsFinal))
+    (session.status === 'UPCOMING' || (session.status === 'ACTIVE' && session.phase === 'VOTING' && allDecisionsFinal))
 
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
           {isCreator || manageAll ? (
-            <Link
-              to={`${detailBasePath}/${session.id}`}
-              className='font-bold text-primary hover:underline'
-            >
+            <Link to={`${detailBasePath}/${session.id}`} className='font-bold text-primary hover:underline'>
               {session.title}
             </Link>
           ) : (
@@ -351,7 +350,18 @@ function SessionDecisionProgress({
   return (
     <div className='rounded-md bg-muted/60 p-3'>
       <div className='flex flex-wrap items-center justify-between gap-2 text-xs'>
-        <strong className='text-foreground'>{decision.decisionType ?? t('board.sections.decisions')}</strong>
+        <strong className='text-foreground'>
+          {decision.targetSeries?.title
+            ? t('board.decisionDisplay.genericTitle', {
+                type: t(`board.decisionTypeLabels.${decision.decisionType}`, {
+                  defaultValue: decision.decisionType ?? t('board.sections.decisions')
+                }),
+                series: decision.targetSeries.title
+              })
+            : t(`board.decisionTypeLabels.${decision.decisionType}`, {
+                defaultValue: decision.decisionType ?? t('board.sections.decisions')
+              })}
+        </strong>
         <span className={decision.quorumMet ? 'font-semibold text-primary' : 'text-muted-foreground'}>
           {decision.quorumMet ? t('board.quorumMet') : t('board.quorumPending')}
         </span>

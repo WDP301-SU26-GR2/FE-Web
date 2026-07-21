@@ -4,6 +4,7 @@ import { Pencil, UserRoundCog } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { StaffProfileResDtoOutput } from '~/api/model/users'
 import type { EditorActionResult } from '../types'
+import { EditorActionToast } from '../components/editor-action-toast'
 import { Dialog } from '~/shared/ui/dialog'
 
 const input = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground'
@@ -87,11 +88,7 @@ function EditorProfileDialog({ profile, onClose }: { profile: StaffProfileResDto
             {t('actions.saveProfile')}
           </button>
         </div>
-        {fetcher.data && (
-          <p className={fetcher.data.ok ? 'text-sm text-primary' : 'text-sm text-destructive'}>
-            {fetcher.data.ok ? t('messages.operationCompleted') : t('errors.actionFailed')}
-          </p>
-        )}
+        <EditorActionToast data={fetcher.data} scope='editor-profile' />
       </fetcher.Form>
     </Dialog>
   )

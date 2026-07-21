@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { EditorActionResult, EditorContractsData } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
+import { EditorActionToast } from '../components/editor-action-toast'
 
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -242,13 +243,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}
             {t('actions.createContract')}
           </button>
-          {fetcher.data && (
-            <p
-              className={`text-xs font-semibold md:col-span-2 ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}
-            >
-              {fetcher.data.ok ? t('messages.createContract') : t(`errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
-            </p>
-          )}
+          <EditorActionToast data={fetcher.data} scope='editor-create-contract' />
         </fetcher.Form>
         </Dialog>
       )}

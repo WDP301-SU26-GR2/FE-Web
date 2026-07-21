@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
 import { ArrowLeft, Gavel, Loader2, Pencil, Save, Settings2, SlidersHorizontal, Vote } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import type { AdminSettingsActionResult, AdminSettingsData } from './types'
-import { Dialog } from '~/shared/ui/dialog'
+import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData | null; hasError: boolean }) {
   const { t } = useTranslation('admin')
@@ -52,64 +53,71 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
         <EditConfigButton onClick={() => setOpen(true)} label={t('settings.edit')} />
       </ConfigCard>
       {open && (
-      <Dialog open onClose={() => setOpen(false)} titleId='edit-app-config' title={t('settings.app.title')} description={t('settings.app.description')} size='xl'>
-      <fetcher.Form method='post'>
-        <input type='hidden' name='intent' value='appConfig' />
-        <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-          <NumberField
-            name='coOwnerApprovalGraceDays'
-            value={config.coOwnerApprovalGraceDays}
-            min={0}
-            label={t('settings.app.coOwnerApprovalGraceDays')}
-            unit={t('settings.units.days')}
-          />
-          <NumberField
-            name='nameMaxReviewRounds'
-            value={config.nameMaxReviewRounds}
-            min={1}
-            label={t('settings.app.nameMaxReviewRounds')}
-          />
-          <NumberField
-            name='reputationRecommendThreshold'
-            value={config.reputationRecommendThreshold}
-            min={1}
-            max={5}
-            step={0.1}
-            label={t('settings.app.reputationRecommendThreshold')}
-          />
-          <NumberField
-            name='hiatusTooLongDays'
-            value={config.hiatusTooLongDays}
-            min={1}
-            label={t('settings.app.hiatusTooLongDays')}
-            unit={t('settings.units.days')}
-          />
-          <NumberField
-            name='lowVoteReliabilityThreshold'
-            value={config.lowVoteReliabilityThreshold}
-            min={0}
-            label={t('settings.app.lowVoteReliabilityThreshold')}
-          />
-          <NumberField
-            name='maxUploadMb'
-            value={bytesToMb(config.maxUploadBytes)}
-            min={1}
-            max={50}
-            step={1}
-            label={t('settings.app.maxUploadBytes')}
-            unit='MB'
-          />
-          <NumberField
-            name='assignmentGraceDays'
-            value={config.assignmentGraceDays}
-            min={0}
-            label={t('settings.app.assignmentGraceDays')}
-            unit={t('settings.units.days')}
-          />
-        </div>
-        <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
-      </fetcher.Form>
-      </Dialog>
+        <Dialog
+          open
+          onClose={() => setOpen(false)}
+          titleId='edit-app-config'
+          title={t('settings.app.title')}
+          description={t('settings.app.description')}
+          size='xl'
+        >
+          <fetcher.Form method='post'>
+            <input type='hidden' name='intent' value='appConfig' />
+            <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+              <NumberField
+                name='coOwnerApprovalGraceDays'
+                value={config.coOwnerApprovalGraceDays}
+                min={0}
+                label={t('settings.app.coOwnerApprovalGraceDays')}
+                unit={t('settings.units.days')}
+              />
+              <NumberField
+                name='nameMaxReviewRounds'
+                value={config.nameMaxReviewRounds}
+                min={1}
+                label={t('settings.app.nameMaxReviewRounds')}
+              />
+              <NumberField
+                name='reputationRecommendThreshold'
+                value={config.reputationRecommendThreshold}
+                min={1}
+                max={5}
+                step={0.1}
+                label={t('settings.app.reputationRecommendThreshold')}
+              />
+              <NumberField
+                name='hiatusTooLongDays'
+                value={config.hiatusTooLongDays}
+                min={1}
+                label={t('settings.app.hiatusTooLongDays')}
+                unit={t('settings.units.days')}
+              />
+              <NumberField
+                name='lowVoteReliabilityThreshold'
+                value={config.lowVoteReliabilityThreshold}
+                min={0}
+                label={t('settings.app.lowVoteReliabilityThreshold')}
+              />
+              <NumberField
+                name='maxUploadMb'
+                value={bytesToMb(config.maxUploadBytes)}
+                min={1}
+                max={50}
+                step={1}
+                label={t('settings.app.maxUploadBytes')}
+                unit='MB'
+              />
+              <NumberField
+                name='assignmentGraceDays'
+                value={config.assignmentGraceDays}
+                min={0}
+                label={t('settings.app.assignmentGraceDays')}
+                unit={t('settings.units.days')}
+              />
+            </div>
+            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
+          </fetcher.Form>
+        </Dialog>
       )}
     </>
   )
@@ -136,33 +144,40 @@ function BoardConfigForm({ data }: { data: AdminSettingsData }) {
         <EditConfigButton onClick={() => setOpen(true)} label={t('settings.edit')} />
       </ConfigCard>
       {open && (
-      <Dialog open onClose={() => setOpen(false)} titleId='edit-board-config' title={t('settings.board.title')} description={t('settings.board.description')} size='lg'>
-      <fetcher.Form method='post'>
-        <input type='hidden' name='intent' value='boardConfig' />
-        <input type='hidden' name='configId' value={config.id} />
-        <input type='hidden' name='updatedBy' value={data.currentUserId} />
-        <div className='grid gap-4 md:grid-cols-3'>
-          <NumberField
-            name='boardTotalMembers'
-            value={config.boardTotalMembers}
-            min={3}
-            step={2}
-            label={t('settings.board.boardTotalMembers')}
-          />
-          <NumberField name='quorumMin' value={config.quorumMin} min={1} label={t('settings.board.quorumMin')} />
-          <NumberField
-            name='approveMajorityPercent'
-            value={Math.round(config.approveMajorityRatio * 100)}
-            min={1}
-            max={100}
-            label={t('settings.board.approveMajorityRatio')}
-            unit='%'
-          />
-        </div>
-        <p className='mt-3 text-xs text-muted-foreground'>{t('settings.board.lockNotice')}</p>
-        <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
-      </fetcher.Form>
-      </Dialog>
+        <Dialog
+          open
+          onClose={() => setOpen(false)}
+          titleId='edit-board-config'
+          title={t('settings.board.title')}
+          description={t('settings.board.description')}
+          size='lg'
+        >
+          <fetcher.Form method='post'>
+            <input type='hidden' name='intent' value='boardConfig' />
+            <input type='hidden' name='configId' value={config.id} />
+            <input type='hidden' name='updatedBy' value={data.currentUserId} />
+            <div className='grid gap-4 md:grid-cols-3'>
+              <NumberField
+                name='boardTotalMembers'
+                value={config.boardTotalMembers}
+                min={3}
+                step={2}
+                label={t('settings.board.boardTotalMembers')}
+              />
+              <NumberField name='quorumMin' value={config.quorumMin} min={1} label={t('settings.board.quorumMin')} />
+              <NumberField
+                name='approveMajorityPercent'
+                value={Math.round(config.approveMajorityRatio * 100)}
+                min={1}
+                max={100}
+                label={t('settings.board.approveMajorityRatio')}
+                unit='%'
+              />
+            </div>
+            <p className='mt-3 text-xs text-muted-foreground'>{t('settings.board.lockNotice')}</p>
+            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
+          </fetcher.Form>
+        </Dialog>
       )}
     </>
   )
@@ -180,69 +195,81 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
         <EditConfigButton onClick={() => setOpen(true)} label={t('settings.edit')} />
       </ConfigCard>
       {open && (
-      <Dialog open onClose={() => setOpen(false)} titleId='edit-voting-config' title={t('settings.voting.title')} description={t('settings.voting.description')} size='xl'>
-      <fetcher.Form method='post'>
-        <input type='hidden' name='intent' value='votingConfig' />
-        <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-          <label className='space-y-1.5'>
-            <span className='text-xs font-bold text-foreground'>{t('settings.voting.authMode')}</span>
-            <select name='authMode' defaultValue={config.authMode} className={inputClassName}>
-              <option value='OTP'>OTP</option>
-              <option value='CAPTCHA'>CAPTCHA</option>
-              <option value='HYBRID'>HYBRID</option>
-            </select>
-          </label>
-          <NumberField
-            name='maxSeriesPerVote'
-            value={config.maxSeriesPerVote}
-            min={1}
-            label={t('settings.voting.maxSeriesPerVote')}
-          />
-          <NumberField
-            name='otpExpirySeconds'
-            value={config.otpExpirySeconds}
-            min={60}
-            label={t('settings.voting.otpExpirySeconds')}
-            unit={t('settings.units.seconds')}
-          />
-          <NumberField
-            name='otpMaxAttempts'
-            value={config.otpMaxAttempts}
-            min={1}
-            label={t('settings.voting.otpMaxAttempts')}
-          />
-          <NumberField name='ipRateLimit' value={config.ipRateLimit} min={1} label={t('settings.voting.ipRateLimit')} />
-          <NumberField
-            name='phoneRateLimit'
-            value={config.phoneRateLimit}
-            min={1}
-            label={t('settings.voting.phoneRateLimit')}
-          />
-          <NumberField
-            name='otpCooldownSeconds'
-            value={config.otpCooldownSeconds}
-            min={0}
-            label={t('settings.voting.otpCooldownSeconds')}
-            unit={t('settings.units.seconds')}
-          />
-          <NumberField
-            name='ipVotesPerPeriod'
-            value={config.ipVotesPerPeriod}
-            min={1}
-            label={t('settings.voting.ipVotesPerPeriod')}
-          />
-          <NumberField
-            name='captchaThreshold'
-            value={config.captchaThreshold}
-            min={0}
-            max={1}
-            step={0.05}
-            label={t('settings.voting.captchaThreshold')}
-          />
-        </div>
-        <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
-      </fetcher.Form>
-      </Dialog>
+        <Dialog
+          open
+          onClose={() => setOpen(false)}
+          titleId='edit-voting-config'
+          title={t('settings.voting.title')}
+          description={t('settings.voting.description')}
+          size='xl'
+        >
+          <fetcher.Form method='post'>
+            <input type='hidden' name='intent' value='votingConfig' />
+            <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+              <label className='space-y-1.5'>
+                <span className='text-xs font-bold text-foreground'>{t('settings.voting.authMode')}</span>
+                <select name='authMode' defaultValue={config.authMode} className={inputClassName}>
+                  <option value='OTP'>OTP</option>
+                  <option value='CAPTCHA'>CAPTCHA</option>
+                  <option value='HYBRID'>HYBRID</option>
+                </select>
+              </label>
+              <NumberField
+                name='maxSeriesPerVote'
+                value={config.maxSeriesPerVote}
+                min={1}
+                label={t('settings.voting.maxSeriesPerVote')}
+              />
+              <NumberField
+                name='otpExpirySeconds'
+                value={config.otpExpirySeconds}
+                min={60}
+                label={t('settings.voting.otpExpirySeconds')}
+                unit={t('settings.units.seconds')}
+              />
+              <NumberField
+                name='otpMaxAttempts'
+                value={config.otpMaxAttempts}
+                min={1}
+                label={t('settings.voting.otpMaxAttempts')}
+              />
+              <NumberField
+                name='ipRateLimit'
+                value={config.ipRateLimit}
+                min={1}
+                label={t('settings.voting.ipRateLimit')}
+              />
+              <NumberField
+                name='phoneRateLimit'
+                value={config.phoneRateLimit}
+                min={1}
+                label={t('settings.voting.phoneRateLimit')}
+              />
+              <NumberField
+                name='otpCooldownSeconds'
+                value={config.otpCooldownSeconds}
+                min={0}
+                label={t('settings.voting.otpCooldownSeconds')}
+                unit={t('settings.units.seconds')}
+              />
+              <NumberField
+                name='ipVotesPerPeriod'
+                value={config.ipVotesPerPeriod}
+                min={1}
+                label={t('settings.voting.ipVotesPerPeriod')}
+              />
+              <NumberField
+                name='captchaThreshold'
+                value={config.captchaThreshold}
+                min={0}
+                max={1}
+                step={0.05}
+                label={t('settings.voting.captchaThreshold')}
+              />
+            </div>
+            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
+          </fetcher.Form>
+        </Dialog>
       )}
     </>
   )
@@ -338,6 +365,22 @@ function FormFooter({
 }) {
   const { t, i18n } = useTranslation('admin')
   const busy = fetcher.state !== 'idle'
+  const closeDialog = useDialogClose()
+  const lastData = useRef<AdminSettingsActionResult | undefined>(fetcher.data)
+
+  useEffect(() => {
+    const data = fetcher.data
+    if (!data || lastData.current === data) return
+    lastData.current = data
+    const message = data.ok
+      ? t(`settings.messages.${data.messageKey}`)
+      : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`)
+    if (data.ok) {
+      toast.success(message, { id: `admin-settings-${data.intent}-success` })
+      closeDialog?.()
+    } else toast.error(message, { id: `admin-settings-${data.intent}-error-${data.errorKey ?? ''}` })
+  }, [closeDialog, fetcher.data, t])
+
   return (
     <div className='mt-5 flex flex-col justify-between gap-3 border-t border-border pt-4 sm:flex-row sm:items-center'>
       <div>
@@ -348,13 +391,6 @@ function FormFooter({
             )
           })}
         </p>
-        {fetcher.data && (
-          <p className={`mt-1 text-xs font-bold ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}>
-            {fetcher.data.ok
-              ? t(`settings.messages.${fetcher.data.messageKey}`)
-              : t(`settings.errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
-          </p>
-        )}
       </div>
       <button
         type='submit'

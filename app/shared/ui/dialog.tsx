@@ -1,4 +1,4 @@
-import { useEffect, type KeyboardEvent, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type KeyboardEvent, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
@@ -27,6 +27,12 @@ const SIZE_CLASS: Record<NonNullable<DialogProps['size']>, string> = {
   md: 'max-w-md',
   lg: 'max-w-lg',
   xl: 'max-w-2xl'
+}
+
+const DialogCloseContext = createContext<(() => void) | null>(null)
+
+export function useDialogClose() {
+  return useContext(DialogCloseContext)
 }
 
 /**
@@ -70,15 +76,8 @@ export function Dialog({
   const stopProp = (e: React.MouseEvent) => e.stopPropagation()
 
   return (
-    <div
-      role='presentation'
-      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-6'
-    >
-      <div
-        aria-hidden='true'
-        onClick={onClose}
-        className='absolute inset-0 bg-black/60 backdrop-blur-sm'
-      />
+    <div role='presentation' className='fixed inset-0 z-50 flex items-center justify-center px-4 py-6'>
+      <div aria-hidden='true' onClick={onClose} className='absolute inset-0 bg-black/60 backdrop-blur-sm' />
       <div
         role='dialog'
         aria-modal='true'
@@ -112,10 +111,10 @@ export function Dialog({
             <X className='h-5 w-5' />
           </button>
         </header>
-        <div className='flex-1 overflow-y-auto px-5 py-4'>{children}</div>
-        {footer && (
-          <footer className='shrink-0 border-t border-border px-5 py-3'>{footer}</footer>
-        )}
+        <div className='flex-1 overflow-y-auto px-5 py-4'>
+          <DialogCloseContext.Provider value={onClose}>{children}</DialogCloseContext.Provider>
+        </div>
+        {footer && <footer className='shrink-0 border-t border-border px-5 py-3'>{footer}</footer>}
       </div>
     </div>
   )

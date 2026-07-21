@@ -38,7 +38,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'finalizeEnding') await seriesControllerFinalizeEnding({ id: required(form, 'seriesId') })
     else if (intent === 'forceCancel') await seriesControllerForceCancel({ id: required(form, 'seriesId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch {
     return { ok: false, intent, errorKey: 'actionFailed' }
   }

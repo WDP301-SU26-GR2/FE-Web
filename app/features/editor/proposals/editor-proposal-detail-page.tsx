@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { EditorActionResult, EditorProposalDetailData } from '../types'
 import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
+import { EditorActionToast } from '../components/editor-action-toast'
 
 export function EditorProposalDetailPage({
   data,
@@ -70,7 +71,7 @@ export function EditorProposalDetailPage({
           </div>
         </div>
       </header>
-      {fetcher.data && <Feedback result={fetcher.data} />}
+      <EditorActionToast data={fetcher.data} scope={`editor-proposal-detail-${series.id}`} />
       <div className='grid gap-6 xl:grid-cols-2'>
         <ReviewPanel
           title={t('proposalDetail.proposalTitle')}
@@ -292,17 +293,3 @@ function ReviewForm({
   )
 }
 
-function Feedback({ result }: { result: EditorActionResult }) {
-  const { t } = useTranslation('editor')
-  return (
-    <div
-      className={`rounded-xl border p-4 text-sm font-bold ${
-        result.ok
-          ? 'border-primary/30 bg-primary/10 text-primary'
-          : 'border-destructive/30 bg-destructive/10 text-destructive'
-      }`}
-    >
-      {result.ok ? t(`messages.${result.messageKey}`) : t(`errors.${result.errorKey ?? 'actionFailed'}`)}
-    </div>
-  )
-}

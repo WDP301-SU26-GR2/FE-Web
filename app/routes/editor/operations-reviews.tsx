@@ -22,7 +22,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       rating: Number(required(form, 'rating')),
       comment: String(form.get('comment') ?? '') || undefined
     })
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch {
     return { ok: false, intent, errorKey: 'actionFailed' }
   }

@@ -127,7 +127,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       })
       if (response.status !== 201) return { ok: false, intent, errorKey: 'surveyImportNotAllowed' }
     } else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch {
     return { ok: false, intent, errorKey: 'actionFailed' }
   }

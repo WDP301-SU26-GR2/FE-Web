@@ -167,7 +167,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
                 ? 'annotationUpdated'
                 : intent === 'reviseManuscript' || intent === 'reviseChapterName'
                   ? 'revisionRequested'
-                  : 'operationCompleted'
+                  : intent
     }
   } catch (error) {
     const code =
@@ -179,11 +179,13 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ? 'notAssigned'
         : code === 'Error.ContractNotExecuted' || code === 'Error.ContractNotFullyExecuted'
           ? 'contractRequired'
-          : ['Error.InvalidManuscriptState', 'Error.InvalidManuscriptTransition', 'Error.InvalidNameState'].includes(
-                code ?? ''
-              )
-            ? 'invalidState'
-            : 'actionFailed'
+          : code === 'Error.PagesNotReadyForPublish'
+            ? 'pagesNotReadyForPublish'
+            : ['Error.InvalidManuscriptState', 'Error.InvalidManuscriptTransition', 'Error.InvalidNameState'].includes(
+                  code ?? ''
+                )
+              ? 'invalidState'
+              : 'actionFailed'
     return { ok: false, intent, errorKey }
   }
 }

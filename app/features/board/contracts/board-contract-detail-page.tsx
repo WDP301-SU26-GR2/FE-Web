@@ -50,6 +50,10 @@ export function BoardContractDetailPage({
   const [changesOpen, setChangesOpen] = useState(false)
   const boardRoster = getContractBoardRoster(contract)
   const isRosterMember = boardRoster.includes(authSession?.user.id ?? '')
+  const currentBoardSignature = progress?.boardProgress.signedEditors.find(
+    (editor) => editor.id === authSession?.user.id
+  )
+  const hasCurrentMemberSigned = Boolean(currentBoardSignature)
   const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
   return (
     <div className='space-y-6 pb-12'>
@@ -63,8 +67,7 @@ export function BoardContractDetailPage({
           conditionsCount={
             conditions.filter(
               (condition) =>
-                condition.status !== 'DISABLED' &&
-                ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
+                condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
             ).length
           }
         />
@@ -163,7 +166,7 @@ export function BoardContractDetailPage({
                   {t('contracts.reportRevenue')}
                 </button>
               </fetcher.Form>
-              {fetcher.data?.intent === 'reportRevenue' && <BoardFeedback data={fetcher.data} />}
+              <BoardFeedback data={fetcher.data?.intent === 'reportRevenue' ? fetcher.data : undefined} />
             </BoardActionDialog>
           )}
         </div>
@@ -178,7 +181,10 @@ export function BoardContractDetailPage({
         {!isRosterMember && (
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>Bạn có thể xem hợp đồng, nhưng chỉ thành viên thuộc phiên Hội đồng đã phê duyệt serial hóa mới được duyệt hoặc ký.</p>
+            <p>
+              Bạn có thể xem hợp đồng, nhưng chỉ thành viên thuộc phiên Hội đồng đã phê duyệt serial hóa mới được duyệt
+              hoặc ký.
+            </p>
           </div>
         )}
         <fetcher.Form method='post' className='grid gap-3'>
@@ -206,14 +212,16 @@ export function BoardContractDetailPage({
               <div>
                 <h3 className='text-sm font-bold text-foreground'>{t('contracts.boardSignature')}</h3>
                 <p className='mt-1 text-xs text-muted-foreground'>
-                  {contract.status === 'MANGAKA_SIGNED'
-                    ? t('contracts.readyToSign')
-                    : contract.boardSignedAt
-                      ? `${t('contracts.signed')}: ${new Date(contract.boardSignedAt).toLocaleString()}`
-                      : t('contracts.waitingMangakaSignature')}
+                  {hasCurrentMemberSigned
+                    ? `${t('contracts.signed')}: ${new Date(currentBoardSignature!.actionAt).toLocaleString()}`
+                    : contract.status === 'MANGAKA_SIGNED'
+                      ? t('contracts.readyToSign')
+                      : contract.boardSignedAt
+                        ? `${t('contracts.signed')}: ${new Date(contract.boardSignedAt).toLocaleString()}`
+                        : t('contracts.waitingMangakaSignature')}
                 </p>
               </div>
-              {isRosterMember && contract.status === 'MANGAKA_SIGNED' && (
+              {isRosterMember && !hasCurrentMemberSigned && contract.status === 'MANGAKA_SIGNED' && (
                 <button
                   type='button'
                   disabled={!conditionsReady}
@@ -283,7 +291,7 @@ export function BoardContractDetailPage({
             </button>
           </div>
         </fetcher.Form>
-        {fetcher.data?.intent === 'changes' && <BoardFeedback data={fetcher.data} />}
+        <BoardFeedback data={fetcher.data?.intent === 'changes' ? fetcher.data : undefined} />
       </Dialog>
       {signOpen && conditionsReady && <ContractSignDialog onClose={() => setSignOpen(false)} />}
       <BoardPanel title={t('contracts.amendments')}>

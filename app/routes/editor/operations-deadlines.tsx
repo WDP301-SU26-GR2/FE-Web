@@ -62,7 +62,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'withdrawDeadline') await deadlineControllerWithdraw({ id: required(form, 'requestId') })
     else if (intent === 'finalizeDeadline') await deadlineControllerFinalize({ id: required(form, 'requestId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: 'operationCompleted' }
+    return { ok: true, intent, messageKey: intent }
   } catch {
     return { ok: false, intent, errorKey: 'actionFailed' }
   }

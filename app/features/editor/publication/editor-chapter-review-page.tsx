@@ -1,6 +1,6 @@
 import { Link, useFetcher } from 'react-router'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -19,9 +19,10 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
+import { EditorActionToast } from '../components/editor-action-toast'
 
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
-import { Dialog } from '~/shared/ui/dialog'
+import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 const HOLDABLE_MANUSCRIPT_STATUSES = new Set(['IN_PRODUCTION', 'EDITOR_REVIEW', 'EDITOR_REVISION', 'READY_FOR_PRINT'])
 
@@ -40,6 +41,7 @@ export function EditorChapterReviewPage({
   const [nameAnnotationsOpen, setNameAnnotationsOpen] = useState(false)
   const [manuscriptAnnotationsOpen, setManuscriptAnnotationsOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<'manuscript' | 'name' | 'production'>('manuscript')
+
   if (hasError || !data) {
     return (
       <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive'>
@@ -117,17 +119,7 @@ export function EditorChapterReviewPage({
           <span className='shrink-0 text-sm font-bold text-primary'>{t('chapterReview.setDeadlineNow')}</span>
         </button>
       )}
-      {fetcher.data && (
-        <div
-          role='status'
-          aria-live='polite'
-          className={`rounded-xl border p-4 text-sm font-bold ${fetcher.data.ok ? 'border-primary/30 bg-primary/10 text-primary' : 'border-destructive/30 bg-destructive/10 text-destructive'}`}
-        >
-          {fetcher.data.ok
-            ? t(`messages.${fetcher.data.messageKey}`)
-            : t(`errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
-        </div>
-      )}
+      <EditorActionToast data={fetcher.data} scope={`editor-chapter-${chapter.id}`} />
       <WorkflowActionPanel data={data} />
       <nav
         aria-label={t('chapterReview.reviewSections')}
@@ -382,7 +374,8 @@ export function EditorChapterReviewPage({
           description={t('publicationReviewUx.approveDescription')}
           size='md'
         >
-          <fetcher.Form method='post' className='space-y-4' onSubmit={() => setNameReviewOpen(false)}>
+          <CloseDialogOnSuccess data={fetcher.data} state={fetcher.state} />
+          <fetcher.Form method='post' className='space-y-4'>
             <input type='hidden' name='chapterId' value={chapter.id} />
             <input type='hidden' name='nameId' value={data.name.id} />
             <label className='grid gap-1.5 text-sm font-semibold text-foreground'>
@@ -422,7 +415,8 @@ export function EditorChapterReviewPage({
         title={chapter.schedule?.currentDeadline ? t('actions.extendDeadline') : t('actions.setDeadline')}
         size='sm'
       >
-        <fetcher.Form method='post' className='space-y-4' onSubmit={() => setDeadlineOpen(false)}>
+        <CloseDialogOnSuccess data={fetcher.data} state={fetcher.state} />
+        <fetcher.Form method='post' className='space-y-4'>
           <input type='hidden' name='chapterId' value={chapter.id} />
           <label className='grid gap-1.5 text-sm font-semibold text-foreground'>
             {chapter.schedule?.currentDeadline ? t('chapterReview.newDeadline') : t('chapterReview.initialDeadline')}
@@ -466,7 +460,8 @@ export function EditorChapterReviewPage({
         title={data.progress?.onHold ? t('actions.resumeChapter') : t('actions.holdChapter')}
         size='sm'
       >
-        <fetcher.Form method='post' className='space-y-4' onSubmit={() => setHoldOpen(false)}>
+        <CloseDialogOnSuccess data={fetcher.data} state={fetcher.state} />
+        <fetcher.Form method='post' className='space-y-4'>
           <input type='hidden' name='chapterId' value={chapter.id} />
           {!data.progress?.onHold && (
             <>
@@ -510,12 +505,15 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const [actionOpen, setActionOpen] = useState(false)
+
   const { series, chapter, contract } = data
   const status = chapter.manuscriptStatus ?? chapter.status
   const busy = fetcher.state !== 'idle'
   const isOnHold = Boolean(data.progress?.onHold)
   const canReview = chapter.manuscriptStatus === 'EDITOR_REVIEW'
   const canPublish = chapter.manuscriptStatus === 'READY_FOR_PRINT'
+  const incompletePageCount = data.pages.filter((page) => page.status !== 'COMPLETED').length
+  const pagesReadyForPublish = incompletePageCount === 0
   const endingPhase = ['CANCELLING', 'COMPLETING'].includes(series.status)
   const contractGateSatisfied = contract?.status === 'FULLY_EXECUTED' || endingPhase
 
@@ -542,20 +540,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
         </div>
       </div>
 
-      {fetcher.data && (
-        <div
-          role='status'
-          className={`mt-4 rounded-lg border px-3 py-2 text-sm font-semibold ${
-            fetcher.data.ok
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-destructive/30 bg-destructive/10 text-destructive'
-          }`}
-        >
-          {fetcher.data.ok
-            ? t(`messages.${fetcher.data.messageKey}`)
-            : t(`errors.${fetcher.data.errorKey ?? 'actionFailed'}`)}
-        </div>
-      )}
+      <EditorActionToast data={fetcher.data} scope={`editor-workflow-${chapter.id}`} />
 
       {canReview && (
         <div className='mt-5 flex justify-end border-t border-border pt-4'>
@@ -573,6 +558,17 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
 
       {canPublish && (
         <div className='mt-5 border-t border-border pt-5'>
+          {!pagesReadyForPublish && (
+            <div className='mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
+              <AlertTriangle className='mt-0.5 size-5 shrink-0 text-amber-700' />
+              <div>
+                <p className='text-sm font-bold text-foreground'>{t('publicationReviewUx.pagesBlocked')}</p>
+                <p className='mt-1 text-xs leading-5 text-muted-foreground'>
+                  {t('publicationReviewUx.pagesBlockedDescription', { count: incompletePageCount })}
+                </p>
+              </div>
+            </div>
+          )}
           <div
             className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-start ${
               contractGateSatisfied ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'
@@ -609,7 +605,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
             <button
               type='button'
               onClick={() => setActionOpen(true)}
-              disabled={busy || isOnHold || !contractGateSatisfied}
+              disabled={busy || isOnHold || !contractGateSatisfied || !pagesReadyForPublish}
               className='inline-flex h-11 items-center justify-center gap-2 rounded-md bg-foreground px-5 text-sm font-bold text-background shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
             >
               {busy ? <Loader2 className='size-4 animate-spin' /> : <Printer className='size-4' />}
@@ -633,9 +629,10 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
         description={canReview ? t('publicationReviewUx.approveDescription') : t('chapterReview.publishGate')}
         size={canReview ? 'lg' : 'sm'}
       >
+        <CloseDialogOnSuccess data={fetcher.data} state={fetcher.state} />
         {canReview ? (
           <div className='grid gap-5 sm:grid-cols-2'>
-            <fetcher.Form method='post' className='space-y-3' onSubmit={() => setActionOpen(false)}>
+            <fetcher.Form method='post' className='space-y-3'>
               <input type='hidden' name='chapterId' value={chapter.id} />
               <label className='grid gap-1.5 text-sm font-semibold text-foreground'>
                 {t('actions.revisionReason')}
@@ -662,7 +659,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
             </fetcher.Form>
             <div className='flex flex-col justify-between rounded-xl border border-primary/20 bg-primary/5 p-4'>
               <p className='text-sm leading-6 text-muted-foreground'>{t('publicationReviewUx.approveDescription')}</p>
-              <fetcher.Form method='post' className='mt-5' onSubmit={() => setActionOpen(false)}>
+              <fetcher.Form method='post' className='mt-5'>
                 <input type='hidden' name='chapterId' value={chapter.id} />
                 <button
                   name='intent'
@@ -677,16 +674,20 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
             </div>
           </div>
         ) : (
-          <fetcher.Form method='post' className='space-y-4' onSubmit={() => setActionOpen(false)}>
+          <fetcher.Form method='post' className='space-y-4'>
             <input type='hidden' name='chapterId' value={chapter.id} />
             <div className='flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4'>
               <CheckCircle2 className='mt-0.5 size-5 shrink-0 text-emerald-700' />
-              <p className='text-sm leading-6 text-foreground'>{t('publicationReviewUx.contractReady')}</p>
+              <p className='text-sm leading-6 text-foreground'>
+                {pagesReadyForPublish
+                  ? t('publicationReviewUx.contractReady')
+                  : t('publicationReviewUx.pagesBlockedDescription', { count: incompletePageCount })}
+              </p>
             </div>
             <button
               name='intent'
               value='publishChapter'
-              disabled={busy || isOnHold || !contractGateSatisfied}
+              disabled={busy || isOnHold || !contractGateSatisfied || !pagesReadyForPublish}
               className='inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-foreground px-5 text-sm font-bold text-background disabled:opacity-40'
             >
               {busy ? <Loader2 className='size-4 animate-spin' /> : <Printer className='size-4' />}
@@ -697,6 +698,23 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
       </Dialog>
     </section>
   )
+}
+
+function CloseDialogOnSuccess({
+  data,
+  state
+}: {
+  data?: EditorActionResult
+  state: 'idle' | 'loading' | 'submitting'
+}) {
+  const closeDialog = useDialogClose()
+  const initialData = useRef(data)
+
+  useEffect(() => {
+    if (state === 'idle' && data?.ok && data !== initialData.current) closeDialog?.()
+  }, [closeDialog, data, state])
+
+  return null
 }
 
 function SectionTab({

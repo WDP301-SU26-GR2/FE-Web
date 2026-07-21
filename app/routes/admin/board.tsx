@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { ArrowLeft, ClipboardList, FileText, Gavel, ShieldAlert, TrendingUp } from 'lucide-react'
+import { ArrowLeft, ClipboardList, FileText, Gavel, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
@@ -35,12 +35,6 @@ export default function AdminBoardRoute() {
       description: t('boardOversight.decisions.description')
     },
     {
-      href: '/dashboard/admin/board/lifecycle',
-      icon: TrendingUp,
-      title: t('boardOversight.lifecycle.title'),
-      description: t('boardOversight.lifecycle.description')
-    },
-    {
       href: '/dashboard/admin/board/payments',
       icon: ShieldAlert,
       title: t('boardOversight.payments.title'),
@@ -68,7 +62,9 @@ export default function AdminBoardRoute() {
           <ShieldAlert className='mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-400' aria-hidden='true' />
           <div>
             <p className='text-sm font-bold text-foreground'>{t('boardOversight.notice.title')}</p>
-            <p className='mt-1 text-sm leading-relaxed text-muted-foreground'>{t('boardOversight.notice.description')}</p>
+            <p className='mt-1 text-sm leading-relaxed text-muted-foreground'>
+              {t('boardOversight.notice.description')}
+            </p>
           </div>
         </div>
       </div>
@@ -87,7 +83,15 @@ export default function AdminBoardRoute() {
   )
 }
 
-function OversightSection({ title, description, items }: { title: string; description: string; items: OversightItem[] }) {
+function OversightSection({
+  title,
+  description,
+  items
+}: {
+  title: string
+  description: string
+  items: OversightItem[]
+}) {
   return (
     <section className='space-y-3'>
       <div>

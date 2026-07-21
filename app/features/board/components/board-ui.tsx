@@ -1,9 +1,10 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Gavel, Loader2, PencilLine } from 'lucide-react'
 import { useFetcher, useRevalidator } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import type { BoardActionResult } from '../types'
-import { Dialog } from '~/shared/ui/dialog'
+import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 export const boardInput =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -79,12 +80,21 @@ export function StatusBadge({ value }: { value: string }) {
 
 export function Feedback({ data }: { data?: BoardActionResult }) {
   const { t } = useTranslation('board')
-  if (!data) return null
-  return (
-    <p className={`mt-3 text-xs font-semibold ${data.ok ? 'text-primary' : 'text-destructive'}`}>
-      {data.ok ? t('common.success') : data.message || t('common.failure')}
-    </p>
-  )
+  const lastData = useRef<BoardActionResult | undefined>(data)
+  const closeDialog = useDialogClose()
+
+  useEffect(() => {
+    if (!data || lastData.current === data) return
+    lastData.current = data
+    const message = data.ok ? data.message || t('common.success') : data.message || t('common.failure')
+    const id = `board-${data.intent}-${data.ok ? 'success' : 'error'}-${data.requestId ?? ''}`
+    if (data.ok) {
+      toast.success(message, { id })
+      closeDialog?.()
+    } else toast.error(message, { id })
+  }, [closeDialog, data, t])
+
+  return null
 }
 
 export const BoardFeedback = Feedback

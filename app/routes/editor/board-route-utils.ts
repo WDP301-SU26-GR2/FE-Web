@@ -18,3 +18,13 @@ export async function loadBoardLifecycleSeries() {
   )
   return responses.flatMap((response) => response.data.items)
 }
+
+export async function loadBoardSessionSeries() {
+  const statuses = ['READY_TO_PITCH', 'PITCHED', 'SERIALIZED'] as const
+  const responses = await Promise.all(
+    statuses.map((status) => seriesControllerListSeries({ status, limit: 100, offset: 0 }))
+  )
+  return [
+    ...new Map(responses.flatMap((response) => response.data.items).map((series) => [series.id, series])).values()
+  ]
+}
