@@ -6,11 +6,13 @@ import {
 } from '~/api/operations/payments/payments'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
 
-export async function clientLoader() {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   try {
-    const response = await paymentControllerGetPayments()
+    const response = await paymentControllerGetPayments(paymentQuery(request))
     return { payments: response.data.data, hasError: false }
   } catch {
     return { payments: [], hasError: true }
@@ -29,14 +31,22 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     } else if (intent === 'pay') {
       await paymentControllerPayPayment(
         { id },
-        { paymentMethod: required(form, 'paymentMethod'), transactionReference: required(form, 'transactionReference') }
+        {
+          paymentMethod: required(form, 'paymentMethod'),
+          transactionReference: required(form, 'transactionReference'),
+          ...(String(form.get('note') ?? '').trim() ? { note: String(form.get('note')).trim() } : {})
+        }
       )
     } else if (intent === 'cancel') {
       await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
     } else return { ok: false, intent }
     return { ok: true, intent }
-  } catch {
-    return { ok: false, intent }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      message: extractApiErrorMessage(error, 'Không thể cập nhật khoản thanh toán. Vui lòng thử lại.')
+    }
   }
 }
 
@@ -47,5 +57,5 @@ function required(form: FormData, key: string) {
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardPaymentsPage {...loaderData} enableFilters />
+  return <BoardPaymentsPage {...loaderData} enableFilters contractBasePath='/dashboard/board/contracts' />
 }

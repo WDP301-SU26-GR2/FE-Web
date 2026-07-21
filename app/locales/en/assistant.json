@@ -62,7 +62,11 @@
       "versions": "{{count}} version",
       "versions_other": "{{count}} versions",
       "pageIdLabel": "Page ID",
-      "statusReason": "Note"
+      "statusReason": "Note",
+      "regionTitle": "Assigned region",
+      "regionType": "Region type",
+      "regionSize": "Size",
+      "resultFile": "Result file"
     },
     "actions": {
       "start": "Start task",

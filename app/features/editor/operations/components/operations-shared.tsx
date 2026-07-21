@@ -70,30 +70,44 @@ export function OperationPanel({
 export function OperationDialogPanel({
   icon: Icon,
   title,
-  children
+  children,
+  compact = false
 }: {
   icon: typeof Wrench
   title: string
   children: React.ReactNode
+  compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const titleId = `operation-dialog-${useId().replaceAll(':', '')}`
 
   return (
     <>
-      <section className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <div className='flex items-center gap-3'>
-          <span className='rounded-lg bg-primary/10 p-2 text-primary'>
-            <Icon className='size-5' />
-          </span>
-          <h2 className='font-bold text-foreground'>{title}</h2>
-        </div>
+      <section
+        className={
+          compact
+            ? 'inline-flex'
+            : 'flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm'
+        }
+      >
+        {!compact && (
+          <div className='flex items-center gap-3'>
+            <span className='rounded-lg bg-primary/10 p-2 text-primary'>
+              <Icon className='size-5' />
+            </span>
+            <h2 className='font-bold text-foreground'>{title}</h2>
+          </div>
+        )}
         <button
           type='button'
           onClick={() => setOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+          className={`inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-bold ${
+            compact
+              ? 'border border-border bg-background text-foreground hover:border-primary hover:text-primary'
+              : 'bg-primary text-primary-foreground'
+          }`}
         >
-          <Plus className='size-4' />
+          {compact ? <Icon className='size-4' /> : <Plus className='size-4' />}
           {title}
         </button>
       </section>
@@ -169,7 +183,7 @@ export function OperationFeedback({ data }: { data?: EditorActionResult }) {
     <p className={`mt-3 text-xs font-bold ${data.ok ? 'text-primary' : 'text-destructive'}`}>
       {data.ok
         ? t(`messages.${data.messageKey ?? 'operationCompleted'}`)
-        : data.message ?? t(`errors.${data.errorKey ?? 'actionFailed'}`)}
+        : (data.message ?? t(`errors.${data.errorKey ?? 'actionFailed'}`))}
     </p>
   )
 }

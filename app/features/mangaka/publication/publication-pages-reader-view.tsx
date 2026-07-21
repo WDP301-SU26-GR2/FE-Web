@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronUp, ImageIcon, Loader2, MessageSquareText, Plus, Sparkles, Upload } from 'lucide-react'
+import { ChevronUp, ImageIcon, Loader2, MessageSquareText, Pencil, Plus, Sparkles, Trash2, Upload } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import type { PageListResDtoOutputItemsItem } from '~/api/model/chapters'
@@ -13,6 +13,10 @@ import { useCreatePage } from './hooks/use-create-page'
 import { usePageAnnotations } from './hooks/use-page-annotations'
 import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
 import { ManuscriptActionPanel } from './components/manuscript-action-panel'
+import { Dialog } from '~/shared/ui/dialog'
+import { useUpdatePage } from './hooks/use-update-page'
+import { useDeletePage } from './hooks/use-delete-page'
+import { taskControllerListTasks } from '~/api/operations/task/task'
 
 /**
  * Pages view — 3-column composite reader.
@@ -211,6 +215,7 @@ export function PublicationPagesReaderView() {
                 page={p}
                 setRef={setPageRef(p.id)}
                 readOnly={!canMutateProduction}
+                onChanged={refreshAll}
               />
             ))}
             <button
@@ -255,19 +260,56 @@ export function PublicationPagesReaderView() {
 function PageCard({
   page,
   setRef,
-  readOnly
+  readOnly,
+  onChanged
 }: {
   page: PageListResDtoOutputItemsItem
   setRef: (el: HTMLDivElement | null) => void
   readOnly: boolean
+  onChanged: () => void
 }) {
   const { t } = useTranslation('mangaka')
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [pageNumber, setPageNumber] = useState(String(page.pageNumber))
+  const [taskCount, setTaskCount] = useState<number | null>(null)
+  const { updatePage, isUpdating } = useUpdatePage()
+  const { deletePage, isDeleting } = useDeletePage()
 
   // For the reader, the "composite" file (if any) is the canonical artwork to
   // show. We fall back to `originalFile` when no composite exists yet.
   // Per FE-API-Guide §5, both file fields are R2 object keys.
-  const showKey = page.compositeFile ?? page.originalFile
+  const showKey = page.displayFile ?? page.compositeFile ?? page.originalFile
   const isComposite = !!page.compositeFile
+  const canEdit = !readOnly && (page.status === 'DRAFT' || page.status === 'REVISING')
+
+  const openDelete = async () => {
+    setDeleteOpen(true)
+    setTaskCount(null)
+    try {
+      const response = await taskControllerListTasks({ pageId: page.id, limit: 1, offset: 0 })
+      setTaskCount(response.data.total)
+    } catch {
+      setTaskCount(null)
+    }
+  }
+
+  const savePageNumber = async () => {
+    const next = Number(pageNumber)
+    if (!Number.isInteger(next) || next < 1) return
+    const updated = await updatePage({ pageId: page.id, body: { pageNumber: next } })
+    if (updated) {
+      setEditOpen(false)
+      onChanged()
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (await deletePage(page.id)) {
+      setDeleteOpen(false)
+      onChanged()
+    }
+  }
 
   return (
     <div ref={setRef} data-page-id={page.id} className='flex flex-col gap-3 scroll-mt-24'>
@@ -284,10 +326,101 @@ function PageCard({
             </span>
           ) : null}
         </div>
-        {readOnly && <span className='text-[11px] font-medium text-muted-foreground'>{t('publication.pagesReader.done')}</span>}
+        {canEdit ? (
+          <div className='flex items-center gap-1'>
+            <button
+              type='button'
+              onClick={() => {
+                setPageNumber(String(page.pageNumber))
+                setEditOpen(true)
+              }}
+              className='inline-flex size-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+              aria-label={t('publication.pagesReader.editPageNumber')}
+              title={t('publication.pagesReader.editPageNumber')}
+            >
+              <Pencil className='size-3.5' />
+            </button>
+            <button
+              type='button'
+              onClick={() => void openDelete()}
+              className='inline-flex size-8 cursor-pointer items-center justify-center rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10'
+              aria-label={t('publication.pagesReader.delete.action')}
+              title={t('publication.pagesReader.delete.action')}
+            >
+              <Trash2 className='size-3.5' />
+            </button>
+          </div>
+        ) : (
+          <span className='text-[11px] font-medium text-muted-foreground'>{t('publication.pagesReader.done')}</span>
+        )}
       </div>
 
       <SignedImage r2Key={showKey} alt={`page-${page.pageNumber}`} aspectClassName='aspect-[3/4]' className='w-full' />
+
+      <Dialog
+        open={editOpen}
+        onClose={() => !isUpdating && setEditOpen(false)}
+        titleId={`edit-page-number-${page.id}`}
+        title={t('publication.pagesReader.editPageNumber')}
+        description={t('publication.pagesReader.editPageNumberDescription')}
+        size='sm'
+      >
+        <div className='grid gap-4'>
+          <input
+            type='number'
+            min={1}
+            step={1}
+            value={pageNumber}
+            onChange={(event) => setPageNumber(event.target.value)}
+            className='h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary'
+          />
+          <div className='flex justify-end gap-2'>
+            <button type='button' onClick={() => setEditOpen(false)} className='h-10 cursor-pointer rounded-md border border-border px-4 text-sm font-bold'>
+              {t('publication.pagesReader.dialog.cancel')}
+            </button>
+            <button
+              type='button'
+              onClick={() => void savePageNumber()}
+              disabled={isUpdating || !Number.isInteger(Number(pageNumber)) || Number(pageNumber) < 1}
+              className='inline-flex h-10 cursor-pointer items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+            >
+              {isUpdating && <Loader2 className='size-4 animate-spin' />}
+              {t('publication.pagesReader.dialog.save')}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={deleteOpen}
+        onClose={() => !isDeleting && setDeleteOpen(false)}
+        titleId={`delete-page-${page.id}`}
+        title={t('publication.pagesReader.delete.title', { n: page.pageNumber })}
+        description={t('publication.pagesReader.delete.description')}
+        size='sm'
+      >
+        <div className='grid gap-4'>
+          <p className='rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-muted-foreground'>
+            {taskCount == null
+              ? t('publication.pagesReader.delete.taskCountUnknown')
+              : t('publication.pagesReader.delete.taskCount', { count: taskCount })}
+          </p>
+          <div className='flex justify-end gap-2'>
+            <button type='button' onClick={() => setDeleteOpen(false)} className='h-10 cursor-pointer rounded-md border border-border px-4 text-sm font-bold'>
+              {t('publication.pagesReader.dialog.cancel')}
+            </button>
+            <button
+              type='button'
+              onClick={() => void confirmDelete()}
+              disabled={isDeleting}
+              className='inline-flex h-10 cursor-pointer items-center gap-2 rounded-md bg-destructive px-4 text-sm font-bold text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50'
+            >
+              {isDeleting && <Loader2 className='size-4 animate-spin' />}
+              {t('publication.pagesReader.delete.confirm')}
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }

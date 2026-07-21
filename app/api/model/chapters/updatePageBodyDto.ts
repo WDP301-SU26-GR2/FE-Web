@@ -30,4 +30,6 @@ export interface UpdatePageBodyDto {
    * @nullable
    */
   compositeFile?: string | null;
+  /** Đổi thứ tự trang trong cùng chapter. */
+  pageNumber?: number | null;
 }

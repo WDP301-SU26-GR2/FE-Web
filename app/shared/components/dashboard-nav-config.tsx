@@ -17,7 +17,8 @@ import {
   Gavel,
   Settings2,
   ScrollText,
-  Wrench
+  Wrench,
+  ArrowRightLeft
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -81,6 +82,7 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
       { label: t('nav.ranking'), href: '/dashboard/mangaka/rankings', icon: TrendingUp },
       { label: t('nav.contracts'), href: '/dashboard/mangaka/contracts', icon: FileText },
       { label: t('nav.reprints'), href: '/dashboard/mangaka/reprints', icon: Printer },
+      { label: t('nav.transfers'), href: '/dashboard/mangaka/transfers', icon: ArrowRightLeft },
       { label: t('nav.notifications'), href: '/dashboard/mangaka/notifications', icon: Bell }
     ]),
     profile: {

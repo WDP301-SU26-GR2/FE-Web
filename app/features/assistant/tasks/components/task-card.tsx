@@ -1,6 +1,6 @@
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { useTranslation } from 'react-i18next'
-import { Calendar, ClipboardList, FileBox, Hash, PlayCircle, Send, Tag, Sparkles } from 'lucide-react'
+import { Calendar, ClipboardList, FileBox, Hash, PlayCircle, Send, Tag, Sparkles, ScanLine } from 'lucide-react'
 
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task'
 import { cn } from '~/shared/lib/cn'
@@ -98,6 +98,20 @@ export function TaskCard({ task, onStart, onSubmit, isMutating }: TaskCardProps)
         </div>
       </div>
 
+      {task.region && (
+        <div className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs'>
+          <div className='flex items-center gap-2 font-bold text-foreground'>
+            <ScanLine className='size-4 text-primary' />
+            {t('tasks.card.regionTitle')}
+          </div>
+          <div className='mt-2 grid grid-cols-2 gap-2 text-muted-foreground sm:grid-cols-3'>
+            <span>{t('tasks.card.regionType')}: <strong className='text-foreground'>{task.region.regionType}</strong></span>
+            <span>X / Y: <strong className='text-foreground'>{task.region.coordinates.x} / {task.region.coordinates.y}</strong></span>
+            <span>{t('tasks.card.regionSize')}: <strong className='text-foreground'>{task.region.coordinates.width} × {task.region.coordinates.height}px</strong></span>
+          </div>
+        </div>
+      )}
+
       {task.statusReason && (
         <div className='flex items-start gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700'>
           <Sparkles className='mt-0.5 h-3 w-3 shrink-0' />
@@ -158,7 +172,7 @@ function TaskActions({
   return (
     <form onSubmit={handleSubmit} className='mt-auto flex flex-col gap-2 border-t border-border pt-3'>
       <label htmlFor={fileInputId} className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-        File key
+        {t('tasks.card.resultFile')}
       </label>
       <div className='flex items-center gap-2'>
         <input

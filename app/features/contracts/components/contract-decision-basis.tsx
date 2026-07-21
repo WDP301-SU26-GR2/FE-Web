@@ -3,22 +3,7 @@ import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import type { ContractResDtoOutput } from '~/api/model/contracts'
-
-type ContractDecisionRelation = {
-  id: string
-  decisionType: string | null
-  result: string | null
-  decidedAt: string | null
-  boardSession: {
-    id: string
-    title: string
-    startTime: string
-  }
-}
-
-type ContractWithDecision = ContractResDtoOutput & {
-  boardDecision?: ContractDecisionRelation | null
-}
+import type { ContractWithLatestRelations } from '~/api/manual/contract-latest'
 
 export function ContractDecisionBasis({
   contract,
@@ -28,7 +13,7 @@ export function ContractDecisionBasis({
   decisionPath?: string
 }) {
   const { t, i18n } = useTranslation('editor')
-  const decision = (contract as ContractWithDecision).boardDecision
+  const decision = (contract as ContractWithLatestRelations).boardDecision
 
   if (!decision) return null
 

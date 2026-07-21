@@ -61,6 +61,7 @@ import type {
   PaymentConditionResDtoOutput,
   RejectAmendmentBodyDto,
   ReportRevenueBodyDto,
+  RequestContractChangesBodyDto,
   SignAmendmentBodyDto,
   SignContractWithOtpBodyDto,
   UpdateAmendmentBodyDto,
@@ -505,12 +506,15 @@ export const getContractControllerRequestChangesUrl = ({ id }: ContractControlle
   return `/contracts/${id}/request-changes`
 }
 
-export const contractControllerRequestChanges = async ({ id }: ContractControllerRequestChangesPathParameters, options?: RequestInit): Promise<contractControllerRequestChangesResponse> => {
+export const contractControllerRequestChanges = async ({ id }: ContractControllerRequestChangesPathParameters,
+    requestContractChangesBodyDto: RequestContractChangesBodyDto, options?: RequestInit): Promise<contractControllerRequestChangesResponse> => {
   
   return customFetch<contractControllerRequestChangesResponse>(getContractControllerRequestChangesUrl({ id }),
   {      
     ...options,
-    method: 'POST'
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(requestContractChangesBodyDto)
     
     
   }
@@ -599,12 +603,15 @@ export const getContractControllerBoardRequestChangesUrl = ({ id }: ContractCont
   return `/contracts/${id}/board-request-changes`
 }
 
-export const contractControllerBoardRequestChanges = async ({ id }: ContractControllerBoardRequestChangesPathParameters, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
+export const contractControllerBoardRequestChanges = async ({ id }: ContractControllerBoardRequestChangesPathParameters,
+    requestContractChangesBodyDto: RequestContractChangesBodyDto, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
   
   return customFetch<contractControllerBoardRequestChangesResponse>(getContractControllerBoardRequestChangesUrl({ id }),
   {      
     ...options,
-    method: 'POST'
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(requestContractChangesBodyDto)
     
     
   }

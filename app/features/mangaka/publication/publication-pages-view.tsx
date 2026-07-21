@@ -16,7 +16,7 @@ import { PublicationPagesReaderView } from './publication-pages-reader-view'
  */
 export function PublicationPagesView() {
   const { t } = useTranslation('mangaka')
-  const { seriesId, chapterId, name } = usePublicationContext()
+  const { seriesId, chapterId, name, pagesError, refreshPages } = usePublicationContext()
   const isUnlocked = name?.status === 'APPROVED'
 
   if (!isUnlocked) {
@@ -33,6 +33,25 @@ export function PublicationPagesView() {
         >
           {t('publication.pagesLocked.backToName')}
         </Link>
+      </section>
+    )
+  }
+
+  if (pagesError) {
+    return (
+      <section className='mx-auto flex max-w-3xl flex-col items-center gap-4 p-12 text-center md:p-16'>
+        <div className='flex h-14 w-14 items-center justify-center rounded-full border border-destructive/30 bg-destructive/10 text-destructive'>
+          <Lock className='h-6 w-6' />
+        </div>
+        <h2 className='text-xl font-bold tracking-tight'>{t('publication.pagesReader.accessDeniedTitle')}</h2>
+        <p className='max-w-md text-sm text-muted-foreground'>{pagesError}</p>
+        <button
+          type='button'
+          onClick={refreshPages}
+          className='inline-flex h-10 cursor-pointer items-center rounded-md border border-border px-4 text-sm font-bold hover:bg-muted'
+        >
+          {t('publication.pagesReader.retry')}
+        </button>
       </section>
     )
   }

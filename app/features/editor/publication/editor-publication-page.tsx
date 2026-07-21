@@ -49,8 +49,13 @@ export function EditorPublicationPage({
 }) {
   const { t } = useTranslation('editor')
   const [search, setSearch] = useState('')
-  const chapters = (data?.chapters ?? []).filter(({ series, chapter }) =>
-    !search || `${series.title} ${chapter.title ?? ''} ${chapter.chapterNumber}`.toLowerCase().includes(search.toLowerCase())
+  const [activeGroup, setActiveGroup] = useState<'review' | 'approved' | 'progress' | 'history'>(() =>
+    groupForReference(data?.chapters ?? [], focusReferenceId)
+  )
+  const chapters = (data?.chapters ?? []).filter(
+    ({ series, chapter }) =>
+      !search ||
+      `${series.title} ${chapter.title ?? ''} ${chapter.chapterNumber}`.toLowerCase().includes(search.toLowerCase())
   )
   const awaitingReview = prioritizeFocused(
     chapters.filter(({ chapter }) => REVIEW_STATUSES.has(chapter.manuscriptStatus ?? '')),
@@ -67,10 +72,12 @@ export function EditorPublicationPage({
       !APPROVED_STATUSES.has(chapter.manuscriptStatus ?? '')
   )
   const published = chapters.filter(({ chapter }) => chapter.manuscriptStatus === 'PUBLISHED')
-
   useEffect(() => {
     if (!focusReferenceId) return
-    document.getElementById(`publication-chapter-${focusReferenceId}`)?.scrollIntoView({ block: 'center' })
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(`publication-chapter-${focusReferenceId}`)?.scrollIntoView({ block: 'center' })
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [focusReferenceId])
 
   return (
@@ -101,57 +108,85 @@ export function EditorPublicationPage({
             label={t('publicationUx.needsAction')}
             value={awaitingReview.length}
             className='border-primary/25 bg-primary/5 text-primary'
+            active={activeGroup === 'review'}
+            onClick={() => setActiveGroup('review')}
           />
           <SummaryCard
             icon={<FileCheck2 className='size-5' />}
             label={t('publicationUx.approved')}
             value={approved.length}
             className='border-emerald-500/25 bg-emerald-500/5 text-emerald-700'
+            active={activeGroup === 'approved'}
+            onClick={() => setActiveGroup('approved')}
           />
           <SummaryCard
             icon={<Clock3 className='size-5' />}
             label={t('publicationUx.inProgress')}
             value={inProgress.length}
             className='border-amber-500/25 bg-amber-500/5 text-amber-700'
+            active={activeGroup === 'progress'}
+            onClick={() => setActiveGroup('progress')}
           />
           <SummaryCard
             icon={<CheckCircle2 className='size-5' />}
             label={t('publication.history')}
             value={published.length}
             className='border-emerald-500/25 bg-emerald-500/5 text-emerald-700'
+            active={activeGroup === 'history'}
+            onClick={() => setActiveGroup('history')}
           />
         </section>
       )}
-      <ChapterSection
-        title={t('publicationUx.needsAction')}
-        description={t('publicationUx.needsActionDescription')}
-        items={awaitingReview}
-        empty={t('publication.emptyAwaiting')}
-        focusReferenceId={focusReferenceId}
-      />
-      <ChapterSection
-        title={t('publicationUx.approved')}
-        description={t('publicationUx.approvedDescription')}
-        items={approved}
-        empty={t('publicationUx.emptyApproved')}
-        focusReferenceId={focusReferenceId}
-      />
-      <ChapterSection
-        title={t('publicationUx.inProgress')}
-        description={t('publicationUx.inProgressDescription')}
-        items={inProgress}
-        empty={t('publicationUx.emptyInProgress')}
-        focusReferenceId={focusReferenceId}
-      />
-      <ChapterSection
-        title={t('publication.history')}
-        description={t('publicationUx.historyDescription')}
-        items={published}
-        empty={t('publication.emptyHistory')}
-        focusReferenceId={focusReferenceId}
-      />
+      {activeGroup === 'review' && (
+        <ChapterSection
+          title={t('publicationUx.needsAction')}
+          description={t('publicationUx.needsActionDescription')}
+          items={awaitingReview}
+          empty={t('publication.emptyAwaiting')}
+          focusReferenceId={focusReferenceId}
+        />
+      )}
+      {activeGroup === 'approved' && (
+        <ChapterSection
+          title={t('publicationUx.approved')}
+          description={t('publicationUx.approvedDescription')}
+          items={approved}
+          empty={t('publicationUx.emptyApproved')}
+          focusReferenceId={focusReferenceId}
+        />
+      )}
+      {activeGroup === 'progress' && (
+        <ChapterSection
+          title={t('publicationUx.inProgress')}
+          description={t('publicationUx.inProgressDescription')}
+          items={inProgress}
+          empty={t('publicationUx.emptyInProgress')}
+          focusReferenceId={focusReferenceId}
+        />
+      )}
+      {activeGroup === 'history' && (
+        <ChapterSection
+          title={t('publication.history')}
+          description={t('publicationUx.historyDescription')}
+          items={published}
+          empty={t('publication.emptyHistory')}
+          focusReferenceId={focusReferenceId}
+        />
+      )}
     </div>
   )
+}
+
+function groupForReference(
+  items: EditorPublicationData['chapters'],
+  focusReferenceId: string | null
+): 'review' | 'approved' | 'progress' | 'history' {
+  const focused = items.find(({ chapter }) => chapter.id === focusReferenceId)?.chapter
+  if (!focused) return 'review'
+  if (REVIEW_STATUSES.has(focused.manuscriptStatus ?? '')) return 'review'
+  if (APPROVED_STATUSES.has(focused.manuscriptStatus ?? '')) return 'approved'
+  if (focused.manuscriptStatus === 'PUBLISHED') return 'history'
+  return 'progress'
 }
 
 function prioritizeFocused(items: EditorPublicationData['chapters'], focusReferenceId: string | null) {
@@ -242,21 +277,34 @@ function SummaryCard({
   icon,
   label,
   value,
-  className
+  className,
+  active,
+  onClick
 }: {
   icon: ReactNode
   label: string
   value: number
   className: string
+  active: boolean
+  onClick: () => void
 }) {
   return (
-    <article className={cn('flex items-center gap-3 rounded-xl border p-4', className)}>
+    <button
+      type='button'
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'flex items-center gap-3 rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm',
+        className,
+        active && 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+      )}
+    >
       <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/70'>{icon}</div>
       <div>
         <p className='text-2xl font-black leading-none'>{value}</p>
         <p className='mt-1 text-xs font-bold uppercase tracking-wider'>{label}</p>
       </div>
-    </article>
+    </button>
   )
 }
 

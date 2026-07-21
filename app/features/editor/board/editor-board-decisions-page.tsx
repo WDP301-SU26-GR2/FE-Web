@@ -96,52 +96,75 @@ export function EditorBoardDecisionsPage({
         />
       )}
       <BoardPanel title={t('board.decisionList')}>
-          <div className='mb-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 md:grid-cols-2 xl:grid-cols-4'>
-              <select className={boardInput} value={selectedSeriesId} onChange={(event) => selectSeries(event.target.value)}>
-                <option value=''>{t('board.filters.allSeries')}</option>
-                {series.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-              </select>
-              <select className={boardInput} value={selectedSessionId} onChange={(event) => setSelectedSessionId(event.target.value)}>
-                <option value=''>{t('board.filters.allSessions')}</option>
-                {sessions.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-              </select>
-              <select className={boardInput} value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
-                <option value=''>{t('board.filters.allDecisionTypes')}</option>
-                {[...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))].map((value) => (
-                  <option key={value} value={value}>
-                    {t(`board.decisionTypeLabels.${value}`, { defaultValue: value })}
-                  </option>
-                ))}
-              </select>
-              <select className={boardInput} value={decisionResult} onChange={(event) => setDecisionResult(event.target.value)}>
-                <option value=''>{t('board.filters.allResults')}</option>
-                {['PENDING', 'PENDING_QUORUM', 'APPROVED', 'REJECTED', 'EXPIRED'].map((value) => (
-                  <option key={value} value={value}>
-                    {t(`board.decisionResultLabels.${value}`, { defaultValue: value })}
-                  </option>
-                ))}
-              </select>
-          </div>
-          <div className='grid gap-3 md:grid-cols-2'>
-            {visibleDecisions.map((decision) => (
-              <DecisionCard
-                key={decision.id}
-                decision={decision}
-                series={series}
-                detailBasePath={detailBasePath}
-                canVote={sessions.some(
-                  (session) =>
-                    session.id === decision.boardSessionId &&
-                    session.status === 'ACTIVE' &&
-                    (realtime.sessionPhases[session.id] ?? sessionPhases[session.id]) === 'VOTING' &&
-                    session.allowedEditorIds.includes(authSession?.user.id ?? '')
-                )}
-              />
+        <div className='mb-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 md:grid-cols-2 xl:grid-cols-4'>
+          <select
+            className={boardInput}
+            value={selectedSeriesId}
+            onChange={(event) => selectSeries(event.target.value)}
+          >
+            <option value=''>{t('board.filters.allSeries')}</option>
+            {series.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
             ))}
-            {!visibleDecisions.length && (
-              <p className='text-sm text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
+          </select>
+          <select
+            className={boardInput}
+            value={selectedSessionId}
+            onChange={(event) => setSelectedSessionId(event.target.value)}
+          >
+            <option value=''>{t('board.filters.allSessions')}</option>
+            {sessions.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+          <select className={boardInput} value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
+            <option value=''>{t('board.filters.allDecisionTypes')}</option>
+            {[...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))].map(
+              (value) => (
+                <option key={value} value={value}>
+                  {t(`board.decisionTypeLabels.${value}`, { defaultValue: value })}
+                </option>
+              )
             )}
-          </div>
+          </select>
+          <select
+            className={boardInput}
+            value={decisionResult}
+            onChange={(event) => setDecisionResult(event.target.value)}
+          >
+            <option value=''>{t('board.filters.allResults')}</option>
+            {['PENDING', 'PENDING_QUORUM', 'APPROVED', 'REJECTED', 'EXPIRED'].map((value) => (
+              <option key={value} value={value}>
+                {t(`board.decisionResultLabels.${value}`, { defaultValue: value })}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className='grid gap-3 md:grid-cols-2'>
+          {visibleDecisions.map((decision) => (
+            <DecisionCard
+              key={decision.id}
+              decision={decision}
+              series={series}
+              sessions={sessions}
+              detailBasePath={detailBasePath}
+              canVote={sessions.some(
+                (session) =>
+                  session.id === decision.boardSessionId &&
+                  session.status === 'ACTIVE' &&
+                  (realtime.sessionPhases[session.id] ?? sessionPhases[session.id]) === 'VOTING' &&
+                  session.allowedEditorIds.includes(authSession?.user.id ?? '')
+              )}
+            />
+          ))}
+          {!visibleDecisions.length && (
+            <p className='text-sm text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
+          )}
+        </div>
       </BoardPanel>
     </BoardPageLayout>
   )
@@ -220,7 +243,11 @@ function CreateSerializationDecision({
           ))}
         {selectedSessionId && !hasExistingDecision && (
           <div className='flex justify-end gap-2 border-t border-border pt-4'>
-            <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+            <button
+              type='button'
+              onClick={onClose}
+              className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            >
               {t('actions.cancel')}
             </button>
             <SubmitButton
@@ -239,17 +266,30 @@ function CreateSerializationDecision({
 function DecisionCard({
   decision,
   series,
+  sessions,
   canVote,
   detailBasePath
 }: {
   decision: BoardDecisionResDtoOutput
   series: SeriesListResDtoOutputItemsItem[]
+  sessions: BoardSessionResDtoOutput[]
   canVote: boolean
   detailBasePath?: string
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
-  const seriesTitle = series.find((item) => item.id === decision.targetSeriesId)?.title
+  const seriesTitle = decision.targetSeries?.title ?? series.find((item) => item.id === decision.targetSeriesId)?.title
+  const sessionTitle = sessions.find((item) => item.id === decision.boardSessionId)?.title
+  const typeLabel = decision.decisionType
+    ? t(`board.decisionTypeLabels.${decision.decisionType}`, { defaultValue: decision.decisionType })
+    : t('board.sections.decisions')
+  const displayTitle =
+    decision.decisionType === 'SERIALIZATION'
+      ? t('board.decisionDisplay.serializationTitle', { series: seriesTitle ?? t('board.unknownSeries') })
+      : t('board.decisionDisplay.genericTitle', {
+          type: typeLabel,
+          series: seriesTitle ?? t('board.unknownSeries')
+        })
   const open = canVote && (decision.result === 'PENDING' || decision.result === 'PENDING_QUORUM')
 
   return (
@@ -259,13 +299,16 @@ function DecisionCard({
           <h3 className='font-bold text-foreground'>
             {detailBasePath ? (
               <Link className='hover:text-primary hover:underline' to={`${detailBasePath}/${decision.id}`}>
-                {seriesTitle ?? decision.targetSeriesId ?? '—'}
+                {displayTitle}
               </Link>
             ) : (
-              seriesTitle ?? decision.targetSeriesId ?? '—'
+              displayTitle
             )}
           </h3>
-          <p className='mt-1 text-xs font-semibold text-muted-foreground'>{decision.decisionType ?? '—'}</p>
+          <p className='mt-1 text-xs font-semibold text-muted-foreground'>{typeLabel}</p>
+          <p className='mt-2 text-xs text-muted-foreground'>
+            {t('board.decisionDisplay.sessionLabel')}: {sessionTitle ?? '—'}
+          </p>
         </div>
         <BoardStatus value={decision.result ?? 'PENDING'} />
       </div>

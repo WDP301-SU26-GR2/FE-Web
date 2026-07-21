@@ -23,6 +23,8 @@ export function BoardDecisionDetailPage({
   reports,
   sessionStatus,
   sessionPhase,
+  sessionTitle,
+  sessionStartTime,
   allowedEditorIds,
   readOnly = false,
   backPath
@@ -32,6 +34,8 @@ export function BoardDecisionDetailPage({
   reports: SeriesReportResDtoOutput[]
   sessionStatus: string
   sessionPhase: BoardSessionPhase
+  sessionTitle: string
+  sessionStartTime: string
   allowedEditorIds: string[]
   readOnly?: boolean
   backPath?: string
@@ -53,26 +57,29 @@ export function BoardDecisionDetailPage({
   const alreadyVoted = votes.some((vote) => vote.voterId === currentUserId)
   const decisionOpen = liveDecision.result === 'PENDING' || liveDecision.result === 'PENDING_QUORUM'
   const canVote =
-    !readOnly &&
-    sessionStatus === 'ACTIVE' &&
-    livePhase === 'VOTING' &&
-    decisionOpen &&
-    voterAllowed &&
-    !alreadyVoted
+    !readOnly && sessionStatus === 'ACTIVE' && livePhase === 'VOTING' && decisionOpen && voterAllowed && !alreadyVoted
+  const seriesTitle = decision.targetSeries?.title ?? t('decisions.unknownSeries')
+  const typeLabel = decision.decisionType
+    ? t(`filters.decisionTypes.${decision.decisionType}`, { defaultValue: decision.decisionType })
+    : t('decisions.title')
+  const displayTitle =
+    decision.decisionType === 'SERIALIZATION'
+      ? t('decisions.serializationTitle', { series: seriesTitle })
+      : t('decisions.genericTitle', { type: typeLabel, series: seriesTitle })
 
   const voteUnavailableReason = readOnly
     ? ''
     : !decisionOpen
-    ? t('decisions.voteUnavailable.closed')
-    : alreadyVoted
-      ? t('decisions.voteUnavailable.alreadyVoted')
-      : !voterAllowed
-        ? t('decisions.voteUnavailable.notInRoster')
-        : sessionStatus !== 'ACTIVE'
-          ? t('decisions.voteUnavailable.sessionNotActive')
-          : livePhase !== 'VOTING'
-            ? t('decisions.voteUnavailable.votingNotOpen')
-            : ''
+      ? t('decisions.voteUnavailable.closed')
+      : alreadyVoted
+        ? t('decisions.voteUnavailable.alreadyVoted')
+        : !voterAllowed
+          ? t('decisions.voteUnavailable.notInRoster')
+          : sessionStatus !== 'ACTIVE'
+            ? t('decisions.voteUnavailable.sessionNotActive')
+            : livePhase !== 'VOTING'
+              ? t('decisions.voteUnavailable.votingNotOpen')
+              : ''
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
@@ -82,9 +89,16 @@ export function BoardDecisionDetailPage({
         </Link>
       )}
       <BoardHeader
-        title={decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
-        description={`${t('decisions.series')}: ${decision.targetSeries?.title ?? t('decisions.unknownSeries')}`}
+        title={displayTitle}
+        description={`${typeLabel} · ${t('decisions.sessionLabel')}: ${sessionTitle}`}
       />
+      <BoardPanel title={t('decisions.relationshipContext')}>
+        <dl className='grid gap-4 text-sm sm:grid-cols-3'>
+          <DecisionFact label={t('decisions.series')} value={seriesTitle} />
+          <DecisionFact label={t('decisions.sessionLabel')} value={sessionTitle} />
+          <DecisionFact label={t('decisions.sessionTime')} value={formatDate(sessionStartTime)} />
+        </dl>
+      </BoardPanel>
       <BoardPanel title={t('decisions.progress')}>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <StatusBadge value={liveDecision.result ?? 'PENDING'} />
@@ -155,6 +169,20 @@ export function BoardDecisionDetailPage({
   )
 }
 
+function DecisionFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className='text-xs text-muted-foreground'>{label}</dt>
+      <dd className='mt-1 font-bold text-foreground'>{value}</dd>
+    </div>
+  )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+}
+
 function VoteDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
@@ -181,7 +209,11 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
         </select>
         <textarea name='note' className={`${boardInput} min-h-24 py-2`} placeholder={t('decisions.note')} />
         <div className='flex justify-end gap-2'>
-          <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+          >
             {t('common.cancel')}
           </button>
           <button

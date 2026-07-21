@@ -5,6 +5,7 @@ import {
 } from '~/api/operations/transfer/transfer'
 import { EditorTransfersPage, type EditorActionResult } from '~/features/editor'
 import { required } from './operations-route-utils'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { Route } from './+types/operations-transfers'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
@@ -34,19 +35,36 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         originalMangaka: Number(required(form, 'originalMangakaShare')),
         newMangaka: Number(required(form, 'newMangakaShare'))
       }
+      const transferType = required(form, 'transferType') as 'FULL_TRANSFER' | 'PARTIAL_TRANSFER'
       if (Object.values(newOwnershipSplit).reduce((sum, value) => sum + value, 0) !== 100)
         throw new Error('Invalid ownership split')
-      await transferControllerCreateTransferContract({
+      if (transferType === 'FULL_TRANSFER' && newOwnershipSplit.originalMangaka !== 0)
+        throw new Error('Chuyển nhượng toàn bộ phải đưa tỷ lệ của Mangaka cũ về 0%.')
+      if (transferType === 'PARTIAL_TRANSFER' && newOwnershipSplit.originalMangaka <= 0)
+        throw new Error('Chuyển nhượng một phần phải giữ tỷ lệ sở hữu cho Mangaka cũ.')
+      const response = await transferControllerCreateTransferContract({
         transferRequestId: required(form, 'transferRequestId'),
         transferAmount: Number(required(form, 'transferAmount')),
-        transferType: required(form, 'transferType') as 'FULL_TRANSFER' | 'PARTIAL_TRANSFER',
+        transferType,
         newOwnershipSplit,
-        coOwnerApprovalRequired: form.get('coOwnerApprovalRequired') === 'on'
+        coOwnerApprovalRequired: transferType === 'PARTIAL_TRANSFER'
       })
+      if (response.status !== 201) throw new Error('Không nhận được hợp đồng chuyển nhượng vừa tạo.')
+      return {
+        ok: true,
+        intent,
+        messageKey: 'operationCompleted',
+        transferContractId: response.data.id
+      }
     } else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: 'operationCompleted' }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      errorKey: 'actionFailed',
+      message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.')
+    }
   }
 }
 

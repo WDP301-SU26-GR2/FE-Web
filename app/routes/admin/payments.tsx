@@ -4,12 +4,14 @@ import {
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
   try {
-    const response = await paymentControllerGetPayments()
+    const response = await paymentControllerGetPayments(paymentQuery(request))
     return { payments: response.data.data, focusPaymentId, hasError: false }
   } catch {
     return { payments: [], focusPaymentId, hasError: true }
@@ -26,15 +28,20 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         { id },
         {
           paymentMethod: required(form, 'paymentMethod'),
-          transactionReference: required(form, 'transactionReference')
+          transactionReference: required(form, 'transactionReference'),
+          ...(String(form.get('note') ?? '').trim() ? { note: String(form.get('note')).trim() } : {})
         }
       )
     } else if (intent === 'cancel') {
       await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
     } else return { ok: false, intent }
     return { ok: true, intent }
-  } catch {
-    return { ok: false, intent }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      message: extractApiErrorMessage(error, 'Không thể cập nhật khoản thanh toán. Vui lòng thử lại.')
+    }
   }
 }
 

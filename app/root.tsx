@@ -1,11 +1,17 @@
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { useEffect } from 'react'
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { AppProviders, themeInitScript } from '~/providers/app-providers'
 import { SITE } from '~/shared/config/site'
+import { resolveDocumentTitle } from '~/shared/config/document-titles'
 
 import type { Route } from './+types/root'
 import './styles/app.css'
+
+export function meta() {
+  return [{ title: SITE.name }, { name: 'description', content: SITE.description }]
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -43,9 +49,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AppProviders>
+      <DocumentTitle />
       <Outlet />
     </AppProviders>
   )
+}
+
+function DocumentTitle() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    document.title = resolveDocumentTitle(pathname)
+  }, [pathname])
+
+  return null
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

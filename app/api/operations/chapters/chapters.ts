@@ -784,4 +784,35 @@ export const chapterControllerCoOwnerReject = async ({ id }: ChapterControllerCo
   }
 );}
 
+export type DeletePageResDtoOutput = {
+  pageId: string
+  deletedRegions: number
+  deletedTasks: number
+}
+
+export type DeletePagesBulkResDtoOutput = {
+  deletedPages: number
+  deletedRegions: number
+  deletedTasks: number
+}
+
+/** @summary Mangaka xoá một trang và các Region/Task chưa được duyệt thuộc trang. */
+export const chapterControllerDeletePage = async (
+  { pageId }: { pageId: string },
+  options?: RequestInit
+): Promise<{ data: DeletePageResDtoOutput; status: 200; headers: Headers }> =>
+  customFetch(`/pages/${pageId}`, { ...options, method: 'DELETE' })
+
+/** @summary Mangaka xoá nhiều trang trong cùng chapter theo cơ chế all-or-nothing. */
+export const chapterControllerDeletePages = async (
+  { id }: { id: string },
+  body: { pageIds: string[] },
+  options?: RequestInit
+): Promise<{ data: DeletePagesBulkResDtoOutput; status: 200; headers: Headers }> =>
+  customFetch(`/chapters/${id}/pages`, {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(body)
+  })
 

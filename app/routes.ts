@@ -32,8 +32,10 @@ export default [
       route('contracts', 'routes/mangaka/contracts.tsx'),
       route('contracts/:id', 'routes/mangaka/contract-detail.tsx'),
       route('reprints', 'routes/mangaka/reprints.tsx'),
+      route('transfers', 'routes/mangaka/transfers.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
+      route('notifications', 'routes/mangaka/notifications.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')
     ])
   ]),
@@ -70,6 +72,7 @@ export default [
       route('contracts/:id/terms', 'routes/editor/contract-terms.tsx'),
       route('contracts/:id/conditions', 'routes/editor/contract-conditions.tsx'),
       route('contracts/:id/history', 'routes/editor/contract-history.tsx'),
+      route('contracts/:id/payments', 'routes/editor/contract-payments.tsx'),
       route('contracts/:id/revenue', 'routes/editor/contract-revenue.tsx'),
       route('contracts/:id/amendments', 'routes/editor/contract-amendments.tsx'),
       route('operations', 'routes/editor/operations.tsx'),

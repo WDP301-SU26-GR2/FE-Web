@@ -26,6 +26,7 @@ export type PublicationContextValue = {
   nameLoading: boolean
   pages: PageListResDtoOutputItemsItem[]
   pagesLoading: boolean
+  pagesError: string | null
   refreshChapter: () => void
   refreshName: () => void
   refreshPages: () => void

@@ -19,6 +19,7 @@ export type EditorActionResult = {
   errorKey?: string
   message?: string
   phase?: 'PRESENTING' | 'QA' | 'VOTING'
+  transferContractId?: string
 }
 
 export type EditorProposalDetailData = {

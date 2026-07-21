@@ -9,9 +9,16 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       surveyControllerGetSurveyPeriods(),
       seriesControllerListSeries({ limit: 100, offset: 0 })
     ])
-    const periods = periodsResponse.status === 200 ? periodsResponse.data : []
+    const periods =
+      periodsResponse.status === 200
+        ? periodsResponse.data
+            .filter((period) => period.status === 'REFLECTED')
+            .sort((left, right) => new Date(right.startDate).getTime() - new Date(left.startDate).getTime())
+        : []
     const requestedPeriodId = new URL(request.url).searchParams.get('surveyPeriodId') ?? ''
-    const surveyPeriodId = requestedPeriodId || periods.find((period) => period.status === 'REFLECTED')?.id || periods[0]?.id || ''
+    const surveyPeriodId = periods.some((period) => period.id === requestedPeriodId)
+      ? requestedPeriodId
+      : (periods[0]?.id ?? '')
     const response = surveyPeriodId ? await surveyControllerGetBoardRanking({ surveyPeriodId }) : null
     return {
       rankings: response?.status === 200 ? response.data.items : [],

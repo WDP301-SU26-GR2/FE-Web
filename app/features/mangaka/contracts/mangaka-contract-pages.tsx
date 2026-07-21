@@ -1,8 +1,17 @@
 import { ArrowLeft, FileSignature, KeyRound, Loader2 } from 'lucide-react'
 import { Link, useFetcher } from 'react-router'
-import type { ReactNode } from 'react'
-import type { AmendmentResDtoOutput, ContractResDtoOutput, PaymentConditionResDtoOutput } from '~/api/model/contracts'
+import { useState, type ReactNode } from 'react'
+import type {
+  AmendmentResDtoOutput,
+  ContractResDtoOutput,
+  ContractStatusProgressResDtoOutput,
+  PaymentConditionResDtoOutput
+} from '~/api/model/contracts'
 import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
+import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
+import { PaymentConditionsSummary } from '~/features/contracts/components/payment-conditions-summary'
+import { Dialog } from '~/shared/ui/dialog'
+import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export type MangakaContractActionResult = {
   ok: boolean
@@ -34,8 +43,12 @@ export function MangakaContractsPage({ contracts }: { contracts: ContractResDtoO
           >
             <div className='flex items-start justify-between gap-3'>
               <div>
-                <h2 className='font-bold text-foreground'>Hợp đồng — {contract.series?.title ?? 'Chưa xác định bộ truyện'}</h2>
-                <p className='mt-1 text-xs text-muted-foreground'>Bộ truyện: {contract.series?.title ?? 'Chưa xác định'}</p>
+                <h2 className='font-bold text-foreground'>
+                  Hợp đồng — {contract.series?.title ?? 'Chưa xác định bộ truyện'}
+                </h2>
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  Bộ truyện: {contract.series?.title ?? 'Chưa xác định'}
+                </p>
               </div>
               <StatusBadge value={contract.status} />
             </div>
@@ -57,18 +70,26 @@ export function MangakaContractsPage({ contracts }: { contracts: ContractResDtoO
 
 export function MangakaContractDetailPage({
   contract,
+  progress,
+  progressLoadFailed = false,
   conditions,
-  amendments
+  amendments,
+  conditionsLoadFailed = false
 }: {
   contract: ContractResDtoOutput
+  progress: ContractStatusProgressResDtoOutput | null
+  progressLoadFailed?: boolean
   conditions: PaymentConditionResDtoOutput[]
   amendments: AmendmentResDtoOutput[]
+  conditionsLoadFailed?: boolean
 }) {
   const fetcher = useFetcher<MangakaContractActionResult>()
   const isWorking = fetcher.state !== 'idle'
+  const [requestChangesOpen, setRequestChangesOpen] = useState(false)
+  const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
 
   return (
-    <div className='space-y-6 pb-12'>
+    <div className='flex flex-col gap-6 pb-12'>
       <header>
         <Link
           to='/dashboard/mangaka/contracts'
@@ -78,10 +99,24 @@ export function MangakaContractDetailPage({
         </Link>
         <div className='mt-4 flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <h1 className='text-2xl font-bold text-foreground'>Hợp đồng — {contract.series?.title ?? 'Chưa xác định bộ truyện'}</h1>
+            <h1 className='text-2xl font-bold text-foreground'>
+              Hợp đồng — {contract.series?.title ?? 'Chưa xác định bộ truyện'}
+            </h1>
             <p className='mt-1 text-sm text-muted-foreground'>Bộ truyện: {contract.series?.title ?? 'Chưa xác định'}</p>
           </div>
-          <StatusBadge value={contract.status} />
+          <div className='flex flex-wrap items-center justify-end gap-2'>
+            <ContractPdfButton
+              contract={contract}
+              conditionsCount={
+                conditions.filter(
+                  (condition) =>
+                    condition.status !== 'DISABLED' &&
+                    ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
+                ).length
+              }
+            />
+            <StatusBadge value={contract.status} />
+          </div>
         </div>
       </header>
 
@@ -104,26 +139,47 @@ export function MangakaContractDetailPage({
         </div>
       </Panel>
 
-      <Panel title='Thao tác của Mangaka'>
+      <Panel title='Thao tác của Mangaka' className='order-4'>
+        {!conditionsReady && (
+          <p className='mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm font-semibold text-destructive'>
+            Không thể đồng ý hoặc ký cho tới khi tải được ít nhất một điều kiện thanh toán hợp lệ.
+          </p>
+        )}
+        {progress && (
+          <div className='mb-5 grid gap-3 rounded-lg border border-border p-4 text-sm sm:grid-cols-2'>
+            <Metric label='Chữ ký Mangaka' value={progress.mangaka.isSigned ? 'Đã ký' : 'Chưa ký'} />
+            <Metric
+              label='Tiến độ chữ ký Hội đồng'
+              value={`${progress.boardProgress.totalSigned}/${progress.boardProgress.totalRequired}`}
+            />
+          </div>
+        )}
+        {progressLoadFailed && (
+          <p className='mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
+            Không thể tải tiến độ chữ ký mới nhất. Hãy tải lại trang trước khi tiếp tục nếu cần đối chiếu chữ ký.
+          </p>
+        )}
         {contract.status === 'MANGAKA_REVIEW' && (
-          <fetcher.Form method='post' className='flex flex-wrap gap-3'>
+          <div className='flex flex-wrap gap-3'>
+            <fetcher.Form method='post'>
+              <button
+                name='intent'
+                value='approve'
+                disabled={isWorking || !conditionsReady}
+                className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+              >
+                Đồng ý điều khoản
+              </button>
+            </fetcher.Form>
             <button
-              name='intent'
-              value='approve'
+              type='button'
               disabled={isWorking}
-              className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
-            >
-              Đồng ý điều khoản
-            </button>
-            <button
-              name='intent'
-              value='requestChanges'
-              disabled={isWorking}
+              onClick={() => setRequestChangesOpen(true)}
               className='h-10 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:opacity-50'
             >
               Yêu cầu chỉnh sửa
             </button>
-          </fetcher.Form>
+          </div>
         )}
         <div className={contract.status === 'MANGAKA_REVIEW' ? 'mt-5 border-t border-border pt-5' : ''}>
           <h3 className='text-sm font-bold text-foreground'>Chữ ký Mangaka</h3>
@@ -139,7 +195,7 @@ export function MangakaContractDetailPage({
               type='submit'
               name='intent'
               value='sendOtp'
-              disabled={isWorking || contract.status !== 'BOARD_APPROVED'}
+              disabled={isWorking || contract.status !== 'BOARD_APPROVED' || !conditionsReady}
               formNoValidate
               className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
             >
@@ -153,13 +209,13 @@ export function MangakaContractDetailPage({
               maxLength={6}
               placeholder='OTP 6 số'
               required
-              disabled={contract.status !== 'BOARD_APPROVED'}
+              disabled={contract.status !== 'BOARD_APPROVED' || !conditionsReady}
               className={`${inputClass} w-40`}
             />
             <button
               name='intent'
               value='signContract'
-              disabled={isWorking || contract.status !== 'BOARD_APPROVED'}
+              disabled={isWorking || contract.status !== 'BOARD_APPROVED' || !conditionsReady}
               className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
             >
               Ký hợp đồng
@@ -172,22 +228,11 @@ export function MangakaContractDetailPage({
         <ActionFeedback fetcher={fetcher} />
       </Panel>
 
-      <Panel title='Điều kiện thanh toán'>
-        <div className='space-y-3'>
-          {conditions.map((condition) => (
-            <article key={condition.id} className='rounded-lg border border-border p-4'>
-              <div className='flex flex-wrap items-center justify-between gap-2'>
-                <strong className='text-sm'>{condition.conditionType.replaceAll('_', ' ')}</strong>
-                <StatusBadge value={condition.status} />
-              </div>
-              <p className='mt-2 text-sm text-muted-foreground'>Mức chi: {formatMoney(condition.payoutAmount)}</p>
-            </article>
-          ))}
-          {!conditions.length && <p className='text-sm text-muted-foreground'>Chưa có điều kiện thanh toán.</p>}
-        </div>
+      <Panel title='Điều kiện thanh toán' className='order-3'>
+        <PaymentConditionsSummary conditions={conditions} loadFailed={conditionsLoadFailed} />
       </Panel>
 
-      <Panel title='Phụ lục hợp đồng'>
+      <Panel title='Phụ lục hợp đồng' className='order-5'>
         <div className='space-y-3'>
           {amendments.map((amendment) => (
             <MangakaAmendmentRow key={amendment.id} contract={contract} amendment={amendment} />
@@ -195,6 +240,61 @@ export function MangakaContractDetailPage({
           {!amendments.length && <p className='text-sm text-muted-foreground'>Chưa có phụ lục.</p>}
         </div>
       </Panel>
+
+      <Dialog
+        open={requestChangesOpen && contract.status === 'MANGAKA_REVIEW'}
+        onClose={() => {
+          if (!isWorking) setRequestChangesOpen(false)
+        }}
+        titleId='request-contract-changes-title'
+        descriptionId='request-contract-changes-description'
+        title='Yêu cầu chỉnh sửa hợp đồng'
+        description='Nêu rõ điều khoản cần Editor xem xét và cập nhật.'
+        size='md'
+        footer={
+          <div className='flex justify-end gap-2'>
+            <button
+              type='button'
+              disabled={isWorking}
+              onClick={() => setRequestChangesOpen(false)}
+              className='h-10 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:opacity-50'
+            >
+              Hủy
+            </button>
+            <button
+              type='submit'
+              form='request-contract-changes-form'
+              disabled={isWorking}
+              className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            >
+              {isWorking && <Loader2 className='size-4 animate-spin' />}
+              Gửi yêu cầu
+            </button>
+          </div>
+        }
+      >
+        <fetcher.Form id='request-contract-changes-form' method='post' className='space-y-2'>
+          <input type='hidden' name='intent' value='requestChanges' />
+          <label htmlFor='contract-change-reason' className='block text-sm font-semibold text-foreground'>
+            Lý do chỉnh sửa <span className='text-destructive'>*</span>
+          </label>
+          <textarea
+            id='contract-change-reason'
+            name='reason'
+            required
+            minLength={1}
+            maxLength={1000}
+            rows={6}
+            autoFocus
+            placeholder='Ví dụ: Đề nghị điều chỉnh tỷ lệ sở hữu và làm rõ điều khoản chấm dứt hợp đồng.'
+            className='w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary'
+          />
+          <p className='text-xs text-muted-foreground'>Bắt buộc, tối đa 1000 ký tự.</p>
+          {fetcher.state === 'idle' && fetcher.data?.intent === 'requestChanges' && !fetcher.data.ok && (
+            <p className='text-xs font-semibold text-destructive'>{fetcher.data.message}</p>
+          )}
+        </fetcher.Form>
+      </Dialog>
     </div>
   )
 }
@@ -284,9 +384,9 @@ function ActionFeedback({ fetcher }: { fetcher: { state: string; data?: MangakaC
   )
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Panel({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+    <section className={`rounded-xl border border-border bg-card p-5 shadow-sm ${className}`}>
       <h2 className='mb-4 text-lg font-bold text-foreground'>{title}</h2>
       {children}
     </section>

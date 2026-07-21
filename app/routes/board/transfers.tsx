@@ -6,30 +6,40 @@ import {
   transferControllerBoardAssignFullBuyout,
   transferControllerBoardRejectScreening,
   transferControllerGetPendingBoardRequests,
+  transferControllerGetTransferRequestById,
   transferControllerGetSignatures,
   transferControllerSignTransferContract
 } from '~/api/operations/transfer/transfer'
 import type { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
 import { BoardTransfersPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/transfers'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
-  const contractId = new URL(request.url).searchParams.get('contractId')?.trim() ?? ''
+  const url = new URL(request.url)
+  const contractId = url.searchParams.get('contractId')?.trim() ?? ''
+  const requestId = url.searchParams.get('requestId')?.trim() ?? ''
   try {
-    const [requests, sessions, signatures] = await Promise.all([
+    const [requests, sessions, signatures, focusedRequest] = await Promise.all([
       transferControllerGetPendingBoardRequests(),
-      boardControllerGetSessions(),
-      contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
+      boardControllerGetSessions({ mine: 'true', status: 'ACTIVE' }),
+      contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null,
+      requestId ? transferControllerGetTransferRequestById({ id: requestId }).catch(() => null) : null
     ])
+    const requestItems = requests.data.data
+    if (focusedRequest?.status === 200 && !requestItems.some((item) => item.id === focusedRequest.data.id)) {
+      requestItems.unshift(focusedRequest.data as (typeof requestItems)[number])
+    }
     return {
-      requests: requests.data.data,
-      sessions: sessions.data.filter((item) => item.status === 'ACTIVE'),
+      requests: requestItems,
+      sessions: sessions.data,
       contractId,
+      requestId,
       signatures: signatures?.status === 200 ? signatures.data.signatures : [],
       hasError: false
     }
   } catch {
-    return { requests: [], sessions: [], contractId, signatures: [], hasError: true }
+    return { requests: [], sessions: [], contractId, requestId, signatures: [], hasError: true }
   }
 }
 
@@ -50,30 +60,41 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (intent === 'approve') await transferControllerBoardApproveScreening(params, body)
       else await transferControllerBoardRejectScreening(params, body)
     } else if (intent === 'fullBuyout') {
+      const conditionTypes = form.getAll('conditionType').map(String)
+      const conditionValues = form.getAll('conditionValue').map(Number)
+      const conditionDescriptions = form.getAll('conditionDescription').map(String)
+      if (!conditionTypes.length || conditionTypes.some((_, index) => !conditionDescriptions[index] || !Number.isFinite(conditionValues[index]))) {
+        throw new Error('Điều kiện hợp đồng chưa đầy đủ.')
+      }
       await transferControllerBoardAssignFullBuyout(
         { id: required(form, 'requestId') },
         {
           boardSessionId: required(form, 'sessionId'),
           valuationAmount: Number(required(form, 'valuationAmount')),
-          conditions: [
-            {
-              type: required(form, 'conditionType') as AssignFullBuyoutBodyDtoConditionsItemType,
-              value: Number(required(form, 'conditionValue')),
-              description: required(form, 'conditionDescription')
-            }
-          ]
+          conditions: conditionTypes.map((type, index) => ({
+            type: type as AssignFullBuyoutBodyDtoConditionsItemType,
+            value: conditionValues[index],
+            description: conditionDescriptions[index]
+          }))
         }
       )
     } else if (intent === 'sign') {
+      const contractId = required(form, 'contractId')
+      const signatures = await transferControllerGetSignatures({ id: contractId })
+      if (signatures.status !== 200) throw new Error('Không thể tải tiến độ chữ ký.')
+      const signedRoles = new Set(signatures.data.signatures.map((signature) => signature.role))
+      if (!signedRoles.has('MANGAKA_A') || !signedRoles.has('MANGAKA_B')) {
+        throw new Error('Cần đủ chữ ký của hai Mangaka trước khi Hội đồng ký.')
+      }
       await transferControllerSignTransferContract(
-        { id: required(form, 'contractId') },
+        { id: contractId },
         { otpCode: required(form, 'otpCode') },
-        { signerRole: 'BOARD_MEMBER' }
+        { signerRole: 'BOARD' }
       )
     } else return { ok: false, intent }
-    return { ok: true, intent }
-  } catch {
-    return { ok: false, intent }
+    return { ok: true, intent, requestId: String(form.get('requestId') ?? '') || undefined }
+  } catch (error) {
+    return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.') }
   }
 }
 

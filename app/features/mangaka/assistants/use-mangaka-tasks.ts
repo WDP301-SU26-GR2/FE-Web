@@ -12,6 +12,9 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export interface UseMangakaTasksOptions {
   assistantId?: string
+  seriesId?: string
+  chapterId?: string
+  groupId?: string
   status?: string
 }
 
@@ -24,6 +27,9 @@ export interface UseMangakaTasksResult {
   error: string | null
   filters: {
     assistantId?: string
+    seriesId?: string
+    chapterId?: string
+    groupId?: string
     status?: string
   }
   setPage: (page: number) => void
@@ -55,6 +61,9 @@ export function useMangakaTasks(options: UseMangakaTasksOptions = {}): UseMangak
           offset: (currentPage - 1) * DEFAULT_PER_PAGE
         }
         if (currentFilters.assistantId) params.assistantId = currentFilters.assistantId
+        if (currentFilters.seriesId) params.seriesId = currentFilters.seriesId
+        if (currentFilters.chapterId) params.chapterId = currentFilters.chapterId
+        if (currentFilters.groupId) params.groupId = currentFilters.groupId
         if (currentFilters.status) params.status = currentFilters.status as TaskControllerListTasksParams['status']
 
         const res = await taskControllerListTasks(params)

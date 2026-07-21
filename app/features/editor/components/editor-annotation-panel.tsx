@@ -13,7 +13,8 @@ export function EditorAnnotationPanel({
   contextFields = {},
   createIntent = 'createAnnotation',
   resolveIntent = 'resolveAnnotation',
-  removeIntent = 'removeAnnotation'
+  removeIntent = 'removeAnnotation',
+  embedded = false
 }: {
   title: string
   annotations: AnnotationListResDtoOutputItemsItem[]
@@ -23,18 +24,21 @@ export function EditorAnnotationPanel({
   createIntent?: string
   resolveIntent?: string
   removeIntent?: string
+  embedded?: boolean
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const hiddenFields = { ...contextFields, annotationTarget: target, nameId: target === 'NAME' ? targetId : '' }
 
   return (
-    <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='flex items-center gap-2 text-lg font-bold text-foreground'>
-        <MessageSquareText className='size-5 text-primary' />
-        {title}
-      </h2>
-      <fetcher.Form method='post' className='mt-4 grid gap-3'>
+    <section className={embedded ? '' : 'rounded-xl border border-border bg-card p-5 shadow-sm'}>
+      {!embedded && (
+        <h2 className='flex items-center gap-2 text-lg font-bold text-foreground'>
+          <MessageSquareText className='size-5 text-primary' />
+          {title}
+        </h2>
+      )}
+      <fetcher.Form method='post' className={`${embedded ? '' : 'mt-4'} grid gap-3`}>
         {Object.entries(hiddenFields).map(([name, value]) => (
           <input key={name} type='hidden' name={name} value={value} />
         ))}

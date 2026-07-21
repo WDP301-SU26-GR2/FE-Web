@@ -39,6 +39,7 @@
     "ranking": "Xếp hạng",
     "contracts": "Hợp đồng",
     "reprints": "Tái bản",
+    "transfers": "Chuyển nhượng",
     "payments": "Thanh toán",
     "notifications": "Thông báo",
     "myTasks": "Nhiệm vụ của tôi",
@@ -87,6 +88,53 @@
     "comingSoonBoard": "Bảng điều khiển cho vai trò BOARD_MEMBER — sắp ra mắt.",
     "comingSoonAdmin": "Bảng điều khiển cho vai trò SUPER_ADMIN — sắp ra mắt.",
     "newChapter": "Chương mới"
+  },
+  "notificationsPage": {
+    "title": "Thông báo",
+    "subtitle": "Theo dõi các cập nhật nghiệp vụ và mở nhanh nội dung liên quan.",
+    "back": "Về bảng điều khiển",
+    "summary": {
+      "unreadCount": "{{count}} chưa đọc"
+    },
+    "filters": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "read": "Đã đọc"
+    },
+    "type": {
+      "SYSTEM": "Hệ thống",
+      "CONTRACT": "Hợp đồng",
+      "TASK": "Nhiệm vụ",
+      "DEADLINE": "Thời hạn",
+      "SURVEY": "Khảo sát",
+      "BOARD": "Hội đồng",
+      "REVIEW": "Duyệt"
+    },
+    "item": {
+      "noContent": "Thông báo không có nội dung.",
+      "openTarget": "Mở nội dung",
+      "reference": "{{type}} · {{id}}"
+    },
+    "actions": {
+      "markRead": "Đánh dấu đã đọc",
+      "markAllRead": "Đọc tất cả"
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} trên {{total}} thông báo"
+    },
+    "empty": {
+      "title": "Không có thông báo",
+      "description": "Thông báo phù hợp với bộ lọc hiện tại sẽ xuất hiện tại đây."
+    },
+    "success": {
+      "markedRead": "Đã đánh dấu thông báo là đã đọc.",
+      "markedAllRead": "Đã đánh dấu tất cả thông báo là đã đọc."
+    },
+    "error": {
+      "updateFailed": "Không thể cập nhật thông báo. Vui lòng thử lại."
+    }
   },
   "refresh": "Làm mới"
 }

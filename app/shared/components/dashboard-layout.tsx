@@ -96,6 +96,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
     if (r === 'MANGAKA') return '/dashboard/mangaka/profile'
     if (r === 'ASSISTANT') return '/dashboard/assistant/profile'
     if (r === 'EDITOR') return '/dashboard/editor/profile'
+    if (r === 'BOARD_MEMBER') return '/dashboard/board/profile'
     if (r === 'SUPER_ADMIN') return '/dashboard/admin/settings'
     return null
   })()
@@ -233,6 +234,7 @@ export function DashboardLayout({ children, navItems, profile, headerActions }: 
             <button
               className='relative rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors'
               aria-label={t('layout.notifications')}
+              title={t('layout.notifications')}
               onClick={() => {
                 const role = session?.user?.role
                 if (role === 'EDITOR') navigate('/dashboard/editor/notifications')

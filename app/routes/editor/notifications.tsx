@@ -1,28 +1,14 @@
-import {
-  notificationControllerList,
-  notificationControllerMarkAllRead,
-  notificationControllerMarkRead
-} from '~/api/operations/notifications/notifications'
-import { EditorNotificationsPage, type EditorActionResult } from '~/features/editor'
+import { EditorNotificationsPage } from '~/features/editor'
+import { handleNotificationAction, loadNotifications } from '~/shared/lib/notifications/notification-route'
 import type { Route } from './+types/notifications'
 
-export async function clientLoader() {
-  const response = await notificationControllerList({ limit: 100, offset: 0 })
-  return response.data
+export function meta() {
+  return [{ title: 'Thông báo biên tập - Mangaka Studio' }]
 }
 
-export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
-  const form = await request.formData()
-  const intent = String(form.get('intent') ?? '')
-  try {
-    if (intent === 'markAllRead') await notificationControllerMarkAllRead()
-    else if (intent === 'markRead') await notificationControllerMarkRead({ id: String(form.get('id') ?? '') })
-    else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: 'operationCompleted' }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
-  }
-}
+export const clientLoader = ({ request }: Route.ClientLoaderArgs) => loadNotifications(request)
+
+export const clientAction = ({ request }: Route.ClientActionArgs) => handleNotificationAction(request)
 
 export default function EditorNotificationsRoute({ loaderData }: Route.ComponentProps) {
   return <EditorNotificationsPage data={loaderData} />

@@ -24,6 +24,18 @@ export function paymentThreshold(form: FormData) {
   throw new Error('Invalid condition type')
 }
 
+export function paymentPayout(form: FormData) {
+  const payoutAmount = optionalNumber(form, 'payoutAmount')
+  const payoutPct = optionalNumber(form, 'payoutPct')
+  if ((payoutAmount ?? 0) <= 0 && (payoutPct ?? 0) <= 0) throw new Error('PAYOUT_VALUE_REQUIRED')
+  if ((payoutAmount != null && payoutAmount < 0) || (payoutPct != null && (payoutPct < 0 || payoutPct > 100)))
+    throw new Error('PAYOUT_VALUE_REQUIRED')
+  return {
+    ...(payoutAmount != null ? { payoutAmount } : {}),
+    ...(payoutPct != null ? { payoutPct } : {})
+  }
+}
+
 export function clauses(form: FormData) {
   return required(form, 'changedClauses')
     .split(',')
@@ -64,13 +76,17 @@ export function ownershipIsValid(contractType: string, publisher: number, mangak
 }
 
 export function contractErrorKey(error: unknown) {
-  const code =
+  const payload =
     error && typeof error === 'object' && 'data' in error
-      ? (error as { data?: { code?: string } }).data?.code
+      ? (error as { data?: { code?: string; message?: string } }).data
       : undefined
+  const code = payload?.code
+  const message = payload?.message ?? (error instanceof Error ? error.message : '')
 
   if (code === 'Error.SeriesNotSerialized') return 'seriesNotSerialized'
   if (code === 'Error.InvalidContractTransition') return 'invalidContractTransition'
+  if (message.includes('INVALID_CONTRACT_STATUS_FOR_THIS_ACTION')) return 'invalidContractTransition'
+  if (message.includes('Trạng thái hợp đồng không phù hợp')) return 'invalidContractTransition'
   if (code === 'Error.ContractNotAmendable') return 'contractNotAmendable'
   if (code === 'Error.OpenAmendmentExists') return 'openAmendmentExists'
   if (code === 'Error.OwnershipMismatch') return 'ownershipMismatch'
@@ -79,6 +95,9 @@ export function contractErrorKey(error: unknown) {
   if (code?.startsWith('Error.AmendmentNot')) return 'invalidState'
   if (code?.includes('REVENUE_NOT_APPLICABLE')) return 'revenueNotApplicable'
   if (code?.includes('ONLY_ASSIGNED_EDITOR')) return 'notAssigned'
+  if (message.includes('PAYOUT_VALUE_REQUIRED')) return 'payoutRequired'
+  if (message.includes('PAYMENT_CONDITION_REQUIRED')) return 'paymentConditionRequired'
+  if (message.includes('PAYMENT_CONDITION_LOCKED')) return 'paymentConditionLocked'
   return 'actionFailed'
 }
 

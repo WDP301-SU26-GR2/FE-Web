@@ -47,8 +47,11 @@ export function useChapterPages(chapterId: string | null | undefined): UseChapte
       } catch (err: unknown) {
         if (signal.aborted) return
         if (err instanceof Error && err.name === 'AbortError') return
-        if (isFetchError(err) && (err.status === 403 || err.status === 404)) {
+        if (isFetchError(err) && err.status === 404) {
           setPages([])
+        } else if (isFetchError(err) && err.status === 403) {
+          setPages([])
+          setError(t('publication.pagesReader.accessDenied'))
         } else {
           setError(err instanceof Error ? err.message : t('publication.error.generic'))
         }
@@ -66,7 +69,6 @@ export function useChapterPages(chapterId: string | null | undefined): UseChapte
       setPages([])
       return
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchPages(chapterId)
     return () => abortRef.current?.abort()
   }, [chapterId, reloadToken, fetchPages])

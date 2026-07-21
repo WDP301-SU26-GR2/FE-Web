@@ -23,12 +23,15 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { TaskListResDtoOutputItemsItemTaskType } from './taskListResDtoOutputItemsItemTaskType';
 import type { TaskListResDtoOutputItemsItemStatus } from './taskListResDtoOutputItemsItemStatus';
 import type { TaskListResDtoOutputItemsItemVersionsItem } from './taskListResDtoOutputItemsItemVersionsItem';
+import type { TaskRegionDtoOutput } from './taskRegionDtoOutput';
 
 export type TaskListResDtoOutputItemsItem = {
   id: string;
   pageId: string;
   /** @nullable */
   regionId: string | null;
+  /** Vùng thao tác được nhúng để Assistant có thể xác định đúng tọa độ công việc. */
+  region?: TaskRegionDtoOutput | null;
   /** @nullable */
   assistantId: string | null;
   /**

@@ -39,6 +39,7 @@
     "ranking": "Ranking",
     "contracts": "Contracts",
     "reprints": "Reprints",
+    "transfers": "Transfers",
     "payments": "Payments",
     "notifications": "Notifications",
     "myTasks": "My Tasks",
@@ -87,6 +88,53 @@
     "comingSoonBoard": "Dashboard for BOARD_MEMBER role — coming soon.",
     "comingSoonAdmin": "Dashboard for SUPER_ADMIN role — coming soon.",
     "newChapter": "New Chapter"
+  },
+  "notificationsPage": {
+    "title": "Notifications",
+    "subtitle": "Track workflow updates and quickly open related content.",
+    "back": "Back to dashboard",
+    "summary": {
+      "unreadCount": "{{count}} unread"
+    },
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "type": {
+      "SYSTEM": "System",
+      "CONTRACT": "Contract",
+      "TASK": "Task",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Survey",
+      "BOARD": "Board",
+      "REVIEW": "Review"
+    },
+    "item": {
+      "noContent": "This notification has no content.",
+      "openTarget": "Open item",
+      "reference": "{{type}} · {{id}}"
+    },
+    "actions": {
+      "markRead": "Mark as read",
+      "markAllRead": "Mark all as read"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}} notifications"
+    },
+    "empty": {
+      "title": "No notifications",
+      "description": "Notifications matching the current filter will appear here."
+    },
+    "success": {
+      "markedRead": "Notification marked as read.",
+      "markedAllRead": "All notifications marked as read."
+    },
+    "error": {
+      "updateFailed": "Unable to update notifications. Please try again."
+    }
   },
   "refresh": "Refresh"
 }

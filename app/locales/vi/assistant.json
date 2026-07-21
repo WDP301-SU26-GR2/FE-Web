@@ -62,7 +62,11 @@
       "versions": "{{count}} bản nộp",
       "versions_other": "{{count}} bản nộp",
       "pageIdLabel": "Page ID",
-      "statusReason": "Ghi chú"
+      "statusReason": "Ghi chú",
+      "regionTitle": "Vùng cần xử lý",
+      "regionType": "Loại vùng",
+      "regionSize": "Kích thước",
+      "resultFile": "Tệp kết quả"
     },
     "actions": {
       "start": "Bắt đầu task",

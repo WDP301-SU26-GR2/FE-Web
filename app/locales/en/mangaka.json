@@ -642,6 +642,26 @@
       "done": "Done",
       "advance": "Advance → {{to}}",
       "uploadError": "Could not upload the image.",
+      "accessDeniedTitle": "Unable to open manuscript pages",
+      "accessDenied": "You do not have access to this chapter's pages, or the collaboration is no longer active.",
+      "retry": "Try again",
+      "editPageNumber": "Change page number",
+      "editPageNumberDescription": "Enter a new order number. Page numbers must be unique within the chapter.",
+      "dialog": {
+        "cancel": "Cancel",
+        "save": "Save changes"
+      },
+      "delete": {
+        "action": "Delete page",
+        "title": "Delete page {{n}}?",
+        "description": "This cannot be undone and also removes unapproved regions and tasks attached to the page.",
+        "taskCount": "{{count}} related task will be checked before deletion.",
+        "taskCount_other": "{{count}} related tasks will be checked before deletion.",
+        "taskCountUnknown": "The related task count could not be loaded. The backend will still validate deletion safely.",
+        "confirm": "Delete page",
+        "success": "Page deleted with {{regions}} regions and {{tasks}} related tasks.",
+        "error": "The page cannot be deleted. Completed pages and pages with approved tasks are protected."
+      },
       "composer": {
         "title": "Upload page {{n}}",
         "cancel": "Cancel",

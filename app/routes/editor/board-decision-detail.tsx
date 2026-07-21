@@ -25,6 +25,8 @@ export async function clientLoader({ params }: ClientLoaderFunctionArgs) {
     reports: reports.data,
     sessionStatus: session.data.status,
     sessionPhase: readBoardSessionPhase(session.data),
+    sessionTitle: session.data.title,
+    sessionStartTime: session.data.startTime,
     allowedEditorIds: session.data.allowedEditorIds
   }
 }

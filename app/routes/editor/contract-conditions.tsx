@@ -1,11 +1,12 @@
 import {
   contractControllerCreatePaymentCondition,
   contractControllerDisablePaymentCondition,
+  contractControllerGetContractById,
   contractControllerGetPaymentConditions,
   contractControllerUpdatePaymentCondition
 } from '~/api/operations/contracts/contracts'
 import { EditorContractConditionsPage, type EditorActionResult } from '~/features/editor'
-import { contractErrorKey, loadContractBase, paymentThreshold, required } from './contract-route-utils'
+import { contractErrorKey, loadContractBase, paymentPayout, paymentThreshold, required } from './contract-route-utils'
 import type { Route } from './+types/contract-conditions'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -20,6 +21,9 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = required(form, 'intent')
   try {
+    const contract = await contractControllerGetContractById({ id: params.id })
+    if (contract.status !== 200) throw new Error('CONTRACT_NOT_FOUND')
+    if (!['DRAFT', 'NEGOTIATION'].includes(contract.data.status)) throw new Error('PAYMENT_CONDITION_LOCKED')
     if (intent === 'createCondition')
       await contractControllerCreatePaymentCondition(
         { contractId: params.id },
@@ -31,8 +35,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
             | 'TIME_BOUND',
           thresholdConfig: paymentThreshold(form),
           isRecurring: required(form, 'conditionType') === 'RECURRING_CHAPTER',
-          ...(form.get('payoutAmount') ? { payoutAmount: Number(form.get('payoutAmount')) } : {}),
-          ...(form.get('payoutPct') ? { payoutPct: Number(form.get('payoutPct')) } : {})
+          ...paymentPayout(form)
         }
       )
     else if (intent === 'disableCondition')
@@ -46,8 +49,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
         {
           thresholdConfig: paymentThreshold(form),
           isRecurring: required(form, 'conditionType') === 'RECURRING_CHAPTER',
-          ...(form.get('payoutAmount') ? { payoutAmount: Number(form.get('payoutAmount')) } : {}),
-          ...(form.get('payoutPct') ? { payoutPct: Number(form.get('payoutPct')) } : {})
+          ...paymentPayout(form)
         }
       )
     else return { ok: false, intent, errorKey: 'invalidAction' }

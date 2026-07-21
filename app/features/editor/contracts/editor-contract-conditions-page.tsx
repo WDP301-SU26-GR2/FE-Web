@@ -22,9 +22,19 @@ export function EditorContractConditionsPage({
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const [conditionType, setConditionType] = useState('CHAPTER_MILESTONE')
+  const canManageConditions = ['DRAFT', 'NEGOTIATION'].includes(contract.status)
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.conditions')}>
-      <ContractDialogPanel title={t('actions.addCondition')}>
+      {!canManageConditions && (
+        <p className='rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground'>
+          {t('contractDetail.paymentConditionsLocked')}
+        </p>
+      )}
+      <ContractDialogPanel
+        title={t('actions.addCondition')}
+        description={t('contractDetail.paymentConditionManageHint')}
+        disabled={!canManageConditions}
+      >
         <fetcher.Form method='post' className='grid gap-3 md:grid-cols-2'>
           <input type='hidden' name='intent' value='createCondition' />
           <select
@@ -40,6 +50,7 @@ export function EditorContractConditionsPage({
             name='payoutAmount'
             type='number'
             min={0}
+            step='any'
             className={contractInput}
             placeholder={t('contractDetail.payoutAmount')}
           />
@@ -48,9 +59,11 @@ export function EditorContractConditionsPage({
             type='number'
             min={0}
             max={100}
+            step='any'
             className={contractInput}
             placeholder={t('contractDetail.payoutPct')}
           />
+          <p className='text-xs text-muted-foreground md:col-span-2'>{t('contractDetail.payoutRequirement')}</p>
           <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground md:col-span-2'>
             {t('actions.addCondition')}
           </button>
@@ -75,7 +88,7 @@ export function EditorContractConditionsPage({
                     {t('contractDetail.payoutPct')}: {condition.payoutPct ?? '—'}%
                   </p>
                 </div>
-                {condition.status === 'PENDING' && (
+                {canManageConditions && condition.status === 'PENDING' && (
                   <fetcher.Form method='post'>
                     <input type='hidden' name='intent' value='disableCondition' />
                     <input type='hidden' name='conditionId' value={condition.id} />
@@ -86,7 +99,7 @@ export function EditorContractConditionsPage({
                   </fetcher.Form>
                 )}
               </div>
-              {condition.status === 'PENDING' && (
+              {canManageConditions && condition.status === 'PENDING' && (
                 <fetcher.Form method='post' className='mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-4'>
                   <input type='hidden' name='intent' value='updateCondition' />
                   <input type='hidden' name='conditionId' value={condition.id} />
@@ -96,6 +109,7 @@ export function EditorContractConditionsPage({
                     name='payoutAmount'
                     type='number'
                     min={0}
+                    step='any'
                     defaultValue={condition.payoutAmount ?? ''}
                     className={contractInput}
                   />
@@ -104,6 +118,7 @@ export function EditorContractConditionsPage({
                     type='number'
                     min={0}
                     max={100}
+                    step='any'
                     defaultValue={condition.payoutPct ?? ''}
                     className={contractInput}
                   />

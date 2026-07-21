@@ -23,6 +23,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { TaskControllerListTasksStatus } from './taskControllerListTasksStatus';
 
 export type TaskControllerListTasksParams = {
+seriesId?: string;
+groupId?: string;
+chapterId?: string;
 pageId?: string;
 /**
  * Lọc task theo vùng (Region id)

@@ -52,3 +52,20 @@ body {
 html.dark {
   color-scheme: dark;
 }
+
+/* Giữ phản hồi con trỏ nhất quán cho mọi thành phần có thể tương tác.
+   Tailwind utility đặt trực tiếp trên component vẫn có thể ghi đè khi cần
+   các chế độ đặc biệt như kéo, vẽ hoặc chọn vùng. */
+@layer base {
+  button:not(:disabled),
+  a[href],
+  summary,
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role='button'][aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}

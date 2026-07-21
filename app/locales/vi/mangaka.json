@@ -642,6 +642,26 @@
       "done": "Hoàn tất",
       "advance": "Chuyển → {{to}}",
       "uploadError": "Không thể upload ảnh.",
+      "accessDeniedTitle": "Không thể mở các trang bản thảo",
+      "accessDenied": "Bạn không có quyền xem các trang của chương này hoặc quan hệ cộng tác đã kết thúc.",
+      "retry": "Thử lại",
+      "editPageNumber": "Đổi số trang",
+      "editPageNumberDescription": "Nhập số thứ tự mới. Số trang không được trùng trong cùng chương.",
+      "dialog": {
+        "cancel": "Hủy",
+        "save": "Lưu thay đổi"
+      },
+      "delete": {
+        "action": "Xóa trang",
+        "title": "Xóa trang {{n}}?",
+        "description": "Thao tác này không thể hoàn tác và sẽ xóa cả vùng cùng nhiệm vụ chưa được duyệt thuộc trang.",
+        "taskCount": "Có {{count}} nhiệm vụ liên quan sẽ được kiểm tra trước khi xóa.",
+        "taskCount_other": "Có {{count}} nhiệm vụ liên quan sẽ được kiểm tra trước khi xóa.",
+        "taskCountUnknown": "Không đọc được số nhiệm vụ liên quan. Backend vẫn kiểm tra an toàn trước khi xóa.",
+        "confirm": "Xóa trang",
+        "success": "Đã xóa trang cùng {{regions}} vùng và {{tasks}} nhiệm vụ liên quan.",
+        "error": "Không thể xóa trang. Trang đã hoàn tất hoặc có nhiệm vụ được duyệt sẽ được bảo vệ."
+      },
       "composer": {
         "title": "Upload trang {{n}}",
         "cancel": "Huỷ",

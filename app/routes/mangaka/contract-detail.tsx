@@ -2,6 +2,7 @@ import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   contractControllerGetContractById,
   contractControllerGetPaymentConditions,
+  contractControllerCheckStatus,
   contractControllerListAmendments,
   contractControllerRejectAmendment,
   contractControllerRequestChanges,
@@ -11,22 +12,28 @@ import {
 } from '~/api/operations/contracts/contracts'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { MangakaContractDetailPage, type MangakaContractActionResult } from '~/features/mangaka'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export function meta() {
   return [{ title: 'Chi tiết hợp đồng - MangakaStudio Pro' }]
 }
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const [contract, conditions, amendments] = await Promise.all([
+  const [contract, progress, conditions, amendments] = await Promise.all([
     contractControllerGetContractById({ id: params.id }),
+    contractControllerCheckStatus({ id: params.id }).catch(() => null),
     contractControllerGetPaymentConditions({ contractId: params.id }).catch(() => null),
     contractControllerListAmendments({ contractId: params.id }).catch(() => null)
   ])
   if (contract.status !== 200) throw new Response('Không tìm thấy hợp đồng', { status: contract.status })
   return {
     contract: contract.data,
+    progress: progress?.status === 200 ? progress.data : null,
+    progressLoadFailed: progress == null,
     conditions: conditions?.status === 200 ? conditions.data.data : [],
-    amendments: amendments?.status === 200 ? amendments.data : []
+    amendments: amendments?.status === 200 ? amendments.data : [],
+    conditionsLoadFailed: conditions == null
   }
 }
 
@@ -40,6 +47,8 @@ export async function clientAction({
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
+    if (['approve', 'sendOtp', 'signContract'].includes(intent))
+      await assertValidPaymentConditions(params.id)
     if (intent === 'approve')
       await contractControllerUpdateStatus(
         { id: params.id },
@@ -48,7 +57,11 @@ export async function clientAction({
           body: JSON.stringify({ status: 'MANGAKA_APPROVED' })
         }
       )
-    else if (intent === 'requestChanges') await contractControllerRequestChanges({ id: params.id })
+    else if (intent === 'requestChanges')
+      await contractControllerRequestChanges(
+        { id: params.id },
+        { reason: required(form, 'reason') }
+      )
     else if (intent === 'sendOtp') {
       const me = await usersControllerGetMe()
       if (me.status !== 200) throw new Error('Không thể đọc tài khoản')
@@ -67,9 +80,19 @@ export async function clientAction({
       )
     } else return { ok: false, intent, message: 'Thao tác không hợp lệ.' }
     return { ok: true, intent }
-  } catch {
-    return { ok: false, intent, message: 'Không thể thực hiện thao tác. Vui lòng kiểm tra trạng thái và thử lại.' }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      message: extractApiErrorMessage(error, 'Không thể thực hiện thao tác. Vui lòng kiểm tra trạng thái và thử lại.')
+    }
   }
+}
+
+async function assertValidPaymentConditions(contractId: string) {
+  const response = await contractControllerGetPaymentConditions({ contractId })
+  if (response.status !== 200 || !hasValidPaymentCondition(response.data.data))
+    throw new Error('Không thể duyệt hoặc ký vì hợp đồng chưa có điều kiện thanh toán hợp lệ.')
 }
 
 function required(form: FormData, key: string) {
