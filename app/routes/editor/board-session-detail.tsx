@@ -84,13 +84,13 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
         }
       }
 
-      await boardControllerCreateDecision({
+      const createdDecision = await boardControllerCreateDecision({
         boardSessionId: params.id,
         targetSeriesId: seriesId,
         decisionType,
         details
       })
-      return { ok: true, intent, messageKey: 'addSessionDecision' }
+      return { ok: true, intent, messageKey: 'addSessionDecision', decision: createdDecision.data }
     }
     if (intent === 'startSession') {
       const response = await boardControllerStartSession({ id: params.id })

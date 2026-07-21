@@ -667,6 +667,8 @@
     "emptyOfflineVotes": "No offline vote data has been imported.",
     "reliable": "Reliable data",
     "unreliable": "Data not yet reliable",
+    "provisionalRankingNotice": "This is a provisional ranking calculated from recorded online and offline votes. The official ranking appears after finalization.",
+    "emptyProvisionalRanking": "No votes have been recorded for this period yet.",
     "rankingAvailableAfterFinalize": "The ranking is available after the period is closed and finalized.",
     "emptyRanking": "No ranking data is available for this period.",
     "riskLevels": {

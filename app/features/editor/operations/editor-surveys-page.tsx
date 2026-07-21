@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Form, Link } from 'react-router'
 import { BarChart3, Check, Circle, FileInput, ListChecks, Settings2, Vote } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +21,13 @@ import {
 } from './components/operations-shared'
 
 type SurveyDataTab = 'online' | 'offline' | 'ranking'
+type SurveyRankingDisplayItem = {
+  seriesId: string
+  rankPosition: number | null
+  voteCount: number
+  isReliable: boolean
+  riskLevel: string | null
+}
 
 export function EditorSurveysPage({
   series,
@@ -55,6 +62,13 @@ export function EditorSurveysPage({
     0
   )
   const flaggedVotes = votes.filter((vote) => vote.isFlagged).length
+  const displayRankings = useMemo(
+    () =>
+      selectedSurvey?.status === 'REFLECTED'
+        ? normalizeOfficialRankings(rankings)
+        : buildProvisionalRankings(votes, surveyData, flaggedVotes),
+    [flaggedVotes, rankings, selectedSurvey?.status, surveyData, votes]
+  )
 
   return (
     <OperationsLayout
@@ -72,7 +86,7 @@ export function EditorSurveysPage({
                 <option value=''>{t('operations.selectSurvey')}</option>
                 {surveys.map((item) => (
                   <option key={item.id} value={item.id}>
-                    #{item.issueNumber ?? '—'} · {t(`operations.surveyStatuses.${item.status}`)}
+                    {surveyOptionLabel(item, i18n.language, t(`operations.surveyStatuses.${item.status}`))}
                   </option>
                 ))}
               </select>
@@ -168,7 +182,7 @@ export function EditorSurveysPage({
                 onClick={() => setActiveData('ranking')}
                 icon={BarChart3}
                 label={t('operations.rankingResult')}
-                value={rankings.length}
+                value={displayRankings.length}
               />
             </div>
 
@@ -185,7 +199,7 @@ export function EditorSurveysPage({
             )}
             {activeData === 'ranking' && (
               <RankingResults
-                rankings={rankings}
+                rankings={displayRankings}
                 seriesTitles={seriesTitles}
                 reflected={selectedSurvey.status === 'REFLECTED'}
               />
@@ -375,7 +389,7 @@ function RankingResults({
   seriesTitles,
   reflected
 }: {
-  rankings: RankingRecordListResDtoOutputItemsItem[]
+  rankings: SurveyRankingDisplayItem[]
   seriesTitles: Record<string, string>
   reflected: boolean
 }) {
@@ -396,14 +410,66 @@ function RankingResults({
           </div>
           <div className='text-right'>
             <strong>{item.voteCount}</strong>
-            <p className='text-xs text-muted-foreground'>{t(`operations.riskLevels.${item.riskLevel}`)}</p>
+            <p className='text-xs text-muted-foreground'>
+              {reflected
+                ? t(`operations.riskLevels.${item.riskLevel ?? 'NONE'}`)
+                : item.isReliable
+                  ? t('operations.reliable')
+                  : t('operations.unreliable')}
+            </p>
           </div>
         </article>
       ))}
-      {!reflected && <EmptySurveyData text={t('operations.rankingAvailableAfterFinalize')} />}
-      {reflected && !rankings.length && <EmptySurveyData text={t('operations.emptyRanking')} />}
+      {!reflected && rankings.length > 0 && (
+        <p className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-semibold text-amber-800 dark:text-amber-200'>
+          {t('operations.provisionalRankingNotice')}
+        </p>
+      )}
+      {!rankings.length && (
+        <EmptySurveyData
+          text={reflected ? t('operations.emptyRanking') : t('operations.emptyProvisionalRanking')}
+        />
+      )}
     </div>
   )
+}
+
+function buildProvisionalRankings(
+  votes: ReaderVoteResDtoOutput[],
+  surveyData: SurveyDataResDtoOutput[],
+  flaggedVotes: number
+): SurveyRankingDisplayItem[] {
+  const totals = new Map<string, number>()
+  for (const vote of votes) {
+    for (const seriesId of vote.seriesIds) {
+      totals.set(seriesId, (totals.get(seriesId) ?? 0) + (vote.voteWeight ?? 1))
+    }
+  }
+  for (const batch of surveyData) {
+    for (const entry of batch.entries) {
+      if (!entry.seriesId) continue
+      totals.set(entry.seriesId, (totals.get(entry.seriesId) ?? 0) + entry.voteCount)
+    }
+  }
+  return [...totals.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .map(([seriesId, voteCount], index) => ({
+      seriesId,
+      rankPosition: index + 1,
+      voteCount,
+      isReliable: flaggedVotes === 0,
+      riskLevel: 'NONE'
+    }))
+}
+
+function normalizeOfficialRankings(rankings: RankingRecordListResDtoOutputItemsItem[]): SurveyRankingDisplayItem[] {
+  return rankings.map((item) => ({
+    seriesId: item.seriesId,
+    rankPosition: item.rankPosition ?? null,
+    voteCount: item.voteCount,
+    isReliable: item.isReliable,
+    riskLevel: item.riskLevel ?? null
+  }))
 }
 
 function SurveyWorkflow({ status }: { status: SurveyPeriodResDtoOutput['status'] }) {
@@ -452,6 +518,21 @@ function SurveyWorkflow({ status }: { status: SurveyPeriodResDtoOutput['status']
       </ol>
     </section>
   )
+}
+
+function surveyOptionLabel(survey: SurveyPeriodResDtoOutput, locale: string, statusLabel: string) {
+  const issue = `#${survey.issueNumber ?? '—'}`
+  const start = formatShortDate(survey.startDate, locale)
+  const end = formatShortDate(survey.endDate, locale)
+  const range = start && end ? `${start} → ${end}` : start || end
+  return range ? `${issue} · ${statusLabel} · ${range}` : `${issue} · ${statusLabel}`
+}
+
+function formatShortDate(value: string | null | undefined, locale: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
 }
 
 function SurveyMetric({ label, value }: { label: string; value: string }) {
