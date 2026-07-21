@@ -15,6 +15,11 @@ export interface AssignTaskDialogProps {
   open: boolean
   openFrom: 'studio' | 'workbench'
   preset?: UseTaskComposerDataOptions
+  /** Locks only the context supplied by a per-assignment "Assign task" CTA. */
+  contextLocks?: {
+    assistant?: boolean
+    series?: boolean
+  }
   onClose: () => void
   onSuccess?: () => void
   className?: string
@@ -30,7 +35,7 @@ const STEP_ORDER = ['context', 'work', 'confirm'] as const
  *  - Mounts the 3 step components in the right order
  *  - Renders footer (Back / Next / Submit) based on form state
  */
-export function AssignTaskDialog({ open, openFrom, preset, onClose, onSuccess }: AssignTaskDialogProps) {
+export function AssignTaskDialog({ open, openFrom, preset, contextLocks, onClose, onSuccess }: AssignTaskDialogProps) {
   if (!open) return null
 
   // ── Inner component: remounts on each open via `key={open}` so local state
@@ -41,6 +46,7 @@ export function AssignTaskDialog({ open, openFrom, preset, onClose, onSuccess }:
       key={open ? 'open' : 'closed'}
       openFrom={openFrom}
       preset={preset}
+      contextLocks={contextLocks}
       onClose={onClose}
       onSuccess={onSuccess}
     />
@@ -50,11 +56,12 @@ export function AssignTaskDialog({ open, openFrom, preset, onClose, onSuccess }:
 interface AssignTaskDialogBodyProps {
   openFrom: 'studio' | 'workbench'
   preset?: UseTaskComposerDataOptions
+  contextLocks?: AssignTaskDialogProps['contextLocks']
   onClose: () => void
   onSuccess?: () => void
 }
 
-function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTaskDialogBodyProps) {
+function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSuccess }: AssignTaskDialogBodyProps) {
   const { t } = useTranslation('mangaka')
 
   // We need the assignments list to resolve assignmentId → assistantId.
@@ -170,6 +177,7 @@ function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTa
             <TaskContextPicker
               openFrom={openFrom}
               preset={preset}
+              contextLocks={contextLocks}
               composer={composer}
               selected={{
                 assignmentId: form.state.assignmentId,

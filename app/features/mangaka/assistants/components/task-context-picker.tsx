@@ -8,6 +8,10 @@ import { PagePickerWithPopup } from '~/features/mangaka/studio/components/page-p
 export interface TaskContextPickerProps {
   openFrom: 'studio' | 'workbench'
   preset?: UseTaskComposerDataOptions
+  contextLocks?: {
+    assistant?: boolean
+    series?: boolean
+  }
   /** Shared composer state (must be a SINGLE instance across the dialog). */
   composer: UseTaskComposerDataResult
   selected: {
@@ -43,7 +47,14 @@ export interface TaskContextPickerProps {
  * assignment pick is **the assignment id** (so the parent hook can resolve
  * the assistant userId + assignedTaskTypes). We DO NOT swap them.
  */
-export function TaskContextPicker({ openFrom, preset, composer, selected, onChange }: TaskContextPickerProps) {
+export function TaskContextPicker({
+  openFrom,
+  preset,
+  contextLocks,
+  composer,
+  selected,
+  onChange
+}: TaskContextPickerProps) {
   const { t } = useTranslation('mangaka')
   const { data, setAssignment, setSeries, setChapter, selected: composerSelected, reload } = composer
 
@@ -103,8 +114,8 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
   )
 
   const isStudio = openFrom === 'studio'
-  const isAssignmentLocked = Boolean(preset?.presetAssignmentId)
-  const isSeriesLocked = Boolean(preset?.presetSeriesId)
+  const isAssignmentLocked = Boolean(contextLocks?.assistant)
+  const isSeriesLocked = Boolean(contextLocks?.series)
 
   return (
     <div className='space-y-4'>

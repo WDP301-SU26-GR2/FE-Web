@@ -11,17 +11,7 @@ function isLanguage(value: string | null | undefined): value is Language {
 
 function detectInitialLanguage(): Language {
   const stored = readStorage(STORAGE_KEYS.language)
-  if (isLanguage(stored)) return stored
-
-  if (typeof navigator !== 'undefined') {
-    const candidates = [...navigator.languages, navigator.language]
-      .filter(Boolean)
-      .map((value) => value.toLowerCase().split('-')[0])
-
-    const matched = candidates.find((value): value is Language => SUPPORTED_LANGUAGES.includes(value as Language))
-
-    if (matched) return matched
-  }
+  if (stored === FALLBACK_LANGUAGE) return stored
 
   return FALLBACK_LANGUAGE
 }

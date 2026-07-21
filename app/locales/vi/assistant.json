@@ -64,6 +64,12 @@
       "versions_other": "{{count}} bản nộp",
       "pageLabel": "Trang #{{id}}",
       "region": "Vùng được giao",
+      "regionTitle": "Chi tiết vùng được giao",
+      "regionType": "Loại",
+      "regionSize": "Kích thước",
+      "openAssignedPage": "Mở ảnh trang và vùng được giao",
+      "revisionRequest": "Mangaka yêu cầu chỉnh sửa",
+      "revisionRequestFallback": "Vui lòng chỉnh sửa bản đã nộp và gửi một phiên bản mới.",
       "regionAssigned": "Vùng #{{id}}",
       "fullPage": "Toàn trang (không gắn vùng)",
       "statusReason": "Ghi chú"
@@ -96,10 +102,16 @@
       "downloadOriginal": "Tải ảnh gốc",
       "downloadSubmitted": "Tải bản nộp",
       "downloadFailed": "Không tải được file. Vui lòng thử lại.",
-      "viewFullsize": "Xem đầy đủ"
+      "viewFullsize": "Xem đầy đủ",
+      "attachments": "Tài liệu tham khảo từ Mangaka",
+      "attachmentImage": "Ảnh tham khảo: {{name}}",
+      "attachmentDocument": "Tài liệu: {{name}}",
+      "viewAttachment": "Mở",
+      "downloadAttachment": "Tải xuống"
     },
     "actions": {
       "start": "Bắt đầu task",
+      "continueRevision": "Tiếp tục chỉnh sửa",
       "submit": "Nộp kết quả",
       "resultFile": "File kết quả",
       "selectedFile": "Đã chọn: {{name}} ({{size}})"
@@ -120,6 +132,10 @@
       "retry": "Thử lại",
       "noFileToSubmit": "Vui lòng đính kèm key file kết quả trước khi nộp.",
       "submitSuccess": "Đã nộp task. Đang chờ Mangaka review."
+    },
+    "success": {
+      "started": "Đã bắt đầu task.",
+      "revisionStarted": "Đã bắt đầu chỉnh sửa. Hãy tải lên kết quả mới khi hoàn tất."
     }
   },
   "studio": {

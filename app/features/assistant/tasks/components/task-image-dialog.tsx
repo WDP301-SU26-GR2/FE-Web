@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Loader2, Download, ScanLine, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import { Loader2, Download, ScanLine, X, ChevronLeft, ChevronRight, ZoomIn, FileText, ImageIcon } from 'lucide-react'
 
 import { Dialog } from '~/shared/ui/dialog'
 import { cn } from '~/shared/lib/cn'
@@ -271,6 +271,19 @@ export function TaskImageDialog({ open, task, onOpenChange }: TaskImageDialogPro
             )}
           </div>
 
+          {task.assets?.length ? (
+            <section aria-labelledby='task-reference-assets-title' className='space-y-2'>
+              <h3 id='task-reference-assets-title' className='text-sm font-bold text-foreground'>
+                {t('tasks.dialog.attachments')}
+              </h3>
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                {task.assets.map((asset) => (
+                  <ReferenceAsset key={asset.id} taskId={task.id} asset={asset} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {/* Actions */}
           <div className='flex flex-wrap items-center justify-between gap-3'>
             <div className='text-xs text-muted-foreground'>
@@ -328,6 +341,54 @@ export function TaskImageDialog({ open, task, onOpenChange }: TaskImageDialogPro
         />
       )}
     </>
+  )
+}
+
+type ReferenceAsset = NonNullable<TaskListResDtoOutputItemsItem['assets']>[number]
+
+function ReferenceAsset({ taskId, asset }: { taskId: string; asset: ReferenceAsset }) {
+  const { t } = useTranslation('assistant')
+  const signed = useTaskSignedUrl(taskId, asset.filePath)
+  const isImage = /\.(png|jpe?g|webp)$/i.test(asset.filePath)
+  const label = isImage
+    ? t('tasks.dialog.attachmentImage', { name: asset.name })
+    : t('tasks.dialog.attachmentDocument', { name: asset.name })
+
+  return (
+    <article className='overflow-hidden rounded-lg border border-border bg-card'>
+      {isImage ? (
+        signed.status === 'ready' ? (
+          <a href={signed.url} target='_blank' rel='noreferrer' aria-label={label} className='block bg-muted/30'>
+            <img src={signed.url} alt={label} className='h-36 w-full object-cover transition-opacity hover:opacity-85' />
+          </a>
+        ) : (
+          <div className='flex h-36 items-center justify-center bg-muted/30 text-muted-foreground'>
+            {signed.status === 'loading' ? <Loader2 className='h-5 w-5 animate-spin' /> : <ImageIcon className='h-5 w-5' />}
+          </div>
+        )
+      ) : (
+        <div className='flex h-20 items-center justify-center bg-muted/30 text-muted-foreground'>
+          <FileText className='h-7 w-7' />
+        </div>
+      )}
+      <div className='flex items-center gap-2 p-3'>
+        <div className='min-w-0 flex-1'>
+          <p className='truncate text-xs font-semibold text-foreground' title={asset.name}>{asset.name}</p>
+          {asset.assetType && <p className='mt-0.5 text-[11px] text-muted-foreground'>{asset.assetType}</p>}
+        </div>
+        {signed.status === 'ready' && (
+          <a
+            href={signed.url}
+            target='_blank'
+            rel='noreferrer'
+            className='inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1.5 text-[11px] font-semibold text-foreground hover:bg-muted'
+          >
+            <Download className='h-3.5 w-3.5' />
+            {isImage ? t('tasks.dialog.viewAttachment') : t('tasks.dialog.downloadAttachment')}
+          </a>
+        )}
+      </div>
+    </article>
   )
 }
 

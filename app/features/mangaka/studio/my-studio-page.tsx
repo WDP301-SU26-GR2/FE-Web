@@ -35,6 +35,16 @@ export function MyStudioPage() {
 
   const [taskDialogOpen, setTaskDialogOpen] = useState(false)
   const [taskPreset, setTaskPreset] = useState<UseTaskComposerDataOptions>({})
+  const [taskContextLocks, setTaskContextLocks] = useState<{ assistant?: boolean; series?: boolean }>({})
+
+  const openTaskComposer = (
+    preset: UseTaskComposerDataOptions,
+    contextLocks: { assistant?: boolean; series?: boolean }
+  ) => {
+    setTaskPreset(preset)
+    setTaskContextLocks(contextLocks)
+    setTaskDialogOpen(true)
+  }
 
   const { items, total, page, perPage, isLoading, error, status, setStatus, setPage, refresh } =
     useMyStudioAssignments()
@@ -58,8 +68,9 @@ export function MyStudioPage() {
           <button
             type='button'
             onClick={() => {
-              setTaskPreset({})
-              setTaskDialogOpen(true)
+              // Same assignment flow as the card CTA, without a fixed hire
+              // context so Mangaka can choose both assistant and series.
+              openTaskComposer({}, {})
             }}
             className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 cursor-pointer'
           >
@@ -149,13 +160,15 @@ export function MyStudioPage() {
                   key={assignment.id}
                   assignment={assignment}
                   onAssignClick={(a) => {
-                    // Pre-fill the composer with the assignment + (if available)
-                    // the series this hire is scoped to.
-                    setTaskPreset({
-                      presetAssignmentId: a.id,
-                      ...(a.seriesId ? { presetSeriesId: a.seriesId } : {})
-                    })
-                    setTaskDialogOpen(true)
+                    // The same composer is used by the header CTA. This entry
+                    // point only fixes the hire context that the card represents.
+                    openTaskComposer(
+                      {
+                        presetAssignmentId: a.id,
+                        ...(a.seriesId ? { presetSeriesId: a.seriesId } : {})
+                      },
+                      { assistant: true, series: Boolean(a.seriesId) }
+                    )
                   }}
                 />
               ))}
@@ -219,9 +232,11 @@ export function MyStudioPage() {
         open={taskDialogOpen}
         openFrom='studio'
         preset={taskPreset}
+        contextLocks={taskContextLocks}
         onClose={() => {
           setTaskDialogOpen(false)
           setTaskPreset({})
+          setTaskContextLocks({})
         }}
         onSuccess={() => {
           refresh()
