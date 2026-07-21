@@ -11923,7 +11923,22 @@
     "/vote/context": {
       "get": {
         "operationId": "SurveyController_getVoteContext",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "publicationType",
+            "required": false,
+            "in": "query",
+            "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WEEKLY",
+                "MONTHLY",
+                "IRREGULAR"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -11941,7 +11956,7 @@
             "bearer": []
           }
         ],
-        "summary": "Public — kỳ bình chọn OPEN hiện tại + danh sách series SERIALIZED cho trang vote Guest",
+        "summary": "Public — kỳ bình chọn OPEN hiện tại + danh sách series SERIALIZED cho trang vote Guest. Option B: ?publicationType=WEEKLY|MONTHLY|IRREGULAR để tách tab; item kèm publicationType",
         "tags": [
           "survey"
         ]
@@ -26080,6 +26095,15 @@
                   ],
                   "description": "Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO. Values: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO",
                   "nullable": true
+                },
+                "publicationType": {
+                  "type": "string",
+                  "enum": [
+                    "WEEKLY",
+                    "MONTHLY",
+                    "IRREGULAR"
+                  ],
+                  "description": "Nhịp xuất bản — Option B: FE tách tab Tuần/Tháng, mỗi tab vote series cùng type"
                 }
               },
               "required": [
@@ -26087,7 +26111,8 @@
                 "title",
                 "coverImage",
                 "genres",
-                "demographic"
+                "demographic",
+                "publicationType"
               ],
               "additionalProperties": false
             }
@@ -26393,6 +26418,17 @@
             "type": "string",
             "nullable": true
           },
+          "publicationType": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "MONTHLY",
+              "IRREGULAR",
+              null
+            ],
+            "description": "Option B: nhịp series được vote (null = phiếu cũ trước Option B)",
+            "nullable": true
+          },
           "authMethod": {
             "type": "string",
             "enum": [
@@ -26429,6 +26465,7 @@
           "surveyPeriodId",
           "seriesIds",
           "identityHash",
+          "publicationType",
           "authMethod",
           "ipHash",
           "captchaScore",

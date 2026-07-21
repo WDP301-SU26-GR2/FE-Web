@@ -39,6 +39,7 @@ import type {
   SurveyControllerGetSurveyPeriodByIdPathParameters,
   SurveyControllerGetSurveyPeriodSurveyDataPathParameters,
   SurveyControllerGetSurveyPeriodVotesPathParameters,
+  SurveyControllerGetVoteContextParams,
   SurveyControllerGetVotePeriodsParams,
   SurveyControllerGetVoteResultsParams,
   SurveyControllerUpdateSurveyPeriodStatusPathParameters,
@@ -128,7 +129,7 @@ export const surveyControllerSubmitVote = async (readerVoteBodyDto: ReaderVoteBo
 
 
 /**
- * @summary Public — kỳ bình chọn OPEN hiện tại + danh sách series SERIALIZED cho trang vote Guest
+ * @summary Public — kỳ bình chọn OPEN hiện tại + danh sách series SERIALIZED cho trang vote Guest. Option B: ?publicationType=WEEKLY|MONTHLY|IRREGULAR để tách tab; item kèm publicationType
  */
 export type surveyControllerGetVoteContextResponse200 = {
   data: VoteContextResDtoOutput
@@ -142,17 +143,24 @@ export type surveyControllerGetVoteContextResponseSuccess = (surveyControllerGet
 
 export type surveyControllerGetVoteContextResponse = (surveyControllerGetVoteContextResponseSuccess)
 
-export const getSurveyControllerGetVoteContextUrl = () => {
+export const getSurveyControllerGetVoteContextUrl = (params?: SurveyControllerGetVoteContextParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/vote/context`
+  return stringifiedParams.length > 0 ? `/vote/context?${stringifiedParams}` : `/vote/context`
 }
 
-export const surveyControllerGetVoteContext = async ( options?: RequestInit): Promise<surveyControllerGetVoteContextResponse> => {
+export const surveyControllerGetVoteContext = async (params?: SurveyControllerGetVoteContextParams, options?: RequestInit): Promise<surveyControllerGetVoteContextResponse> => {
   
-  return customFetch<surveyControllerGetVoteContextResponse>(getSurveyControllerGetVoteContextUrl(),
+  return customFetch<surveyControllerGetVoteContextResponse>(getSurveyControllerGetVoteContextUrl(params),
   {      
     ...options,
     method: 'GET'

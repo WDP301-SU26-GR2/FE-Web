@@ -22,29 +22,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
-import type { ChapterProgressResDtoOutputNameStatus } from './chapterProgressResDtoOutputNameStatus';
-import type { ChapterProgressResDtoOutputTaskBreakdown } from './chapterProgressResDtoOutputTaskBreakdown';
-import type { ChapterProgressResDtoOutputWarningLevel } from './chapterProgressResDtoOutputWarningLevel';
+import type { SurveyControllerGetVoteContextPublicationType } from './surveyControllerGetVoteContextPublicationType';
 
-export interface ChapterProgressResDtoOutput {
-  chapterId: string;
-  /**
-   * null = chapter không gắn Name
-   * @nullable
-   */
-  nameStatus: ChapterProgressResDtoOutputNameStatus;
-  totalPages: number;
-  /** Số trang đã hết task mở (sẵn sàng nộp) */
-  pagesReady: number;
-  /** Số trang còn task đang mở */
-  pagesPending: number;
-  taskBreakdown: ChapterProgressResDtoOutputTaskBreakdown;
-  /** @nullable */
-  deadline: string | null;
-  /** @nullable */
-  remainingHours: number | null;
-  progressPct: number;
-  /** Deadline warning: NONE an toan, YELLOW nguy co, RED kho kip, CRITICAL qua han. Values: NONE, YELLOW, RED, CRITICAL */
-  warningLevel: ChapterProgressResDtoOutputWarningLevel;
-  onHold: boolean;
-}
+export type SurveyControllerGetVoteContextParams = {
+/**
+ * Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR
+ */
+publicationType?: SurveyControllerGetVoteContextPublicationType;
+};

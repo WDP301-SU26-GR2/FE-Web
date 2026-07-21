@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type { VoteContextResDtoOutputSeriesItemGenresItem } from './voteContextResDtoOutputSeriesItemGenresItem';
 import type { VoteContextResDtoOutputSeriesItemDemographic } from './voteContextResDtoOutputSeriesItemDemographic';
+import type { VoteContextResDtoOutputSeriesItemPublicationType } from './voteContextResDtoOutputSeriesItemPublicationType';
 
 export type VoteContextResDtoOutputSeriesItem = {
   id: string;
@@ -39,4 +40,6 @@ export type VoteContextResDtoOutputSeriesItem = {
    * @nullable
    */
   demographic: VoteContextResDtoOutputSeriesItemDemographic;
+  /** Nhịp xuất bản — Option B: FE tách tab Tuần/Tháng, mỗi tab vote series cùng type */
+  publicationType: VoteContextResDtoOutputSeriesItemPublicationType;
 };

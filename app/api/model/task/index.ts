@@ -88,3 +88,4 @@ export * from './updateRegionBodyDto'
 export * from './updateRegionBodyDtoCoordinates'
 export * from './updateRegionBodyDtoRegionType'
 export * from './updateTaskBodyDto'
+

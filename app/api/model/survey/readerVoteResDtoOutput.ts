@@ -22,6 +22,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { ReaderVoteResDtoOutputPublicationType } from './readerVoteResDtoOutputPublicationType';
 import type { ReaderVoteResDtoOutputAuthMethod } from './readerVoteResDtoOutputAuthMethod';
 
 export interface ReaderVoteResDtoOutput {
@@ -30,6 +31,11 @@ export interface ReaderVoteResDtoOutput {
   seriesIds: string[];
   /** @nullable */
   identityHash: string | null;
+  /**
+   * Option B: nhịp series được vote (null = phiếu cũ trước Option B)
+   * @nullable
+   */
+  publicationType: ReaderVoteResDtoOutputPublicationType;
   /** @nullable */
   authMethod: ReaderVoteResDtoOutputAuthMethod;
   /** @nullable */

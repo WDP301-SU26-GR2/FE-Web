@@ -66,7 +66,6 @@ import type {
   PaymentConditionResDtoOutput,
   RejectAmendmentBodyDto,
   ReportRevenueBodyDto,
-  RequestContractChangesBodyDto,
   SignAmendmentBodyDto,
   SignContractWithOtpBodyDto,
   UpdateAmendmentBodyDto,
