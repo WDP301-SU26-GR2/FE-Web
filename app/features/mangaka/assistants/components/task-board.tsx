@@ -166,17 +166,20 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
   // → Đọc qua POST /tasks/:id/download-url (useTaskSignedUrl)
   const originalR2Key = task.pageOriginalFile ?? null
 
+  const [selectedVersionNumber, setSelectedVersionNumber] = useState<number | null>(null)
+
   // Lấy version mới nhất (nếu có)
   const latestVersion =
     task.versions.length > 0
       ? task.versions.reduce((latest, v) => (v.versionNumber > latest.versionNumber ? v : latest))
       : null
+  const selectedVersion = task.versions.find((version) => version.versionNumber === selectedVersionNumber) ?? latestVersion
 
   // FE-API-Guide-v3.md §6 (2026-07-21):
   // ẢNH 2 — BẢN ASSISTANT NỘP: dùng `versions[].file` (R2 key)
   // → Đọc qua POST /tasks/:id/download-url (useTaskSignedUrl)
-  const submittedR2Key = latestVersion?.file ?? null
-  const submitter = latestVersion?.submitter
+  const submittedR2Key = selectedVersion?.file ?? null
+  const submitter = selectedVersion?.submitter
 
   // Signed URL cho ảnh submitted (dùng cho download)
   const submittedSignedUrl = useTaskSignedUrl(task.id, submittedR2Key)
@@ -344,7 +347,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
             {submittedR2Key && (
               <button
                 type='button'
-                onClick={() => handleDownload(`task-${task.id.slice(0, 8)}-v${latestVersion?.versionNumber}.png`)}
+                onClick={() => handleDownload(`task-${task.id.slice(0, 8)}-v${selectedVersion?.versionNumber}.png`)}
                 disabled={submittedSignedUrl.status !== 'ready' || isDownloading}
                 className='absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-black/50 px-2 py-1 text-xs text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100 cursor-pointer disabled:opacity-50'
                 aria-label={t('studio.tasksTab.download')}
@@ -392,16 +395,16 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
           )}
 
           {/* Submitted version info */}
-          {latestVersion && submitter && (
+          {selectedVersion && (
             <div className='rounded-lg bg-muted/50 p-3'>
               <div className='mb-2 flex items-center justify-between'>
                 <span className='text-xs font-medium text-muted-foreground'>
-                  {t('studio.tasksTab.latestSubmission')}
+                  {t('studio.tasksTab.selectedSubmission')}
                 </span>
-                <span className='text-xs text-muted-foreground'>v{latestVersion.versionNumber}</span>
+                <span className='text-xs text-muted-foreground'>v{selectedVersion.versionNumber}</span>
               </div>
               <div className='flex items-center gap-2'>
-                {submitter.avatar ? (
+                {submitter?.avatar ? (
                   <SignedImage
                     r2Key={submitter.avatar}
                     alt={submitter.displayName ?? ''}
@@ -414,9 +417,9 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                   </div>
                 )}
                 <div className='min-w-0 flex-1'>
-                  <p className='truncate text-sm'>{submitter.displayName}</p>
+                  <p className='truncate text-sm'>{submitter?.displayName ?? t('studio.tasksTab.unknownSubmitter')}</p>
                   <p className='text-xs text-muted-foreground'>
-                    {new Date(latestVersion.submittedAt).toLocaleDateString(i18n.language, {
+                    {new Date(selectedVersion.submittedAt).toLocaleDateString(i18n.language, {
                       day: '2-digit',
                       month: 'short',
                       hour: '2-digit',
@@ -424,12 +427,15 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                     })}
                   </p>
                 </div>
-                <StatusBadge tone={getReviewStatusTone(latestVersion.reviewStatus)}>
-                  {t(`studio.tasksTab.reviewStatus.${latestVersion.reviewStatus}`)}
+                <StatusBadge tone={getReviewStatusTone(selectedVersion.reviewStatus)}>
+                  {t(`studio.tasksTab.reviewStatus.${selectedVersion.reviewStatus}`)}
                 </StatusBadge>
               </div>
-              {latestVersion.reviewerNote && (
-                <p className='mt-2 rounded bg-warning/10 p-2 text-xs text-warning'>{latestVersion.reviewerNote}</p>
+              {selectedVersion.reviewerNote && (
+                <div className='mt-2 rounded bg-warning/10 p-2 text-xs text-warning'>
+                  <p className='font-semibold'>{t('studio.tasksTab.reviewerNote')}</p>
+                  <p className='mt-1 whitespace-pre-wrap'>{selectedVersion.reviewerNote}</p>
+                </div>
               )}
             </div>
           )}
@@ -446,7 +452,21 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                   .slice()
                   .reverse()
                   .map((v) => (
-                    <div key={v.versionNumber} className='flex items-center gap-2 rounded bg-muted/30 p-2 text-xs'>
+                    <button
+                      key={v.versionNumber}
+                      type='button'
+                      onClick={() => {
+                        setSelectedVersionNumber(v.versionNumber)
+                        setCarouselIndex(1)
+                      }}
+                      aria-pressed={selectedVersion?.versionNumber === v.versionNumber}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded p-2 text-left text-xs transition-colors cursor-pointer',
+                        selectedVersion?.versionNumber === v.versionNumber
+                          ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
+                          : 'bg-muted/30 hover:bg-muted'
+                      )}
+                    >
                       <span className='font-medium'>v{v.versionNumber}</span>
                       <span className='text-muted-foreground'>
                         {new Date(v.submittedAt).toLocaleDateString(i18n.language)}
@@ -454,7 +474,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                       <StatusBadge tone={getReviewStatusTone(v.reviewStatus)}>
                         {t(`studio.tasksTab.reviewStatus.${v.reviewStatus}`)}
                       </StatusBadge>
-                    </div>
+                    </button>
                   ))}
               </div>
             </details>

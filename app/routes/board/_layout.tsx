@@ -18,8 +18,8 @@ export default function BoardLayout() {
 
   const config = {
     ...baseConfig,
-    profile: {
-      ...baseConfig.profile,
+    profileFallback: {
+      ...baseConfig.profileFallback,
       name: session.user.displayName || session.user.name
     }
   }

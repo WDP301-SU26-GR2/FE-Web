@@ -4,7 +4,6 @@ import {
   paymentControllerGetPayments,
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
-import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { paymentQuery } from '~/shared/lib/payments/payment-query'
@@ -25,9 +24,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const id = required(form, 'paymentId')
   try {
     if (intent === 'approve') {
-      const me = await usersControllerGetMe()
-      if (me.status !== 200) throw new Error('User not found')
-      await paymentControllerApprovePayment({ id }, { approvedBy: me.data.id })
+      await paymentControllerApprovePayment({ id })
     } else if (intent === 'pay') {
       await paymentControllerPayPayment(
         { id },

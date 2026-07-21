@@ -14,6 +14,7 @@ export function LanguageSwitcher() {
 
   return (
     <div
+      hidden
       role='group'
       aria-label={t('language')}
       className='inline-flex items-center rounded-full border border-border bg-card p-0.5 text-sm dark:border-white/20 dark:bg-white/10'

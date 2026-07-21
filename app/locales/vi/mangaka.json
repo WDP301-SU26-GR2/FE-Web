@@ -729,6 +729,18 @@
           "SUPER_ADMIN": "Admin"
         }
       },
+      "revisions": {
+        "title": "Yêu cầu chỉnh sửa từ Editor",
+        "subtitle": "Phản hồi dành cho manuscript này",
+        "empty": "Chưa có yêu cầu chỉnh sửa manuscript.",
+        "round": "Vòng {{round}}",
+        "requestedAt": "Yêu cầu lúc {{date}}",
+        "resolved": "Đã xử lý",
+        "resolve": "Đánh dấu đã chỉnh sửa",
+        "resolving": "Đang cập nhật...",
+        "resolveSuccess": "Đã đánh dấu yêu cầu chỉnh sửa là đã xử lý.",
+        "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại."
+      },
       "delete": {
         "confirmTitle": "Xoá trang {{n}}?",
         "confirmDesc": "Hành động này không hoàn tác được. Mọi vùng và nhiệm vụ liên quan sẽ bị xoá cùng.",
@@ -1186,7 +1198,10 @@
         "noImage": "Chưa có ảnh"
       },
       "assistant": "Trợ lý",
+      "unknownSubmitter": "Trợ lý trước đó",
       "latestSubmission": "Bản nộp mới nhất",
+      "selectedSubmission": "Bản nộp đang xem",
+      "reviewerNote": "Phản hồi của Mangaka",
       "versionHistory": "Lịch sử phiên bản ({{count}})",
       "reviewStatus": {
         "PENDING": "Chờ duyệt",

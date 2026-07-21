@@ -64,6 +64,12 @@
       "versions_other": "{{count}} versions",
       "pageLabel": "Page #{{id}}",
       "region": "Assigned region",
+      "regionTitle": "Assigned region details",
+      "regionType": "Type",
+      "regionSize": "Size",
+      "openAssignedPage": "Open assigned page and regions",
+      "revisionRequest": "Mangaka requested changes",
+      "revisionRequestFallback": "Please update the submitted work and submit a new version.",
       "regionAssigned": "Region #{{id}}",
       "fullPage": "Full page (no region)",
       "statusReason": "Note"
@@ -96,10 +102,16 @@
       "downloadOriginal": "Download original",
       "downloadSubmitted": "Download submitted",
       "downloadFailed": "Couldn't download the file. Try again.",
-      "viewFullsize": "View full size"
+      "viewFullsize": "View full size",
+      "attachments": "Reference files from Mangaka",
+      "attachmentImage": "Reference image: {{name}}",
+      "attachmentDocument": "Document: {{name}}",
+      "viewAttachment": "Open",
+      "downloadAttachment": "Download"
     },
     "actions": {
       "start": "Start task",
+      "continueRevision": "Continue revision",
       "submit": "Submit result",
       "resultFile": "Result file",
       "selectedFile": "Selected: {{name}} ({{size}})"
@@ -120,6 +132,10 @@
       "retry": "Retry",
       "noFileToSubmit": "Please attach the result file key before submitting.",
       "submitSuccess": "Task submitted. Awaiting Mangaka review."
+    },
+    "success": {
+      "started": "Task started.",
+      "revisionStarted": "Revision started. Upload the updated result when ready."
     }
   },
   "studio": {

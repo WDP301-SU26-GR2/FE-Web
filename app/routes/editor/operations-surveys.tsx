@@ -20,7 +20,21 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   try {
     const [seriesResponse, surveys] = await Promise.all([loadPublicSeriesCatalog(), surveyControllerGetSurveyPeriods()])
     const series = seriesResponse
-    const orderedSurveys = [...surveys.data].sort(
+    const uniqueSurveys = [
+      ...new Map(
+        surveys.data.map((survey) => [
+          [
+            survey.issueNumber ?? '',
+            survey.reflectedIssueNumber ?? '',
+            survey.status,
+            survey.startDate,
+            survey.endDate
+          ].join('|'),
+          survey
+        ])
+      ).values()
+    ]
+    const orderedSurveys = uniqueSurveys.sort(
       (left, right) => new Date(right.startDate).getTime() - new Date(left.startDate).getTime()
     )
     const selectedSurveyId = orderedSurveys.some((survey) => survey.id === focusSurveyId)

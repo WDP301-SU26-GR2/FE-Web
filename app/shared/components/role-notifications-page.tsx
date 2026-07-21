@@ -147,6 +147,7 @@ export function RoleNotificationsPage({
               to={to}
               total={data.total}
               tKeyPrefix='notificationsPage.pagination'
+              t={t}
             />
           </>
         ) : (

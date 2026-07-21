@@ -20,6 +20,7 @@ export type EditorActionResult = {
   message?: string
   phase?: 'PRESENTING' | 'QA' | 'VOTING'
   transferContractId?: string
+  decision?: BoardDecisionResDtoOutput
 }
 
 export type EditorProposalDetailData = {

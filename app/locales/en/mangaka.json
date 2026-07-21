@@ -728,6 +728,18 @@
           "SUPER_ADMIN": "Admin"
         }
       },
+      "revisions": {
+        "title": "Editor revision requests",
+        "subtitle": "Feedback for this manuscript",
+        "empty": "No manuscript revision requests yet.",
+        "round": "Round {{round}}",
+        "requestedAt": "Requested {{date}}",
+        "resolved": "Resolved",
+        "resolve": "Mark changes addressed",
+        "resolving": "Updating...",
+        "resolveSuccess": "Revision request marked as addressed.",
+        "resolveError": "Could not update the revision request. Please try again."
+      },
       "delete": {
         "confirmTitle": "Delete page {{n}}?",
         "confirmDesc": "This action cannot be undone. All related regions and tasks will also be deleted.",
@@ -1185,7 +1197,10 @@
         "noImage": "No image"
       },
       "assistant": "Assistant",
+      "unknownSubmitter": "Former Assistant",
       "latestSubmission": "Latest submission",
+      "selectedSubmission": "Selected submission",
+      "reviewerNote": "Mangaka feedback",
       "versionHistory": "Version history ({{count}})",
       "reviewStatus": {
         "PENDING": "Pending",

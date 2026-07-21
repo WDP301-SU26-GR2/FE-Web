@@ -8,7 +8,7 @@ import { PublicationPagesReaderView } from './publication-pages-reader-view'
 /**
  * Pages view. Enforces the API gate (Name.status === 'APPROVED') BEFORE
  * mounting the heavy reader — keeps the "locked" UX crisp and avoids the
- * reader fetching annotations / pages when there's nothing meaningful to
+ * reader fetching revisions / pages when there's nothing meaningful to
  * render.
  *
  * When approved, mounts the 3-column reader implemented in

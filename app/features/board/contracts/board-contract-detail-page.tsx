@@ -22,12 +22,13 @@ import { Dialog } from '~/shared/ui/dialog'
 import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
 import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
 import { PaymentConditionsSummary } from '~/features/contracts/components/payment-conditions-summary'
-import { getContractBoardRoster } from '~/api/manual/contract-latest'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export function BoardContractDetailPage({
   contract,
+  boardRoster = [],
+  boardRosterLoadFailed = false,
   progress,
   amendments,
   conditions,
@@ -36,6 +37,8 @@ export function BoardContractDetailPage({
   hasSupplementaryDataError = false
 }: {
   contract: ContractResDtoOutput
+  boardRoster?: string[]
+  boardRosterLoadFailed?: boolean
   progress: ContractStatusProgressResDtoOutput | null
   amendments: AmendmentResDtoOutput[]
   conditions: PaymentConditionListResDtoOutputDataItem[]
@@ -48,8 +51,8 @@ export function BoardContractDetailPage({
   const fetcher = useFetcher<BoardActionResult>()
   const [signOpen, setSignOpen] = useState(false)
   const [changesOpen, setChangesOpen] = useState(false)
-  const boardRoster = getContractBoardRoster(contract)
   const isRosterMember = boardRoster.includes(authSession?.user.id ?? '')
+  const canAttemptBoardAction = isRosterMember || boardRosterLoadFailed || boardRoster.length === 0
   const currentBoardSignature = progress?.boardProgress.signedEditors.find(
     (editor) => editor.id === authSession?.user.id
   )
@@ -178,7 +181,7 @@ export function BoardContractDetailPage({
             <p>Không thể duyệt hoặc ký cho tới khi tải được ít nhất một điều kiện thanh toán hợp lệ.</p>
           </div>
         )}
-        {!isRosterMember && (
+        {!canAttemptBoardAction && (
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
             <p>
@@ -187,9 +190,18 @@ export function BoardContractDetailPage({
             </p>
           </div>
         )}
+        {canAttemptBoardAction && !isRosterMember && contract.boardDecisionId && (
+          <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
+            <ShieldAlert className='mt-0.5 size-4 shrink-0' />
+            <p>
+              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend sẽ
+              kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
+            </p>
+          </div>
+        )}
         <fetcher.Form method='post' className='grid gap-3'>
           <div className='flex flex-wrap gap-2'>
-            {isRosterMember && contract.status === 'MANGAKA_APPROVED' && (
+            {canAttemptBoardAction && contract.status === 'MANGAKA_APPROVED' && (
               <>
                 <button
                   name='intent'
@@ -221,7 +233,7 @@ export function BoardContractDetailPage({
                         : t('contracts.waitingMangakaSignature')}
                 </p>
               </div>
-              {isRosterMember && !hasCurrentMemberSigned && contract.status === 'MANGAKA_SIGNED' && (
+              {canAttemptBoardAction && !hasCurrentMemberSigned && contract.status === 'MANGAKA_SIGNED' && (
                 <button
                   type='button'
                   disabled={!conditionsReady}
@@ -246,7 +258,7 @@ export function BoardContractDetailPage({
         )}
       </BoardPanel>
       <Dialog
-        open={isRosterMember && changesOpen && contract.status === 'MANGAKA_APPROVED'}
+        open={canAttemptBoardAction && changesOpen && contract.status === 'MANGAKA_APPROVED'}
         onClose={() => {
           if (fetcher.state === 'idle') setChangesOpen(false)
         }}

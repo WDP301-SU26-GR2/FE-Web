@@ -667,6 +667,8 @@
     "emptyOfflineVotes": "Chưa nhập dữ liệu phiếu offline.",
     "reliable": "Dữ liệu đủ tin cậy",
     "unreliable": "Dữ liệu chưa đủ tin cậy",
+    "provisionalRankingNotice": "Đây là bảng xếp hạng tạm tính từ phiếu trực tuyến và phiếu offline đã ghi nhận. Bảng chính thức sẽ xuất hiện sau khi chốt kỳ.",
+    "emptyProvisionalRanking": "Kỳ này chưa có phiếu nào được ghi nhận.",
     "rankingAvailableAfterFinalize": "Bảng xếp hạng chỉ xuất hiện sau khi đóng kỳ và chốt kết quả.",
     "emptyRanking": "Chưa có dữ liệu xếp hạng cho kỳ này.",
     "riskLevels": {

@@ -274,6 +274,7 @@ export function EditorBoardMeetingRoomPage({
         <AddSessionDecisionDialog
           series={series}
           decisions={meeting.decisions}
+          onDecisionCreated={meeting.addDecision}
           onAdded={meeting.refreshDecisions}
           onClose={() => setAddDecisionOpen(false)}
         />
@@ -285,11 +286,13 @@ export function EditorBoardMeetingRoomPage({
 function AddSessionDecisionDialog({
   series,
   decisions,
+  onDecisionCreated,
   onAdded,
   onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   decisions: BoardDecisionResDtoOutput[]
+  onDecisionCreated: (decision: BoardDecisionResDtoOutput) => void
   onAdded: () => Promise<void>
   onClose: () => void
 }) {
@@ -307,10 +310,11 @@ function AddSessionDecisionDialog({
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'addSessionDecision') {
+      if (fetcher.data.decision) onDecisionCreated(fetcher.data.decision)
       void onAdded()
       onClose()
     }
-  }, [fetcher.data, fetcher.state, onAdded, onClose])
+  }, [fetcher.data, fetcher.state, onAdded, onClose, onDecisionCreated])
 
   return (
     <Dialog

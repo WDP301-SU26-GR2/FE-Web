@@ -1,4 +1,5 @@
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
+import { boardControllerGetSessionById } from '~/api/operations/board/board'
 import {
   contractControllerBoardApprove,
   contractControllerBoardRequestChanges,
@@ -26,8 +27,14 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     contractControllerGetContractVersions({ id: params.id }).catch(() => null)
   ])
   if (contract.status !== 200) throw new Response('Not found', { status: 404 })
+  const boardSessionId = contract.data.boardDecision?.boardSession?.id
+  const boardSession = boardSessionId
+    ? await boardControllerGetSessionById({ id: boardSessionId }).catch(() => null)
+    : null
   return {
     contract: contract.data,
+    boardRoster: boardSession?.status === 200 ? boardSession.data.allowedEditorIds : [],
+    boardRosterLoadFailed: Boolean(boardSessionId && boardSession == null),
     progress: progress?.status === 200 ? progress.data : null,
     amendments: amendments?.status === 200 ? amendments.data : [],
     conditions: conditions?.status === 200 ? conditions.data.data : [],

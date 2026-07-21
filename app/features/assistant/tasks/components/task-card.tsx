@@ -1,7 +1,7 @@
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { ClipboardList, Calendar, FileBox, ScanLine, Tag, PlayCircle, Send, Sparkles, Maximize2 } from 'lucide-react'
+import { ClipboardList, Calendar, FileBox, ScanLine, Tag, PlayCircle, Send, Sparkles, MessageSquareWarning, Maximize2 } from 'lucide-react'
 
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task'
 import { cn } from '~/shared/lib/cn'
@@ -51,18 +51,19 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
   const locale = i18n.language
 
   const statusMeta = STATUS_META[task.status] ?? STATUS_META.ASSIGNED
-  const isActionable = task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS'
-
+  const isActionable = task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS' || task.status === 'REVISION_REQUESTED'
+  const primaryRegion = task.regions?.[0]
+  const primaryRegionCoordinates = primaryRegion?.coordinates
+  const revisionVersions = task.versions.filter((version) => version.reviewStatus === 'REVISION_REQUESTED')
+  const latestRevision = revisionVersions.length
+    ? revisionVersions.reduce((latest, version) => (version.versionNumber > latest.versionNumber ? version : latest))
+    : null
   return (
-    <button
-      type='button'
+    <article
       data-task-id={task.id}
-      onClick={onOpen}
-      disabled={!onOpen}
       className={cn(
-        'flex h-full w-full flex-col gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        onOpen ? 'cursor-pointer' : 'cursor-default'
+        'flex h-full w-full flex-col gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all',
+        onOpen && 'hover:border-primary/40 hover:shadow-md'
       )}
     >
       <header className='flex items-start justify-between gap-3'>
@@ -102,28 +103,34 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
         </div>
       </dl>
 
-      <div className='flex items-start gap-1.5 rounded-md border border-border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground'>
-        <ScanLine className='mt-0.5 h-3.5 w-3.5 shrink-0 text-primary' />
-        <div className='min-w-0 flex-1'>
-          <p className='font-semibold text-foreground'>{t('tasks.card.region')}</p>
-          <p className='mt-0.5'>
-            {task.regions?.length
-              ? t('tasks.dialog.regionCount', { count: task.regions.length })
-              : t('tasks.card.fullPage')}
-          </p>
-        </div>
-      </div>
-
-      {task.region && (
-        <div className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs'>
+      {primaryRegion && (
+        <button
+          type='button'
+          onClick={onOpen}
+          disabled={!onOpen || !task.pageOriginalFile}
+          className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-left text-xs transition-colors hover:bg-primary/10 disabled:cursor-default disabled:hover:bg-primary/5 cursor-pointer'
+          aria-label={t('tasks.card.openAssignedPage')}
+        >
           <div className='flex items-center gap-2 font-bold text-foreground'>
             <ScanLine className='size-4 text-primary' />
             {t('tasks.card.regionTitle')}
           </div>
           <div className='mt-2 grid grid-cols-2 gap-2 text-muted-foreground sm:grid-cols-3'>
-            <span>{t('tasks.card.regionType')}: <strong className='text-foreground'>{task.region.regionType}</strong></span>
-            <span>X / Y: <strong className='text-foreground'>{task.region.coordinates.x} / {task.region.coordinates.y}</strong></span>
-            <span>{t('tasks.card.regionSize')}: <strong className='text-foreground'>{task.region.coordinates.width} × {task.region.coordinates.height}px</strong></span>
+            <span>{t('tasks.card.regionType')}: <strong className='text-foreground'>{primaryRegion.regionType}</strong></span>
+            <span>X / Y: <strong className='text-foreground'>{primaryRegionCoordinates?.x ?? '-'} / {primaryRegionCoordinates?.y ?? '-'}</strong></span>
+            <span>{t('tasks.card.regionSize')}: <strong className='text-foreground'>{primaryRegionCoordinates?.width ?? '-'} × {primaryRegionCoordinates?.height ?? '-'}px</strong></span>
+          </div>
+        </button>
+      )}
+
+      {task.status === 'REVISION_REQUESTED' && (
+        <div className='flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs'>
+          <MessageSquareWarning className='mt-0.5 size-4 shrink-0 text-primary' />
+          <div className='min-w-0'>
+            <p className='font-bold text-foreground'>{t('tasks.card.revisionRequest')}</p>
+            <p className='mt-1 whitespace-pre-wrap text-muted-foreground'>
+              {latestRevision?.reviewerNote || t('tasks.card.revisionRequestFallback')}
+            </p>
           </div>
         </div>
       )}
@@ -146,7 +153,7 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
           <TaskActions task={task} onStart={onStart} onSubmit={onSubmit} isMutating={!!isMutating} />
         </footer>
       )}
-    </button>
+    </article>
   )
 }
 
@@ -176,7 +183,7 @@ function TaskActions({
     void onSubmit(task.id, pickedFile)
   }
 
-  if (task.status === 'ASSIGNED') {
+  if (task.status === 'ASSIGNED' || task.status === 'REVISION_REQUESTED') {
     return (
       <button
         type='button'
@@ -188,7 +195,7 @@ function TaskActions({
         className='inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
       >
         <PlayCircle className='h-3.5 w-3.5' />
-        {t('tasks.actions.start')}
+        {task.status === 'REVISION_REQUESTED' ? t('tasks.actions.continueRevision') : t('tasks.actions.start')}
       </button>
     )
   }

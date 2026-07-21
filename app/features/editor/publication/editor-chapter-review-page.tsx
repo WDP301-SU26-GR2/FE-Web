@@ -312,51 +312,27 @@ export function EditorChapterReviewPage({
                   value={data.progress.remainingHours == null ? '—' : `${Math.round(data.progress.remainingHours)}h`}
                 />
               </div>
-            </div>
-          ) : (
-            <div className='mt-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
-              <AlertTriangle className='mt-0.5 size-5 shrink-0 text-amber-700' />
-              <div>
-                <p className='text-sm font-bold text-foreground'>{t('chapterReview.deadlineMissing')}</p>
-                <p className='mt-1 text-xs leading-5 text-muted-foreground'>
-                  {t('chapterReview.deadlineMissingDescription')}
-                </p>
-              </div>
-            </div>
-          )}
-          {scheduleEditable && chapter.schedule?.currentDeadline && (
-            <Link
-              to={`/dashboard/editor/operations/deadlines?chapterId=${encodeURIComponent(chapter.id)}`}
-              className='mt-2 inline-flex text-xs font-bold text-primary'
-            >
-              {t('chapterReview.openDeadlineNegotiation')}
-            </Link>
-          )}
-          {data.progress && (
-            <div className='mt-4 grid grid-cols-2 gap-3 rounded-lg bg-muted p-4 text-sm'>
-              <Metric label={t('chapterReview.progress')} value={`${data.progress.progressPct}%`} />
-              <Metric label={t('chapterReview.warning')} value={data.progress.warningLevel} />
-              <Metric
-                label={t('chapterReview.pagesProgress')}
-                value={`${data.progress.pagesReady}/${data.progress.totalPages}`}
-              />
-              <Metric
-                label={t('chapterReview.remaining')}
-                value={data.progress.remainingHours == null ? '—' : `${Math.round(data.progress.remainingHours)}h`}
-              />
-            </div>
-          )}
-          <fetcher.Form method='post' className='mt-4 grid gap-3 sm:grid-cols-2'>
-            <input type='hidden' name='chapterId' value={chapter.id} />
-            <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-              {chapter.schedule?.currentDeadline ? t('chapterReview.newDeadline') : t('chapterReview.initialDeadline')}
-              <input
-                name='deadline'
-                type='datetime-local'
-                required
-                defaultValue={toDateTimeLocal(chapter.schedule?.currentDeadline)}
+            )}
+            <fetcher.Form method='post' className='mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]'>
+              <input type='hidden' name='chapterId' value={chapter.id} />
+              <label className='grid gap-1.5 text-xs font-bold text-foreground'>
+                {chapter.schedule?.currentDeadline
+                  ? t('chapterReview.newDeadline')
+                  : t('chapterReview.initialDeadline')}
+                <input
+                  name='deadline'
+                  type='datetime-local'
+                  required
+                  defaultValue={toDateTimeLocal(chapter.schedule?.currentDeadline)}
+                  disabled={!scheduleEditable || busy}
+                  className='h-10 rounded-md border border-input bg-background px-3 text-sm font-normal text-foreground disabled:opacity-50'
+                />
+              </label>
+              <button
+                name='intent'
+                value={chapter.schedule?.currentDeadline ? 'extendSchedule' : 'setSchedule'}
                 disabled={!scheduleEditable || busy}
-                className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                className='inline-flex h-10 items-center justify-center gap-2 self-end rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
               >
                 <CalendarClock className='size-4' />
                 {chapter.schedule?.currentDeadline ? t('actions.extendDeadline') : t('actions.setDeadline')}
@@ -365,12 +341,12 @@ export function EditorChapterReviewPage({
                 type='button'
                 onClick={() => setHoldOpen(true)}
                 disabled={!holdable || busy}
-                className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                className='inline-flex h-10 items-center justify-center gap-2 self-end rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:cursor-not-allowed disabled:opacity-50'
               >
                 {data.progress?.onHold ? <Play className='size-4' /> : <Pause className='size-4' />}
                 {data.progress?.onHold ? t('actions.resumeChapter') : t('actions.holdChapter')}
               </button>
-            </div>
+            </fetcher.Form>
           </div>
         </section>
       )}

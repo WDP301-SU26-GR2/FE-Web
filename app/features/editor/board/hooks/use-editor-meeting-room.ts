@@ -113,6 +113,9 @@ export function useEditorMeetingRoom({
     [sessionId]
   )
   const updatePhase = useCallback((nextPhase: BoardSessionPhase) => setPhase(nextPhase), [])
+  const addDecision = useCallback((decision: BoardDecisionResDtoOutput) => {
+    setBaseDecisions((current) => (current.some((item) => item.id === decision.id) ? current : [...current, decision]))
+  }, [])
   const refreshDecisions = useCallback(async () => {
     const response = await boardControllerGetDecisions({ boardSessionId: sessionId }).catch(() => null)
     if (response?.status === 200) setBaseDecisions(response.data)
@@ -122,5 +125,5 @@ export function useEditorMeetingRoom({
     () => baseDecisions.map((decision) => (updates[decision.id] ? { ...decision, ...updates[decision.id] } : decision)),
     [baseDecisions, updates]
   )
-  return { phase, messages, decisions, connectionState, sendMessage, updatePhase, refreshDecisions }
+  return { phase, messages, decisions, connectionState, sendMessage, updatePhase, addDecision, refreshDecisions }
 }

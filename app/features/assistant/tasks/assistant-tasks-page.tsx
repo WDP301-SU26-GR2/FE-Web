@@ -124,7 +124,9 @@ export function AssistantTasksPage() {
                   onStart={(id) => {
                     void actions.start(id).then((ok) => {
                       if (ok) {
-                        toast.success(t('tasks.error.submitSuccess'))
+                        toast.success(
+                          t(task.status === 'REVISION_REQUESTED' ? 'tasks.success.revisionStarted' : 'tasks.success.started')
+                        )
                         tasks.refresh()
                       }
                     })
