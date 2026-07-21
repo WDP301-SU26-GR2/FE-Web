@@ -52,6 +52,8 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
 
   const statusMeta = STATUS_META[task.status] ?? STATUS_META.ASSIGNED
   const isActionable = task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS'
+  const primaryRegion = task.regions?.[0]
+  const primaryRegionCoordinates = primaryRegion?.coordinates
 
   return (
     <button
@@ -114,16 +116,16 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
         </div>
       </div>
 
-      {task.region && (
+      {primaryRegion && (
         <div className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs'>
           <div className='flex items-center gap-2 font-bold text-foreground'>
             <ScanLine className='size-4 text-primary' />
             {t('tasks.card.regionTitle')}
           </div>
           <div className='mt-2 grid grid-cols-2 gap-2 text-muted-foreground sm:grid-cols-3'>
-            <span>{t('tasks.card.regionType')}: <strong className='text-foreground'>{task.region.regionType}</strong></span>
-            <span>X / Y: <strong className='text-foreground'>{task.region.coordinates.x} / {task.region.coordinates.y}</strong></span>
-            <span>{t('tasks.card.regionSize')}: <strong className='text-foreground'>{task.region.coordinates.width} × {task.region.coordinates.height}px</strong></span>
+            <span>{t('tasks.card.regionType')}: <strong className='text-foreground'>{primaryRegion.regionType}</strong></span>
+            <span>X / Y: <strong className='text-foreground'>{primaryRegionCoordinates?.x ?? '-'} / {primaryRegionCoordinates?.y ?? '-'}</strong></span>
+            <span>{t('tasks.card.regionSize')}: <strong className='text-foreground'>{primaryRegionCoordinates?.width ?? '-'} × {primaryRegionCoordinates?.height ?? '-'}px</strong></span>
           </div>
         </div>
       )}

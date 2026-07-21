@@ -29,8 +29,6 @@ import { usePageAnnotations } from './hooks/use-page-annotations'
 import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
 import { ManuscriptActionPanel } from './components/manuscript-action-panel'
 import { Dialog } from '~/shared/ui/dialog'
-import { useUpdatePage } from './hooks/use-update-page'
-import { useDeletePage } from './hooks/use-delete-page'
 import { taskControllerListTasks } from '~/api/operations/task/task'
 
 /**
@@ -70,6 +68,7 @@ import { taskControllerListTasks } from '~/api/operations/task/task'
 export function PublicationPagesReaderView() {
   const { t } = useTranslation('mangaka')
   const { chapter, name, pages, refreshAll } = usePublicationContext()
+  const refreshPages = refreshAll
 
   // All hooks at top level — never inside callbacks or conditionals.
   const { createPage, isCreating } = useCreatePage()

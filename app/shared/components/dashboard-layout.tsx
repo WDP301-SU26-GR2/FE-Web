@@ -12,6 +12,7 @@ import { useAuth } from '~/features/auth/context/auth-context'
 import { useUnreadNotifications } from '~/shared/hooks/use-unread-notifications'
 import { useSidebarProfile } from '~/shared/hooks/use-sidebar-profile'
 import { BrandLogo } from './brand-logo'
+import { notificationControllerList } from '~/api/operations/notifications/notifications'
 
 export interface NavItem {
   label: string
