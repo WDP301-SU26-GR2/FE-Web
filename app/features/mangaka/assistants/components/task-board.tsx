@@ -1,28 +1,25 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Calendar,
-  Hash,
-  Clock,
   AlertCircle,
-  BookOpen,
   FileText,
   ChevronLeft,
   ChevronRight,
   Download,
   User,
-  MapPin,
   X,
   ZoomIn,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react'
 import { cn } from '~/shared/lib/cn'
+import { ImageRegionOverlay, type ImageRegion } from '~/shared/components/image-region-overlay'
+import { SignedImage } from '~/shared/components/signed-image'
 import { StatusBadge } from '~/shared/ui'
 import { getTaskStatusTone } from '../lib/task-status-meta'
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task/taskListResDtoOutputItemsItem'
-import type { PageResDtoOutput } from '~/api/model/chapters/pageResDtoOutput'
-import { SignedImage } from '~/shared/components/signed-image'
-import { useSignedImageUrl } from '~/shared/hooks/use-signed-image-url'
+import { TaskSignedImage } from './task-signed-image'
+import { useTaskSignedUrl } from '../lib/use-task-signed-url'
 
 export interface TaskBoardProps {
   tasks: TaskListResDtoOutputItemsItem[]
@@ -36,23 +33,6 @@ export interface TaskBoardProps {
   totalPages: number
   total: number
   onPageChange: (page: number) => void
-  /** Pre-loaded pages from the cascade (series → chapter → page) */
-  pages: PageResDtoOutput[]
-  isLoadingPages: boolean
-}
-
-/**
- * Lấy displayFile từ pageId.
- * Ưu tiên: pages đã load sẵn → fetch riêng (nếu cần)
- */
-function usePageDisplayFile(pageId: string, cachedPages: PageResDtoOutput[]): string | null {
-  const cached = useMemo(
-    () => cachedPages.find((p) => p.id === pageId),
-    [cachedPages, pageId]
-  )
-  // TODO: fetch riêng nếu không có trong cache
-  // Hiện tại dùng cache từ dropdown
-  return cached?.displayFile ?? null
 }
 
 function formatDeadline(iso: string | null, locale: string): string {
@@ -77,9 +57,7 @@ export function TaskBoard({
   page,
   totalPages,
   total,
-  onPageChange,
-  pages,
-  isLoadingPages
+  onPageChange
 }: TaskBoardProps) {
   const { t } = useTranslation('mangaka')
 
@@ -125,8 +103,6 @@ export function TaskBoard({
               <TaskCard
                 key={task.id}
                 task={task}
-                cachedPages={pages}
-                isLoadingPages={isLoadingPages}
                 onApprove={onApprove}
                 onRequestRevision={onRequestRevision}
                 onCancel={onCancel}
@@ -171,14 +147,12 @@ export function TaskBoard({
 
 interface TaskCardProps {
   task: TaskListResDtoOutputItemsItem
-  cachedPages: PageResDtoOutput[]
-  isLoadingPages: boolean
   onApprove: (taskId: string) => void
   onRequestRevision: (taskId: string) => void
   onCancel: (taskId: string) => void
 }
 
-function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevision, onCancel }: TaskCardProps) {
+function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProps) {
   const { t, i18n } = useTranslation('mangaka')
   const tone = getTaskStatusTone(task.status)
   const overdue = isOverdue(task.deadline)
@@ -187,56 +161,77 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
     ? t(`tasks.composer.taskTypeEnum.${task.taskType}`, { defaultValue: task.taskType })
     : '—'
 
-  // Lấy ảnh page gốc từ cache
-  const pageData = useMemo(() => cachedPages.find((p) => p.id === task.pageId), [cachedPages, task.pageId])
-  const originalImageUrl = pageData?.displayFile ?? pageData?.originalFile ?? null
+  // FE-API-Guide-v3.md §6 (2026-07-21):
+  // ẢNH 1 — ẢNH GỐC (Mangaka giao): dùng `task.pageOriginalFile` (R2 key)
+  // → Đọc qua POST /tasks/:id/download-url (useTaskSignedUrl)
+  const originalR2Key = task.pageOriginalFile ?? null
 
   // Lấy version mới nhất (nếu có)
-  const latestVersion = task.versions.length > 0
-    ? task.versions.reduce((latest, v) =>
-        v.versionNumber > latest.versionNumber ? v : latest
-      )
-    : null
-  const submittedImageUrl = latestVersion?.file ?? null
+  const latestVersion =
+    task.versions.length > 0
+      ? task.versions.reduce((latest, v) => (v.versionNumber > latest.versionNumber ? v : latest))
+      : null
+
+  // FE-API-Guide-v3.md §6 (2026-07-21):
+  // ẢNH 2 — BẢN ASSISTANT NỘP: dùng `versions[].file` (R2 key)
+  // → Đọc qua POST /tasks/:id/download-url (useTaskSignedUrl)
+  const submittedR2Key = latestVersion?.file ?? null
   const submitter = latestVersion?.submitter
+
+  // Signed URL cho ảnh submitted (dùng cho download)
+  const submittedSignedUrl = useTaskSignedUrl(task.id, submittedR2Key)
 
   const [carouselIndex, setCarouselIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const hasRegion = !!task.region
+  const [isDownloading, setIsDownloading] = useState(false)
 
+  // Dùng task.pageOriginalFile (không dùng pageData từ cache nữa)
   const images = [
-    { r2Key: originalImageUrl, label: t('studio.tasksTab.image.original'), key: 'original' },
-    { r2Key: submittedImageUrl, label: t('studio.tasksTab.image.submitted'), key: 'submitted' }
+    { r2Key: originalR2Key, label: t('studio.tasksTab.image.original'), key: 'original' },
+    { r2Key: submittedR2Key, label: t('studio.tasksTab.image.submitted'), key: 'submitted' }
   ].filter((img) => img.r2Key) as { r2Key: string; label: string; key: string }[]
 
   const currentImage = images[carouselIndex] ?? images[0] ?? null
   const hasImages = images.length > 0
 
-  // Auto-switch to submitted image if available
-  useEffect(() => {
-    if (submittedImageUrl && carouselIndex === 0) {
+  // Auto-switch to submitted image if available (useLayoutEffect to avoid visual flicker)
+  useLayoutEffect(() => {
+    if (submittedR2Key && carouselIndex === 0 && images.length > 1) {
       setCarouselIndex(1)
     }
-  }, [submittedImageUrl])
+  }, [submittedR2Key])
 
   // Reset carouselIndex if it goes out of bounds
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (carouselIndex >= images.length && images.length > 0) {
       setCarouselIndex(images.length - 1)
     }
   }, [carouselIndex, images.length])
 
-  const submittedSignedUrl = useSignedImageUrl(submittedImageUrl)
-
-  const handleDownload = (filename: string) => {
-    if (submittedSignedUrl.status !== 'ready') return
-    const link = document.createElement('a')
-    link.href = submittedSignedUrl.url
-    link.download = filename
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  // Download: fetch blob then create local blob URL for download
+  // (Browser's download attribute doesn't work with cross-origin signed URLs)
+  const handleDownload = async (filename: string) => {
+    if (submittedSignedUrl.status !== 'ready' || isDownloading) return
+    setIsDownloading(true)
+    try {
+      const response = await fetch(submittedSignedUrl.url)
+      if (!response.ok) throw new Error('Fetch failed')
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = filename
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      // Revoke after a short delay to ensure download starts
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000)
+    } catch (err) {
+      console.error('Download failed:', err)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -247,17 +242,12 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
           <StatusBadge tone={tone}>{statusLabel}</StatusBadge>
           <div className='min-w-0 flex-1 space-y-0.5'>
             <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-              <span className='flex items-center gap-1 text-xs text-muted-foreground'>
-                <Hash className='h-3 w-3 shrink-0' />
-                <span className='font-mono'>{task.id.slice(0, 8)}</span>
-              </span>
               <span className='text-sm font-medium'>{taskTypeLabel}</span>
-              {task.region && (
-                <span className='flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs text-primary'>
-                  <MapPin className='h-3 w-3' />
-                  {t(`studio.tasksTab.regionType.${task.region.regionType}`)}
+              {task.regions?.length ? (
+                <span className='rounded bg-primary/10 px-2 py-0.5 text-xs text-primary'>
+                  {t('studio.tasks.board.regions', { count: task.regions.length })}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -265,15 +255,18 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
         {/* Deadline & Priority */}
         <div className='flex items-center gap-2'>
           {task.deadline && (
-            <div className={cn('flex items-center gap-1 rounded px-2 py-0.5 text-xs', overdue ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground')}>
-              <Clock className='h-3 w-3' />
-              <span>{formatDeadline(task.deadline, i18n.language)}</span>
+            <div
+              className={cn(
+                'flex items-center gap-1 rounded px-2 py-0.5 text-xs',
+                overdue ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
+              )}
+            >
+              <span>{t('studio.tasks.board.deadline', { date: formatDeadline(task.deadline, i18n.language) })}</span>
             </div>
           )}
           {task.priority !== undefined && task.priority > 0 && (
             <div className='flex items-center gap-1 rounded bg-warning/10 px-2 py-0.5 text-xs text-warning'>
-              <Calendar className='h-3 w-3' />
-              <span>{task.priority}</span>
+              <span>{t('studio.tasks.board.priority', { value: task.priority })}</span>
             </div>
           )}
         </div>
@@ -284,24 +277,17 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
         {/* Image Carousel */}
         {hasImages ? (
           <div className='group relative w-full md:w-80 shrink-0 bg-muted'>
-            {/* Image - dùng SignedImage để tự động lấy signed URL */}
+            {/* Image — dùng TaskSignedImage cho cả 2 loại ảnh */}
             <div className='relative aspect-3/4 md:aspect-auto md:h-52'>
               {currentImage ? (
-              <SignedImage
-                r2Key={currentImage.key === 'original' ? originalImageUrl : submittedImageUrl}
-                alt={currentImage.label}
-                className='absolute inset-0 h-full w-full'
-                imgClassName='h-full w-full object-contain'
-              />
-              ) : null}
-
-              {/* Region overlay */}
-              {hasRegion && task.region && originalImageUrl && (
-                <RegionOverlay
-                  region={task.region}
-                  imageUrl={originalImageUrl}
+                <TaskSignedImage
+                  taskId={task.id}
+                  r2Key={currentImage.r2Key}
+                  alt={currentImage.label}
+                  className='absolute inset-0 h-full w-full'
+                  imgClassName='h-full w-full object-contain'
                 />
-              )}
+              ) : null}
 
               {/* Zoom button */}
               <button
@@ -355,15 +341,15 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
             )}
 
             {/* Download button for submitted image */}
-            {submittedImageUrl && (
+            {submittedR2Key && (
               <button
                 type='button'
                 onClick={() => handleDownload(`task-${task.id.slice(0, 8)}-v${latestVersion?.versionNumber}.png`)}
-                disabled={submittedSignedUrl.status !== 'ready'}
+                disabled={submittedSignedUrl.status !== 'ready' || isDownloading}
                 className='absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-black/50 px-2 py-1 text-xs text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100 cursor-pointer disabled:opacity-50'
                 aria-label={t('studio.tasksTab.download')}
               >
-                {submittedSignedUrl.status === 'loading' ? (
+                {submittedSignedUrl.status === 'loading' || isDownloading ? (
                   <span className='h-3 w-3 animate-spin rounded-full border border-white border-t-transparent' />
                 ) : (
                   <Download className='h-3 w-3' />
@@ -374,14 +360,10 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
           </div>
         ) : (
           <div className='flex w-full md:w-80 shrink-0 items-center justify-center bg-muted/50 md:h-52'>
-            {isLoadingPages ? (
-              <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent' />
-            ) : (
-              <div className='flex flex-col items-center gap-1 text-xs text-muted-foreground'>
-                <FileText className='h-6 w-6' />
-                <span>{t('studio.tasksTab.noImage')}</span>
-              </div>
-            )}
+            <div className='flex flex-col items-center gap-1 text-xs text-muted-foreground'>
+              <FileText className='h-6 w-6' />
+              <span>{t('studio.tasksTab.noImage')}</span>
+            </div>
           </div>
         )}
 
@@ -391,10 +373,11 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
           {task.assistant && (
             <div className='flex items-center gap-2'>
               {task.assistant.avatar ? (
-                <img
-                  src={task.assistant.avatar}
+                <SignedImage
+                  r2Key={task.assistant.avatar}
                   alt={task.assistant.displayName ?? ''}
-                  className='h-8 w-8 rounded-full object-cover'
+                  aspectClassName='aspect-square'
+                  className='h-8 w-8 rounded-full'
                 />
               ) : (
                 <div className='flex h-8 w-8 items-center justify-center rounded-full bg-primary/10'>
@@ -415,13 +398,16 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
                 <span className='text-xs font-medium text-muted-foreground'>
                   {t('studio.tasksTab.latestSubmission')}
                 </span>
-                <span className='text-xs text-muted-foreground'>
-                  v{latestVersion.versionNumber}
-                </span>
+                <span className='text-xs text-muted-foreground'>v{latestVersion.versionNumber}</span>
               </div>
               <div className='flex items-center gap-2'>
                 {submitter.avatar ? (
-                  <img src={submitter.avatar} alt={submitter.displayName ?? ''} className='h-6 w-6 rounded-full object-cover' />
+                  <SignedImage
+                    r2Key={submitter.avatar}
+                    alt={submitter.displayName ?? ''}
+                    aspectClassName='aspect-square'
+                    className='h-6 w-6 rounded-full'
+                  />
                 ) : (
                   <div className='flex h-6 w-6 items-center justify-center rounded-full bg-primary/10'>
                     <User className='h-3 w-3 text-primary' />
@@ -443,9 +429,7 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
                 </StatusBadge>
               </div>
               {latestVersion.reviewerNote && (
-                <p className='mt-2 rounded bg-warning/10 p-2 text-xs text-warning'>
-                  {latestVersion.reviewerNote}
-                </p>
+                <p className='mt-2 rounded bg-warning/10 p-2 text-xs text-warning'>{latestVersion.reviewerNote}</p>
               )}
             </div>
           )}
@@ -511,11 +495,12 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
       {/* Lightbox */}
       {lightboxOpen && currentImage && (
         <Lightbox
+          taskId={task.id}
           images={images}
+          regions={task.regions}
           currentIndex={carouselIndex}
           onClose={() => setLightboxOpen(false)}
           onNavigate={setCarouselIndex}
-          region={hasRegion ? task.region : null}
         />
       )}
     </div>
@@ -523,21 +508,62 @@ function TaskCard({ task, cachedPages, isLoadingPages, onApprove, onRequestRevis
 }
 
 interface LightboxProps {
+  taskId: string
   images: { r2Key: string | null; label: string; key: string }[]
+  regions?: ImageRegion[] | null
   currentIndex: number
   onClose: () => void
   onNavigate: (index: number) => void
-  region: TaskListResDtoOutputItemsItem['region']
 }
 
-function Lightbox({ images, currentIndex, onClose, onNavigate, region }: LightboxProps) {
-  const { t } = useTranslation('mangaka')
+function LightboxImage({
+  taskId,
+  r2Key,
+  alt,
+  regions
+}: {
+  taskId: string
+  r2Key: string
+  alt: string
+  regions?: ImageRegion[] | null
+}) {
+  const signed = useTaskSignedUrl(taskId, r2Key)
+  const [imgErrored, setImgErrored] = useState(false)
+
+  if (signed.status === 'loading' || signed.status === 'idle') {
+    return (
+      <div className='flex items-center justify-center'>
+        <Loader2 className='h-12 w-12 animate-spin text-white/60' />
+      </div>
+    )
+  }
+
+  if (signed.status === 'error' || imgErrored) {
+    return (
+      <div className='flex flex-col items-center justify-center gap-2 text-white/60'>
+        <X className='h-12 w-12' />
+        <span className='text-sm'>Failed to load image</span>
+      </div>
+    )
+  }
 
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/90'
-      onClick={onClose}
-    >
+    <ImageRegionOverlay
+      src={signed.url}
+      alt={alt}
+      className='max-h-[90vh] max-w-[90vw] object-contain'
+      onError={() => setImgErrored(true)}
+      regions={regions}
+    />
+  )
+}
+
+function Lightbox({ taskId, images, regions, currentIndex, onClose, onNavigate }: LightboxProps) {
+  const currentImage = images[currentIndex]
+  if (!currentImage || !currentImage.r2Key) return null
+
+  return (
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/90' onClick={onClose}>
       {/* Close button */}
       <button
         type='button'
@@ -550,7 +576,7 @@ function Lightbox({ images, currentIndex, onClose, onNavigate, region }: Lightbo
 
       {/* Image counter */}
       <div className='absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-black/50 px-3 py-1 text-sm text-white'>
-        {currentIndex + 1} / {images.length} — {images[currentIndex].label}
+        {currentIndex + 1} / {images.length} — {currentImage.label}
       </div>
 
       {/* Navigation arrows */}
@@ -581,26 +607,17 @@ function Lightbox({ images, currentIndex, onClose, onNavigate, region }: Lightbo
         </>
       )}
 
-      {/* Image - dùng SignedImage */}
-      <SignedImage
-        r2Key={images[currentIndex].r2Key}
-        alt={images[currentIndex].label}
-        className='max-h-[90vh] max-w-[90vw]'
-        imgClassName='max-h-[90vh] max-w-[90vw] object-contain'
-      />
+      {/* Image — render directly for lightbox */}
+      <div className='flex items-center justify-center' onClick={(e) => e.stopPropagation()}>
+        <LightboxImage
+          taskId={taskId}
+          r2Key={currentImage.r2Key}
+          alt={currentImage.label}
+          regions={currentImage.key === 'original' ? regions : null}
+        />
+      </div>
     </div>
   )
-}
-
-interface RegionOverlayProps {
-  region: NonNullable<TaskListResDtoOutputItemsItem['region']>
-  imageUrl: string
-}
-
-function RegionOverlay({ region, imageUrl }: RegionOverlayProps) {
-  // TODO: Calculate overlay position based on region coordinates and image dimensions
-  // This requires knowing the actual image dimensions
-  return null // Placeholder - implement with actual image sizing
 }
 
 function getReviewStatusTone(status: string): 'success' | 'warning' | 'destructive' | 'neutral' {

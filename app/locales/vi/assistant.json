@@ -69,18 +69,34 @@
       "statusReason": "Ghi chú"
     },
     "dialog": {
-      "title": "Trang {{n}} — #{{id}}",
-      "description": "Xem ảnh trang được giao, vùng cần xử lý và tải file gốc về máy.",
-      "loading": "Đang tải ảnh trang...",
-      "loadFailed": "Không tải được ảnh trang.",
+      "title": "Chi tiết nhiệm vụ",
+      "description": "Xem ảnh gốc từ Mangaka, bản đã nộp (nếu có), và tải file về máy.",
+      "loading": "Đang tải ảnh...",
+      "loadFailed": "Không tải được ảnh.",
       "noOriginalFile": "Trang này chưa có file ảnh gốc.",
       "pageUnavailable": "Không tìm thấy trang này trong các chương bạn đang tham gia.",
       "imageAlt": "Trang {{n}}",
+      "image": {
+        "original": "Ảnh gốc (Mangaka giao)",
+        "submitted": "Bản đã nộp",
+        "noImage": "Chưa có ảnh"
+      },
       "regionCount_one": "{{count}} vùng khớp",
       "regionCount_other": "{{count}} vùng khớp",
       "fullPageHint": "Nhiệm vụ toàn trang (không gắn vùng cụ thể)",
-      "downloadOriginal": "Tải ảnh gốc về máy",
-      "downloadFailed": "Không tải được file gốc. Vui lòng thử lại."
+      "regionType": {
+        "PANEL": "Khung truyện",
+        "BACKGROUND": "Nền",
+        "SCREEN_TONE": "Tone",
+        "EFFECT_LINES": "Hiệu ứng đường",
+        "SFX": "Hiệu ứng chữ",
+        "CHARACTER": "Nhân vật"
+      },
+      "regionCoords": "Toạ độ: ({{x}}, {{y}}) {{w}}×{{h}}",
+      "downloadOriginal": "Tải ảnh gốc",
+      "downloadSubmitted": "Tải bản nộp",
+      "downloadFailed": "Không tải được file. Vui lòng thử lại.",
+      "viewFullsize": "Xem đầy đủ"
     },
     "actions": {
       "start": "Bắt đầu task",
@@ -129,7 +145,7 @@
       "LETTERING": "Chữ/thoại"
     },
     "card": {
-      "mangakaFallback": "Mangaka #{{id}}",
+      "unknownMangaka": "Mangaka",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không có series context",
@@ -178,7 +194,7 @@
       "LETTERING": "Chữ/thoại"
     },
     "card": {
-      "mangakaFallback": "Mangaka #{{id}}",
+      "unknownMangaka": "Mangaka",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không có series context",

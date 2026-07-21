@@ -15,7 +15,8 @@ export interface TaskContextPickerProps {
     seriesId?: string
     chapterId?: string
     pageId?: string
-    regionId?: string
+    pageIds: string[]
+    regionIds: string[]
   }
   onChange: (next: {
     assignmentId?: string
@@ -23,7 +24,8 @@ export interface TaskContextPickerProps {
     seriesId?: string
     chapterId?: string
     pageId?: string
-    regionId?: string
+    pageIds?: string[]
+    regionIds?: string[]
   }) => void
   className?: string
 }
@@ -68,7 +70,8 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
         seriesId: undefined,
         chapterId: undefined,
         pageId: undefined,
-        regionId: undefined
+        pageIds: [],
+        regionIds: []
       })
     },
     [onChange, setAssignment, assistantByAssignmentId]
@@ -78,7 +81,14 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const val = e.target.value || undefined
       setSeries(val)
-      onChange({ ...selected, seriesId: val, chapterId: undefined, pageId: undefined, regionId: undefined })
+      onChange({
+        ...selected,
+        seriesId: val,
+        chapterId: undefined,
+        pageId: undefined,
+        pageIds: [],
+        regionIds: []
+      })
     },
     [onChange, selected, setSeries]
   )
@@ -87,12 +97,14 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const val = e.target.value || undefined
       setChapter(val)
-      onChange({ ...selected, chapterId: val, pageId: undefined, regionId: undefined })
+      onChange({ ...selected, chapterId: val, pageId: undefined, pageIds: [], regionIds: [] })
     },
     [onChange, selected, setChapter]
   )
 
   const isStudio = openFrom === 'studio'
+  const isAssignmentLocked = Boolean(preset?.presetAssignmentId)
+  const isSeriesLocked = Boolean(preset?.presetSeriesId)
 
   return (
     <div className='space-y-4'>
@@ -106,7 +118,7 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
             id='assign-task-assignment'
             value={selected.assignmentId ?? ''}
             onChange={handleAssignmentChange}
-            disabled={data.loading.assignments}
+            disabled={data.loading.assignments || isAssignmentLocked}
             className='w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50'
           >
             <option value=''>{t('studio.tasks.composer.selectAssistantPlaceholder')}</option>
@@ -114,7 +126,7 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
               const display = a.assistant?.displayName
               return (
                 <option key={a.id} value={a.id}>
-                  {display ?? a.assistantId.slice(0, 8)}
+                  {display ?? t('myStudio.card.unnamedAssistant')}
                 </option>
               )
             })}
@@ -133,7 +145,7 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
             id='assign-task-series'
             value={selected.seriesId ?? ''}
             onChange={handleSeriesChange}
-            disabled={data.loading.series}
+            disabled={data.loading.series || isSeriesLocked}
             className='w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50'
           >
             <option value=''>{t('studio.tasks.composer.selectSeriesPlaceholder')}</option>
@@ -176,9 +188,49 @@ export function TaskContextPicker({ openFrom, preset, composer, selected, onChan
       <PagePickerWithPopup
         preset={preset}
         composer={composer}
-        selected={{ chapterId: selected.chapterId ?? composerSelected.chapterId, pageId: selected.pageId, regionId: selected.regionId }}
-        onChange={(next) => onChange({ ...selected, ...next })}
+        selected={{
+          chapterId: selected.chapterId ?? composerSelected.chapterId,
+          pageId: selected.pageId,
+          regionIds: selected.regionIds
+        }}
+        onChange={(next) => onChange({ ...selected, ...next, pageIds: next.pageId ? [next.pageId] : [] })}
       />
+
+      {data.pages.length > 1 && (
+        <fieldset className='space-y-2'>
+          <legend className='text-sm font-medium text-foreground'>
+            {t('studio.tasks.composer.selectMultiplePages')}
+          </legend>
+          <p className='text-xs text-muted-foreground'>{t('studio.tasks.composer.multiplePagesHint')}</p>
+          <div className='grid max-h-40 grid-cols-2 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-3'>
+            {data.pages.map((page) => {
+              const checked = selected.pageIds.includes(page.id)
+              return (
+                <label key={page.id} className='flex cursor-pointer items-center gap-2 text-sm text-foreground'>
+                  <input
+                    type='checkbox'
+                    checked={checked}
+                    onChange={() => {
+                      const pageIds = checked
+                        ? selected.pageIds.filter((id) => id !== page.id)
+                        : [...selected.pageIds, page.id]
+                      const pageId = pageIds.length === 1 ? pageIds[0] : undefined
+                      onChange({
+                        ...selected,
+                        pageIds,
+                        pageId,
+                        regionIds: pageIds.length === 1 ? selected.regionIds : []
+                      })
+                    }}
+                    className='h-4 w-4 rounded border-border text-primary focus:ring-ring'
+                  />
+                  {t('publication.nameSection.pageNumber', { n: page.pageNumber })}
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+      )}
 
       {/* Reload button */}
       {(data.errors.assignments || data.errors.series || data.errors.chapters || data.errors.pages) && (

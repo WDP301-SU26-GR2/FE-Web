@@ -209,9 +209,7 @@ export function MyStudioPage() {
 
       <section className='rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5'>
         <div className='mb-4 flex items-center justify-between'>
-          <h2 className='text-sm font-bold uppercase tracking-wider text-foreground'>
-            {t('studio.tasks.title')}
-          </h2>
+          <h2 className='text-sm font-bold uppercase tracking-wider text-foreground'>{t('studio.tasks.title')}</h2>
         </div>
         <StudioTasksTab />
       </section>

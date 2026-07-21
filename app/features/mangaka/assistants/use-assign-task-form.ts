@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
-import type { CreateTaskBodyDto, CreateTaskBodyDtoTaskType } from '~/api/model/task'
+import type { CreateTaskBodyDto, CreateTaskBodyDtoTaskType, CreateTaskGroupBodyDto } from '~/api/model/task'
 import type { UseTaskComposerDataOptions } from './use-task-composer-data'
 import { useAssignTask } from './use-assign-task'
 import type { UseAssignTaskResult } from './use-assign-task'
@@ -27,7 +27,9 @@ export interface AssignTaskFormState {
   seriesId?: string
   chapterId?: string
   pageId?: string
-  regionId?: string
+  /** Selected whole pages. More than one uses `POST /tasks/group`. */
+  pageIds: string[]
+  regionIds: string[]
   taskType?: CreateTaskBodyDtoTaskType
   /** Local datetime string (YYYY-MM-DDTHH:mm) before ISO conversion. */
   deadline?: string
@@ -47,7 +49,7 @@ export interface UseAssignTaskFormResult {
   selectedAssignment: AssignmentListResDtoOutputItemsItem | undefined
   /** Whitelist of task types allowed for the selected assignment. */
   allowedTaskTypes: CreateTaskBodyDtoTaskType[]
-  /** True when context (assistantId + pageId) is set so user can advance to "work". */
+  /** True when context (assistantId + at least one page) is set so user can advance to "work". */
   canGoNextFromContext: boolean
   /** True when work (taskType) is set so user can advance to "confirm". */
   canGoNextFromWork: boolean
@@ -55,10 +57,17 @@ export interface UseAssignTaskFormResult {
   goNext: () => void
   goBack: () => void
   /** Update context fields (assistant/series/chapter/page/region). Pass assistantId as userId. */
-  setContext: (ctx: Partial<Pick<AssignTaskFormState, 'assignmentId' | 'assistantId' | 'seriesId' | 'chapterId' | 'pageId' | 'regionId'>>) => void
+  setContext: (
+    ctx: Partial<
+      Pick<
+        AssignTaskFormState,
+        'assignmentId' | 'assistantId' | 'seriesId' | 'chapterId' | 'pageId' | 'pageIds' | 'regionIds'
+      >
+    >
+  ) => void
   setWork: (work: Partial<Pick<AssignTaskFormState, 'taskType' | 'deadline' | 'priority' | 'assetIds'>>) => void
   /** Submit the form. Returns `{success:true, data}` on success. */
-  submit: () => Promise<{ success: boolean; data?: CreateTaskBodyDto; error?: string }>
+  submit: () => Promise<{ success: boolean; data?: CreateTaskBodyDto | CreateTaskGroupBodyDto; error?: string }>
   reset: () => void
   isSubmitting: UseAssignTaskResult['isSubmitting']
 }
@@ -77,7 +86,7 @@ const STEP_ORDER: ComposerStep[] = ['context', 'work', 'confirm']
  */
 export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAssignTaskFormResult {
   const { preset, assignments = [] } = options
-  const { assignTask, isSubmitting } = useAssignTask()
+  const { assignTask, assignTaskGroup, isSubmitting } = useAssignTask()
 
   const initial: AssignTaskFormState = useMemo(
     () => ({
@@ -90,9 +99,16 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       seriesId: preset?.presetSeriesId,
       chapterId: preset?.presetChapterId,
       pageId: preset?.presetPageId,
-      regionId: preset?.presetRegionId
+      pageIds: preset?.presetPageId ? [preset.presetPageId] : [],
+      regionIds: preset?.presetRegionId ? [preset.presetRegionId] : []
     }),
-    [preset?.presetAssignmentId, preset?.presetChapterId, preset?.presetPageId, preset?.presetRegionId, preset?.presetSeriesId]
+    [
+      preset?.presetAssignmentId,
+      preset?.presetChapterId,
+      preset?.presetPageId,
+      preset?.presetRegionId,
+      preset?.presetSeriesId
+    ]
   )
 
   const [state, setState] = useState<AssignTaskFormState>(initial)
@@ -107,7 +123,9 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     [selectedAssignment]
   )
 
-  const canGoNextFromContext = !!state.assistantId && !!state.pageId
+  const resolvedAssistantId = state.assistantId ?? selectedAssignment?.assistantId
+
+  const canGoNextFromContext = !!resolvedAssistantId && state.pageIds.length > 0
   const canGoNextFromWork = !!state.taskType
 
   const setStep = useCallback((step: ComposerStep) => {
@@ -132,7 +150,12 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
 
   const setContext = useCallback(
     (
-      ctx: Partial<Pick<AssignTaskFormState, 'assignmentId' | 'assistantId' | 'seriesId' | 'chapterId' | 'pageId' | 'regionId'>>
+      ctx: Partial<
+        Pick<
+          AssignTaskFormState,
+          'assignmentId' | 'assistantId' | 'seriesId' | 'chapterId' | 'pageId' | 'pageIds' | 'regionIds'
+        >
+      >
     ) => {
       setState((prev) => {
         const next = { ...prev, ...ctx }
@@ -166,17 +189,35 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     }
   }, [assignments, initial])
 
-  const submit = useCallback(async (): Promise<{ success: boolean; data?: CreateTaskBodyDto; error?: string }> => {
-    if (!state.assistantId || !state.pageId || !state.taskType) {
+  const submit = useCallback(async (): Promise<{
+    success: boolean
+    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto
+    error?: string
+  }> => {
+    if (!resolvedAssistantId || state.pageIds.length === 0 || !state.taskType) {
       return { success: false, error: 'Vui lòng điền đầy đủ thông tin.' }
     }
     if (allowedTaskTypes.length > 0 && !allowedTaskTypes.includes(state.taskType)) {
       return { success: false, error: 'Loại công việc không nằm trong thoả thuận thuê của trợ lý.' }
     }
+    if (state.pageIds.length > 1) {
+      const payload: CreateTaskGroupBodyDto = {
+        assistantId: resolvedAssistantId,
+        pageIds: state.pageIds,
+        taskType: state.taskType,
+        ...(state.deadline ? { deadline: new Date(state.deadline).toISOString() } : {}),
+        ...(state.priority !== undefined ? { priority: state.priority } : {}),
+        ...(state.assetIds && state.assetIds.length > 0 ? { assetIds: state.assetIds } : {})
+      }
+      const result = await assignTaskGroup(payload)
+      return result.success
+        ? { success: true, data: payload }
+        : { success: false, error: result.error ?? 'Không thể giao nhóm task.' }
+    }
     const payload: CreateTaskBodyDto = {
-      assistantId: state.assistantId,
-      pageId: state.pageId,
-      ...(state.regionId ? { regionId: state.regionId } : {}),
+      assistantId: resolvedAssistantId,
+      pageId: state.pageIds[0],
+      ...(state.regionIds.length > 0 ? { regionIds: state.regionIds } : {}),
       taskType: state.taskType,
       ...(state.deadline ? { deadline: new Date(state.deadline).toISOString() } : {}),
       ...(state.priority !== undefined ? { priority: state.priority } : {}),
@@ -187,7 +228,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       return { success: true, data: payload }
     }
     return { success: false, error: result.error ?? 'Không thể giao task.' }
-  }, [state, allowedTaskTypes, assignTask])
+  }, [state, resolvedAssistantId, allowedTaskTypes, assignTask, assignTaskGroup])
 
   return {
     state,

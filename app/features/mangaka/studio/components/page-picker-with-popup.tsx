@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { ImageIcon } from 'lucide-react'
 
 import { Button } from '~/shared/ui'
-import type { UseTaskComposerDataOptions, UseTaskComposerDataResult } from '~/features/mangaka/assistants/use-task-composer-data'
+import type {
+  UseTaskComposerDataOptions,
+  UseTaskComposerDataResult
+} from '~/features/mangaka/assistants/use-task-composer-data'
 import { PageRegionPopup } from './page-region-popup'
 
 export interface PagePickerWithPopupProps {
@@ -13,14 +16,14 @@ export interface PagePickerWithPopupProps {
   selected: {
     chapterId?: string
     pageId?: string
-    regionId?: string
+    regionIds: string[]
   }
-  onChange: (next: { chapterId?: string; pageId?: string; regionId?: string }) => void
+  onChange: (next: { chapterId?: string; pageId?: string; regionIds: string[] }) => void
 }
 
 export function PagePickerWithPopup({ preset, composer, selected, onChange }: PagePickerWithPopupProps) {
   const { t } = useTranslation('mangaka')
-  const { data, setChapter, selected: composerSelected } = composer
+  const { data, setChapter, setPage, selected: composerSelected } = composer
   const [popupOpen, setPopupOpen] = useState(false)
 
   // Sync chapterId from the shared composer (so page list refreshes as soon as
@@ -39,6 +42,7 @@ export function PagePickerWithPopup({ preset, composer, selected, onChange }: Pa
   }, [preset?.presetChapterId, selected.chapterId, composerSelected.chapterId, setChapter])
 
   const page = data.pages.find((p) => p.id === selected.pageId) ?? null
+  const selectedRegions = data.regions.filter((item) => selected.regionIds.includes(item.id))
   // Use either the prop or the composer's resolved chapterId so the page
   // dropdown enables the moment the chapter is known anywhere in the dialog.
   const effectiveChapterId = selected.chapterId ?? composerSelected.chapterId
@@ -54,7 +58,8 @@ export function PagePickerWithPopup({ preset, composer, selected, onChange }: Pa
           value={selected.pageId ?? ''}
           onChange={(e) => {
             const val = e.target.value || undefined
-            onChange({ chapterId: effectiveChapterId, pageId: val, regionId: undefined })
+            setPage(val)
+            onChange({ chapterId: effectiveChapterId, pageId: val, regionIds: [] })
           }}
           disabled={data.loading.pages || !effectiveChapterId}
           className='flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50'
@@ -81,15 +86,48 @@ export function PagePickerWithPopup({ preset, composer, selected, onChange }: Pa
       </div>
       {data.errors.pages && <p className='text-xs text-destructive'>{data.errors.pages}</p>}
 
-      {selected.regionId && (
+      {selected.pageId && data.regions.length > 0 && (
+        <fieldset className='space-y-2 rounded-md border border-border p-3'>
+          <legend className='px-1 text-xs font-medium text-foreground'>
+            {t('studio.tasks.composer.selectRegions')}
+          </legend>
+          <p className='text-xs text-muted-foreground'>{t('studio.tasks.composer.selectRegionsHint')}</p>
+          <div className='grid gap-2 sm:grid-cols-2'>
+            {data.regions.map((item) => {
+              const checked = selected.regionIds.includes(item.id)
+              return (
+                <label key={item.id} className='flex cursor-pointer items-center gap-2 text-xs text-foreground'>
+                  <input
+                    type='checkbox'
+                    checked={checked}
+                    onChange={() =>
+                      onChange({
+                        chapterId: effectiveChapterId,
+                        pageId: selected.pageId,
+                        regionIds: checked
+                          ? selected.regionIds.filter((id) => id !== item.id)
+                          : [...selected.regionIds, item.id]
+                      })
+                    }
+                    className='h-4 w-4 rounded border-border text-primary focus:ring-ring'
+                  />
+                  {item.label}
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+      )}
+
+      {selectedRegions.length > 0 && (
         <p className='mt-1 flex items-center gap-1.5 text-xs text-muted-foreground'>
           <span className='rounded bg-primary/10 px-1.5 py-0.5 font-mono text-primary'>
-            {t('studio.tasks.composer.regionSelected', { id: selected.regionId.slice(0, 8) })}
+            {selectedRegions.map((region) => region.label).join(', ')}
           </span>
           <button
             type='button'
             className='text-xs text-primary underline-offset-2 hover:underline'
-            onClick={() => onChange({ chapterId: effectiveChapterId, pageId: selected.pageId, regionId: undefined })}
+            onClick={() => onChange({ chapterId: effectiveChapterId, pageId: selected.pageId, regionIds: [] })}
           >
             {t('studio.tasks.composer.regionClear')}
           </button>
@@ -102,8 +140,13 @@ export function PagePickerWithPopup({ preset, composer, selected, onChange }: Pa
           pageNumber={page.pageNumber}
           pageImageKey={page.originalFile ?? page.compositeFile ?? null}
           onPickRegion={(regionId) => {
-            onChange({ chapterId: effectiveChapterId, pageId: selected.pageId, regionId })
-            setPopupOpen(false)
+            onChange({
+              chapterId: effectiveChapterId,
+              pageId: selected.pageId,
+              regionIds: selected.regionIds.includes(regionId)
+                ? selected.regionIds.filter((id) => id !== regionId)
+                : [...selected.regionIds, regionId]
+            })
           }}
           onClose={() => setPopupOpen(false)}
         />

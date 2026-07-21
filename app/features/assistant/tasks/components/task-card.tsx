@@ -1,18 +1,7 @@
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import {
-  ClipboardList,
-  Calendar,
-  FileBox,
-  ScanLine,
-  Tag,
-  PlayCircle,
-  Send,
-  Sparkles,
-  Info,
-  Maximize2
-} from 'lucide-react'
+import { ClipboardList, Calendar, FileBox, ScanLine, Tag, PlayCircle, Send, Sparkles, Maximize2 } from 'lucide-react'
 
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task'
 import { cn } from '~/shared/lib/cn'
@@ -31,10 +20,7 @@ export type TaskCardProps = {
   onOpen?: () => void
 }
 
-const STATUS_META: Record<
-  TaskControllerListTasksStatus,
-  { className: string }
-> = {
+const STATUS_META: Record<TaskControllerListTasksStatus, { className: string }> = {
   ASSIGNED: { className: 'bg-primary/10 text-primary border-primary/20' },
   IN_PROGRESS: { className: 'bg-sky-500/10 text-sky-600 border-sky-500/20' },
   SUBMITTED: { className: 'bg-violet-500/10 text-violet-600 border-violet-500/20' },
@@ -114,10 +100,6 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
           <FileBox className='mt-0.5 h-3 w-3 shrink-0' />
           <span>{t('tasks.card.versions', { count: task.versions.length })}</span>
         </div>
-        <div className='flex items-start gap-1.5 text-muted-foreground'>
-          <Info className='mt-0.5 h-3 w-3 shrink-0' />
-          <span className='truncate font-mono text-[10px]'>{t('tasks.card.pageLabel', { id: task.pageId.slice(0, 8) })}</span>
-        </div>
       </dl>
 
       <div className='flex items-start gap-1.5 rounded-md border border-border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground'>
@@ -125,8 +107,8 @@ export function TaskCard({ task, onStart, onSubmit, isMutating, onOpen }: TaskCa
         <div className='min-w-0 flex-1'>
           <p className='font-semibold text-foreground'>{t('tasks.card.region')}</p>
           <p className='mt-0.5'>
-            {task.regionId
-              ? t('tasks.card.regionAssigned', { id: task.regionId.slice(0, 8) })
+            {task.regions?.length
+              ? t('tasks.dialog.regionCount', { count: task.regions.length })
               : t('tasks.card.fullPage')}
           </p>
         </div>
@@ -199,7 +181,10 @@ function TaskActions({
 
   return (
     <div className='space-y-1.5'>
-      <label htmlFor={fileInputId} className='block text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+      <label
+        htmlFor={fileInputId}
+        className='block text-[10px] font-bold uppercase tracking-wider text-muted-foreground'
+      >
         {t('tasks.actions.resultFile')}
       </label>
       <div className='flex items-center gap-2'>

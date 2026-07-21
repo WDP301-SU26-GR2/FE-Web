@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { Calendar, ListChecks, Plus, Sparkles, XCircle, Hash, Briefcase } from 'lucide-react'
+import { ListChecks, Plus, Sparkles, XCircle } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
+import { SignedImage } from '~/shared/components/signed-image'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { AssignmentListResDtoOutputItemsItemStatus } from '~/api/model/studio/assignmentListResDtoOutputItemsItemStatus'
 import type { AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem } from '~/api/model/studio/assignmentListResDtoOutputItemsItemAssignedTaskTypesItem'
@@ -33,10 +34,6 @@ function formatDate(iso: string | null, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-function formatShortId(id: string): string {
-  return id.slice(0, 8)
 }
 
 const AVATAR_GRADIENTS = [
@@ -80,8 +77,7 @@ export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProp
   // Per Spec 20 the BE embeds `assistant?: UserMini` directly on the assignment.
   const embeddedAssistant = assignment.assistant
   const statusMeta = STATUS_META[assignment.status] ?? STATUS_META.ACTIVE
-  const displayName =
-    embeddedAssistant?.displayName ?? t('myStudio.card.unnamedAssistant', { id: formatShortId(assignment.assistantId) })
+  const displayName = embeddedAssistant?.displayName ?? t('myStudio.card.unnamedAssistant')
   const fallbackSeed = embeddedAssistant?.displayName ?? assignment.assistantId
   const hireFrom = formatDate(assignment.hireStart, locale)
   const hireTo = formatDate(assignment.hireEnd, locale)
@@ -91,15 +87,24 @@ export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProp
   return (
     <article className='flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md'>
       <header className='flex items-start gap-3'>
-        <div
-          className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
-            pickGradient(fallbackSeed)
-          )}
-          aria-hidden='true'
-        >
-          {getInitials(embeddedAssistant?.displayName, assignment.assistantId)}
-        </div>
+        {embeddedAssistant?.avatar ? (
+          <SignedImage
+            r2Key={embeddedAssistant.avatar}
+            alt={displayName}
+            aspectClassName='aspect-square'
+            className='h-12 w-12 shrink-0 rounded-full shadow-sm'
+          />
+        ) : (
+          <div
+            className={cn(
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
+              pickGradient(fallbackSeed)
+            )}
+            aria-hidden='true'
+          >
+            {getInitials(embeddedAssistant?.displayName, assignment.assistantId)}
+          </div>
+        )}
         <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-1.5'>
             <h3 className='truncate text-sm font-bold text-foreground'>{displayName}</h3>
@@ -121,15 +126,11 @@ export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProp
               </span>
             )}
           </div>
-          <p className='mt-0.5 truncate text-[11px] text-muted-foreground'>
-            <Hash className='inline h-3 w-3 align-text-bottom' /> {assignment.id}
-          </p>
         </div>
       </header>
 
       <div className='grid grid-cols-1 gap-2 text-[11px] sm:grid-cols-2'>
-        <div className='flex items-start gap-1.5 text-muted-foreground'>
-          <Calendar className='mt-0.5 h-3 w-3 shrink-0' />
+        <div className='text-muted-foreground'>
           <span>
             {assignment.hireEnd
               ? t('myStudio.card.hireWindow', { from: hireFrom, to: hireTo })
@@ -138,9 +139,8 @@ export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProp
                 : '—'}
           </span>
         </div>
-        <div className='flex items-start gap-1.5 text-muted-foreground'>
-          <Briefcase className='mt-0.5 h-3 w-3 shrink-0' />
-          <span>{assignment.seriesId ?? t('myStudio.card.seriesNone')}</span>
+        <div className='text-muted-foreground'>
+          <span>{t('myStudio.card.series', { title: assignment.series?.title ?? t('myStudio.card.seriesNone') })}</span>
         </div>
       </div>
 
@@ -175,7 +175,6 @@ export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProp
       )}
 
       <footer className='mt-auto flex items-center justify-between gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground'>
-        <span>{t('myStudio.card.ended', { date: formatDate(assignment.createdAt, locale) || '—' })}</span>
         <div className='flex items-center gap-2'>
           <span>{t(`myStudio.card.${assignment.activeNow ? 'activeNowBadge' : 'endedBadge'}`)}</span>
           {onAssignClick && (
@@ -184,7 +183,7 @@ export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProp
               onClick={() => onAssignClick(assignment)}
               disabled={!assignment.activeNow}
               aria-label={t('studio.tasks.composer.assignFor', {
-                name: embeddedAssistant?.displayName ?? formatShortId(assignment.assistantId)
+                name: displayName
               })}
               title={
                 assignment.activeNow

@@ -1,4 +1,5 @@
 export { useSignedImageUrl } from './use-signed-image-url'
+export { useTaskSignedUrl } from './use-task-signed-url'
 export {
   useUnreadNotifications,
   notificationsPathForRole,

@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import {
-  Clock,
   AlertTriangle,
   ArrowUpRight,
   TrendingUp,
@@ -82,18 +81,6 @@ function getRankChangeDisplay(change: number | null): {
     return { text: `+${change} pos`, color: 'text-emerald-500' }
   }
   return { text: `${change} pos`, color: 'text-rose-500' }
-}
-
-/** Get chapter subtitle — prefers chapter title, falls back to manuscript status label */
-function getChapterSubtitle(
-  title: string | null,
-  manuscriptStatus: string,
-  t: (key: string) => string
-): string {
-  if (title != null) {
-    return title
-  }
-  return getManuscriptSubtitle(manuscriptStatus, t)
 }
 
 export function MangakaDashboard() {
@@ -218,8 +205,7 @@ export function MangakaDashboard() {
                         </p>
                       </div>
                       <div className='mt-6 flex items-center justify-between'>
-                        <div className={cn('flex items-center gap-1.5 text-xs font-bold', warning.text)}>
-                          <Clock className='h-3.5 w-3.5' />
+                        <div className={cn('text-xs font-bold', warning.text)}>
                           <span>
                             {item.remainingHours !== null && item.remainingHours <= 24
                               ? t('dashboard.dueInHours', { hours: item.remainingHours })

@@ -11,6 +11,7 @@ import { useLogout } from '~/features/auth/hooks/use-logout'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { useUnreadNotifications } from '~/shared/hooks/use-unread-notifications'
 import { useSidebarProfile } from '~/shared/hooks/use-sidebar-profile'
+import { BrandLogo } from './brand-logo'
 
 export interface NavItem {
   label: string
@@ -81,7 +82,9 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
   // Use real profile data from API, fallback to nav config defaults
   const displayName = realProfile?.displayName ?? profileFallback.name
   const avatarKey = realProfile?.avatar ?? null
-  const roleLabel = realProfile?.role ? t(`roleEnum.${realProfile.role}`, { defaultValue: realProfile.role }) : profileFallback.role
+  const roleLabel = realProfile?.role
+    ? t(`roleEnum.${realProfile.role}`, { defaultValue: realProfile.role })
+    : profileFallback.role
   const statusBadge = realProfile?.status === 'ACTIVE' ? null : realProfile?.status
 
   // The authenticated user's role comes from the persisted session (BE enum,
@@ -115,11 +118,14 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
       >
         {/* Sidebar Header */}
         <div className='flex h-16 items-center justify-between border-b border-border px-6'>
-          <div className='flex flex-col'>
-            <span className='text-lg font-bold tracking-wider text-primary'>{t('layout.brand')}</span>
-            <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
-              {t('layout.productionEnvironment')}
-            </span>
+          <div className='flex min-w-0 items-center gap-3'>
+            <BrandLogo className='h-9 w-9 shrink-0 rounded-lg' />
+            <div className='flex min-w-0 flex-col'>
+              <span className='truncate text-sm font-bold tracking-wide text-primary'>{t('layout.brand')}</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground'>
+                {t('layout.productionEnvironment')}
+              </span>
+            </div>
           </div>
           <button
             onClick={() => setIsSidebarOpen(false)}
@@ -151,10 +157,7 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
                 </div>
                 <div className='flex items-center gap-1.5'>
                   {item.badge && unreadCount > 0 && (
-                    <span
-                      aria-hidden='true'
-                      className='h-2 w-2 rounded-full bg-destructive'
-                    />
+                    <span aria-hidden='true' className='h-2 w-2 rounded-full bg-destructive' />
                   )}
                   {isActive && <ChevronRight className='h-4 w-4 shrink-0' />}
                 </div>
@@ -194,9 +197,7 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
               <div className='min-w-0'>
                 <p className='truncate text-sm font-semibold'>{displayName}</p>
                 <div className='flex items-center gap-1.5'>
-                  <span className='truncate text-[11px] text-muted-foreground uppercase font-medium'>
-                    {roleLabel}
-                  </span>
+                  <span className='truncate text-[11px] text-muted-foreground uppercase font-medium'>{roleLabel}</span>
                   {statusBadge && (
                     <span className='inline-flex items-center rounded bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-destructive uppercase'>
                       {statusBadge}

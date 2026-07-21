@@ -10186,7 +10186,7 @@
             }
           },
           "409": {
-            "description": "Error.InvalidManuscriptTransition - manuscript state transition is not allowed | Error.ContractNotExecuted - series has no FULLY_EXECUTED contract; cannot publish (BR-CONTRACT-05) | Error.ChapterOnHold (id) - chapter is on hold; resume before production mutations",
+            "description": "Error.InvalidManuscriptTransition - manuscript state transition is not allowed | Error.ContractNotExecuted - series has no FULLY_EXECUTED contract; cannot publish (BR-CONTRACT-05) | Error.ChapterOnHold (id) - chapter is on hold; resume before production mutations | Error.PagesNotReadyForPublish (chapterId) - chapter still has non-COMPLETED (unreviewed) page(s); cannot publish",
             "content": {
               "application/json": {
                 "example": {
@@ -13631,6 +13631,78 @@
           }
         ],
         "summary": "Chi tiết task (Mangaka sở hữu / Assistant được giao)",
+        "tags": [
+          "task"
+        ]
+      }
+    },
+    "/tasks/{id}/download-url": {
+      "post": {
+        "operationId": "TaskController_getTaskFileDownloadUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskFileDownloadBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskFileDownloadResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.TaskFileForbidden (key) - caller is not a participant of this task (owner/assignee/editor/board), or the key does not belong to the task",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.TaskFileForbidden",
+                  "message": "Bạn không có quyền tải tệp của công việc này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.TaskNotFound (id) - task not found or invalid id",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.TaskNotFound",
+                  "message": "Không tìm thấy công việc"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ký signed URL tải file của task (ảnh gốc trang Mangaka giao / file version Assistant nộp)",
         "tags": [
           "task"
         ]
@@ -17557,6 +17629,23 @@
                 "WEEKLY",
                 "MONTHLY",
                 "IRREGULAR"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo trạng thái (chỉ trạng thái công khai): SERIALIZED=đang phát hành · COMPLETED=đã hoàn thành · CANCELLED=đã huỷ ...",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SERIALIZED",
+                "HIATUS",
+                "COMPLETING",
+                "CANCELLING",
+                "COMPLETED",
+                "CANCELLED"
               ]
             }
           },
@@ -27116,8 +27205,14 @@
           "pageId": {
             "type": "string"
           },
-          "regionId": {
-            "type": "string"
+          "regionIds": {
+            "default": [],
+            "description": "Các vùng trên trang cần xử lý (đều phải thuộc pageId); rỗng = giao cả trang",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "assistantId": {
             "type": "string"
@@ -27169,9 +27264,12 @@
           "pageId": {
             "type": "string"
           },
-          "regionId": {
-            "type": "string",
-            "nullable": true
+          "regionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Các vùng (Region id) mà task này xử lý; rỗng = cả trang / task nhóm"
           },
           "assistantId": {
             "type": "string",
@@ -27328,104 +27426,157 @@
             "description": "Trợ lý được giao — có ở GET list/detail",
             "nullable": true
           },
-          "region": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "pageId": {
-                "type": "string"
-              },
-              "coordinates": {
-                "type": "object",
-                "properties": {
-                  "x": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "y": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "width": {
-                    "type": "number",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  },
-                  "height": {
-                    "type": "number",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  }
+          "assets": {
+            "type": "array",
+            "description": "Ảnh reference Mangaka đính khi giao task (resolve từ assetIds → key) — có ở GET list/detail",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "ObjectId Asset (= một phần tử của assetIds)"
                 },
-                "required": [
-                  "x",
-                  "y",
-                  "width",
-                  "height"
-                ],
-                "additionalProperties": false,
-                "description": "Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0)",
-                "nullable": true
+                "filePath": {
+                  "type": "string",
+                  "description": "Object key R2 — truyền vào POST /tasks/:id/download-url để tải reference"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "assetType": {
+                  "type": "string",
+                  "enum": [
+                    "REFERENCE",
+                    "BACKGROUND",
+                    "SCREENTONE",
+                    "BRUSH",
+                    "OTHER",
+                    "DOCUMENT",
+                    null
+                  ],
+                  "description": "Uploaded asset type: REFERENCE, BACKGROUND, SCREENTONE, BRUSH, OTHER, DOCUMENT (system-generated documents). Values: REFERENCE, BACKGROUND, SCREENTONE, BRUSH, OTHER, DOCUMENT",
+                  "nullable": true
+                }
               },
-              "regionType": {
-                "type": "string",
-                "enum": [
-                  "PANEL",
-                  "BACKGROUND",
-                  "SPEECH_BUBBLE",
-                  "SFX",
-                  "CHARACTER",
-                  null
-                ],
-                "description": "Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER. Values: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER",
-                "nullable": true
+              "required": [
+                "id",
+                "filePath",
+                "name",
+                "assetType"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "regions": {
+            "type": "array",
+            "description": "Các vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail. Task 1 trang trả đủ vùng; task nhóm (nhiều trang) trả [] (chỉ hiển thị theo trang).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "pageId": {
+                  "type": "string"
+                },
+                "coordinates": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "width": {
+                      "type": "number",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "height": {
+                      "type": "number",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "width",
+                    "height"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0)",
+                  "nullable": true
+                },
+                "regionType": {
+                  "type": "string",
+                  "enum": [
+                    "PANEL",
+                    "BACKGROUND",
+                    "SPEECH_BUBBLE",
+                    "SFX",
+                    "CHARACTER",
+                    null
+                  ],
+                  "description": "Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER. Values: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER",
+                  "nullable": true
+                },
+                "createdBy": {
+                  "type": "string",
+                  "description": "MANUAL | AI",
+                  "nullable": true
+                },
+                "confirmedByMangaka": {
+                  "type": "boolean"
+                },
+                "confidenceScore": {
+                  "type": "number",
+                  "description": "null khi MANUAL",
+                  "nullable": true
+                },
+                "detectedSubtype": {
+                  "type": "string",
+                  "description": "Original AI model class (frame/body/text-block/bubble/...)",
+                  "nullable": true
+                },
+                "aiModelVersion": {
+                  "type": "string",
+                  "description": "AI model version that produced this region; null for MANUAL",
+                  "nullable": true
+                }
               },
-              "createdBy": {
-                "type": "string",
-                "description": "MANUAL | AI",
-                "nullable": true
-              },
-              "confirmedByMangaka": {
-                "type": "boolean"
-              },
-              "confidenceScore": {
-                "type": "number",
-                "description": "null khi MANUAL",
-                "nullable": true
-              },
-              "detectedSubtype": {
-                "type": "string",
-                "description": "Original AI model class (frame/body/text-block/bubble/...)",
-                "nullable": true
-              },
-              "aiModelVersion": {
-                "type": "string",
-                "description": "AI model version that produced this region; null for MANUAL",
-                "nullable": true
-              }
-            },
-            "required": [
-              "id",
-              "pageId",
-              "coordinates",
-              "regionType",
-              "createdBy",
-              "confirmedByMangaka",
-              "confidenceScore",
-              "detectedSubtype",
-              "aiModelVersion"
-            ],
-            "additionalProperties": false,
-            "description": "Vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail; null khi task không gắn vùng",
+              "required": [
+                "id",
+                "pageId",
+                "coordinates",
+                "regionType",
+                "createdBy",
+                "confirmedByMangaka",
+                "confidenceScore",
+                "detectedSubtype",
+                "aiModelVersion"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "pageOriginalFile": {
+            "type": "string",
+            "description": "Object key ảnh GỐC của trang (bản Mangaka giao) — dùng ký signed URL để review; có ở GET list/detail",
+            "nullable": true
+          },
+          "pageDisplayFile": {
+            "type": "string",
+            "description": "Object key ảnh NÊN HIỂN THỊ của trang = compositeFile ?? originalFile; có ở GET list/detail",
             "nullable": true
           }
         },
         "required": [
           "id",
           "pageId",
-          "regionId",
+          "regionIds",
           "assistantId",
           "taskType",
           "status",
@@ -27516,9 +27667,12 @@
                 "pageId": {
                   "type": "string"
                 },
-                "regionId": {
-                  "type": "string",
-                  "nullable": true
+                "regionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Các vùng (Region id) mà task này xử lý; rỗng = cả trang / task nhóm"
                 },
                 "assistantId": {
                   "type": "string",
@@ -27675,104 +27829,157 @@
                   "description": "Trợ lý được giao — có ở GET list/detail",
                   "nullable": true
                 },
-                "region": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "pageId": {
-                      "type": "string"
-                    },
-                    "coordinates": {
-                      "type": "object",
-                      "properties": {
-                        "x": {
-                          "type": "number",
-                          "minimum": 0
-                        },
-                        "y": {
-                          "type": "number",
-                          "minimum": 0
-                        },
-                        "width": {
-                          "type": "number",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        },
-                        "height": {
-                          "type": "number",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        }
+                "assets": {
+                  "description": "Ảnh reference Mangaka đính khi giao task (resolve từ assetIds → key) — có ở GET list/detail",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ObjectId Asset (= một phần tử của assetIds)"
                       },
-                      "required": [
-                        "x",
-                        "y",
-                        "width",
-                        "height"
-                      ],
-                      "additionalProperties": false,
-                      "description": "Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0)",
-                      "nullable": true
+                      "filePath": {
+                        "type": "string",
+                        "description": "Object key R2 — truyền vào POST /tasks/:id/download-url để tải reference"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "assetType": {
+                        "type": "string",
+                        "enum": [
+                          "REFERENCE",
+                          "BACKGROUND",
+                          "SCREENTONE",
+                          "BRUSH",
+                          "OTHER",
+                          "DOCUMENT",
+                          null
+                        ],
+                        "description": "Uploaded asset type: REFERENCE, BACKGROUND, SCREENTONE, BRUSH, OTHER, DOCUMENT (system-generated documents). Values: REFERENCE, BACKGROUND, SCREENTONE, BRUSH, OTHER, DOCUMENT",
+                        "nullable": true
+                      }
                     },
-                    "regionType": {
-                      "type": "string",
-                      "enum": [
-                        "PANEL",
-                        "BACKGROUND",
-                        "SPEECH_BUBBLE",
-                        "SFX",
-                        "CHARACTER",
-                        null
-                      ],
-                      "description": "Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER. Values: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER",
-                      "nullable": true
+                    "required": [
+                      "id",
+                      "filePath",
+                      "name",
+                      "assetType"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "regions": {
+                  "description": "Các vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail. Task 1 trang trả đủ vùng; task nhóm (nhiều trang) trả [] (chỉ hiển thị theo trang).",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "pageId": {
+                        "type": "string"
+                      },
+                      "coordinates": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "additionalProperties": false,
+                        "description": "Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0)",
+                        "nullable": true
+                      },
+                      "regionType": {
+                        "type": "string",
+                        "enum": [
+                          "PANEL",
+                          "BACKGROUND",
+                          "SPEECH_BUBBLE",
+                          "SFX",
+                          "CHARACTER",
+                          null
+                        ],
+                        "description": "Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER. Values: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER",
+                        "nullable": true
+                      },
+                      "createdBy": {
+                        "type": "string",
+                        "description": "MANUAL | AI",
+                        "nullable": true
+                      },
+                      "confirmedByMangaka": {
+                        "type": "boolean"
+                      },
+                      "confidenceScore": {
+                        "type": "number",
+                        "description": "null khi MANUAL",
+                        "nullable": true
+                      },
+                      "detectedSubtype": {
+                        "type": "string",
+                        "description": "Original AI model class (frame/body/text-block/bubble/...)",
+                        "nullable": true
+                      },
+                      "aiModelVersion": {
+                        "type": "string",
+                        "description": "AI model version that produced this region; null for MANUAL",
+                        "nullable": true
+                      }
                     },
-                    "createdBy": {
-                      "type": "string",
-                      "description": "MANUAL | AI",
-                      "nullable": true
-                    },
-                    "confirmedByMangaka": {
-                      "type": "boolean"
-                    },
-                    "confidenceScore": {
-                      "type": "number",
-                      "description": "null khi MANUAL",
-                      "nullable": true
-                    },
-                    "detectedSubtype": {
-                      "type": "string",
-                      "description": "Original AI model class (frame/body/text-block/bubble/...)",
-                      "nullable": true
-                    },
-                    "aiModelVersion": {
-                      "type": "string",
-                      "description": "AI model version that produced this region; null for MANUAL",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "pageId",
-                    "coordinates",
-                    "regionType",
-                    "createdBy",
-                    "confirmedByMangaka",
-                    "confidenceScore",
-                    "detectedSubtype",
-                    "aiModelVersion"
-                  ],
-                  "additionalProperties": false,
-                  "description": "Vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail; null khi task không gắn vùng",
+                    "required": [
+                      "id",
+                      "pageId",
+                      "coordinates",
+                      "regionType",
+                      "createdBy",
+                      "confirmedByMangaka",
+                      "confidenceScore",
+                      "detectedSubtype",
+                      "aiModelVersion"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "pageOriginalFile": {
+                  "type": "string",
+                  "description": "Object key ảnh GỐC của trang (bản Mangaka giao) — dùng ký signed URL để review; có ở GET list/detail",
+                  "nullable": true
+                },
+                "pageDisplayFile": {
+                  "type": "string",
+                  "description": "Object key ảnh NÊN HIỂN THỊ của trang = compositeFile ?? originalFile; có ở GET list/detail",
                   "nullable": true
                 }
               },
               "required": [
                 "id",
                 "pageId",
-                "regionId",
+                "regionIds",
                 "assistantId",
                 "taskType",
                 "status",
@@ -27885,9 +28092,12 @@
                 "pageId": {
                   "type": "string"
                 },
-                "regionId": {
-                  "type": "string",
-                  "nullable": true
+                "regionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Các vùng (Region id) mà task này xử lý; rỗng = cả trang / task nhóm"
                 },
                 "assistantId": {
                   "type": "string",
@@ -28044,104 +28254,157 @@
                   "description": "Trợ lý được giao — có ở GET list/detail",
                   "nullable": true
                 },
-                "region": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "pageId": {
-                      "type": "string"
-                    },
-                    "coordinates": {
-                      "type": "object",
-                      "properties": {
-                        "x": {
-                          "type": "number",
-                          "minimum": 0
-                        },
-                        "y": {
-                          "type": "number",
-                          "minimum": 0
-                        },
-                        "width": {
-                          "type": "number",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        },
-                        "height": {
-                          "type": "number",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        }
+                "assets": {
+                  "description": "Ảnh reference Mangaka đính khi giao task (resolve từ assetIds → key) — có ở GET list/detail",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ObjectId Asset (= một phần tử của assetIds)"
                       },
-                      "required": [
-                        "x",
-                        "y",
-                        "width",
-                        "height"
-                      ],
-                      "additionalProperties": false,
-                      "description": "Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0)",
-                      "nullable": true
+                      "filePath": {
+                        "type": "string",
+                        "description": "Object key R2 — truyền vào POST /tasks/:id/download-url để tải reference"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "assetType": {
+                        "type": "string",
+                        "enum": [
+                          "REFERENCE",
+                          "BACKGROUND",
+                          "SCREENTONE",
+                          "BRUSH",
+                          "OTHER",
+                          "DOCUMENT",
+                          null
+                        ],
+                        "description": "Uploaded asset type: REFERENCE, BACKGROUND, SCREENTONE, BRUSH, OTHER, DOCUMENT (system-generated documents). Values: REFERENCE, BACKGROUND, SCREENTONE, BRUSH, OTHER, DOCUMENT",
+                        "nullable": true
+                      }
                     },
-                    "regionType": {
-                      "type": "string",
-                      "enum": [
-                        "PANEL",
-                        "BACKGROUND",
-                        "SPEECH_BUBBLE",
-                        "SFX",
-                        "CHARACTER",
-                        null
-                      ],
-                      "description": "Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER. Values: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER",
-                      "nullable": true
+                    "required": [
+                      "id",
+                      "filePath",
+                      "name",
+                      "assetType"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "regions": {
+                  "description": "Các vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail. Task 1 trang trả đủ vùng; task nhóm (nhiều trang) trả [] (chỉ hiển thị theo trang).",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "pageId": {
+                        "type": "string"
+                      },
+                      "coordinates": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "additionalProperties": false,
+                        "description": "Toạ độ vùng trên trang (pixel, top-left origin; x,y ≥ 0; width,height > 0)",
+                        "nullable": true
+                      },
+                      "regionType": {
+                        "type": "string",
+                        "enum": [
+                          "PANEL",
+                          "BACKGROUND",
+                          "SPEECH_BUBBLE",
+                          "SFX",
+                          "CHARACTER",
+                          null
+                        ],
+                        "description": "Loại vùng trên trang: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER. Values: PANEL, BACKGROUND, SPEECH_BUBBLE, SFX, CHARACTER",
+                        "nullable": true
+                      },
+                      "createdBy": {
+                        "type": "string",
+                        "description": "MANUAL | AI",
+                        "nullable": true
+                      },
+                      "confirmedByMangaka": {
+                        "type": "boolean"
+                      },
+                      "confidenceScore": {
+                        "type": "number",
+                        "description": "null khi MANUAL",
+                        "nullable": true
+                      },
+                      "detectedSubtype": {
+                        "type": "string",
+                        "description": "Original AI model class (frame/body/text-block/bubble/...)",
+                        "nullable": true
+                      },
+                      "aiModelVersion": {
+                        "type": "string",
+                        "description": "AI model version that produced this region; null for MANUAL",
+                        "nullable": true
+                      }
                     },
-                    "createdBy": {
-                      "type": "string",
-                      "description": "MANUAL | AI",
-                      "nullable": true
-                    },
-                    "confirmedByMangaka": {
-                      "type": "boolean"
-                    },
-                    "confidenceScore": {
-                      "type": "number",
-                      "description": "null khi MANUAL",
-                      "nullable": true
-                    },
-                    "detectedSubtype": {
-                      "type": "string",
-                      "description": "Original AI model class (frame/body/text-block/bubble/...)",
-                      "nullable": true
-                    },
-                    "aiModelVersion": {
-                      "type": "string",
-                      "description": "AI model version that produced this region; null for MANUAL",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "pageId",
-                    "coordinates",
-                    "regionType",
-                    "createdBy",
-                    "confirmedByMangaka",
-                    "confidenceScore",
-                    "detectedSubtype",
-                    "aiModelVersion"
-                  ],
-                  "additionalProperties": false,
-                  "description": "Vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail; null khi task không gắn vùng",
+                    "required": [
+                      "id",
+                      "pageId",
+                      "coordinates",
+                      "regionType",
+                      "createdBy",
+                      "confirmedByMangaka",
+                      "confidenceScore",
+                      "detectedSubtype",
+                      "aiModelVersion"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "pageOriginalFile": {
+                  "type": "string",
+                  "description": "Object key ảnh GỐC của trang (bản Mangaka giao) — dùng ký signed URL để review; có ở GET list/detail",
+                  "nullable": true
+                },
+                "pageDisplayFile": {
+                  "type": "string",
+                  "description": "Object key ảnh NÊN HIỂN THỊ của trang = compositeFile ?? originalFile; có ở GET list/detail",
                   "nullable": true
                 }
               },
               "required": [
                 "id",
                 "pageId",
-                "regionId",
+                "regionIds",
                 "assistantId",
                 "taskType",
                 "status",
@@ -28216,6 +28479,37 @@
             "nullable": true
           }
         },
+        "additionalProperties": false
+      },
+      "TaskFileDownloadBodyDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "TaskFileDownloadResDto_Output": {
+        "type": "object",
+        "properties": {
+          "downloadUrl": {
+            "type": "string",
+            "description": "Presigned GET URL có hạn"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO 8601 thời điểm hết hạn"
+          }
+        },
+        "required": [
+          "downloadUrl",
+          "expiresAt"
+        ],
         "additionalProperties": false
       },
       "SubmitTaskBodyDto": {

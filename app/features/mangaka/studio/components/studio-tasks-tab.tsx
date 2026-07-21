@@ -4,6 +4,7 @@ import { Loader2, X, SlidersHorizontal, ChevronDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { cn } from '~/shared/lib/cn'
+import { Dialog } from '~/shared/ui/dialog'
 import {
   useMangakaSeriesList,
   useMangakaChapterList,
@@ -47,6 +48,8 @@ export function StudioTasksTab() {
   const [status, setStatus] = useState<TaskControllerListTasksStatus | undefined>(undefined)
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [taskAction, setTaskAction] = useState<{ taskId: string; type: 'revision' | 'cancel' } | null>(null)
+  const [actionNote, setActionNote] = useState('')
 
   // Cache pages from all chapters we've fetched
   const [pagesCache, setPagesCache] = useState<Record<string, PageResDtoOutput[]>>({})
@@ -125,7 +128,36 @@ export function StudioTasksTab() {
     return t(`tasks.status.${s}`)
   }
 
+  const closeTaskAction = () => {
+    setTaskAction(null)
+    setActionNote('')
+  }
+
+  const submitTaskAction = () => {
+    if (!taskAction) return
+    const note = actionNote.trim()
+    if (taskAction.type === 'revision' && !note) {
+      toast.error(t('studio.tasksTab.revisionRequired'))
+      return
+    }
+
+    const action = taskAction
+    closeTaskAction()
+    const request = action.type === 'revision'
+      ? taskQuery.requestRevision(action.taskId, note)
+      : taskQuery.cancelTask(action.taskId, note || undefined)
+
+    void request.then((result) => {
+      if (result.success) {
+        toast.success(t(action.type === 'revision' ? 'studio.tasksTab.toast.revisionRequested' : 'studio.tasksTab.toast.cancelled'))
+      } else {
+        toast.error(result.error ?? t(action.type === 'revision' ? 'studio.tasksTab.toast.revisionFailed' : 'studio.tasksTab.toast.cancelFailed'))
+      }
+    })
+  }
+
   return (
+    <>
     <div className='space-y-4'>
       {/* Single horizontal filter bar */}
       <div className='rounded-xl border border-border bg-card p-3'>
@@ -292,30 +324,49 @@ export function StudioTasksTab() {
               })
             }}
             onRequestRevision={(id) => {
-              const note = window.prompt(t('studio.tasksTab.revisionPrompt'))?.trim()
-              if (!note) return
-              void taskQuery.requestRevision(id, note).then((r) => {
-                if (r.success) toast.success(t('studio.tasksTab.toast.revisionRequested'))
-                else toast.error(r.error ?? t('studio.tasksTab.toast.revisionFailed'))
-              })
+              setActionNote('')
+              setTaskAction({ taskId: id, type: 'revision' })
             }}
             onCancel={(id) => {
-              const reason = window.prompt(t('studio.tasksTab.cancelPrompt'))?.trim()
-              if (reason === undefined) return
-              void taskQuery.cancelTask(id, reason || undefined).then((r) => {
-                if (r.success) toast.success(t('studio.tasksTab.toast.cancelled'))
-                else toast.error(r.error ?? t('studio.tasksTab.toast.cancelFailed'))
-              })
+              setActionNote('')
+              setTaskAction({ taskId: id, type: 'cancel' })
             }}
             page={currentPage}
             totalPages={taskQuery.totalPages}
             total={taskQuery.total}
             onPageChange={(page) => setCurrentPage(page)}
-            pages={allCachedPages}
-            isLoadingPages={pageQuery.isLoading || isLoadingPagesCache}
           />
         )}
       </div>
     </div>
+    <Dialog
+      open={taskAction !== null}
+      onClose={closeTaskAction}
+      titleId='studio-task-action-title'
+      title={t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.title' : 'studio.tasksTab.cancelDialog.title')}
+      description={t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.description' : 'studio.tasksTab.cancelDialog.description')}
+      footer={
+        <div className='flex justify-end gap-2'>
+          <button type='button' onClick={closeTaskAction} className='rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted'>
+            {t('studio.tasksTab.dialog.cancel')}
+          </button>
+          <button type='button' onClick={submitTaskAction} className={cn('rounded-md px-3 py-2 text-sm font-semibold text-primary-foreground', taskAction?.type === 'revision' ? 'bg-warning' : 'bg-destructive')}>
+            {t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.submit' : 'studio.tasksTab.cancelDialog.submit')}
+          </button>
+        </div>
+      }
+    >
+      <label className='block text-sm font-medium text-foreground' htmlFor='studio-task-action-note'>
+        {t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.label' : 'studio.tasksTab.cancelDialog.label')}
+      </label>
+      <textarea
+        id='studio-task-action-note'
+        value={actionNote}
+        onChange={(event) => setActionNote(event.target.value)}
+        placeholder={t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionPrompt' : 'studio.tasksTab.cancelPrompt')}
+        className='mt-2 min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring'
+      />
+    </Dialog>
+    </>
   )
 }

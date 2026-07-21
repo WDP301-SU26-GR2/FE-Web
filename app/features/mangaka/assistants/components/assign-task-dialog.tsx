@@ -36,13 +36,15 @@ export function AssignTaskDialog({ open, openFrom, preset, onClose, onSuccess }:
   // ── Inner component: remounts on each open via `key={open}` so local state
   // (error, etc.) resets cleanly without needing a `useEffect` (which would
   // cascade a synchronous re-render — see React 19 lint rule).
-  return <AssignTaskDialogBody
-    key={open ? 'open' : 'closed'}
-    openFrom={openFrom}
-    preset={preset}
-    onClose={onClose}
-    onSuccess={onSuccess}
-  />
+  return (
+    <AssignTaskDialogBody
+      key={open ? 'open' : 'closed'}
+      openFrom={openFrom}
+      preset={preset}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  )
 }
 
 interface AssignTaskDialogBodyProps {
@@ -73,8 +75,7 @@ function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTa
   const [error, setError] = useState<string | null>(null)
 
   const currentStepIndex = STEP_ORDER.indexOf(form.state.step)
-  const canGoNext =
-    form.state.step === 'context' ? form.canGoNextFromContext : form.canGoNextFromWork
+  const canGoNext = form.state.step === 'context' ? form.canGoNextFromContext : form.canGoNextFromWork
 
   const handleContextChange = (ctx: Parameters<typeof form.setContext>[0]) => {
     setError(null)
@@ -115,6 +116,17 @@ function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTa
       assignedTaskTypes: a.assignedTaskTypes
     }
   }, [form.selectedAssignment])
+
+  const selectedPageLabels = useMemo(
+    () =>
+      form.state.pageIds
+        .map((id) => composer.data.pages.find((page) => page.id === id)?.pageNumber)
+        .filter((pageNumber): pageNumber is number => pageNumber !== undefined),
+    [composer.data.pages, form.state.pageIds]
+  )
+  const selectedRegionLabels = form.state.regionIds
+    .map((id) => composer.data.regions.find((region) => region.id === id)?.label)
+    .filter((label): label is string => Boolean(label))
 
   return (
     <div
@@ -164,7 +176,8 @@ function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTa
                 seriesId: form.state.seriesId,
                 chapterId: form.state.chapterId,
                 pageId: form.state.pageId,
-                regionId: form.state.regionId
+                pageIds: form.state.pageIds,
+                regionIds: form.state.regionIds
               }}
               onChange={handleContextChange}
             />
@@ -175,9 +188,7 @@ function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTa
               {form.allowedTaskTypes.length > 0 && (
                 <p className='text-xs text-muted-foreground'>
                   {t('studio.tasks.composer.allowedTaskTypesHint', {
-                    types: form.allowedTaskTypes
-                      .map((tt) => t(`studio.tasks.composer.taskTypeEnum.${tt}`))
-                      .join(', ')
+                    types: form.allowedTaskTypes.map((tt) => t(`studio.tasks.composer.taskTypeEnum.${tt}`)).join(', ')
                   })}
                 </p>
               )}
@@ -204,18 +215,28 @@ function AssignTaskDialogBody({ openFrom, preset, onClose, onSuccess }: AssignTa
                 <div className='grid grid-cols-[auto_1fr] gap-x-4 gap-y-2'>
                   <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.assistant')}</dt>
                   <dd className='text-foreground'>
-                    {confirmedSummary?.assistantDisplayName ?? confirmedSummary?.assistantUserId.slice(0, 8) ?? '—'}
+                    {confirmedSummary?.assistantDisplayName ?? t('myStudio.card.unnamedAssistant')}
                   </dd>
                   <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.taskType')}</dt>
                   <dd className='text-foreground'>
                     {form.state.taskType ? t(`studio.tasks.composer.taskTypeEnum.${form.state.taskType}`) : '—'}
                   </dd>
-                  <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.page')}</dt>
-                  <dd className='text-foreground'>{form.state.pageId ?? '—'}</dd>
-                  {form.state.regionId && (
+                  <dt className='font-medium text-foreground'>
+                    {form.state.pageIds.length > 1
+                      ? t('studio.tasks.composer.confirm.pages')
+                      : t('studio.tasks.composer.confirm.page')}
+                  </dt>
+                  <dd className='text-foreground'>
+                    {selectedPageLabels
+                      .map((pageNumber) => t('publication.nameSection.pageNumber', { n: pageNumber }))
+                      .join(', ')}
+                  </dd>
+                  {form.state.regionIds.length > 0 && form.state.pageIds.length === 1 && (
                     <>
                       <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.region')}</dt>
-                      <dd className='text-foreground'>{form.state.regionId}</dd>
+                      <dd className='text-foreground'>
+                        {selectedRegionLabels.join(', ') || t('studio.tasks.composer.regionSelected')}
+                      </dd>
                     </>
                   )}
                   <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.deadline')}</dt>

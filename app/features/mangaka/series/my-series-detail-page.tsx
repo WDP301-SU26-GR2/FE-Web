@@ -2,21 +2,16 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
-  Calendar,
   ChevronDown,
-  ChevronRight,
   ImageIcon,
   Loader2,
   Pencil,
-  ScrollText,
   Send,
   Trash2,
   Undo2,
   RefreshCw,
   RotateCcw,
   MessageSquareWarning,
-  UserCheck,
-  Users
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
@@ -439,7 +434,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             {/* Metadata grid */}
             <div className='grid grid-cols-1 gap-3 rounded-lg border border-border bg-background/40 p-3 text-sm sm:grid-cols-2 lg:grid-cols-3'>
               <MetaItem
-                icon={<Users className='h-3.5 w-3.5' />}
                 label={t('seriesDetail.demographic')}
                 value={
                   series.demographic
@@ -448,7 +442,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 }
               />
               <MetaItem
-                icon={<Calendar className='h-3.5 w-3.5' />}
                 label={t('seriesDetail.publicationType')}
                 value={
                   series.publicationType
@@ -457,7 +450,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 }
               />
               <MetaItem
-                icon={<UserCheck className='h-3.5 w-3.5' />}
                 label={t('seriesDetail.editor')}
                 value={
                   series.editor?.displayName
@@ -468,27 +460,23 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 }
               />
               <MetaItem
-                icon={<Calendar className='h-3.5 w-3.5' />}
                 label={t('seriesDetail.createdAt')}
                 value={formatDateTime(series.createdAt, currentLocale)}
               />
               {series.reviewStartedAt && (
                 <MetaItem
-                  icon={<Calendar className='h-3.5 w-3.5' />}
                   label={t('seriesDetail.reviewStartedAt')}
                   value={formatDateTime(series.reviewStartedAt, currentLocale)}
                 />
               )}
               {series.statusReason && series.status === 'REJECTED' && (
                 <MetaItem
-                  icon={<MessageSquareWarning className='h-3.5 w-3.5' />}
                   label={t('seriesDetail.statusReason')}
                   value={series.statusReason}
                 />
               )}
               {series.relationshipType && (
                 <MetaItem
-                  icon={<ChevronRight className='h-3.5 w-3.5' />}
                   label={t('seriesDetail.relationshipType')}
                   value={translate(
                     `seriesDetail.enums.relationshipType.${series.relationshipType}`,
@@ -504,7 +492,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       {/* PROPOSAL section */}
       <CollapsibleCard
         title={t('seriesDetail.proposal.title')}
-        icon={<ScrollText className='h-4 w-4 text-muted-foreground' />}
         rightSlot={
           proposal && proposalMetaClassName ? (
             <span
@@ -529,7 +516,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       {/* NAMES section */}
       <CollapsibleCard
         title={t('seriesDetail.names.title')}
-        icon={<ImageIcon className='h-4 w-4 text-muted-foreground' />}
         rightSlot={
           <span className='text-xs text-muted-foreground'>
             {t('seriesDetail.names.count', { count: sortedNames.length })}
@@ -657,16 +643,14 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
 // ─── Sub-components ────────────────────────────────────────────────────────
 
 type MetaItemProps = {
-  icon: React.ReactNode
   label: string
   value: React.ReactNode
 }
 
-function MetaItem({ icon, label, value }: MetaItemProps) {
+function MetaItem({ label, value }: MetaItemProps) {
   return (
-    <div className='flex items-start gap-2'>
-      <div className='mt-0.5 text-muted-foreground'>{icon}</div>
-      <div className='min-w-0 flex-1'>
+    <div className='min-w-0 border-l-2 border-primary/30 pl-3'>
+      <div className='min-w-0'>
         <div className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>{label}</div>
         <div className='truncate font-medium text-foreground'>{value}</div>
       </div>
@@ -676,7 +660,6 @@ function MetaItem({ icon, label, value }: MetaItemProps) {
 
 type CollapsibleCardProps = {
   title: React.ReactNode
-  icon?: React.ReactNode
   rightSlot?: React.ReactNode
   defaultCollapsed?: boolean
   children: React.ReactNode
@@ -687,7 +670,7 @@ type CollapsibleCardProps = {
  * - When `defaultCollapsed` is true, starts closed.
  * - User can always toggle afterwards.
  */
-function CollapsibleCard({ title, icon, rightSlot, defaultCollapsed = false, children }: CollapsibleCardProps) {
+function CollapsibleCard({ title, rightSlot, defaultCollapsed = false, children }: CollapsibleCardProps) {
   const [open, setOpen] = useState(!defaultCollapsed)
 
   return (
@@ -698,10 +681,7 @@ function CollapsibleCard({ title, icon, rightSlot, defaultCollapsed = false, chi
         aria-expanded={open}
         className='flex w-full items-center justify-between border-b border-border px-5 py-3 text-left transition-colors hover:bg-muted/40 cursor-pointer'
       >
-        <div className='flex items-center gap-2'>
-          {icon}
-          <h2 className='text-sm font-bold uppercase tracking-wider'>{title}</h2>
-        </div>
+        <h2 className='text-sm font-bold uppercase tracking-wider'>{title}</h2>
         <div className='flex items-center gap-2'>
           {rightSlot}
           <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
@@ -758,7 +738,6 @@ function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
           reads first and the visual blocks stay grouped at the bottom. */}
       <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
         <MetaItem
-          icon={<ScrollText className='h-3.5 w-3.5' />}
           label={t('seriesDetail.proposal.estimatedLength')}
           value={
             proposal.estimatedLength
@@ -767,7 +746,6 @@ function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
           }
         />
         <MetaItem
-          icon={<Calendar className='h-3.5 w-3.5' />}
           label={t('seriesDetail.proposal.createdAt')}
           value={formatDateTime(proposal.createdAt, locale)}
         />

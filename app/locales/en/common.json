@@ -1,5 +1,5 @@
 {
-  "appName": "Mangaka",
+  "appName": "Manga Creation Workflow and Publishing Management System",
   "language": "Language",
   "theme": "Theme",
   "light": "Light",
@@ -20,7 +20,7 @@
     "messageGeneric": "An unexpected error occurred."
   },
   "layout": {
-    "brand": "Mangaka Studio",
+    "brand": "Manga Creation Workflow and Publishing Management System",
     "brandPro": "Pro",
     "productionEnvironment": "Production Environment",
     "supportSection": "Support & Actions",
@@ -32,6 +32,16 @@
     "notificationsWithCount_other": "Notifications ({{count}} unread)",
     "settings": "Settings",
     "signOut": "Sign Out"
+  },
+  "notificationMenu": {
+    "label": "Unread notifications",
+    "title": "Notifications",
+    "unreadCount_one": "{{count}} unread notification",
+    "unreadCount_other": "{{count}} unread notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "You're all caught up.",
+    "noContent": "New notification",
+    "viewAll": "View all notifications"
   },
   "nav": {
     "home": "Home",

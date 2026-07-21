@@ -23,6 +23,7 @@
     "noActiveSeries": "Chưa có series đang sản xuất",
     "noRankings": "Chưa có dữ liệu xếp hạng",
     "noDeadline": "Không có hạn",
+    "deadline": "Hạn: {{date}}",
     "refresh": "Làm mới",
     "viewAllSeries": "Xem tất cả series",
     "loadError": "Không tải được dashboard",
@@ -128,10 +129,11 @@
       "activeNow": "Chỉ quan hệ đang hiệu lực"
     },
     "card": {
-      "unnamedAssistant": "Trợ lý #{{id}}",
+      "unnamedAssistant": "Trợ lý chưa đặt tên",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không gắn với series cụ thể",
+      "series": "Series: {{title}}",
       "terminatedReason": "Lý do: {{reason}}",
       "noReason": "Không ghi lý do",
       "ended": "Kết thúc {{date}}",
@@ -472,6 +474,7 @@
         "loadFailed": "Không thể tải danh sách chương."
       },
       "onHold": "Đang tạm dừng",
+      "deadline": "Hạn: {{date}}",
       "publishedAt": "Xuất bản {{date}}",
       "pages": "{{count}} trang",
       "chapterLabel": "Chương {{n}}",
@@ -897,7 +900,9 @@
       "selectPagePlaceholder": "— Chọn trang —",
       "selectRegion": "Chọn vùng (tuỳ chọn)",
       "wholePage": "Cả trang (không chọn vùng)",
-      "regionSelected": "Đã chọn vùng: {{id}}",
+      "selectRegions": "Chọn các vùng (tuỳ chọn)",
+      "selectRegionsHint": "Chọn một hoặc nhiều vùng trên trang, hoặc để trống để giao toàn bộ trang.",
+      "regionSelected": "Đã chọn vùng",
       "regionClear": "Bỏ chọn",
       "taskType": "Loại công việc",
       "taskTypeEnum": {
@@ -967,8 +972,8 @@
     "board": {
       "empty": "Chưa có nhiệm vụ nào.",
       "overdue": "Quá hạn",
-      "deadline": "Hạn",
-      "priority": "Ưu tiên",
+      "deadline": "Hạn: {{date}}",
+      "priority": "Ưu tiên: {{value}}",
       "approve": "Duyệt",
       "revision": "Yêu cầu sửa",
       "cancel": "Huỷ",
@@ -1007,10 +1012,14 @@
         "selectChapter": "Chọn chương",
         "selectChapterPlaceholder": "— Chọn chương —",
         "selectPage": "Chọn trang",
+        "selectMultiplePages": "Chọn một hoặc nhiều trang",
+        "multiplePagesHint": "Chọn nhiều trang sẽ tạo một nhóm task. Chỉ có thể chọn vùng khi giao cho một trang.",
         "selectPagePlaceholder": "— Chọn trang —",
         "selectRegion": "Chọn vùng (tuỳ chọn)",
         "wholePage": "Cả trang (không chọn vùng)",
-        "regionSelected": "Đã chọn vùng: {{id}}",
+        "selectRegions": "Chọn các vùng (tuỳ chọn)",
+        "selectRegionsHint": "Chọn một hoặc nhiều vùng trên trang, hoặc để trống để giao toàn bộ trang.",
+        "regionSelected": "Đã chọn vùng",
         "regionClear": "Bỏ chọn",
         "taskType": "Loại công việc",
         "taskTypeEnum": {
@@ -1044,6 +1053,7 @@
           "assistant": "Trợ lý",
           "taskType": "Loại công việc",
           "page": "Trang",
+          "pages": "Các trang",
           "region": "Vùng",
           "deadline": "Deadline",
           "priority": "Độ ưu tiên",
@@ -1081,8 +1091,9 @@
       "board": {
         "empty": "Chưa có nhiệm vụ nào.",
         "overdue": "Quá hạn",
-        "deadline": "Hạn",
-        "priority": "Ưu tiên",
+        "deadline": "Hạn: {{date}}",
+        "priority": "Ưu tiên: {{value}}",
+        "regions": "Vùng: {{count}}",
         "approve": "Duyệt",
         "revision": "Yêu cầu sửa",
         "cancel": "Huỷ"
@@ -1122,6 +1133,20 @@
       },
       "revisionPrompt": "Lý do yêu cầu sửa:",
       "cancelPrompt": "Lý do huỷ (có thể để trống):",
+      "revisionRequired": "Hãy mô tả nội dung cần sửa.",
+      "dialog": { "cancel": "Quay lại" },
+      "revisionDialog": {
+        "title": "Yêu cầu chỉnh sửa",
+        "description": "Gửi phản hồi cụ thể để Assistant cập nhật bài nộp.",
+        "label": "Nội dung cần chỉnh sửa",
+        "submit": "Gửi yêu cầu"
+      },
+      "cancelDialog": {
+        "title": "Huỷ nhiệm vụ",
+        "description": "Bạn có thể ghi chú lý do huỷ để Assistant nắm được thông tin.",
+        "label": "Lý do huỷ (không bắt buộc)",
+        "submit": "Huỷ nhiệm vụ"
+      },
       "toast": {
         "approved": "Đã duyệt nhiệm vụ.",
         "approveFailed": "Không thể duyệt.",

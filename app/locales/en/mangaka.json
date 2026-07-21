@@ -23,6 +23,7 @@
     "noActiveSeries": "No series in production",
     "noRankings": "No ranking data yet",
     "noDeadline": "No deadline",
+    "deadline": "Deadline: {{date}}",
     "refresh": "Refresh",
     "viewAllSeries": "View all series",
     "loadError": "Failed to load dashboard",
@@ -128,10 +129,11 @@
       "activeNow": "Only active right now"
     },
     "card": {
-      "unnamedAssistant": "Assistant #{{id}}",
+      "unnamedAssistant": "Unnamed assistant",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "From {{from}}",
       "seriesNone": "No series context",
+      "series": "Series: {{title}}",
       "terminatedReason": "Reason: {{reason}}",
       "noReason": "No reason recorded",
       "ended": "Ended {{date}}",
@@ -472,6 +474,7 @@
         "loadFailed": "Failed to load the chapter list."
       },
       "onHold": "On hold",
+      "deadline": "Deadline: {{date}}",
       "publishedAt": "Published {{date}}",
       "pages": "{{count}} pages",
       "chapterLabel": "Chapter {{n}}",
@@ -896,7 +899,9 @@
       "selectPagePlaceholder": "— Select page —",
       "selectRegion": "Select region (optional)",
       "wholePage": "Whole page (no region)",
-      "regionSelected": "Region selected: {{id}}",
+      "selectRegions": "Select regions (optional)",
+      "selectRegionsHint": "Choose one or more regions on this page, or leave empty to assign the whole page.",
+      "regionSelected": "Region selected",
       "regionClear": "Clear",
       "taskType": "Task type",
       "taskTypeEnum": {
@@ -966,8 +971,8 @@
     "board": {
       "empty": "No tasks yet.",
       "overdue": "Overdue",
-      "deadline": "Deadline",
-      "priority": "Priority",
+      "deadline": "Deadline: {{date}}",
+      "priority": "Priority: {{value}}",
       "approve": "Approve",
       "revision": "Request revision",
       "cancel": "Cancel",
@@ -1006,10 +1011,14 @@
         "selectChapter": "Select Chapter",
         "selectChapterPlaceholder": "— Select chapter —",
         "selectPage": "Select page",
+        "selectMultiplePages": "Select one or more pages",
+        "multiplePagesHint": "Selecting multiple pages creates one grouped task. Region selection is available for a single page only.",
         "selectPagePlaceholder": "— Select page —",
         "selectRegion": "Select region (optional)",
         "wholePage": "Whole page (no region)",
-        "regionSelected": "Region selected: {{id}}",
+        "selectRegions": "Select regions (optional)",
+        "selectRegionsHint": "Choose one or more regions on this page, or leave empty to assign the whole page.",
+        "regionSelected": "Region selected",
         "regionClear": "Clear",
         "taskType": "Task type",
         "taskTypeEnum": {
@@ -1043,6 +1052,7 @@
           "assistant": "Assistant",
           "taskType": "Task type",
           "page": "Page",
+          "pages": "Pages",
           "region": "Region",
           "deadline": "Deadline",
           "priority": "Priority",
@@ -1080,8 +1090,9 @@
       "board": {
         "empty": "No tasks yet.",
         "overdue": "Overdue",
-        "deadline": "Deadline",
-        "priority": "Priority",
+        "deadline": "Deadline: {{date}}",
+        "priority": "Priority: {{value}}",
+        "regions": "Regions: {{count}}",
         "approve": "Approve",
         "revision": "Request revision",
         "cancel": "Cancel"
@@ -1121,6 +1132,20 @@
       },
       "revisionPrompt": "Revision note:",
       "cancelPrompt": "Cancel reason (optional):",
+      "revisionRequired": "Describe what needs to be revised.",
+      "dialog": { "cancel": "Go back" },
+      "revisionDialog": {
+        "title": "Request revision",
+        "description": "Send clear feedback so the Assistant can update the submission.",
+        "label": "Required changes",
+        "submit": "Send request"
+      },
+      "cancelDialog": {
+        "title": "Cancel task",
+        "description": "You can leave a note to explain the cancellation to the Assistant.",
+        "label": "Cancellation reason (optional)",
+        "submit": "Cancel task"
+      },
       "toast": {
         "approved": "Task approved.",
         "approvalFailed": "Couldn't approve.",

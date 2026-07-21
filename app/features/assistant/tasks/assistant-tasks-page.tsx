@@ -44,13 +44,6 @@ export function AssistantTasksPage() {
           </div>
           <p className='mt-1 text-sm text-muted-foreground'>{t('tasks.subtitle')}</p>
         </div>
-        <a
-          href='/dashboard/assistant'
-          className='inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted'
-        >
-          <ArrowLeft className='h-3.5 w-3.5' />
-          {t('tasks.back')}
-        </a>
       </div>
 
       <div className='flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-sm'>

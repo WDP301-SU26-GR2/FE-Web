@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react'
-import { taskControllerCreateTask } from '~/api/operations/task/task'
-import type { CreateTaskBodyDto, TaskResDtoOutput } from '~/api/model/task'
+import { taskControllerCreateTask, taskControllerCreateTaskGroup } from '~/api/operations/task/task'
+import type { CreateTaskBodyDto, CreateTaskGroupBodyDto, TaskResDtoOutput } from '~/api/model/task'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export interface UseAssignTaskResult {
   /** Fire `POST /tasks`. Returns the created task on success. */
   assignTask: (input: CreateTaskBodyDto) => Promise<{ success: boolean; data?: TaskResDtoOutput; error?: string }>
+  /** Fire `POST /tasks/group` for one shared task across multiple whole pages. */
+  assignTaskGroup: (input: CreateTaskGroupBodyDto) => Promise<{ success: boolean; error?: string }>
   isSubmitting: boolean
 }
 
@@ -41,5 +43,21 @@ export function useAssignTask(): UseAssignTaskResult {
     [isSubmitting]
   )
 
-  return { assignTask, isSubmitting }
+  const assignTaskGroup = useCallback(
+    async (input: CreateTaskGroupBodyDto): Promise<{ success: boolean; error?: string }> => {
+      if (isSubmitting) return { success: false, error: 'Đang giao task, vui lòng đợi.' }
+      setIsSubmitting(true)
+      try {
+        await taskControllerCreateTaskGroup(input)
+        return { success: true }
+      } catch (err) {
+        return { success: false, error: extractApiErrorMessage(err, 'Không thể giao nhóm task. Vui lòng thử lại.') }
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [isSubmitting]
+  )
+
+  return { assignTask, assignTaskGroup, isSubmitting }
 }

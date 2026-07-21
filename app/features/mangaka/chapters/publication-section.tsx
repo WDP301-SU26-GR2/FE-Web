@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookPlus, Calendar, ChevronDown, ChevronRight, ImageIcon, Loader2 } from 'lucide-react'
+import { BookPlus, ChevronDown, ChevronRight, ImageIcon, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
@@ -202,10 +202,7 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
           </div>
           <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground'>
             {deadline && (
-              <span className='inline-flex items-center gap-1'>
-                <Calendar className='h-3 w-3' />
-                {formatDate(deadline, locale)}
-              </span>
+              <span>{t('seriesDetail.publication.deadline', { date: formatDate(deadline, locale) })}</span>
             )}
             {chapter.publishedAt && (
               <span className='inline-flex items-center gap-1'>
