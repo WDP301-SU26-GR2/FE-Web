@@ -6,18 +6,21 @@ import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting
 import type { BoardMeetingSession } from '~/api/manual/board-meeting'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import { BoardHeader, BoardPanel, EmptyState, StatusBadge, useBoardPolling } from '../components/board-ui'
+import { SeriesMeetingBrief, type BoardMeetingSeriesBrief } from './components/series-meeting-brief'
 import { useSessionVoteProgress } from './use-session-vote-progress'
 
 export function BoardSessionDetailPage({
   session,
   decisions,
   phase,
-  messages
+  messages,
+  seriesBriefs
 }: {
   session: BoardMeetingSession
   decisions: BoardDecisionResDtoOutput[]
   phase: BoardSessionPhase
   messages: BoardMessage[]
+  seriesBriefs: BoardMeetingSeriesBrief[]
 }) {
   const { t } = useTranslation('board')
   useBoardPolling()
@@ -57,13 +60,26 @@ export function BoardSessionDetailPage({
       <BoardPanel title={t('sessions.participants')}>
         <div className='flex flex-wrap gap-2'>
           {(session.members ?? []).map((member) => (
-            <span key={member.id} className='inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold'>
+            <span
+              key={member.id}
+              className='inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold'
+            >
               <Users className='size-3.5 text-primary' />
               {member.displayName || member.id}
             </span>
           ))}
         </div>
       </BoardPanel>
+      {seriesBriefs.length > 0 && (
+        <BoardPanel title={t('sessions.seriesBrief.title')}>
+          <p className='mb-4 text-sm text-muted-foreground'>{t('sessions.seriesBrief.description')}</p>
+          <div className='grid gap-4'>
+            {seriesBriefs.map((brief) => (
+              <SeriesMeetingBrief key={brief.series.id} brief={brief} />
+            ))}
+          </div>
+        </BoardPanel>
+      )}
       <MeetingChat
         messages={meeting.messages}
         disabled={session.status !== 'ACTIVE' || meeting.phase === 'VOTING'}

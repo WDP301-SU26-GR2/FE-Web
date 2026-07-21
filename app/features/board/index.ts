@@ -1,6 +1,7 @@
 export { BoardDashboardPage } from './dashboard/board-dashboard-page'
 export { BoardSessionsPage } from './sessions/board-sessions-page'
 export { BoardSessionDetailPage } from './sessions/board-session-detail-page'
+export type { BoardMeetingSeriesBrief } from './sessions/components/series-meeting-brief'
 export { BoardDecisionsPage } from './decisions/board-decisions-page'
 export { BoardDecisionDetailPage } from './decisions/board-decision-detail-page'
 export { BoardReportsPage } from './reports/board-reports-page'

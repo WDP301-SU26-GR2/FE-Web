@@ -66,6 +66,7 @@ export function StatusBadge({ value }: { value: string }) {
       `filters.paymentStatuses.${value}`,
       `filters.reprintStatuses.${value}`,
       `filters.transferStatuses.${value}`,
+      `sessions.seriesBrief.seriesStatuses.${value}`,
       `deadlines.statuses.${value}`,
       `rankings.riskLevels.${value}`
     ],
