@@ -33,7 +33,7 @@ export type DashboardRole = 'MANGAKA' | 'ASSISTANT' | 'EDITOR' | 'BOARD' | 'SUPE
 
 export interface DashboardNavConfig {
   navItems: NavItem[]
-  profile: { name: string; role: string; badge: string }
+  profileFallback: { name: string; role: string; badge: string }
   headerActions?: ReactNode
 }
 
@@ -80,9 +80,9 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
       { label: t('nav.assistantDirectory'), href: '/dashboard/mangaka/assistants', icon: Users },
       { label: t('nav.ranking'), href: '/dashboard/mangaka/rankings', icon: TrendingUp },
       { label: t('nav.contracts'), href: '/dashboard/mangaka/contracts', icon: FileText },
-      { label: t('nav.notifications'), href: '/dashboard/mangaka/notifications', icon: Bell }
+      { label: t('nav.notifications'), href: '/dashboard/mangaka/notifications', icon: Bell, badge: true }
     ]),
-    profile: {
+    profileFallback: {
       name: t('profile.mangakaName'),
       role: t('profile.mangakaRole'),
       badge: t('profile.mangakaBadge')
@@ -103,9 +103,9 @@ function buildAssistantConfig(t: ReturnType<typeof useTranslation>['t']): Dashbo
       { label: t('nav.myTasks'), href: '/dashboard/assistant/tasks', icon: ClipboardList },
       { label: t('nav.studio'), href: '/dashboard/assistant/studio', icon: Briefcase },
       { label: t('nav.invites'), href: '/dashboard/assistant/invites', icon: Mail },
-      { label: t('nav.notifications'), href: '/dashboard/assistant/notifications', icon: Bell }
+      { label: t('nav.notifications'), href: '/dashboard/assistant/notifications', icon: Bell, badge: true }
     ]),
-    profile: {
+    profileFallback: {
       name: t('profile.assistantName'),
       role: t('profile.assistantRole'),
       badge: t('profile.assistantBadge')
@@ -123,9 +123,9 @@ function buildEditorConfig(t: ReturnType<typeof useTranslation>['t']): Dashboard
       { label: t('nav.contracts'), href: '/dashboard/editor/contracts', icon: ScrollText },
       { label: t('nav.operations'), href: '/dashboard/editor/operations', icon: Wrench },
       { label: t('nav.publication'), href: '/dashboard/editor/publication', icon: Printer },
-      { label: t('nav.notifications'), href: '/dashboard/editor/notifications', icon: Bell }
+      { label: t('nav.notifications'), href: '/dashboard/editor/notifications', icon: Bell, badge: true }
     ]),
-    profile: {
+    profileFallback: {
       name: t('profile.editorName'),
       role: t('profile.editorRole'),
       badge: t('profile.editorBadge')
@@ -142,9 +142,9 @@ function buildBoardConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
       { label: t('nav.contracts'), href: '/dashboard/board/contracts', icon: FileText },
       { label: t('nav.payments'), href: '/dashboard/board/payments', icon: Briefcase },
       { label: t('nav.operations'), href: '/dashboard/board/deadlines', icon: ClipboardList },
-      { label: t('nav.notifications'), href: '/dashboard/board/notifications', icon: Bell }
+      { label: t('nav.notifications'), href: '/dashboard/board/notifications', icon: Bell, badge: true }
     ]),
-    profile: {
+    profileFallback: {
       name: t('profile.boardName'),
       role: t('profile.boardRole'),
       badge: t('profile.boardBadge')
@@ -160,9 +160,9 @@ function buildAdminConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
       { label: t('nav.users'), href: '/dashboard/admin/users', icon: Users },
       { label: t('nav.audit'), href: '/dashboard/admin/audit', icon: ScrollText },
       { label: t('nav.systemSettings'), href: '/dashboard/admin/settings', icon: Settings2 },
-      { label: t('nav.notifications'), href: '/dashboard/admin/notifications', icon: Bell }
+      { label: t('nav.notifications'), href: '/dashboard/admin/notifications', icon: Bell, badge: true }
     ]),
-    profile: {
+    profileFallback: {
       name: t('profile.adminName'),
       role: t('profile.adminRole'),
       badge: t('profile.adminBadge')

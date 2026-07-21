@@ -28,6 +28,8 @@
     "closeMenu": "Close menu",
     "openMenu": "Open menu",
     "notifications": "Notifications",
+    "notificationsWithCount_one": "Notifications ({{count}} unread)",
+    "notificationsWithCount_other": "Notifications ({{count}} unread)",
     "settings": "Settings",
     "signOut": "Sign Out"
   },
@@ -69,6 +71,13 @@
     "adminName": "Super Admin",
     "adminRole": "Admin",
     "adminBadge": "SUPER_ADMIN"
+  },
+  "roleEnum": {
+    "MANGAKA": "Mangaka",
+    "ASSISTANT": "Assistant",
+    "EDITOR": "Editor",
+    "BOARD_MEMBER": "Board Member",
+    "SUPER_ADMIN": "Admin"
   },
   "dashboard": {
     "assistant": "Assistant Dashboard",

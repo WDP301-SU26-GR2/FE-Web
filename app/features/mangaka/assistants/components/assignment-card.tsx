@@ -1,18 +1,17 @@
 import { useTranslation } from 'react-i18next'
-import { Calendar, ListChecks, Sparkles, XCircle, Hash, Briefcase } from 'lucide-react'
+import { Calendar, ListChecks, Plus, Sparkles, XCircle, Hash, Briefcase } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { AssignmentListResDtoOutputItemsItemStatus } from '~/api/model/studio/assignmentListResDtoOutputItemsItemStatus'
 import type { AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem } from '~/api/model/studio/assignmentListResDtoOutputItemsItemAssignedTaskTypesItem'
-import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 
 export type AssignmentCardProps = {
   assignment: AssignmentListResDtoOutputItemsItem
-  /** AssistantProfile from the parallel pool. May be null when the pool fetch
-   *  was capped and this assistantId isn't in the first 100. The card falls
-   *  back to a generated placeholder name. */
-  assistant: AssistantDirectoryListResDtoOutputItemsItem | null
+  /** When provided, renders a "Assign task" CTA in the footer (only enabled
+   *  while the assignment is ACTIVE — you can only assign work to a hired
+   *  assistant whose hire window covers "now"). */
+  onAssignClick?: (assignment: AssignmentListResDtoOutputItemsItem) => void
 }
 
 const STATUS_META: Record<AssignmentListResDtoOutputItemsItemStatus, { className: string }> = {
@@ -74,14 +73,16 @@ function isKnownTaskType(value: string): value is AssignmentListResDtoOutputItem
  * - When the pool is missing the assistant, fall back to a "Trợ lý #xxxxxxxx"
  *   placeholder so the card still renders.
  */
-export function AssignmentCard({ assignment, assistant }: AssignmentCardProps) {
+export function AssignmentCard({ assignment, onAssignClick }: AssignmentCardProps) {
   const { t, i18n } = useTranslation('mangaka')
   const locale = i18n.language
 
+  // Per Spec 20 the BE embeds `assistant?: UserMini` directly on the assignment.
+  const embeddedAssistant = assignment.assistant
   const statusMeta = STATUS_META[assignment.status] ?? STATUS_META.ACTIVE
   const displayName =
-    assistant?.displayName ?? t('myStudio.card.unnamedAssistant', { id: formatShortId(assignment.assistantId) })
-  const fallbackSeed = assistant?.displayName ?? assignment.assistantId
+    embeddedAssistant?.displayName ?? t('myStudio.card.unnamedAssistant', { id: formatShortId(assignment.assistantId) })
+  const fallbackSeed = embeddedAssistant?.displayName ?? assignment.assistantId
   const hireFrom = formatDate(assignment.hireStart, locale)
   const hireTo = formatDate(assignment.hireEnd, locale)
 
@@ -97,7 +98,7 @@ export function AssignmentCard({ assignment, assistant }: AssignmentCardProps) {
           )}
           aria-hidden='true'
         >
-          {getInitials(assistant?.displayName, assignment.assistantId)}
+          {getInitials(embeddedAssistant?.displayName, assignment.assistantId)}
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-1.5'>
@@ -173,9 +174,30 @@ export function AssignmentCard({ assignment, assistant }: AssignmentCardProps) {
         </div>
       )}
 
-      <footer className='mt-auto flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground'>
+      <footer className='mt-auto flex items-center justify-between gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground'>
         <span>{t('myStudio.card.ended', { date: formatDate(assignment.createdAt, locale) || '—' })}</span>
-        <span>{t(`myStudio.card.${assignment.activeNow ? 'activeNowBadge' : 'endedBadge'}`)}</span>
+        <div className='flex items-center gap-2'>
+          <span>{t(`myStudio.card.${assignment.activeNow ? 'activeNowBadge' : 'endedBadge'}`)}</span>
+          {onAssignClick && (
+            <button
+              type='button'
+              onClick={() => onAssignClick(assignment)}
+              disabled={!assignment.activeNow}
+              aria-label={t('studio.tasks.composer.assignFor', {
+                name: embeddedAssistant?.displayName ?? formatShortId(assignment.assistantId)
+              })}
+              title={
+                assignment.activeNow
+                  ? t('studio.tasks.composer.assignCta')
+                  : t('studio.tasks.composer.assignDisabledReason')
+              }
+              className='inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
+            >
+              <Plus className='h-3 w-3' />
+              <span>{t('studio.tasks.composer.assignCta')}</span>
+            </button>
+          )}
+        </div>
       </footer>
     </article>
   )

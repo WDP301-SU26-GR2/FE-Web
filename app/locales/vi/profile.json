@@ -17,6 +17,63 @@
   "ratingCount_one": "{{count}} đánh giá",
   "ratingCount_other": "{{count}} đánh giá",
   "editTitle": "Chỉnh sửa hồ sơ — {{mode}}",
+  "accountInfo": {
+    "title": "Thông tin tài khoản",
+    "edit": "Sửa tài khoản",
+    "email": "Email",
+    "phoneNumber": "Số điện thoại",
+    "name": "Tên",
+    "displayName": "Tên hiển thị",
+    "displayNamePlaceholder": "Để trống = dùng tên thật",
+    "displayNameHint": "Để trống để dùng tên thật. Tên hiển thị công khai với mọi người.",
+    "avatar": "Ảnh đại diện",
+    "avatarHint": "PNG, JPEG, WebP — tối đa 15MB.",
+    "role": "Vai trò",
+    "memberSince": "Tham gia",
+    "notSet": "Chưa cập nhật",
+    "characters": "ký tự",
+    "emailVerified": "Đã xác thực email",
+    "emailUnverified": "Chưa xác thực email",
+    "mustChangePassword": "Bạn cần đổi mật khẩu trước khi tiếp tục sử dụng.",
+    "saveSuccess": "Đã cập nhật thông tin tài khoản.",
+    "avatarErrors": {
+      "type": "Chỉ chấp nhận file PNG, JPEG, hoặc WebP.",
+      "size": "File phải nhỏ hơn hoặc bằng {{max}}MB.",
+      "uploadGeneric": "Upload thất bại."
+    },
+    "errors": {
+      "nameTooShort": "Tên phải có ít nhất 2 ký tự.",
+      "nameTooLong": "Tên tối đa 100 ký tự.",
+      "displayNameTooLong": "Tên hiển thị tối đa 100 ký tự.",
+      "phoneInvalid": "Số điện thoại không hợp lệ. Dùng định dạng E.164, vd: +84912345678",
+      "saveGeneric": "Không thể lưu thông tin tài khoản. Vui lòng thử lại."
+    },
+    "roleEnum": {
+      "MANGAKA": "Mangaka",
+      "ASSISTANT": "Trợ lý",
+      "EDITOR": "Biên tập viên",
+      "BOARD_MEMBER": "Thành viên Hội đồng",
+      "SUPER_ADMIN": "Quản trị viên"
+    },
+    "statusEnum": {
+      "ACTIVE": "Hoạt động",
+      "INACTIVE": "Chưa kích hoạt",
+      "BANNED": "Bị cấm",
+      "BLOCKED": "Bị khóa"
+    }
+  },
+  "avatar": {
+    "change": "Đổi ảnh",
+    "remove": "Xoá",
+    "uploading": "Đang tải lên...",
+    "alt": "Ảnh đại diện",
+    "hint": "PNG, JPEG, WebP — tối đa 15MB.",
+    "errors": {
+      "type": "Chỉ chấp nhận file PNG, JPEG, hoặc WebP.",
+      "size": "File phải nhỏ hơn hoặc bằng {{max}}MB.",
+      "uploadGeneric": "Upload thất bại."
+    }
+  },
   "sections": {
     "genres": "Thể loại",
     "specializations": "Chuyên môn",

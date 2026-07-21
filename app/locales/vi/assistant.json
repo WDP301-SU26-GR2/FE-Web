@@ -56,17 +56,37 @@
     },
     "card": {
       "taskType": "Loại công việc",
+      "taskTypeNone": "Chưa phân loại",
       "priority": "Độ ưu tiên",
       "deadline": "Deadline",
       "deadlineNone": "Không có deadline",
       "versions": "{{count}} bản nộp",
       "versions_other": "{{count}} bản nộp",
-      "pageIdLabel": "Page ID",
+      "pageLabel": "Trang #{{id}}",
+      "region": "Vùng được giao",
+      "regionAssigned": "Vùng #{{id}}",
+      "fullPage": "Toàn trang (không gắn vùng)",
       "statusReason": "Ghi chú"
+    },
+    "dialog": {
+      "title": "Trang {{n}} — #{{id}}",
+      "description": "Xem ảnh trang được giao, vùng cần xử lý và tải file gốc về máy.",
+      "loading": "Đang tải ảnh trang...",
+      "loadFailed": "Không tải được ảnh trang.",
+      "noOriginalFile": "Trang này chưa có file ảnh gốc.",
+      "pageUnavailable": "Không tìm thấy trang này trong các chương bạn đang tham gia.",
+      "imageAlt": "Trang {{n}}",
+      "regionCount_one": "{{count}} vùng khớp",
+      "regionCount_other": "{{count}} vùng khớp",
+      "fullPageHint": "Nhiệm vụ toàn trang (không gắn vùng cụ thể)",
+      "downloadOriginal": "Tải ảnh gốc về máy",
+      "downloadFailed": "Không tải được file gốc. Vui lòng thử lại."
     },
     "actions": {
       "start": "Bắt đầu task",
-      "submit": "Nộp kết quả"
+      "submit": "Nộp kết quả",
+      "resultFile": "File kết quả",
+      "selectedFile": "Đã chọn: {{name}} ({{size}})"
     },
     "pagination": {
       "previousPage": "Trang trước",
@@ -210,6 +230,12 @@
     "item": {
       "noContent": "(không có nội dung)",
       "openTarget": "Mở",
+      "openChapter": "Mở chapter",
+      "openTask": "Mở nhiệm vụ",
+      "openContract": "Mở hợp đồng",
+      "openDeadline": "Mở deadline",
+      "openAssistant": "Mở trợ lý",
+      "openRevision": "Mở vòng sửa",
       "reference": "Tham chiếu: {{type}} • {{id}}"
     },
     "actions": {

@@ -119,6 +119,7 @@ export function AssistantStudioPage() {
               to={to}
               total={total}
               tKeyPrefix='studio.pagination'
+              t={t}
             />
           </>
         )}

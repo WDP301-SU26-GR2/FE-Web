@@ -1,7 +1,11 @@
 {
+  "common": {
+    "retry": "Retry"
+  },
   "dashboard": {
     "title": "Production Dashboard",
     "subtitle": "Welcome back. You have {{count}} critical tasks requiring immediate attention.",
+    "subtitleIdle": "Welcome back. Everything is running smoothly.",
     "criticalDeadlines": "Critical Deadlines",
     "actionRequired": "ACTION REQUIRED",
     "dueInHours": "Due in {{hours}} hours",
@@ -14,7 +18,32 @@
     "actionInbox": "Action Inbox",
     "uploadBatch": "Upload Batch",
     "editorSupport": "Editor Support",
-    "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Sync: {{time}} ago"
+    "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Sync: {{time}} ago",
+    "noCriticalDeadlines": "No critical deadlines",
+    "noActiveSeries": "No series in production",
+    "noRankings": "No ranking data yet",
+    "noDeadline": "No deadline",
+    "refresh": "Refresh",
+    "viewAllSeries": "View all series",
+    "loadError": "Failed to load dashboard",
+    "studio": {
+      "subtitleDraft": "Draft",
+      "subtitleInProduction": "In Production",
+      "subtitleEditorReview": "Editor Review",
+      "subtitleEditorRevision": "Editor Revision",
+      "subtitleReadyForPrint": "Ready for Print",
+      "subtitleAwaitingCoOwner": "Awaiting Co-owner",
+      "subtitlePublished": "Published",
+      "chapterLabel": "Ch.{{number}} {{title}}"
+    },
+    "inbox": {
+      "notifications": "{{count}} unread notifications",
+      "notificationsDesc": "Updates from Editor, Board, and system",
+      "revisions": "{{count}} open revision requests",
+      "revisionsDesc": "Editor has requested revisions to proposal or manuscript",
+      "allClear": "All caught up",
+      "allClearDesc": "No pending actions"
+    }
   },
   "assistantDirectory": {
     "title": "Assistant Directory",
@@ -243,6 +272,7 @@
     "inReviewQueue": "In review queue",
     "createdAt": "Created at",
     "reviewStartedAt": "Review started at",
+    "statusReason": "Reason",
     "revisions": {
       "title": "Editor revision requests",
       "round": "Round {{round}}",
@@ -383,6 +413,10 @@
         "confirm": "Withdraw proposal",
         "success": "Proposal withdrawn."
       },
+      "reopen": {
+        "button": "Reopen",
+        "success": "Proposal reopened. Back to draft to edit and resubmit."
+      },
       "resubmitProposal": {
         "button": "Resubmit proposal",
         "success": "Proposal resubmitted for review."
@@ -397,6 +431,7 @@
         "ProposalNotDeletable": "Only a draft proposal can be deleted.",
         "InvalidProposalState": "The proposal is not waiting for resubmission.",
         "InvalidNameState": "The sample Name is not waiting for resubmission.",
+        "InvalidSeriesTransition": "The series is not in a state that allows this action.",
         "SeriesNotFound": "The series no longer exists."
       }
     },
@@ -591,10 +626,9 @@
       "APPROVED": "Approved"
     },
     "pageStatus": {
-      "NOT_STARTED": "Not started",
-      "IN_PROGRESS": "In progress",
-      "COMPOSITE_READY": "Composite ready",
-      "COMPLETED": "Completed"
+      "DRAFT": "Draft",
+      "COMPLETED": "Completed",
+      "REVISING": "Revision requested"
     },
     "statusPill": {
       "label": "Storyboard"
@@ -638,15 +672,17 @@
       "emptyTitle": "No pages yet",
       "emptyDesc": "Upload your first pencil/ink page below to start production.",
       "backToTop": "Back to top",
-      "compositeBadge": "Composite",
       "done": "Done",
-      "advance": "Advance → {{to}}",
+      "replaceCompositeHint": "Pick a new composite file. The previous one is replaced.",
+      "chooseFile": "Choose file",
       "uploadError": "Could not upload the image.",
       "composer": {
         "title": "Upload page {{n}}",
         "cancel": "Cancel",
         "dropOrClick": "Drop an image here or click to choose",
-        "submit": "Upload page {{n}}"
+        "submit": "Upload page {{n}}",
+        "allowedTypes": "PNG, JPG, WEBP, or PDF (max 15MB)",
+        "chooseAnother": "Choose a different file"
       },
       "toc": {
         "title": "Pages",
@@ -668,17 +704,62 @@
           "BOARD_MEMBER": "Board",
           "SUPER_ADMIN": "Admin"
         }
+      },
+      "delete": {
+        "confirmTitle": "Delete page {{n}}?",
+        "confirmDesc": "This action cannot be undone. All related regions and tasks will also be deleted.",
+        "confirmButton": "Delete page",
+        "cancellingButton": "Cancel",
+        "success": "Page deleted.",
+        "errorHasApprovedTasks": "Cannot delete a page with approved tasks.",
+        "errorPageNotEditable": "This page is locked and cannot be deleted.",
+        "errorChapterOnHold": "Chapter is on hold. Resume it first."
+      },
+      "deleteBulk": {
+        "enterSelectMode": "Select pages to delete",
+        "selectAll": "Select all",
+        "deselectAll": "Deselect all",
+        "selectedCount": "{{count}} pages selected",
+        "confirmTitle": "Delete {{count}} pages?",
+        "confirmDesc": "This action cannot be undone. All related regions and tasks will also be deleted.",
+        "confirmButton": "Delete {{count}} pages",
+        "success": "Deleted {{pages}} pages, {{regions}} regions, {{tasks}} tasks.",
+        "errorPageNotEditable": "Some pages are locked and cannot be deleted.",
+        "errorHasApprovedTasks": "Some pages have approved tasks — cannot delete.",
+        "errorPageNotFound": "Some pages do not exist or do not belong to this chapter.",
+        "errorChapterOnHold": "Chapter is on hold. Resume it first.",
+        "errorAccessDenied": "You do not have permission to delete these pages."
+      },
+      "updatePage": {
+        "dialogTitle": "Edit page",
+        "imageLabel": "Edited image",
+        "confirm": "Save"
+      },
+      "updatePageNumber": {
+        "dialogTitle": "Change page number",
+        "currentLabel": "Current number",
+        "newLabel": "New number",
+        "cancel": "Cancel",
+        "confirm": "Save",
+        "saving": "Saving...",
+        "success": "Page number updated.",
+        "errorDuplicate": "This page number is already in use in this chapter.",
+        "errorGeneric": "Could not update page number."
       }
     },
     "manuscript": {
       "label": "Manuscript",
       "onHold": "On hold",
-      "progress": "{{completed}}/{{total}} pages · {{percent}}%",
+      "progress": "{{ready}}/{{total}} ready · {{pending}} pending · {{percent}}%",
       "completePagesHint": "Complete every page before submitting the manuscript to the Editor.",
+      "noPagesHint": "Upload at least 1 page before submitting the manuscript.",
+      "tasksPendingHint": "Please complete all tasks (assigned to assistants) before submitting the manuscript.",
+      "readyForPrintHint": "Manuscript is ready. Waiting for the Editor to publish.",
+      "coOwnerPending": "Waiting for the co-owner to approve before publishing.",
+      "publishedHint": "Chapter has been published successfully.",
       "status": {
         "DRAFT": "Draft",
         "IN_PRODUCTION": "In production",
-        "COMPOSITE_REVIEW": "Composite review",
         "EDITOR_REVIEW": "Editor review",
         "EDITOR_REVISION": "Editor revision",
         "READY_FOR_PRINT": "Ready for print",
@@ -686,11 +767,6 @@
         "PUBLISHED": "Published"
       },
       "actions": {
-        "markCompositeReady": {
-          "button": "Start composite review",
-          "success": "Manuscript moved to composite review.",
-          "error": "Could not start composite review."
-        },
         "submit": {
           "button": "Submit manuscript",
           "success": "Manuscript submitted to the Editor.",
@@ -900,11 +976,13 @@
       "cancelPrompt": "Cancellation reason (optional):"
     },
     "toast": {
+      "created": "Task assigned.",
       "approved": "Task approved.",
       "revisionRequested": "Revision requested.",
       "cancelled": "Task cancelled."
     },
     "pagination": {
+      "showing": "Showing {{from}}-{{to}} / {{total}}",
       "prev": "Previous",
       "next": "Next"
     }
@@ -956,8 +1034,13 @@
           "work": "Work",
           "confirm": "Confirm"
         },
+        "assignCta": "Assign task",
+        "assignFor": "Assign task to {{name}}",
+        "assignDisabledReason": "This assistant is not currently hired (no active collaboration).",
+        "allowedTaskTypesHint": "This assistant was hired for: {{types}}. Other task types will be rejected.",
         "confirm": {
           "description": "Review the information before assigning the task.",
+          "assistant": "Assistant",
           "taskType": "Task type",
           "page": "Page",
           "region": "Region",
@@ -1007,6 +1090,73 @@
         "prev": "Previous",
         "next": "Next"
       }
+    },
+    "tasksTab": {
+      "selectSeries": "Series",
+      "selectSeriesPlaceholder": "-- Select a series --",
+      "selectChapter": "Chapter",
+      "selectChapterPlaceholder": "-- Select a chapter --",
+      "selectPage": "Page",
+      "selectPagePlaceholder": "-- Select a page --",
+      "selectSeriesFirst": "Pick a series first",
+      "selectChapterFirst": "Pick a chapter first",
+      "loading": "Loading...",
+      "seriesNone": "No series selected",
+      "chapterNone": "No chapter selected",
+      "pageNone": "No page selected",
+      "chapterLabel": "Chapter {{n}}",
+      "pageLabel": "Page {{n}}",
+      "viewAll": "All tasks",
+      "enableFilter": "Filter by series",
+      "showAll": "Show all",
+      "allSeries": "All series",
+      "allChapters": "All chapters",
+      "allPages": "All pages",
+      "allStatuses": "All",
+      "clearFilters": "Clear filters",
+      "empty": {
+        "pickSeries": "Pick a series to get started.",
+        "pickChapter": "Pick a chapter within the series.",
+        "pickPage": "Pick a page within the chapter to see its tasks."
+      },
+      "revisionPrompt": "Revision note:",
+      "cancelPrompt": "Cancel reason (optional):",
+      "toast": {
+        "approved": "Task approved.",
+        "approvalFailed": "Couldn't approve.",
+        "revisionRequested": "Revision requested.",
+        "revisionFailed": "Couldn't request revision.",
+        "cancelled": "Task cancelled.",
+        "cancelFailed": "Couldn't cancel the task."
+      },
+      "errors": {
+        "loadSeriesFailed": "Couldn't load the series list.",
+        "loadChaptersFailed": "Couldn't load the chapters.",
+        "loadPagesFailed": "Couldn't load the pages."
+      },
+      "image": {
+        "original": "Original image",
+        "submitted": "Submitted image",
+        "noImage": "No image"
+      },
+      "assistant": "Assistant",
+      "latestSubmission": "Latest submission",
+      "versionHistory": "Version history ({{count}})",
+      "reviewStatus": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REVISION_REQUESTED": "Needs revision"
+      },
+      "regionType": {
+        "PANEL": "Panel",
+        "BACKGROUND": "Background",
+        "SCREENTONE": "Screentone",
+        "EFFECT_LINES": "Effect lines",
+        "SFX": "SFX",
+        "CHARACTER": "Character"
+      },
+      "download": "Download",
+      "viewFullsize": "View full size"
     },
     "popup": {
       "title": "Page {{n}} — regions",
@@ -1069,6 +1219,127 @@
         "aiApplyFailed": "Could not apply AI proposal.",
         "aiTimeout": "AI segment timed out, please retry."
       }
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Updates on your proposals, series reviews, deadlines, and contract activity.",
+    "back": "Back to dashboard",
+    "filters": {
+      "all": "All",
+      "unread": "Unread only",
+      "read": "Read only"
+    },
+    "type": {
+      "SYSTEM": "System",
+      "CONTRACT": "Contract",
+      "TASK": "Task",
+      "DEADLINE": "Deadline",
+      "SURVEY": "Survey",
+      "BOARD": "Board",
+      "REVIEW": "Review"
+    },
+    "item": {
+      "noContent": "(no content)",
+      "openTarget": "Open series",
+      "openChapter": "Open chapter",
+      "openTask": "Open task",
+      "openContract": "Open contract",
+      "openDeadline": "Open deadline",
+      "openAssistant": "Open assistant",
+      "openRevision": "Open revision",
+      "reference": "Reference: {{type}} • {{id}}"
+    },
+    "actions": {
+      "markRead": "Mark as read",
+      "markAllRead": "Mark all as read"
+    },
+    "summary": {
+      "unreadCount_one": "{{count}} unread",
+      "unreadCount_other": "{{count}} unread"
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "empty": {
+      "title": "You're all caught up",
+      "description": "No notifications to show right now."
+    },
+    "error": {
+      "loadFailed": "Could not load notifications. Please try again.",
+      "markReadFailed": "Could not mark the notification as read. Please try again.",
+      "markAllReadFailed": "Could not mark all notifications as read. Please try again.",
+      "retry": "Retry"
+    },
+    "success": {
+      "markedRead": "Notification marked as read.",
+      "markedAllRead": "All notifications marked as read."
+    }
+  },
+  "rankings": {
+    "title": "Rankings",
+    "subtitle": "See how your series is performing in the latest and historical readership rankings.",
+    "back": "Back to dashboard",
+    "refresh": "Refresh",
+    "latest": {
+      "title": "Latest reflected period",
+      "description": "The newest board from the guest voting + postcard results. Use the chips to focus on weekly, monthly, or irregular cadence.",
+      "loading": "Loading the latest ranking…",
+      "empty": "No results yet for this period.",
+      "periodLabel": "Issue {{issue}} · Reflected issue {{reflected}}"
+    },
+    "history": {
+      "title": "Historical periods",
+      "description": "Pick a previously reflected period to inspect its board.",
+      "label": "Period",
+      "selectPlaceholder": "Choose a period…",
+      "noPeriods": "No reflected periods available yet.",
+      "loading": "Loading this period…",
+      "empty": "No results for this period.",
+      "prompt": "Pick a period above to see its ranking."
+    },
+    "trend": {
+      "title": "My series trend",
+      "description": "Rank over the last 12 reflected periods, colour-coded by risk level. Only series you own are visible (BE-scoped).",
+      "label": "Series",
+      "selectPlaceholder": "Pick one of your series…",
+      "noSeries": "You have no published series yet — nothing to chart.",
+      "chartLabel": "Rank over time chart",
+      "tooltip": "#{{rank}} · {{date}} · {{votes}} votes",
+      "empty": "No reflected periods recorded for this series yet.",
+      "noRanks": "No rank data available for this series yet.",
+      "prompt": "Select a series to view its trend.",
+      "promptHint": "Trend data is BE-scoped — you can only chart series you own."
+    },
+    "publicationType": {
+      "label": "Publication type",
+      "ALL": "Overall",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "IRREGULAR": "Irregular"
+    },
+    "riskLevel": {
+      "NONE": "No risk",
+      "LOW": "At risk",
+      "MEDIUM": "At risk (3+)",
+      "SEVERE": "Critical (5+)"
+    },
+    "table": {
+      "columns": {
+        "rank": "Rank",
+        "series": "Series",
+        "publicationType": "Cadence",
+        "votes": "Votes",
+        "change": "Change"
+      },
+      "changeStable": "Stable",
+      "deletedSeries": "(deleted series)"
+    },
+    "error": {
+      "loadFailed": "Could not load rankings. Please try again.",
+      "retry": "Retry"
     }
   }
 }

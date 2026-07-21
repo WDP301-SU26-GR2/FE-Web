@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ClipboardList, Filter, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
-import { FilterChip, Pagination } from '~/shared/components/pagination'
+import { cn } from '~/shared/lib/cn'
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
-import { useAssistantTasks } from './use-assistant-tasks'
+import { useAssistantTasksQuery } from './use-assistant-tasks-query'
+import { useAssistantTaskActions } from './use-assistant-task-actions'
 import { TaskCard } from './components/task-card'
+import { TaskImageDialog } from './components/task-image-dialog'
 
 const STATUS_FILTERS: ReadonlyArray<TaskControllerListTasksStatus> = [
   'ASSIGNED',
@@ -20,29 +24,18 @@ const STATUS_FILTERS: ReadonlyArray<TaskControllerListTasksStatus> = [
 
 export function AssistantTasksPage() {
   const { t } = useTranslation('assistant')
-  const {
-    items,
-    total,
-    page,
-    perPage,
-    isLoading,
-    error,
-    status,
-    setStatus,
-    setPage,
-    refresh,
-    startTask,
-    submitTask,
-    isMutating
-  } = useAssistantTasks()
+  const [status, setStatus] = useState<TaskControllerListTasksStatus | undefined>(undefined)
+  const tasks = useAssistantTasksQuery({ status })
+  const actions = useAssistantTaskActions()
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null)
+  const openTask = tasks.items.find((task) => task.id === openTaskId) ?? null
 
-  const totalPages = Math.max(1, Math.ceil(total / perPage))
-  const from = total === 0 ? 0 : (page - 1) * perPage + 1
-  const to = Math.min(page * perPage, total)
+  const totalPages = Math.max(1, Math.ceil(tasks.total / tasks.perPage))
+  const from = tasks.total === 0 ? 0 : (tasks.page - 1) * tasks.perPage + 1
+  const to = Math.min(tasks.page * tasks.perPage, tasks.total)
 
   return (
     <div className='space-y-6'>
-      {/* Header */}
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
         <div>
           <div className='flex items-center gap-2'>
@@ -60,33 +53,57 @@ export function AssistantTasksPage() {
         </a>
       </div>
 
-      {/* Status filters */}
       <div className='flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-sm'>
         <div className='flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
           <Filter className='h-3.5 w-3.5' />
           <span>{t('tasks.filters.status')}</span>
         </div>
-        <FilterChip active={status === undefined} onClick={() => setStatus(undefined)} label={t('tasks.filters.all')} />
+        <button
+          type='button'
+          onClick={() => {
+            setStatus(undefined)
+            tasks.setPage(1)
+          }}
+          aria-pressed={status === undefined}
+          className={cn(
+            'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer',
+            status === undefined
+              ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+              : 'border-border bg-card text-foreground hover:bg-muted'
+          )}
+        >
+          {t('tasks.filters.all')}
+        </button>
         {STATUS_FILTERS.map((value) => (
-          <FilterChip
+          <button
             key={value}
-            active={status === value}
-            onClick={() => setStatus(status === value ? undefined : value)}
-            label={t(`tasks.filters.statuses.${value}`)}
-          />
+            type='button'
+            onClick={() => {
+              setStatus(status === value ? undefined : value)
+              tasks.setPage(1)
+            }}
+            aria-pressed={status === value}
+            className={cn(
+              'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer',
+              status === value
+                ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                : 'border-border bg-card text-foreground hover:bg-muted'
+            )}
+          >
+            {t(`tasks.filters.statuses.${value}`)}
+          </button>
         ))}
       </div>
 
-      {/* Error banner */}
-      {error && (
+      {tasks.error && (
         <div
           role='alert'
           className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm font-medium text-destructive'
         >
-          <span>{extractApiErrorMessage({ message: error }, t('tasks.error.loadFailed'))}</span>
+          <span>{extractApiErrorMessage({ message: tasks.error }, t('tasks.error.loadFailed'))}</span>
           <button
             type='button'
-            onClick={refresh}
+            onClick={tasks.refresh}
             className='inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2.5 py-1 text-xs font-bold hover:bg-destructive/10 cursor-pointer'
           >
             <RefreshCw className='h-3 w-3' />
@@ -95,42 +112,77 @@ export function AssistantTasksPage() {
         </div>
       )}
 
-      {/* Card grid */}
       <div className='rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5'>
-        {isLoading ? (
+        {tasks.isLoading ? (
           <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-            {Array.from({ length: perPage }).map((_, i) => (
+            {Array.from({ length: tasks.perPage }).map((_, i) => (
               <CardSkeleton key={i} />
             ))}
           </div>
-        ) : items.length === 0 ? (
+        ) : tasks.items.length === 0 ? (
           <EmptyState />
         ) : (
           <>
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-              {items.map((task) => (
+              {tasks.items.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
-                  onStart={(id) => void startTask(id)}
-                  onSubmit={(id, file) => void submitTask(id, file)}
-                  isMutating={isMutating}
+                  onStart={(id) => {
+                    void actions.start(id).then((ok) => {
+                      if (ok) {
+                        toast.success(t('tasks.error.submitSuccess'))
+                        tasks.refresh()
+                      }
+                    })
+                  }}
+                  onSubmit={async (id, file) => {
+                    const ok = await actions.submit(id, file)
+                    if (ok) tasks.refresh()
+                    return ok
+                  }}
+                  onOpen={() => setOpenTaskId(task.id)}
+                  isMutating={actions.isMutating}
                 />
               ))}
             </div>
 
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              setPage={setPage}
-              from={from}
-              to={to}
-              total={total}
-              tKeyPrefix='tasks.pagination'
-            />
+            <div className='mt-5 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row'>
+              <div className='flex items-center gap-2'>
+                <button
+                  type='button'
+                  onClick={() => tasks.setPage(Math.max(1, tasks.page - 1))}
+                  disabled={tasks.page === 1 || tasks.isLoading}
+                  className='flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer'
+                  aria-label={t('tasks.pagination.previousPage')}
+                >
+                  <ArrowLeft className='h-4 w-4' />
+                </button>
+                <span className='text-xs text-muted-foreground'>
+                  {t('tasks.pagination.showingRange', { from, to, total: tasks.total })}
+                </span>
+                <button
+                  type='button'
+                  onClick={() => tasks.setPage(tasks.page + 1)}
+                  disabled={tasks.page === totalPages || tasks.isLoading}
+                  className='flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer'
+                  aria-label={t('tasks.pagination.nextPage')}
+                >
+                  <span aria-hidden>→</span>
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>
+
+      <TaskImageDialog
+        open={openTaskId !== null}
+        task={openTask}
+        onOpenChange={(next) => {
+          if (!next) setOpenTaskId(null)
+        }}
+      />
     </div>
   )
 }

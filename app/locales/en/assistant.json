@@ -56,17 +56,37 @@
     },
     "card": {
       "taskType": "Task type",
+      "taskTypeNone": "Untyped",
       "priority": "Priority",
       "deadline": "Deadline",
       "deadlineNone": "No deadline",
       "versions": "{{count}} version",
       "versions_other": "{{count}} versions",
-      "pageIdLabel": "Page ID",
+      "pageLabel": "Page #{{id}}",
+      "region": "Assigned region",
+      "regionAssigned": "Region #{{id}}",
+      "fullPage": "Full page (no region)",
       "statusReason": "Note"
+    },
+    "dialog": {
+      "title": "Page {{n}} — #{{id}}",
+      "description": "View the assigned page image, region overlay and download the original file.",
+      "loading": "Loading page image...",
+      "loadFailed": "Couldn't load the page image.",
+      "noOriginalFile": "This page has no original file yet.",
+      "pageUnavailable": "Couldn't find this page among your hired chapters.",
+      "imageAlt": "Page {{n}}",
+      "regionCount_one": "{{count}} matching region",
+      "regionCount_other": "{{count}} matching regions",
+      "fullPageHint": "Full-page task (no specific region)",
+      "downloadOriginal": "Download original",
+      "downloadFailed": "Couldn't download the original file. Try again."
     },
     "actions": {
       "start": "Start task",
-      "submit": "Submit result"
+      "submit": "Submit result",
+      "resultFile": "Result file",
+      "selectedFile": "Selected: {{name}} ({{size}})"
     },
     "pagination": {
       "previousPage": "Previous page",
@@ -210,6 +230,12 @@
     "item": {
       "noContent": "(no content)",
       "openTarget": "Open",
+      "openChapter": "Open chapter",
+      "openTask": "Open task",
+      "openContract": "Open contract",
+      "openDeadline": "Open deadline",
+      "openAssistant": "Open assistant",
+      "openRevision": "Open revision",
       "reference": "Reference: {{type}} • {{id}}"
     },
     "actions": {

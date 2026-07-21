@@ -137,6 +137,7 @@ export function AssistantNotificationsPage() {
               to={to}
               total={total}
               tKeyPrefix='notifications.pagination'
+              t={t}
             />
           </>
         )}

@@ -142,6 +142,7 @@ export function AssistantInvitesPage() {
               to={to}
               total={total}
               tKeyPrefix='invites.pagination'
+              t={t}
             />
           </>
         )}

@@ -13,6 +13,7 @@ import {
   Trash2,
   Undo2,
   RefreshCw,
+  RotateCcw,
   MessageSquareWarning,
   UserCheck,
   Users
@@ -149,7 +150,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const { series, names, isLoading, error, notFound, refresh } = useSeriesDetail(seriesId)
   const { session } = useAuth()
   const { submit, isSubmitting } = useSubmitSeries()
-  const { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName } = useProposalActions()
+  const { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen } = useProposalActions()
   const {
     chapters,
     isLoading: isChaptersLoading,
@@ -199,7 +200,12 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
   const canDeleteDraft = isOwner && series?.status === SeriesStatusEnum.DRAFT
-  const canWithdraw = isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'PITCHED'].includes(series?.status ?? '')
+  // Per FE-API-Guide-v3.md §3 unhappy cases: Mangaka can withdraw from IN_REVIEW, READY_TO_PITCH,
+  // PITCHED (stuck in editorial flow), AND REJECTED (Board said no — Mangaka can abandon or withdraw).
+  // Spec 22 (2026-07-18): ABANDONED/WITHDRAWN have their own reopen action instead.
+  const canWithdraw = isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'PITCHED', 'REJECTED'].includes(series?.status ?? '')
+  // Per Spec 22: at ABANDONED/WITHDRAWN Mangaka can "Nộp lại" (reopen → DRAFT, back to queue).
+  const canReopen = isOwner && ['ABANDONED', 'WITHDRAWN'].includes(series?.status ?? '')
   const canResubmitProposal = isOwner && proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION
   const canResubmitName = isOwner && proposalName?.status === 'REVISION'
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
@@ -378,6 +384,21 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     })()}
                   </button>
                 )}
+                {canReopen && (
+                  <button
+                    type='button'
+                    disabled={activeAction !== null}
+                    onClick={async () => {
+                      if (await reopen(series.id)) {
+                        refresh()
+                      }
+                    }}
+                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
+                  >
+                    <RotateCcw className={cn('h-3.5 w-3.5', activeAction === 'reopen' && 'animate-spin')} />
+                    {t('seriesDetail.actions.reopen.button')}
+                  </button>
+                )}
                 {canWithdraw && (
                   <button
                     type='button'
@@ -456,6 +477,13 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                   icon={<Calendar className='h-3.5 w-3.5' />}
                   label={t('seriesDetail.reviewStartedAt')}
                   value={formatDateTime(series.reviewStartedAt, currentLocale)}
+                />
+              )}
+              {series.statusReason && series.status === 'REJECTED' && (
+                <MetaItem
+                  icon={<MessageSquareWarning className='h-3.5 w-3.5' />}
+                  label={t('seriesDetail.statusReason')}
+                  value={series.statusReason}
                 />
               )}
               {series.relationshipType && (

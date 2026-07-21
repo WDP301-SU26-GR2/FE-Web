@@ -22,7 +22,6 @@ import type { EditorActionResult, EditorChapterReviewData } from '../types'
 
 const HOLDABLE_MANUSCRIPT_STATUSES = new Set([
   'IN_PRODUCTION',
-  'COMPOSITE_REVIEW',
   'EDITOR_REVIEW',
   'EDITOR_REVISION',
   'READY_FOR_PRINT'
@@ -271,7 +270,7 @@ export function EditorChapterReviewPage({
               <Metric label={t('chapterReview.warning')} value={data.progress.warningLevel} />
               <Metric
                 label={t('chapterReview.pagesProgress')}
-                value={`${data.progress.pagesCompleted}/${data.progress.totalPages}`}
+                value={`${data.progress.pagesReady}/${data.progress.totalPages}`}
               />
               <Metric
                 label={t('chapterReview.remaining')}

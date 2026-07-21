@@ -28,6 +28,8 @@
     "closeMenu": "Đóng menu",
     "openMenu": "Mở menu",
     "notifications": "Thông báo",
+    "notificationsWithCount_one": "Thông báo ({{count}} chưa đọc)",
+    "notificationsWithCount_other": "Thông báo ({{count}} chưa đọc)",
     "settings": "Cài đặt",
     "signOut": "Đăng xuất"
   },
@@ -69,6 +71,13 @@
     "adminName": "Quản trị viên",
     "adminRole": "Quản trị",
     "adminBadge": "SUPER_ADMIN"
+  },
+  "roleEnum": {
+    "MANGAKA": "Mangaka",
+    "ASSISTANT": "Trợ lý",
+    "EDITOR": "Biên tập viên",
+    "BOARD_MEMBER": "Hội đồng",
+    "SUPER_ADMIN": "Quản trị"
   },
   "dashboard": {
     "assistant": "Bảng điều khiển Trợ lý",

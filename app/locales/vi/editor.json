@@ -127,7 +127,6 @@
     "workflow": {
       "DRAFT": "Chờ hoàn thiện Name",
       "IN_PRODUCTION": "Đang sản xuất trang",
-      "COMPOSITE_REVIEW": "Mangaka đang duyệt composite",
       "EDITOR_REVIEW": "Duyệt bản thảo cuối",
       "EDITOR_REVISION": "Đang chờ Mangaka sửa",
       "READY_FOR_PRINT": "Kiểm tra điều kiện xuất bản",
@@ -136,8 +135,7 @@
     },
     "workflowDescription": {
       "DRAFT": "Mangaka cần hoàn thiện và gửi Name trước khi bắt đầu sản xuất trang.",
-      "IN_PRODUCTION": "Các trang và task đang được thực hiện; Editor có thể theo dõi tiến độ và deadline.",
-      "COMPOSITE_REVIEW": "Mangaka đang kiểm tra từng trang composite trước khi nộp bản thảo.",
+      "IN_PRODUCTION": "Các trang và task đang được thực hiện; Editor có thể theo dõi tiến độ và deadline. Khi tất cả trang đã COMPLETED, Mangaka sẽ nộp bản thảo cho Editor duyệt.",
       "EDITOR_REVIEW": "Kiểm tra các trang composite, ghi chú phần cần sửa hoặc duyệt bản thảo.",
       "EDITOR_REVISION": "Yêu cầu sửa đã được gửi; chờ Mangaka cập nhật và nộp lại.",
       "READY_FOR_PRINT": "Bản thảo đã đạt yêu cầu; xác nhận hợp đồng trước khi xuất bản.",

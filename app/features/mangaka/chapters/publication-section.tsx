@@ -38,7 +38,6 @@ const CHAPTER_STATUS_META: Record<string, { className: string; labelKey: string 
 const MANUSCRIPT_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
   IN_PRODUCTION: { className: 'bg-warning/10 text-warning border-warning/20' },
-  COMPOSITE_REVIEW: { className: 'bg-info/10 text-info border-info/20' },
   EDITOR_REVIEW: { className: 'bg-info/10 text-info border-info/20' },
   EDITOR_REVISION: { className: 'bg-warning/10 text-warning border-warning/20' },
   READY_FOR_PRINT: { className: 'bg-success/10 text-success border-success/20' },
@@ -169,7 +168,6 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
     (chapter.manuscriptStatus as
       | 'DRAFT'
       | 'IN_PRODUCTION'
-      | 'COMPOSITE_REVIEW'
       | 'EDITOR_REVIEW'
       | 'EDITOR_REVISION'
       | 'READY_FOR_PRINT'

@@ -1,6 +1,8 @@
 # FE API Guide v3 — Manga Creation Workflow System
 
-> **Nguồn sự thật:** bản nền sinh + đối chiếu từ Swagger runtime (`GET /api-json`) — cập nhật mới nhất **2026-07-17 sau Spec 16** (Board Meeting Room): **251 route, 63 enum**, verify bằng flow-test 15/15 file 0 FAIL + smoke-spec16 38/38 (unit 1021/1021). Các mốc trước: Spec 12 @ `c953e0c` (239 route), Spec 14, Spec 15 (public reader/voting — 249 route).
+> **Nguồn sự thật:** bản nền sinh + đối chiếu từ Swagger runtime (`GET /api-json`), đồng bộ contract tới **Page API mở rộng + Region embed** ngày 2026-07-21: **263 route, 63 enum**. (Mốc trước: Spec 19 Page Lifecycle 256 route ngày 2026-07-18 — xem PROGRESS-BE-A §63.6; Spec 22 Reopen/Re-pitch +2 = 258; Spec 24 +1 = 259; Page API mở rộng +2 = 261; Task group +2 = 263.)
+> 🆕 **Đợt 2026-07-20 có 3 thay đổi FE PHẢI sửa** (chi tiết §16): route mới `GET /contracts/:id/pdf` · 2 route request-changes nay **bắt buộc body `{reason}`** · `board-approve`/`board-request-changes` siết quyền theo roster phiên họp. Ngoài ra nhóm route public/ranking nay có **read-cache** (§0.11).
+> ⚠️ **Đánh số spec:** **Spec 18 = Role Dashboards** (6 route `/dashboard/*`), **Spec 19 = Page Lifecycle Simplification**. Bản guide trước ghi nhầm Page Lifecycle là "Spec 18" — đã sửa 2026-07-18.
 > **Phạm vi:** TOÀN BỘ backend (BE-A + BE-B), tổ chức theo **flow nghiệp vụ Requiment (Flow 1–13)** — mỗi flow: mô tả nghiệp vụ, các bước happy path (gọi API nào), bảng unhappy case, rồi reference chi tiết từng API (role, field, enum, lỗi).
 > **Thay thế:** `FE-API-Guide-v2.md` (chỉ cover BE-A, đã lỗi thời sau Spec 9/10/11/12 + Fix-1/2). Đọc §16 để biết breaking change so với v2.
 
@@ -10,7 +12,7 @@
 - §1. Từ điển Enum (63 enum — đầy đủ giá trị + ý nghĩa)
 - §2. Auth, Tài khoản & Hồ sơ (Flow 11)
 - §3. Flow 1 — Series Proposal → Serialization (kèm Board engine)
-- §4. Flow 6 — Contract & Payment
+- §4. Flow 6 — Contract & Payment (kèm xuất PDF hợp đồng)
 - §5. Flow 2 — Chapter Production (chapter-first)
 - §6. Flow 3 — Region / Task / AI segmentation
 - §7. Flow 9 — Danh bạ Mangaka/Trợ lý & Studio (kèm Review/Reputation)
@@ -33,7 +35,7 @@
 Mọi response **thành công** đều được bọc:
 
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* payload — chính là shape ghi trong guide này */ } }
+{ "success": true, "message": "Thành công", "data": { /* payload — chính là shape ghi trong guide này */ } }
 ```
 
 - Bảng "Response" của từng API trong guide mô tả shape **BÊN TRONG `data`** (chưa bọc).
@@ -43,19 +45,31 @@ Mọi response **lỗi**:
 
 ```jsonc
 // Lỗi field-level (validation 422 hoặc lỗi nghiệp vụ có path):
-{ "success": false, "statusCode": 422, "message": "Invalid email address",
-  "errors": [ { "message": "Invalid email address", "path": "email" } ] }
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] }
+// mỗi item trong errors[] có `code` (mã domain, hoặc null nếu là lỗi validation zod) + `message` tiếng Việt + `path`
 
 // Lỗi đơn (không gắn field):
-{ "success": false, "statusCode": 403, "message": "Error.EmailNotVerified" }
+{ "success": false, "statusCode": 403, "code": "Error.EmailNotVerified",
+  "message": "Email chưa được xác thực" }
 
 // Rate-limit (OTP) — có thêm code + retryAfter (giây) cho UI cooldown:
-{ "success": false, "statusCode": 429, "message": "Error.OtpRateLimited",
-  "code": "AUTH_OTP_RATE_LIMITED", "retryAfter": 60 }
+{ "success": false, "statusCode": 429, "code": "Error.OtpRateLimited",
+  "message": "Bạn thao tác quá nhanh — vui lòng thử lại sau", "retryAfter": 60 }
 ```
 
-- `message` **luôn là string**. Mã `Error.PascalCase` là **code để FE map sang text hiển thị** (đa ngôn ngữ tuỳ FE) — KHÔNG hiển thị raw code cho user.
-- Nhiều lỗi field cùng lúc → `message: "Validation failed"` + chi tiết trong `errors[]`.
+> 🔴 **BREAKING 2026-07-20 — mọi `code` nay đều theo dạng `Error.PascalCase`.**
+> Trước đây tồn tại 2 lớp mã legacy: câu tiếng Anh nguyên văn ở guard 401/403 (`"Unauthorized"`,
+> `"You do not have permission to access this resource"`) và SCREAMING_SNAKE ở rate-limit +
+> contract/payment/transfer (`AUTH_OTP_RATE_LIMITED`, `CONTRACT_NOT_FOUND`, …). Toàn bộ đã chuẩn hoá —
+> xem bảng ánh xạ cũ→mới ở **§16 changelog**. `message` (tiếng Việt) và `retryAfter` **không đổi**.
+
+- `code` là mã máy ổn định (`Error.*` hoặc mã raw tương thích BE-B như `AUTH_OTP_RATE_LIMITED`) — FE **phân nhánh logic theo `code`**, không so sánh `message`.
+- ⚠ Riêng 401/403 từ guard auth, `code` là chuỗi legacy giữ nguyên để tương thích: `"Unauthorized"`, `"Access token is required"`, `"Invalid access token"`, `"You do not have permission to access this resource"` — vẫn ổn định, FE cứ so bằng đúng chuỗi đó.
+- `message` và `errors[].message` là text tiếng Việt sẵn để hiển thị trực tiếp. Không tự map `Error.*` từ `message` nữa.
+- Nhiều lỗi field cùng lúc → `code: "Error.ValidationFailed"`, `message: "Dữ liệu không hợp lệ"` và chi tiết tiếng Việt trong `errors[]`.
+- Metadata bổ sung như `retryAfter` vẫn giữ nguyên bên cạnh envelope chuẩn.
 
 ### 0.2. Status code semantics
 
@@ -125,6 +139,59 @@ Mọi response **lỗi**:
 
 Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội dung (`dedupeKey`): 2 sự kiện y hệt (vd retry job) chỉ tạo **một** bản ghi. Với FE nghĩa là danh sách `GET /notifications` **không còn bản trùng lặp** cho cùng một hành động — không cần tự dedupe phía client.
 
+### 0.10. Tên hiển thị nhúng trong response đọc (Spec 20 — additive)
+
+Các route GET nghiệp vụ dưới đây trả thêm object hiển thị, đồng thời **giữ nguyên toàn bộ field ID cũ**. FE dùng trực tiếp các object này để render tên/avatar/title; không cần gọi thêm `/staff/:id`, `/mangakas/:id` hoặc `/assistants/:id`. Đây là thay đổi additive, không breaking.
+
+| GET route | Field nhúng thêm trong từng item/detail |
+|---|---|
+| `/contracts`, `/contracts/:id` | `series {id,title}` · `mangaka UserMini` · `editor UserMini \| null` · 🆕 2026-07-19 `boardDecision {id, decisionType, result, decidedAt, boardSession{id,title,startTime}} \| null` (căn cứ phiên họp serial hóa) |
+| `/contracts/:contractId/amendments[/:id]` | `creator UserMini \| null` (từ `createdBy`) |
+| `/payments`, `/payments/:id`, `/payments/contracts/:id/payments`, `/payments/series/:id/payments`, `/payments/users/:id/payments` | `series {id,title} \| null` · `receiver UserMini` · `approver UserMini \| null` |
+| `/transfers/requests/mine`, `/transfers/requests/pending-board`, `/transfers/requests/:id` | `series {id,title} \| null` · `requestingMangaka UserMini \| null` · `originalMangaka UserMini \| null` |
+| `/reprint-requests`, `/reprint-requests/:id` | `series {id,title} \| null` · `requester UserMini \| null` |
+| `/deadline-requests`, `/deadline-requests/:id` | `series {id,title} \| null` · `chapter {id,chapterNumber,title} \| null` |
+| `/tasks`, `/tasks/:id` | `assistant UserMini \| null`; mỗi `versions[]` có `submitter UserMini \| null`; 🆕 2026-07-21 `region {id,pageId,coordinates{x,y,width,height},regionType,createdBy,confirmedByMangaka,confidenceScore,detectedSubtype,aiModelVersion} \| null` |
+| `/collaboration-invites[/:id]`, `/studio-assignments[/:id]` | `mangaka UserMini \| null` · `assistant UserMini \| null` · `series {id,title} \| null` |
+| `/annotations?targetType=&targetId=` | `author UserMini \| null` |
+| `/revision-requests` | `requester UserMini \| null` · `recipient UserMini \| null` · `series {id,title} \| null` |
+
+> 🆕 **2026-07-21 — `region` nhúng trong TaskRes (additive, quan trọng cho Assistant).** Trước đây `TaskRes` chỉ có
+> `regionId` trần, mà `GET /pages/:id/regions` lại là **MANGAKA/EDITOR-only** ⇒ Assistant nhận task theo vùng nhưng
+> **không có API hợp lệ nào** để lấy toạ độ vùng cần xử lý. Nay `GET /tasks` và `GET /tasks/:id` trả kèm object
+> `region` đầy đủ toạ độ, nên **màn hình task của Assistant vẽ được khung vùng ngay từ một call**, không cần thêm
+> request và không cần nới quyền route region. `region = null` khi task không gắn vùng (giao cả trang).
+
+`UserMini = { id, displayName, avatar }`, trong đó backend tính `displayName = user.displayName ?? user.name`; `avatar` có thể `null`. Lookup **không lọc `deletedAt`**, vì lịch sử công việc/hợp đồng vẫn phải hiện tên người đã nghỉ. ID dangling do dữ liệu cũ/xóa cứng được biểu diễn bằng `null`, không làm hỏng cả response.
+
+> Chỉ dựa vào embed ở các route GET nêu trên. Response mutation vẫn serialize bình thường nhưng field embed có thể vắng mặt; nếu màn hình cần tên mới nhất sau mutation thì refetch route GET. `DeadlineRequest.requestedBy`/`lastProposedBy` vẫn là PHE `MANGAKA|EDITOR`, không phải user ID và không đổi semantics.
+
+### 0.11. Read-cache trên nhóm route public/ranking (Spec 23 — hạ tầng, KHÔNG breaking)
+
+Từ 2026-07-20, một số route **đọc** được cache phía server (Redis) để chịu tải guest. **Shape response
+không đổi một ký tự nào** — FE không phải sửa gì. Điều duy nhất cần biết: **dữ liệu có thể trễ tối đa
+bằng TTL** sau một hành động ghi.
+
+| Nhóm route | TTL tối đa | Ghi chú |
+|---|---|---|
+| `GET /public/series`, `/public/series/:id`, `/public/chapters/:id/pages` | 120s | Chỉ cache trang đầu (`offset=0`); `offset>0` luôn đi thẳng DB |
+| `GET /vote/context` | 60s | Trang bình chọn |
+| `GET /vote/results`, `/vote/results/latest`, `/vote/periods` | 3600s | Kỳ đã `REFLECTED` là **bất biến** nên TTL dài an toàn |
+| `GET /rankings`, `/rankings/board`, `/survey-periods/:id/rankings` | 600s | Dữ liệu dùng chung mọi role, không scope theo user |
+
+**Thực tế thì thường tươi hơn TTL nhiều:** hệ thống chủ động xoá cache khi có sự kiện nghiệp vụ —
+series đổi trạng thái, publish chapter, `PATCH /series/:id` đổi title/cover, mở/đóng kỳ bình chọn,
+chốt ranking. TTL chỉ là lưới an toàn.
+
+**KHÔNG cache:** mọi route scope theo user (`/dashboard/*`, `/notifications`, list series khi đã đăng nhập)
+— nên các màn hình cá nhân luôn tươi tuyệt đối.
+
+⚠ **`coverImageUrl` / `imageUrl` (signed URL) KHÔNG bị cache** — luôn được ký mới mỗi request. Vì vậy 2 lần
+gọi cùng một route public sẽ trả URL ảnh **khác chuỗi nhau** dù nội dung giống hệt; đừng dùng URL ảnh làm
+khóa so sánh/diff hay cache key phía FE — hãy dùng `id` (hoặc `key` nếu có).
+
+> Redis chết thì các route này **vẫn chạy bình thường** (đọc thẳng DB, fail-open) — không bao giờ trả 5xx vì cache.
+
 ---
 
 ## §1. Từ điển Enum (63 enum — nguồn: Prisma schema, đầy đủ 100% giá trị)
@@ -169,9 +236,9 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | `CANCELLING` | Bị Board hủy — chỉ được tạo thêm đúng `endingChapterAllowance` chương kết thúc |
 | `COMPLETED` | Đã kết thúc tự nhiên (terminal) |
 | `CANCELLED` | Đã hủy xong (terminal) |
-| `REJECTED` | Board từ chối serial hóa (Mangaka có thể sửa và nộp lại từ DRAFT) |
-| `ABANDONED` | Editor từ chối hẳn concept ở giai đoạn review (terminal) |
-| `WITHDRAWN` | Mangaka tự rút hồ sơ (terminal) |
+| `REJECTED` | Board từ chối serial hóa; Editor phụ trách có thể mở lại vòng rework (`IN_REVIEW`), hoặc hai bên rút/bỏ hẳn |
+| `ABANDONED` | Editor từ chối hẳn concept; Mangaka có thể mở lại hồ sơ về `DRAFT` |
+| `WITHDRAWN` | Mangaka tự rút hồ sơ; có thể mở lại về `DRAFT` |
 
 **`ProposalStatus`** — trạng thái hồ sơ proposal (embedded trong Series):
 | Giá trị | Ý nghĩa |
@@ -213,14 +280,13 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|
 | `DRAFT` | Khởi tạo cùng chapter (chapter-first), chưa có page |
 | `IN_PRODUCTION` | Có page đầu tiên — đang vẽ / giao task |
-| `COMPOSITE_REVIEW` | Mọi task đã nộp — Mangaka đang duyệt bản tổng hợp từng trang |
 | `EDITOR_REVIEW` | Mangaka đã nộp cho Editor final check |
 | `EDITOR_REVISION` | Editor yêu cầu sửa (annotate) — Mangaka sửa rồi resubmit |
 | `READY_FOR_PRINT` | Editor đã duyệt — chờ publish |
 | `AWAITING_CO_OWNER_APPROVAL` | Series có co-owner (PARTIAL_TRANSFER) — chờ Mangaka gốc duyệt trước khi phát hành |
 | `PUBLISHED` | Đã xuất bản (emit sự kiện cho payment + ranking) |
 
-**`PageStatus`**: `NOT_STARTED` (chưa có task) → `IN_PROGRESS` (task đầu tiên bắt đầu) → `COMPOSITE_READY` (mọi task trên trang đã SUBMITTED — auto bởi cascade) → `COMPLETED` (mọi task APPROVED).
+**`PageStatus`** (backend-driven; FE không set): `DRAFT` (được sửa) → `COMPLETED` (khóa sửa khi Editor review) → `REVISING` (mở lại để sửa) → `COMPLETED` khi resubmit.
 
 **`ChapterHoldAction`** (read-only, trong `holdHistory[]`): `HOLD` · `RESUME`. Lưu ý: hold KHÔNG phải một `ChapterStatus` — chapter đang hold có object `hold != null`, mọi mutation sản xuất bị chặn 409 `Error.ChapterOnHold`.
 
@@ -353,7 +419,7 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 
 **`RevisionTargetType`** — loại thực thể của một vòng yêu cầu sửa: `PROPOSAL` (targetId = seriesId) · `NAME` (targetId = nameId) · `MANUSCRIPT` (targetId = chapterId) · `TASK` (targetId = taskId).
 
-**`AssetType`** — phân loại file đính kèm: `REFERENCE` (ảnh tham khảo) · `BACKGROUND` · `SCREENTONE` · `BRUSH` · `OTHER`.
+**`AssetType`** — phân loại file đính kèm: `REFERENCE` (ảnh tham khảo) · `BACKGROUND` · `SCREENTONE` · `BRUSH` · `OTHER` · `DOCUMENT` (🆕 2026-07-20 — file văn bản do **hệ thống tự sinh**, hiện dùng cho PDF hợp đồng ở `GET /contracts/:id/pdf`; FE không tạo loại này qua `POST /uploads/sign`).
 
 **`NotificationType`** — nhóm thông báo (dùng filter): `SYSTEM` · `CONTRACT` · `TASK` · `DEADLINE` · `SURVEY` · `BOARD` · `REVIEW`.
 
@@ -441,6 +507,36 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 422 | — | Validation (password >=8, hoa/thuong/so; roleCode chi MANGAKA/ASSISTANT) |
 | 429 | `Error.OtpRateLimited` | too many OTP requests |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "name": "Nguyễn Văn A",
+  "phoneNumber": "+84912345678",
+  "password": "Password123",
+  "displayName": "Nguyễn Văn A",
+  "confirm_password": "Password123",
+  "type": "MANGAKA"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /auth/verify-email`
@@ -470,6 +566,31 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 422 | `Error.InvalidOTP` | OTP code is invalid |
 | 422 | `Error.OTPLocked` | OTP attempts are locked |
 | 422 | `Error.EmailNotFound` | email does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "code": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -508,6 +629,41 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 403 | `Error.EmailNotVerified` | email is not verified |
 | 422 | `Error.EmailNotFound` | email does not exist |
 | 422 | `Error.InvalidPassword` | password is invalid |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "email": "user@example.com",
+      "name": "Nguyễn Văn A",
+      "displayName": "Nguyễn Văn A",
+      "phoneNumber": "+84912345678",
+      "role": "MANGAKA"
+    },
+    "mustChangePassword": false,
+    "accessToken": "string",
+    "refreshToken": "string"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -548,6 +704,40 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 403 | `Error.EmailNotVerified` | email is not verified |
 | 409 | `Error.GoogleAccountMismatch` | google account does not match existing account |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "idToken": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "email": "user@example.com",
+      "name": "Nguyễn Văn A",
+      "displayName": "Nguyễn Văn A",
+      "phoneNumber": "+84912345678",
+      "role": "MANGAKA"
+    },
+    "mustChangePassword": false,
+    "accessToken": "string",
+    "refreshToken": "string"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /auth/refresh-token`
@@ -585,6 +775,40 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 403 | `Error.AccountBanned` | account is banned or blocked |
 | 403 | `Error.EmailNotVerified` | email is not verified |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "refreshToken": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "email": "user@example.com",
+      "name": "Nguyễn Văn A",
+      "displayName": "Nguyễn Văn A",
+      "phoneNumber": "+84912345678",
+      "role": "MANGAKA"
+    },
+    "mustChangePassword": false,
+    "accessToken": "string",
+    "refreshToken": "string"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /auth/logout`
@@ -609,6 +833,30 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 401 | `Error.UnauthorizedAccess` | authentication token is missing or invalid |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "refreshToken": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -637,6 +885,31 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 422 | `Error.EmailNotFound` | email does not exist |
 | 422 | `Error.EmailAlreadyExists` | email is already used |
 | 429 | `Error.OtpRateLimited` | too many OTP requests |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "purpose": "REGISTER"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -670,6 +943,33 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | 422 | `Error.OTPLocked` | OTP attempts are locked |
 | 422 | `Error.InvalidPassword` | password is invalid |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "code": "string",
+  "newPassword": "Password123",
+  "confirmNewPassword": "Password123"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /auth/change-password`
@@ -696,6 +996,32 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 422 | `Error.InvalidPassword` | password is invalid |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "currentPassword": "Password123",
+  "newPassword": "Password123",
+  "confirmNewPassword": "Password123"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -725,6 +1051,32 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.UserNotFound` | user does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "Nguyễn Văn A",
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "phoneNumber": "+84912345678",
+    "role": "MANGAKA",
+    "status": "INACTIVE",
+    "emailVerified": false,
+    "mustChangePassword": false,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -764,6 +1116,43 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|---|
 | 404 | `Error.UserNotFound` | user does not exist |
 | 422 | — | Validation fail (gửi email/role/status → strict reject) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "name": "Nguyễn Văn A",
+  "displayName": "Nguyễn Văn A",
+  "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+  "phoneNumber": "+84912345678"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "Nguyễn Văn A",
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "phoneNumber": "+84912345678",
+    "role": "MANGAKA",
+    "status": "INACTIVE",
+    "emailVerified": false,
+    "mustChangePassword": false,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -806,6 +1195,54 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|---|
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "penName": "Bút danh mẫu",
+  "genres": [
+    "ACTION"
+  ],
+  "experienceLevel": "string",
+  "bio": "Nội dung mẫu",
+  "portfolioFiles": [
+    "uploads/507f1f77bcf86cd799439011/anh.png"
+  ]
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "penName": "Bút danh mẫu",
+    "genres": [
+      "ACTION"
+    ],
+    "experienceLevel": "string",
+    "bio": "Nội dung mẫu",
+    "portfolioFiles": [
+      "uploads/507f1f77bcf86cd799439011/anh.png"
+    ],
+    "reputationScore": 0,
+    "ratingAvg": 0,
+    "ratingCount": 1,
+    "isRecommended": false,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /me/mangaka-profile`
@@ -836,6 +1273,38 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ProfileNotFound` | profile does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "penName": "Bút danh mẫu",
+    "genres": [
+      "ACTION"
+    ],
+    "experienceLevel": "string",
+    "bio": "Nội dung mẫu",
+    "portfolioFiles": [
+      "uploads/507f1f77bcf86cd799439011/anh.png"
+    ],
+    "reputationScore": 0,
+    "ratingAvg": 0,
+    "ratingCount": 1,
+    "isRecommended": false,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -880,6 +1349,56 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|---|
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "specializations": [
+    "BACKGROUND"
+  ],
+  "experienceLevel": "string",
+  "portfolioFiles": [
+    "uploads/507f1f77bcf86cd799439011/anh.png"
+  ],
+  "availabilityStatus": "AVAILABLE",
+  "availabilityFrom": "2026-07-20T09:30:00.000Z",
+  "availabilityTo": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "specializations": [
+      "BACKGROUND"
+    ],
+    "experienceLevel": "string",
+    "portfolioFiles": [
+      "uploads/507f1f77bcf86cd799439011/anh.png"
+    ],
+    "availabilityStatus": "AVAILABLE",
+    "availabilityFrom": "string",
+    "availabilityTo": "string",
+    "reputationScore": 0,
+    "ratingAvg": 0,
+    "ratingCount": 1,
+    "isRecommended": false,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /me/assistant-profile`
@@ -911,6 +1430,39 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ProfileNotFound` | profile does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "specializations": [
+      "BACKGROUND"
+    ],
+    "experienceLevel": "string",
+    "portfolioFiles": [
+      "uploads/507f1f77bcf86cd799439011/anh.png"
+    ],
+    "availabilityStatus": "AVAILABLE",
+    "availabilityFrom": "string",
+    "availabilityTo": "string",
+    "reputationScore": 0,
+    "ratingAvg": 0,
+    "ratingCount": 1,
+    "isRecommended": false,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -948,6 +1500,49 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|---|
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "specialtyGenres": [
+    "ACTION"
+  ],
+  "demographics": [
+    "SHONEN"
+  ],
+  "bio": "Nội dung mẫu",
+  "yearsOfExperience": 1
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "role": "MANGAKA",
+    "specialtyGenres": [
+      "ACTION"
+    ],
+    "demographics": [
+      "SHONEN"
+    ],
+    "bio": "Nội dung mẫu",
+    "yearsOfExperience": 0,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /me/staff-profile`
@@ -974,6 +1569,34 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ProfileNotFound` | profile does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "role": "MANGAKA",
+    "specialtyGenres": [
+      "ACTION"
+    ],
+    "demographics": [
+      "SHONEN"
+    ],
+    "bio": "Nội dung mẫu",
+    "yearsOfExperience": 0,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1005,6 +1628,38 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ProfileNotFound` | profile does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "penName": "Bút danh mẫu",
+    "genres": [
+      "ACTION"
+    ],
+    "experienceLevel": "string",
+    "bio": "Nội dung mẫu",
+    "portfolioFiles": [
+      "uploads/507f1f77bcf86cd799439011/anh.png"
+    ],
+    "reputationScore": 0,
+    "ratingAvg": 0,
+    "ratingCount": 1,
+    "isRecommended": false,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1038,6 +1693,39 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|---|
 | 404 | `Error.ProfileNotFound` | profile does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "specializations": [
+      "BACKGROUND"
+    ],
+    "experienceLevel": "string",
+    "portfolioFiles": [
+      "uploads/507f1f77bcf86cd799439011/anh.png"
+    ],
+    "availabilityStatus": "AVAILABLE",
+    "availabilityFrom": "string",
+    "availabilityTo": "string",
+    "reputationScore": 0,
+    "ratingAvg": 0,
+    "ratingCount": 1,
+    "isRecommended": false,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /staff/:userId`
@@ -1064,6 +1752,34 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ProfileNotFound` | profile does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "userId": "507f1f77bcf86cd799439011",
+    "role": "MANGAKA",
+    "specialtyGenres": [
+      "ACTION"
+    ],
+    "demographics": [
+      "SHONEN"
+    ],
+    "bio": "Nội dung mẫu",
+    "yearsOfExperience": 0,
+    "displayName": "Nguyễn Văn A",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "hasProfile": false
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1096,6 +1812,36 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 |---|---|---|
 | 409 | `Error.EmailAlreadyExists` | email is already used |
 | 422 | — | Validation (roleCode chỉ EDITOR/BOARD_MEMBER) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "name": "Nguyễn Văn A",
+  "phoneNumber": "+84912345678",
+  "roleCode": "EDITOR"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "roleCode": "MANGAKA",
+    "temporaryPassword": "Password123"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1136,6 +1882,40 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "email": "user@example.com",
+        "name": "Nguyễn Văn A",
+        "displayName": "Nguyễn Văn A",
+        "phoneNumber": "+84912345678",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "role": "MANGAKA",
+        "status": "INACTIVE",
+        "emailVerified": false,
+        "registrationType": "SELF_REGISTERED",
+        "mustChangePassword": false,
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /admin/users/:id`
@@ -1165,6 +1945,33 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.UserNotFound` | user does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "Nguyễn Văn A",
+    "displayName": "Nguyễn Văn A",
+    "phoneNumber": "+84912345678",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "role": "MANGAKA",
+    "status": "INACTIVE",
+    "emailVerified": false,
+    "registrationType": "SELF_REGISTERED",
+    "mustChangePassword": false,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1206,6 +2013,42 @@ Backend nay chống trùng thông báo bằng khóa duy nhất có hash nội du
 
 Validation fail (status không nhận INACTIVE) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "status": "ACTIVE",
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "Nguyễn Văn A",
+    "displayName": "Nguyễn Văn A",
+    "phoneNumber": "+84912345678",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "role": "MANGAKA",
+    "status": "INACTIVE",
+    "emailVerified": false,
+    "registrationType": "SELF_REGISTERED",
+    "mustChangePassword": false,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /admin/users/:id`
@@ -1226,6 +2069,22 @@ Validation fail (status không nhận INACTIVE) |
 | 404 | `Error.UserNotFound` | user does not exist |
 | 409 | `Error.UserAlreadyDeleted` | user has already been soft-deleted |
 | 422 | `Error.CannotModifyAdminUser` | super admin users cannot be modified by admin moderation routes |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1259,6 +2118,33 @@ Validation fail (status không nhận INACTIVE) |
 | 409 | `Error.UserNotDeleted` | user is not soft-deleted |
 | 422 | `Error.CannotModifyAdminUser` | super admin users cannot be modified by admin moderation routes |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "Nguyễn Văn A",
+    "displayName": "Nguyễn Văn A",
+    "phoneNumber": "+84912345678",
+    "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "role": "MANGAKA",
+    "status": "INACTIVE",
+    "emailVerified": false,
+    "registrationType": "SELF_REGISTERED",
+    "mustChangePassword": false,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /admin/users/:id/reset-password`
@@ -1278,6 +2164,22 @@ Validation fail (status không nhận INACTIVE) |
 |---|---|---|
 | 404 | `Error.UserNotFound` | user does not exist |
 | 422 | `Error.CannotModifyAdminUser` | super admin users cannot be modified by admin moderation routes |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "temporaryPassword": "Password123"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1304,13 +2206,47 @@ Validation fail (status không nhận INACTIVE) |
 | `tasks` | object | ✅ |  |
 | `tasks.total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
 | `tasks.byStatus` | object | ✅ |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "users": {
+      "total": 1,
+      "deleted": 0,
+      "byStatus": {},
+      "byRole": {}
+    },
+    "series": {
+      "total": 1,
+      "byStatus": {}
+    },
+    "chapters": {
+      "total": 1,
+      "published": 0
+    },
+    "tasks": {
+      "total": 1,
+      "byStatus": {}
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §3. Flow 1 — Series Proposal → Serialization (kèm Board engine)
 
 **Nghiệp vụ:** Mangaka nộp hồ sơ series mới (synopsis + thiết kế nhân vật + **Name chương mẫu**) → hồ sơ vào **hàng đợi review chung** → một Editor **claim** (nhận) → review lặp proposal + Name → khi CẢ HAI được duyệt → Editor **pitch** lên Hội đồng → Board họp phiên, vote (quorum, đa số >50%) → APPROVED = series `SERIALIZED` + được xếp slot (tạp chí, số bắt đầu, weekly/monthly) → tự động mở đường tạo Contract (Flow 6, §4).
 
-**State machine Series:** `DRAFT → IN_REVIEW → READY_TO_PITCH → PITCHED → SERIALIZED` (nhánh kết thúc sớm: `ABANDONED` Editor từ chối hẳn / `WITHDRAWN` Mangaka rút / `REJECTED` Board từ chối — nộp lại được).
+**State machine Series:** `DRAFT → IN_REVIEW → READY_TO_PITCH → PITCHED → SERIALIZED`; nhánh mở lại: `ABANDONED|WITHDRAWN → DRAFT`, `REJECTED → IN_REVIEW|WITHDRAWN|ABANDONED`. Lịch sử status/Board Decision cũ được giữ nguyên qua mọi vòng.
 
 ### Happy path
 
@@ -1326,8 +2262,10 @@ Validation fail (status không nhận INACTIVE) |
    - **`PRESENTING`** — Editor trình bày (Board đọc decision details + reports; tra tài liệu cũ của series: `GET /board/reports?seriesId=`).
    - **Creator** `PATCH /board/sessions/:id/phase {phase:'QA'}` → **Q&A**: chat qua WS `sendMessage` → mọi người nhận `messageReceived` (lịch sử lưu DB). Phase forward-only, được nhảy cóc PRESENTING→VOTING nếu không có câu hỏi.
    - **Creator** `PATCH .../phase {phase:'VOTING'}` → room nhận `phaseChanged`; **từ đây CHAT BỊ KHÓA** (DENIED `VOTING_PHASE`) — chỉ vote.
-10. **Board members** `POST /board/decisions/:id/vote` (APPROVE/REJECT/ABSTAIN — ⚠ **chỉ được khi phase=`VOTING`**, sớm hơn → 409 `Error.VotingNotOpen`; realtime tiến độ qua `voteProgressUpdated`). Đủ quorum + >50% APPROVE → decision `APPROVED` → **hệ thống tự chuyển Series `SERIALIZED` + set slot từ details** → thông báo Mangaka/Editor → Flow 6 bắt đầu.
+10. **Board members** `POST /board/decisions/:id/vote` (APPROVE/REJECT/ABSTAIN — ⚠ **chỉ được khi phase=`VOTING`**, sớm hơn → 409 `Error.VotingNotOpen`; realtime tiến độ qua `voteProgressUpdated`). **Luật chốt (Spec 17):** quorum = **≥ 2/3 roster** đã bỏ phiếu (`ceil(2/3 × số thành viên roster)`), và **APPROVE > 1/2 roster** (đa số tuyệt đối của cả roster — phiếu ABSTAIN/vắng tính là chưa đồng thuận) → decision `APPROVED` → **hệ thống tự chuyển Series `SERIALIZED` + set slot từ details** → thông báo Mangaka/Editor → Flow 6 bắt đầu. Nếu REJECT đủ chặn (approve không thể quá bán) hoặc cả roster vote xong mà approve chưa quá bán → `REJECTED`. Chưa đủ quorum → `PENDING_QUORUM`; đủ quorum nhưng chưa ngã ngũ → `PENDING` (chờ phiếu tiếp). Vote lại một decision đã `APPROVED`/`REJECTED`/`EXPIRED` → 409 `Error.DecisionAlreadyFinalized` (FE nên disable nút vote khi `result ∉ {PENDING, PENDING_QUORUM}`).
 11. Phiên xong → `PATCH /board/sessions/:id/conclude` (hoặc cron auto khi quá `endTime`); decision còn treo → `EXPIRED`, Series giữ `PITCHED` — Editor mở phiên mới + decision mới (KHÔNG cần pitch lại; report cũ tra qua `?seriesId=`).
+12. **Mở lại hồ sơ trước pitch:** nếu Editor đã từ chối (`ABANDONED`) hoặc Mangaka đã rút (`WITHDRAWN`), Mangaka `POST /series/:id/reopen` → Series/proposal/proposal-Name về `DRAFT`, bỏ Editor cũ; sau khi sửa, gọi `submit` như bước 2 để trở lại hàng đợi chung và Editor bất kỳ claim.
+13. **Re-pitch sau Board reject:** Series `REJECTED` giữ Editor cũ. Editor `POST /series/:id/reopen-review {reason}` → `IN_REVIEW`, proposal `PROPOSAL_REVISION`; Mangaka sửa/resubmit, Editor approve proposal (và có thể mở lại proposal-Name `APPROVED→REVISION`) → `READY_TO_PITCH` → pitch lại và tạo Board Decision mới. Nếu không tiếp tục: Mangaka `withdraw` → `WITHDRAWN`, hoặc Editor `reject` → `ABANDONED`.
 
 ### Unhappy cases
 
@@ -1351,15 +2289,23 @@ Validation fail (status không nhận INACTIVE) |
 | Vote khi không thuộc roster phiên | `POST /board/decisions/:id/vote` | 403 (VoterNotAllowed) |
 | Vote khi phiên chưa ACTIVE / đã CONCLUDED | vote | 4xx theo trạng thái phiên |
 | 🆕 Vote khi phiên ACTIVE nhưng phase chưa `VOTING` (PRESENTING/QA) | `POST /board/decisions/:id/vote` | 409 `Error.VotingNotOpen` |
+| 🆕 Vote lại decision đã chốt (APPROVED/REJECTED/EXPIRED) | `POST /board/decisions/:id/vote` | 409 `Error.DecisionAlreadyFinalized` |
 | 🆕 Đổi phase khi không phải creator (Super Admin được) | `PATCH /board/sessions/:id/phase` | 403 `Error.NotSessionCreator` |
 | 🆕 Đổi phase LÙI hoặc giữ nguyên (chỉ tiến: PRESENTING→QA→VOTING, được nhảy cóc) | `PATCH /board/sessions/:id/phase` | 409 `Error.InvalidPhaseTransition` |
 | 🆕 Chat khi phase `VOTING` | WS `sendMessage` | ack `{status:'DENIED', reason:'VOTING_PHASE'}` |
 | 🆕 Đọc lịch sử chat khi ngoài roster/creator | `GET /board/sessions/:id/messages` | 403 `Error.NotSessionParticipant` |
 | 🆕 Tạo decision SERIALIZATION thiếu slot trong `details` | `POST /board/decisions` | 422 field-level (`details.magazine`...) |
 | Phiên bế mạc mà decision chưa đủ quorum | (cron/conclude) | decision → `EXPIRED`, series **giữ `PITCHED`**, Editor được notify mở phiên mới |
-| Board REJECT | (kết quả vote) | Series `REJECTED` + statusReason — Mangaka sửa và nộp lại |
-| Editor từ chối hẳn concept | `POST /series/:id/reject` | Series `ABANDONED` (terminal) |
-| Mangaka rút hồ sơ | `POST /series/:id/withdraw` | Series `WITHDRAWN` (terminal) |
+| Board REJECT | (kết quả vote) | Series `REJECTED` + statusReason; chờ Editor phụ trách mở rework |
+| Mở lại khi không ở ABANDONED/WITHDRAWN | `POST /series/:id/reopen` | 409 `Error.InvalidSeriesTransition` |
+| Người không phải chủ mở lại hồ sơ | `POST /series/:id/reopen` | 403 `Error.NotSeriesOwner` |
+| Mở rework khi không ở REJECTED | `POST /series/:id/reopen-review` | 409 `Error.InvalidSeriesTransition` |
+| Editor khác mở rework | `POST /series/:id/reopen-review` | 403 `Error.NotAssignedEditor` |
+| Mangaka gọi route Editor / Editor gọi route Mangaka | hai route reopen | 403 role guard |
+| Yêu cầu sửa proposal-Name APPROVED trước khi reopen-review | names request-revision | 409 `Error.InvalidNameState` |
+| Yêu cầu sửa chapter-Name APPROVED qua nhánh rework | chapter names request-revision | 409 `Error.InvalidNameState` (guard mới chỉ áp dụng proposal-Name) |
+| Editor từ chối hẳn concept | `POST /series/:id/reject` | `IN_REVIEW` hoặc `REJECTED` → Series `ABANDONED` |
+| Mangaka rút hồ sơ | `POST /series/:id/withdraw` | có thể rút thêm ở `REJECTED` → Series `WITHDRAWN` |
 | Xem series ngoài scope (Mangaka xem series người khác) | `GET /series/:id` | 403 `Error.SeriesAccessDenied` |
 
 > **Scope đọc `GET /series`:** MANGAKA → của mình · EDITOR → mình phụ trách + hàng đợi (IN_REVIEW chưa ai claim) · BOARD/SUPER_ADMIN → tất cả (ẩn DRAFT/WITHDRAWN) · ASSISTANT → không có quyền.
@@ -1430,6 +2376,112 @@ Validation fail (status không nhận INACTIVE) |
 |---|---|---|
 | 422 | `Error.ParentSeriesNotFound` | parent series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "title": "Tiêu đề mẫu",
+  "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+  "genres": [
+    "ACTION"
+  ],
+  "demographic": "SHONEN",
+  "publicationType": "WEEKLY",
+  "synopsis": "Nội dung mẫu",
+  "characterDesigns": [
+    "string"
+  ],
+  "estimatedLength": 1,
+  "namePages": [
+    {
+      "pageNumber": 1,
+      "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  ],
+  "parentSeriesId": "507f1f77bcf86cd799439011",
+  "relationshipType": "SEQUEL"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "mangakaId": "507f1f77bcf86cd799439011",
+      "editorId": "507f1f77bcf86cd799439011",
+      "mangaka": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "editor": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "coOwnerId": "507f1f77bcf86cd799439011",
+      "parentSeriesId": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu",
+      "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+      "genres": [
+        "ACTION"
+      ],
+      "demographic": "SHONEN",
+      "publicationType": "WEEKLY",
+      "magazine": "string",
+      "startIssueNumber": 1,
+      "status": "DRAFT",
+      "statusReason": "Nội dung mẫu",
+      "relationshipType": "SEQUEL",
+      "franchiseConsentStatus": "PENDING",
+      "createdAt": "2026-07-20T09:30:00.000Z",
+      "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+      "completionProposal": {
+        "proposedByRole": "string",
+        "proposedById": "507f1f77bcf86cd799439011",
+        "reason": "Nội dung mẫu",
+        "proposedEndingChapters": 0,
+        "proposedAt": "2026-07-20T09:30:00.000Z"
+      },
+      "proposal": {
+        "nameId": "507f1f77bcf86cd799439011",
+        "synopsis": "Nội dung mẫu",
+        "characterDesigns": [
+          "string"
+        ],
+        "estimatedLength": 0,
+        "status": "DRAFT",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "name": {
+      "id": "507f1f77bcf86cd799439011",
+      "seriesId": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "kind": "PROPOSAL",
+      "status": "DRAFT",
+      "version": 1,
+      "submittedAt": "2026-07-20T09:30:00.000Z",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PUT /series/proposals/:id`
@@ -1494,6 +2546,87 @@ Validation fail (status không nhận INACTIVE) |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.ProposalNotEditable` | proposal cannot be edited in current state |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "title": "Tiêu đề mẫu",
+  "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+  "genres": [
+    "ACTION"
+  ],
+  "demographic": "SHONEN",
+  "publicationType": "WEEKLY",
+  "synopsis": "Nội dung mẫu",
+  "characterDesigns": [
+    "string"
+  ],
+  "estimatedLength": 1
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /series/proposals/:id`
@@ -1514,6 +2647,22 @@ Validation fail (status không nhận INACTIVE) |
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.ProposalNotDeletable` | proposal cannot be deleted in current state |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1560,6 +2709,75 @@ Validation fail (status không nhận INACTIVE) |
 | `total` | number | ✅ | Tổng số bản ghi khớp filter (phân trang) |
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "mangakaId": "507f1f77bcf86cd799439011",
+        "editorId": "507f1f77bcf86cd799439011",
+        "mangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "editor": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "coOwnerId": "507f1f77bcf86cd799439011",
+        "parentSeriesId": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "genres": [
+          "ACTION"
+        ],
+        "demographic": "SHONEN",
+        "publicationType": "WEEKLY",
+        "magazine": "string",
+        "startIssueNumber": 1,
+        "status": "DRAFT",
+        "statusReason": "Nội dung mẫu",
+        "relationshipType": "SEQUEL",
+        "franchiseConsentStatus": "PENDING",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+        "completionProposal": {
+          "proposedByRole": "string",
+          "proposedById": "507f1f77bcf86cd799439011",
+          "reason": "Nội dung mẫu",
+          "proposedEndingChapters": 0,
+          "proposedAt": "2026-07-20T09:30:00.000Z"
+        },
+        "proposal": {
+          "nameId": "507f1f77bcf86cd799439011",
+          "synopsis": "Nội dung mẫu",
+          "characterDesigns": [
+            "string"
+          ],
+          "estimatedLength": 0,
+          "status": "DRAFT",
+          "createdAt": "2026-07-20T09:30:00.000Z"
+        }
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1613,6 +2831,68 @@ Validation fail (status không nhận INACTIVE) |
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /series/:id`
@@ -1644,6 +2924,81 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 409 | `Error.SeriesNotEditable` | series đã ở trạng thái terminal |
 | 409 | `Error.SeriesMetadataConflict` | metadata bị cập nhật cạnh tranh quá số lần CAS retry; reload series mới nhất rồi gửi lại PATCH |
 | 422 | — | body sai kiểu hoặc có field ngoài allowlist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "title": "Tiêu đề mẫu",
+  "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+  "synopsis": "Nội dung mẫu",
+  "characterDesigns": [
+    "string"
+  ]
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1696,6 +3051,85 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
 | 409 | `Error.FranchiseConsentRequired` | derivative needs original mangaka consent (APPROVED) before submit |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "mangakaId": "507f1f77bcf86cd799439011",
+      "editorId": "507f1f77bcf86cd799439011",
+      "mangaka": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "editor": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "coOwnerId": "507f1f77bcf86cd799439011",
+      "parentSeriesId": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu",
+      "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+      "genres": [
+        "ACTION"
+      ],
+      "demographic": "SHONEN",
+      "publicationType": "WEEKLY",
+      "magazine": "string",
+      "startIssueNumber": 1,
+      "status": "DRAFT",
+      "statusReason": "Nội dung mẫu",
+      "relationshipType": "SEQUEL",
+      "franchiseConsentStatus": "PENDING",
+      "createdAt": "2026-07-20T09:30:00.000Z",
+      "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+      "completionProposal": {
+        "proposedByRole": "string",
+        "proposedById": "507f1f77bcf86cd799439011",
+        "reason": "Nội dung mẫu",
+        "proposedEndingChapters": 0,
+        "proposedAt": "2026-07-20T09:30:00.000Z"
+      },
+      "proposal": {
+        "nameId": "507f1f77bcf86cd799439011",
+        "synopsis": "Nội dung mẫu",
+        "characterDesigns": [
+          "string"
+        ],
+        "estimatedLength": 0,
+        "status": "DRAFT",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "name": {
+      "id": "507f1f77bcf86cd799439011",
+      "seriesId": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "kind": "PROPOSAL",
+      "status": "DRAFT",
+      "version": 1,
+      "submittedAt": "2026-07-20T09:30:00.000Z",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/claim`
@@ -1745,6 +3179,68 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 |---|---|---|
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.SeriesAlreadyClaimed` | series has already been claimed |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1796,6 +3292,68 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.ReviewAlreadyStarted` | review has already started |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1854,6 +3412,76 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/proposal/resubmit`
@@ -1903,6 +3531,68 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 |---|---|---|
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -1955,6 +3645,68 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /series/:id/names`
@@ -1991,6 +3743,39 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "chapterId": "507f1f77bcf86cd799439011",
+        "chapterNumber": 1,
+        "kind": "PROPOSAL",
+        "status": "DRAFT",
+        "version": 1,
+        "pages": [
+          {
+            "pageNumber": 1,
+            "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+          }
+        ],
+        "submittedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /series/:id/names/:nameId`
@@ -2021,6 +3806,35 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 404 | `Error.NameNotFound` | name does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2059,6 +3873,43 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/names/:nameId/resubmit`
@@ -2088,6 +3939,35 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 |---|---|---|
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2119,6 +3999,35 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2159,6 +4068,48 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "pages": [
+    {
+      "pageNumber": 1,
+      "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  ]
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/names/:nameId/pages`
@@ -2196,6 +4147,44 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "pageNumber": 1,
+  "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2254,6 +4243,76 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidProposalState` | proposal state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/withdraw`
@@ -2310,6 +4369,323 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `POST /series/:id/reopen`
+> Mangaka mở lại hồ sơ `ABANDONED`/`WITHDRAWN`: Series + proposal + proposal-Name về `DRAFT`, bỏ Editor cũ để lần submit sau quay về hàng đợi chung
+
+**Quyền:** MANGAKA (Bearer)
+
+**Body:** không có.
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | Chủ sở hữu gọi reopen |
+| `editorId` | string | ✅ | `null` sau reopen; raw Mongo đã unset field để lọt hàng đợi claim |
+| `mangaka` / `editor` | `UserMini` | — | Embed optional; mutation có thể không trả — refetch `GET /series/:id` khi cần render |
+| `coOwnerId` | string | ✅ | Đồng sở hữu; null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc; null nếu không phải franchise |
+| `title` | string | ✅ | Tên series |
+| `coverImage` | string | ✅ | Object key ảnh bìa; null nếu chưa có |
+| `genres` | enum `Genre`[] | ✅ | Danh sách thể loại |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc; null nếu chưa chọn |
+| `publicationType` | enum `PublicationType` | ✅ | Nhịp phát hành; null nếu chưa chọn |
+| `magazine` | string | ✅ | Slot tạp chí; null trước SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ bắt đầu; null trước SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Luôn `DRAFT` khi thành công |
+| `statusReason` | string | ✅ | Lý do status gần nhất; có thể null |
+| `relationshipType` | enum `RelationshipType` | ✅ | Quan hệ franchise; null nếu không có |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Trạng thái consent; null nếu không áp dụng |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | `null` sau reopen |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc; null nếu chưa có |
+| `completionProposal.proposedByRole` | string | ✅ | `MANGAKA\|EDITOR` khi completionProposal có mặt |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc; nullable |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Proposal embedded; không null với flow này |
+| `proposal.nameId` | string | ✅ | Id proposal-Name được reset về `DRAFT` |
+| `proposal.synopsis` | string | ✅ | Tóm tắt; nullable |
+| `proposal.characterDesigns` | string[] | ✅ | Object keys thiết kế nhân vật |
+| `proposal.estimatedLength` | number | ✅ | Số chương dự kiến; nullable |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Luôn `DRAFT` khi thành công |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | Mangaka không phải chủ sở hữu series |
+| 403 | `You do not have permission to access this resource` | Token không có role MANGAKA (security code legacy — xem §0) |
+| 404 | `Error.SeriesNotFound` | Series không tồn tại hoặc id không hợp lệ |
+| 409 | `Error.InvalidSeriesTransition` | Series không ở `ABANDONED`/`WITHDRAWN` |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `POST /series/:id/reopen-review`
+> Editor phụ trách mở lại vòng chỉnh sửa sau khi Board reject: `REJECTED→IN_REVIEW`, giữ Editor/mốc review và đưa proposal về `PROPOSAL_REVISION`
+
+**Quyền:** EDITOR (Bearer)
+
+**Body** (`ReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do mở lại vòng rework, hiển thị cho Mangaka |
+
+**Response 201** (`SeriesRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `id` | string | ✅ | ObjectId của Series |
+| `mangakaId` | string | ✅ | Chủ sở hữu được notify |
+| `editorId` | string | ✅ | Giữ nguyên Editor phụ trách |
+| `mangaka` / `editor` | `UserMini` | — | Embed optional; mutation có thể không trả — refetch `GET /series/:id` khi cần render |
+| `coOwnerId` | string | ✅ | Đồng sở hữu; null nếu không có |
+| `parentSeriesId` | string | ✅ | Series gốc; null nếu không phải franchise |
+| `title` | string | ✅ | Tên series |
+| `coverImage` | string | ✅ | Object key ảnh bìa; null nếu chưa có |
+| `genres` | enum `Genre`[] | ✅ | Danh sách thể loại |
+| `demographic` | enum `Demographic` | ✅ | Phân khúc; null nếu chưa chọn |
+| `publicationType` | enum `PublicationType` | ✅ | Nhịp phát hành; null nếu chưa chọn |
+| `magazine` | string | ✅ | Slot tạp chí; null trước SERIALIZED |
+| `startIssueNumber` | integer | ✅ | Số kỳ bắt đầu; null trước SERIALIZED |
+| `status` | enum `SeriesStatus` | ✅ | Luôn `IN_REVIEW` khi thành công |
+| `statusReason` | string | ✅ | Lý do reopen-review vừa ghi; có thể null theo contract |
+| `relationshipType` | enum `RelationshipType` | ✅ | Quan hệ franchise; null nếu không có |
+| `franchiseConsentStatus` | enum `FranchiseConsentStatus` | ✅ | Trạng thái consent; null nếu không áp dụng |
+| `createdAt` | string | ✅ | ISO 8601 |
+| `reviewStartedAt` | string | ✅ | Giữ nguyên mốc đã bắt đầu review |
+| `completionProposal` | object | ✅ | Đề xuất kết thúc; null nếu chưa có |
+| `completionProposal.proposedByRole` | string | ✅ | `MANGAKA\|EDITOR` khi completionProposal có mặt |
+| `completionProposal.proposedById` | string | ✅ | UserId người đề xuất |
+| `completionProposal.reason` | string | ✅ | Lý do đề xuất |
+| `completionProposal.proposedEndingChapters` | integer | ✅ | Số chương kết thúc; nullable |
+| `completionProposal.proposedAt` | string | ✅ | ISO 8601 |
+| `proposal` | object | ✅ | Proposal embedded; không null với flow này |
+| `proposal.nameId` | string | ✅ | Id proposal-Name; Name giữ `APPROVED` tới khi Editor yêu cầu sửa |
+| `proposal.synopsis` | string | ✅ | Tóm tắt; nullable |
+| `proposal.characterDesigns` | string[] | ✅ | Object keys thiết kế nhân vật |
+| `proposal.estimatedLength` | number | ✅ | Số chương dự kiến; nullable |
+| `proposal.status` | enum `ProposalStatus` | ✅ | Luôn `PROPOSAL_REVISION` khi thành công |
+| `proposal.createdAt` | string | ✅ | ISO 8601 |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotAssignedEditor` | Caller không phải Editor đang phụ trách series |
+| 403 | `You do not have permission to access this resource` | Token không có role EDITOR (security code legacy — xem §0) |
+| 404 | `Error.SeriesNotFound` | Series không tồn tại hoặc id không hợp lệ |
+| 409 | `Error.InvalidSeriesTransition` | Series không ở `REJECTED` |
+| 422 | `Error.ValidationFailed` | Thiếu/rỗng `reason`, quá 1000 ký tự hoặc body có field lạ |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/pitch`
@@ -2361,6 +4737,68 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.SeriesNotReadyToPitch` | series is not ready to pitch |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /board/suggest-members`
@@ -2396,6 +4834,37 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 422 | `Error.NotEnoughBoardMembers` | fewer than 3 active board members exist — cannot form a valid session |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "userId": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "specialtyGenres": [
+          "ACTION"
+        ],
+        "matchedGenres": [
+          "ACTION"
+        ],
+        "score": 0,
+        "hasProfile": false
+      }
+    ],
+    "size": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /board/sessions`
@@ -2413,7 +4882,7 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | `description` | string (0..500 ký tự) ✍ | — |  |
 | `allowedEditorIds` | string[] ✍ | — | Bỏ trống → hệ thống tự phân công theo seriesId (PB-05) |
 | `seriesId` | string (regex) ✍ | — | Nguồn thể loại cho auto-assign roster. BẮT BUỘC khi omit allowedEditorIds |
-| `rosterSize` | integer (≥ 3) ✍ | — | Sĩ số mong muốn (sẽ được ép về số lẻ). Mặc định lấy BoardConfig.quorumMin |
+| `rosterSize` | integer (≥ 3) ✍ | — | Sĩ số roster mong muốn (sẽ được ép về số lẻ). Mặc định lấy `BoardConfig.quorumMin` (nay = sĩ số roster mặc định, không phải quorum đếm phiếu — Spec 17) |
 
 **Response 201** (`BoardSessionRes` — đọc `res.data`):
 
@@ -2443,6 +4912,62 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 422 | `Error.RosterSourceRequired` | provide allowedEditorIds, or seriesId so the roster can be auto-assigned |
 | 422 | `Error.NotEnoughBoardMembers` | fewer than 3 active board members exist — cannot form a valid session |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "title": "Tiêu đề mẫu",
+  "startTime": "2026-07-20T09:30:00.000Z",
+  "endTime": "2026-07-20T09:30:00.000Z",
+  "description": "Nội dung mẫu",
+  "allowedEditorIds": [
+    "507f1f77bcf86cd799439011"
+  ],
+  "seriesId": "507f1f77bcf86cd799439011",
+  "rosterSize": 3
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "description": "Nội dung mẫu",
+    "creatorId": "507f1f77bcf86cd799439011",
+    "status": "UPCOMING",
+    "phase": "PRESENTING",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "members": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "startTime": "2026-07-20T09:30:00.000Z",
+    "endTime": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /board/sessions`
@@ -2466,6 +4991,48 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | `members` | `UserMini[]` | ✅ | Roster đã resolve theo thứ tự `allowedEditorIds` |
 
 > `creator`/`members` chỉ được bảo đảm ở hai route read trên; response mutation create/start/conclude/phase có thể không chứa hai field enrichment này.
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu",
+      "description": "Nội dung mẫu",
+      "creatorId": "507f1f77bcf86cd799439011",
+      "status": "UPCOMING",
+      "phase": "PRESENTING",
+      "creator": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "members": [
+        {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      ],
+      "allowedEditorIds": [
+        "507f1f77bcf86cd799439011"
+      ],
+      "startTime": "2026-07-20T09:30:00.000Z",
+      "endTime": "2026-07-20T09:30:00.000Z",
+      "createdAt": "2026-07-20T09:30:00.000Z",
+      "updatedAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2498,6 +5065,46 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 |---|---|---|
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "description": "Nội dung mẫu",
+    "creatorId": "507f1f77bcf86cd799439011",
+    "status": "UPCOMING",
+    "phase": "PRESENTING",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "members": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "startTime": "2026-07-20T09:30:00.000Z",
+    "endTime": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /board/sessions/:id/phase`
@@ -2521,6 +5128,54 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.BoardSessionNotFound` | session không tồn tại hoặc id không hợp lệ |
 | 409 | `Error.BoardSessionNotOpen` | session không ở trạng thái ACTIVE |
 | 409 | `Error.InvalidPhaseTransition` | phase đích bằng hoặc đứng trước phase hiện tại |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "phase": "PRESENTING"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "description": "Nội dung mẫu",
+    "creatorId": "507f1f77bcf86cd799439011",
+    "status": "UPCOMING",
+    "phase": "PRESENTING",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "members": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "startTime": "2026-07-20T09:30:00.000Z",
+    "endTime": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2556,6 +5211,36 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.NotSessionParticipant` | caller không phải creator, roster hoặc SUPER_ADMIN |
 | 404 | `Error.BoardSessionNotFound` | session không tồn tại hoặc id không hợp lệ |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "sessionId": "507f1f77bcf86cd799439011",
+        "sender": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "content": "Nội dung mẫu",
+        "phase": "PRESENTING",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /board/sessions/:id/start`
@@ -2587,6 +5272,46 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 | 409 | `Error.InvalidBoardSessionTransition` | board session status transition is not allowed by BOARD_SESSION_TRANSITIONS |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "description": "Nội dung mẫu",
+    "creatorId": "507f1f77bcf86cd799439011",
+    "status": "UPCOMING",
+    "phase": "PRESENTING",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "members": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "startTime": "2026-07-20T09:30:00.000Z",
+    "endTime": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /board/sessions/:id/conclude`
@@ -2617,6 +5342,46 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 403 | `Error.NotSessionCreator` | only the board session creator or a Super Admin can conclude the session |
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 | 409 | `Error.InvalidBoardSessionTransition` | board session status transition is not allowed by BOARD_SESSION_TRANSITIONS |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "description": "Nội dung mẫu",
+    "creatorId": "507f1f77bcf86cd799439011",
+    "status": "UPCOMING",
+    "phase": "PRESENTING",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "members": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "startTime": "2026-07-20T09:30:00.000Z",
+    "endTime": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2666,6 +5431,60 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 422 | `Error.InvalidBoardMembers` | board member count must be odd to prevent tie votes |
 | 422 | — | `SERIALIZATION` thiếu/sai `details.magazine`, `startIssueNumber` hoặc `publicationType` |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "boardSessionId": "507f1f77bcf86cd799439011",
+  "targetSeriesId": "507f1f77bcf86cd799439011",
+  "decisionType": "CONTINUE",
+  "details": {}
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "targetSeriesId": "507f1f77bcf86cd799439011",
+    "targetSeries": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "boardSessionId": "507f1f77bcf86cd799439011",
+    "decisionType": "CONTINUE",
+    "result": "PENDING",
+    "totalVotes": 1,
+    "approveCount": 1,
+    "rejectCount": 1,
+    "quorumMet": false,
+    "endingChapterAllowance": 0,
+    "details": null,
+    "decidedAt": "2026-07-20T09:30:00.000Z",
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "votes": [
+      {
+        "voterId": "507f1f77bcf86cd799439011",
+        "voteValue": "APPROVE",
+        "note": "Nội dung mẫu",
+        "votedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /board/decisions`
@@ -2678,10 +5497,58 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | Param | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
 | `boardSessionId` | string | — | Lọc decision theo session; id không hợp lệ trả mảng rỗng |
+| `targetSeriesId` | string | — | 🆕 Lọc decision theo series mục tiêu (dùng để hỏi "series này có decision nào đang treo/đã chốt"); id không hợp lệ trả mảng rỗng. Kết hợp được với `boardSessionId` |
+
+> **Biết series nào đang được bỏ phiếu:** KHÔNG có `SeriesStatus.PITCHING` — series đứng ở `PITCHED` suốt thời gian chờ/đang vote. Muốn biết trạng thái vote, gọi `GET /board/decisions?targetSeriesId=<id>` rồi đọc `result`: `PENDING`/`PENDING_QUORUM` = đang bỏ phiếu, `APPROVED`/`REJECTED` = đã chốt, `EXPIRED` = phiên bế mạc chưa chốt (mở phiên mới).
 
 **Response 200** (`BoardDecisionRes[]` — đọc `res.data`): mỗi item có thêm `targetSeries: {id, title} | null`, chỉ được bảo đảm ở route list/detail decision.
 
 > `targetSeries` là field enrichment cho read route; response tạo decision có thể không chứa field này.
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "targetSeriesId": "507f1f77bcf86cd799439011",
+      "targetSeries": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu"
+      },
+      "boardSessionId": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "totalVotes": 1,
+      "approveCount": 1,
+      "rejectCount": 1,
+      "quorumMet": false,
+      "endingChapterAllowance": 0,
+      "details": null,
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "allowedEditorIds": [
+        "507f1f77bcf86cd799439011"
+      ],
+      "votes": [
+        {
+          "voterId": "507f1f77bcf86cd799439011",
+          "voteValue": "APPROVE",
+          "note": "Nội dung mẫu",
+          "votedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2721,6 +5588,49 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 |---|---|---|
 | 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "targetSeriesId": "507f1f77bcf86cd799439011",
+    "targetSeries": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "boardSessionId": "507f1f77bcf86cd799439011",
+    "decisionType": "CONTINUE",
+    "result": "PENDING",
+    "totalVotes": 1,
+    "approveCount": 1,
+    "rejectCount": 1,
+    "quorumMet": false,
+    "endingChapterAllowance": 0,
+    "details": null,
+    "decidedAt": "2026-07-20T09:30:00.000Z",
+    "allowedEditorIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "votes": [
+      {
+        "voterId": "507f1f77bcf86cd799439011",
+        "voteValue": "APPROVE",
+        "note": "Nội dung mẫu",
+        "votedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /board/decisions/:id/vote`
@@ -2750,7 +5660,33 @@ Khi có thay đổi thật, BE ghi audit `METADATA_UPDATED` và notify best-effo
 | 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 | 409 | `Error.VotingNotOpen` | session ACTIVE nhưng phase chưa phải `VOTING` (roster được kiểm tra trước phase) |
+| 409 | `Error.DecisionAlreadyFinalized` | 🆕 decision đã `APPROVED`/`REJECTED`/`EXPIRED` — sổ phiếu đã khóa, không nhận thêm phiếu (guard chạy sau roster+phase, trước double-vote) |
 | 409 | `Error.VoterAlreadyVoted` | voter has already cast a vote on this decision |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "voteValue": "APPROVE",
+  "note": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2768,6 +5704,27 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "voterId": "507f1f77bcf86cd799439011",
+      "voteValue": "APPROVE",
+      "note": "Nội dung mẫu",
+      "votedAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2808,6 +5765,45 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.BoardDecisionNotFound` | board decision does not exist (or id is not a valid ObjectId) |
 | 404 | `Error.BoardSessionNotFound` | board session does not exist (or id is not a valid ObjectId) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "seriesId": "507f1f77bcf86cd799439011",
+  "boardDecisionId": "507f1f77bcf86cd799439011",
+  "reportType": "string",
+  "content": "Nội dung mẫu",
+  "attachments": [
+    "string"
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "preparedBy": "string",
+    "reportType": "string",
+    "content": "Nội dung mẫu",
+    "attachments": [
+      "string"
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /board/reports`
@@ -2827,6 +5823,33 @@ Id filter không hợp lệ trả mảng rỗng, không phải 404.
 **Response 200** :
 
 _(xem envelope §0 — data có thể null)_
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "seriesId": "507f1f77bcf86cd799439011",
+      "boardDecisionId": "507f1f77bcf86cd799439011",
+      "preparedBy": "string",
+      "reportType": "string",
+      "content": "Nội dung mẫu",
+      "attachments": [
+        "string"
+      ],
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2854,12 +5877,39 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 404 | `Error.BoardReportNotFound` | series report does not exist (or id is not a valid ObjectId) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "preparedBy": "string",
+    "reportType": "string",
+    "content": "Nội dung mẫu",
+    "attachments": [
+      "string"
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /board/config`
 > Xem cấu hình biểu quyết Hội đồng hiện tại
 
 **Quyền:** SUPER_ADMIN, BOARD_MEMBER, EDITOR (Bearer)
+
+> 🆕 **Spec 17:** config được **lazy-seed** — lần gọi đầu trên DB chưa có row sẽ tự tạo default (`boardTotalMembers=5, quorumMin=3, approveMajorityRatio=0.5`) và trả 200. KHÔNG còn 404 trên DB mới.
 
 **Response 200** (`BoardConfigRes` — đọc `res.data`):
 
@@ -2868,10 +5918,32 @@ _(xem envelope §0 — data có thể null)_
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `updatedBy` | string | — |  |
 | `boardTotalMembers` | number | ✅ |  |
-| `quorumMin` | number | ✅ |  |
-| `approveMajorityRatio` | number | ✅ |  |
+| `quorumMin` | number | ✅ | ⚠ **Spec 17: chỉ là sĩ số roster mặc định khi auto-assign phiên** — KHÔNG còn là quorum đếm phiếu. Quorum vote thực tế = `ceil(2/3 × roster của phiên)` (xem route vote) |
+| `approveMajorityRatio` | number | ✅ | Ngưỡng đa số (default 0.5); APPROVE phải > `ratio × roster` để thông qua |
 | `isDefault` | boolean | — |  |
 | `updatedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "updatedBy": "string",
+    "boardTotalMembers": 1,
+    "quorumMin": 0,
+    "approveMajorityRatio": 0,
+    "isDefault": false,
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -2884,8 +5956,8 @@ _(xem envelope §0 — data có thể null)_
 
 | Field | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
-| `boardTotalMembers` | number ✍ | ✅ |  |
-| `quorumMin` | number ✍ | ✅ |  |
+| `boardTotalMembers` | number ✍ | ✅ | Phải lẻ (chống hòa phiếu) |
+| `quorumMin` | number ✍ | ✅ | ⚠ Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu (≤ `boardTotalMembers`) |
 | `approveMajorityRatio` | number ✍ | ✅ |  |
 | `updatedBy` | string ✍ | ✅ |  |
 
@@ -2907,6 +5979,40 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 400 | `Error.BoardConfigLocked` | cannot update BoardConfig while a session is ACTIVE/UPCOMING |
 | 404 | `Error.BoardConfigNotFound` | system has no active BoardConfig row |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "boardTotalMembers": 1,
+  "quorumMin": 0,
+  "approveMajorityRatio": 0,
+  "updatedBy": "string"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "updatedBy": "string",
+    "boardTotalMembers": 1,
+    "quorumMin": 0,
+    "approveMajorityRatio": 0,
+    "isDefault": false,
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §4. Flow 6 — Contract & Payment
@@ -2918,8 +6024,9 @@ _(xem envelope §0 — data có thể null)_
 1. **Editor** `POST /contracts` (seriesId + contractType + valuationAmount + ownership % + terminationClause) → `DRAFT`. Chỉ tạo được khi series `SERIALIZED`.
 2. **Editor** thêm điều kiện: `POST /contracts/:contractId/payment-conditions` (4 loại — `thresholdConfig` theo loại, xem reference). Sửa/tắt: `PATCH .../payment-conditions/:conditionId` / `.../disable`.
 3. **Editor** gửi Mangaka: `PATCH /contracts/:id/status` (sang MANGAKA_REVIEW).
-4. **Mangaka** xem (`GET /contracts/:id`): đồng ý → `PATCH /contracts/:id/status` (MANGAKA_APPROVED) **hoặc** yêu cầu sửa → `POST /contracts/:id/request-changes` (→ NEGOTIATION → Editor sửa `PATCH /contracts/:id` → gửi lại — mọi sửa đổi reset phê duyệt cũ).
-5. **Board** duyệt bản Mangaka đã gật: `POST /contracts/:id/board-approve` (hoặc `board-request-changes` → NEGOTIATION → vòng lại từ Mangaka).
+4. **Mangaka** xem (`GET /contracts/:id`): đồng ý → `PATCH /contracts/:id/status` (MANGAKA_APPROVED) **hoặc** yêu cầu sửa → `POST /contracts/:id/request-changes` **kèm body `{reason}` bắt buộc** 🆕 (→ NEGOTIATION → Editor sửa `PATCH /contracts/:id` → gửi lại — mọi sửa đổi reset phê duyệt cũ).
+5. **Board** duyệt bản Mangaka đã gật: `POST /contracts/:id/board-approve` (hoặc `board-request-changes` **kèm `{reason}`** 🆕 → NEGOTIATION → vòng lại từ Mangaka).
+   🆕 Cả 2 route chỉ nhận board member **trong roster phiên họp** của hợp đồng — **1 người là đủ** (đại diện xem xét), khác với bước ký cần **toàn bộ** roster.
 6. Ký: **Mangaka** `POST /contracts/:id/signatures/mangaka` (OTP) → `MANGAKA_SIGNED` → **Board** `POST /contracts/:id/signatures/board` → **`FULLY_EXECUTED`** (khóa — mở gate publish chapter).
 
 ### Happy path — dòng tiền tự động
@@ -2950,6 +6057,11 @@ _(xem envelope §0 — data có thể null)_
 | OTP ký sai/hết hạn | signatures (OTP) | 422 / 410 |
 | Sửa HĐ đã FULLY_EXECUTED trực tiếp | `PATCH /contracts/:id` | 409 (phải dùng Amendment) |
 | Mangaka ký amendment của HĐ FULL_BUYOUT | `.../sign/mangaka` | 409 `Error.MangakaSignNotRequired` |
+| 🆕 Board member **ngoài roster** phiên họp bấm duyệt/yêu cầu sửa | `board-approve` / `board-request-changes` | 403 `NOT_AUTHORIZED_IN_BOARD` |
+| 🆕 Hợp đồng chưa gắn Board Decision | `board-approve` / `board-request-changes` | 400 `BOARD_DECISION_NOT_FOUND` |
+| 🆕 Yêu cầu sửa mà không nêu lý do | `request-changes` / `board-request-changes` | 422 (thiếu `reason`) |
+| 🆕 Tải PDF khi HĐ chưa ký khoá | `GET /contracts/:id/pdf` | 409 `Error.ContractNotExecutedForPdf` |
+| 🆕 Người ngoài cuộc tải PDF | `GET /contracts/:id/pdf` | 403 `Error.ContractAccessDenied` |
 | Execute amendment 2 lần (double-submit) | sign cuối | 409 (guard atomic) |
 | Reject amendment đang trình ký | `.../reject` | về `DRAFT` + **reset toàn bộ chữ ký** |
 | Duyệt/chi PaymentRecord sai trạng thái | payments approve/pay | 409 |
@@ -2969,6 +6081,23 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|---|
 | `status` | string | ✅ |  |
 | `module` | string | ✅ |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "status": "string",
+    "module": "string"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3014,17 +6143,97 @@ _(xem envelope §0 — data có thể null)_
 | `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
-**Lỗi nghiệp vụ:**
+**Lỗi nghiệp vụ:** 🆕 2026-07-19 — BE siết validate lúc tạo draft (căn cứ Board Decision phải hợp lệ):
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 404 | — | CONTRACT_NOT_FOUND |
-| 409 | `Error.SeriesNotSerialized` | Series phải ở SERIALIZED (hoặc CANCELLING/COMPLETING cho chương kết thúc) mới tạo được chapter |
+| 404 | — (`CONTRACT_NOT_FOUND`) | `seriesId` rác/không tồn tại |
+| 404 | `Error.BoardDecisionNotFound` 🆕 | `boardDecisionId` rác/không tồn tại |
+| 409 | `Error.SeriesNotSerialized` | Series chưa `SERIALIZED` — chỉ tạo hợp đồng sau khi Board duyệt serial hóa |
+| 409 | `Error.InvalidSerializationDecision` 🆕 | Decision không phải `SERIALIZATION` + `APPROVED` của đúng series này (`targetSeriesId` phải khớp `seriesId`) |
+| 409 | `Error.ContractMangakaMismatch` 🆕 | `mangakaId` gửi lên không phải chủ sở hữu hiện tại của series |
+| 409 | `Error.OpenContractExists` 🆕 | Series hoặc Decision này đã có hợp đồng **chưa kết thúc** (mọi status ngoài `VOIDED`/`FULFILLED`/`TERMINATED`/`TERMINATED_BY_BREACH`/`EXPIRED`) — kể cả `FULLY_EXECUTED` |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "seriesId": "507f1f77bcf86cd799439011",
+  "mangakaId": "507f1f77bcf86cd799439011",
+  "boardDecisionId": "507f1f77bcf86cd799439011",
+  "contractType": "FULL_BUYOUT",
+  "valuationAmount": 1,
+  "publisherOwnershipPct": 1,
+  "mangakaOwnershipPct": 1,
+  "terminationClause": "string",
+  "contractStart": "2026-07-20T09:30:00.000Z",
+  "contractEnd": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
 #### `GET /contracts`
 > Danh sách hợp đồng theo scope role hiện tại
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
+> 🆕 **2026-07-19:** mỗi item kèm thêm `boardDecision {id, decisionType, result, decidedAt, boardSession{id,title,startTime}}` — xem bảng field ở `GET /contracts/:id`.
 
 **Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
 
@@ -3032,10 +6241,70 @@ _(xem envelope §0 — data có thể null)_
 
 _(xem envelope §0 — data có thể null)_
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "seriesId": "507f1f77bcf86cd799439011",
+      "mangakaId": "507f1f77bcf86cd799439011",
+      "editorId": "507f1f77bcf86cd799439011",
+      "series": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu"
+      },
+      "mangaka": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "editor": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "boardDecisionId": "507f1f77bcf86cd799439011",
+      "boardDecision": {
+        "id": "507f1f77bcf86cd799439011",
+        "decisionType": "CONTINUE",
+        "result": "PENDING",
+        "decidedAt": "2026-07-20T09:30:00.000Z",
+        "boardSession": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu",
+          "startTime": "2026-07-20T09:30:00.000Z"
+        }
+      },
+      "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+      "contractType": "FULL_BUYOUT",
+      "valuationAmount": 1000000,
+      "publisherOwnershipPct": 50,
+      "mangakaOwnershipPct": 50,
+      "terminationClause": "string",
+      "contractStart": "2026-07-20T09:30:00.000Z",
+      "contractEnd": "2026-07-20T09:30:00.000Z",
+      "status": "DRAFT",
+      "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+      "boardSignedAt": "2026-07-20T09:30:00.000Z",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /contracts/:id`
 > Chi tiết hợp đồng
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
 
@@ -3060,6 +6329,67 @@ _(xem envelope §0 — data có thể null)_
 | `mangakaSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+| `series` | object 🆕 | GET | `{id, title}` — title series để render, không cần tra `/series/:id` |
+| `mangaka` | object 🆕 | GET | `UserMini {id, displayName, avatar}` của Mangaka ký hợp đồng |
+| `editor` | object \| null 🆕 | GET | `UserMini` của Editor soạn; `null` = chưa gán |
+| `boardDecision` | object \| null 🆕 2026-07-19 | GET | Căn cứ phiên họp serial hóa: `{id, decisionType, result, decidedAt, boardSession{id, title, startTime}}` — render "duyệt tại phiên X ngày Y" không cần tra `/board/decisions`; `decidedAt` null khi chưa finalize |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3083,6 +6413,44 @@ _(xem envelope §0 — data có thể null)_
 | `boardProgress.totalSigned` | number | ✅ |  |
 | `boardProgress.signedEditors` | object[] | ✅ |  |
 | `boardProgress.pendingEditors` | object[] | ✅ |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "status": "DRAFT",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "isSigned": false,
+      "signedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "boardProgress": {
+      "totalRequired": 1,
+      "totalSigned": 1,
+      "signedEditors": [
+        {
+          "id": "507f1f77bcf86cd799439011",
+          "actionAt": "2026-07-20T09:30:00.000Z"
+        }
+      ],
+      "pendingEditors": [
+        {
+          "id": "507f1f77bcf86cd799439011",
+          "actionAt": null
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3126,6 +6494,78 @@ _(xem envelope §0 — data có thể null)_
 | `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "contractType": "FULL_BUYOUT",
+  "valuationAmount": 1,
+  "publisherOwnershipPct": 1,
+  "mangakaOwnershipPct": 1,
+  "terminationClause": "string",
+  "contractStart": "2026-07-20T09:30:00.000Z",
+  "contractEnd": "2026-07-20T09:30:00.000Z",
+  "note": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /contracts/:id/status`
@@ -3155,12 +6595,81 @@ _(xem envelope §0 — data có thể null)_
 | `boardSignedAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 | `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /contracts/:id/request-changes`
 > B-CON-02: Mangaka yêu cầu chỉnh sửa điều khoản → NEGOTIATION
 
-**Quyền:** MANGAKA (Bearer)
+**Quyền:** MANGAKA (Bearer) — phải đúng Mangaka của hợp đồng.
+
+> 🆕 **BREAKING 2026-07-20 — route này nay BẮT BUỘC có body `{reason}`.** Trước đây gọi không body;
+> Editor nhận thông báo "Mangaka yêu cầu chỉnh sửa" mà **không biết sửa gì** → phải hỏi ngoài hệ thống,
+> làm gãy vòng thương lượng (BR-CONTRACT-02). Gọi thiếu `reason` → **422**.
+> Lý do được ghi vào **2 nơi**: nội dung Notification gửi Editor, và `AuditLog.reason` (tra qua
+> `GET /audit?entityType=CONTRACT&entityId=:id` — bản ghi bền, notification chỉ là kênh báo tức thời).
+
+**Body** (`ContractChangeReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do yêu cầu chỉnh sửa — Editor đọc để biết sửa điều khoản nào. `.strict()`: gửi thêm field lạ (vd `note`) → 422 |
 
 **Response 201** (`ContractRes` — đọc `res.data`):
 
@@ -3191,13 +6700,89 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.NotContractMangaka` | caller không phải Mangaka của hợp đồng (⚠ đổi từ ONLY_ASSIGNED_EDITOR_CAN_EDIT — 2026-07-17) |
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
+| 422 | `Error.ValidationFailed` | 🆕 thiếu `reason` / `reason` rỗng / > 1000 ký tự / gửi field lạ |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
 #### `POST /contracts/:id/board-approve`
 > B-CON-02 (BOARD_REVIEW): Hội đồng duyệt điều khoản → BOARD_APPROVED
 
-**Quyền:** BOARD_MEMBER (Bearer)
+**Quyền:** BOARD_MEMBER (Bearer) — 🆕 **phải nằm trong roster phiên họp** đã ra quyết định
+`SERIALIZATION` cho hợp đồng này (`contract.boardDecision.boardSession.allowedEditorIds`).
+
+> 🆕 **SIẾT QUYỀN 2026-07-20 (không đổi shape request/response).** Trước đây **bất kỳ** BOARD_MEMBER nào
+> trong hệ thống cũng bấm được, kể cả người không dự phiên họp đó. Nay dùng **cùng một nguồn sự thật**
+> mà bước KÝ (`/signatures/board`) vẫn dùng. Phân biệt rõ 2 bước:
+> - **XEM XÉT điều khoản** (`board-approve` / `board-request-changes`): **1 board member trong roster là đủ** — đại diện Hội đồng.
+> - **KÝ** (`/signatures/board`): **TOÀN BỘ roster phải ký** mới `FULLY_EXECUTED` (multi-sign 100%).
+>
+> **FE cần làm:** chỉ hiện nút Duyệt/Yêu cầu sửa khi user hiện tại có trong `boardDecision.boardSession`
+> roster (lấy từ `GET /contracts/:id` — xem §0.10 embed `boardDecision`). Nếu vẫn gọi khi ngoài roster → **403**.
 
 **Response 201** (`ContractRes` — đọc `res.data`):
 
@@ -3225,15 +6810,90 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
+| 400 | `BOARD_DECISION_NOT_FOUND` | 🆕 hợp đồng chưa gắn quyết định Hội đồng nào |
+| 403 | `NOT_AUTHORIZED_IN_BOARD` | 🆕 caller là BOARD_MEMBER nhưng **ngoài roster** phiên họp của hợp đồng này |
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
+
+> ⚠ Thứ tự guard: **authz trước, transition sau**. Người ngoài roster luôn nhận **403** kể cả khi
+> hợp đồng đang ở trạng thái không duyệt được — cố ý, để không lộ trạng thái hợp đồng ra ngoài Hội đồng.
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
 #### `POST /contracts/:id/board-request-changes`
 > B-CON-02 (BOARD_REVIEW): Hội đồng yêu cầu chỉnh sửa → NEGOTIATION
 
-**Quyền:** BOARD_MEMBER (Bearer)
+**Quyền:** BOARD_MEMBER (Bearer) — 🆕 **phải nằm trong roster phiên họp** (như `board-approve` ở trên).
+
+> 🆕 **BREAKING 2026-07-20 — route này nay BẮT BUỘC có body `{reason}`** (cùng lý do với
+> `/request-changes` phía Mangaka). Gọi thiếu → **422**.
+>
+> ⚠ **Tác động nặng hơn `board-approve`:** route này reset **CẢ HAI** chữ ký
+> (`mangakaSignedAt` và `boardSignedAt` về `null`) và đưa hợp đồng về `NEGOTIATION` — cả hai bên
+> phải gật lại từ đầu. FE nên confirm dialog trước khi gọi.
+
+**Body** (`ContractChangeReasonBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `reason` | string (1..1000 ký tự) ✍ | ✅ | Lý do Hội đồng yêu cầu sửa — vào Notification gửi Editor + `AuditLog.reason`. `.strict()`: field lạ → 422 |
 
 **Response 201** (`ContractRes` — đọc `res.data`):
 
@@ -3261,8 +6921,76 @@ _(xem envelope §0 — data có thể null)_
 
 | Status | Code | Khi nào |
 |---|---|---|
+| 400 | `BOARD_DECISION_NOT_FOUND` | 🆕 hợp đồng chưa gắn quyết định Hội đồng nào |
+| 403 | `NOT_AUTHORIZED_IN_BOARD` | 🆕 caller là BOARD_MEMBER nhưng **ngoài roster** phiên họp của hợp đồng này |
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.InvalidContractTransition` | contract status transition not allowed by CONTRACT_TRANSITIONS (Flow 6) |
+| 422 | `Error.ValidationFailed` | 🆕 thiếu `reason` / `reason` rỗng / > 1000 ký tự / gửi field lạ |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3307,6 +7035,71 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.NotContractMangaka` | caller không phải Mangaka của hợp đồng này (mới 2026-07-17) |
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.ContractNotSignableYet` | contract must reach BOARD_APPROVED before it can be signed (B-CON-02) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "otpCode": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "boardDecision": {
+      "id": "507f1f77bcf86cd799439011",
+      "decisionType": "CONTINUE",
+      "result": "PENDING",
+      "decidedAt": "2026-07-20T09:30:00.000Z",
+      "boardSession": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "startTime": "2026-07-20T09:30:00.000Z"
+      }
+    },
+    "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+    "contractType": "FULL_BUYOUT",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3357,6 +7150,75 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | `Error.ContractNotSignableYet` | contract must reach BOARD_APPROVED before it can be signed (B-CON-02) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "otpCode": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "status": "string",
+    "message": "Nội dung mẫu",
+    "contract": {
+      "id": "507f1f77bcf86cd799439011",
+      "seriesId": "507f1f77bcf86cd799439011",
+      "mangakaId": "507f1f77bcf86cd799439011",
+      "editorId": "507f1f77bcf86cd799439011",
+      "series": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu"
+      },
+      "mangaka": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "editor": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "boardDecisionId": "507f1f77bcf86cd799439011",
+      "boardDecision": {
+        "id": "507f1f77bcf86cd799439011",
+        "decisionType": "CONTINUE",
+        "result": "PENDING",
+        "decidedAt": "2026-07-20T09:30:00.000Z",
+        "boardSession": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu",
+          "startTime": "2026-07-20T09:30:00.000Z"
+        }
+      },
+      "sourceTransferRequestId": "507f1f77bcf86cd799439011",
+      "contractType": "FULL_BUYOUT",
+      "valuationAmount": 1000000,
+      "publisherOwnershipPct": 50,
+      "mangakaOwnershipPct": 50,
+      "terminationClause": "string",
+      "contractStart": "2026-07-20T09:30:00.000Z",
+      "contractEnd": "2026-07-20T09:30:00.000Z",
+      "status": "DRAFT",
+      "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+      "boardSignedAt": "2026-07-20T09:30:00.000Z",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /contracts/:contractId/payment-conditions`
@@ -3397,6 +7259,43 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | CONTRACT_NOT_FOUND |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "conditionType": "CHAPTER_MILESTONE",
+  "thresholdConfig": null,
+  "isRecurring": false,
+  "payoutAmount": 1,
+  "payoutPct": 1
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionType": "CHAPTER_MILESTONE",
+    "thresholdConfig": null,
+    "payoutAmount": 1000000,
+    "payoutPct": 50,
+    "isRecurring": false,
+    "status": "PENDING",
+    "lastTriggeredValue": 0,
+    "achievedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /contracts/:contractId/payment-conditions`
@@ -3426,6 +7325,35 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 403 | — | ONLY_ASSIGNED_EDITOR_CAN_MANAGE_PAYMENT_CONDITIONS |
 | 404 | — | CONTRACT_NOT_FOUND |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "contractId": "507f1f77bcf86cd799439011",
+        "conditionType": "CHAPTER_MILESTONE",
+        "thresholdConfig": null,
+        "payoutAmount": 1000000,
+        "payoutPct": 50,
+        "isRecurring": false,
+        "status": "PENDING",
+        "lastTriggeredValue": 0,
+        "achievedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3468,6 +7396,42 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | PAYMENT_CONDITION_NOT_FOUND |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "thresholdConfig": null,
+  "payoutAmount": 1,
+  "payoutPct": 1,
+  "isRecurring": false
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionType": "CHAPTER_MILESTONE",
+    "thresholdConfig": null,
+    "payoutAmount": 1000000,
+    "payoutPct": 50,
+    "isRecurring": false,
+    "status": "PENDING",
+    "lastTriggeredValue": 0,
+    "achievedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /contracts/:contractId/payment-conditions/:conditionId/disable`
@@ -3499,6 +7463,31 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | CONTRACT_NOT_FOUND |
 | 404 | — | PAYMENT_CONDITION_NOT_FOUND |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionType": "CHAPTER_MILESTONE",
+    "thresholdConfig": null,
+    "payoutAmount": 1000000,
+    "payoutPct": 50,
+    "isRecurring": false,
+    "status": "PENDING",
+    "lastTriggeredValue": 0,
+    "achievedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /contracts/:id/revenue`
@@ -3527,6 +7516,31 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | CONTRACT_NOT_FOUND |
 | 409 | — | REVENUE_NOT_APPLICABLE - contract must be REVENUE_SHARE and FULLY_EXECUTED to report revenue |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "revenue": 1,
+  "period": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /contracts/:id/versions`
@@ -3537,6 +7551,33 @@ _(xem envelope §0 — data có thể null)_
 **Response 200** :
 
 _(xem envelope §0 — data có thể null)_
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "contractId": "507f1f77bcf86cd799439011",
+      "versionNumber": 1,
+      "valuationAmount": 1000000,
+      "publisherOwnershipPct": 50,
+      "mangakaOwnershipPct": 50,
+      "terminationClause": "string",
+      "editedById": "507f1f77bcf86cd799439011",
+      "note": "Nội dung mẫu",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3559,6 +7600,97 @@ _(xem envelope §0 — data có thể null)_
 | `editedById` | string | ✅ |  |
 | `note` | string | ✅ | Ghi chú text tự do |
 | `createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "versionNumber": 1,
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "editedById": "507f1f77bcf86cd799439011",
+    "note": "Nội dung mẫu",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /contracts/:id/pdf` 🆕
+> Spec 24 — xuất hợp đồng đã ký ra PDF (văn bản chính thức)
+
+**Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer) — cùng luật xem như `GET /contracts/:id`:
+BOARD_MEMBER xem tất; EDITOR/MANGAKA chỉ hợp đồng của mình.
+
+**Nghiệp vụ:** hệ thống render PDF tiếng Việt (1 template chuẩn của NXB) từ dữ liệu đã có
+(Contract + PaymentCondition + ContractVersion + ContractSignature + Series/User + BoardDecision/BoardSession),
+đẩy lên object storage rồi trả **presigned URL** để FE tải. **BE không giữ bytes** sau request (BR-STORAGE).
+
+**Chỉ xuất được khi hợp đồng ĐÃ KÝ KHOÁ.** `status` phải ∈
+`FULLY_EXECUTED | FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED`.
+Không có bản nháp, không watermark — PDF là văn bản chính thức duy nhất.
+
+**Idempotent theo phiên bản nội dung:** key file = `contracts/{contractId}/contract-v{soVersion}-a{soAmendmentDaThucThi}.pdf`.
+Gọi lại nhiều lần → **cùng `key`**, không render lại. Khi một Amendment `FULLY_EXECUTED` (nội dung đổi)
+→ lần gọi kế tiếp sinh **key mới**; file cũ giữ nguyên làm vết đối chiếu.
+
+**Không có body.** Không có query param.
+
+**Response 200** (`ContractPdfRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `downloadUrl` | string | ✅ | Presigned GET URL — mở/tải trực tiếp, KHÔNG kèm `Authorization`. **Có hạn** (mặc định 600s) → xin lại khi hết hạn, đừng cache lâu |
+| `expiresAt` | string (ISO 8601) | ✅ | Thời điểm `downloadUrl` hết hiệu lực (UTC) |
+| `key` | string | ✅ | Object key trên storage. Dùng để so sánh phiên bản: `key` không đổi ⇒ nội dung hợp đồng chưa đổi |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.ContractAccessDenied` | caller ngoài cuộc (không phải Editor/Mangaka của HĐ, không phải BOARD_MEMBER). Body có thêm `errors[{path:'id'}]` |
+| 404 | `CONTRACT_NOT_FOUND` | id rác (không 24-hex) hoặc hợp đồng không tồn tại. ⚠ Mã **raw legacy**, không phải dạng `Error.*` — so đúng chuỗi này |
+| 409 | `Error.ContractNotExecutedForPdf` | 🆕 hợp đồng chưa `FULLY_EXECUTED` (vd đang `DRAFT`/`NEGOTIATION`/`MANGAKA_SIGNED`/`VOIDED`) |
+
+> Giá trị `code` ở bảng trên đã **verify bằng response thật** (smoke Spec 24 + flow-06, 2026-07-20), không phải suy đoán từ tên exception. `message` luôn là câu tiếng Việt hiển thị được.
+
+**FE nên làm:**
+
+- Ở màn chi tiết hợp đồng, chỉ hiện nút **"Tải hợp đồng PDF"** khi `status` thuộc 5 giá trị ở trên —
+  tránh cho user bấm rồi ăn 409.
+- Bấm nút → `GET /contracts/:id/pdf` → mở `data.downloadUrl` (tab mới hoặc `<a download>`).
+  **Đừng** gắn header `Authorization` vào `downloadUrl` (URL đã tự ký; thêm header có thể làm hỏng chữ ký).
+- Nội dung PDF hiển thị ngày giờ theo **giờ VN (UTC+7)**; API vẫn trả/lưu ISO UTC như mọi nơi khác.
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "downloadUrl": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "expiresAt": "2026-07-20T09:30:00.000Z",
+    "key": "uploads/507f1f77bcf86cd799439011/anh.png"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3619,16 +7751,134 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.OpenAmendmentExists` | contract already has a non-terminal amendment (DRAFT/PENDING_SIGNATURES) |
 | 422 | `Error.OwnershipMismatch` | ownership split must total 100; FULL_BUYOUT stays 100/0 |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "changedClauses": [
+    "string"
+  ],
+  "reason": "Nội dung mẫu",
+  "valuationAmount": 1,
+  "publisherOwnershipPct": 1,
+  "mangakaOwnershipPct": 1,
+  "terminationClause": "string",
+  "contractStart": "2026-07-20T09:30:00.000Z",
+  "contractEnd": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /contracts/:contractId/amendments`
 > Danh sách phụ lục của hợp đồng
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** EDITOR, MANGAKA, BOARD_MEMBER (Bearer)
 
 **Response 200** :
 
 _(xem envelope §0 — data có thể null)_
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "contractId": "507f1f77bcf86cd799439011",
+      "changedClauses": [
+        "string"
+      ],
+      "reason": "Nội dung mẫu",
+      "status": "DRAFT",
+      "triggerSource": "MANUAL",
+      "valuationAmount": 1000000,
+      "publisherOwnershipPct": 50,
+      "mangakaOwnershipPct": 50,
+      "terminationClause": "string",
+      "contractStart": "2026-07-20T09:30:00.000Z",
+      "contractEnd": "2026-07-20T09:30:00.000Z",
+      "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+      "boardSignedAt": "2026-07-20T09:30:00.000Z",
+      "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+      "voidReason": "Nội dung mẫu",
+      "createdBy": "string",
+      "creator": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      },
+      "createdAt": "2026-07-20T09:30:00.000Z",
+      "signatures": [
+        {
+          "id": "507f1f77bcf86cd799439011",
+          "amendmentId": "507f1f77bcf86cd799439011",
+          "userId": "507f1f77bcf86cd799439011",
+          "role": "string",
+          "signedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3671,6 +7921,55 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3729,6 +8028,72 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.AmendmentNotEditable` | amendment can only be edited while DRAFT |
 | 422 | `Error.OwnershipMismatch` | ownership split must total 100; FULL_BUYOUT stays 100/0 |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "changedClauses": [
+    "string"
+  ],
+  "reason": "Nội dung mẫu",
+  "valuationAmount": 1,
+  "publisherOwnershipPct": 1,
+  "mangakaOwnershipPct": 1,
+  "terminationClause": "string",
+  "contractStart": "2026-07-20T09:30:00.000Z",
+  "contractEnd": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /contracts/:contractId/amendments/:id/submit`
@@ -3772,6 +8137,55 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
 | 409 | `Error.AmendmentNotSubmittable` | amendment can only be submitted while DRAFT |
 | 422 | `Error.AmendmentNoChanges` | submit requires at least one changed term + non-empty changedClauses |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3823,6 +8237,63 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
 | 409 | — | MangakaSignNotRequired |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "otpCode": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /contracts/:contractId/amendments/:id/sign/board`
@@ -3872,6 +8343,63 @@ _(xem envelope §0 — data có thể null)_
 | 400 | — | BOARD_MEMBER_ALREADY_SIGNED |
 | 403 | — | NOT_AUTHORIZED_IN_BOARD |
 | 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "otpCode": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -3923,6 +8451,63 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.AmendmentNotPendingSignatures` | amendment must be PENDING_SIGNATURES to sign/reject |
 | 409 | — | MangakaSignNotRequired |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /contracts/:contractId/amendments/:id/void`
@@ -3973,10 +8558,68 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.AmendmentNotFound` | amendment id not found under this contract |
 | 409 | `Error.AmendmentNotVoidable` | amendment is already terminal (FULLY_EXECUTED/VOIDED) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "voidReason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "changedClauses": [
+      "string"
+    ],
+    "reason": "Nội dung mẫu",
+    "status": "DRAFT",
+    "triggerSource": "MANUAL",
+    "valuationAmount": 1000000,
+    "publisherOwnershipPct": 50,
+    "mangakaOwnershipPct": 50,
+    "terminationClause": "string",
+    "contractStart": "2026-07-20T09:30:00.000Z",
+    "contractEnd": "2026-07-20T09:30:00.000Z",
+    "mangakaSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "fullyExecutedAt": "2026-07-20T09:30:00.000Z",
+    "voidReason": "Nội dung mẫu",
+    "createdBy": "string",
+    "creator": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amendmentId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /payments`
 > Danh sách payment toàn hệ thống (filter status/receiver/series/contract/type/source)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** BOARD_MEMBER, SUPER_ADMIN (Bearer)
 
@@ -4018,10 +8661,65 @@ _(xem envelope §0 — data có thể null)_
 | `data[].createdBy` | string | ✅ |  |
 | `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "contractId": "507f1f77bcf86cd799439011",
+        "conditionId": "507f1f77bcf86cd799439011",
+        "receiverId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "description": "Nội dung mẫu",
+        "approvedBy": "string",
+        "approvedAt": "2026-07-20T09:30:00.000Z",
+        "paymentType": "CONDITION_PAYOUT",
+        "paymentSource": "CONTRACT",
+        "amount": 1000000,
+        "period": "string",
+        "paymentMethod": "string",
+        "transactionReference": "string",
+        "status": "TRIGGERED",
+        "paidAt": "2026-07-20T09:30:00.000Z",
+        "cancelledAt": "2026-07-20T09:30:00.000Z",
+        "cancelReason": "Nội dung mẫu",
+        "note": "Nội dung mẫu",
+        "createdBy": "string",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "receiver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "approver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /payments/:id`
 > Chi tiết một payment record
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** BOARD_MEMBER, SUPER_ADMIN, MANGAKA, EDITOR (Bearer)
 
@@ -4057,10 +8755,61 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 404 | — | PAYMENT_RECORD_NOT_FOUND |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionId": "507f1f77bcf86cd799439011",
+    "receiverId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "description": "Nội dung mẫu",
+    "approvedBy": "string",
+    "approvedAt": "2026-07-20T09:30:00.000Z",
+    "paymentType": "CONDITION_PAYOUT",
+    "paymentSource": "CONTRACT",
+    "amount": 1000000,
+    "period": "string",
+    "paymentMethod": "string",
+    "transactionReference": "string",
+    "status": "TRIGGERED",
+    "paidAt": "2026-07-20T09:30:00.000Z",
+    "cancelledAt": "2026-07-20T09:30:00.000Z",
+    "cancelReason": "Nội dung mẫu",
+    "note": "Nội dung mẫu",
+    "createdBy": "string",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "receiver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "approver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /payments/contracts/:id/payments`
 > Danh sách payment theo contractId
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
 
@@ -4090,6 +8839,60 @@ _(xem envelope §0 — data có thể null)_
 | `data[].note` | string | ✅ | Ghi chú text tự do |
 | `data[].createdBy` | string | ✅ |  |
 | `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "contractId": "507f1f77bcf86cd799439011",
+        "conditionId": "507f1f77bcf86cd799439011",
+        "receiverId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "description": "Nội dung mẫu",
+        "approvedBy": "string",
+        "approvedAt": "2026-07-20T09:30:00.000Z",
+        "paymentType": "CONDITION_PAYOUT",
+        "paymentSource": "CONTRACT",
+        "amount": 1000000,
+        "period": "string",
+        "paymentMethod": "string",
+        "transactionReference": "string",
+        "status": "TRIGGERED",
+        "paidAt": "2026-07-20T09:30:00.000Z",
+        "cancelledAt": "2026-07-20T09:30:00.000Z",
+        "cancelReason": "Nội dung mẫu",
+        "note": "Nội dung mẫu",
+        "createdBy": "string",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "receiver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "approver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4125,6 +8928,60 @@ _(xem envelope §0 — data có thể null)_
 | `data[].createdBy` | string | ✅ |  |
 | `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "contractId": "507f1f77bcf86cd799439011",
+        "conditionId": "507f1f77bcf86cd799439011",
+        "receiverId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "description": "Nội dung mẫu",
+        "approvedBy": "string",
+        "approvedAt": "2026-07-20T09:30:00.000Z",
+        "paymentType": "CONDITION_PAYOUT",
+        "paymentSource": "CONTRACT",
+        "amount": 1000000,
+        "period": "string",
+        "paymentMethod": "string",
+        "transactionReference": "string",
+        "status": "TRIGGERED",
+        "paidAt": "2026-07-20T09:30:00.000Z",
+        "cancelledAt": "2026-07-20T09:30:00.000Z",
+        "cancelReason": "Nội dung mẫu",
+        "note": "Nội dung mẫu",
+        "createdBy": "string",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "receiver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "approver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /payments/users/:id/payments`
@@ -4158,6 +9015,60 @@ _(xem envelope §0 — data có thể null)_
 | `data[].note` | string | ✅ | Ghi chú text tự do |
 | `data[].createdBy` | string | ✅ |  |
 | `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "contractId": "507f1f77bcf86cd799439011",
+        "conditionId": "507f1f77bcf86cd799439011",
+        "receiverId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "description": "Nội dung mẫu",
+        "approvedBy": "string",
+        "approvedAt": "2026-07-20T09:30:00.000Z",
+        "paymentType": "CONDITION_PAYOUT",
+        "paymentSource": "CONTRACT",
+        "amount": 1000000,
+        "period": "string",
+        "paymentMethod": "string",
+        "transactionReference": "string",
+        "status": "TRIGGERED",
+        "paidAt": "2026-07-20T09:30:00.000Z",
+        "cancelledAt": "2026-07-20T09:30:00.000Z",
+        "cancelReason": "Nội dung mẫu",
+        "note": "Nội dung mẫu",
+        "createdBy": "string",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "receiver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "approver": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4205,6 +9116,64 @@ _(xem envelope §0 — data có thể null)_
 | 400 | — | INVALID_STATUS_FOR_APPROVAL_EXPECTED_TRIGGERED |
 | 404 | — | PAYMENT_RECORD_NOT_FOUND |
 | 422 | — | Validation fail |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "approvedBy": "string"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionId": "507f1f77bcf86cd799439011",
+    "receiverId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "description": "Nội dung mẫu",
+    "approvedBy": "string",
+    "approvedAt": "2026-07-20T09:30:00.000Z",
+    "paymentType": "CONDITION_PAYOUT",
+    "paymentSource": "CONTRACT",
+    "amount": 1000000,
+    "period": "string",
+    "paymentMethod": "string",
+    "transactionReference": "string",
+    "status": "TRIGGERED",
+    "paidAt": "2026-07-20T09:30:00.000Z",
+    "cancelledAt": "2026-07-20T09:30:00.000Z",
+    "cancelReason": "Nội dung mẫu",
+    "note": "Nội dung mẫu",
+    "createdBy": "string",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "receiver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "approver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4255,6 +9224,66 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | PAYMENT_RECORD_NOT_FOUND |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "paymentMethod": "string",
+  "transactionReference": "string",
+  "note": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionId": "507f1f77bcf86cd799439011",
+    "receiverId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "description": "Nội dung mẫu",
+    "approvedBy": "string",
+    "approvedAt": "2026-07-20T09:30:00.000Z",
+    "paymentType": "CONDITION_PAYOUT",
+    "paymentSource": "CONTRACT",
+    "amount": 1000000,
+    "period": "string",
+    "paymentMethod": "string",
+    "transactionReference": "string",
+    "status": "TRIGGERED",
+    "paidAt": "2026-07-20T09:30:00.000Z",
+    "cancelledAt": "2026-07-20T09:30:00.000Z",
+    "cancelReason": "Nội dung mẫu",
+    "note": "Nội dung mẫu",
+    "createdBy": "string",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "receiver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "approver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /payments/:id/cancel`
@@ -4301,13 +9330,72 @@ _(xem envelope §0 — data có thể null)_
 | 400 | — | PAYMENT_ALREADY_PAID_CANNOT_CANCEL |
 | 404 | — | PAYMENT_RECORD_NOT_FOUND |
 | 422 | — | Validation fail |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "cancelReason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "contractId": "507f1f77bcf86cd799439011",
+    "conditionId": "507f1f77bcf86cd799439011",
+    "receiverId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "description": "Nội dung mẫu",
+    "approvedBy": "string",
+    "approvedAt": "2026-07-20T09:30:00.000Z",
+    "paymentType": "CONDITION_PAYOUT",
+    "paymentSource": "CONTRACT",
+    "amount": 1000000,
+    "period": "string",
+    "paymentMethod": "string",
+    "transactionReference": "string",
+    "status": "TRIGGERED",
+    "paidAt": "2026-07-20T09:30:00.000Z",
+    "cancelledAt": "2026-07-20T09:30:00.000Z",
+    "cancelReason": "Nội dung mẫu",
+    "note": "Nội dung mẫu",
+    "createdBy": "string",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "receiver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "approver": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §5. Flow 2 — Chapter Production (chapter-first)
 
 **Nghiệp vụ (chapter-first):** slot chương (số + tiêu đề + deadline) tạo **TRƯỚC** → Mangaka vẽ **Name** (storyboard) gắn vào chapter → Editor duyệt Name (checkpoint #1 — sửa storyboard rẻ hơn sửa bản vẽ thật) → khi Name `APPROVED` mới được **upload page** → phân vùng + giao task trợ lý (Flow 3, §6) → Mangaka duyệt bản tổng hợp → nộp Editor final check → duyệt → **publish** (bị gate bởi Contract FULLY_EXECUTED). Series có co-owner (PARTIAL_TRANSFER, Flow 8) thì publish phải qua co-owner duyệt.
 
-**State machine Manuscript:** `DRAFT → IN_PRODUCTION → COMPOSITE_REVIEW → EDITOR_REVIEW ⇄ EDITOR_REVISION → READY_FOR_PRINT → [AWAITING_CO_OWNER_APPROVAL] → PUBLISHED`. `Chapter.status` là giá trị **dẫn xuất** (DRAFT = name-phase → IN_PRODUCTION → PUBLISHED).
+**State machine Manuscript:** `DRAFT → IN_PRODUCTION → EDITOR_REVIEW ⇄ EDITOR_REVISION → READY_FOR_PRINT → [AWAITING_CO_OWNER_APPROVAL] → PUBLISHED`. `Chapter.status` là giá trị **dẫn xuất** (DRAFT = name-phase → IN_PRODUCTION → PUBLISHED).
 
 ### Happy path
 
@@ -4315,12 +9403,12 @@ _(xem envelope §0 — data có thể null)_
 2. **Editor** đặt deadline: `PUT /chapters/:id/schedule`; gia hạn đơn phương: `PATCH /chapters/:id/schedule/extend` (giữ lịch sử). *(Thương lượng 2 chiều → Flow 10, §8.)*
 3. **Mangaka** tạo Name: `POST /chapters/:id/names` → Name **`DRAFT`** (derive chapterNumber). ⚠ **Đổi hành vi:** chapter-Name **KHÔNG còn tự SUBMITTED** — sinh ở `DRAFT` để Mangaka sửa trang thoải mái (`PUT/POST /chapters/:id/names/:nameId/pages`), sửa cả `title`/`chapterNumber` qua `PATCH /chapters/:id`; **bấm `POST /chapters/:id/names/:nameId/submit`** mới sang `SUBMITTED` (vào tầm Editor). Vẽ hỏng chưa duyệt cũng có thể `DELETE /chapters/:id/names/:nameId` rồi tạo lại.
 4. **Vòng duyệt Name** (route chapter-scoped): Editor `POST /chapters/:id/names/:nameId/request-revision` → Mangaka sửa trang (`PUT/POST .../pages`) → `.../resubmit` → Editor `.../approve` → **mở gate page**.
-5. **Mangaka** upload trang: `POST /chapters/:id/pages` (object key từ §14) — trang đầu tiên đẩy Manuscript `IN_PRODUCTION`. Vòng đời Page chuyển tự động theo cascade task (Flow 3); fallback tay: `PATCH /pages/:pageId`.
-6. Mọi task nộp xong → Manuscript auto `COMPOSITE_REVIEW` (fallback tay: `POST /chapters/:id/manuscript/mark-composite-ready`). Mangaka duyệt composite từng trang (annotation §5-cuối + approve task ở Flow 3).
-7. Mọi Page `COMPLETED` → **Mangaka** `POST /chapters/:id/manuscript/submit` → `EDITOR_REVIEW`.
-8. **Editor** final check: `request-revision` (annotate lên manuscript) ⇄ Mangaka `resubmit`; đạt → `POST /chapters/:id/manuscript/approve` → `READY_FOR_PRINT`.
+5. **Mangaka** upload trang: `POST /chapters/:id/pages` (object key từ §14) — Page sinh `DRAFT`, trang đầu tiên đẩy Manuscript `IN_PRODUCTION`. `PATCH /pages/:pageId` chỉ sửa file, không nhận `status`.
+6. Mangaka review/approve task (Flow 3). Khi chapter có ít nhất 1 page và mọi Task không-CANCELLED đều `APPROVED`, **Mangaka** `POST /chapters/:id/manuscript/submit`; backend bulk Page `DRAFT→COMPLETED` và Manuscript → `EDITOR_REVIEW`.
+7. **Editor** `request-revision` → backend bulk Page `COMPLETED→REVISING`; Mangaka sửa và resolve hết RevisionRequest mở, rồi `resubmit` → bulk `REVISING|DRAFT→COMPLETED` + Manuscript `EDITOR_REVIEW`.
+8. **Editor** đạt → `POST /chapters/:id/manuscript/approve` → `READY_FOR_PRINT`.
 9. **Editor** `POST /chapters/:id/publish` → `PUBLISHED` + `publishedAt` (kích hoạt đếm mốc thanh toán Flow 6 + đủ điều kiện lên ranking Flow 4). Series có co-owner → sang `AWAITING_CO_OWNER_APPROVAL`, co-owner `POST /chapters/:id/co-owner-approve|reject`.
-10. Theo dõi: `GET /chapters/:id/progress` (Editor/Mangaka/Board — poll 10–30s): số trang theo trạng thái, taskBreakdown, deadline còn lại, `warningLevel`, `onHold`.
+10. Theo dõi: `GET /chapters/:id/progress` (Editor/Mangaka/Board — poll 10–30s): `pagesReady/pagesPending` theo Task, taskBreakdown, deadline còn lại, `progressPct`, `warningLevel`, `onHold`.
 
 **Tạm ngưng giữa chừng (hiatus cấp chương):** Editor `POST /chapters/:id/hold` `{reason, expectedReturnDate?}` — đóng băng (mọi mutation sản xuất → 409), `POST /chapters/:id/resume` khôi phục.
 
@@ -4340,7 +9428,10 @@ _(xem envelope §0 — data có thể null)_
 | Đổi `chapterNumber` khi hết DRAFT | `PATCH /chapters/:id` | 409 `Error.ChapterNumberLocked` |
 | Đổi `title` sau PUBLISHED | `PATCH /chapters/:id` | 409 `Error.ChapterNotEditable` |
 | Xoá chapter hết DRAFT | `DELETE /chapters/:id` | 409 `Error.ChapterNotDeletable` |
-| Submit manuscript khi còn page chưa COMPLETED | manuscript/submit | 409 `Error.PagesNotAllCompleted` |
+| Submit manuscript khi chapter chưa có page | manuscript/submit | 409 `Error.NoPagesToSubmit` |
+| Submit/resubmit khi còn Task không-CANCELLED chưa APPROVED | manuscript/submit, resubmit | 409 `Error.TasksNotAllApproved` |
+| Resubmit khi còn RevisionRequest mở | manuscript/resubmit | 409 `Error.RevisionNotResolved` |
+| Sửa Page/Region/Task/AI khi Page COMPLETED | pages/regions/tasks/segment | 409 `Error.PageNotEditable` |
 | Chuyển manuscript sai bậc | manuscript/* | 409 `Error.InvalidManuscriptTransition` |
 | Publish khi chưa READY_FOR_PRINT | publish | 409 |
 | **Publish khi series chưa có Contract FULLY_EXECUTED** | publish | 409 `Error.ContractNotExecuted` *(ngoại lệ: series CANCELLING/COMPLETING được bypass để ra chương kết thúc)* |
@@ -4403,6 +9494,62 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.SeriesNotSerialized` | Series phải ở SERIALIZED (hoặc CANCELLING/COMPLETING cho chương kết thúc) mới tạo được chapter |
 | 409 | `Error.EndingAllowanceExceeded` | Series CANCELLING đã tạo đủ số chương kết thúc Board cấp (endingChapterAllowance) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "seriesId": "507f1f77bcf86cd799439011",
+  "chapterNumber": 1,
+  "title": "Tiêu đề mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /chapters`
@@ -4432,6 +9579,56 @@ _(xem envelope §0 — data có thể null)_
 | `items[].hold` | object | ✅ | null = chapter is not on hold |
 | `items[].manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
 | `items[].schedule` | object | ✅ |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "nameId": "507f1f77bcf86cd799439011",
+        "chapterNumber": 1,
+        "title": "Tiêu đề mẫu",
+        "totalPages": 1,
+        "status": "DRAFT",
+        "publishedAt": "2026-07-20T09:30:00.000Z",
+        "hold": {
+          "reason": "Nội dung mẫu",
+          "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+          "heldBy": "string",
+          "heldAt": "2026-07-20T09:30:00.000Z"
+        },
+        "manuscriptStatus": "DRAFT",
+        "schedule": {
+          "id": "507f1f77bcf86cd799439011",
+          "chapterId": "507f1f77bcf86cd799439011",
+          "originalDeadline": "2026-07-20T09:30:00.000Z",
+          "currentDeadline": "2026-07-20T09:30:00.000Z",
+          "extended": false,
+          "extensions": [
+            {
+              "extendedBy": "string",
+              "previousDeadline": "2026-07-20T09:30:00.000Z",
+              "newDeadline": "2026-07-20T09:30:00.000Z",
+              "reason": "Nội dung mẫu",
+              "extendedAt": "2026-07-20T09:30:00.000Z"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4471,6 +9668,52 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4522,6 +9765,61 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.ChapterNumberLocked` | chapterNumber can only be changed while the chapter is in DRAFT status |
 | 409 | `Error.DuplicateChapterNumber` | chapter number already exists in this series |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "title": "Tiêu đề mẫu",
+  "chapterNumber": 1
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /chapters/:id`
@@ -4542,6 +9840,22 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.ChapterNotDeletable` | chapter can only be deleted while in DRAFT status |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4585,6 +9899,48 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.ChapterNotDraftForName` | chapter must be in DRAFT status to create a Name |
 | 409 | `Error.ChapterNameAlreadyExists` | this chapter already has a Name assigned |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "namePages": [
+    {
+      "pageNumber": 1,
+      "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/names/:nameId/submit`
@@ -4604,6 +9960,35 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter không tồn tại / id rác |
 | 404 | `Error.NameNotFound` | Name không thuộc chapter này (hoặc id rác) |
 | 409 | `Error.InvalidNameState` | Name không ở `DRAFT` (đã nộp/đang duyệt/đã duyệt) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4633,6 +10018,39 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 |---|---|---|
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "chapterId": "507f1f77bcf86cd799439011",
+        "chapterNumber": 1,
+        "kind": "PROPOSAL",
+        "status": "DRAFT",
+        "version": 1,
+        "pages": [
+          {
+            "pageNumber": 1,
+            "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+          }
+        ],
+        "submittedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4664,6 +10082,35 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 404 | `Error.NameNotFound` | name does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4703,6 +10150,43 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.NameNotFound` | name does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/names/:nameId/resubmit`
@@ -4735,6 +10219,35 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.NameNotFound` | name does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/names/:nameId/approve`
@@ -4766,6 +10279,35 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 404 | `Error.NameNotFound` | name does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -4807,6 +10349,48 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.NameNotFound` | name does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "pages": [
+    {
+      "pageNumber": 1,
+      "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  ]
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/names/:nameId/pages`
@@ -4846,6 +10430,44 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.NameNotFound` | name does not exist |
 | 409 | `Error.InvalidNameState` | name state does not allow this action |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "pageNumber": 1,
+  "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "kind": "PROPOSAL",
+    "status": "DRAFT",
+    "version": 1,
+    "pages": [
+      {
+        "pageNumber": 1,
+        "fileUrl": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    ],
+    "submittedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /chapters/:id/names/:nameId`
@@ -4868,10 +10490,26 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.NameNotFound` | name does not exist |
 | 409 | `Error.NameNotDeletable` | only a not-yet-approved Name on a DRAFT chapter can be deleted |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/pages`
-> Mangaka upload trang (pencil/ink) → tạo Page (NOT_STARTED)
+> Mangaka upload trang (pencil/ink) → tạo Page (DRAFT)
 
 **Quyền:** MANGAKA (Bearer)
 
@@ -4891,6 +10529,7 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | `pageNumber` | number | ✅ | Số thứ tự trang trong chương |
 | `originalFile` | string | ✅ | Object key file gốc (pencil/ink) trên R2 |
 | `compositeFile` | string | ✅ | Object key file composite trên R2 |
+| `displayFile` | string | ✅ | 🆕 **Ảnh nên hiển thị** = `compositeFile ?? originalFile`. FE render field này là đủ, khỏi tự fallback |
 | `status` | enum `PageStatus` | ✅ | Page production status |
 | `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
 
@@ -4903,12 +10542,54 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
 | 409 | `Error.ChapterNameNotApproved` | Name must be APPROVED before uploading pages; create/approve the Name first |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "pageNumber": 1,
+  "originalFile": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "pageNumber": 1,
+    "originalFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "compositeFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "status": "DRAFT",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /chapters/:id/pages`
-> List trang của chapter
+> List trang của chapter (đã siết scoping)
 
-**Quyền:** Mọi user đã đăng nhập (Bearer)
+**Quyền:** MANGAKA chủ series · EDITOR phụ trách · ASSISTANT có `StudioAssignment` ACTIVE với Mangaka đó · BOARD_MEMBER · SUPER_ADMIN (Bearer)
+
+> 🔴 **BREAKING 2026-07-21.** Trước đây route này chỉ cần đăng nhập (không kiểm sở hữu) nên **mọi user đọc được `originalFile` của mọi chapter**. Nay có scoping theo sở hữu/phân công (BR-AUTH-00): ngoài phạm vi → **403 `Error.ChapterAccessDenied`**.
+> - Assistant chỉ đọc được trang của studio mình đang cộng tác (cùng gate BR-ASSIST-01 dùng khi giao task).
+> - FE phải xử lý 403 ở màn đọc trang thay vì giả định luôn 200.
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.ChapterAccessDenied` | không phải chủ series / editor phụ trách / assistant đang cộng tác |
+| 404 | `Error.ChapterNotFound` | chapter không tồn tại hoặc id không phải ObjectId |
 
 **Response 200** (`PageListRes` — đọc `res.data`):
 
@@ -4920,22 +10601,51 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | `items[].pageNumber` | number | ✅ | Số thứ tự trang trong chương |
 | `items[].originalFile` | string | ✅ | Object key file gốc (pencil/ink) trên R2 |
 | `items[].compositeFile` | string | ✅ | Object key file composite trên R2 |
+| `items[].displayFile` | string | ✅ | 🆕 **Ảnh nên hiển thị** = `compositeFile ?? originalFile` |
 | `items[].status` | enum `PageStatus` | ✅ | Page production status |
 | `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "chapterId": "507f1f77bcf86cd799439011",
+        "pageNumber": 1,
+        "originalFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "compositeFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "DRAFT",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
 #### `PATCH /pages/:pageId`
-> Mangaka cập nhật trang (file/status: NOT_STARTED→IN_PROGRESS→COMPOSITE_READY→COMPLETED)
+> Mangaka cập nhật file gốc / composite / số trang khi Page DRAFT/REVISING; status do backend điều khiển
 
 **Quyền:** MANGAKA (Bearer)
 
-**Body** (`UpdatePageBody`):
+**Body** (`UpdatePageBody`) — partial-update: **omit hoặc `null` = giữ nguyên**:
 
 | Field | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
 | `compositeFile` | string (1..∞ ký tự) ✍ | — | Object key bản tổng hợp sau khi Assistant xong |
-| `status` | enum `PageStatus` | — | Page production status |
+| `pageNumber` | number (int ≥ 1) | — | 🆕 Đổi số trang; trùng số trong cùng chapter → 409 |
+
+> 🆕 **2026-07-21:** thêm `pageNumber`. **`originalFile` vẫn KHÔNG sửa được qua PATCH** (gửi vào → 422) — đó là *bản gốc pencil/ink*, là nguồn cho AI segment và cho Assistant tải về làm việc; cho đè sẽ hỏng cả hai. Muốn thay bản gốc: **xoá trang rồi upload lại** (`DELETE /pages/:pageId` + `POST /chapters/:id/pages`). Gửi lại đúng số trang hiện tại của chính nó → 200 (không coi là trùng).
 
 **Response 200** (`PageRes` — đọc `res.data`):
 
@@ -4946,6 +10656,7 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | `pageNumber` | number | ✅ | Số thứ tự trang trong chương |
 | `originalFile` | string | ✅ | Object key file gốc (pencil/ink) trên R2 |
 | `compositeFile` | string | ✅ | Object key file composite trên R2 |
+| `displayFile` | string | ✅ | 🆕 **Ảnh nên hiển thị** = `compositeFile ?? originalFile`. FE render field này là đủ, khỏi tự fallback |
 | `status` | enum `PageStatus` | ✅ | Page production status |
 | `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
 
@@ -4955,53 +10666,144 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 |---|---|---|
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.PageNotFound` | page does not exist |
-| 409 | `Error.InvalidPageTransition` | page state transition is not allowed |
+| 409 | `Error.PageNotEditable` | Page COMPLETED đang được review; không được sửa page hoặc tài nguyên con |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 409 | `Error.DuplicatePageNumber` | 🆕 số trang đã có trang khác dùng trong cùng chapter |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "compositeFile": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "pageNumber": 1,
+    "originalFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "compositeFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "status": "DRAFT",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
-#### `POST /chapters/:id/manuscript/mark-composite-ready`
-> Mangaka chốt composite (cần tất cả trang COMPLETED) → Manuscript sang COMPOSITE_REVIEW
+#### `DELETE /pages/:pageId`
+> 🆕 Mangaka xoá một trang — cascade xoá luôn Region + Task của trang đó
 
-**Quyền:** MANGAKA (Bearer)
+**Quyền:** MANGAKA chủ series (Bearer)
 
-**Response 201** (`ChapterRes` — đọc `res.data`):
+**Nghiệp vụ:** dùng khi Mangaka upload nhầm trang hoặc bỏ một trang khỏi chương. Xoá trang thì mọi Region đã khoanh và mọi Task đã giao trên trang đó **không còn ý nghĩa** nên bị xoá cùng, trong **một transaction** (không có trạng thái nửa vời). Trợ lý đang giữ task bị xoá sẽ nhận notification.
+
+> ⚠️ Chỉ xoá được khi Page ở `DRAFT` hoặc `REVISING`. Page `COMPLETED` (đang nằm trong bản thảo Editor duyệt) bị khoá — xem Spec 19.
+
+**Response 200** (`DeletePageRes` — đọc `res.data`):
 
 | Field | Kiểu | Có mặt | Mô tả |
 |---|---|---|---|
-| `id` | string | ✅ | ObjectId của bản ghi |
-| `seriesId` | string | ✅ | ObjectId của Series |
-| `nameId` | string | ✅ | ObjectId của Name (storyboard) |
-| `chapterNumber` | number | ✅ | Số thứ tự chương trong series |
-| `title` | string | ✅ | Tiêu đề (FE tự nhập) |
-| `totalPages` | number | ✅ | Tổng số trang của chương |
-| `status` | enum `ChapterStatus` | ✅ | Chapter production status |
-| `publishedAt` | string | ✅ | ISO 8601; null khi chưa xuất bản |
-| `hold` | object | ✅ | null = chapter is not on hold |
-| `hold.reason` | string | ✅ | Lý do (text tự do, hiển thị cho bên liên quan) |
-| `hold.expectedReturnDate` | string | ✅ |  |
-| `hold.heldBy` | string | ✅ |  |
-| `hold.heldAt` | string | ✅ |  |
-| `manuscriptStatus` | enum `ManuscriptStatus` | ✅ | Manuscript production status |
-| `schedule` | object | ✅ |  |
-| `schedule.id` | string | ✅ | ObjectId của bản ghi |
-| `schedule.chapterId` | string | ✅ | ObjectId của Chapter |
-| `schedule.originalDeadline` | string | ✅ | Deadline gốc khi tạo |
-| `schedule.currentDeadline` | string | ✅ | Deadline hiệu lực hiện tại (nguồn sự thật duy nhất) |
-| `schedule.extended` | boolean | ✅ | true = đã từng gia hạn |
-| `schedule.extensions` | object[] | ✅ | Lịch sử các lần gia hạn |
+| `pageId` | string | ✅ | ObjectId trang vừa xoá |
+| `deletedRegions` | number | ✅ | Số vùng bị xoá theo trang |
+| `deletedTasks` | number | ✅ | Số task bị xoá theo trang |
 
 **Lỗi nghiệp vụ:**
 
 | Status | Code | Khi nào |
 |---|---|---|
-| 403 | `Error.NotSeriesOwner` | current user is not the series owner |
-| 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
-| 409 | `Error.PagesNotAllCompleted` | all pages must be completed first |
-| 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
-| 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+| 403 | `Error.NotSeriesOwner` | không phải chủ series |
+| 404 | `Error.PageNotFound` | trang không tồn tại, hoặc id không phải ObjectId 24-hex |
+| 409 | `Error.PageNotEditable` | trang đang `COMPLETED` |
+| 409 | `Error.PageHasApprovedTasks` | trang có task đã `APPROVED` — không xoá mất công trợ lý đã được duyệt |
+| 409 | `Error.ChapterOnHold` | chương đang tạm dừng — resume trước đã |
+
+**FE nên làm:** confirm dialog hiển thị trước số task sẽ mất (gọi `GET /tasks?pageId=...` để đếm), vì thao tác **không hoàn tác được**.
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "pageId": "507f1f77bcf86cd799439011",
+    "deletedRegions": 2,
+    "deletedTasks": 1
+  }
+}
+```
 
 ---
+
+#### `DELETE /chapters/:id/pages`
+> 🆕 Mangaka xoá nhiều trang trong một chương — **all-or-nothing**, tối đa 50 id
+
+**Quyền:** MANGAKA chủ series (Bearer)
+
+**Body** (`DeletePagesBulkBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageIds` | string[] (1..50, mỗi phần tử ObjectId 24-hex) | ✅ | Danh sách trang cần xoá — phải **cùng** chapter `:id` |
+
+**Nghiệp vụ — all-or-nothing:** backend validate **toàn bộ** danh sách trước; chỉ cần **một** id sai (không tồn tại / thuộc chapter khác / đang `COMPLETED`) thì **không trang nào bị xoá** và trả lỗi tương ứng. Không có trường hợp xoá được một nửa.
+
+**Response 200** (`DeletePagesBulkRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `deletedPages` | number | ✅ | Số trang đã xoá |
+| `deletedRegions` | number | ✅ | Tổng số vùng bị xoá theo |
+| `deletedTasks` | number | ✅ | Tổng số task bị xoá theo |
+
+**Lỗi nghiệp vụ:**
+
+| Status | Code | Khi nào |
+|---|---|---|
+| 403 | `Error.NotSeriesOwner` | không phải chủ series |
+| 404 | `Error.ChapterNotFound` | chapter không tồn tại |
+| 404 | `Error.PageNotFound` | có id không tồn tại **hoặc** thuộc chapter khác |
+| 409 | `Error.PageNotEditable` | có trang đang `COMPLETED` |
+| 409 | `Error.PageHasApprovedTasks` | có trang chứa task đã `APPROVED` |
+| 409 | `Error.ChapterOnHold` | chương đang tạm dừng |
+| 422 | `Error.ValidationFailed` | `pageIds` rỗng, quá 50 phần tử, hoặc phần tử không phải ObjectId |
+
+**Ví dụ request body:**
+
+```json
+{
+  "pageIds": ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "deletedPages": 2,
+    "deletedRegions": 3,
+    "deletedTasks": 2
+  }
+}
+```
+
+---
+
 
 #### `POST /chapters/:id/manuscript/submit`
 > Mangaka nộp manuscript cho Editor final check → EDITOR_REVIEW
@@ -5042,6 +10844,52 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5091,10 +10939,64 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/manuscript/resubmit`
-> Mangaka nộp lại sau revision → EDITOR_REVIEW
+> Mangaka nộp lại sau revision (resolve hết request mở và mọi task đạt gate) → EDITOR_REVIEW
 
 **Quyền:** MANGAKA (Bearer)
 
@@ -5132,6 +11034,52 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5174,6 +11122,52 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5218,6 +11212,52 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 409 | `Error.ContractNotExecuted` | series has no FULLY_EXECUTED contract; cannot publish (BR-CONTRACT-05) |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/co-owner-approve`
@@ -5260,6 +11300,52 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.CoOwnerApprovalNotPending` | co-owner approval is not PENDING; already decided or escalated |
 | 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5310,6 +11396,60 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 409 | `Error.CoOwnerApprovalNotPending` | co-owner approval is not PENDING; already decided or escalated |
 | 409 | `Error.InvalidManuscriptTransition` | manuscript state transition is not allowed |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PUT /chapters/:id/schedule`
@@ -5357,6 +11497,61 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "originalDeadline": "2026-07-20T09:30:00.000Z",
+  "currentDeadline": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /chapters/:id/schedule/extend`
@@ -5403,6 +11598,61 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 |---|---|---|
 | 403 | `Error.NotSeriesEditor` | current user is not the assigned series editor |
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "newDeadline": "2026-07-20T09:30:00.000Z",
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5453,6 +11703,61 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 409 | `Error.ChapterNotHoldable` | manuscript must be IN_PRODUCTION..READY_FOR_PRINT to hold |
 | 409 | `Error.ChapterAlreadyOnHold` | chapter is already on hold |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu",
+  "expectedReturnDate": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /chapters/:id/resume`
@@ -5494,6 +11799,52 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
 | 409 | `Error.ChapterNotOnHold` | chapter is not on hold; nothing to resume |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "nameId": "507f1f77bcf86cd799439011",
+    "chapterNumber": 1,
+    "title": "Tiêu đề mẫu",
+    "totalPages": 1,
+    "status": "DRAFT",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "hold": {
+      "reason": "Nội dung mẫu",
+      "expectedReturnDate": "2026-07-20T09:30:00.000Z",
+      "heldBy": "string",
+      "heldAt": "2026-07-20T09:30:00.000Z"
+    },
+    "manuscriptStatus": "DRAFT",
+    "schedule": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterId": "507f1f77bcf86cd799439011",
+      "originalDeadline": "2026-07-20T09:30:00.000Z",
+      "currentDeadline": "2026-07-20T09:30:00.000Z",
+      "extended": false,
+      "extensions": [
+        {
+          "extendedBy": "string",
+          "previousDeadline": "2026-07-20T09:30:00.000Z",
+          "newDeadline": "2026-07-20T09:30:00.000Z",
+          "reason": "Nội dung mẫu",
+          "extendedAt": "2026-07-20T09:30:00.000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /chapters/:id/progress`
@@ -5508,9 +11859,8 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 | `chapterId` | string | ✅ | ObjectId của Chapter |
 | `nameStatus` | enum `NameStatus` | ✅ | null = chapter không gắn Name |
 | `totalPages` | number | ✅ | Tổng số trang của chương |
-| `pagesCompleted` | number | ✅ |  |
-| `pagesInProgress` | number | ✅ |  |
-| `pagesNotStarted` | number | ✅ |  |
+| `pagesReady` | number | ✅ | Page không có task hoặc mọi Task không-CANCELLED đều APPROVED |
+| `pagesPending` | number | ✅ | `totalPages - pagesReady` |
 | `taskBreakdown` | object | ✅ |  |
 | `taskBreakdown.assigned` | number | ✅ |  |
 | `taskBreakdown.inProgress` | number | ✅ |  |
@@ -5532,6 +11882,41 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 |---|---|---|
 | 403 | `Error.ChapterAccessDenied` | caller is outside the chapter scope (owner mangaka / assigned editor / board / admin) |
 | 404 | `Error.ChapterNotFound` | chapter does not exist (or id is not a valid ObjectId) — used by POST /chapters/:id/names (Spec 10) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "chapterId": "507f1f77bcf86cd799439011",
+    "nameStatus": "DRAFT",
+    "totalPages": 1,
+    "pagesReady": 1,
+    "pagesPending": 1,
+    "taskBreakdown": {
+      "assigned": 0,
+      "inProgress": 0,
+      "submitted": 0,
+      "underReview": 0,
+      "approved": 0,
+      "revisionRequested": 0,
+      "onHold": 0,
+      "cancelled": 0
+    },
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "remainingHours": 0,
+    "progressPct": 50,
+    "warningLevel": "NONE",
+    "onHold": false
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5578,10 +11963,58 @@ Không có body. Chỉ chuyển được khi Name đang `DRAFT`; sau `SUBMITTED`
 
 Validation fail (targetType/targetId/annotationType/...) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "targetType": "PAGE",
+  "targetId": "507f1f77bcf86cd799439011",
+  "annotationType": "TEXT",
+  "coordinates": {},
+  "content": "Nội dung mẫu",
+  "reviewStage": "ASSISTANT",
+  "taskId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "taskId": "507f1f77bcf86cd799439011",
+    "authorId": "507f1f77bcf86cd799439011",
+    "authorRole": "string",
+    "targetType": "PAGE",
+    "targetId": "507f1f77bcf86cd799439011",
+    "annotationType": "TEXT",
+    "reviewStage": "ASSISTANT",
+    "coordinates": {},
+    "content": "Nội dung mẫu",
+    "isResolved": false,
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "author": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /annotations`
 > List annotation theo targetType + targetId
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** Mọi user đã đăng nhập (Bearer)
 
@@ -5617,6 +12050,43 @@ Validation fail (targetType/targetId/annotationType/...) |
 |---|---|---|
 | 422 | — | Thiếu/sai query targetType hoặc targetId |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "taskId": "507f1f77bcf86cd799439011",
+        "authorId": "507f1f77bcf86cd799439011",
+        "authorRole": "string",
+        "targetType": "PAGE",
+        "targetId": "507f1f77bcf86cd799439011",
+        "annotationType": "TEXT",
+        "reviewStage": "ASSISTANT",
+        "coordinates": {},
+        "content": "Nội dung mẫu",
+        "isResolved": false,
+        "resolvedAt": "2026-07-20T09:30:00.000Z",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "author": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /annotations/:id/resolve`
@@ -5649,6 +12119,39 @@ Validation fail (targetType/targetId/annotationType/...) |
 | 403 | `Error.AnnotationForbidden` | current user cannot update this annotation |
 | 404 | `Error.AnnotationNotFound` | annotation does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "taskId": "507f1f77bcf86cd799439011",
+    "authorId": "507f1f77bcf86cd799439011",
+    "authorRole": "string",
+    "targetType": "PAGE",
+    "targetId": "507f1f77bcf86cd799439011",
+    "annotationType": "TEXT",
+    "reviewStage": "ASSISTANT",
+    "coordinates": {},
+    "content": "Nội dung mẫu",
+    "isResolved": false,
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "author": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /annotations/:id`
@@ -5666,7 +12169,7 @@ Validation fail (targetType/targetId/annotationType/...) |
 
 ## §6. Flow 3 — Region / Task / AI segmentation
 
-**Nghiệp vụ:** trên mỗi trang đã pencil/ink, Mangaka **khoanh vùng** (Region) cần xử lý — tự tay hoặc nhờ **AI segment** (đề xuất trước, Mangaka confirm/apply mới ghi) → tạo **Task** cho từng vùng, giao Assistant (CHỈ giao được cho người có StudioAssignment ACTIVE + còn trong thời hạn thuê — Flow 9) → Assistant start → nộp kết quả (mỗi lần nộp = 1 TaskVersion, giữ lịch sử) → Mangaka approve / yêu cầu sửa. Task được duyệt tự **cascade**: mọi task của trang SUBMITTED → Page `COMPOSITE_READY`; mọi task APPROVED → Page `COMPLETED`; đủ điều kiện → Manuscript nhích trạng thái (Flow 2).
+**Nghiệp vụ:** trên mỗi trang `DRAFT`/`REVISING`, Mangaka khoanh Region hoặc dùng AI segment → tạo Task và giao Assistant đang được thuê → Assistant start/nộp TaskVersion → Mangaka approve/yêu cầu sửa. Task **không cascade status** sang Page/Manuscript; trạng thái Task là gate submit/resubmit và nguồn tính tiến độ. Page `COMPLETED` khóa mutation với `Error.PageNotEditable`.
 
 ### Happy path
 
@@ -5747,6 +12250,49 @@ Validation fail (targetType/targetId/annotationType/...) |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "coordinates": {
+    "x": 1,
+    "y": 1,
+    "width": 1,
+    "height": 1
+  },
+  "regionType": "PANEL"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "coordinates": {
+      "x": 1,
+      "y": 1,
+      "width": 1,
+      "height": 1
+    },
+    "regionType": "PANEL",
+    "createdBy": "string",
+    "confirmedByMangaka": false,
+    "confidenceScore": 0,
+    "detectedSubtype": "string",
+    "aiModelVersion": "string"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /pages/:id/regions`
@@ -5775,6 +12321,39 @@ Validation fail (targetType/targetId/annotationType/...) |
 |---|---|---|
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.PageNotFound` | page does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "pageId": "507f1f77bcf86cd799439011",
+        "coordinates": {
+          "x": 1,
+          "y": 1,
+          "width": 1,
+          "height": 1
+        },
+        "regionType": "PANEL",
+        "createdBy": "string",
+        "confirmedByMangaka": false,
+        "confidenceScore": 0,
+        "detectedSubtype": "string",
+        "aiModelVersion": "string"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5822,6 +12401,50 @@ Validation fail (targetType/targetId/annotationType/...) |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "coordinates": {
+    "x": 1,
+    "y": 1,
+    "width": 1,
+    "height": 1
+  },
+  "regionType": "PANEL",
+  "confirmedByMangaka": false
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "coordinates": {
+      "x": 1,
+      "y": 1,
+      "width": 1,
+      "height": 1
+    },
+    "regionType": "PANEL",
+    "createdBy": "string",
+    "confirmedByMangaka": false,
+    "confidenceScore": 0,
+    "detectedSubtype": "string",
+    "aiModelVersion": "string"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /regions/:id`
@@ -5844,6 +12467,25 @@ Validation fail (targetType/targetId/annotationType/...) |
 | 404 | `Error.RegionNotFound` | region not found or invalid id |
 | 409 | `Error.RegionHasApprovedTasks` | region has approved task(s); cannot delete |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "regionId": "507f1f77bcf86cd799439011",
+    "cancelledTaskIds": [
+      "507f1f77bcf86cd799439011"
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5878,6 +12520,31 @@ Validation fail (targetType/targetId/annotationType/...) |
 Validation fail |
 | 503 | `Error.AiNotEnabled` | AI service is not configured (AI_SERVICE_URL empty); use manual regions |
 | 503 | `Error.AiEnqueueFailed` | could not enqueue AI job (queue unavailable); use manual regions |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "mode": "MODEL"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "jobId": "507f1f77bcf86cd799439011",
+    "status": "QUEUED"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5914,6 +12581,47 @@ Validation fail |
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.AiJobNotFound` | AI job does not exist or does not belong to the current user |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "type": "SEGMENT",
+    "mode": "MODEL",
+    "pageId": "507f1f77bcf86cd799439011",
+    "status": "QUEUED",
+    "error": "string",
+    "modelVersion": "string",
+    "proposedRegions": [
+      {
+        "regionType": "PANEL",
+        "detectedSubtype": "string",
+        "coordinates": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "confidenceScore": 1
+      }
+    ],
+    "regionCount": 1,
+    "appliedAt": "2026-07-20T09:30:00.000Z",
+    "startedAt": "2026-07-20T09:30:00.000Z",
+    "finishedAt": "2026-07-20T09:30:00.000Z",
+    "durationMs": 0,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -5954,6 +12662,38 @@ Validation fail |
 | 403 | `Error.NotSeriesOwner` | current user is not the series owner |
 | 404 | `Error.PageNotFound` | page does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "type": "SEGMENT",
+        "mode": "MODEL",
+        "pageId": "507f1f77bcf86cd799439011",
+        "status": "QUEUED",
+        "error": "string",
+        "modelVersion": "string",
+        "regionCount": 1,
+        "appliedAt": "2026-07-20T09:30:00.000Z",
+        "startedAt": "2026-07-20T09:30:00.000Z",
+        "finishedAt": "2026-07-20T09:30:00.000Z",
+        "durationMs": 0,
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /ai-jobs/:id/apply`
@@ -5979,6 +12719,25 @@ Validation fail |
 | 404 | `Error.PageNotFound` | page does not exist |
 | 409 | `Error.AiJobNotApplicable` | AI job is not in SUCCEEDED state or has no proposed regions |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu",
+    "created": 0,
+    "removed": 0,
+    "skipped": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6007,6 +12766,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6020,6 +12781,8 @@ Validation fail |
 | `versions[].reviewStatus` | enum `TaskVersionReviewStatus` | ✅ | Trạng thái review của 1 bản nộp task: PENDING, APPROVED, REVISION_REQUESTED |
 | `versions[].reviewerNote` | string | ✅ |  |
 | `versions[].submittedAt` | string | ✅ | Thời điểm nộp (ISO 8601 UTC) |
+| `versions[].submitter` | object \| null 🆕 | GET | `UserMini {id, displayName, avatar}` của Assistant nộp bản đó |
+| `assistant` | object \| null 🆕 | GET | `UserMini` của Assistant được giao; `null` nếu id không còn tồn tại |
 | `createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
 
 **Lỗi nghiệp vụ:**
@@ -6033,6 +12796,70 @@ Validation fail |
 | 422 | — | Error.AssetNotFound (assetIds) - asset does not exist
 
 Validation fail |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "pageId": "507f1f77bcf86cd799439011",
+  "regionId": "507f1f77bcf86cd799439011",
+  "assistantId": "507f1f77bcf86cd799439011",
+  "taskType": "BACKGROUND",
+  "deadline": "2026-07-20T09:30:00.000Z",
+  "priority": 0,
+  "assetIds": [
+    "507f1f77bcf86cd799439011"
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6087,17 +12914,187 @@ Validation fail |
 
 Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "items": [
+    {
+      "pageId": "507f1f77bcf86cd799439011",
+      "regionId": "507f1f77bcf86cd799439011",
+      "assistantId": "507f1f77bcf86cd799439011",
+      "taskType": "BACKGROUND",
+      "deadline": "2026-07-20T09:30:00.000Z",
+      "priority": 0,
+      "assetIds": [
+        "507f1f77bcf86cd799439011"
+      ]
+    }
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "pageId": "507f1f77bcf86cd799439011",
+        "regionId": "507f1f77bcf86cd799439011",
+        "assistantId": "507f1f77bcf86cd799439011",
+        "taskType": "BACKGROUND",
+        "status": "ASSIGNED",
+        "statusReason": "Nội dung mẫu",
+        "priority": 0,
+        "deadline": "2026-07-20T09:30:00.000Z",
+        "assetIds": [
+          "507f1f77bcf86cd799439011"
+        ],
+        "versions": [
+          {
+            "submittedBy": "string",
+            "versionNumber": 1,
+            "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+            "reviewStatus": "PENDING",
+            "reviewerNote": "Nội dung mẫu",
+            "submittedAt": "2026-07-20T09:30:00.000Z",
+            "submitter": {
+              "id": "507f1f77bcf86cd799439011",
+              "displayName": "Nguyễn Văn A",
+              "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+            }
+          }
+        ],
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "assistant": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `POST /tasks/group`
+> 🆕 Giao **một đầu việc trải nhiều trang** (vd "vẽ nền ch.5 trang 1–10")
+
+**Quyền:** MANGAKA chủ series (Bearer)
+
+**Nghiệp vụ:** trong studio thật, "vẽ nền chương 5" là *một* đầu việc chứ không phải 10 đầu việc rời. Route này cho phép giao một lần cho nhiều trang.
+
+> **Dưới DB vẫn là N task, mỗi task thuộc đúng 1 trang**, chỉ dùng chung `groupId`. Đây là chủ ý, không phải hạn chế:
+> - `Region` thuộc về **một** trang — task đa trang thật sự sẽ không mang được `regionId`, mà "khoanh vùng rồi giao việc" là feature lõi.
+> - Mangaka duyệt **từng trang** (nhìn từng trang mới duyệt được), và `pagesReady` / `progressPct` tính theo trang.
+> - Xoá trang / xoá vùng cascade theo trang vẫn chạy đúng.
+>
+> Nên `groupId` là lớp **gom hiển thị + thao tác hàng loạt**, không đổi mô hình dữ liệu.
+
+**Body** (`CreateTaskGroupBody`):
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `pageIds` | string[] (1..50, ObjectId 24-hex) | ✅ | Các trang cùng nhận đầu việc này — **all-or-nothing** |
+| `assistantId` | string | ✅ | Trợ lý nhận việc (phải có `StudioAssignment` ACTIVE — BR-ASSIST-01) |
+| `taskType` | enum `Specialization` | ✅ | Loại việc (BACKGROUND / SCREENTONE / …) |
+| `groupTitle` | string (1..200) | — | Tên nhóm hiển thị, vd `"Vẽ nền ch.5"` |
+| `deadline` | string (ISO 8601) | — | Áp cho mọi task trong nhóm |
+| `priority` | integer (≥ 0) | — | Mặc định `0` |
+| `assetIds` | string[] | — | Tài nguyên tham khảo dùng chung |
+
+> **All-or-nothing:** backend validate **toàn bộ** `pageIds` trước (sở hữu · trang còn sửa được · chương không hold · trợ lý đã được thuê). Một trang sai → **không task nào được tạo**.
+> Task tạo qua route này có `regionId = null` (giao cả trang). Cần giao theo vùng thì dùng `POST /tasks` hoặc `POST /tasks/batch`.
+
+**Response 201** (`TaskGroupRes` — đọc `res.data`):
+
+| Field | Kiểu | Mô tả |
+|---|---|---|
+| `groupId` | string | Định danh nhóm (UUID, **không phải ObjectId**) |
+| `groupTitle` | string \| null | Tên nhóm |
+| `items` | `TaskRes[]` | Các task vừa tạo (mỗi trang 1 task) |
+| `total` | number | Số task đã tạo |
+
+**Lỗi nghiệp vụ:** giống `POST /tasks` — `Error.PageNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.AssistantNotHired` (409) · `Error.AssetNotFound` (404) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
+
+**Ví dụ request body:**
+
+```json
+{
+  "pageIds": ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"],
+  "assistantId": "507f1f77bcf86cd799439020",
+  "taskType": "BACKGROUND",
+  "groupTitle": "Vẽ nền ch.5"
+}
+```
+
+---
+
+#### `POST /tasks/group/:groupId/approve`
+> 🆕 Duyệt **cả nhóm việc** trong một lần bấm
+
+**Quyền:** MANGAKA chủ series (Bearer)
+
+**Nghiệp vụ:** duyệt mọi task trong nhóm đang ở `SUBMITTED` hoặc `UNDER_REVIEW`. Task chưa tới lượt (còn `ASSIGNED`/`IN_PROGRESS`/`REVISION_REQUESTED`) **được bỏ qua** và liệt kê ở `skipped` — nhóm hiếm khi chín cùng lúc nên không dùng all-or-nothing ở đây.
+
+Mỗi task được duyệt đi qua **đúng luật duyệt lẻ**: `SUBMITTED → UNDER_REVIEW → APPROVED`, ghi kết quả review vào version mới nhất, và gửi notification cho trợ lý.
+
+**Response 201** (`ApproveTaskGroupRes` — đọc `res.data`):
+
+| Field | Kiểu | Mô tả |
+|---|---|---|
+| `groupId` | string | Nhóm vừa xử lý |
+| `approved` | number | Số task vừa được duyệt |
+| `skipped` | string[] | Task id bỏ qua vì chưa ở trạng thái duyệt được |
+
+**Lỗi nghiệp vụ:** `Error.TaskNotFound` (404 — group không tồn tại) · `Error.NotSeriesOwner` (403) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
+
+**Ví dụ response 201:**
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": { "groupId": "8f14e45f-ceea-467a-9f4b-1a2c3d4e5f60", "approved": 6, "skipped": ["66f1a2b3c4d5e6f708192a3b"] }
+}
+```
+
 ---
 
 #### `GET /tasks`
-> Danh sách task theo status/regionId (Assistant=được giao; Mangaka=theo pageId sở hữu)
+> Danh sách task (Assistant = task được giao cho mình; Mangaka = task thuộc series mình sở hữu)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT (Bearer)
+
+> 🆕 **2026-07-21 — Mangaka KHÔNG còn phải truyền `pageId`.** Trước đây thiếu `pageId` là trả **rỗng**, nên muốn xem việc phải đi lần lượt series → chapter → page rồi mới gọi được. Nay gọi `GET /tasks` trần là ra **toàn bộ task thuộc mọi series mình sở hữu**, rồi lọc dần bằng các param bên dưới (kết hợp tự do):
+>
+> `GET /tasks` → tất cả · `?assistantId=` → việc của một trợ lý · `?seriesId=` → một series · `?chapterId=` → một chương · `?pageId=` → một trang · thêm `?status=` để lọc trạng thái.
+>
+> **Authz:** `seriesId`/`chapterId` không thuộc Mangaka đang gọi → trả **rỗng** (200, `total: 0`), không phải 403 — giữ đúng quy ước cũ của route này và không lộ sự tồn tại của series người khác. ID sai định dạng cũng trả rỗng, không 500.
+> **Assistant:** luôn bị giới hạn ở task của chính mình; `seriesId`/`chapterId` chỉ là *bộ lọc thu hẹp*, không mở rộng quyền.
 
 **Query params:**
 
 | Param | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|
+| `seriesId` | string | — | 🆕 Lọc theo series (Mangaka: chỉ series mình sở hữu) |
+| `groupId` | string | — | 🆕 Lọc theo nhóm việc (UUID, không phải ObjectId) |
+| `chapterId` | string | — | 🆕 Lọc theo chapter |
 | `pageId` | string | — | ObjectId của Page |
 | `regionId` | string | — | Lọc task theo vùng (Region id) |
 | `assistantId` | string | — | ObjectId User của Assistant |
@@ -6126,10 +13123,66 @@ Validation fail |
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "pageId": "507f1f77bcf86cd799439011",
+        "regionId": "507f1f77bcf86cd799439011",
+        "assistantId": "507f1f77bcf86cd799439011",
+        "taskType": "BACKGROUND",
+        "status": "ASSIGNED",
+        "statusReason": "Nội dung mẫu",
+        "priority": 0,
+        "deadline": "2026-07-20T09:30:00.000Z",
+        "assetIds": [
+          "507f1f77bcf86cd799439011"
+        ],
+        "versions": [
+          {
+            "submittedBy": "string",
+            "versionNumber": 1,
+            "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+            "reviewStatus": "PENDING",
+            "reviewerNote": "Nội dung mẫu",
+            "submittedAt": "2026-07-20T09:30:00.000Z",
+            "submitter": {
+              "id": "507f1f77bcf86cd799439011",
+              "displayName": "Nguyễn Văn A",
+              "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+            }
+          }
+        ],
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "assistant": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /tasks/:id`
 > Chi tiết task (Mangaka sở hữu / Assistant được giao)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT (Bearer)
 
@@ -6141,6 +13194,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6161,6 +13216,54 @@ Validation fail |
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.TaskNotFound` | task not found or invalid id |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6185,6 +13288,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6211,6 +13316,66 @@ Validation fail |
 
 Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "assetIds": [
+    "507f1f77bcf86cd799439011"
+  ],
+  "deadline": "2026-07-20T09:30:00.000Z",
+  "priority": 1
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /tasks/:id/start`
@@ -6226,6 +13391,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6248,6 +13415,54 @@ Validation fail |
 | 403 | `Error.NotTaskAssignee` | caller is not the assigned assistant of this task |
 | 404 | `Error.TaskNotFound` | task not found or invalid id |
 | 409 | `Error.InvalidTaskTransition` | invalid task status transition |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6270,6 +13485,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6294,6 +13511,62 @@ Validation fail |
 | 409 | `Error.InvalidTaskTransition` | invalid task status transition |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "file": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /tasks/:id/approve`
@@ -6309,6 +13582,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6332,6 +13607,54 @@ Validation fail |
 | 404 | `Error.TaskNotFound` | task not found or invalid id |
 | 409 | `Error.InvalidTaskTransition` | invalid task status transition |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /tasks/:id/request-revision`
@@ -6353,6 +13676,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6377,6 +13702,62 @@ Validation fail |
 | 409 | `Error.InvalidTaskTransition` | invalid task status transition |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reviewerNote": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /tasks/:id/reassign`
@@ -6398,6 +13779,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6424,6 +13807,62 @@ Validation fail |
 | 409 | `Error.ChapterOnHold` | chapter is on hold; resume before production mutations |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "assistantId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /tasks/:id/cancel`
@@ -6445,6 +13884,8 @@ Validation fail |
 | `pageId` | string | ✅ | ObjectId của Page |
 | `regionId` | string | ✅ | ObjectId của Region (vùng trên trang) |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `taskType` | enum `Specialization` | ✅ | Assistant specialization/task type |
 | `status` | enum `TaskStatus` | ✅ | Task production status: ASSIGNED → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/REVISION_REQUESTED; ON_HOLD khi assistant nghỉ |
 | `statusReason` | string | ✅ | Latest status-change reason for cancel/reassign |
@@ -6468,6 +13909,63 @@ Validation fail |
 | 404 | `Error.TaskNotFound` | task not found or invalid id |
 | 409 | `Error.TaskNotCancellable` | task is APPROVED/CANCELLED and cannot be cancelled |
 | 422 | — | Validation fail |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pageId": "507f1f77bcf86cd799439011",
+    "regionId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "taskType": "BACKGROUND",
+    "status": "ASSIGNED",
+    "statusReason": "Nội dung mẫu",
+    "priority": 0,
+    "deadline": "2026-07-20T09:30:00.000Z",
+    "assetIds": [
+      "507f1f77bcf86cd799439011"
+    ],
+    "versions": [
+      {
+        "submittedBy": "string",
+        "versionNumber": 1,
+        "file": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "reviewStatus": "PENDING",
+        "reviewerNote": "Nội dung mẫu",
+        "submittedAt": "2026-07-20T09:30:00.000Z",
+        "submitter": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ],
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §7. Flow 9 — Danh bạ Mangaka/Trợ lý & Studio (kèm Review/Reputation)
@@ -6538,6 +14036,44 @@ Validation fail |
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "userId": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "penName": "Bút danh mẫu",
+        "genres": [
+          "ACTION"
+        ],
+        "experienceLevel": "string",
+        "bio": "Nội dung mẫu",
+        "portfolioFiles": [
+          "uploads/507f1f77bcf86cd799439011/anh.png"
+        ],
+        "reputationScore": 0,
+        "ratingAvg": 0,
+        "ratingCount": 1,
+        "isRecommended": false
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /assistants`
@@ -6579,6 +14115,45 @@ Validation fail |
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "userId": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "specializations": [
+          "BACKGROUND"
+        ],
+        "experienceLevel": "string",
+        "portfolioFiles": [
+          "uploads/507f1f77bcf86cd799439011/anh.png"
+        ],
+        "availabilityStatus": "AVAILABLE",
+        "availabilityFrom": "string",
+        "availabilityTo": "string",
+        "reputationScore": 0,
+        "ratingAvg": 0,
+        "ratingCount": 1,
+        "isRecommended": false
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /collaboration-invites`
@@ -6603,6 +14178,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6621,10 +14198,65 @@ Validation fail |
 
 Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "assistantId": "507f1f77bcf86cd799439011",
+  "seriesId": "507f1f77bcf86cd799439011",
+  "hireStart": "2026-07-20T09:30:00.000Z",
+  "hireEnd": "2026-07-20T09:30:00.000Z",
+  "taskTypes": [
+    "BACKGROUND"
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "taskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /collaboration-invites`
 > Danh sách invite theo scope role (Mangaka=gửi, Assistant=nhận)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT (Bearer)
 
@@ -6654,10 +14286,58 @@ Validation fail |
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "mangakaId": "507f1f77bcf86cd799439011",
+        "assistantId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "hireStart": "string",
+        "hireEnd": "string",
+        "taskTypes": [
+          "BACKGROUND"
+        ],
+        "status": "PENDING",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "mangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "assistant": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        }
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /collaboration-invites/:id`
 > Chi tiết 1 invite (chỉ owner hoặc invitee)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT (Bearer)
 
@@ -6668,6 +14348,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6680,6 +14362,46 @@ Validation fail |
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.InviteNotFound` | collaboration invite does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "taskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6695,6 +14417,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6713,6 +14437,48 @@ Validation fail |
 | 409 | `Error.InviteNotPending` | invite is not in PENDING state |
 | 409 | `Error.DuplicateActiveCollaboration` | an active collaboration or pending invite already exists for this pair |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "assignedTaskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "ACTIVE",
+    "terminatedReason": "Nội dung mẫu",
+    "activeNow": false,
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /collaboration-invites/:id/decline`
@@ -6727,6 +14493,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6742,6 +14510,46 @@ Validation fail |
 | 404 | `Error.InviteNotFound` | collaboration invite does not exist |
 | 409 | `Error.InviteNotPending` | invite is not in PENDING state |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "taskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /collaboration-invites/:id/cancel`
@@ -6756,6 +14564,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6771,10 +14581,51 @@ Validation fail |
 | 404 | `Error.InviteNotFound` | collaboration invite does not exist |
 | 409 | `Error.InviteNotPending` | invite is not in PENDING state |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "taskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /studio-assignments`
 > Danh sách assignment theo scope role (filter status / activeNow=true)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT (Bearer)
 
@@ -6807,10 +14658,60 @@ Validation fail |
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "mangakaId": "507f1f77bcf86cd799439011",
+        "assistantId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "hireStart": "string",
+        "hireEnd": "string",
+        "assignedTaskTypes": [
+          "BACKGROUND"
+        ],
+        "status": "ACTIVE",
+        "terminatedReason": "Nội dung mẫu",
+        "activeNow": false,
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "mangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "assistant": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        }
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /studio-assignments/:id`
 > Chi tiết 1 assignment (chỉ mangaka owner hoặc assistant)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT (Bearer)
 
@@ -6821,6 +14722,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6835,6 +14738,48 @@ Validation fail |
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.AssignmentNotFound` | studio assignment does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "assignedTaskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "ACTIVE",
+    "terminatedReason": "Nội dung mẫu",
+    "activeNow": false,
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6856,6 +14801,8 @@ Validation fail |
 | `id` | string | ✅ | ObjectId của bản ghi |
 | `mangakaId` | string | ✅ | ObjectId User của Mangaka chủ sở hữu |
 | `assistantId` | string | ✅ | ObjectId User của Assistant |
+| `groupId` | string \| null | ✅ | 🆕 Nhóm việc chứa task này (UUID); `null` = task lẻ |
+| `groupTitle` | string \| null | ✅ | 🆕 Tên nhóm việc hiển thị |
 | `seriesId` | string | ✅ | ObjectId của Series |
 | `hireStart` | string | ✅ | Ngày bắt đầu thuê (ISO) |
 | `hireEnd` | string | ✅ | Ngày kết thúc thuê (ISO) |
@@ -6873,6 +14820,56 @@ Validation fail |
 | 404 | `Error.AssignmentNotFound` | studio assignment does not exist |
 | 409 | `Error.AssignmentNotActive` | studio assignment is not active |
 | 422 | — | Validation fail |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "assistantId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "hireStart": "string",
+    "hireEnd": "string",
+    "assignedTaskTypes": [
+      "BACKGROUND"
+    ],
+    "status": "ACTIVE",
+    "terminatedReason": "Nội dung mẫu",
+    "activeNow": false,
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "assistant": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6897,9 +14894,415 @@ Validation fail |
 | `items[].progressPct` | number | ✅ |  |
 | `items[].warningLevel` | enum(NONE, YELLOW, RED, CRITICAL) | ✅ | Deadline warning: NONE an toan, YELLOW nguy co, RED kho kip, CRITICAL qua han |
 | `items[].onHold` | boolean | ✅ |  |
-| `items[].pagesCompleted` | number | ✅ |  |
+| `items[].pagesReady` | number | ✅ | Page ready theo Task |
+| `items[].pagesPending` | number | ✅ | Page chưa ready theo Task |
 | `items[].totalPages` | number | ✅ | Tổng số trang của chương |
 | `items[].openTasks` | number | ✅ |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "chapterId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "seriesTitle": "Tiêu đề mẫu",
+        "chapterNumber": 1,
+        "title": "Tiêu đề mẫu",
+        "manuscriptStatus": "DRAFT",
+        "deadline": "2026-07-20T09:30:00.000Z",
+        "remainingHours": 0,
+        "progressPct": 50,
+        "warningLevel": "NONE",
+        "onHold": false,
+        "pagesReady": 1,
+        "pagesPending": 1,
+        "totalPages": 1,
+        "openTasks": 0
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /dashboard/mangaka`
+> Dashboard tổng hợp cho Mangaka trong **1 call** — studio overview + ranking series + badge chưa đọc + số vòng sửa còn mở. Thay cho việc FE gọi rời `GET /studio/overview` + `GET /rankings` + `GET /notifications` + `GET /revision-requests`.
+
+**Quyền:** MANGAKA (Bearer) — role khác → 403.
+
+**Response 200** (`MangakaDashboardRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `studio` | object[] | ✅ | **Y HỆT `items` của `GET /studio/overview`**; mỗi item dùng `pagesReady/pagesPending`, không còn `pagesCompleted` |
+| `rankings` | object[] | ✅ | Ranking **kỳ gần nhất** của TỪNG series thuộc Mangaka (series chưa có ranking sẽ không xuất hiện) |
+| `rankings[].seriesId` | string | ✅ | |
+| `rankings[].seriesTitle` | string | ✅ | |
+| `rankings[].seriesStatus` | enum `SeriesStatus` | ✅ | |
+| `rankings[].rankPosition` | number \| null | ✅ | null nếu kỳ đó chưa xếp hạng series này |
+| `rankings[].voteCount` | number | ✅ | Tổng trọng số phiếu kỳ gần nhất |
+| `rankings[].previousRank` | number \| null | ✅ | |
+| `rankings[].rankChange` | number \| null | ✅ | + tăng hạng, − tụt hạng so với kỳ trước |
+| `rankings[].riskLevel` | enum `RiskLevel` | ✅ | NONE/LOW/MEDIUM/SEVERE |
+| `rankings[].isAtRisk` | boolean | ✅ | |
+| `rankings[].recordedAt` | string | ✅ | ISO 8601 UTC — thời điểm chốt ranking |
+| `unreadNotifications` | number | ✅ | Số thông báo chưa đọc (badge) |
+| `openRevisionRequests` | number | ✅ | Số vòng yêu cầu sửa còn mở mà Mangaka phải xử lý |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "studio": [
+      {
+        "chapterId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "seriesTitle": "Tiêu đề mẫu",
+        "chapterNumber": 1,
+        "title": "Tiêu đề mẫu",
+        "manuscriptStatus": "DRAFT",
+        "deadline": "2026-07-20T09:30:00.000Z",
+        "remainingHours": 0,
+        "progressPct": 50,
+        "warningLevel": "NONE",
+        "onHold": false,
+        "pagesReady": 1,
+        "pagesPending": 1,
+        "totalPages": 1,
+        "openTasks": 0
+      }
+    ],
+    "rankings": [
+      {
+        "seriesId": "507f1f77bcf86cd799439011",
+        "seriesTitle": "Tiêu đề mẫu",
+        "seriesStatus": "DRAFT",
+        "rankPosition": 1,
+        "voteCount": 1,
+        "previousRank": 1,
+        "rankChange": 1,
+        "riskLevel": "NONE",
+        "isAtRisk": false,
+        "recordedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "unreadNotifications": 0,
+    "openRevisionRequests": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /dashboard/mangaka/earnings`
+> Thu nhập Mangaka tổng hợp từ `PaymentRecord` (Flow 6). Tách khỏi `/dashboard/mangaka` vì màn tiền thường mở riêng và nặng hơn.
+
+**Quyền:** MANGAKA (Bearer) — role khác → 403.
+
+**Response 200** (`MangakaEarningsRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `totalPaid` | number | ✅ | Tổng tiền đã thực chi (`status=PAID`) |
+| `totalPending` | number | ✅ | Đã kích hoạt/duyệt nhưng chưa chi (`TRIGGERED` + `APPROVED`) |
+| `totalMissed` | number | ✅ | Mốc điều kiện không đạt (`MISSED`) |
+| `byStatus` | object | ✅ | Map `PaymentRecordStatus` → `{count, amount}` |
+| `byType` | object | ✅ | Map `PaymentType` → `{count, amount}` (CONDITION_PAYOUT / REVENUE_SHARE / COMPENSATION) |
+| `recent[]` | object[] | ✅ | Các khoản gần nhất |
+| `recent[].id` | string | ✅ | PaymentRecord ObjectId |
+| `recent[].amount` | number | ✅ | |
+| `recent[].status` | enum `PaymentRecordStatus` | ✅ | |
+| `recent[].paymentType` | enum `PaymentType` | ✅ | |
+| `recent[].seriesId` | string \| null | ✅ | null nếu khoản chi không gắn trực tiếp series |
+| `recent[].period` | string \| null | ✅ | Kỳ thanh toán; null nếu loại khoản không theo kỳ |
+| `recent[].paidAt` | string \| null | ✅ | ISO 8601 UTC; null khi chưa chi |
+| `recent[].createdAt` | string | ✅ | ISO 8601 UTC |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "totalPaid": 1,
+    "totalPending": 1,
+    "totalMissed": 1,
+    "byStatus": {},
+    "byType": {},
+    "recent": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "amount": 1000000,
+        "status": "TRIGGERED",
+        "paymentType": "CONDITION_PAYOUT",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "period": "string",
+        "paidAt": "2026-07-20T09:30:00.000Z",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /dashboard/assistant`
+> Dashboard Assistant trong 1 call — khối lượng task + số hợp tác đang hiệu lực + uy tín + badge.
+
+**Quyền:** ASSISTANT (Bearer) — role khác → 403.
+
+**Response 200** (`AssistantDashboardRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `tasks.byStatus` | object | ✅ | Map `TaskStatus` → số lượng (task của chính mình) |
+| `tasks.openTotal` | number | ✅ | Tổng task đang mở (loại `APPROVED`/`CANCELLED`) |
+| `activeAssignments` | number | ✅ | Số `StudioAssignment` ACTIVE còn trong `hire_period` |
+| `reputation.ratingAvg` | number | ✅ | Điểm trung bình thô |
+| `reputation.ratingCount` | number | ✅ | Số lượt đánh giá |
+| `reputation.reputationScore` | number | ✅ | Điểm Bayesian (m=3.5, C=5) |
+| `reputation.isRecommended` | boolean | ✅ | `ratingCount ≥ 3 && score ≥ ngưỡng AppConfig` |
+| `unreadNotifications` | number | ✅ | Badge |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "tasks": {
+      "byStatus": {},
+      "openTotal": 1
+    },
+    "activeAssignments": 0,
+    "reputation": {
+      "ratingAvg": 0,
+      "ratingCount": 1,
+      "reputationScore": 0,
+      "isRecommended": false
+    },
+    "unreadNotifications": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /dashboard/editor`
+> Dashboard Editor — hàng đợi review + phân bố series phụ trách + series nguy cơ + cảnh báo sản xuất + hợp đồng đang chờ.
+
+**Quyền:** EDITOR (Bearer) — role khác → 403.
+
+**Response 200** (`EditorDashboardRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `reviewQueue` | number | ✅ | Số series ở hàng đợi chờ claim (`IN_REVIEW` + chưa có editor) |
+| `mySeries.byStatus` | object | ✅ | Map `SeriesStatus` → số lượng series mình phụ trách |
+| `mySeries.total` | number | ✅ | |
+| `atRisk[]` | object[] | ✅ | Series mình phụ trách đang ở vùng nguy cơ ranking |
+| `atRisk[].seriesId` / `.title` | string | ✅ | |
+| `atRisk[].riskLevel` | enum `RiskLevel` | ✅ | NONE/LOW/MEDIUM/SEVERE |
+| `atRisk[].rankPosition` | number \| null | ✅ | null nếu kỳ gần nhất chưa xếp hạng series |
+| `productionAlerts[]` | object[] | ✅ | **Cùng shape `StudioOverviewItem`** (có `pagesReady`/`pagesPending`/`warningLevel`) — chapter sắp/đã trễ deadline |
+| `pendingContracts[]` | object[] | ✅ | Hợp đồng đang chờ thao tác |
+| `pendingContracts[].contractId` / `.seriesId` | string | ✅ | |
+| `pendingContracts[].status` | enum `ContractStatus` | ✅ | |
+| `unreadNotifications` | number | ✅ | Badge |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "reviewQueue": 0,
+    "mySeries": {
+      "byStatus": {},
+      "total": 1
+    },
+    "atRisk": [
+      {
+        "seriesId": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "riskLevel": "NONE",
+        "rankPosition": 1
+      }
+    ],
+    "productionAlerts": [
+      {
+        "chapterId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "seriesTitle": "Tiêu đề mẫu",
+        "chapterNumber": 1,
+        "title": "Tiêu đề mẫu",
+        "manuscriptStatus": "DRAFT",
+        "deadline": "2026-07-20T09:30:00.000Z",
+        "remainingHours": 0,
+        "progressPct": 50,
+        "warningLevel": "NONE",
+        "onHold": false,
+        "pagesReady": 1,
+        "pagesPending": 1,
+        "totalPages": 1,
+        "openTasks": 0
+      }
+    ],
+    "pendingContracts": [
+      {
+        "contractId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "status": "DRAFT"
+      }
+    ],
+    "unreadNotifications": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /dashboard/board`
+> Dashboard Board Member — quyết định đang chờ mình bỏ phiếu + phiên họp sắp tới + series nguy cơ nghiêm trọng.
+
+**Quyền:** BOARD_MEMBER (Bearer) — role khác → 403.
+
+**Response 200** (`BoardDashboardRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `pendingDecisions[]` | object[] | ✅ | Decision trong phiên ACTIVE mà mình thuộc roster |
+| `pendingDecisions[].decisionId` | string | ✅ | BoardDecision ObjectId |
+| `pendingDecisions[].boardSessionId` | string | ✅ | Phiên đang ACTIVE (dùng để join WS `/board`) |
+| `pendingDecisions[].decisionType` | enum `DecisionType` | ✅ | SERIALIZATION/CANCELLATION/... |
+| `pendingDecisions[].targetSeries` | object \| null | ✅ | `{id, title}`; null nếu decision không nhắm 1 series |
+| `pendingDecisions[].phase` | enum `BoardSessionPhase` | ✅ | **PRESENTING/QA/VOTING — chỉ `VOTING` mới vote được** (Spec 16), sớm hơn → 409 `Error.VotingNotOpen` |
+| `pendingDecisions[].result` | enum `BoardDecisionResult` | ✅ | FE **disable nút vote** khi `result ∉ {PENDING, PENDING_QUORUM}` (Spec 17) |
+| `upcomingSessions` | number | ✅ | Số phiên họp sắp diễn ra |
+| `atRiskSevere[]` | object[] | ✅ | Series `riskLevel=SEVERE` cần Board xem xét (Flow 5) |
+| `atRiskSevere[].seriesId` / `.title` | string | ✅ | |
+| `atRiskSevere[].rankPosition` | number \| null | ✅ | |
+| `unreadNotifications` | number | ✅ | Badge |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "pendingDecisions": [
+      {
+        "decisionId": "507f1f77bcf86cd799439011",
+        "boardSessionId": "507f1f77bcf86cd799439011",
+        "decisionType": "CONTINUE",
+        "targetSeries": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "phase": "PRESENTING",
+        "result": "PENDING"
+      }
+    ],
+    "upcomingSessions": 0,
+    "atRiskSevere": [
+      {
+        "seriesId": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "rankPosition": 1
+      }
+    ],
+    "unreadNotifications": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
+
+---
+
+#### `GET /dashboard/admin`
+> Dashboard Super Admin — thống kê hệ thống + badge.
+
+**Quyền:** SUPER_ADMIN (Bearer) — role khác → 403.
+
+**Response 200** (`AdminDashboardRes` — đọc `res.data`):
+
+| Field | Kiểu | Có mặt | Mô tả |
+|---|---|---|---|
+| `systemStats` | object | ✅ | **Y HỆT response `GET /admin/users/stats`** (tổng user, phân bố theo role/status…) |
+| `unreadNotifications` | number | ✅ | Badge |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "systemStats": {
+      "users": {
+        "total": 1,
+        "deleted": 0,
+        "byStatus": {},
+        "byRole": {}
+      },
+      "series": {
+        "total": 1,
+        "byStatus": {}
+      },
+      "chapters": {
+        "total": 1,
+        "published": 0
+      },
+      "tasks": {
+        "total": 1,
+        "byStatus": {}
+      }
+    },
+    "unreadNotifications": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -6939,6 +15342,42 @@ Validation fail |
 | 422 | `Error.CannotReviewSelf` | reviewer and target user must be different |
 | 422 | `Error.ReviewRequiresEndedAssignment` | review requires an ended studio assignment between the pair |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "assistantId": "507f1f77bcf86cd799439011",
+  "rating": 1,
+  "comment": "Nội dung mẫu",
+  "studioAssignmentId": "507f1f77bcf86cd799439011",
+  "seriesId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "rating": 0,
+    "comment": "Nội dung mẫu",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewer": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /assistant-reviews`
@@ -6964,6 +15403,34 @@ Validation fail |
 | `items[].comment` | string | ✅ | Nhận xét text tự do |
 | `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
 | `items[].reviewer` | object | — |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "rating": 0,
+        "comment": "Nội dung mẫu",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "reviewer": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7001,6 +15468,41 @@ Validation fail |
 | 404 | `Error.ProfileNotFound` | profile does not exist |
 | 422 | `Error.CannotReviewSelf` | reviewer and target user must be different |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "mangakaId": "507f1f77bcf86cd799439011",
+  "rating": 1,
+  "comment": "Nội dung mẫu",
+  "seriesId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "rating": 0,
+    "comment": "Nội dung mẫu",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewer": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /mangaka-reviews`
@@ -7026,6 +15528,35 @@ Validation fail |
 | `items[].comment` | string | ✅ | Nhận xét text tự do |
 | `items[].createdAt` | string | ✅ | Thời điểm tạo (ISO 8601 UTC) |
 | `items[].reviewer` | object | — |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "rating": 0,
+        "comment": "Nội dung mẫu",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "reviewer": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §8. Flow 10 — Deadline Negotiation (thương lượng deadline)
@@ -7096,10 +15627,59 @@ Validation fail |
 | 409 | `Error.OpenDeadlineRequestExists` | an open deadline negotiation already exists for this chapter |
 | 409 | `Error.DeadlineRequestNotAllowed` | deadline action is not allowed for the current chapter or request state |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "chapterId": "507f1f77bcf86cd799439011",
+  "requestedDeadline": "2026-07-20T09:30:00.000Z",
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /deadline-requests`
 > List deadline-request theo chapter (scope theo role)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
 
@@ -7137,10 +15717,53 @@ Validation fail |
 | 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "scheduleId": "507f1f77bcf86cd799439011",
+        "chapterId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "requestedBy": "string",
+        "lastProposedBy": "string",
+        "currentDeadline": "2026-07-20T09:30:00.000Z",
+        "requestedDeadline": "2026-07-20T09:30:00.000Z",
+        "reason": "Nội dung mẫu",
+        "affectsSlot": false,
+        "status": "PROPOSED",
+        "boardReviewedBy": "string",
+        "resolvedAt": "2026-07-20T09:30:00.000Z",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "chapter": {
+          "id": "507f1f77bcf86cd799439011",
+          "chapterNumber": 1,
+          "title": "Tiêu đề mẫu"
+        }
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /deadline-requests/:id`
 > Chi tiết 1 deadline-request (scope theo role)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
 
@@ -7169,6 +15792,44 @@ Validation fail |
 |---|---|---|
 | 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7212,6 +15873,53 @@ Validation fail |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 | 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "requestedDeadline": "2026-07-20T09:30:00.000Z",
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /deadline-requests/:id/agree`
@@ -7246,6 +15954,44 @@ Validation fail |
 | 403 | `Error.NotCounterparty` | only the counterparty can perform this deadline negotiation action |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 | 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7288,6 +16034,52 @@ Validation fail |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 | 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /deadline-requests/:id/withdraw`
@@ -7322,6 +16114,44 @@ Validation fail |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 | 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /deadline-requests/:id/finalize`
@@ -7355,6 +16185,44 @@ Validation fail |
 | 403 | `Error.DeadlineRequestAccessDenied` | current user cannot access or mutate this deadline request |
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 | 409 | `Error.InvalidDeadlineRequestTransition` | deadline request state transition is not allowed |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7395,6 +16263,54 @@ Validation fail |
 |---|---|---|
 | 404 | `Error.DeadlineRequestNotFound` | deadline request, chapter, or schedule does not exist |
 | 409 | `Error.DeadlineNotAwaitingBoard` | deadline request is not awaiting Board decision (must be BOARD_REVIEW or ESCALATED) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "decision": "APPROVE",
+  "note": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "scheduleId": "507f1f77bcf86cd799439011",
+    "chapterId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "lastProposedBy": "string",
+    "currentDeadline": "2026-07-20T09:30:00.000Z",
+    "requestedDeadline": "2026-07-20T09:30:00.000Z",
+    "reason": "Nội dung mẫu",
+    "affectsSlot": false,
+    "status": "PROPOSED",
+    "boardReviewedBy": "string",
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "chapter": {
+      "id": "507f1f77bcf86cd799439011",
+      "chapterNumber": 1,
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §9. Flow 4 — Survey / Guest Voting / Ranking
@@ -7475,6 +16391,39 @@ Validation fail |
 | `endDate` | string (regex, ISO 8601) | ✅ |  |
 | `status` | enum `SurveyStatus` | ✅ | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "issueNumber": 1,
+  "reflectedIssueNumber": 1,
+  "startDate": "2026-07-20T09:30:00.000Z",
+  "endDate": "2026-07-20T09:30:00.000Z",
+  "status": "DRAFT"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "issueNumber": 1,
+    "reflectedIssueNumber": 1,
+    "startDate": "2026-07-20T09:30:00.000Z",
+    "endDate": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /survey-periods`
@@ -7485,6 +16434,29 @@ Validation fail |
 **Response 200** :
 
 _(xem envelope §0 — data có thể null)_
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "issueNumber": 1,
+      "reflectedIssueNumber": 1,
+      "startDate": "2026-07-20T09:30:00.000Z",
+      "endDate": "2026-07-20T09:30:00.000Z",
+      "status": "DRAFT"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7503,6 +16475,27 @@ _(xem envelope §0 — data có thể null)_
 | `startDate` | string (regex, ISO 8601) | ✅ |  |
 | `endDate` | string (regex, ISO 8601) | ✅ |  |
 | `status` | enum `SurveyStatus` | ✅ | Vòng đời kỳ bình chọn: DRAFT → OPEN (đang nhận phiếu) → CLOSED → REFLECTED (đã chốt ranking, công khai được) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "issueNumber": 1,
+    "reflectedIssueNumber": 1,
+    "startDate": "2026-07-20T09:30:00.000Z",
+    "endDate": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7534,6 +16527,35 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 404 | `Error.SurveyPeriodNotFound` |  |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "status": "DRAFT"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "issueNumber": 1,
+    "reflectedIssueNumber": 1,
+    "startDate": "2026-07-20T09:30:00.000Z",
+    "endDate": "2026-07-20T09:30:00.000Z",
+    "status": "DRAFT"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /vote/context`
@@ -7558,6 +16580,40 @@ _(xem envelope §0 — data có thể null)_
 | `series[].genres` | enum `Genre`[] | ✅ | Manga genre (mảng, nhiều thể loại / series) |
 | `series[].demographic` | enum `Demographic` | ✅ | Phân khúc độc giả: SHONEN, SEINEN, SHOJO, JOSEI, KODOMO |
 | `maxSeriesPerVote` | integer | ✅ |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "period": {
+      "id": "507f1f77bcf86cd799439011",
+      "issueNumber": 1,
+      "reflectedIssueNumber": 1,
+      "startDate": "2026-07-20T09:30:00.000Z",
+      "endDate": "2026-07-20T09:30:00.000Z"
+    },
+    "series": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu",
+        "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "genres": [
+          "ACTION"
+        ],
+        "demographic": "SHONEN"
+      }
+    ],
+    "maxSeriesPerVote": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7584,6 +16640,31 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 429 | `Error.VoteOtpRateLimit` |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "identity": "user@example.com",
+  "captchaToken": "string"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7621,6 +16702,36 @@ _(xem envelope §0 — data có thể null)_
 | 422 | `Error.SeriesNotVotable` | seriesIds chứa id rác/không tồn tại hoặc series không ở trạng thái SERIALIZED (PB-03) |
 | 429 | `Error.VoteIpLimitExceeded` | IP này đã đạt trần số phiếu cho kỳ bình chọn (VotingConfig.ipVotesPerPeriod); chặn trước khi đốt OTP |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "surveyPeriodId": "507f1f77bcf86cd799439011",
+  "identity": "user@example.com",
+  "otpCode": "string",
+  "seriesIds": [
+    "507f1f77bcf86cd799439011"
+  ],
+  "captchaToken": "string"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /vote/results`
@@ -7654,6 +16765,33 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.SurveyPeriodNotFound` |  |
 | 409 | `Error.SurveyPeriodNotFinalized` | Kỳ bình chọn chưa REFLECTED (chưa finalize) — kết quả public chỉ xem được sau khi chốt |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "surveyPeriodId": "507f1f77bcf86cd799439011",
+    "issueNumber": 1,
+    "results": [
+      {
+        "rankPosition": 1,
+        "seriesId": "507f1f77bcf86cd799439011",
+        "seriesTitle": "Tiêu đề mẫu",
+        "publicationType": "WEEKLY",
+        "voteCount": 1,
+        "rankChange": 1
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /survey-data/import`
@@ -7686,6 +16824,39 @@ _(xem envelope §0 — data có thể null)_
 | 400 | `Error.SurveyDataImportNotAllowed` |  |
 | 404 | `Error.SurveyPeriodNotFound` |  |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "surveyPeriodId": "507f1f77bcf86cd799439011",
+  "issueNumber": 1,
+  "reflectedIssueNumber": 1,
+  "surveyDate": "2026-07-20T09:30:00.000Z",
+  "entries": [
+    {
+      "seriesId": "507f1f77bcf86cd799439011",
+      "voteCount": 1
+    }
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /survey-periods/:id/finalize`
@@ -7707,6 +16878,22 @@ _(xem envelope §0 — data có thể null)_
 | 400 | `Error.SurveyDataImportNotAllowed` |  |
 | 404 | `Error.SurveyPeriodNotFound` |  |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /survey-periods/:id/votes`
@@ -7718,6 +16905,35 @@ _(xem envelope §0 — data có thể null)_
 
 _(xem envelope §0 — data có thể null)_
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "surveyPeriodId": "507f1f77bcf86cd799439011",
+      "seriesIds": [
+        "507f1f77bcf86cd799439011"
+      ],
+      "identityHash": "string",
+      "authMethod": "EMAIL_OTP",
+      "ipHash": "string",
+      "captchaScore": 0,
+      "voteWeight": 0,
+      "isFlagged": false,
+      "votedAt": "2026-07-20T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /survey-periods/:id/survey-data`
@@ -7728,6 +16944,34 @@ _(xem envelope §0 — data có thể null)_
 **Response 200** :
 
 _(xem envelope §0 — data có thể null)_
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "surveyPeriodId": "507f1f77bcf86cd799439011",
+      "importedBy": "string",
+      "surveyDate": "2026-07-20T09:30:00.000Z",
+      "importedAt": "2026-07-20T09:30:00.000Z",
+      "entries": [
+        {
+          "seriesId": "507f1f77bcf86cd799439011",
+          "voteCount": 1
+        }
+      ]
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7750,6 +16994,34 @@ _(xem envelope §0 — data có thể null)_
 | `items[].riskLevel` | enum `RiskLevel` | ✅ | Mức nguy cơ của series theo kết quả ranking kỳ: NONE bình thường, LOW at-risk kỳ này, MEDIUM 3+ kỳ liên tiếp, SEVERE 5+ kỳ liên tiếp (feed Board) |
 | `items[].consecutiveAtRiskCount` | integer | ✅ | Số kỳ liên tiếp nằm bottom 1/3 |
 | `items[].isReliable` | boolean | ✅ | false = dữ liệu kỳ không đủ tin cậy (quá ít phiếu / chapter bị hold lâu) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "seriesId": "507f1f77bcf86cd799439011",
+        "rankPosition": 1,
+        "voteCount": 1,
+        "previousRank": 1,
+        "rankChange": 1,
+        "isAtRisk": false,
+        "riskLevel": "NONE",
+        "consecutiveAtRiskCount": 1,
+        "isReliable": false
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7787,6 +17059,34 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.RankingAccessDenied` | MANGAKA chỉ xem được series mình sở hữu; EDITOR chỉ xem được series mình phụ trách; BOARD/SUPER_ADMIN xem mọi series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "seriesId": "507f1f77bcf86cd799439011",
+        "rankPosition": 1,
+        "voteCount": 1,
+        "previousRank": 1,
+        "rankChange": 1,
+        "isAtRisk": false,
+        "riskLevel": "NONE",
+        "isReliable": false,
+        "recordedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /rankings/board`
@@ -7821,6 +17121,34 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 404 | `Error.SurveyPeriodNotFound` |  |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "seriesId": "507f1f77bcf86cd799439011",
+        "rankPosition": 1,
+        "voteCount": 1,
+        "previousRank": 1,
+        "rankChange": 1,
+        "isAtRisk": false,
+        "riskLevel": "NONE",
+        "isReliable": false,
+        "recordedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /voting-config`
@@ -7843,6 +17171,32 @@ _(xem envelope §0 — data có thể null)_
 | `ipVotesPerPeriod` | integer | ✅ |  |
 | `captchaThreshold` | number | ✅ |  |
 | `updatedAt` | string (regex, ISO 8601) | ✅ | Thời điểm cập nhật gần nhất (ISO 8601 UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "authMode": "OTP",
+    "maxSeriesPerVote": 0,
+    "otpExpirySeconds": 0,
+    "otpMaxAttempts": 0,
+    "ipRateLimit": 1,
+    "phoneRateLimit": 1,
+    "otpCooldownSeconds": 0,
+    "ipVotesPerPeriod": 0,
+    "captchaThreshold": 0,
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -7886,6 +17240,49 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.VotingConfigNotFound` |  |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "authMode": "OTP",
+  "maxSeriesPerVote": 1,
+  "otpExpirySeconds": 60,
+  "otpMaxAttempts": 1,
+  "ipRateLimit": 1,
+  "phoneRateLimit": 1,
+  "otpCooldownSeconds": 1,
+  "ipVotesPerPeriod": 1,
+  "captchaThreshold": 1
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "authMode": "OTP",
+    "maxSeriesPerVote": 0,
+    "otpExpirySeconds": 0,
+    "otpMaxAttempts": 0,
+    "ipRateLimit": 1,
+    "phoneRateLimit": 1,
+    "otpCooldownSeconds": 0,
+    "ipVotesPerPeriod": 0,
+    "captchaThreshold": 0,
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §10. Flow 5 — Series Lifecycle (hiatus / complete / cancel / đổi format)
@@ -7977,6 +17374,77 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidSeriesTransition` | series state transition is not allowed |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu",
+  "expectedReturnDate": "2026-07-20T09:30:00.000Z"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/resume`
@@ -8027,6 +17495,68 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.InvalidSeriesTransition` | series state transition is not allowed |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8086,6 +17616,77 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.SeriesNotProposableForCompletion` |  |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reason": "Nội dung mẫu",
+  "proposedEndingChapters": 0
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:id/finalize-ending`
@@ -8136,6 +17737,68 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.NotAssignedEditor` | current editor is not assigned to this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.SeriesNotInEndingState` | Series không ở trạng thái CANCELLING/COMPLETING nên không thể chốt kết thúc. |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8188,6 +17851,68 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.SeriesNotInCancellingState` |  |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /tankobon-sales`
@@ -8221,6 +17946,39 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.SeriesNotFound` | series does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "seriesId": "507f1f77bcf86cd799439011",
+  "volumeNumber": 1,
+  "unitsSold": 1,
+  "period": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "volumeNumber": 1,
+    "unitsSold": 0,
+    "period": "string",
+    "recordedBy": "string",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8261,6 +18019,57 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 403 | `Error.DefenseDashboardAccessDenied` |  |
 | 404 | `Error.SeriesNotFound` | series does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "seriesId": "507f1f77bcf86cd799439011",
+    "rankingTrend": [
+      {
+        "surveyPeriodId": "507f1f77bcf86cd799439011",
+        "rankPosition": 1,
+        "voteCount": 1,
+        "previousRank": 1,
+        "rankChange": 1,
+        "isAtRisk": false,
+        "riskLevel": "string",
+        "recordedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "tankobon": {
+      "totalUnitsSold": 1,
+      "volumes": [
+        {
+          "volumeNumber": 1,
+          "unitsSold": 0,
+          "period": "string"
+        }
+      ]
+    },
+    "seriesReports": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "reportType": "string",
+        "content": "Nội dung mẫu",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "serialization": {
+      "serializedSince": "string",
+      "chaptersPublished": 0
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §11. Flow 7 — Reprint (tái bản)
@@ -8334,10 +18143,66 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.ActiveContractNotFound` | series has no FULLY_EXECUTED contract; cannot create/manipulate reprint request |
 | 404 | `Error.OriginalChaptersNotFound` | no PUBLISHED original chapter exists in the requested chapter range |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "seriesId": "507f1f77bcf86cd799439011",
+  "revisionMode": "AS_IS",
+  "reason": "Nội dung mẫu",
+  "chapterRangeStart": 1,
+  "chapterRangeEnd": 1
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /reprint-requests`
 > Danh sách yêu cầu tái bản (filter status/seriesId, scope theo role)
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** EDITOR, BOARD_MEMBER, MANGAKA, SUPER_ADMIN (Bearer)
 
@@ -8352,10 +18217,56 @@ _(xem envelope §0 — data có thể null)_
 
 _(xem envelope §0 — data có thể null)_
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "seriesId": "507f1f77bcf86cd799439011",
+      "requestedBy": "string",
+      "revisionMode": "AS_IS",
+      "reason": "Nội dung mẫu",
+      "chapterRangeStart": 0,
+      "chapterRangeEnd": 0,
+      "status": "string",
+      "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+      "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+      "publishedAt": "2026-07-20T09:30:00.000Z",
+      "createdAt": "2026-07-20T09:30:00.000Z",
+      "chapters": [
+        {
+          "originalChapterId": "507f1f77bcf86cd799439011",
+          "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+          "status": "PENDING"
+        }
+      ],
+      "series": {
+        "id": "507f1f77bcf86cd799439011",
+        "title": "Tiêu đề mẫu"
+      },
+      "requester": {
+        "id": "507f1f77bcf86cd799439011",
+        "displayName": "Nguyễn Văn A",
+        "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+      }
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /reprint-requests/:id`
 > Chi tiết yêu cầu tái bản
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** EDITOR, BOARD_MEMBER, MANGAKA, SUPER_ADMIN (Bearer)
 
@@ -8385,6 +18296,49 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8429,6 +18383,58 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
 | 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "accept": false,
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /reprint-requests/:id/board-approve`
@@ -8472,6 +18478,58 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.ActiveContractNotFound` | series has no FULLY_EXECUTED contract; cannot create/manipulate reprint request |
 | 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "approve": false,
+  "reason": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /reprint-requests/:id/chapters`
@@ -8488,6 +18546,26 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "originalChapterId": "507f1f77bcf86cd799439011",
+      "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+      "status": "PENDING"
+    }
+  ]
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8510,6 +18588,24 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
 | 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "originalChapterId": "507f1f77bcf86cd799439011",
+    "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "status": "PENDING"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8556,6 +18652,58 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.ReviserOnlyForFullBuyout` | reviser can only be assigned when the active contract is FULL_BUYOUT |
 | 422 | `Error.ReviserMangakaNotFound` | reviserType=OTHER_MANGAKA requires the target user to have role MANGAKA |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "reviserId": "507f1f77bcf86cd799439011",
+  "reviserType": "INTERNAL_TEAM"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /reprint-requests/:id/chapters/:chapterId/manuscript`
@@ -8599,6 +18747,58 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
 | 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "originalChapterId": "507f1f77bcf86cd799439011",
+  "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /reprint-requests/:id/chapters/:chapterId/approve`
@@ -8641,6 +18841,59 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.ReprintRequestNotFound` | reprint request does not exist (or id is not a valid ObjectId) |
 | 404 | `Error.ReprintChapterNotFound` | embedded chapter is not part of this reprint request (or originalChapterId mismatch) |
 | 409 | `Error.InvalidReprintTransition` | reprint request state transition is not allowed by REPRINT_REQUEST_TRANSITIONS |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "originalChapterId": "507f1f77bcf86cd799439011",
+  "approve": false
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestedBy": "string",
+    "revisionMode": "AS_IS",
+    "reason": "Nội dung mẫu",
+    "chapterRangeStart": 0,
+    "chapterRangeEnd": 0,
+    "status": "string",
+    "mangakaApprovedAt": "2026-07-20T09:30:00.000Z",
+    "boardApprovedAt": "2026-07-20T09:30:00.000Z",
+    "publishedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "chapters": [
+      {
+        "originalChapterId": "507f1f77bcf86cd799439011",
+        "manuscriptFile": "uploads/507f1f77bcf86cd799439011/anh.png",
+        "status": "PENDING"
+      }
+    ],
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §12. Flow 8 — Transfer (chuyển nhượng series giữa các Mangaka)
@@ -8711,10 +18964,63 @@ _(xem envelope §0 — data có thể null)_
 | 400 | — | NO_ACTIVE_CONTRACT_FOUND_FOR_THIS_SERIES |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "seriesId": "507f1f77bcf86cd799439011",
+  "planDescription": "Nội dung mẫu",
+  "proposedType": "FULL_TRANSFER",
+  "proposedPercentage": 1
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /transfers/requests/mine`
 > Danh sách yêu cầu chuyển nhượng của Mangaka hiện tại
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA (Bearer)
 
@@ -8736,10 +19042,56 @@ _(xem envelope §0 — data có thể null)_
 | `data[].boardDecisionId` | string | — |  |
 | `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "requestingMangakaId": "507f1f77bcf86cd799439011",
+        "originalMangakaId": "507f1f77bcf86cd799439011",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "requestingMangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "originalMangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "originalContractType": "string",
+        "proposedType": "string",
+        "proposedPercentage": 50,
+        "planDescription": "Nội dung mẫu",
+        "originalContractId": "507f1f77bcf86cd799439011",
+        "status": "SUBMITTED",
+        "boardDecisionId": "507f1f77bcf86cd799439011",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /transfers/requests/pending-board`
 > Danh sách yêu cầu chuyển nhượng chờ Board xử lý
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** BOARD_MEMBER (Bearer)
 
@@ -8761,10 +19113,56 @@ _(xem envelope §0 — data có thể null)_
 | `data[].boardDecisionId` | string | — |  |
 | `data[].createdAt` | string (regex, ISO 8601) | ✅ | ISO 8601 date-time (UTC) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "data": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "requestingMangakaId": "507f1f77bcf86cd799439011",
+        "originalMangakaId": "507f1f77bcf86cd799439011",
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        },
+        "requestingMangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "originalMangaka": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "originalContractType": "string",
+        "proposedType": "string",
+        "proposedPercentage": 50,
+        "planDescription": "Nội dung mẫu",
+        "originalContractId": "507f1f77bcf86cd799439011",
+        "status": "SUBMITTED",
+        "boardDecisionId": "507f1f77bcf86cd799439011",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /transfers/requests/:id`
 > Chi tiết yêu cầu chuyển nhượng
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, EDITOR, BOARD_MEMBER (Bearer)
 
@@ -8790,6 +19188,47 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8830,6 +19269,56 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "boardSessionId": "507f1f77bcf86cd799439011",
+  "details": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /transfers/requests/:id/board-reject`
@@ -8869,6 +19358,56 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "boardSessionId": "507f1f77bcf86cd799439011",
+  "details": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /transfers/requests/:id/assign-full-buyout`
@@ -8903,6 +19442,38 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "boardSessionId": "507f1f77bcf86cd799439011",
+  "valuationAmount": 1,
+  "conditions": [
+    {
+      "description": "Nội dung mẫu",
+      "type": "CHAPTER_MILESTONE",
+      "value": 1
+    }
+  ]
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /transfers/requests/:id/start-negotiation`
@@ -8933,6 +19504,47 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 400 | — | THIS_ACTION_ONLY_APPLIES_TO_REVENUE_SHARE_CONTRACTS |
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -8965,6 +19577,47 @@ _(xem envelope §0 — data có thể null)_
 | 400 | — | REQUEST_IS_NOT_IN_NEGOTIATING_STAGE |
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /transfers/requests/:id/mangaka-reject`
@@ -8995,6 +19648,47 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 400 | — | REQUEST_IS_NOT_IN_NEGOTIATING_STAGE |
 | 404 | — | TRANSFER_REQUEST_NOT_FOUND |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "requestingMangakaId": "507f1f77bcf86cd799439011",
+    "originalMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "requestingMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "originalContractType": "string",
+    "proposedType": "string",
+    "proposedPercentage": 50,
+    "planDescription": "Nội dung mẫu",
+    "originalContractId": "507f1f77bcf86cd799439011",
+    "status": "SUBMITTED",
+    "boardDecisionId": "507f1f77bcf86cd799439011",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -9046,6 +19740,70 @@ _(xem envelope §0 — data có thể null)_
 | 409 | `Error.InvalidTransferState` | transfer request is not in the required state for this action (B-TRF-03) |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "transferRequestId": "507f1f77bcf86cd799439011",
+  "transferAmount": 1,
+  "transferType": "FULL_TRANSFER",
+  "newOwnershipSplit": {},
+  "coOwnerApprovalRequired": false
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "transferRequestId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "fromMangakaId": "507f1f77bcf86cd799439011",
+    "toMangakaId": "507f1f77bcf86cd799439011",
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    },
+    "fromMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "toMangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "transferType": "string",
+    "transferAmount": 1000000,
+    "newOwnershipSplit": null,
+    "coOwnerApprovalRequired": false,
+    "status": "DRAFT",
+    "aSignedAt": "2026-07-20T09:30:00.000Z",
+    "bSignedAt": "2026-07-20T09:30:00.000Z",
+    "boardSignedAt": "2026-07-20T09:30:00.000Z",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "transferContractId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /transfers/contracts/:id/sign`
@@ -9081,6 +19839,30 @@ _(xem envelope §0 — data có thể null)_
 | 404 | — | TRANSFER_CONTRACT_NOT_FOUND_AFTER_UPDATE |
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "otpCode": "string"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /transfers/contracts/:id/signatures`
@@ -9104,6 +19886,31 @@ _(xem envelope §0 — data có thể null)_
 | Status | Code | Khi nào |
 |---|---|---|
 | 404 | — | TRANSFER_CONTRACT_NOT_FOUND |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "signatures": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "transferContractId": "507f1f77bcf86cd799439011",
+        "userId": "507f1f77bcf86cd799439011",
+        "role": "string",
+        "signedAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §13. Flow 12 + 13 — Franchise consent & Publication Version
@@ -9181,6 +19988,76 @@ _(xem envelope §0 — data có thể null)_
 | 404 | `Error.SeriesNotFound` | series does not exist |
 | 409 | `Error.NotFranchiseConsentTarget` | series is not a franchise pending consent |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "approve": false
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "mangakaId": "507f1f77bcf86cd799439011",
+    "editorId": "507f1f77bcf86cd799439011",
+    "mangaka": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "editor": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "coOwnerId": "507f1f77bcf86cd799439011",
+    "parentSeriesId": "507f1f77bcf86cd799439011",
+    "title": "Tiêu đề mẫu",
+    "coverImage": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "genres": [
+      "ACTION"
+    ],
+    "demographic": "SHONEN",
+    "publicationType": "WEEKLY",
+    "magazine": "string",
+    "startIssueNumber": 1,
+    "status": "DRAFT",
+    "statusReason": "Nội dung mẫu",
+    "relationshipType": "SEQUEL",
+    "franchiseConsentStatus": "PENDING",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "reviewStartedAt": "2026-07-20T09:30:00.000Z",
+    "completionProposal": {
+      "proposedByRole": "string",
+      "proposedById": "507f1f77bcf86cd799439011",
+      "reason": "Nội dung mẫu",
+      "proposedEndingChapters": 0,
+      "proposedAt": "2026-07-20T09:30:00.000Z"
+    },
+    "proposal": {
+      "nameId": "507f1f77bcf86cd799439011",
+      "synopsis": "Nội dung mẫu",
+      "characterDesigns": [
+        "string"
+      ],
+      "estimatedLength": 0,
+      "status": "DRAFT",
+      "createdAt": "2026-07-20T09:30:00.000Z"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /series/:seriesId/publication-versions`
@@ -9216,6 +20093,39 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "language": "string",
+  "readingDirection": "RTL",
+  "versionType": "ORIGINAL",
+  "notes": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "language": "string",
+    "readingDirection": "RTL",
+    "versionType": "string",
+    "notes": "Nội dung mẫu",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /series/:seriesId/publication-versions`
@@ -9243,6 +20153,32 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.SeriesNotFound` | series does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "language": "string",
+        "readingDirection": "RTL",
+        "versionType": "string",
+        "notes": "Nội dung mẫu",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /publication-versions/:id`
@@ -9268,6 +20204,28 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.PublicationVersionNotFound` | publication version does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "language": "string",
+    "readingDirection": "RTL",
+    "versionType": "string",
+    "notes": "Nội dung mẫu",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -9304,6 +20262,39 @@ _(xem envelope §0 — data có thể null)_
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.PublicationVersionNotFound` | publication version does not exist |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "language": "string",
+  "readingDirection": "RTL",
+  "versionType": "ORIGINAL",
+  "notes": "Nội dung mẫu"
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "language": "string",
+    "readingDirection": "RTL",
+    "versionType": "string",
+    "notes": "Nội dung mẫu",
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `DELETE /publication-versions/:id`
@@ -9323,6 +20314,23 @@ _(xem envelope §0 — data có thể null)_
 |---|---|---|
 | 403 | `Error.SeriesAccessDenied` | current user cannot access this series |
 | 404 | `Error.PublicationVersionNotFound` | publication version does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "message": "Nội dung mẫu"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §14. Cross-cutting: Upload R2, Notification, Audit, AppConfig
@@ -9390,6 +20398,37 @@ Mỗi action request-revision của proposal, Name, manuscript hoặc task tự 
 | 422 | `Error.UnsupportedFileType` | file type is not allowed |
 | 422 | `Error.FileTooLarge` | file exceeds upload size limit |
 
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "fileName": "uploads/507f1f77bcf86cd799439011/anh.png",
+  "contentType": "image/png",
+  "contentLength": 1,
+  "assetType": "REFERENCE"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "assetId": "507f1f77bcf86cd799439011",
+    "key": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "uploadUrl": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "requiredHeaders": {},
+    "expiresAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `POST /uploads/sign-download`
@@ -9416,6 +20455,31 @@ Mỗi action request-revision của proposal, Name, manuscript hoặc task tự 
 |---|---|---|
 | 403 | `Error.DownloadForbidden` | current user cannot download this asset |
 | 404 | `Error.AssetNotFound` | asset does not exist |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "key": "uploads/507f1f77bcf86cd799439011/anh.png"
+}
+```
+
+**Ví dụ response 201** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "downloadUrl": "uploads/507f1f77bcf86cd799439011/anh.png",
+    "expiresAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -9450,6 +20514,36 @@ Mỗi action request-revision của proposal, Name, manuscript hoặc task tự 
 | `limit` | number | ✅ | Số bản ghi mỗi trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua (phân trang) |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "type": "SYSTEM",
+        "referenceId": "507f1f77bcf86cd799439011",
+        "referenceType": "string",
+        "content": "Nội dung mẫu",
+        "isRead": false,
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "total": 1,
+    "unreadCount": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /notifications/:id/read`
@@ -9475,6 +20569,28 @@ Mỗi action request-revision của proposal, Name, manuscript hoặc task tự 
 |---|---|---|
 | 404 | `Error.NotificationNotFound` | notification does not exist or does not belong to the current user |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "type": "SYSTEM",
+    "referenceId": "507f1f77bcf86cd799439011",
+    "referenceType": "string",
+    "content": "Nội dung mẫu",
+    "isRead": false,
+    "createdAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /notifications/read-all`
@@ -9488,10 +20604,27 @@ Mỗi action request-revision của proposal, Name, manuscript hoặc task tự 
 |---|---|---|---|
 | `updated` | number | ✅ | Số notification vừa được đánh dấu đã đọc |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "updated": 0
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /revision-requests`
 > List lịch sử vòng yêu cầu sửa; scope theo người trong cuộc, Board/Admin xem tất cả
+> 🆕 **Spec 20:** response kèm object hiển thị (UserMini/series/chapter — xem bảng §0.10), field id cũ giữ nguyên.
 
 **Quyền:** MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN (Bearer)
 
@@ -9528,6 +20661,54 @@ MANGAKA/ASSISTANT/EDITOR chỉ thấy row có `recipientId = mình` hoặc `requ
 | `limit` | number | ✅ | Kích thước trang |
 | `offset` | number | ✅ | Số bản ghi bỏ qua |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "targetType": "PROPOSAL",
+        "targetId": "507f1f77bcf86cd799439011",
+        "seriesId": "507f1f77bcf86cd799439011",
+        "round": 0,
+        "reason": "Nội dung mẫu",
+        "requestedBy": "string",
+        "recipientId": "507f1f77bcf86cd799439011",
+        "isResolved": false,
+        "resolvedAt": "2026-07-20T09:30:00.000Z",
+        "resolvedBy": "string",
+        "createdAt": "2026-07-20T09:30:00.000Z",
+        "requester": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "recipient": {
+          "id": "507f1f77bcf86cd799439011",
+          "displayName": "Nguyễn Văn A",
+          "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+        },
+        "series": {
+          "id": "507f1f77bcf86cd799439011",
+          "title": "Tiêu đề mẫu"
+        }
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `PATCH /revision-requests/:id/resolve`
@@ -9545,6 +20726,47 @@ MANGAKA/ASSISTANT/EDITOR chỉ thấy row có `recipientId = mình` hoặc `requ
 |---|---|---|
 | 403 | `Error.NotRevisionRecipient` | caller không phải người phải sửa của vòng này |
 | 404 | `Error.RevisionRequestNotFound` | revision request không tồn tại hoặc id không hợp lệ |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "targetType": "PROPOSAL",
+    "targetId": "507f1f77bcf86cd799439011",
+    "seriesId": "507f1f77bcf86cd799439011",
+    "round": 0,
+    "reason": "Nội dung mẫu",
+    "requestedBy": "string",
+    "recipientId": "507f1f77bcf86cd799439011",
+    "isResolved": false,
+    "resolvedAt": "2026-07-20T09:30:00.000Z",
+    "resolvedBy": "string",
+    "createdAt": "2026-07-20T09:30:00.000Z",
+    "requester": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "recipient": {
+      "id": "507f1f77bcf86cd799439011",
+      "displayName": "Nguyễn Văn A",
+      "avatar": "uploads/507f1f77bcf86cd799439011/anh.png"
+    },
+    "series": {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Tiêu đề mẫu"
+    }
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -9588,6 +20810,37 @@ MANGAKA/ASSISTANT/EDITOR chỉ thấy row có `recipientId = mình` hoặc `requ
 |---|---|---|
 | 422 | — | Validation fail |
 
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "507f1f77bcf86cd799439011",
+        "actorId": "507f1f77bcf86cd799439011",
+        "entityType": "SERIES",
+        "entityId": "507f1f77bcf86cd799439011",
+        "action": "string",
+        "fromState": "string",
+        "toState": "string",
+        "reason": "Nội dung mẫu",
+        "createdAt": "2026-07-20T09:30:00.000Z"
+      }
+    ],
+    "total": 1,
+    "limit": 1,
+    "offset": 1
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 #### `GET /admin/app-config`
@@ -9609,6 +20862,31 @@ MANGAKA/ASSISTANT/EDITOR chỉ thấy row có `recipientId = mình` hoặc `requ
 | `maxUploadBytes` | integer (≥ 0, ≤ 52428800) | ✅ | Maximum upload size in bytes |
 | `assignmentGraceDays` | integer (≥ 0) | ✅ | Grace days around assignment lifecycle checks |
 | `updatedAt` | string | ✅ | Thời điểm cập nhật gần nhất (ISO 8601 UTC) |
+
+<!-- payload-example:begin -->
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "updatedBy": "string",
+    "coOwnerApprovalGraceDays": 1,
+    "nameMaxReviewRounds": 1,
+    "reputationRecommendThreshold": 1,
+    "hiatusTooLongDays": 1,
+    "lowVoteReliabilityThreshold": 1,
+    "maxUploadBytes": 1,
+    "assignmentGraceDays": 1,
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
 
 ---
 
@@ -9649,6 +20927,46 @@ MANGAKA/ASSISTANT/EDITOR chỉ thấy row có `recipientId = mình` hoặc `requ
 | Status | Code | Khi nào |
 |---|---|---|
 | 422 | — | Validation fail |
+
+<!-- payload-example:begin -->
+
+**Ví dụ request body:**
+
+```json
+{
+  "coOwnerApprovalGraceDays": 1,
+  "nameMaxReviewRounds": 1,
+  "reputationRecommendThreshold": 1,
+  "hiatusTooLongDays": 0,
+  "lowVoteReliabilityThreshold": 1,
+  "maxUploadBytes": 0,
+  "assignmentGraceDays": 1
+}
+```
+
+**Ví dụ response 200** (đã bọc envelope — FE đọc `data`):
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "updatedBy": "string",
+    "coOwnerApprovalGraceDays": 1,
+    "nameMaxReviewRounds": 1,
+    "reputationRecommendThreshold": 1,
+    "hiatusTooLongDays": 1,
+    "lowVoteReliabilityThreshold": 1,
+    "maxUploadBytes": 1,
+    "assignmentGraceDays": 1,
+    "updatedAt": "2026-07-20T09:30:00.000Z"
+  }
+}
+```
+
+<!-- payload-example:end -->
+
 ---
 
 ## §15. WebSocket `/board` — realtime phiên họp Hội đồng
@@ -9695,7 +21013,141 @@ socket.on('disconnect', (reason) => {
 
 ## §16. Changelog v2 → v3 (FE PHẢI đọc nếu đã code theo v2)
 
-**Breaking:**
+### 2026-07-21 (bổ sung chiều) — `displayFile`, sửa ảnh trang xuất bản, lọc task theo series/chapter
+
+> Cùng ngày với entry bên dưới. Route inventory **giữ nguyên 261** (chỉ thêm query param + field response).
+
+**🔴 SỬA BUG XUẤT BẢN — độc giả đang thấy bản vẽ THÔ**
+
+`GET /public/chapters/:id/pages` trước đây serve `originalFile` (bản pencil/ink của Mangaka), nên **toàn bộ phần nền / screentone / hiệu ứng do trợ lý làm không bao giờ tới mắt độc giả**. Nay serve `compositeFile ?? originalFile`.
+
+Shape response **không đổi** (vẫn `pages[].imageUrl`) — FE không phải sửa gì; chỉ là ảnh trả về nay đúng bản hoàn chỉnh.
+
+**🆕 ADDITIVE — `PageRes.displayFile`**
+
+Mọi response chứa Page (`GET /chapters/:id/pages`, `POST /chapters/:id/pages`, `PATCH /pages/:pageId`) nay có thêm:
+
+```
+displayFile = compositeFile ?? originalFile
+```
+
+FE chỉ cần render **một** field này là ra đúng ảnh trong mọi trạng thái, không phải tự viết fallback. `originalFile` và `compositeFile` **giữ nguyên** — code cũ đang đọc `compositeFile` vẫn chạy y hệt, không breaking.
+
+> **Vì sao không gộp 2 cột làm 1:** `originalFile` là *bản gốc* mà AI segmentation phải chạy trên đó và Assistant phải tải về để làm việc; `compositeFile` là *thành phẩm* sau khi ghép việc của trợ lý. Gộp lại thì AI sẽ segment lên ảnh đã có nền, trợ lý thứ hai nhận trang đã bake sẵn việc của người trước, và không có đường quay lại. `displayFile` cho FE sự đơn giản của một field mà không mất hai nguồn đó.
+
+**🔄 ĐIỀU CHỈNH — `PATCH /pages/:pageId` KHÔNG nhận `originalFile`**
+
+Entry trước (sáng cùng ngày) có nói PATCH nhận thêm `originalFile`. **Đã rút lại** vì lý do trên. Body cuối cùng: **`compositeFile` + `pageNumber`**. Gửi `originalFile` → **422** (như trước khi có thay đổi nào). Muốn thay bản gốc: `DELETE /pages/:pageId` rồi `POST /chapters/:id/pages` lại.
+
+**🆕 ADDITIVE — `GET /tasks` lọc theo `seriesId` / `chapterId`, Mangaka không cần `pageId`**
+
+Trước đây Mangaka gọi `GET /tasks` mà thiếu `pageId` thì nhận **rỗng** → muốn xem việc phải lần lượt series → chapter → page. Nay:
+
+- `GET /tasks` → toàn bộ task thuộc mọi series Mangaka sở hữu
+- `?assistantId=` · `?seriesId=` · `?chapterId=` · `?pageId=` · `?status=` — kết hợp tự do để lọc dần
+
+`seriesId`/`chapterId` không thuộc mình → **rỗng** (200, `total: 0`), không 403. Assistant vẫn chỉ thấy task của chính mình.
+
+**🆕 Mã lỗi mới — `Error.PageHasApprovedTasks` (409)**
+
+`DELETE /pages/:pageId` và `DELETE /chapters/:id/pages` nay **từ chối** khi trang có task đã `APPROVED`, để không xoá mất công trợ lý đã được duyệt. Đồng bộ với hành vi sẵn có của `DELETE /regions/:id` (`Error.RegionHasApprovedTasks`).
+
+
+### 2026-07-21 — Page API mở rộng + siết quyền đọc trang + Assistant lấy được toạ độ vùng (1 breaking, 4 additive)
+
+> Route inventory **259 → 261**. Nguồn đối chiếu: Swagger runtime `GET /api-json` sau khi land.
+
+**🔴 BREAKING — `GET /chapters/:id/pages` nay có scoping theo sở hữu/phân công**
+
+Trước đây route này chỉ yêu cầu đăng nhập, **không kiểm ai đang gọi** ⇒ bất kỳ user nào (Mangaka đối thủ, Assistant của studio khác, Editor không phụ trách) đều đọc được `originalFile` của **mọi chapter** trong hệ thống. Đây là lỗ hổng so với BR-AUTH-00.
+
+Nay quyền là: **MANGAKA chủ series · EDITOR phụ trách · ASSISTANT có `StudioAssignment` ACTIVE với Mangaka đó · BOARD_MEMBER · SUPER_ADMIN**. Ngoài phạm vi → **403 `Error.ChapterAccessDenied`**.
+
+**FE sửa gì:** màn hình nào đang gọi route này phải xử lý nhánh 403 (trước đây luôn 200). Nếu màn đọc trang của Assistant đang hoạt động nhờ route này, Assistant đó phải có `StudioAssignment` ACTIVE — đúng bằng điều kiện đã cần để được giao task (BR-ASSIST-01), nên luồng thật không đổi.
+
+**🆕 ADDITIVE 1 — `TaskRes` nhúng thêm `region` (quan trọng cho màn Assistant)**
+
+`GET /tasks` và `GET /tasks/:id` nay trả kèm object `region` đầy đủ toạ độ (`{id, pageId, coordinates{x,y,width,height}, regionType, createdBy, confirmedByMangaka, confidenceScore, detectedSubtype, aiModelVersion}`), `null` nếu task không gắn vùng.
+
+**Vì sao cần:** `TaskRes` trước đây chỉ có `regionId` trần, mà `GET /pages/:id/regions` là MANGAKA/EDITOR-only ⇒ **Assistant không có API hợp lệ nào để biết vùng mình phải làm nằm ở đâu trên trang**. Nay vẽ được khung vùng từ đúng một call, không phải nới quyền route region. Xem §0.10.
+
+**🆕 ADDITIVE 2 — `PATCH /pages/:pageId` nhận thêm `originalFile` và `pageNumber`**
+
+Body `.strict()` trước đây **chỉ** nhận `compositeFile` (gửi `originalFile` → 422). Nay nhận cả 3 field, partial-update (omit/`null` = giữ nguyên). Đổi `pageNumber` sang số đã có trang khác dùng trong cùng chapter → **409 `Error.DuplicatePageNumber`** (mã lỗi mới); gửi lại đúng số hiện tại của chính nó → 200.
+
+**🆕 ADDITIVE 3 — `DELETE /pages/:pageId`**
+
+Xoá một trang, cascade xoá Region + Task của trang trong một transaction; trả `{pageId, deletedRegions, deletedTasks}`. Chỉ xoá được khi Page `DRAFT`/`REVISING` (Page `COMPLETED` → 409 `Error.PageNotEditable`, đúng Spec 19). Trợ lý mất task được notify.
+
+**🆕 ADDITIVE 4 — `DELETE /chapters/:id/pages` (bulk, all-or-nothing)**
+
+Body `{pageIds: string[]}` (1..50). Backend validate toàn bộ trước — một id sai (không tồn tại / thuộc chapter khác / `COMPLETED`) thì **không trang nào bị xoá**. Trả `{deletedPages, deletedRegions, deletedTasks}`.
+
+**Mã lỗi mới cần thêm vào bảng map của FE:** `Error.DuplicatePageNumber` (409). `Error.ChapterAccessDenied` đã tồn tại từ trước nhưng nay xuất hiện thêm ở `GET /chapters/:id/pages`.
+
+
+### 2026-07-20 — Chuẩn hoá `code` lỗi + payload example (2 breaking, 1 additive)
+
+**🔴 BREAKING 1 — mọi `code` legacy đổi sang `Error.PascalCase`.** FE nào `switch`/`if` theo chuỗi `code`
+phải cập nhật. `statusCode`, `message` (tiếng Việt), `errors[]`, `retryAfter` **giữ nguyên** — nếu FE chỉ
+hiển thị `message` thì không phải sửa gì.
+
+| Nhóm | Code cũ | Code mới |
+|---|---|---|
+| Guard 401 | `Unauthorized` | `Error.Unauthorized` |
+| Guard 401 | `Access token is required` | `Error.AccessTokenRequired` |
+| Guard 401 | `Invalid access token` | `Error.InvalidAccessToken` |
+| Guard 403 | `You do not have permission to access this resource` | `Error.ForbiddenResource` |
+| Rate-limit 429 | `AUTH_OTP_RATE_LIMITED` | `Error.OtpRateLimited` |
+| Rate-limit 429 | `PUBLIC_RATE_LIMITED` | `Error.PublicRateLimited` |
+| Rate-limit 429 | `VOTE_OTP_RATE_LIMITED` | `Error.VoteOtpRateLimit` |
+| Contract | `CONTRACT_NOT_FOUND` | `Error.ContractNotFound` |
+| Contract | `REVENUE_NOT_APPLICABLE` | `Error.RevenueNotApplicable` |
+| Contract | `ONLY_ASSIGNED_EDITOR_CAN_EDIT` | `Error.NotAssignedContractEditor` |
+| Contract | `INVALID_CONTRACT_STATUS_FOR_THIS_ACTION` | `Error.InvalidContractStatus` |
+| Contract | `CONTRACT_ALREADY_SIGNED_BY_THIS_PARTY` | `Error.ContractAlreadySigned` |
+| Contract | `BOARD_DECISION_NOT_FOUND` | `Error.ContractBoardDecisionMissing` |
+| Contract | `NOT_AUTHORIZED_IN_BOARD` | `Error.NotAuthorizedInBoard` |
+| Contract | `BOARD_MEMBER_ALREADY_SIGNED` | `Error.BoardMemberAlreadySigned` |
+| Contract | `MangakaSignNotRequired` | `Error.MangakaSignNotRequired` |
+| Payment | `PAYMENT_RECORD_NOT_FOUND` | `Error.PaymentRecordNotFound` |
+| Payment | `INVALID_STATUS_FOR_APPROVAL_EXPECTED_TRIGGERED` | `Error.PaymentNotApprovable` |
+| Payment | `INVALID_STATUS_FOR_PAYMENT_EXPECTED_APPROVED` | `Error.PaymentNotPayable` |
+| Payment | `PAYMENT_ALREADY_PAID_CANNOT_CANCEL` | `Error.PaymentAlreadyPaid` |
+| Payment | `RECEIVER_USER_NOT_FOUND` | `Error.PaymentReceiverNotFound` |
+| Payment | `INVALID_AMOUNT_MUST_BE_GREATER_THAN_0` | `Error.InvalidPaymentAmount` |
+| Payment | `PAYMENT_CONDITION_NOT_FOUND` | `Error.PaymentConditionNotFound` |
+| Payment | `PAYMENT_CONDITION_NOT_EDITABLE_STATUS_ACHIEVED_OR_MISSED` | `Error.PaymentConditionNotEditable` |
+| Payment | `ONLY_ASSIGNED_EDITOR_CAN_MANAGE_PAYMENT_CONDITIONS` | `Error.NotAssignedPaymentEditor` |
+| Payment | `INVALID_THRESHOLD_CONFIG` | `Error.InvalidThresholdConfig` |
+| Payment | `RECURRING_CHAPTER_REQUIRES_IS_RECURRING_TRUE` | `Error.RecurringChapterRequiresRecurring` |
+| Transfer | `NO_ACTIVE_CONTRACT_FOUND_FOR_THIS_SERIES` | `Error.NoActiveContractForSeries` |
+| Transfer | `TRANSFER_REQUEST_NOT_FOUND` | `Error.TransferRequestNotFound` |
+| Transfer | `INVALID_STATUS_FOR_SCREENING` | `Error.InvalidStatusForScreening` |
+| Transfer | `THIS_ACTION_ONLY_APPLIES_TO_FULL_BUYOUT_CONTRACTS` | `Error.OnlyAppliesToFullBuyout` |
+| Transfer | `ORIGINAL_CONTRACT_ID_NOT_FOUND` | `Error.OriginalContractNotFound` |
+| Transfer | `THIS_ACTION_ONLY_APPLIES_TO_REVENUE_SHARE_CONTRACTS` | `Error.OnlyAppliesToRevenueShare` |
+| Transfer | `REQUEST_IS_NOT_IN_NEGOTIATING_STAGE` | `Error.RequestNotInNegotiatingStage` |
+| Transfer | `TRANSFER_CONTRACT_NOT_FOUND` | `Error.TransferContractNotFound` |
+| Transfer | `USER_OR_EMAIL_NOT_FOUND` | `Error.TransferSignerNotFound` |
+| Transfer | `USER_HAS_ALREADY_SIGNED_THIS_CONTRACT` | `Error.TransferAlreadySigned` |
+| Transfer | `TRANSFER_CONTRACT_NOT_FOUND_AFTER_UPDATE` | `Error.TransferContractNotFoundAfterUpdate` |
+| Transfer | `YOU_ARE_NOT_THE_CO_OWNER_FOR_THIS_CHAPTER` | `Error.NotChapterCoOwner` |
+| Transfer | `CHAPTER_APPROVAL_IS_NOT_PENDING` | `Error.ChapterApprovalNotPending` |
+
+**🔴 BREAKING 2 — 429 rate-limit không còn `code` riêng tách khỏi `message`.** Trước đây `message` là
+`Error.OtpRateLimited` còn `code` là `AUTH_OTP_RATE_LIMITED` (2 mã cho 1 lỗi). Nay `code` = `Error.OtpRateLimited`.
+
+**✅ ADDITIVE — payload example JSON.** Mỗi route trong guide nay có block **"Ví dụ request body"** +
+**"Ví dụ response"** (đã bọc envelope). Lưu ý khi đọc:
+
+- Example **sinh tự động từ Swagger runtime** (`scripts/gen-payload-examples.mjs`) → luôn khớp schema thật, nhưng
+  **giá trị chỉ là mẫu**, không phải data thật.
+- **Bảng field phía trên vẫn là nguồn chuẩn** về kiểu/enum/bắt buộc. Chỗ nào example ghi `"string"` nghĩa là
+  schema khai string tự do (không suy ra được mẫu cụ thể) — đọc bảng để biết ràng buộc.
+- Field ngày giờ hiển thị dạng ISO UTC (`2026-07-20T09:30:00.000Z`) — FE tự đổi sang UTC+7 khi render.
+
+**Breaking (v2 → v3):**
 
 | # | Thay đổi | Chi tiết |
 |---|---|---|
@@ -9716,6 +21168,7 @@ socket.on('disconnect', (reason) => {
 - `GET /board/suggest-members?seriesId=` + `POST /board/sessions` cho phép **bỏ trống `allowedEditorIds`** (kèm `seriesId`) để auto-assign roster theo thể loại.
 - `PATCH|DELETE /chapters/:id` · `DELETE /chapters/:id/names/:nameId`.
 - `POST /series/:id/propose-completion` / `force-cancel` / `finalize-ending` / `hiatus` / `resume` / `franchise-consent`.
+- `POST /series/:id/reopen` / `reopen-review` (Spec 22: nộp lại hồ sơ và re-pitch sau Board reject).
 - Toàn bộ BE-B: contracts + amendments + payments, board engine, survey/vote/rankings (2 route public `GET /vote/context`, `GET /vote/results`), reprint, transfer, publication-versions, tankobon + defense-dashboard.
 - Notification `referenceType` action-specific (`<ENTITY>_<ACTION>`) — deep-link theo prefix (§0.6).
 - Spec 14: `GET /revision-requests`, `PATCH /revision-requests/:id/resolve`, `PATCH /series/:id`, `GET /mangakas`; `GET /assistants` thêm query `q` tìm theo tên.
@@ -9724,6 +21177,8 @@ socket.on('disconnect', (reason) => {
 - **Spec 13 (hạ tầng):** CORS env-driven `CORS_ORIGINS` — origin FE phải được whitelist (§0.8); notification đã chống trùng (không còn bản lặp, §0.9); route auth/OTP thất bại (422/409) **không còn** đốt cooldown → đăng ký lại ngay không dính 429 oan (cooldown default 60s→30s).
 - **Option A (Spec 14):** `POST /chapters/:id/names/:nameId/submit` (chapter-Name `DRAFT→SUBMITTED`) — xem breaking #9.
 - Swagger: field ngày giờ đã có `format: date-time` (đọc type chính xác từ `/api-json`).
+- **Spec 18 — Dashboard role-based (6 route):** `GET /dashboard/mangaka` · `/dashboard/mangaka/earnings` · `/dashboard/assistant` · `/dashboard/editor` · `/dashboard/board` · `/dashboard/admin` — mỗi route đúng 1 role (sai role → 403), tự scope theo token. Route cũ **`/me/dashboard` không còn tồn tại**. `studio`/`productionAlerts` dùng progress theo Task (`pagesReady/pagesPending`).
+- **Spec 17 (Board quorum & vote hardening):** luật chốt vote đổi → quorum = `ceil(2/3 × roster phiên)`, APPROVE phải > `1/2 roster` (đa số tuyệt đối; ABSTAIN/vắng = chưa đồng thuận) — xem route vote. Vote lại decision đã chốt → **409 `Error.DecisionAlreadyFinalized`** (FE disable nút vote khi `result ∉ {PENDING, PENDING_QUORUM}`). `GET /board/decisions` thêm query **`targetSeriesId`** (hỏi decision theo series). `GET /board/config` **lazy-seed** (hết 404 trên DB mới). `BoardConfig.quorumMin` giờ chỉ là sĩ số roster mặc định, KHÔNG phải quorum đếm phiếu.
 - 4 mã lỗi mới của Spec 14: `Error.RevisionRequestNotFound`, `Error.NotRevisionRecipient`, `Error.SeriesNotEditable`, `Error.SeriesMetadataConflict`. Các mã mới trước đó: `Error.NotEnoughBoardMembers`, `Error.RosterSourceRequired`, `Error.NameNotDeletable`; vote thêm `Error.DuplicateSeriesInVote`, `Error.SeriesNotVotable`; transfer thêm `Error.InvalidOwnershipSplit`; reviews thêm `Error.ProfileNotFound`.
 
 ---
@@ -9755,3 +21210,111 @@ socket.on('disconnect', (reason) => {
    - **`Error.NotContractMangaka`** (403, path `mangakaId`) — thay `ONLY_ASSIGNED_EDITOR_CAN_EDIT` ở các path SAI-MANGAKA: `PATCH /contracts/:id/status` (nhánh mangaka approve), `POST /contracts/:id/request-changes`, `POST /contracts/:id/signatures/mangaka`, `GET /contracts/:id/status` (mangaka xem HĐ người khác), `POST .../amendments/:id/sign/mangaka`, `POST .../amendments/:id/reject`.
    - **`Error.ContractAccessDenied`** (403, path `id`) — thay `ONLY_ASSIGNED_EDITOR_CAN_EDIT` ở guard XEM hợp đồng/phụ lục ngoài scope: `GET /contracts/:id`, `GET /contracts/:id/versions[/:versionId]`, `GET /contracts/:contractId/amendments[/:id]`.
    - `ONLY_ASSIGNED_EDITOR_CAN_EDIT` **vẫn giữ** cho các path editor-semantic (editor khác sửa/gửi HĐ, tạo/sửa amendment, revenue nhánh editor).
+
+### Spec 17 (2026-07-17) — Board quorum & vote hardening
+
+1. **Luật chốt vote đổi (hành vi):** trước đây do hệ thống thiếu seed `BoardConfig` nên **1 phiếu APPROVE là đủ chốt** (bug prod). Nay: quorum = `ceil(2/3 × số thành viên roster của phiên)`, và APPROVE phải **> `approveMajorityRatio × roster`** (default 0.5 → quá bán tuyệt đối cả roster). Phiếu `ABSTAIN`/vắng làm khó đạt hơn (mẫu số là cả roster). Kết quả: `PENDING_QUORUM` (chưa đủ người) → `PENDING` (đủ người, chưa ngã ngũ) → `APPROVED`/`REJECTED` (khóa cứng khi toán học không thể đổi chiều).
+2. **Mã lỗi mới:** 409 `Error.DecisionAlreadyFinalized` — vote lại decision đã `APPROVED`/`REJECTED`/`EXPIRED`. **FE nên disable nút vote khi `result ∉ {PENDING, PENDING_QUORUM}`.**
+3. **Additive query:** `GET /board/decisions?targetSeriesId=` — hỏi decision theo series (kết hợp được `boardSessionId`); id rác → `[]`.
+4. **`GET /board/config` lazy-seed:** hết 404 trên DB mới (tự tạo default `boardTotalMembers=5, quorumMin=3, ratio=0.5`).
+5. **Đổi ngữ nghĩa field:** `BoardConfig.quorumMin` nay = **sĩ số roster mặc định** khi auto-assign phiên, KHÔNG còn là quorum đếm phiếu. FE hiển thị/sửa config cần đổi label.
+6. **Tương thích:** không breaking REST route/field. Thay đổi FE Board phải xử lý: đọc `result` để khóa nút vote, và cập nhật hiểu biết "1 phiếu không còn chốt được".
+
+### Spec 18 (2026-07-18) — Role Dashboards ⚠ có 1 breaking
+
+> Mỗi role có **1 endpoint tổng hợp riêng**, thay cho việc FE ghép 4–5 call rời ở màn trang chủ. Route inventory 251 → **257**.
+
+| # | Thay đổi | FE phải đổi |
+|---|---|---|
+| 1 | 🔴 **Bỏ `GET /me/dashboard`** | Route **không còn tồn tại** (404) — đổi sang `GET /dashboard/mangaka`. Đây là breaking duy nhất của Spec 18. |
+| 2 | **6 route mới** `/dashboard/*` | `mangaka` · `mangaka/earnings` · `assistant` · `editor` · `board` · `admin` — mỗi route `@Roles` đúng 1 role, gọi sai role → **403**. Xem API Reference §7. |
+| 3 | Scoping tự động | Không cần truyền id: BE tự lọc theo `mangakaId`/`editorId`/`assistantId`/roster Board của chính token. |
+| 4 | Tiền tách riêng | Thu nhập Mangaka **không** nằm trong `/dashboard/mangaka` mà ở `/dashboard/mangaka/earnings` (màn tiền mở riêng). |
+| 5 | Dùng lại shape cũ | `studio` (Mangaka) và `productionAlerts` (Editor) dùng **đúng `StudioOverviewItem`** của `GET /studio/overview` → tái dùng component, không cần map lại. |
+
+> ⚠️ Các field `pagesReady`/`pagesPending` trong `studio`/`productionAlerts` chịu ảnh hưởng của **Spec 19** bên dưới — đọc tiếp.
+
+### Spec 19 (2026-07-18) — Page Lifecycle Simplification ⚠ FE PHẢI đọc
+
+| # | Breaking | FE phải đổi |
+|---|---|---|
+| 1 | `PageStatus`: `NOT_STARTED|IN_PROGRESS|COMPOSITE_READY|COMPLETED` → `DRAFT|COMPLETED|REVISING` | Không suy trạng thái từ Task và không tự PATCH status; render đúng 3 badge mới. |
+| 2 | `ManuscriptStatus` bỏ `COMPOSITE_REVIEW` | Stepper đi thẳng `IN_PRODUCTION→EDITOR_REVIEW`. |
+| 3 | Bỏ endpoint composite-ready; route inventory `257→256` | Xóa call/bước fallback composite; submit trực tiếp khi gate task đạt. |
+| 4 | `PATCH /pages/:pageId` bỏ field `status` | Body `.strict()` chỉ nhận **`compositeFile`**. Gửi `status` **hoặc `originalFile`** → 422 (`originalFile` chỉ set lúc `POST /chapters/:id/pages`, không sửa qua PATCH). Ngoài ra page phải ở `DRAFT`/`REVISING`, nếu `COMPLETED` → 409 `Error.PageNotEditable`. |
+| 5 | Progress/overview/dashboard đổi field | `GET /chapters/:id/progress`, `GET /studio/overview`, `GET /dashboard/mangaka`: bỏ `pagesCompleted/pagesInProgress/pagesNotStarted`, dùng `pagesReady/pagesPending`; `progressPct` đo theo Task. |
+| 6 | Error contract đổi | Bỏ `Error.PagesNotAllCompleted`; thêm 409 `Error.NoPagesToSubmit`, `Error.TasksNotAllApproved`, `Error.RevisionNotResolved`, `Error.PageNotEditable`. |
+| 7 | Page `COMPLETED` khóa sửa | Mutation Page/Region/Task/AI trả 409 `Error.PageNotEditable`; UI chuyển editor sang read-only tới khi backend mở `REVISING`. |
+| 8 | Resubmit bắt buộc resolve trước | Resolve hết RevisionRequest `MANUSCRIPT` đang mở trước khi gọi resubmit; còn request → 409 `Error.RevisionNotResolved`. |
+
+**Flow backend-driven:** submit bulk `DRAFT→COMPLETED`; Editor request-revision và co-owner reject bulk `COMPLETED→REVISING`; resubmit bulk `REVISING|DRAFT→COMPLETED`. Task approve không còn cascade Page/Manuscript.
+
+### Spec 20 (2026-07-18) — Response Name Enrichment (additive — không breaking)
+
+1. Các response GET của Contract/Payment/Transfer/Reprint/Deadline/Task/Studio/Annotation/Revision được thêm object hiển thị theo bảng §0.10; mọi field ID cũ được giữ nguyên.
+2. `UserMini` thống nhất `{id, displayName, avatar}` với fallback `displayName ?? name`; series/chapter dùng mini object chỉ chứa field render cần thiết.
+3. Embed được đảm bảo ở read path; mutation path có thể không có embed và FE refetch GET nếu cần. Dữ liệu cũ có ID dangling trả `null` thay vì làm GET thất bại.
+4. Lookup giữ tên user soft-deleted để lịch sử vẫn đọc được; thay đổi không thêm/bỏ route, route inventory giữ **256**.
+
+### Spec 21 (2026-07-18) — Vietnamese Messages + stable error `code` (breaking FE)
+
+1. **Envelope lỗi luôn có `code`:** shape chuẩn là `{success:false,statusCode,code,message,errors?}`; các metadata chuyên biệt như `retryAfter` vẫn được giữ nguyên.
+2. **`message` đổi semantics:** trước đây thường chứa mã `Error.*`, nay là câu tiếng Việt hiển thị trực tiếp. FE phải phân nhánh bằng `code`, tuyệt đối không so sánh `message`.
+3. **Validation 422 đổi contract:** top-level dùng `code: "Error.ValidationFailed"`; từng `errors[].message` đã là tiếng Việt và `errors[].path` vẫn dùng để map field.
+4. **Thông báo thành công/nghiệp vụ được Việt hoá:** default success đổi `"Success"` → `"Thành công"`; notification và message module cũng dùng tiếng Việt.
+5. **Mã máy giữ tương thích:** toàn bộ `Error.*` giữ nguyên; mã raw BE-B/rate-limit như `AUTH_OTP_RATE_LIMITED` và `PUBLIC_RATE_LIMITED` vẫn là giá trị của `code`. Route/schema nghiệp vụ không đổi, inventory giữ **256**.
+
+### Spec 22 (2026-07-18) — Series Reopen & Re-pitch (additive)
+
+1. **Hai route mới:** `POST /series/:id/reopen` (MANGAKA, không body) và `POST /series/:id/reopen-review` (EDITOR, body `{reason}`); route inventory **256→258**.
+2. **Ba trạng thái không còn terminal:** `ABANDONED|WITHDRAWN→DRAFT`; `REJECTED→IN_REVIEW|WITHDRAWN|ABANDONED`. FE bỏ logic ẩn/khóa toàn bộ action chỉ vì gặp ba status này.
+3. **UI Mangaka:** ở `ABANDONED`/`WITHDRAWN` hiện **Nộp lại**; ở `REJECTED` hiện lý do Board + **Rút hẳn** và chờ Editor mở rework. Reopen về `DRAFT` sẽ bỏ Editor cũ; sau submit, series quay lại hàng đợi claim.
+4. **UI Editor:** ở `REJECTED`, Editor phụ trách hiện **Mở lại chỉnh sửa**, **Bỏ series** và action rút/pitch tương ứng. Reopen-review giữ Editor, đưa proposal về `PROPOSAL_REVISION`; sau approve lại thì pitch và tạo Board Decision mới.
+5. **Proposal-Name:** sau reopen-review, Editor có thể yêu cầu `APPROVED→REVISION` chỉ với proposal-Name khi series `IN_REVIEW`; chapter-Name APPROVED vẫn bị khóa. Không thêm enum hay mã lỗi mới; dùng lại `Error.InvalidSeriesTransition`, `Error.NotSeriesOwner`, `Error.NotAssignedEditor`.
+
+### 2026-07-19 — Contract creation gate + Board Decision embed (contract)
+
+1. **`POST /contracts` siết validate** (thêm 4 mã lỗi — FE map thêm): 404 `Error.BoardDecisionNotFound` · 409 `Error.InvalidSerializationDecision` (decision phải là `SERIALIZATION` + `APPROVED` của đúng series) · 409 `Error.ContractMangakaMismatch` (`mangakaId` phải là chủ series) · 409 `Error.OpenContractExists` (series/decision đã có hợp đồng chưa kết thúc). Body **không đổi** (3 field id vốn đã bắt buộc).
+2. **`GET /contracts` + `GET /contracts/:id` thêm embed `boardDecision`** `{id, decisionType, result, decidedAt, boardSession{id, title, startTime}}` — FE render "duyệt tại phiên [title] ngày [startTime]" trực tiếp, không cần gọi `/board/decisions`. Additive, field `boardDecisionId` cũ giữ nguyên.
+
+### 2026-07-20 — Contract PDF + `reason` bắt buộc + siết quyền Board + read-cache
+
+> Đợt này có **3 breaking** (mục 1–3) và **2 additive** (mục 4–5). Route inventory **258→259**.
+
+**1. 🔴 BREAKING — `POST /contracts/:id/request-changes` bắt buộc body `{reason}`**
+
+- Trước: gọi không body. Nay: `{ reason: string }` (1–1000 ký tự, schema `.strict()`). Thiếu/rỗng/quá dài/gửi field lạ → **422**.
+- Vì sao: Editor nhận thông báo "Mangaka yêu cầu chỉnh sửa" mà không biết **sửa điều khoản nào** → phải hỏi ngoài hệ thống, gãy vòng thương lượng BR-CONTRACT-02.
+- Lý do được ghi **2 nơi**: nội dung Notification gửi Editor, và `AuditLog.reason` (tra `GET /audit?entityType=CONTRACT&entityId=:id`). Notification bị đánh dấu đã đọc; audit là bản ghi bền.
+- ⚠ Tên field là **`reason`** (đồng bộ với `manuscript/request-revision`, `series/reopen-review`, `DeadlineRequest`), **không phải `note`**. Gửi `note` → 422 vì schema `.strict()`.
+- **FE sửa:** thêm ô nhập lý do (textarea, required, maxlength 1000) vào dialog "Yêu cầu chỉnh sửa" ở màn chi tiết hợp đồng.
+
+**2. 🔴 BREAKING — `POST /contracts/:id/board-request-changes` bắt buộc body `{reason}`**
+
+- Y hệt mục 1, phía Hội đồng.
+- ⚠ Route này reset **CẢ HAI** chữ ký (`mangakaSignedAt` + `boardSignedAt` → `null`) và đưa HĐ về `NEGOTIATION` — hai bên phải gật lại từ đầu. FE nên có confirm dialog.
+
+**3. 🔴 BREAKING (quyền, không đổi shape) — `board-approve` / `board-request-changes` siết theo roster phiên họp**
+
+- Trước: **bất kỳ** `BOARD_MEMBER` nào trong hệ thống cũng bấm được, kể cả người không dự phiên họp ra quyết định serial hoá cho hợp đồng đó.
+- Nay: caller phải nằm trong `contract.boardDecision.boardSession.allowedEditorIds` — **cùng nguồn sự thật** mà bước ký `/signatures/board` vẫn dùng.
+- Phân biệt 2 bước (nghiệp vụ **không đổi**): **XEM XÉT** điều khoản = 1 board member trong roster là đủ (đại diện); **KÝ** = toàn bộ roster phải ký mới `FULLY_EXECUTED`.
+- Mã lỗi mới: **403 `NOT_AUTHORIZED_IN_BOARD`** (ngoài roster) · **400 `BOARD_DECISION_NOT_FOUND`** (HĐ chưa gắn quyết định Hội đồng).
+- ⚠ Guard **authz đứng trước transition** → người ngoài roster luôn nhận 403 kể cả khi HĐ đang ở trạng thái không duyệt được (cố ý — không lộ trạng thái HĐ ra ngoài Hội đồng).
+- **FE sửa:** ẩn/disable nút Duyệt và Yêu cầu sửa nếu `currentUser.id` không có trong roster. Roster lấy từ embed `boardDecision.boardSession` ở `GET /contracts/:id` (§0.10).
+
+**4. 🆕 Additive — route mới `GET /contracts/:id/pdf` (258→259 route)**
+
+- Xuất hợp đồng đã ký ra **PDF tiếng Việt**, trả `{ downloadUrl, expiresAt, key }` (presigned GET, mặc định 600s).
+- Quyền: EDITOR/MANGAKA/BOARD_MEMBER, cùng luật xem như `GET /contracts/:id`.
+- **Chỉ xuất khi `status` ∈ `FULLY_EXECUTED | FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED`** — khác → **409 `Error.ContractNotExecutedForPdf`** (mã mới, FE map thêm). Không có bản nháp/watermark.
+- **Idempotent theo phiên bản nội dung:** `key = contracts/{id}/contract-v{n}-a{m}.pdf`. Gọi lại → cùng `key`, không render lại. Amendment `FULLY_EXECUTED` → lần gọi sau ra key mới, file cũ giữ làm vết.
+- Enum `AssetType` thêm giá trị **`DOCUMENT`** (file hệ thống tự sinh) — FE không tạo loại này qua `POST /uploads/sign`.
+- **FE làm:** nút "Tải hợp đồng PDF" ở màn chi tiết HĐ, chỉ hiện khi status hợp lệ → mở `downloadUrl` (đừng gắn header `Authorization` vào URL đã ký).
+
+**5. 🆕 Additive — read-cache nhóm route public/ranking (§0.11)**
+
+- Shape response **không đổi**; dữ liệu có thể trễ tối đa TTL (public 120s · vote-context 60s · ranking 600s · kết quả kỳ đã REFLECTED 3600s) sau hành động ghi, nhưng thường tươi hơn nhiều vì hệ thống chủ động xoá cache theo sự kiện nghiệp vụ.
+- Route scope theo user (`/dashboard/*`, `/notifications`, list series đã đăng nhập) **không** cache → luôn tươi.
+- ⚠ **Signed URL ảnh không bị cache** — 2 lần gọi cùng route trả URL ảnh khác chuỗi nhau dù nội dung giống hệt. **Đừng dùng URL ảnh làm key so sánh/diff/cache phía FE**, dùng `id`.
+- Redis chết → route vẫn 200 (đọc thẳng DB, fail-open).

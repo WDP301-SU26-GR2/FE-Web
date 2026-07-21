@@ -33,6 +33,8 @@ export default [
       route('contracts/:id', 'routes/mangaka/contract-detail.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
+      route('rankings', 'routes/mangaka/rankings.tsx'),
+      route('notifications', 'routes/mangaka/notifications.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')
     ])
   ]),

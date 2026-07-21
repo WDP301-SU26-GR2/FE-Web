@@ -16,7 +16,6 @@ const STATUS_META: Record<string, { className: string; dotClassName: string }> =
     className: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
     dotClassName: 'bg-amber-500'
   },
-  COMPOSITE_REVIEW: { className: 'border-sky-500/30 bg-sky-500/10 text-sky-700', dotClassName: 'bg-sky-500' },
   EDITOR_REVIEW: {
     className: 'border-primary/30 bg-primary/10 text-primary',
     dotClassName: 'bg-primary'
