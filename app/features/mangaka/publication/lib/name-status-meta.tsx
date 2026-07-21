@@ -2,6 +2,8 @@ import { cn } from '~/shared/lib/cn'
 
 export type NameStatusKey = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'REVISION' | 'APPROVED'
 
+export type PageStatusKey = 'DRAFT' | 'COMPLETED' | 'REVISING'
+
 type StatusMeta = {
   className: string
   /** i18n key under `publication.nameStatus.<key>`. */
@@ -31,22 +33,27 @@ const NAME_STATUS_META: Record<NameStatusKey, StatusMeta> = {
   }
 }
 
-const PAGE_STATUS_META: Record<string, StatusMeta> = {
-  NOT_STARTED: {
+/**
+ * Page status (per FE-API-Guide-v3 §5):
+ *   - DRAFT — Mangaka đang vẽ / giao cho Assistant. Sửa được.
+ *   - COMPLETED — Đã nộp, đang ở tay Editor. KHÔNG sửa được.
+ *   - REVISING — Editor (hoặc co-owner) yêu cầu sửa. Mở khoá sửa lại.
+ *
+ * NOTE: Ở spec v3, page KHÔNG còn state machine riêng cho Mangaka tự chuyển —
+ * BE tự quản lý khi Editor duyệt/revision. FE chỉ render badge.
+ */
+const PAGE_STATUS_META: Record<PageStatusKey, StatusMeta> = {
+  DRAFT: {
     className: 'bg-muted text-muted-foreground border-border',
-    i18nKey: 'NOT_STARTED'
-  },
-  IN_PROGRESS: {
-    className: 'bg-warning/10 text-warning border-warning/20',
-    i18nKey: 'IN_PROGRESS'
-  },
-  COMPOSITE_READY: {
-    className: 'bg-info/10 text-info border-info/20',
-    i18nKey: 'COMPOSITE_READY'
+    i18nKey: 'DRAFT'
   },
   COMPLETED: {
     className: 'bg-success/10 text-success border-success/20',
     i18nKey: 'COMPLETED'
+  },
+  REVISING: {
+    className: 'bg-warning/10 text-warning border-warning/20',
+    i18nKey: 'REVISING'
   }
 }
 
@@ -76,7 +83,7 @@ export function nameStatusClassName(status: string): string {
 }
 
 export function PageStatusBadge({ status, className }: { status: string; className?: string }) {
-  const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.NOT_STARTED
+  const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT
   return (
     <span
       className={cn(
@@ -91,8 +98,10 @@ export function PageStatusBadge({ status, className }: { status: string; classNa
 }
 
 export function pageStatusClassName(status: string): string {
-  return ((PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.NOT_STARTED).className
+  return ((PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT).className
 }
+
+export const PAGE_STATUS_KEYS = Object.keys(PAGE_STATUS_META) as PageStatusKey[]
 
 export const NAME_STATUS_KEYS = Object.keys(NAME_STATUS_META) as NameStatusKey[]
 /**

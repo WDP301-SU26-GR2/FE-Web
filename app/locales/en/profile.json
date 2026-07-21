@@ -17,6 +17,58 @@
   "ratingCount_one": "{{count}} rating",
   "ratingCount_other": "{{count}} ratings",
   "editTitle": "Edit profile — {{mode}}",
+  "accountInfo": {
+    "title": "Account Information",
+    "edit": "Edit account",
+    "email": "Email",
+    "phoneNumber": "Phone number",
+    "name": "Name",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "Leave blank to use real name",
+    "displayNameHint": "Leave blank to use your real name. The display name is shown publicly.",
+    "avatar": "Avatar",
+    "avatarHint": "PNG, JPEG, WebP — up to 15MB.",
+    "role": "Role",
+    "memberSince": "Member since",
+    "notSet": "Not set",
+    "characters": "characters",
+    "emailVerified": "Email verified",
+    "emailUnverified": "Email not verified",
+    "mustChangePassword": "You need to change your password before continuing.",
+    "saveSuccess": "Account information updated.",
+    "errors": {
+      "nameTooShort": "Name must be at least 2 characters.",
+      "nameTooLong": "Name must be 100 characters or fewer.",
+      "displayNameTooLong": "Display name must be 100 characters or fewer.",
+      "phoneInvalid": "Invalid phone number. Use E.164 format, e.g.: +84912345678",
+      "saveGeneric": "Could not save account information. Please try again."
+    },
+    "roleEnum": {
+      "MANGAKA": "Mangaka",
+      "ASSISTANT": "Assistant",
+      "EDITOR": "Editor",
+      "BOARD_MEMBER": "Board Member",
+      "SUPER_ADMIN": "Super Admin"
+    },
+    "statusEnum": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "BANNED": "Banned",
+      "BLOCKED": "Blocked"
+    }
+  },
+  "avatar": {
+    "change": "Change photo",
+    "remove": "Remove",
+    "uploading": "Uploading...",
+    "alt": "Avatar",
+    "hint": "PNG, JPEG, WebP — up to 15MB.",
+    "errors": {
+      "type": "Only PNG, JPEG, or WebP files are allowed.",
+      "size": "File must be {{max}}MB or smaller.",
+      "uploadGeneric": "Upload failed."
+    }
+  },
   "sections": {
     "genres": "Genres",
     "specializations": "Specializations",

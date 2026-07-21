@@ -1,18 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import {
-  ArrowLeft,
-  Calendar,
-  Check,
-  Filter,
-  Hash,
-  ListChecks,
-  Mail,
-  RefreshCw,
-  X
-} from 'lucide-react'
+import { BookOpen, Calendar, Check, Filter, ListChecks, Mail, RefreshCw, X } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { SignedImage } from '~/shared/components/signed-image'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { InviteListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { InviteListResDtoOutputItemsItemStatus } from '~/api/model/studio/inviteListResDtoOutputItemsItemStatus'
@@ -62,13 +53,6 @@ export function AssistantInvitesPage() {
           </div>
           <p className='mt-1 text-sm text-muted-foreground'>{t('invites.subtitle')}</p>
         </div>
-        <a
-          href='/dashboard/assistant'
-          className='inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted'
-        >
-          <ArrowLeft className='h-3.5 w-3.5' />
-          {t('invites.back')}
-        </a>
       </div>
 
       {/* Status filters */}
@@ -142,6 +126,7 @@ export function AssistantInvitesPage() {
               to={to}
               total={total}
               tKeyPrefix='invites.pagination'
+              t={t}
             />
           </>
         )}
@@ -173,10 +158,6 @@ function pickGradient(seed: string): string {
   return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length]
 }
 
-function formatShortId(id: string): string {
-  return id.slice(0, 8)
-}
-
 function formatDate(iso: string | null, locale: string): string {
   if (!iso) return ''
   const d = new Date(iso)
@@ -197,9 +178,8 @@ function isKnownTaskType(value: string): value is InviteListResDtoOutputItemsIte
 
 /**
  * Compact list-style row representing one collaboration invite received by
- * the current Assistant. The Mangaka on the other side is identified only by
- * `mangakaId`, so we render a `Mangaka #hash` placeholder (see also
- * `AssistantAssignmentCard`).
+ * the current Assistant. The response embeds Mangaka and Series display data,
+ * so this card does not expose raw database IDs.
  */
 function InviteCard({
   invite,
@@ -216,7 +196,8 @@ function InviteCard({
   const locale = i18n.language
 
   const statusMeta = STATUS_META[invite.status] ?? STATUS_META.PENDING
-  const displayName = t('invites.card.mangakaFallback', { id: formatShortId(invite.mangakaId) })
+  const mangaka = invite.mangaka
+  const displayName = mangaka?.displayName ?? t('invites.card.unknownMangaka')
   const hireFrom = formatDate(invite.hireStart, locale)
   const hireTo = formatDate(invite.hireEnd, locale)
   const taskTypes = invite.taskTypes.filter(isKnownTaskType)
@@ -224,15 +205,24 @@ function InviteCard({
 
   return (
     <article className='flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:flex-row sm:items-center'>
-      <div
-        className={cn(
-          'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
-          pickGradient(invite.mangakaId)
-        )}
-        aria-hidden='true'
-      >
-        {formatShortId(invite.mangakaId).slice(0, 2).toUpperCase()}
-      </div>
+      {mangaka?.avatar ? (
+        <SignedImage
+          r2Key={mangaka.avatar}
+          alt={displayName}
+          aspectClassName='aspect-square'
+          className='h-12 w-12 shrink-0 rounded-full shadow-sm'
+        />
+      ) : (
+        <div
+          className={cn(
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
+            pickGradient(invite.mangakaId)
+          )}
+          aria-hidden='true'
+        >
+          {displayName.slice(0, 2).toUpperCase()}
+        </div>
+      )}
       <div className='min-w-0 flex-1 space-y-2'>
         <div className='flex flex-wrap items-center gap-1.5'>
           <h3 className='truncate text-sm font-bold text-foreground'>{displayName}</h3>
@@ -243,10 +233,6 @@ function InviteCard({
             )}
           >
             {t(`invites.filters.statuses.${invite.status}`)}
-          </span>
-          <span className='inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-            <Hash className='h-3 w-3' />
-            {invite.id.slice(0, 8)}
           </span>
         </div>
 
@@ -262,8 +248,8 @@ function InviteCard({
             </span>
           </div>
           <div className='flex items-start gap-1.5'>
-            <Mail className='mt-0.5 h-3 w-3 shrink-0' />
-            <span>{invite.seriesId ?? t('invites.card.seriesNone')}</span>
+            <BookOpen className='mt-0.5 h-3 w-3 shrink-0' />
+            <span>{invite.series?.title ?? t('invites.card.seriesNone')}</span>
           </div>
         </div>
 
@@ -286,7 +272,7 @@ function InviteCard({
       </div>
 
       <div className='flex shrink-0 items-center gap-2 sm:flex-col sm:items-end'>
-        <span className='text-[10px] font-medium text-muted-foreground'>
+        <span className='hidden'>
           {t('invites.card.receivedAt', { date: formatDate(invite.createdAt, locale) || '—' })}
         </span>
         {isPending && (

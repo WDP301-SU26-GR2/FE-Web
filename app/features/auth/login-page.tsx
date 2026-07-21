@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Sparkles, Layers, Pencil } from 'lucide-react'
+import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Sparkles, Layers } from 'lucide-react'
 
 import { useLogin } from '~/features/auth/hooks/use-login'
 import { ROLE_DASHBOARD_PATH } from '~/shared/components'
 import { cn } from '~/shared/lib/cn'
+import { BrandLogo } from '~/shared/components/brand-logo'
 
 export function LoginPage() {
   const { t } = useTranslation('auth')
@@ -56,9 +57,7 @@ export function LoginPage() {
         {/* Left Header */}
         <div className='relative z-10'>
           <div className='flex items-center gap-3'>
-            <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-              <Pencil className='h-5 w-5' />
-            </div>
+            <BrandLogo className='h-10 w-10 rounded-lg' />
             <span className='text-xl font-bold tracking-wider text-primary'>{t('login.brand')}</span>
           </div>
           <p className='mt-4 text-sm font-semibold tracking-wide text-primary/80'>{t('login.tagline')}</p>

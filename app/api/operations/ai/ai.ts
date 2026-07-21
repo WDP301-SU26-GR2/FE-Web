@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -42,40 +44,13 @@ export type aiControllerSegmentResponse201 = {
   data: SegmentAcceptedResDtoOutput
   status: 201
 }
-
-export type aiControllerSegmentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type aiControllerSegmentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type aiControllerSegmentResponse409 = {
-  data: void
-  status: 409
-}
-
-export type aiControllerSegmentResponse422 = {
-  data: void
-  status: 422
-}
-
-export type aiControllerSegmentResponse503 = {
-  data: void
-  status: 503
-}
     
 export type aiControllerSegmentResponseSuccess = (aiControllerSegmentResponse201) & {
   headers: Headers;
 };
-export type aiControllerSegmentResponseError = (aiControllerSegmentResponse403 | aiControllerSegmentResponse404 | aiControllerSegmentResponse409 | aiControllerSegmentResponse422 | aiControllerSegmentResponse503) & {
-  headers: Headers;
-};
+;
 
-export type aiControllerSegmentResponse = (aiControllerSegmentResponseSuccess | aiControllerSegmentResponseError)
+export type aiControllerSegmentResponse = (aiControllerSegmentResponseSuccess)
 
 export const getAiControllerSegmentUrl = ({ id }: AiControllerSegmentPathParameters,) => {
 
@@ -106,20 +81,13 @@ export type aiControllerGetJobResponse200 = {
   data: AiJobResDtoOutput
   status: 200
 }
-
-export type aiControllerGetJobResponse404 = {
-  data: void
-  status: 404
-}
     
 export type aiControllerGetJobResponseSuccess = (aiControllerGetJobResponse200) & {
   headers: Headers;
 };
-export type aiControllerGetJobResponseError = (aiControllerGetJobResponse404) & {
-  headers: Headers;
-};
+;
 
-export type aiControllerGetJobResponse = (aiControllerGetJobResponseSuccess | aiControllerGetJobResponseError)
+export type aiControllerGetJobResponse = (aiControllerGetJobResponseSuccess)
 
 export const getAiControllerGetJobUrl = ({ id }: AiControllerGetJobPathParameters,) => {
 
@@ -148,25 +116,13 @@ export type aiControllerListJobsResponse200 = {
   data: AiJobListResDtoOutput
   status: 200
 }
-
-export type aiControllerListJobsResponse403 = {
-  data: void
-  status: 403
-}
-
-export type aiControllerListJobsResponse404 = {
-  data: void
-  status: 404
-}
     
 export type aiControllerListJobsResponseSuccess = (aiControllerListJobsResponse200) & {
   headers: Headers;
 };
-export type aiControllerListJobsResponseError = (aiControllerListJobsResponse403 | aiControllerListJobsResponse404) & {
-  headers: Headers;
-};
+;
 
-export type aiControllerListJobsResponse = (aiControllerListJobsResponseSuccess | aiControllerListJobsResponseError)
+export type aiControllerListJobsResponse = (aiControllerListJobsResponseSuccess)
 
 export const getAiControllerListJobsUrl = ({ id }: AiControllerListJobsPathParameters,
     params?: AiControllerListJobsParams,) => {
@@ -204,30 +160,13 @@ export type aiControllerApplyJobResponse201 = {
   data: ApplyAiJobResDtoOutput
   status: 201
 }
-
-export type aiControllerApplyJobResponse403 = {
-  data: void
-  status: 403
-}
-
-export type aiControllerApplyJobResponse404 = {
-  data: void
-  status: 404
-}
-
-export type aiControllerApplyJobResponse409 = {
-  data: void
-  status: 409
-}
     
 export type aiControllerApplyJobResponseSuccess = (aiControllerApplyJobResponse201) & {
   headers: Headers;
 };
-export type aiControllerApplyJobResponseError = (aiControllerApplyJobResponse403 | aiControllerApplyJobResponse404 | aiControllerApplyJobResponse409) & {
-  headers: Headers;
-};
+;
 
-export type aiControllerApplyJobResponse = (aiControllerApplyJobResponseSuccess | aiControllerApplyJobResponseError)
+export type aiControllerApplyJobResponse = (aiControllerApplyJobResponseSuccess)
 
 export const getAiControllerApplyJobUrl = ({ id }: AiControllerApplyJobPathParameters,) => {
 

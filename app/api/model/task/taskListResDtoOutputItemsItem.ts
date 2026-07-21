@@ -7,28 +7,33 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type { TaskListResDtoOutputItemsItemTaskType } from './taskListResDtoOutputItemsItemTaskType';
 import type { TaskListResDtoOutputItemsItemStatus } from './taskListResDtoOutputItemsItemStatus';
 import type { TaskListResDtoOutputItemsItemVersionsItem } from './taskListResDtoOutputItemsItemVersionsItem';
+import type { TaskListResDtoOutputItemsItemAssistant } from './taskListResDtoOutputItemsItemAssistant';
+import type { TaskListResDtoOutputItemsItemAssetsItem } from './taskListResDtoOutputItemsItemAssetsItem';
+import type { TaskListResDtoOutputItemsItemRegionsItem } from './taskListResDtoOutputItemsItemRegionsItem';
 
 export type TaskListResDtoOutputItemsItem = {
   id: string;
   pageId: string;
-  /** @nullable */
-  regionId: string | null;
+  /** Các vùng (Region id) mà task này xử lý; rỗng = cả trang / task nhóm */
+  regionIds: string[];
   /** @nullable */
   assistantId: string | null;
   /**
@@ -49,4 +54,33 @@ export type TaskListResDtoOutputItemsItem = {
   assetIds: string[];
   versions: TaskListResDtoOutputItemsItemVersionsItem[];
   createdAt: string;
+  /**
+   * Nhóm việc chứa task này; null = task lẻ
+   * @nullable
+   */
+  groupId?: string | null;
+  /**
+   * Tên nhóm việc hiển thị
+   * @nullable
+   */
+  groupTitle?: string | null;
+  /**
+   * Trợ lý được giao — có ở GET list/detail
+   * @nullable
+   */
+  assistant?: TaskListResDtoOutputItemsItemAssistant;
+  /** Ảnh reference Mangaka đính khi giao task (resolve từ assetIds → key) — có ở GET list/detail */
+  assets?: TaskListResDtoOutputItemsItemAssetsItem[];
+  /** Các vùng cần xử lý (toạ độ + loại vùng) — có ở GET list/detail. Task 1 trang trả đủ vùng; task nhóm (nhiều trang) trả [] (chỉ hiển thị theo trang). */
+  regions?: TaskListResDtoOutputItemsItemRegionsItem[];
+  /**
+   * Object key ảnh GỐC của trang (bản Mangaka giao) — dùng ký signed URL để review; có ở GET list/detail
+   * @nullable
+   */
+  pageOriginalFile?: string | null;
+  /**
+   * Object key ảnh NÊN HIỂN THỊ của trang = compositeFile ?? originalFile; có ở GET list/detail
+   * @nullable
+   */
+  pageDisplayFile?: string | null;
 };

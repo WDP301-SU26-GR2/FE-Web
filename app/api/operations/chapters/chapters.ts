@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -25,12 +27,13 @@ import type {
   ChapterControllerCoOwnerApprovePathParameters,
   ChapterControllerCoOwnerRejectPathParameters,
   ChapterControllerCreatePagePathParameters,
+  ChapterControllerDeletePagePathParameters,
+  ChapterControllerDeletePagesBulkPathParameters,
   ChapterControllerExtendPathParameters,
   ChapterControllerGetOnePathParameters,
   ChapterControllerHoldPathParameters,
   ChapterControllerListBySeriesParams,
   ChapterControllerListPagesPathParameters,
-  ChapterControllerMarkCompositeReadyPathParameters,
   ChapterControllerProgressPathParameters,
   ChapterControllerPublishPathParameters,
   ChapterControllerRemovePathParameters,
@@ -46,6 +49,9 @@ import type {
   ChapterResDtoOutput,
   CreateChapterBodyDto,
   CreatePageBodyDto,
+  DeletePageResDtoOutput,
+  DeletePagesBulkBodyDto,
+  DeletePagesBulkResDtoOutput,
   ExtendDeadlineBodyDto,
   HoldChapterBodyDto,
   MessageResDtoOutput,
@@ -67,30 +73,13 @@ export type chapterControllerCreateResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerCreateResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerCreateResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerCreateResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerCreateResponseSuccess = (chapterControllerCreateResponse201) & {
   headers: Headers;
 };
-export type chapterControllerCreateResponseError = (chapterControllerCreateResponse403 | chapterControllerCreateResponse404 | chapterControllerCreateResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerCreateResponse = (chapterControllerCreateResponseSuccess | chapterControllerCreateResponseError)
+export type chapterControllerCreateResponse = (chapterControllerCreateResponseSuccess)
 
 export const getChapterControllerCreateUrl = () => {
 
@@ -162,30 +151,13 @@ export type chapterControllerUpdateResponse200 = {
   data: ChapterResDtoOutput
   status: 200
 }
-
-export type chapterControllerUpdateResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerUpdateResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerUpdateResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerUpdateResponseSuccess = (chapterControllerUpdateResponse200) & {
   headers: Headers;
 };
-export type chapterControllerUpdateResponseError = (chapterControllerUpdateResponse403 | chapterControllerUpdateResponse404 | chapterControllerUpdateResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerUpdateResponse = (chapterControllerUpdateResponseSuccess | chapterControllerUpdateResponseError)
+export type chapterControllerUpdateResponse = (chapterControllerUpdateResponseSuccess)
 
 export const getChapterControllerUpdateUrl = ({ id }: ChapterControllerUpdatePathParameters,) => {
 
@@ -216,30 +188,13 @@ export type chapterControllerRemoveResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type chapterControllerRemoveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerRemoveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerRemoveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerRemoveResponseSuccess = (chapterControllerRemoveResponse200) & {
   headers: Headers;
 };
-export type chapterControllerRemoveResponseError = (chapterControllerRemoveResponse403 | chapterControllerRemoveResponse404 | chapterControllerRemoveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerRemoveResponse = (chapterControllerRemoveResponseSuccess | chapterControllerRemoveResponseError)
+export type chapterControllerRemoveResponse = (chapterControllerRemoveResponseSuccess)
 
 export const getChapterControllerRemoveUrl = ({ id }: ChapterControllerRemovePathParameters,) => {
 
@@ -268,20 +223,13 @@ export type chapterControllerGetOneResponse200 = {
   data: ChapterResDtoOutput
   status: 200
 }
-
-export type chapterControllerGetOneResponse404 = {
-  data: void
-  status: 404
-}
     
 export type chapterControllerGetOneResponseSuccess = (chapterControllerGetOneResponse200) & {
   headers: Headers;
 };
-export type chapterControllerGetOneResponseError = (chapterControllerGetOneResponse404) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerGetOneResponse = (chapterControllerGetOneResponseSuccess | chapterControllerGetOneResponseError)
+export type chapterControllerGetOneResponse = (chapterControllerGetOneResponseSuccess)
 
 export const getChapterControllerGetOneUrl = ({ id }: ChapterControllerGetOnePathParameters,) => {
 
@@ -310,25 +258,13 @@ export type chapterControllerProgressResponse200 = {
   data: ChapterProgressResDtoOutput
   status: 200
 }
-
-export type chapterControllerProgressResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerProgressResponse404 = {
-  data: void
-  status: 404
-}
     
 export type chapterControllerProgressResponseSuccess = (chapterControllerProgressResponse200) & {
   headers: Headers;
 };
-export type chapterControllerProgressResponseError = (chapterControllerProgressResponse403 | chapterControllerProgressResponse404) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerProgressResponse = (chapterControllerProgressResponseSuccess | chapterControllerProgressResponseError)
+export type chapterControllerProgressResponse = (chapterControllerProgressResponseSuccess)
 
 export const getChapterControllerProgressUrl = ({ id }: ChapterControllerProgressPathParameters,) => {
 
@@ -357,25 +293,13 @@ export type chapterControllerSetScheduleResponse200 = {
   data: ChapterResDtoOutput
   status: 200
 }
-
-export type chapterControllerSetScheduleResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerSetScheduleResponse404 = {
-  data: void
-  status: 404
-}
     
 export type chapterControllerSetScheduleResponseSuccess = (chapterControllerSetScheduleResponse200) & {
   headers: Headers;
 };
-export type chapterControllerSetScheduleResponseError = (chapterControllerSetScheduleResponse403 | chapterControllerSetScheduleResponse404) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerSetScheduleResponse = (chapterControllerSetScheduleResponseSuccess | chapterControllerSetScheduleResponseError)
+export type chapterControllerSetScheduleResponse = (chapterControllerSetScheduleResponseSuccess)
 
 export const getChapterControllerSetScheduleUrl = ({ id }: ChapterControllerSetSchedulePathParameters,) => {
 
@@ -406,25 +330,13 @@ export type chapterControllerExtendResponse200 = {
   data: ChapterResDtoOutput
   status: 200
 }
-
-export type chapterControllerExtendResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerExtendResponse404 = {
-  data: void
-  status: 404
-}
     
 export type chapterControllerExtendResponseSuccess = (chapterControllerExtendResponse200) & {
   headers: Headers;
 };
-export type chapterControllerExtendResponseError = (chapterControllerExtendResponse403 | chapterControllerExtendResponse404) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerExtendResponse = (chapterControllerExtendResponseSuccess | chapterControllerExtendResponseError)
+export type chapterControllerExtendResponse = (chapterControllerExtendResponseSuccess)
 
 export const getChapterControllerExtendUrl = ({ id }: ChapterControllerExtendPathParameters,) => {
 
@@ -455,30 +367,13 @@ export type chapterControllerHoldResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerHoldResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerHoldResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerHoldResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerHoldResponseSuccess = (chapterControllerHoldResponse201) & {
   headers: Headers;
 };
-export type chapterControllerHoldResponseError = (chapterControllerHoldResponse403 | chapterControllerHoldResponse404 | chapterControllerHoldResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerHoldResponse = (chapterControllerHoldResponseSuccess | chapterControllerHoldResponseError)
+export type chapterControllerHoldResponse = (chapterControllerHoldResponseSuccess)
 
 export const getChapterControllerHoldUrl = ({ id }: ChapterControllerHoldPathParameters,) => {
 
@@ -509,30 +404,13 @@ export type chapterControllerResumeResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerResumeResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerResumeResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerResumeResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerResumeResponseSuccess = (chapterControllerResumeResponse201) & {
   headers: Headers;
 };
-export type chapterControllerResumeResponseError = (chapterControllerResumeResponse403 | chapterControllerResumeResponse404 | chapterControllerResumeResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerResumeResponse = (chapterControllerResumeResponseSuccess | chapterControllerResumeResponseError)
+export type chapterControllerResumeResponse = (chapterControllerResumeResponseSuccess)
 
 export const getChapterControllerResumeUrl = ({ id }: ChapterControllerResumePathParameters,) => {
 
@@ -555,36 +433,19 @@ export const chapterControllerResume = async ({ id }: ChapterControllerResumePat
 
 
 /**
- * @summary Mangaka upload trang (pencil/ink) → tạo Page (NOT_STARTED)
+ * @summary Mangaka upload trang (pencil/ink) → tạo Page (DRAFT)
  */
 export type chapterControllerCreatePageResponse201 = {
   data: PageResDtoOutput
   status: 201
 }
-
-export type chapterControllerCreatePageResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerCreatePageResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerCreatePageResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerCreatePageResponseSuccess = (chapterControllerCreatePageResponse201) & {
   headers: Headers;
 };
-export type chapterControllerCreatePageResponseError = (chapterControllerCreatePageResponse403 | chapterControllerCreatePageResponse404 | chapterControllerCreatePageResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerCreatePageResponse = (chapterControllerCreatePageResponseSuccess | chapterControllerCreatePageResponseError)
+export type chapterControllerCreatePageResponse = (chapterControllerCreatePageResponseSuccess)
 
 export const getChapterControllerCreatePageUrl = ({ id }: ChapterControllerCreatePagePathParameters,) => {
 
@@ -609,7 +470,7 @@ export const chapterControllerCreatePage = async ({ id }: ChapterControllerCreat
 
 
 /**
- * @summary List trang của chapter
+ * @summary List trang của chapter (scoped: chủ sở hữu / editor phụ trách / trợ lý đang cộng tác)
  */
 export type chapterControllerListPagesResponse200 = {
   data: PageListResDtoOutput
@@ -644,36 +505,56 @@ export const chapterControllerListPages = async ({ id }: ChapterControllerListPa
 
 
 /**
- * @summary Mangaka cập nhật trang (file/status: NOT_STARTED→IN_PROGRESS→COMPOSITE_READY→COMPLETED)
+ * @summary Mangaka xoá nhiều trang trong 1 chapter (all-or-nothing, tối đa 50)
+ */
+export type chapterControllerDeletePagesBulkResponse200 = {
+  data: DeletePagesBulkResDtoOutput
+  status: 200
+}
+    
+export type chapterControllerDeletePagesBulkResponseSuccess = (chapterControllerDeletePagesBulkResponse200) & {
+  headers: Headers;
+};
+;
+
+export type chapterControllerDeletePagesBulkResponse = (chapterControllerDeletePagesBulkResponseSuccess)
+
+export const getChapterControllerDeletePagesBulkUrl = ({ id }: ChapterControllerDeletePagesBulkPathParameters,) => {
+
+
+  
+
+  return `/chapters/${id}/pages`
+}
+
+export const chapterControllerDeletePagesBulk = async ({ id }: ChapterControllerDeletePagesBulkPathParameters,
+    deletePagesBulkBodyDto: DeletePagesBulkBodyDto, options?: RequestInit): Promise<chapterControllerDeletePagesBulkResponse> => {
+  
+  return customFetch<chapterControllerDeletePagesBulkResponse>(getChapterControllerDeletePagesBulkUrl({ id }),
+  {      
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      deletePagesBulkBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Mangaka cập nhật file gốc/composite/số trang; trạng thái do backend lifecycle quản lý
  */
 export type chapterControllerUpdatePageResponse200 = {
   data: PageResDtoOutput
   status: 200
 }
-
-export type chapterControllerUpdatePageResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerUpdatePageResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerUpdatePageResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerUpdatePageResponseSuccess = (chapterControllerUpdatePageResponse200) & {
   headers: Headers;
 };
-export type chapterControllerUpdatePageResponseError = (chapterControllerUpdatePageResponse403 | chapterControllerUpdatePageResponse404 | chapterControllerUpdatePageResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerUpdatePageResponse = (chapterControllerUpdatePageResponseSuccess | chapterControllerUpdatePageResponseError)
+export type chapterControllerUpdatePageResponse = (chapterControllerUpdatePageResponseSuccess)
 
 export const getChapterControllerUpdatePageUrl = ({ pageId }: ChapterControllerUpdatePagePathParameters,) => {
 
@@ -698,51 +579,34 @@ export const chapterControllerUpdatePage = async ({ pageId }: ChapterControllerU
 
 
 /**
- * @summary Mangaka chốt composite (cần tất cả trang COMPLETED) → Manuscript sang COMPOSITE_REVIEW
+ * @summary Mangaka xoá trang — cascade xoá Region + Task của trang (chặn khi trang đã COMPLETED)
  */
-export type chapterControllerMarkCompositeReadyResponse201 = {
-  data: ChapterResDtoOutput
-  status: 201
-}
-
-export type chapterControllerMarkCompositeReadyResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerMarkCompositeReadyResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerMarkCompositeReadyResponse409 = {
-  data: void
-  status: 409
+export type chapterControllerDeletePageResponse200 = {
+  data: DeletePageResDtoOutput
+  status: 200
 }
     
-export type chapterControllerMarkCompositeReadyResponseSuccess = (chapterControllerMarkCompositeReadyResponse201) & {
+export type chapterControllerDeletePageResponseSuccess = (chapterControllerDeletePageResponse200) & {
   headers: Headers;
 };
-export type chapterControllerMarkCompositeReadyResponseError = (chapterControllerMarkCompositeReadyResponse403 | chapterControllerMarkCompositeReadyResponse404 | chapterControllerMarkCompositeReadyResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerMarkCompositeReadyResponse = (chapterControllerMarkCompositeReadyResponseSuccess | chapterControllerMarkCompositeReadyResponseError)
+export type chapterControllerDeletePageResponse = (chapterControllerDeletePageResponseSuccess)
 
-export const getChapterControllerMarkCompositeReadyUrl = ({ id }: ChapterControllerMarkCompositeReadyPathParameters,) => {
+export const getChapterControllerDeletePageUrl = ({ pageId }: ChapterControllerDeletePagePathParameters,) => {
 
 
   
 
-  return `/chapters/${id}/manuscript/mark-composite-ready`
+  return `/pages/${pageId}`
 }
 
-export const chapterControllerMarkCompositeReady = async ({ id }: ChapterControllerMarkCompositeReadyPathParameters, options?: RequestInit): Promise<chapterControllerMarkCompositeReadyResponse> => {
+export const chapterControllerDeletePage = async ({ pageId }: ChapterControllerDeletePagePathParameters, options?: RequestInit): Promise<chapterControllerDeletePageResponse> => {
   
-  return customFetch<chapterControllerMarkCompositeReadyResponse>(getChapterControllerMarkCompositeReadyUrl({ id }),
+  return customFetch<chapterControllerDeletePageResponse>(getChapterControllerDeletePageUrl({ pageId }),
   {      
     ...options,
-    method: 'POST'
+    method: 'DELETE'
     
     
   }
@@ -756,30 +620,13 @@ export type chapterControllerSubmitResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerSubmitResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerSubmitResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerSubmitResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerSubmitResponseSuccess = (chapterControllerSubmitResponse201) & {
   headers: Headers;
 };
-export type chapterControllerSubmitResponseError = (chapterControllerSubmitResponse403 | chapterControllerSubmitResponse404 | chapterControllerSubmitResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerSubmitResponse = (chapterControllerSubmitResponseSuccess | chapterControllerSubmitResponseError)
+export type chapterControllerSubmitResponse = (chapterControllerSubmitResponseSuccess)
 
 export const getChapterControllerSubmitUrl = ({ id }: ChapterControllerSubmitPathParameters,) => {
 
@@ -808,30 +655,13 @@ export type chapterControllerRequestRevisionResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerRequestRevisionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerRequestRevisionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerRequestRevisionResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerRequestRevisionResponseSuccess = (chapterControllerRequestRevisionResponse201) & {
   headers: Headers;
 };
-export type chapterControllerRequestRevisionResponseError = (chapterControllerRequestRevisionResponse403 | chapterControllerRequestRevisionResponse404 | chapterControllerRequestRevisionResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerRequestRevisionResponse = (chapterControllerRequestRevisionResponseSuccess | chapterControllerRequestRevisionResponseError)
+export type chapterControllerRequestRevisionResponse = (chapterControllerRequestRevisionResponseSuccess)
 
 export const getChapterControllerRequestRevisionUrl = ({ id }: ChapterControllerRequestRevisionPathParameters,) => {
 
@@ -862,30 +692,13 @@ export type chapterControllerResubmitResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerResubmitResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerResubmitResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerResubmitResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerResubmitResponseSuccess = (chapterControllerResubmitResponse201) & {
   headers: Headers;
 };
-export type chapterControllerResubmitResponseError = (chapterControllerResubmitResponse403 | chapterControllerResubmitResponse404 | chapterControllerResubmitResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerResubmitResponse = (chapterControllerResubmitResponseSuccess | chapterControllerResubmitResponseError)
+export type chapterControllerResubmitResponse = (chapterControllerResubmitResponseSuccess)
 
 export const getChapterControllerResubmitUrl = ({ id }: ChapterControllerResubmitPathParameters,) => {
 
@@ -914,30 +727,13 @@ export type chapterControllerApproveResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerApproveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerApproveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerApproveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerApproveResponseSuccess = (chapterControllerApproveResponse201) & {
   headers: Headers;
 };
-export type chapterControllerApproveResponseError = (chapterControllerApproveResponse403 | chapterControllerApproveResponse404 | chapterControllerApproveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerApproveResponse = (chapterControllerApproveResponseSuccess | chapterControllerApproveResponseError)
+export type chapterControllerApproveResponse = (chapterControllerApproveResponseSuccess)
 
 export const getChapterControllerApproveUrl = ({ id }: ChapterControllerApprovePathParameters,) => {
 
@@ -966,30 +762,13 @@ export type chapterControllerPublishResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerPublishResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerPublishResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerPublishResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerPublishResponseSuccess = (chapterControllerPublishResponse201) & {
   headers: Headers;
 };
-export type chapterControllerPublishResponseError = (chapterControllerPublishResponse403 | chapterControllerPublishResponse404 | chapterControllerPublishResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerPublishResponse = (chapterControllerPublishResponseSuccess | chapterControllerPublishResponseError)
+export type chapterControllerPublishResponse = (chapterControllerPublishResponseSuccess)
 
 export const getChapterControllerPublishUrl = ({ id }: ChapterControllerPublishPathParameters,) => {
 
@@ -1018,30 +797,13 @@ export type chapterControllerCoOwnerApproveResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerCoOwnerApproveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerCoOwnerApproveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerCoOwnerApproveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerCoOwnerApproveResponseSuccess = (chapterControllerCoOwnerApproveResponse201) & {
   headers: Headers;
 };
-export type chapterControllerCoOwnerApproveResponseError = (chapterControllerCoOwnerApproveResponse403 | chapterControllerCoOwnerApproveResponse404 | chapterControllerCoOwnerApproveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerCoOwnerApproveResponse = (chapterControllerCoOwnerApproveResponseSuccess | chapterControllerCoOwnerApproveResponseError)
+export type chapterControllerCoOwnerApproveResponse = (chapterControllerCoOwnerApproveResponseSuccess)
 
 export const getChapterControllerCoOwnerApproveUrl = ({ id }: ChapterControllerCoOwnerApprovePathParameters,) => {
 
@@ -1070,30 +832,13 @@ export type chapterControllerCoOwnerRejectResponse201 = {
   data: ChapterResDtoOutput
   status: 201
 }
-
-export type chapterControllerCoOwnerRejectResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterControllerCoOwnerRejectResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterControllerCoOwnerRejectResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterControllerCoOwnerRejectResponseSuccess = (chapterControllerCoOwnerRejectResponse201) & {
   headers: Headers;
 };
-export type chapterControllerCoOwnerRejectResponseError = (chapterControllerCoOwnerRejectResponse403 | chapterControllerCoOwnerRejectResponse404 | chapterControllerCoOwnerRejectResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterControllerCoOwnerRejectResponse = (chapterControllerCoOwnerRejectResponseSuccess | chapterControllerCoOwnerRejectResponseError)
+export type chapterControllerCoOwnerRejectResponse = (chapterControllerCoOwnerRejectResponseSuccess)
 
 export const getChapterControllerCoOwnerRejectUrl = ({ id }: ChapterControllerCoOwnerRejectPathParameters,) => {
 

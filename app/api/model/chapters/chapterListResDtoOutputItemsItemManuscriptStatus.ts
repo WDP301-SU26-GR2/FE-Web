@@ -7,22 +7,24 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 
 /**
- * Manuscript production status. Values: DRAFT, IN_PRODUCTION, COMPOSITE_REVIEW, EDITOR_REVIEW, EDITOR_REVISION, READY_FOR_PRINT, AWAITING_CO_OWNER_APPROVAL, PUBLISHED
+ * DRAFT: Chapter mới tạo, chưa có trang (đang ở khâu Name). | IN_PRODUCTION: Đang sản xuất trang. | EDITOR_REVIEW: Đã nộp, Editor đang duyệt. | EDITOR_REVISION: Editor yêu cầu sửa. | READY_FOR_PRINT: Editor đã duyệt, sẵn sàng xuất bản. | AWAITING_CO_OWNER_APPROVAL: Chờ đồng sở hữu duyệt (PARTIAL_TRANSFER). | PUBLISHED: Đã xuất bản.. Values: DRAFT, IN_PRODUCTION, EDITOR_REVIEW, EDITOR_REVISION, READY_FOR_PRINT, AWAITING_CO_OWNER_APPROVAL, PUBLISHED
  * @nullable
  */
 export type ChapterListResDtoOutputItemsItemManuscriptStatus = typeof ChapterListResDtoOutputItemsItemManuscriptStatus[keyof typeof ChapterListResDtoOutputItemsItemManuscriptStatus] | null;
@@ -32,7 +34,6 @@ export type ChapterListResDtoOutputItemsItemManuscriptStatus = typeof ChapterLis
 export const ChapterListResDtoOutputItemsItemManuscriptStatus = {
   DRAFT: 'DRAFT',
   IN_PRODUCTION: 'IN_PRODUCTION',
-  COMPOSITE_REVIEW: 'COMPOSITE_REVIEW',
   EDITOR_REVIEW: 'EDITOR_REVIEW',
   EDITOR_REVISION: 'EDITOR_REVISION',
   READY_FOR_PRINT: 'READY_FOR_PRINT',

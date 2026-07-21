@@ -54,6 +54,8 @@ type PaginationProps = {
    * `studio.pagination`, `invites.pagination`).
    */
   tKeyPrefix: string
+  /** The i18n `t` function from the parent's `useTranslation(namespace)`. */
+  t: ReturnType<typeof useTranslation>[ 't' ]
 }
 
 /**
@@ -63,8 +65,7 @@ type PaginationProps = {
  * Use `useTranslation` at the parent so the component stays decoupled from a
  * specific namespace.
  */
-export function Pagination({ page, totalPages, setPage, from, to, total, tKeyPrefix }: PaginationProps) {
-  const { t } = useTranslation()
+export function Pagination({ page, totalPages, setPage, from, to, total, tKeyPrefix, t }: PaginationProps) {
   const prevLabel = t(`${tKeyPrefix}.previousPage`)
   const nextLabel = t(`${tKeyPrefix}.nextPage`)
 

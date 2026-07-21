@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookPlus, Calendar, ChevronDown, ChevronRight, ImageIcon, Loader2 } from 'lucide-react'
+import { BookPlus, ChevronDown, ChevronRight, ImageIcon, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
@@ -38,7 +38,6 @@ const CHAPTER_STATUS_META: Record<string, { className: string; labelKey: string 
 const MANUSCRIPT_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
   IN_PRODUCTION: { className: 'bg-warning/10 text-warning border-warning/20' },
-  COMPOSITE_REVIEW: { className: 'bg-info/10 text-info border-info/20' },
   EDITOR_REVIEW: { className: 'bg-info/10 text-info border-info/20' },
   EDITOR_REVISION: { className: 'bg-warning/10 text-warning border-warning/20' },
   READY_FOR_PRINT: { className: 'bg-success/10 text-success border-success/20' },
@@ -169,7 +168,6 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
     (chapter.manuscriptStatus as
       | 'DRAFT'
       | 'IN_PRODUCTION'
-      | 'COMPOSITE_REVIEW'
       | 'EDITOR_REVIEW'
       | 'EDITOR_REVISION'
       | 'READY_FOR_PRINT'
@@ -204,10 +202,7 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
           </div>
           <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground'>
             {deadline && (
-              <span className='inline-flex items-center gap-1'>
-                <Calendar className='h-3 w-3' />
-                {formatDate(deadline, locale)}
-              </span>
+              <span>{t('seriesDetail.publication.deadline', { date: formatDate(deadline, locale) })}</span>
             )}
             {chapter.publishedAt && (
               <span className='inline-flex items-center gap-1'>

@@ -5,12 +5,19 @@ import { Loader2, Sparkles, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '~/shared/ui'
+import { Dialog } from '~/shared/ui/dialog'
 import { cn } from '~/shared/lib/cn'
 import type { RegionResDtoOutput } from '~/api/model/task'
 
 import { usePageRegions } from '../hooks/use-page-regions'
 import { usePageSegment, type ProposedRegion } from '../hooks/use-page-segment'
-import { PageRegionCanvas, type CanvasMode, type PixelRect, type RegionType, type ProposedRegion as CanvasProposedRegion } from './page-region-canvas'
+import {
+  PageRegionCanvas,
+  type CanvasMode,
+  type PixelRect,
+  type RegionType,
+  type ProposedRegion as CanvasProposedRegion
+} from './page-region-canvas'
 
 export interface PageRegionPopupProps {
   /** Page id (required so the popup can list/create regions + run AI). */
@@ -19,7 +26,7 @@ export interface PageRegionPopupProps {
   pageNumber: number
   /** R2 key for the page image. */
   pageImageKey: string | null | undefined
-  /** Picked when the user finishes drawing — bubbles back to the parent. */
+  /** Toggles one region in the parent task selection. */
   onPickRegion: (regionId: string) => void
   onClose: () => void
 }
@@ -32,8 +39,8 @@ const REGION_TYPES: RegionType[] = ['PANEL', 'BACKGROUND', 'SPEECH_BUBBLE', 'SFX
  *  - **Run AI** segmentation and preview proposals (dashed overlay), then
  *    `Apply` to persist them.
  *
- * Successful actions bubble a chosen `regionId` back to the parent via
- * `onPickRegion` so the calling dialog can prefill its `regionId` field.
+ * The selected region can be toggled repeatedly before closing, so a task can
+ * include multiple regions of the same page (`POST /tasks` → `regionIds[]`).
  */
 export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion, onClose }: PageRegionPopupProps) {
   const { t } = useTranslation('mangaka')
@@ -42,6 +49,7 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
   const [regionType, setRegionType] = useState<RegionType>('PANEL')
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null)
   const [proposedType, setProposedType] = useState<RegionType>('PANEL')
+  const [regionPendingDelete, setRegionPendingDelete] = useState<string | null>(null)
 
   const regions = usePageRegions(pageId)
   const segment = usePageSegment()
@@ -79,8 +87,7 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
   const handlePickSelected = useCallback(() => {
     if (!selectedRegionId) return
     onPickRegion(selectedRegionId)
-    onClose()
-  }, [selectedRegionId, onPickRegion, onClose])
+  }, [selectedRegionId, onPickRegion])
 
   const handleStartSegment = useCallback(() => {
     if (!pageId) return
@@ -140,12 +147,7 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
                 </button>
               ))}
             </div>
-            <Button
-              variant='secondary'
-              size='sm'
-              onClick={handleStartSegment}
-              disabled={isAiRunning || !pageId}
-            >
+            <Button variant='secondary' size='sm' onClick={handleStartSegment} disabled={isAiRunning || !pageId}>
               {isAiRunning ? (
                 <>
                   <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
@@ -220,9 +222,7 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
                 onClick={handleApplyProposals}
                 disabled={segment.status !== 'SUCCEEDED' || segment.isApplying || segment.proposedRegions.length === 0}
               >
-                {segment.isApplying ? (
-                  <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
-                ) : null}
+                {segment.isApplying ? <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' /> : null}
                 {t('studio.popup.ai.apply')}
               </Button>
               <Button size='sm' variant='ghost' onClick={() => segment.reset()}>
@@ -257,9 +257,7 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
                         onClick={() => setSelectedRegionId(r.id)}
                         className={cn(
                           'w-full rounded-md border border-transparent px-2 py-1.5 text-left text-xs transition',
-                          selectedRegionId === r.id
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'hover:bg-muted'
+                          selectedRegionId === r.id ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'
                         )}
                       >
                         <div className='flex items-center justify-between'>
@@ -267,12 +265,9 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
                             {t(`studio.popup.regionTypes.${r.regionType ?? 'PANEL'}`)}
                           </span>
                           {aiUnconfirmed && (
-                            <span className='rounded bg-warning/20 px-1 text-[10px] font-medium text-warning'>
-                              AI
-                            </span>
+                            <span className='rounded bg-warning/20 px-1 text-[10px] font-medium text-warning'>AI</span>
                           )}
                         </div>
-                        <span className='block font-mono text-[10px] text-muted-foreground'>{r.id.slice(0, 8)}</span>
                       </button>
                     </li>
                   )
@@ -306,14 +301,42 @@ export function PageRegionPopup({ pageId, pageNumber, pageImageKey, onPickRegion
               onPick={handlePickSelected}
               onConfirm={handleConfirmAiRegion}
               onDelete={async (id) => {
-                await regions.deleteRegion(id)
-                setSelectedRegionId(null)
+                setRegionPendingDelete(id)
               }}
               t={t}
             />
           </aside>
         </div>
       </div>
+      <Dialog
+        open={regionPendingDelete !== null}
+        onClose={() => setRegionPendingDelete(null)}
+        titleId='page-region-delete-title'
+        title={t('studio.popup.detail.delete')}
+        description={t('studio.popup.detail.deleteConfirm')}
+        footer={
+          <div className='flex justify-end gap-2'>
+            <Button variant='ghost' size='sm' onClick={() => setRegionPendingDelete(null)}>
+              {t('studio.popup.close')}
+            </Button>
+            <Button
+              variant='destructive'
+              size='sm'
+              onClick={() => {
+                if (regionPendingDelete) {
+                  void regions.deleteRegion(regionPendingDelete)
+                  setSelectedRegionId(null)
+                  setRegionPendingDelete(null)
+                }
+              }}
+            >
+              {t('studio.popup.detail.delete')}
+            </Button>
+          </div>
+        }
+      >
+        <p className='text-sm text-muted-foreground'>{t('studio.popup.detail.deleteConfirm')}</p>
+      </Dialog>
     </div>
   )
 }
@@ -369,14 +392,7 @@ function SelectedDetail({
       <Button size='sm' onClick={onPick} className='w-full'>
         {t('studio.popup.detail.pickThis')}
       </Button>
-      <Button
-        size='sm'
-        variant='destructive'
-        onClick={async () => {
-          if (window.confirm(t('studio.popup.detail.deleteConfirm'))) await onDelete(region.id)
-        }}
-        className='w-full'
-      >
+      <Button size='sm' variant='destructive' onClick={() => void onDelete(region.id)} className='w-full'>
         {t('studio.popup.detail.delete')}
       </Button>
       {region.confidenceScore !== null && (

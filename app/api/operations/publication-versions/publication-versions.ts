@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -42,25 +44,13 @@ export type publicationControllerCreateResponse201 = {
   data: PublicationVersionResDtoOutput
   status: 201
 }
-
-export type publicationControllerCreateResponse403 = {
-  data: void
-  status: 403
-}
-
-export type publicationControllerCreateResponse404 = {
-  data: void
-  status: 404
-}
     
 export type publicationControllerCreateResponseSuccess = (publicationControllerCreateResponse201) & {
   headers: Headers;
 };
-export type publicationControllerCreateResponseError = (publicationControllerCreateResponse403 | publicationControllerCreateResponse404) & {
-  headers: Headers;
-};
+;
 
-export type publicationControllerCreateResponse = (publicationControllerCreateResponseSuccess | publicationControllerCreateResponseError)
+export type publicationControllerCreateResponse = (publicationControllerCreateResponseSuccess)
 
 export const getPublicationControllerCreateUrl = ({ seriesId }: PublicationControllerCreatePathParameters,) => {
 
@@ -91,25 +81,13 @@ export type publicationControllerListResponse200 = {
   data: PublicationVersionListResDtoOutput
   status: 200
 }
-
-export type publicationControllerListResponse403 = {
-  data: void
-  status: 403
-}
-
-export type publicationControllerListResponse404 = {
-  data: void
-  status: 404
-}
     
 export type publicationControllerListResponseSuccess = (publicationControllerListResponse200) & {
   headers: Headers;
 };
-export type publicationControllerListResponseError = (publicationControllerListResponse403 | publicationControllerListResponse404) & {
-  headers: Headers;
-};
+;
 
-export type publicationControllerListResponse = (publicationControllerListResponseSuccess | publicationControllerListResponseError)
+export type publicationControllerListResponse = (publicationControllerListResponseSuccess)
 
 export const getPublicationControllerListUrl = ({ seriesId }: PublicationControllerListPathParameters,) => {
 
@@ -138,25 +116,13 @@ export type publicationControllerGetOneResponse200 = {
   data: PublicationVersionResDtoOutput
   status: 200
 }
-
-export type publicationControllerGetOneResponse403 = {
-  data: void
-  status: 403
-}
-
-export type publicationControllerGetOneResponse404 = {
-  data: void
-  status: 404
-}
     
 export type publicationControllerGetOneResponseSuccess = (publicationControllerGetOneResponse200) & {
   headers: Headers;
 };
-export type publicationControllerGetOneResponseError = (publicationControllerGetOneResponse403 | publicationControllerGetOneResponse404) & {
-  headers: Headers;
-};
+;
 
-export type publicationControllerGetOneResponse = (publicationControllerGetOneResponseSuccess | publicationControllerGetOneResponseError)
+export type publicationControllerGetOneResponse = (publicationControllerGetOneResponseSuccess)
 
 export const getPublicationControllerGetOneUrl = ({ id }: PublicationControllerGetOnePathParameters,) => {
 
@@ -185,25 +151,13 @@ export type publicationControllerUpdateResponse200 = {
   data: PublicationVersionResDtoOutput
   status: 200
 }
-
-export type publicationControllerUpdateResponse403 = {
-  data: void
-  status: 403
-}
-
-export type publicationControllerUpdateResponse404 = {
-  data: void
-  status: 404
-}
     
 export type publicationControllerUpdateResponseSuccess = (publicationControllerUpdateResponse200) & {
   headers: Headers;
 };
-export type publicationControllerUpdateResponseError = (publicationControllerUpdateResponse403 | publicationControllerUpdateResponse404) & {
-  headers: Headers;
-};
+;
 
-export type publicationControllerUpdateResponse = (publicationControllerUpdateResponseSuccess | publicationControllerUpdateResponseError)
+export type publicationControllerUpdateResponse = (publicationControllerUpdateResponseSuccess)
 
 export const getPublicationControllerUpdateUrl = ({ id }: PublicationControllerUpdatePathParameters,) => {
 
@@ -234,25 +188,13 @@ export type publicationControllerRemoveResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type publicationControllerRemoveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type publicationControllerRemoveResponse404 = {
-  data: void
-  status: 404
-}
     
 export type publicationControllerRemoveResponseSuccess = (publicationControllerRemoveResponse200) & {
   headers: Headers;
 };
-export type publicationControllerRemoveResponseError = (publicationControllerRemoveResponse403 | publicationControllerRemoveResponse404) & {
-  headers: Headers;
-};
+;
 
-export type publicationControllerRemoveResponse = (publicationControllerRemoveResponseSuccess | publicationControllerRemoveResponseError)
+export type publicationControllerRemoveResponse = (publicationControllerRemoveResponseSuccess)
 
 export const getPublicationControllerRemoveUrl = ({ id }: PublicationControllerRemovePathParameters,) => {
 

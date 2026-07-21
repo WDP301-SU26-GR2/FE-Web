@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -57,25 +59,13 @@ export type nameControllerListResponse200 = {
   data: NameListResDtoOutput
   status: 200
 }
-
-export type nameControllerListResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerListResponse404 = {
-  data: void
-  status: 404
-}
     
 export type nameControllerListResponseSuccess = (nameControllerListResponse200) & {
   headers: Headers;
 };
-export type nameControllerListResponseError = (nameControllerListResponse403 | nameControllerListResponse404) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerListResponse = (nameControllerListResponseSuccess | nameControllerListResponseError)
+export type nameControllerListResponse = (nameControllerListResponseSuccess)
 
 export const getNameControllerListUrl = ({ id }: NameControllerListPathParameters,
     params?: NameControllerListParams,) => {
@@ -113,25 +103,13 @@ export type nameControllerGetOneResponse200 = {
   data: NameResDtoOutput
   status: 200
 }
-
-export type nameControllerGetOneResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerGetOneResponse404 = {
-  data: void
-  status: 404
-}
     
 export type nameControllerGetOneResponseSuccess = (nameControllerGetOneResponse200) & {
   headers: Headers;
 };
-export type nameControllerGetOneResponseError = (nameControllerGetOneResponse403 | nameControllerGetOneResponse404) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerGetOneResponse = (nameControllerGetOneResponseSuccess | nameControllerGetOneResponseError)
+export type nameControllerGetOneResponse = (nameControllerGetOneResponseSuccess)
 
 export const getNameControllerGetOneUrl = ({ id, nameId }: NameControllerGetOnePathParameters,) => {
 
@@ -160,30 +138,13 @@ export type nameControllerRequestRevisionResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type nameControllerRequestRevisionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerRequestRevisionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type nameControllerRequestRevisionResponse409 = {
-  data: void
-  status: 409
-}
     
 export type nameControllerRequestRevisionResponseSuccess = (nameControllerRequestRevisionResponse201) & {
   headers: Headers;
 };
-export type nameControllerRequestRevisionResponseError = (nameControllerRequestRevisionResponse403 | nameControllerRequestRevisionResponse404 | nameControllerRequestRevisionResponse409) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerRequestRevisionResponse = (nameControllerRequestRevisionResponseSuccess | nameControllerRequestRevisionResponseError)
+export type nameControllerRequestRevisionResponse = (nameControllerRequestRevisionResponseSuccess)
 
 export const getNameControllerRequestRevisionUrl = ({ id, nameId }: NameControllerRequestRevisionPathParameters,) => {
 
@@ -214,25 +175,13 @@ export type nameControllerResubmitResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type nameControllerResubmitResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerResubmitResponse409 = {
-  data: void
-  status: 409
-}
     
 export type nameControllerResubmitResponseSuccess = (nameControllerResubmitResponse201) & {
   headers: Headers;
 };
-export type nameControllerResubmitResponseError = (nameControllerResubmitResponse403 | nameControllerResubmitResponse409) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerResubmitResponse = (nameControllerResubmitResponseSuccess | nameControllerResubmitResponseError)
+export type nameControllerResubmitResponse = (nameControllerResubmitResponseSuccess)
 
 export const getNameControllerResubmitUrl = ({ id, nameId }: NameControllerResubmitPathParameters,) => {
 
@@ -261,30 +210,13 @@ export type nameControllerApproveResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type nameControllerApproveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerApproveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type nameControllerApproveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type nameControllerApproveResponseSuccess = (nameControllerApproveResponse201) & {
   headers: Headers;
 };
-export type nameControllerApproveResponseError = (nameControllerApproveResponse403 | nameControllerApproveResponse404 | nameControllerApproveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerApproveResponse = (nameControllerApproveResponseSuccess | nameControllerApproveResponseError)
+export type nameControllerApproveResponse = (nameControllerApproveResponseSuccess)
 
 export const getNameControllerApproveUrl = ({ id, nameId }: NameControllerApprovePathParameters,) => {
 
@@ -313,30 +245,13 @@ export type nameControllerUpdatePagesResponse200 = {
   data: NameResDtoOutput
   status: 200
 }
-
-export type nameControllerUpdatePagesResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerUpdatePagesResponse404 = {
-  data: void
-  status: 404
-}
-
-export type nameControllerUpdatePagesResponse409 = {
-  data: void
-  status: 409
-}
     
 export type nameControllerUpdatePagesResponseSuccess = (nameControllerUpdatePagesResponse200) & {
   headers: Headers;
 };
-export type nameControllerUpdatePagesResponseError = (nameControllerUpdatePagesResponse403 | nameControllerUpdatePagesResponse404 | nameControllerUpdatePagesResponse409) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerUpdatePagesResponse = (nameControllerUpdatePagesResponseSuccess | nameControllerUpdatePagesResponseError)
+export type nameControllerUpdatePagesResponse = (nameControllerUpdatePagesResponseSuccess)
 
 export const getNameControllerUpdatePagesUrl = ({ id, nameId }: NameControllerUpdatePagesPathParameters,) => {
 
@@ -367,30 +282,13 @@ export type nameControllerAddPageResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type nameControllerAddPageResponse403 = {
-  data: void
-  status: 403
-}
-
-export type nameControllerAddPageResponse404 = {
-  data: void
-  status: 404
-}
-
-export type nameControllerAddPageResponse409 = {
-  data: void
-  status: 409
-}
     
 export type nameControllerAddPageResponseSuccess = (nameControllerAddPageResponse201) & {
   headers: Headers;
 };
-export type nameControllerAddPageResponseError = (nameControllerAddPageResponse403 | nameControllerAddPageResponse404 | nameControllerAddPageResponse409) & {
-  headers: Headers;
-};
+;
 
-export type nameControllerAddPageResponse = (nameControllerAddPageResponseSuccess | nameControllerAddPageResponseError)
+export type nameControllerAddPageResponse = (nameControllerAddPageResponseSuccess)
 
 export const getNameControllerAddPageUrl = ({ id, nameId }: NameControllerAddPagePathParameters,) => {
 
@@ -421,30 +319,13 @@ export type chapterNameControllerCreateResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type chapterNameControllerCreateResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerCreateResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerCreateResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerCreateResponseSuccess = (chapterNameControllerCreateResponse201) & {
   headers: Headers;
 };
-export type chapterNameControllerCreateResponseError = (chapterNameControllerCreateResponse403 | chapterNameControllerCreateResponse404 | chapterNameControllerCreateResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerCreateResponse = (chapterNameControllerCreateResponseSuccess | chapterNameControllerCreateResponseError)
+export type chapterNameControllerCreateResponse = (chapterNameControllerCreateResponseSuccess)
 
 export const getChapterNameControllerCreateUrl = ({ id }: ChapterNameControllerCreatePathParameters,) => {
 
@@ -475,25 +356,13 @@ export type chapterNameControllerListResponse200 = {
   data: NameListResDtoOutput
   status: 200
 }
-
-export type chapterNameControllerListResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerListResponse404 = {
-  data: void
-  status: 404
-}
     
 export type chapterNameControllerListResponseSuccess = (chapterNameControllerListResponse200) & {
   headers: Headers;
 };
-export type chapterNameControllerListResponseError = (chapterNameControllerListResponse403 | chapterNameControllerListResponse404) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerListResponse = (chapterNameControllerListResponseSuccess | chapterNameControllerListResponseError)
+export type chapterNameControllerListResponse = (chapterNameControllerListResponseSuccess)
 
 export const getChapterNameControllerListUrl = ({ id }: ChapterNameControllerListPathParameters,) => {
 
@@ -522,30 +391,13 @@ export type chapterNameControllerSubmitResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type chapterNameControllerSubmitResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerSubmitResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerSubmitResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerSubmitResponseSuccess = (chapterNameControllerSubmitResponse201) & {
   headers: Headers;
 };
-export type chapterNameControllerSubmitResponseError = (chapterNameControllerSubmitResponse403 | chapterNameControllerSubmitResponse404 | chapterNameControllerSubmitResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerSubmitResponse = (chapterNameControllerSubmitResponseSuccess | chapterNameControllerSubmitResponseError)
+export type chapterNameControllerSubmitResponse = (chapterNameControllerSubmitResponseSuccess)
 
 export const getChapterNameControllerSubmitUrl = ({ id, nameId }: ChapterNameControllerSubmitPathParameters,) => {
 
@@ -574,25 +426,13 @@ export type chapterNameControllerGetOneResponse200 = {
   data: NameResDtoOutput
   status: 200
 }
-
-export type chapterNameControllerGetOneResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerGetOneResponse404 = {
-  data: void
-  status: 404
-}
     
 export type chapterNameControllerGetOneResponseSuccess = (chapterNameControllerGetOneResponse200) & {
   headers: Headers;
 };
-export type chapterNameControllerGetOneResponseError = (chapterNameControllerGetOneResponse403 | chapterNameControllerGetOneResponse404) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerGetOneResponse = (chapterNameControllerGetOneResponseSuccess | chapterNameControllerGetOneResponseError)
+export type chapterNameControllerGetOneResponse = (chapterNameControllerGetOneResponseSuccess)
 
 export const getChapterNameControllerGetOneUrl = ({ id, nameId }: ChapterNameControllerGetOnePathParameters,) => {
 
@@ -621,30 +461,13 @@ export type chapterNameControllerRemoveResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type chapterNameControllerRemoveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerRemoveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerRemoveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerRemoveResponseSuccess = (chapterNameControllerRemoveResponse200) & {
   headers: Headers;
 };
-export type chapterNameControllerRemoveResponseError = (chapterNameControllerRemoveResponse403 | chapterNameControllerRemoveResponse404 | chapterNameControllerRemoveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerRemoveResponse = (chapterNameControllerRemoveResponseSuccess | chapterNameControllerRemoveResponseError)
+export type chapterNameControllerRemoveResponse = (chapterNameControllerRemoveResponseSuccess)
 
 export const getChapterNameControllerRemoveUrl = ({ id, nameId }: ChapterNameControllerRemovePathParameters,) => {
 
@@ -673,30 +496,13 @@ export type chapterNameControllerRequestRevisionResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type chapterNameControllerRequestRevisionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerRequestRevisionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerRequestRevisionResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerRequestRevisionResponseSuccess = (chapterNameControllerRequestRevisionResponse201) & {
   headers: Headers;
 };
-export type chapterNameControllerRequestRevisionResponseError = (chapterNameControllerRequestRevisionResponse403 | chapterNameControllerRequestRevisionResponse404 | chapterNameControllerRequestRevisionResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerRequestRevisionResponse = (chapterNameControllerRequestRevisionResponseSuccess | chapterNameControllerRequestRevisionResponseError)
+export type chapterNameControllerRequestRevisionResponse = (chapterNameControllerRequestRevisionResponseSuccess)
 
 export const getChapterNameControllerRequestRevisionUrl = ({ id, nameId }: ChapterNameControllerRequestRevisionPathParameters,) => {
 
@@ -727,30 +533,13 @@ export type chapterNameControllerResubmitResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type chapterNameControllerResubmitResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerResubmitResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerResubmitResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerResubmitResponseSuccess = (chapterNameControllerResubmitResponse201) & {
   headers: Headers;
 };
-export type chapterNameControllerResubmitResponseError = (chapterNameControllerResubmitResponse403 | chapterNameControllerResubmitResponse404 | chapterNameControllerResubmitResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerResubmitResponse = (chapterNameControllerResubmitResponseSuccess | chapterNameControllerResubmitResponseError)
+export type chapterNameControllerResubmitResponse = (chapterNameControllerResubmitResponseSuccess)
 
 export const getChapterNameControllerResubmitUrl = ({ id, nameId }: ChapterNameControllerResubmitPathParameters,) => {
 
@@ -779,30 +568,13 @@ export type chapterNameControllerApproveResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type chapterNameControllerApproveResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerApproveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerApproveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerApproveResponseSuccess = (chapterNameControllerApproveResponse201) & {
   headers: Headers;
 };
-export type chapterNameControllerApproveResponseError = (chapterNameControllerApproveResponse403 | chapterNameControllerApproveResponse404 | chapterNameControllerApproveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerApproveResponse = (chapterNameControllerApproveResponseSuccess | chapterNameControllerApproveResponseError)
+export type chapterNameControllerApproveResponse = (chapterNameControllerApproveResponseSuccess)
 
 export const getChapterNameControllerApproveUrl = ({ id, nameId }: ChapterNameControllerApprovePathParameters,) => {
 
@@ -831,30 +603,13 @@ export type chapterNameControllerUpdatePagesResponse200 = {
   data: NameResDtoOutput
   status: 200
 }
-
-export type chapterNameControllerUpdatePagesResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerUpdatePagesResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerUpdatePagesResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerUpdatePagesResponseSuccess = (chapterNameControllerUpdatePagesResponse200) & {
   headers: Headers;
 };
-export type chapterNameControllerUpdatePagesResponseError = (chapterNameControllerUpdatePagesResponse403 | chapterNameControllerUpdatePagesResponse404 | chapterNameControllerUpdatePagesResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerUpdatePagesResponse = (chapterNameControllerUpdatePagesResponseSuccess | chapterNameControllerUpdatePagesResponseError)
+export type chapterNameControllerUpdatePagesResponse = (chapterNameControllerUpdatePagesResponseSuccess)
 
 export const getChapterNameControllerUpdatePagesUrl = ({ id, nameId }: ChapterNameControllerUpdatePagesPathParameters,) => {
 
@@ -885,30 +640,13 @@ export type chapterNameControllerAddPageResponse201 = {
   data: NameResDtoOutput
   status: 201
 }
-
-export type chapterNameControllerAddPageResponse403 = {
-  data: void
-  status: 403
-}
-
-export type chapterNameControllerAddPageResponse404 = {
-  data: void
-  status: 404
-}
-
-export type chapterNameControllerAddPageResponse409 = {
-  data: void
-  status: 409
-}
     
 export type chapterNameControllerAddPageResponseSuccess = (chapterNameControllerAddPageResponse201) & {
   headers: Headers;
 };
-export type chapterNameControllerAddPageResponseError = (chapterNameControllerAddPageResponse403 | chapterNameControllerAddPageResponse404 | chapterNameControllerAddPageResponse409) & {
-  headers: Headers;
-};
+;
 
-export type chapterNameControllerAddPageResponse = (chapterNameControllerAddPageResponseSuccess | chapterNameControllerAddPageResponseError)
+export type chapterNameControllerAddPageResponse = (chapterNameControllerAddPageResponseSuccess)
 
 export const getChapterNameControllerAddPageUrl = ({ id, nameId }: ChapterNameControllerAddPagePathParameters,) => {
 

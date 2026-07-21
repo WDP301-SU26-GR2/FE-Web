@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -41,6 +43,8 @@ import type {
   SeriesControllerProposeCompletionPathParameters,
   SeriesControllerRejectPathParameters,
   SeriesControllerReleasePathParameters,
+  SeriesControllerReopenPathParameters,
+  SeriesControllerReopenReviewPathParameters,
   SeriesControllerRequestProposalRevisionPathParameters,
   SeriesControllerResubmitProposalPathParameters,
   SeriesControllerResumePathParameters,
@@ -105,25 +109,13 @@ export type seriesControllerGetSeriesResponse200 = {
   data: SeriesResDtoOutput
   status: 200
 }
-
-export type seriesControllerGetSeriesResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerGetSeriesResponse404 = {
-  data: void
-  status: 404
-}
     
 export type seriesControllerGetSeriesResponseSuccess = (seriesControllerGetSeriesResponse200) & {
   headers: Headers;
 };
-export type seriesControllerGetSeriesResponseError = (seriesControllerGetSeriesResponse403 | seriesControllerGetSeriesResponse404) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerGetSeriesResponse = (seriesControllerGetSeriesResponseSuccess | seriesControllerGetSeriesResponseError)
+export type seriesControllerGetSeriesResponse = (seriesControllerGetSeriesResponseSuccess)
 
 export const getSeriesControllerGetSeriesUrl = ({ id }: SeriesControllerGetSeriesPathParameters,) => {
 
@@ -152,30 +144,13 @@ export type seriesControllerUpdateSeriesMetadataResponse200 = {
   data: SeriesResDtoOutput
   status: 200
 }
-
-export type seriesControllerUpdateSeriesMetadataResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerUpdateSeriesMetadataResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerUpdateSeriesMetadataResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerUpdateSeriesMetadataResponseSuccess = (seriesControllerUpdateSeriesMetadataResponse200) & {
   headers: Headers;
 };
-export type seriesControllerUpdateSeriesMetadataResponseError = (seriesControllerUpdateSeriesMetadataResponse403 | seriesControllerUpdateSeriesMetadataResponse404 | seriesControllerUpdateSeriesMetadataResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerUpdateSeriesMetadataResponse = (seriesControllerUpdateSeriesMetadataResponseSuccess | seriesControllerUpdateSeriesMetadataResponseError)
+export type seriesControllerUpdateSeriesMetadataResponse = (seriesControllerUpdateSeriesMetadataResponseSuccess)
 
 export const getSeriesControllerUpdateSeriesMetadataUrl = ({ id }: SeriesControllerUpdateSeriesMetadataPathParameters,) => {
 
@@ -206,20 +181,13 @@ export type seriesControllerCreateProposalResponse201 = {
   data: CreateProposalResDtoOutput
   status: 201
 }
-
-export type seriesControllerCreateProposalResponse422 = {
-  data: void
-  status: 422
-}
     
 export type seriesControllerCreateProposalResponseSuccess = (seriesControllerCreateProposalResponse201) & {
   headers: Headers;
 };
-export type seriesControllerCreateProposalResponseError = (seriesControllerCreateProposalResponse422) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerCreateProposalResponse = (seriesControllerCreateProposalResponseSuccess | seriesControllerCreateProposalResponseError)
+export type seriesControllerCreateProposalResponse = (seriesControllerCreateProposalResponseSuccess)
 
 export const getSeriesControllerCreateProposalUrl = () => {
 
@@ -249,30 +217,13 @@ export type seriesControllerUpdateProposalResponse200 = {
   data: SeriesResDtoOutput
   status: 200
 }
-
-export type seriesControllerUpdateProposalResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerUpdateProposalResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerUpdateProposalResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerUpdateProposalResponseSuccess = (seriesControllerUpdateProposalResponse200) & {
   headers: Headers;
 };
-export type seriesControllerUpdateProposalResponseError = (seriesControllerUpdateProposalResponse403 | seriesControllerUpdateProposalResponse404 | seriesControllerUpdateProposalResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerUpdateProposalResponse = (seriesControllerUpdateProposalResponseSuccess | seriesControllerUpdateProposalResponseError)
+export type seriesControllerUpdateProposalResponse = (seriesControllerUpdateProposalResponseSuccess)
 
 export const getSeriesControllerUpdateProposalUrl = ({ id }: SeriesControllerUpdateProposalPathParameters,) => {
 
@@ -303,30 +254,13 @@ export type seriesControllerDeleteProposalResponse200 = {
   data: MessageResDtoOutput
   status: 200
 }
-
-export type seriesControllerDeleteProposalResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerDeleteProposalResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerDeleteProposalResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerDeleteProposalResponseSuccess = (seriesControllerDeleteProposalResponse200) & {
   headers: Headers;
 };
-export type seriesControllerDeleteProposalResponseError = (seriesControllerDeleteProposalResponse403 | seriesControllerDeleteProposalResponse404 | seriesControllerDeleteProposalResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerDeleteProposalResponse = (seriesControllerDeleteProposalResponseSuccess | seriesControllerDeleteProposalResponseError)
+export type seriesControllerDeleteProposalResponse = (seriesControllerDeleteProposalResponseSuccess)
 
 export const getSeriesControllerDeleteProposalUrl = ({ id }: SeriesControllerDeleteProposalPathParameters,) => {
 
@@ -355,30 +289,13 @@ export type seriesControllerSubmitResponse201 = {
   data: CreateProposalResDtoOutput
   status: 201
 }
-
-export type seriesControllerSubmitResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerSubmitResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerSubmitResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerSubmitResponseSuccess = (seriesControllerSubmitResponse201) & {
   headers: Headers;
 };
-export type seriesControllerSubmitResponseError = (seriesControllerSubmitResponse403 | seriesControllerSubmitResponse404 | seriesControllerSubmitResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerSubmitResponse = (seriesControllerSubmitResponseSuccess | seriesControllerSubmitResponseError)
+export type seriesControllerSubmitResponse = (seriesControllerSubmitResponseSuccess)
 
 export const getSeriesControllerSubmitUrl = ({ id }: SeriesControllerSubmitPathParameters,) => {
 
@@ -407,30 +324,13 @@ export type seriesControllerRequestProposalRevisionResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerRequestProposalRevisionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerRequestProposalRevisionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerRequestProposalRevisionResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerRequestProposalRevisionResponseSuccess = (seriesControllerRequestProposalRevisionResponse201) & {
   headers: Headers;
 };
-export type seriesControllerRequestProposalRevisionResponseError = (seriesControllerRequestProposalRevisionResponse403 | seriesControllerRequestProposalRevisionResponse404 | seriesControllerRequestProposalRevisionResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerRequestProposalRevisionResponse = (seriesControllerRequestProposalRevisionResponseSuccess | seriesControllerRequestProposalRevisionResponseError)
+export type seriesControllerRequestProposalRevisionResponse = (seriesControllerRequestProposalRevisionResponseSuccess)
 
 export const getSeriesControllerRequestProposalRevisionUrl = ({ id }: SeriesControllerRequestProposalRevisionPathParameters,) => {
 
@@ -461,25 +361,13 @@ export type seriesControllerResubmitProposalResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerResubmitProposalResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerResubmitProposalResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerResubmitProposalResponseSuccess = (seriesControllerResubmitProposalResponse201) & {
   headers: Headers;
 };
-export type seriesControllerResubmitProposalResponseError = (seriesControllerResubmitProposalResponse403 | seriesControllerResubmitProposalResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerResubmitProposalResponse = (seriesControllerResubmitProposalResponseSuccess | seriesControllerResubmitProposalResponseError)
+export type seriesControllerResubmitProposalResponse = (seriesControllerResubmitProposalResponseSuccess)
 
 export const getSeriesControllerResubmitProposalUrl = ({ id }: SeriesControllerResubmitProposalPathParameters,) => {
 
@@ -508,30 +396,13 @@ export type seriesControllerApproveProposalResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerApproveProposalResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerApproveProposalResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerApproveProposalResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerApproveProposalResponseSuccess = (seriesControllerApproveProposalResponse201) & {
   headers: Headers;
 };
-export type seriesControllerApproveProposalResponseError = (seriesControllerApproveProposalResponse403 | seriesControllerApproveProposalResponse404 | seriesControllerApproveProposalResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerApproveProposalResponse = (seriesControllerApproveProposalResponseSuccess | seriesControllerApproveProposalResponseError)
+export type seriesControllerApproveProposalResponse = (seriesControllerApproveProposalResponseSuccess)
 
 export const getSeriesControllerApproveProposalUrl = ({ id }: SeriesControllerApproveProposalPathParameters,) => {
 
@@ -560,30 +431,13 @@ export type seriesControllerRejectResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerRejectResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerRejectResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerRejectResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerRejectResponseSuccess = (seriesControllerRejectResponse201) & {
   headers: Headers;
 };
-export type seriesControllerRejectResponseError = (seriesControllerRejectResponse403 | seriesControllerRejectResponse404 | seriesControllerRejectResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerRejectResponse = (seriesControllerRejectResponseSuccess | seriesControllerRejectResponseError)
+export type seriesControllerRejectResponse = (seriesControllerRejectResponseSuccess)
 
 export const getSeriesControllerRejectUrl = ({ id }: SeriesControllerRejectPathParameters,) => {
 
@@ -614,25 +468,13 @@ export type seriesControllerWithdrawResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerWithdrawResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerWithdrawResponse404 = {
-  data: void
-  status: 404
-}
     
 export type seriesControllerWithdrawResponseSuccess = (seriesControllerWithdrawResponse201) & {
   headers: Headers;
 };
-export type seriesControllerWithdrawResponseError = (seriesControllerWithdrawResponse403 | seriesControllerWithdrawResponse404) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerWithdrawResponse = (seriesControllerWithdrawResponseSuccess | seriesControllerWithdrawResponseError)
+export type seriesControllerWithdrawResponse = (seriesControllerWithdrawResponseSuccess)
 
 export const getSeriesControllerWithdrawUrl = ({ id }: SeriesControllerWithdrawPathParameters,) => {
 
@@ -657,36 +499,91 @@ export const seriesControllerWithdraw = async ({ id }: SeriesControllerWithdrawP
 
 
 /**
+ * @summary Mangaka mở lại hồ sơ đã ABANDONED/WITHDRAWN (Series → DRAFT, về hàng đợi khi nộp lại)
+ */
+export type seriesControllerReopenResponse201 = {
+  data: SeriesResDtoOutput
+  status: 201
+}
+    
+export type seriesControllerReopenResponseSuccess = (seriesControllerReopenResponse201) & {
+  headers: Headers;
+};
+;
+
+export type seriesControllerReopenResponse = (seriesControllerReopenResponseSuccess)
+
+export const getSeriesControllerReopenUrl = ({ id }: SeriesControllerReopenPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/reopen`
+}
+
+export const seriesControllerReopen = async ({ id }: SeriesControllerReopenPathParameters, options?: RequestInit): Promise<seriesControllerReopenResponse> => {
+  
+  return customFetch<seriesControllerReopenResponse>(getSeriesControllerReopenUrl({ id }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Editor mở lại vòng chỉnh sửa sau khi Board từ chối (REJECTED → IN_REVIEW, giữ editor)
+ */
+export type seriesControllerReopenReviewResponse201 = {
+  data: SeriesResDtoOutput
+  status: 201
+}
+    
+export type seriesControllerReopenReviewResponseSuccess = (seriesControllerReopenReviewResponse201) & {
+  headers: Headers;
+};
+;
+
+export type seriesControllerReopenReviewResponse = (seriesControllerReopenReviewResponseSuccess)
+
+export const getSeriesControllerReopenReviewUrl = ({ id }: SeriesControllerReopenReviewPathParameters,) => {
+
+
+  
+
+  return `/series/${id}/reopen-review`
+}
+
+export const seriesControllerReopenReview = async ({ id }: SeriesControllerReopenReviewPathParameters,
+    reasonBodyDto: ReasonBodyDto, options?: RequestInit): Promise<seriesControllerReopenReviewResponse> => {
+  
+  return customFetch<seriesControllerReopenReviewResponse>(getSeriesControllerReopenReviewUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reasonBodyDto,)
+  }
+);}
+
+
+/**
  * @summary Mangaka gốc đồng ý/từ chối series phái sinh (A-SER-06). REJECTED chỉ block submit.
  */
 export type seriesControllerFranchiseConsentResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerFranchiseConsentResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerFranchiseConsentResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerFranchiseConsentResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerFranchiseConsentResponseSuccess = (seriesControllerFranchiseConsentResponse201) & {
   headers: Headers;
 };
-export type seriesControllerFranchiseConsentResponseError = (seriesControllerFranchiseConsentResponse403 | seriesControllerFranchiseConsentResponse404 | seriesControllerFranchiseConsentResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerFranchiseConsentResponse = (seriesControllerFranchiseConsentResponseSuccess | seriesControllerFranchiseConsentResponseError)
+export type seriesControllerFranchiseConsentResponse = (seriesControllerFranchiseConsentResponseSuccess)
 
 export const getSeriesControllerFranchiseConsentUrl = ({ id }: SeriesControllerFranchiseConsentPathParameters,) => {
 
@@ -717,30 +614,13 @@ export type seriesControllerPitchResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerPitchResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerPitchResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerPitchResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerPitchResponseSuccess = (seriesControllerPitchResponse201) & {
   headers: Headers;
 };
-export type seriesControllerPitchResponseError = (seriesControllerPitchResponse403 | seriesControllerPitchResponse404 | seriesControllerPitchResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerPitchResponse = (seriesControllerPitchResponseSuccess | seriesControllerPitchResponseError)
+export type seriesControllerPitchResponse = (seriesControllerPitchResponseSuccess)
 
 export const getSeriesControllerPitchUrl = ({ id }: SeriesControllerPitchPathParameters,) => {
 
@@ -769,25 +649,13 @@ export type seriesControllerClaimResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerClaimResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerClaimResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerClaimResponseSuccess = (seriesControllerClaimResponse201) & {
   headers: Headers;
 };
-export type seriesControllerClaimResponseError = (seriesControllerClaimResponse404 | seriesControllerClaimResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerClaimResponse = (seriesControllerClaimResponseSuccess | seriesControllerClaimResponseError)
+export type seriesControllerClaimResponse = (seriesControllerClaimResponseSuccess)
 
 export const getSeriesControllerClaimUrl = ({ id }: SeriesControllerClaimPathParameters,) => {
 
@@ -816,30 +684,13 @@ export type seriesControllerReleaseResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerReleaseResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerReleaseResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerReleaseResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerReleaseResponseSuccess = (seriesControllerReleaseResponse201) & {
   headers: Headers;
 };
-export type seriesControllerReleaseResponseError = (seriesControllerReleaseResponse403 | seriesControllerReleaseResponse404 | seriesControllerReleaseResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerReleaseResponse = (seriesControllerReleaseResponseSuccess | seriesControllerReleaseResponseError)
+export type seriesControllerReleaseResponse = (seriesControllerReleaseResponseSuccess)
 
 export const getSeriesControllerReleaseUrl = ({ id }: SeriesControllerReleasePathParameters,) => {
 
@@ -868,30 +719,13 @@ export type seriesControllerHiatusResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerHiatusResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerHiatusResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerHiatusResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerHiatusResponseSuccess = (seriesControllerHiatusResponse201) & {
   headers: Headers;
 };
-export type seriesControllerHiatusResponseError = (seriesControllerHiatusResponse403 | seriesControllerHiatusResponse404 | seriesControllerHiatusResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerHiatusResponse = (seriesControllerHiatusResponseSuccess | seriesControllerHiatusResponseError)
+export type seriesControllerHiatusResponse = (seriesControllerHiatusResponseSuccess)
 
 export const getSeriesControllerHiatusUrl = ({ id }: SeriesControllerHiatusPathParameters,) => {
 
@@ -922,30 +756,13 @@ export type seriesControllerResumeResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerResumeResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerResumeResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerResumeResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerResumeResponseSuccess = (seriesControllerResumeResponse201) & {
   headers: Headers;
 };
-export type seriesControllerResumeResponseError = (seriesControllerResumeResponse403 | seriesControllerResumeResponse404 | seriesControllerResumeResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerResumeResponse = (seriesControllerResumeResponseSuccess | seriesControllerResumeResponseError)
+export type seriesControllerResumeResponse = (seriesControllerResumeResponseSuccess)
 
 export const getSeriesControllerResumeUrl = ({ id }: SeriesControllerResumePathParameters,) => {
 
@@ -974,30 +791,13 @@ export type seriesControllerFinalizeEndingResponse201 = {
   data: SeriesResDtoOutput
   status: 201
 }
-
-export type seriesControllerFinalizeEndingResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerFinalizeEndingResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerFinalizeEndingResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerFinalizeEndingResponseSuccess = (seriesControllerFinalizeEndingResponse201) & {
   headers: Headers;
 };
-export type seriesControllerFinalizeEndingResponseError = (seriesControllerFinalizeEndingResponse403 | seriesControllerFinalizeEndingResponse404 | seriesControllerFinalizeEndingResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerFinalizeEndingResponse = (seriesControllerFinalizeEndingResponseSuccess | seriesControllerFinalizeEndingResponseError)
+export type seriesControllerFinalizeEndingResponse = (seriesControllerFinalizeEndingResponseSuccess)
 
 export const getSeriesControllerFinalizeEndingUrl = ({ id }: SeriesControllerFinalizeEndingPathParameters,) => {
 
@@ -1026,30 +826,13 @@ export type seriesControllerProposeCompletionResponse200 = {
   data: SeriesResDtoOutput
   status: 200
 }
-
-export type seriesControllerProposeCompletionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerProposeCompletionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerProposeCompletionResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerProposeCompletionResponseSuccess = (seriesControllerProposeCompletionResponse200) & {
   headers: Headers;
 };
-export type seriesControllerProposeCompletionResponseError = (seriesControllerProposeCompletionResponse403 | seriesControllerProposeCompletionResponse404 | seriesControllerProposeCompletionResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerProposeCompletionResponse = (seriesControllerProposeCompletionResponseSuccess | seriesControllerProposeCompletionResponseError)
+export type seriesControllerProposeCompletionResponse = (seriesControllerProposeCompletionResponseSuccess)
 
 export const getSeriesControllerProposeCompletionUrl = ({ id }: SeriesControllerProposeCompletionPathParameters,) => {
 
@@ -1080,30 +863,13 @@ export type seriesControllerForceCancelResponse200 = {
   data: SeriesResDtoOutput
   status: 200
 }
-
-export type seriesControllerForceCancelResponse403 = {
-  data: void
-  status: 403
-}
-
-export type seriesControllerForceCancelResponse404 = {
-  data: void
-  status: 404
-}
-
-export type seriesControllerForceCancelResponse409 = {
-  data: void
-  status: 409
-}
     
 export type seriesControllerForceCancelResponseSuccess = (seriesControllerForceCancelResponse200) & {
   headers: Headers;
 };
-export type seriesControllerForceCancelResponseError = (seriesControllerForceCancelResponse403 | seriesControllerForceCancelResponse404 | seriesControllerForceCancelResponse409) & {
-  headers: Headers;
-};
+;
 
-export type seriesControllerForceCancelResponse = (seriesControllerForceCancelResponseSuccess | seriesControllerForceCancelResponseError)
+export type seriesControllerForceCancelResponse = (seriesControllerForceCancelResponseSuccess)
 
 export const getSeriesControllerForceCancelUrl = ({ id }: SeriesControllerForceCancelPathParameters,) => {
 

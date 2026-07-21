@@ -1,5 +1,5 @@
 {
-  "appName": "Mangaka",
+  "appName": "Manga Creation Workflow and Publishing Management System",
   "language": "Language",
   "theme": "Theme",
   "light": "Light",
@@ -20,7 +20,7 @@
     "messageGeneric": "An unexpected error occurred."
   },
   "layout": {
-    "brand": "Mangaka Studio",
+    "brand": "Manga Creation Workflow and Publishing Management System",
     "brandPro": "Pro",
     "productionEnvironment": "Production Environment",
     "supportSection": "Support & Actions",
@@ -28,8 +28,20 @@
     "closeMenu": "Close menu",
     "openMenu": "Open menu",
     "notifications": "Notifications",
+    "notificationsWithCount_one": "Notifications ({{count}} unread)",
+    "notificationsWithCount_other": "Notifications ({{count}} unread)",
     "settings": "Settings",
     "signOut": "Sign Out"
+  },
+  "notificationMenu": {
+    "label": "Unread notifications",
+    "title": "Notifications",
+    "unreadCount_one": "{{count}} unread notification",
+    "unreadCount_other": "{{count}} unread notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "You're all caught up.",
+    "noContent": "New notification",
+    "viewAll": "View all notifications"
   },
   "nav": {
     "home": "Home",
@@ -69,6 +81,13 @@
     "adminName": "Super Admin",
     "adminRole": "Admin",
     "adminBadge": "SUPER_ADMIN"
+  },
+  "roleEnum": {
+    "MANGAKA": "Mangaka",
+    "ASSISTANT": "Assistant",
+    "EDITOR": "Editor",
+    "BOARD_MEMBER": "Board Member",
+    "SUPER_ADMIN": "Admin"
   },
   "dashboard": {
     "assistant": "Assistant Dashboard",

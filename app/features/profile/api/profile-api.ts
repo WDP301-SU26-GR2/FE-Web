@@ -2,14 +2,18 @@ import {
   usersControllerGetMyAssistantProfile,
   usersControllerGetMyMangakaProfile,
   usersControllerUpsertAssistantProfile,
-  usersControllerUpsertMangakaProfile
+  usersControllerUpsertMangakaProfile,
+  usersControllerGetMe,
+  usersControllerUpdateMe
 } from '~/api/operations/users/users'
 import {
   AssistantProfileBodyDtoAvailabilityStatus,
   AssistantProfileBodyDtoSpecializationsItem,
   MangakaProfileBodyDtoGenresItem,
   type AssistantProfileResDtoOutput,
-  type MangakaProfileResDtoOutput
+  type MangakaProfileResDtoOutput,
+  type MeResDtoOutput,
+  type UpdateMeBodyDto
 } from '~/api/model/users'
 
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
@@ -89,6 +93,43 @@ export async function saveAssistantProfile(
   const res = await usersControllerUpsertAssistantProfile(payload)
   if (!res.data) {
     throw new Error('Empty response saving Assistant profile')
+  }
+  return res.data
+}
+
+// ── Account info (PATCH /me) ─────────────────────────────────────────────────
+
+export type AccountInfo = MeResDtoOutput
+
+export type AccountInfoSubmit = {
+  name?: string
+  displayName?: string | null
+  avatar?: string | null
+  phoneNumber?: string
+}
+
+/**
+ * Fetch the signed-in user's account info (name/email/avatar/phoneNumber/role/status).
+ */
+export async function fetchAccountInfo(): Promise<AccountInfo> {
+  const res = await usersControllerGetMe()
+  if (!res.data) {
+    throw new Error('Empty response fetching account info')
+  }
+  return res.data
+}
+
+/**
+ * Persist account info changes (PATCH /me). Returns the updated account from BE.
+ * - omit/null = keep current
+ * - '' (empty string) = delete nullable fields (displayName, avatar)
+ */
+export async function saveAccountInfo(
+  payload: AccountInfoSubmit
+): Promise<AccountInfo> {
+  const res = await usersControllerUpdateMe(payload as UpdateMeBodyDto)
+  if (!res.data) {
+    throw new Error('Empty response saving account info')
   }
   return res.data
 }

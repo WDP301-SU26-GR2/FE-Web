@@ -56,17 +56,53 @@
     },
     "card": {
       "taskType": "Task type",
+      "taskTypeNone": "Untyped",
       "priority": "Priority",
       "deadline": "Deadline",
       "deadlineNone": "No deadline",
       "versions": "{{count}} version",
       "versions_other": "{{count}} versions",
-      "pageIdLabel": "Page ID",
+      "pageLabel": "Page #{{id}}",
+      "region": "Assigned region",
+      "regionAssigned": "Region #{{id}}",
+      "fullPage": "Full page (no region)",
       "statusReason": "Note"
+    },
+    "dialog": {
+      "title": "Task details",
+      "description": "View original image from Mangaka, submitted work (if any), and download files.",
+      "loading": "Loading image...",
+      "loadFailed": "Couldn't load the image.",
+      "noOriginalFile": "This page has no original file yet.",
+      "pageUnavailable": "Couldn't find this page among your hired chapters.",
+      "imageAlt": "Page {{n}}",
+      "image": {
+        "original": "Original (from Mangaka)",
+        "submitted": "Submitted work",
+        "noImage": "No image"
+      },
+      "regionCount_one": "{{count}} matching region",
+      "regionCount_other": "{{count}} matching regions",
+      "fullPageHint": "Full-page task (no specific region)",
+      "regionType": {
+        "PANEL": "Panel",
+        "BACKGROUND": "Background",
+        "SCREEN_TONE": "Screentone",
+        "EFFECT_LINES": "Effect lines",
+        "SFX": "SFX",
+        "CHARACTER": "Character"
+      },
+      "regionCoords": "Coords: ({{x}}, {{y}}) {{w}}×{{h}}",
+      "downloadOriginal": "Download original",
+      "downloadSubmitted": "Download submitted",
+      "downloadFailed": "Couldn't download the file. Try again.",
+      "viewFullsize": "View full size"
     },
     "actions": {
       "start": "Start task",
-      "submit": "Submit result"
+      "submit": "Submit result",
+      "resultFile": "Result file",
+      "selectedFile": "Selected: {{name}} ({{size}})"
     },
     "pagination": {
       "previousPage": "Previous page",
@@ -109,7 +145,7 @@
       "LETTERING": "Lettering"
     },
     "card": {
-      "mangakaFallback": "Mangaka #{{id}}",
+      "unknownMangaka": "Mangaka",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "From {{from}}",
       "seriesNone": "No series context",
@@ -158,7 +194,7 @@
       "LETTERING": "Lettering"
     },
     "card": {
-      "mangakaFallback": "Mangaka #{{id}}",
+      "unknownMangaka": "Mangaka",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "From {{from}}",
       "seriesNone": "No series context",
@@ -210,6 +246,12 @@
     "item": {
       "noContent": "(no content)",
       "openTarget": "Open",
+      "openChapter": "Open chapter",
+      "openTask": "Open task",
+      "openContract": "Open contract",
+      "openDeadline": "Open deadline",
+      "openAssistant": "Open assistant",
+      "openRevision": "Open revision",
       "reference": "Reference: {{type}} • {{id}}"
     },
     "actions": {

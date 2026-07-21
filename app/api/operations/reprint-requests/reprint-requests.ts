@@ -7,17 +7,19 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
@@ -91,20 +93,13 @@ export type reprintRequestControllerCreateResponse201 = {
   data: ReprintRequestResDtoOutput
   status: 201
 }
-
-export type reprintRequestControllerCreateResponse404 = {
-  data: void
-  status: 404
-}
     
 export type reprintRequestControllerCreateResponseSuccess = (reprintRequestControllerCreateResponse201) & {
   headers: Headers;
 };
-export type reprintRequestControllerCreateResponseError = (reprintRequestControllerCreateResponse404) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerCreateResponse = (reprintRequestControllerCreateResponseSuccess | reprintRequestControllerCreateResponseError)
+export type reprintRequestControllerCreateResponse = (reprintRequestControllerCreateResponseSuccess)
 
 export const getReprintRequestControllerCreateUrl = () => {
 
@@ -134,20 +129,13 @@ export type reprintRequestControllerFindByIdResponse200 = {
   data: ReprintRequestResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerFindByIdResponse404 = {
-  data: void
-  status: 404
-}
     
 export type reprintRequestControllerFindByIdResponseSuccess = (reprintRequestControllerFindByIdResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerFindByIdResponseError = (reprintRequestControllerFindByIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerFindByIdResponse = (reprintRequestControllerFindByIdResponseSuccess | reprintRequestControllerFindByIdResponseError)
+export type reprintRequestControllerFindByIdResponse = (reprintRequestControllerFindByIdResponseSuccess)
 
 export const getReprintRequestControllerFindByIdUrl = ({ id }: ReprintRequestControllerFindByIdPathParameters,) => {
 
@@ -176,20 +164,13 @@ export type reprintRequestControllerGetChaptersResponse200 = {
   data: ReprintChapterResDtoOutput[]
   status: 200
 }
-
-export type reprintRequestControllerGetChaptersResponse404 = {
-  data: void
-  status: 404
-}
     
 export type reprintRequestControllerGetChaptersResponseSuccess = (reprintRequestControllerGetChaptersResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerGetChaptersResponseError = (reprintRequestControllerGetChaptersResponse404) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerGetChaptersResponse = (reprintRequestControllerGetChaptersResponseSuccess | reprintRequestControllerGetChaptersResponseError)
+export type reprintRequestControllerGetChaptersResponse = (reprintRequestControllerGetChaptersResponseSuccess)
 
 export const getReprintRequestControllerGetChaptersUrl = ({ id }: ReprintRequestControllerGetChaptersPathParameters,) => {
 
@@ -218,20 +199,13 @@ export type reprintRequestControllerGetChapterByIdResponse200 = {
   data: ReprintChapterResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerGetChapterByIdResponse404 = {
-  data: void
-  status: 404
-}
     
 export type reprintRequestControllerGetChapterByIdResponseSuccess = (reprintRequestControllerGetChapterByIdResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerGetChapterByIdResponseError = (reprintRequestControllerGetChapterByIdResponse404) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerGetChapterByIdResponse = (reprintRequestControllerGetChapterByIdResponseSuccess | reprintRequestControllerGetChapterByIdResponseError)
+export type reprintRequestControllerGetChapterByIdResponse = (reprintRequestControllerGetChapterByIdResponseSuccess)
 
 export const getReprintRequestControllerGetChapterByIdUrl = ({ id, chapterId }: ReprintRequestControllerGetChapterByIdPathParameters,) => {
 
@@ -260,25 +234,13 @@ export type reprintRequestControllerUpdateChapterManuscriptResponse200 = {
   data: ReprintRequestResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerUpdateChapterManuscriptResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reprintRequestControllerUpdateChapterManuscriptResponse409 = {
-  data: void
-  status: 409
-}
     
 export type reprintRequestControllerUpdateChapterManuscriptResponseSuccess = (reprintRequestControllerUpdateChapterManuscriptResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerUpdateChapterManuscriptResponseError = (reprintRequestControllerUpdateChapterManuscriptResponse404 | reprintRequestControllerUpdateChapterManuscriptResponse409) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerUpdateChapterManuscriptResponse = (reprintRequestControllerUpdateChapterManuscriptResponseSuccess | reprintRequestControllerUpdateChapterManuscriptResponseError)
+export type reprintRequestControllerUpdateChapterManuscriptResponse = (reprintRequestControllerUpdateChapterManuscriptResponseSuccess)
 
 export const getReprintRequestControllerUpdateChapterManuscriptUrl = ({ id, chapterId }: ReprintRequestControllerUpdateChapterManuscriptPathParameters,) => {
 
@@ -309,25 +271,13 @@ export type reprintRequestControllerApproveChapterResponse200 = {
   data: ReprintRequestResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerApproveChapterResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reprintRequestControllerApproveChapterResponse409 = {
-  data: void
-  status: 409
-}
     
 export type reprintRequestControllerApproveChapterResponseSuccess = (reprintRequestControllerApproveChapterResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerApproveChapterResponseError = (reprintRequestControllerApproveChapterResponse404 | reprintRequestControllerApproveChapterResponse409) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerApproveChapterResponse = (reprintRequestControllerApproveChapterResponseSuccess | reprintRequestControllerApproveChapterResponseError)
+export type reprintRequestControllerApproveChapterResponse = (reprintRequestControllerApproveChapterResponseSuccess)
 
 export const getReprintRequestControllerApproveChapterUrl = ({ id, chapterId }: ReprintRequestControllerApproveChapterPathParameters,) => {
 
@@ -358,30 +308,13 @@ export type reprintRequestControllerMangakaReviewResponse200 = {
   data: ReprintRequestResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerMangakaReviewResponse403 = {
-  data: void
-  status: 403
-}
-
-export type reprintRequestControllerMangakaReviewResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reprintRequestControllerMangakaReviewResponse409 = {
-  data: void
-  status: 409
-}
     
 export type reprintRequestControllerMangakaReviewResponseSuccess = (reprintRequestControllerMangakaReviewResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerMangakaReviewResponseError = (reprintRequestControllerMangakaReviewResponse403 | reprintRequestControllerMangakaReviewResponse404 | reprintRequestControllerMangakaReviewResponse409) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerMangakaReviewResponse = (reprintRequestControllerMangakaReviewResponseSuccess | reprintRequestControllerMangakaReviewResponseError)
+export type reprintRequestControllerMangakaReviewResponse = (reprintRequestControllerMangakaReviewResponseSuccess)
 
 export const getReprintRequestControllerMangakaReviewUrl = ({ id }: ReprintRequestControllerMangakaReviewPathParameters,) => {
 
@@ -412,25 +345,13 @@ export type reprintRequestControllerBoardApproveResponse200 = {
   data: ReprintRequestResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerBoardApproveResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reprintRequestControllerBoardApproveResponse409 = {
-  data: void
-  status: 409
-}
     
 export type reprintRequestControllerBoardApproveResponseSuccess = (reprintRequestControllerBoardApproveResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerBoardApproveResponseError = (reprintRequestControllerBoardApproveResponse404 | reprintRequestControllerBoardApproveResponse409) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerBoardApproveResponse = (reprintRequestControllerBoardApproveResponseSuccess | reprintRequestControllerBoardApproveResponseError)
+export type reprintRequestControllerBoardApproveResponse = (reprintRequestControllerBoardApproveResponseSuccess)
 
 export const getReprintRequestControllerBoardApproveUrl = ({ id }: ReprintRequestControllerBoardApprovePathParameters,) => {
 
@@ -461,30 +382,13 @@ export type reprintRequestControllerAssignReviserResponse200 = {
   data: ReprintRequestResDtoOutput
   status: 200
 }
-
-export type reprintRequestControllerAssignReviserResponse404 = {
-  data: void
-  status: 404
-}
-
-export type reprintRequestControllerAssignReviserResponse409 = {
-  data: void
-  status: 409
-}
-
-export type reprintRequestControllerAssignReviserResponse422 = {
-  data: void
-  status: 422
-}
     
 export type reprintRequestControllerAssignReviserResponseSuccess = (reprintRequestControllerAssignReviserResponse200) & {
   headers: Headers;
 };
-export type reprintRequestControllerAssignReviserResponseError = (reprintRequestControllerAssignReviserResponse404 | reprintRequestControllerAssignReviserResponse409 | reprintRequestControllerAssignReviserResponse422) & {
-  headers: Headers;
-};
+;
 
-export type reprintRequestControllerAssignReviserResponse = (reprintRequestControllerAssignReviserResponseSuccess | reprintRequestControllerAssignReviserResponseError)
+export type reprintRequestControllerAssignReviserResponse = (reprintRequestControllerAssignReviserResponseSuccess)
 
 export const getReprintRequestControllerAssignReviserUrl = ({ id, chapterId }: ReprintRequestControllerAssignReviserPathParameters,) => {
 

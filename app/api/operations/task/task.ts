@@ -7,33 +7,39 @@
 ### ⚠️ Response envelope (ĐỌC TRƯỚC)
 Mọi response **thành công** đều được bọc envelope — schema/Example Value bên dưới mô tả phần **CHƯA bọc** (chính là `data`):
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* shape mô tả trong từng API *\/ } }
+{ "success": true, "message": "Thành công", "data": { /* shape mô tả trong từng API *\/ } }
 ```
 → **FE luôn đọc `res.data`** (KHÔNG đọc thẳng field gốc). Một số API trả `message` tuỳ biến (vd xoá) → message nằm ở top-level, `data` có thể `null`.
 
 Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 ```jsonc
-{ "success": false, "statusCode": 409, "message": "Error.ProposalNotEditable" }   // lỗi đơn
-{ "success": false, "statusCode": 422, "message": "Invalid email",
-  "errors": [ { "message": "Invalid email", "path": "email" } ] }                  // lỗi field-level
+{ "success": false, "statusCode": 409, "code": "Error.ProposalNotEditable",
+  "message": "Không thể chỉnh sửa bản đề xuất ở trạng thái hiện tại" }             // lỗi đơn
+{ "success": false, "statusCode": 422, "code": "Error.ValidationFailed",
+  "message": "Địa chỉ email không hợp lệ",
+  "errors": [ { "code": null, "message": "Địa chỉ email không hợp lệ", "path": "email" } ] } // lỗi field-level
 ```
-`message` luôn là **string**; với mã `Error.*` thì FE map sang text hiển thị. Validation fail = **422** (không phải 400).
+`message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
 import type {
+  ApproveTaskGroupResDtoOutput,
   BatchCreateTaskBodyDto,
   CancelTaskBodyDto,
   CreateRegionBodyDto,
   CreateTaskBodyDto,
+  CreateTaskGroupBodyDto,
   DeleteRegionResDtoOutput,
   ReassignTaskBodyDto,
   RegionListResDtoOutput,
   RegionResDtoOutput,
   RequestRevisionBodyDto,
   SubmitTaskBodyDto,
+  TaskControllerApproveTaskGroupPathParameters,
   TaskControllerApproveTaskPathParameters,
   TaskControllerCancelTaskPathParameters,
   TaskControllerCreateRegionPathParameters,
+  TaskControllerGetTaskFileDownloadUrlPathParameters,
   TaskControllerGetTaskPathParameters,
   TaskControllerListRegionsPathParameters,
   TaskControllerListTasksParams,
@@ -44,6 +50,9 @@ import type {
   TaskControllerSubmitTaskPathParameters,
   TaskControllerUpdateRegionPathParameters,
   TaskControllerUpdateTaskPathParameters,
+  TaskFileDownloadBodyDto,
+  TaskFileDownloadResDtoOutput,
+  TaskGroupResDtoOutput,
   TaskListResDtoOutput,
   TaskResDtoOutput,
   UpdateRegionBodyDto,
@@ -60,21 +69,6 @@ export type taskControllerCreateRegionResponse201 = {
   status: 201
 }
 
-export type taskControllerCreateRegionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerCreateRegionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerCreateRegionResponse409 = {
-  data: void
-  status: 409
-}
-
 export type taskControllerCreateRegionResponse422 = {
   data: void
   status: 422
@@ -83,7 +77,7 @@ export type taskControllerCreateRegionResponse422 = {
 export type taskControllerCreateRegionResponseSuccess = (taskControllerCreateRegionResponse201) & {
   headers: Headers;
 };
-export type taskControllerCreateRegionResponseError = (taskControllerCreateRegionResponse403 | taskControllerCreateRegionResponse404 | taskControllerCreateRegionResponse409 | taskControllerCreateRegionResponse422) & {
+export type taskControllerCreateRegionResponseError = (taskControllerCreateRegionResponse422) & {
   headers: Headers;
 };
 
@@ -118,25 +112,13 @@ export type taskControllerListRegionsResponse200 = {
   data: RegionListResDtoOutput
   status: 200
 }
-
-export type taskControllerListRegionsResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerListRegionsResponse404 = {
-  data: void
-  status: 404
-}
     
 export type taskControllerListRegionsResponseSuccess = (taskControllerListRegionsResponse200) & {
   headers: Headers;
 };
-export type taskControllerListRegionsResponseError = (taskControllerListRegionsResponse403 | taskControllerListRegionsResponse404) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerListRegionsResponse = (taskControllerListRegionsResponseSuccess | taskControllerListRegionsResponseError)
+export type taskControllerListRegionsResponse = (taskControllerListRegionsResponseSuccess)
 
 export const getTaskControllerListRegionsUrl = ({ id }: TaskControllerListRegionsPathParameters,) => {
 
@@ -166,21 +148,6 @@ export type taskControllerUpdateRegionResponse200 = {
   status: 200
 }
 
-export type taskControllerUpdateRegionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerUpdateRegionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerUpdateRegionResponse409 = {
-  data: void
-  status: 409
-}
-
 export type taskControllerUpdateRegionResponse422 = {
   data: void
   status: 422
@@ -189,7 +156,7 @@ export type taskControllerUpdateRegionResponse422 = {
 export type taskControllerUpdateRegionResponseSuccess = (taskControllerUpdateRegionResponse200) & {
   headers: Headers;
 };
-export type taskControllerUpdateRegionResponseError = (taskControllerUpdateRegionResponse403 | taskControllerUpdateRegionResponse404 | taskControllerUpdateRegionResponse409 | taskControllerUpdateRegionResponse422) & {
+export type taskControllerUpdateRegionResponseError = (taskControllerUpdateRegionResponse422) & {
   headers: Headers;
 };
 
@@ -224,30 +191,13 @@ export type taskControllerRemoveRegionResponse200 = {
   data: DeleteRegionResDtoOutput
   status: 200
 }
-
-export type taskControllerRemoveRegionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerRemoveRegionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerRemoveRegionResponse409 = {
-  data: void
-  status: 409
-}
     
 export type taskControllerRemoveRegionResponseSuccess = (taskControllerRemoveRegionResponse200) & {
   headers: Headers;
 };
-export type taskControllerRemoveRegionResponseError = (taskControllerRemoveRegionResponse403 | taskControllerRemoveRegionResponse404 | taskControllerRemoveRegionResponse409) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerRemoveRegionResponse = (taskControllerRemoveRegionResponseSuccess | taskControllerRemoveRegionResponseError)
+export type taskControllerRemoveRegionResponse = (taskControllerRemoveRegionResponseSuccess)
 
 export const getTaskControllerRemoveRegionUrl = ({ id }: TaskControllerRemoveRegionPathParameters,) => {
 
@@ -276,35 +226,13 @@ export type taskControllerCreateTaskResponse201 = {
   data: TaskResDtoOutput
   status: 201
 }
-
-export type taskControllerCreateTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerCreateTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerCreateTaskResponse409 = {
-  data: void
-  status: 409
-}
-
-export type taskControllerCreateTaskResponse422 = {
-  data: void
-  status: 422
-}
     
 export type taskControllerCreateTaskResponseSuccess = (taskControllerCreateTaskResponse201) & {
   headers: Headers;
 };
-export type taskControllerCreateTaskResponseError = (taskControllerCreateTaskResponse403 | taskControllerCreateTaskResponse404 | taskControllerCreateTaskResponse409 | taskControllerCreateTaskResponse422) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerCreateTaskResponse = (taskControllerCreateTaskResponseSuccess | taskControllerCreateTaskResponseError)
+export type taskControllerCreateTaskResponse = (taskControllerCreateTaskResponseSuccess)
 
 export const getTaskControllerCreateTaskUrl = () => {
 
@@ -328,7 +256,7 @@ export const taskControllerCreateTask = async (createTaskBodyDto: CreateTaskBody
 
 
 /**
- * @summary Danh sách task theo status/regionId (Assistant=được giao; Mangaka=theo pageId sở hữu)
+ * @summary Danh sách task. Assistant = task được giao cho mình; Mangaka = task thuộc mọi series mình sở hữu (KHÔNG cần pageId), lọc dần bằng seriesId/chapterId/pageId/assistantId/status. Scope không thuộc mình → trả rỗng, không 403.
  */
 export type taskControllerListTasksResponse200 = {
   data: TaskListResDtoOutput
@@ -376,35 +304,13 @@ export type taskControllerCreateTaskBatchResponse201 = {
   data: TaskListResDtoOutput
   status: 201
 }
-
-export type taskControllerCreateTaskBatchResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerCreateTaskBatchResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerCreateTaskBatchResponse409 = {
-  data: void
-  status: 409
-}
-
-export type taskControllerCreateTaskBatchResponse422 = {
-  data: void
-  status: 422
-}
     
 export type taskControllerCreateTaskBatchResponseSuccess = (taskControllerCreateTaskBatchResponse201) & {
   headers: Headers;
 };
-export type taskControllerCreateTaskBatchResponseError = (taskControllerCreateTaskBatchResponse403 | taskControllerCreateTaskBatchResponse404 | taskControllerCreateTaskBatchResponse409 | taskControllerCreateTaskBatchResponse422) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerCreateTaskBatchResponse = (taskControllerCreateTaskBatchResponseSuccess | taskControllerCreateTaskBatchResponseError)
+export type taskControllerCreateTaskBatchResponse = (taskControllerCreateTaskBatchResponseSuccess)
 
 export const getTaskControllerCreateTaskBatchUrl = () => {
 
@@ -428,41 +334,90 @@ export const taskControllerCreateTaskBatch = async (batchCreateTaskBodyDto: Batc
 
 
 /**
+ * @summary Giao MỘT đầu việc trải nhiều trang (vd "vẽ nền ch.5 trang 1-10"). Backend tạo N task — mỗi trang 1 task — dùng chung groupId; all-or-nothing. Region/tiến độ/duyệt vẫn theo từng trang.
+ */
+export type taskControllerCreateTaskGroupResponse201 = {
+  data: TaskGroupResDtoOutput
+  status: 201
+}
+    
+export type taskControllerCreateTaskGroupResponseSuccess = (taskControllerCreateTaskGroupResponse201) & {
+  headers: Headers;
+};
+;
+
+export type taskControllerCreateTaskGroupResponse = (taskControllerCreateTaskGroupResponseSuccess)
+
+export const getTaskControllerCreateTaskGroupUrl = () => {
+
+
+  
+
+  return `/tasks/group`
+}
+
+export const taskControllerCreateTaskGroup = async (createTaskGroupBodyDto: CreateTaskGroupBodyDto, options?: RequestInit): Promise<taskControllerCreateTaskGroupResponse> => {
+  
+  return customFetch<taskControllerCreateTaskGroupResponse>(getTaskControllerCreateTaskGroupUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createTaskGroupBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Duyệt cả nhóm việc. Chỉ duyệt task đang SUBMITTED/UNDER_REVIEW; task chưa tới lượt được liệt kê ở `skipped`.
+ */
+export type taskControllerApproveTaskGroupResponse201 = {
+  data: ApproveTaskGroupResDtoOutput
+  status: 201
+}
+    
+export type taskControllerApproveTaskGroupResponseSuccess = (taskControllerApproveTaskGroupResponse201) & {
+  headers: Headers;
+};
+;
+
+export type taskControllerApproveTaskGroupResponse = (taskControllerApproveTaskGroupResponseSuccess)
+
+export const getTaskControllerApproveTaskGroupUrl = ({ groupId }: TaskControllerApproveTaskGroupPathParameters,) => {
+
+
+  
+
+  return `/tasks/group/${groupId}/approve`
+}
+
+export const taskControllerApproveTaskGroup = async ({ groupId }: TaskControllerApproveTaskGroupPathParameters, options?: RequestInit): Promise<taskControllerApproveTaskGroupResponse> => {
+  
+  return customFetch<taskControllerApproveTaskGroupResponse>(getTaskControllerApproveTaskGroupUrl({ groupId }),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+/**
  * @summary Sửa task (assetIds/deadline/priority)
  */
 export type taskControllerUpdateTaskResponse200 = {
   data: TaskResDtoOutput
   status: 200
 }
-
-export type taskControllerUpdateTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerUpdateTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerUpdateTaskResponse409 = {
-  data: void
-  status: 409
-}
-
-export type taskControllerUpdateTaskResponse422 = {
-  data: void
-  status: 422
-}
     
 export type taskControllerUpdateTaskResponseSuccess = (taskControllerUpdateTaskResponse200) & {
   headers: Headers;
 };
-export type taskControllerUpdateTaskResponseError = (taskControllerUpdateTaskResponse403 | taskControllerUpdateTaskResponse404 | taskControllerUpdateTaskResponse409 | taskControllerUpdateTaskResponse422) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerUpdateTaskResponse = (taskControllerUpdateTaskResponseSuccess | taskControllerUpdateTaskResponseError)
+export type taskControllerUpdateTaskResponse = (taskControllerUpdateTaskResponseSuccess)
 
 export const getTaskControllerUpdateTaskUrl = ({ id }: TaskControllerUpdateTaskPathParameters,) => {
 
@@ -493,20 +448,13 @@ export type taskControllerGetTaskResponse200 = {
   data: TaskResDtoOutput
   status: 200
 }
-
-export type taskControllerGetTaskResponse404 = {
-  data: void
-  status: 404
-}
     
 export type taskControllerGetTaskResponseSuccess = (taskControllerGetTaskResponse200) & {
   headers: Headers;
 };
-export type taskControllerGetTaskResponseError = (taskControllerGetTaskResponse404) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerGetTaskResponse = (taskControllerGetTaskResponseSuccess | taskControllerGetTaskResponseError)
+export type taskControllerGetTaskResponse = (taskControllerGetTaskResponseSuccess)
 
 export const getTaskControllerGetTaskUrl = ({ id }: TaskControllerGetTaskPathParameters,) => {
 
@@ -529,36 +477,56 @@ export const taskControllerGetTask = async ({ id }: TaskControllerGetTaskPathPar
 
 
 /**
+ * @summary Ký signed URL tải file của task (ảnh gốc trang Mangaka giao / file version Assistant nộp)
+ */
+export type taskControllerGetTaskFileDownloadUrlResponse201 = {
+  data: TaskFileDownloadResDtoOutput
+  status: 201
+}
+    
+export type taskControllerGetTaskFileDownloadUrlResponseSuccess = (taskControllerGetTaskFileDownloadUrlResponse201) & {
+  headers: Headers;
+};
+;
+
+export type taskControllerGetTaskFileDownloadUrlResponse = (taskControllerGetTaskFileDownloadUrlResponseSuccess)
+
+export const getTaskControllerGetTaskFileDownloadUrlUrl = ({ id }: TaskControllerGetTaskFileDownloadUrlPathParameters,) => {
+
+
+  
+
+  return `/tasks/${id}/download-url`
+}
+
+export const taskControllerGetTaskFileDownloadUrl = async ({ id }: TaskControllerGetTaskFileDownloadUrlPathParameters,
+    taskFileDownloadBodyDto: TaskFileDownloadBodyDto, options?: RequestInit): Promise<taskControllerGetTaskFileDownloadUrlResponse> => {
+  
+  return customFetch<taskControllerGetTaskFileDownloadUrlResponse>(getTaskControllerGetTaskFileDownloadUrlUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      taskFileDownloadBodyDto,)
+  }
+);}
+
+
+/**
  * @summary Assistant bắt đầu xử lý task → IN_PROGRESS (SRS §2.2a)
  */
 export type taskControllerStartTaskResponse201 = {
   data: TaskResDtoOutput
   status: 201
 }
-
-export type taskControllerStartTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerStartTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerStartTaskResponse409 = {
-  data: void
-  status: 409
-}
     
 export type taskControllerStartTaskResponseSuccess = (taskControllerStartTaskResponse201) & {
   headers: Headers;
 };
-export type taskControllerStartTaskResponseError = (taskControllerStartTaskResponse403 | taskControllerStartTaskResponse404 | taskControllerStartTaskResponse409) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerStartTaskResponse = (taskControllerStartTaskResponseSuccess | taskControllerStartTaskResponseError)
+export type taskControllerStartTaskResponse = (taskControllerStartTaskResponseSuccess)
 
 export const getTaskControllerStartTaskUrl = ({ id }: TaskControllerStartTaskPathParameters,) => {
 
@@ -581,26 +549,11 @@ export const taskControllerStartTask = async ({ id }: TaskControllerStartTaskPat
 
 
 /**
- * @summary Assistant nộp kết quả → SUBMITTED + TaskVersion + cascade
+ * @summary Assistant nộp kết quả → SUBMITTED + TaskVersion
  */
 export type taskControllerSubmitTaskResponse201 = {
   data: TaskResDtoOutput
   status: 201
-}
-
-export type taskControllerSubmitTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerSubmitTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerSubmitTaskResponse409 = {
-  data: void
-  status: 409
 }
 
 export type taskControllerSubmitTaskResponse422 = {
@@ -611,7 +564,7 @@ export type taskControllerSubmitTaskResponse422 = {
 export type taskControllerSubmitTaskResponseSuccess = (taskControllerSubmitTaskResponse201) & {
   headers: Headers;
 };
-export type taskControllerSubmitTaskResponseError = (taskControllerSubmitTaskResponse403 | taskControllerSubmitTaskResponse404 | taskControllerSubmitTaskResponse409 | taskControllerSubmitTaskResponse422) & {
+export type taskControllerSubmitTaskResponseError = (taskControllerSubmitTaskResponse422) & {
   headers: Headers;
 };
 
@@ -646,30 +599,13 @@ export type taskControllerApproveTaskResponse201 = {
   data: TaskResDtoOutput
   status: 201
 }
-
-export type taskControllerApproveTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerApproveTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerApproveTaskResponse409 = {
-  data: void
-  status: 409
-}
     
 export type taskControllerApproveTaskResponseSuccess = (taskControllerApproveTaskResponse201) & {
   headers: Headers;
 };
-export type taskControllerApproveTaskResponseError = (taskControllerApproveTaskResponse403 | taskControllerApproveTaskResponse404 | taskControllerApproveTaskResponse409) & {
-  headers: Headers;
-};
+;
 
-export type taskControllerApproveTaskResponse = (taskControllerApproveTaskResponseSuccess | taskControllerApproveTaskResponseError)
+export type taskControllerApproveTaskResponse = (taskControllerApproveTaskResponseSuccess)
 
 export const getTaskControllerApproveTaskUrl = ({ id }: TaskControllerApproveTaskPathParameters,) => {
 
@@ -699,21 +635,6 @@ export type taskControllerRequestRevisionResponse201 = {
   status: 201
 }
 
-export type taskControllerRequestRevisionResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerRequestRevisionResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerRequestRevisionResponse409 = {
-  data: void
-  status: 409
-}
-
 export type taskControllerRequestRevisionResponse422 = {
   data: void
   status: 422
@@ -722,7 +643,7 @@ export type taskControllerRequestRevisionResponse422 = {
 export type taskControllerRequestRevisionResponseSuccess = (taskControllerRequestRevisionResponse201) & {
   headers: Headers;
 };
-export type taskControllerRequestRevisionResponseError = (taskControllerRequestRevisionResponse403 | taskControllerRequestRevisionResponse404 | taskControllerRequestRevisionResponse409 | taskControllerRequestRevisionResponse422) & {
+export type taskControllerRequestRevisionResponseError = (taskControllerRequestRevisionResponse422) & {
   headers: Headers;
 };
 
@@ -758,21 +679,6 @@ export type taskControllerCancelTaskResponse201 = {
   status: 201
 }
 
-export type taskControllerCancelTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerCancelTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerCancelTaskResponse409 = {
-  data: void
-  status: 409
-}
-
 export type taskControllerCancelTaskResponse422 = {
   data: void
   status: 422
@@ -781,7 +687,7 @@ export type taskControllerCancelTaskResponse422 = {
 export type taskControllerCancelTaskResponseSuccess = (taskControllerCancelTaskResponse201) & {
   headers: Headers;
 };
-export type taskControllerCancelTaskResponseError = (taskControllerCancelTaskResponse403 | taskControllerCancelTaskResponse404 | taskControllerCancelTaskResponse409 | taskControllerCancelTaskResponse422) & {
+export type taskControllerCancelTaskResponseError = (taskControllerCancelTaskResponse422) & {
   headers: Headers;
 };
 
@@ -817,21 +723,6 @@ export type taskControllerReassignTaskResponse201 = {
   status: 201
 }
 
-export type taskControllerReassignTaskResponse403 = {
-  data: void
-  status: 403
-}
-
-export type taskControllerReassignTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type taskControllerReassignTaskResponse409 = {
-  data: void
-  status: 409
-}
-
 export type taskControllerReassignTaskResponse422 = {
   data: void
   status: 422
@@ -840,7 +731,7 @@ export type taskControllerReassignTaskResponse422 = {
 export type taskControllerReassignTaskResponseSuccess = (taskControllerReassignTaskResponse201) & {
   headers: Headers;
 };
-export type taskControllerReassignTaskResponseError = (taskControllerReassignTaskResponse403 | taskControllerReassignTaskResponse404 | taskControllerReassignTaskResponse409 | taskControllerReassignTaskResponse422) & {
+export type taskControllerReassignTaskResponseError = (taskControllerReassignTaskResponse422) & {
   headers: Headers;
 };
 

@@ -7,11 +7,11 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { StudioControllerListAssignmentsStatus } from '~/api/model/studio/studioControllerListAssignmentsStatus'
 import { AssignmentCard } from '~/features/mangaka/assistants/components/assignment-card'
 import { AssignTaskDialog } from '~/features/mangaka/assistants/components/assign-task-dialog'
+import { StudioTasksTab } from '~/features/mangaka/studio/components/studio-tasks-tab'
 import { useMyStudioAssignments } from './use-my-studio-assignments'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { TaskBoard } from '~/features/mangaka/assistants/components/task-board'
-import { useMangakaTasks } from '~/features/mangaka/assistants/use-mangaka-tasks'
+import type { UseTaskComposerDataOptions } from '~/features/mangaka/assistants/use-task-composer-data'
 
 const STATUS_FILTERS: ReadonlyArray<StudioControllerListAssignmentsStatus> = ['ACTIVE', 'COMPLETED', 'TERMINATED']
 
@@ -34,10 +34,10 @@ export function MyStudioPage() {
   const navigate = useNavigate()
 
   const [taskDialogOpen, setTaskDialogOpen] = useState(false)
+  const [taskPreset, setTaskPreset] = useState<UseTaskComposerDataOptions>({})
 
   const { items, total, page, perPage, isLoading, error, status, setStatus, setPage, refresh } =
     useMyStudioAssignments()
-  const tasks = useMangakaTasks()
 
   const totalPages = Math.max(1, Math.ceil(total / perPage))
   const from = total === 0 ? 0 : (page - 1) * perPage + 1
@@ -57,7 +57,10 @@ export function MyStudioPage() {
         <div className='flex items-center gap-2'>
           <button
             type='button'
-            onClick={() => setTaskDialogOpen(true)}
+            onClick={() => {
+              setTaskPreset({})
+              setTaskDialogOpen(true)
+            }}
             className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 cursor-pointer'
           >
             <Plus className='h-3.5 w-3.5' />
@@ -141,8 +144,20 @@ export function MyStudioPage() {
         ) : (
           <>
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-              {items.map(({ assignment, assistant }) => (
-                <AssignmentCard key={assignment.id} assignment={assignment} assistant={assistant} />
+              {items.map(({ assignment }) => (
+                <AssignmentCard
+                  key={assignment.id}
+                  assignment={assignment}
+                  onAssignClick={(a) => {
+                    // Pre-fill the composer with the assignment + (if available)
+                    // the series this hire is scoped to.
+                    setTaskPreset({
+                      presetAssignmentId: a.id,
+                      ...(a.seriesId ? { presetSeriesId: a.seriesId } : {})
+                    })
+                    setTaskDialogOpen(true)
+                  }}
+                />
               ))}
             </div>
 
@@ -193,50 +208,24 @@ export function MyStudioPage() {
       </div>
 
       <section className='rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5'>
-        <h2 className='mb-4 text-sm font-bold uppercase tracking-wider text-foreground'>{t('studio.tasks.title')}</h2>
-        <TaskBoard
-          tasks={tasks.tasks}
-          isLoading={tasks.isLoading}
-          error={tasks.error}
-          onRefresh={tasks.refresh}
-          onApprove={(taskId) => {
-            void tasks.approveTask(taskId).then((result) => {
-              if (result.success) toast.success(t('tasks.toast.approved'))
-              else toast.error(result.error ?? t('tasks.errors.approveFailed'))
-            })
-          }}
-          onRequestRevision={(taskId) => {
-            const note = window.prompt(t('tasks.board.revisionPrompt'))?.trim()
-            if (!note) return
-            void tasks.requestRevision(taskId, note).then((result) => {
-              if (result.success) toast.success(t('tasks.toast.revisionRequested'))
-              else toast.error(result.error ?? t('tasks.errors.revisionFailed'))
-            })
-          }}
-          onCancel={(taskId) => {
-            const reason = window.prompt(t('tasks.board.cancelPrompt'))?.trim()
-            if (reason === undefined) return
-            void tasks.cancelTask(taskId, reason || undefined).then((result) => {
-              if (result.success) toast.success(t('tasks.toast.cancelled'))
-              else toast.error(result.error ?? t('tasks.errors.cancelFailed'))
-            })
-          }}
-          filters={tasks.filters}
-          onFiltersChange={tasks.setFilters}
-          page={tasks.page}
-          totalPages={Math.max(1, Math.ceil(tasks.total / tasks.perPage))}
-          onPageChange={tasks.setPage}
-        />
+        <div className='mb-4 flex items-center justify-between'>
+          <h2 className='text-sm font-bold uppercase tracking-wider text-foreground'>{t('studio.tasks.title')}</h2>
+        </div>
+        <StudioTasksTab />
       </section>
 
       {/* Task Assignment Dialog */}
       <AssignTaskDialog
         open={taskDialogOpen}
         openFrom='studio'
-        onClose={() => setTaskDialogOpen(false)}
+        preset={taskPreset}
+        onClose={() => {
+          setTaskDialogOpen(false)
+          setTaskPreset({})
+        }}
         onSuccess={() => {
           refresh()
-          tasks.refresh()
+          toast.success(t('tasks.toast.created'))
         }}
       />
     </div>
