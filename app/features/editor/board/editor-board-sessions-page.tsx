@@ -134,7 +134,6 @@ function CreateSessionDialog({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
-  const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const timeRangeIsValid = Boolean(startTime) && (!endTime || endTime > startTime)
@@ -155,6 +154,7 @@ function CreateSessionDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='createSession' />
+        <input type='hidden' name='rosterSourceSeriesId' value={series[0]?.id ?? ''} />
         {!series.length && (
           <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
             {t('board.noEligibleSeriesForSession')}
@@ -172,26 +172,6 @@ function CreateSessionDialog({
         <label className='grid gap-1.5 text-sm font-semibold'>
           {t('board.sessionName')}
           <input className={boardInput} name='title' minLength={5} required />
-        </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
-          {t('board.rosterSourceSeries')}
-          <select
-            className={boardInput}
-            name='rosterSourceSeriesId'
-            required
-            value={rosterSourceSeriesId}
-            onChange={(event) => setRosterSourceSeriesId(event.target.value)}
-          >
-            <option value='' disabled>
-              {t('board.rosterSourceSeries')}
-            </option>
-            {series.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title} · {t(`seriesStatuses.${item.status}`, { defaultValue: item.status })}
-              </option>
-            ))}
-          </select>
-          <span className='text-xs font-normal text-muted-foreground'>{t('board.rosterSourceSeriesHint')}</span>
         </label>
         <div className='grid min-w-0 gap-3'>
           <label className='grid min-w-0 gap-1.5 text-sm font-semibold'>
@@ -235,7 +215,7 @@ function CreateSessionDialog({
             {t('actions.cancel')}
           </button>
           <button
-            disabled={fetcher.state !== 'idle' || !series.length || !rosterSourceSeriesId || !timeRangeIsValid}
+            disabled={fetcher.state !== 'idle' || !series.length || !timeRangeIsValid}
             className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? (
