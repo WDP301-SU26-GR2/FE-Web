@@ -43,9 +43,13 @@ export function EditorBoardSessionsPage({
   const [sessionSearch, setSessionSearch] = useState('')
   const [sessionStatus, setSessionStatus] = useState('')
   useBoardAutoRefresh()
-  const voteProgress = useEditorSessionVoteProgress(sessions, decisions)
+  const currentUserId = authSession?.user.id ?? ''
+  const visibleSessions = manageAll ? sessions : sessions.filter((session) => session.creatorId === currentUserId)
+  const visibleSessionIds = new Set(visibleSessions.map((session) => session.id))
+  const visibleDecisions = decisions.filter((decision) => visibleSessionIds.has(decision.boardSessionId))
+  const voteProgress = useEditorSessionVoteProgress(visibleSessions, visibleDecisions)
   const filteredSessions = orderBoardSessions(
-    sessions.filter(
+    visibleSessions.filter(
       (session) =>
         (!sessionStatus || session.status === sessionStatus) &&
         (!sessionSearch || session.title.toLowerCase().includes(sessionSearch.toLowerCase()))
@@ -89,7 +93,7 @@ export function EditorBoardSessionsPage({
               <option value='CONCLUDED'>{t('board.sessionStatuses.CONCLUDED')}</option>
             </select>
           </div>
-          {!!sessions.some((session) => session.status === 'ACTIVE') && (
+          {!!visibleSessions.some((session) => session.status === 'ACTIVE') && (
             <div className='flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
               <Radio className={`size-4 ${voteProgress.connectionState === 'connected' ? 'text-primary' : ''}`} />
               {t(`board.realtime.${voteProgress.connectionState}`)}
@@ -100,7 +104,7 @@ export function EditorBoardSessionsPage({
               key={session.id}
               session={session}
               decisions={voteProgress.decisions.filter((decision) => decision.boardSessionId === session.id)}
-              currentUserId={authSession?.user.id ?? ''}
+              currentUserId={currentUserId}
               manageAll={manageAll}
               detailBasePath={detailBasePath}
             />
