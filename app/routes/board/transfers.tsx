@@ -1,6 +1,4 @@
 import { boardControllerGetSessions } from '~/api/operations/board/board'
-import { authControllerSendOtp } from '~/api/operations/auth/auth'
-import { usersControllerGetMe } from '~/api/operations/users/users'
 import {
   transferControllerBoardApproveScreening,
   transferControllerBoardAssignFullBuyout,
@@ -26,12 +24,19 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null,
       requestId ? transferControllerGetTransferRequestById({ id: requestId }).catch(() => null) : null
     ])
-    const requestItems = requests.data.data
-    if (focusedRequest?.status === 200 && !requestItems.some((item) => item.id === focusedRequest.data.id)) {
-      requestItems.unshift(focusedRequest.data as (typeof requestItems)[number])
+    const requestItems = await Promise.all(
+      requests.data.data.map((item) =>
+        transferControllerGetTransferRequestById({ id: item.id })
+          .then((response) => response.data)
+          .catch(() => null)
+      )
+    )
+    const availableRequests = requestItems.filter((item) => item !== null)
+    if (focusedRequest?.status === 200 && !availableRequests.some((item) => item.id === focusedRequest.data.id)) {
+      availableRequests.unshift(focusedRequest.data)
     }
     return {
-      requests: requestItems,
+      requests: availableRequests,
       sessions: sessions.data,
       contractId,
       requestId,
@@ -47,11 +52,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (intent === 'sendOtp') {
-      const me = await usersControllerGetMe()
-      if (me.status !== 200) throw new Error('Unable to load current user')
-      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
-    } else if (intent === 'approve' || intent === 'reject') {
+    if (intent === 'approve' || intent === 'reject') {
       const params = { id: required(form, 'requestId') }
       const body = {
         boardSessionId: required(form, 'sessionId'),
@@ -63,7 +64,10 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const conditionTypes = form.getAll('conditionType').map(String)
       const conditionValues = form.getAll('conditionValue').map(Number)
       const conditionDescriptions = form.getAll('conditionDescription').map(String)
-      if (!conditionTypes.length || conditionTypes.some((_, index) => !conditionDescriptions[index] || !Number.isFinite(conditionValues[index]))) {
+      if (
+        !conditionTypes.length ||
+        conditionTypes.some((_, index) => !conditionDescriptions[index] || !Number.isFinite(conditionValues[index]))
+      ) {
         throw new Error('Điều kiện hợp đồng chưa đầy đủ.')
       }
       await transferControllerBoardAssignFullBuyout(
@@ -86,25 +90,19 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (!signedRoles.has('MANGAKA_A') || !signedRoles.has('MANGAKA_B')) {
         throw new Error('Cần đủ chữ ký của hai Mangaka trước khi Hội đồng ký.')
       }
-      await transferControllerSignTransferContract(
-        { id: contractId },
-        { otpCode: required(form, 'otpCode') },
-        { signerRole: 'BOARD' }
-      )
+      await transferControllerSignTransferContract({ id: contractId }, { otpCode: required(form, 'otpCode') })
     } else return { ok: false, intent }
     return {
       ok: true,
       intent,
       messageKey:
-        intent === 'sendOtp'
-          ? 'transferOtpSent'
-          : intent === 'approve'
-            ? 'transferScreeningApproved'
-            : intent === 'reject'
-              ? 'transferScreeningRejected'
-              : intent === 'fullBuyout'
-                ? 'fullBuyoutAssigned'
-                : 'transferContractSigned',
+        intent === 'approve'
+          ? 'transferScreeningApproved'
+          : intent === 'reject'
+            ? 'transferScreeningRejected'
+            : intent === 'fullBuyout'
+              ? 'fullBuyoutAssigned'
+              : 'transferContractSigned',
       requestId: String(form.get('requestId') ?? '') || undefined
     }
   } catch (error) {

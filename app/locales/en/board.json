@@ -31,7 +31,9 @@
     "transferScreeningApproved": "The transfer screening was approved successfully.",
     "transferScreeningRejected": "The transfer screening was rejected.",
     "fullBuyoutAssigned": "The full-buyout transfer plan was configured.",
-    "transferContractSigned": "The transfer contract was signed successfully."
+    "transferContractSigned": "The transfer contract was signed successfully.",
+    "tankobonSalesRecorded": "Tankobon sales were recorded successfully.",
+    "taskDownloadReady": "The protected task download is ready."
   },
   "nav": {
     "sessions": "Board sessions",
@@ -44,6 +46,7 @@
     "reprints": "Reprint requests",
     "transfers": "Series transfers",
     "audit": "Audit history",
+    "reference": "Decision reference data",
     "notifications": "Notifications",
     "profile": "Board profile"
   },
@@ -178,6 +181,11 @@
     "emptyPending": "No active decision currently requires your attention.",
     "emptyRisk": "No severe-risk series were reported.",
     "unranked": "Not ranked in the latest period",
+    "config": {
+      "members": "Configured Board members",
+      "defaultRoster": "Default roster size",
+      "majority": "Approval majority"
+    },
     "sections": {
       "sessions": "Review sessions assigned to you and their agenda.",
       "decisions": "Inspect active decisions and cast your Board vote.",
@@ -189,6 +197,7 @@
       "reprints": "Review and approve reprint workflows.",
       "transfers": "Screen transfer requests and sign transfer agreements.",
       "audit": "Trace business state changes and system actions.",
+      "reference": "Inspect defense, survey, publication and production evidence.",
       "notifications": "Track items requiring Board attention.",
       "profile": "Maintain specialties used for session assignment."
     }
@@ -545,5 +554,31 @@
     "filter": "Apply filters",
     "system": "System",
     "empty": "No audit records were found."
+  },
+  "reference": {
+    "title": "Decision reference data",
+    "description": "Inspect the evidence used for Board decisions without changing production state.",
+    "seriesTitle": "Series defense and publication",
+    "selectSeries": "Select a series",
+    "seriesNameId": "Proposal Name ID (optional)",
+    "publicationVersionId": "Publication version ID (optional)",
+    "surveyTitle": "Survey and ranking evidence",
+    "selectSurvey": "Select a survey period",
+    "productionTitle": "Chapter production reference",
+    "chapterId": "Chapter ID",
+    "chapterNameId": "Chapter Name ID (optional)",
+    "enterChapter": "Enter a chapter ID to inspect production progress.",
+    "directoriesTitle": "Mangaka and assistant directories",
+    "revisionsTitle": "Revision request history",
+    "salesTitle": "Record tankobon sales",
+    "period": "Period, for example 2026-Q2",
+    "volume": "Volume number",
+    "unitsSold": "Units sold",
+    "recordSales": "Record sales",
+    "taskFileTitle": "Protected task file",
+    "taskId": "Task ID",
+    "fileKey": "Task file key",
+    "signDownload": "Create download link",
+    "openDownload": "Open protected download"
   }
 }

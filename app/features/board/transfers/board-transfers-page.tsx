@@ -2,11 +2,8 @@ import { useEffect, useState } from 'react'
 import { Form, useFetcher, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { PenLine } from 'lucide-react'
-import type { BoardSessionResDtoOutput } from '~/api/model/board'
-import type {
-  TransferRequestListResDtoOutputDataItem,
-  TransferSignatureListResDtoOutputSignaturesItem
-} from '~/api/model/transfer'
+import type { BoardSessionListItemDtoOutput } from '~/api/model/board'
+import type { TransferRequestResDtoOutput, TransferSignatureListResDtoOutputSignaturesItem } from '~/api/model/transfer'
 import {
   BoardActionDialog,
   boardInput,
@@ -25,8 +22,8 @@ export function BoardTransfersPage({
   signatures,
   hasError
 }: {
-  requests: TransferRequestListResDtoOutputDataItem[]
-  sessions: BoardSessionResDtoOutput[]
+  requests: TransferRequestResDtoOutput[]
+  sessions: BoardSessionListItemDtoOutput[]
   contractId: string
   requestId: string
   signatures: TransferSignatureListResDtoOutputSignaturesItem[]
@@ -150,15 +147,6 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
           placeholder={t('transfers.contractId')}
           required
         />
-        <button
-          name='intent'
-          value='sendOtp'
-          formNoValidate
-          disabled={fetcher.state !== 'idle'}
-          className='h-10 rounded-md border border-border px-3 text-sm font-bold disabled:opacity-60'
-        >
-          {t('contracts.sendOtp')}
-        </button>
         <input
           className={boardInput}
           name='otpCode'
@@ -194,8 +182,8 @@ function TransferCard({
   item,
   sessions
 }: {
-  item: TransferRequestListResDtoOutputDataItem
-  sessions: BoardSessionResDtoOutput[]
+  item: TransferRequestResDtoOutput
+  sessions: BoardSessionListItemDtoOutput[]
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
@@ -270,7 +258,7 @@ function TransferCard({
   )
 }
 
-function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardSessionResDtoOutput[] }) {
+function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardSessionListItemDtoOutput[] }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const [conditionCount, setConditionCount] = useState(1)

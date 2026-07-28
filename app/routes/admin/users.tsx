@@ -38,6 +38,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     limit,
     offset: (page - 1) * limit,
     includeDeleted: searchParams.get('includeDeleted') === 'true' ? 'true' : 'false',
+    onlyDeleted: searchParams.get('onlyDeleted') === 'true' ? 'true' : 'false',
     roleCode: roleCode as UsersControllerListUsersRoleCode | undefined,
     status: status as UsersControllerListUsersStatus | undefined,
     search

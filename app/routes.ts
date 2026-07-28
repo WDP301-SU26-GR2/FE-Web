@@ -110,6 +110,7 @@ export default [
       route('reprints', 'routes/board/reprints.tsx'),
       route('transfers', 'routes/board/transfers.tsx'),
       route('audit', 'routes/board/audit.tsx'),
+      route('reference', 'routes/board/reference.tsx'),
       route('notifications', 'routes/board/notifications.tsx'),
       route('profile', 'routes/board/profile.tsx')
     ])
@@ -134,6 +135,7 @@ export default [
       route('operations/monitoring', 'routes/admin/operations-monitoring.tsx'),
       route('operations/surveys', 'routes/admin/operations-surveys.tsx'),
       route('operations/publication-versions', 'routes/admin/operations-versions.tsx'),
+      route('operations/reference', 'routes/admin/operations-reference.tsx'),
       route('notifications', 'routes/admin/notifications.tsx'),
       route('settings', 'routes/admin/settings.tsx')
     ])

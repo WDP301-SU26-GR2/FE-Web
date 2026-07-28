@@ -2,9 +2,17 @@ import { Form, useFetcher } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
-import type { SeriesResDtoOutput } from '~/api/model/series'
+import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
-import { BoardActionDialog, boardInput, BoardFeedback, BoardHeader, BoardPanel, EmptyState, StatusBadge } from '../components/board-ui'
+import {
+  BoardActionDialog,
+  boardInput,
+  BoardFeedback,
+  BoardHeader,
+  BoardPanel,
+  EmptyState,
+  StatusBadge
+} from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 
 export function BoardReprintsPage({
@@ -16,7 +24,7 @@ export function BoardReprintsPage({
   seriesId
 }: {
   requests: ReprintRequestResDtoOutput[]
-  series: SeriesResDtoOutput[]
+  series: SeriesListResDtoOutputItemsItem[]
   contractTypes: Record<string, string>
   mangakas: MangakaDirectoryListResDtoOutputItemsItem[]
   hasError: boolean
@@ -33,24 +41,29 @@ export function BoardReprintsPage({
         <Form method='get' className='flex flex-col gap-3 sm:flex-row'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId} required>
             <option value=''>{t('reprints.selectSeries')}</option>
-            {series.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+            {series.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>{t('common.load')}</button>
+          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+            {t('common.load')}
+          </button>
         </Form>
       </BoardPanel>
       <select className={boardInput} value={status} onChange={(event) => setStatus(event.target.value)}>
         <option value=''>{t('filters.allReprintStatuses')}</option>
-        {statuses.map((value) => <option key={value} value={value}>{t(`filters.reprintStatuses.${value}`, { defaultValue: value })}</option>)}
+        {statuses.map((value) => (
+          <option key={value} value={value}>
+            {t(`filters.reprintStatuses.${value}`, { defaultValue: value })}
+          </option>
+        ))}
       </select>
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-4'>
         {filteredRequests.map((item) => (
-          <ReprintCard
-            key={item.id}
-            item={item}
-            contractType={contractTypes[item.seriesId]}
-            mangakas={mangakas}
-          />
+          <ReprintCard key={item.id} item={item} contractType={contractTypes[item.seriesId]} mangakas={mangakas} />
         ))}
       </div>
       {!filteredRequests.length && <EmptyState text={t('reprints.empty')} />}
@@ -70,12 +83,14 @@ function ReprintCard({
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const canReview = item.status === 'MANGAKA_APPROVED' || (item.status === 'PENDING' && contractType === 'FULL_BUYOUT')
-  const revisableChapters = item.chapters.filter((chapter) =>
-    chapter.originalChapterId && ['PENDING', 'IN_REVISION'].includes(chapter.status)
+  const revisableChapters = item.chapters.filter(
+    (chapter) => chapter.originalChapterId && ['PENDING', 'IN_REVISION'].includes(chapter.status)
   )
   const canAssignReviser =
-    contractType === 'FULL_BUYOUT' && item.revisionMode === 'WITH_REVISION' &&
-    ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) && revisableChapters.length > 0
+    contractType === 'FULL_BUYOUT' &&
+    item.revisionMode === 'WITH_REVISION' &&
+    ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) &&
+    revisableChapters.length > 0
   return (
     <article className='rounded-xl border border-border bg-card p-5'>
       <div className='flex justify-between gap-3'>
@@ -83,7 +98,8 @@ function ReprintCard({
           <strong>{item.series?.title ?? item.seriesId}</strong>
           {item.requester ? <p className='mt-1 text-xs text-muted-foreground'>{item.requester.displayName}</p> : null}
           <p className='mt-1 text-xs text-muted-foreground'>
-            {t(`reprints.revisionModes.${item.revisionMode}`, { defaultValue: item.revisionMode })} · {item.chapterRangeStart}-{item.chapterRangeEnd}
+            {t(`reprints.revisionModes.${item.revisionMode}`, { defaultValue: item.revisionMode })} ·{' '}
+            {item.chapterRangeStart}-{item.chapterRangeEnd}
           </p>
         </div>
         <StatusBadge value={item.status} />
@@ -91,27 +107,27 @@ function ReprintCard({
       <p className='mt-3 text-sm text-muted-foreground'>{item.reason}</p>
       {canReview && (
         <div className='mt-4'>
-        <BoardActionDialog title={t('reprints.review')}>
-        <fetcher.Form method='post' className='mt-4 flex flex-wrap gap-2'>
-          <input type='hidden' name='requestId' value={item.id} />
-          <input className={`${boardInput} max-w-sm`} name='reason' placeholder={t('reprints.reviewReason')} />
-          <button
-            name='intent'
-            value='approve'
-            className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
-          >
-            {t('reprints.approve')}
-          </button>
-          <button
-            name='intent'
-            value='reject'
-            className='h-10 rounded-md border border-destructive px-3 text-sm font-bold text-destructive'
-          >
-            {t('reprints.reject')}
-          </button>
-        </fetcher.Form>
-        <BoardFeedback data={fetcher.data} />
-        </BoardActionDialog>
+          <BoardActionDialog title={t('reprints.review')}>
+            <fetcher.Form method='post' className='mt-4 flex flex-wrap gap-2'>
+              <input type='hidden' name='requestId' value={item.id} />
+              <input className={`${boardInput} max-w-sm`} name='reason' placeholder={t('reprints.reviewReason')} />
+              <button
+                name='intent'
+                value='approve'
+                className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+              >
+                {t('reprints.approve')}
+              </button>
+              <button
+                name='intent'
+                value='reject'
+                className='h-10 rounded-md border border-destructive px-3 text-sm font-bold text-destructive'
+              >
+                {t('reprints.reject')}
+              </button>
+            </fetcher.Form>
+            <BoardFeedback data={fetcher.data} />
+          </BoardActionDialog>
         </div>
       )}
       {['PENDING', 'MANGAKA_REVIEW'].includes(item.status) && contractType === 'REVENUE_SHARE' && (

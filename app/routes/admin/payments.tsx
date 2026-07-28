@@ -1,6 +1,10 @@
 import {
   paymentControllerCancelPayment,
+  paymentControllerGetPaymentById,
   paymentControllerGetPayments,
+  paymentControllerGetPaymentsByContract,
+  paymentControllerGetPaymentsBySeries,
+  paymentControllerGetPaymentsByUser,
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
@@ -11,8 +15,26 @@ import type { Route } from './+types/payments'
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
   try {
-    const response = await paymentControllerGetPayments(paymentQuery(request))
-    return { payments: response.data.data, focusPaymentId, hasError: false }
+    const query = paymentQuery(request)
+    const response = query.contractId
+      ? await paymentControllerGetPaymentsByContract({ id: query.contractId })
+      : query.seriesId
+        ? await paymentControllerGetPaymentsBySeries({ id: query.seriesId })
+        : query.receiverId
+          ? await paymentControllerGetPaymentsByUser({ id: query.receiverId })
+          : await paymentControllerGetPayments(query)
+    const payments = await Promise.all(
+      response.data.data.map((payment) =>
+        paymentControllerGetPaymentById({ id: payment.id })
+          .then((detail) => detail.data)
+          .catch(() => null)
+      )
+    )
+    return {
+      payments: payments.filter((payment) => payment !== null),
+      focusPaymentId,
+      hasError: false
+    }
   } catch {
     return { payments: [], focusPaymentId, hasError: true }
   }

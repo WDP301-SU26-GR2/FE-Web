@@ -1,6 +1,6 @@
 import { Link, useFetcher, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
+import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
 import { ArrowLeft } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import {
@@ -23,7 +23,7 @@ export function BoardPaymentsPage({
   contractBasePath,
   seriesBasePath
 }: {
-  payments: PaymentRecordListResDtoOutputDataItem[]
+  payments: PaymentRecordResDtoOutput[]
   hasError: boolean
   canApprove?: boolean
   focusPaymentId?: string
@@ -141,7 +141,7 @@ function PaymentCard({
   contractBasePath,
   seriesBasePath
 }: {
-  payment: PaymentRecordListResDtoOutputDataItem
+  payment: PaymentRecordResDtoOutput
   canApprove: boolean
   focused: boolean
   contractBasePath?: string
@@ -212,7 +212,10 @@ function PaymentCard({
                   label={t('payments.receiver')}
                   value={payment.receiver?.displayName ?? payment.receiverId}
                 />
-                <PaymentFact label={t('payments.condition')} value={payment.conditionId && shortId(payment.conditionId)} />
+                <PaymentFact
+                  label={t('payments.condition')}
+                  value={payment.conditionId && shortId(payment.conditionId)}
+                />
                 <PaymentFact label={t('payments.createdAt')} value={formatDate(payment.createdAt)} />
                 <PaymentFact label={t('payments.descriptionLabel')} value={payment.description} />
               </dl>
@@ -302,15 +305,7 @@ function PaymentCard({
   )
 }
 
-function PaymentFact({
-  label,
-  value,
-  emptyValue
-}: {
-  label: string
-  value?: ReactNode
-  emptyValue?: string
-}) {
+function PaymentFact({ label, value, emptyValue }: { label: string; value?: ReactNode; emptyValue?: string }) {
   const { t } = useTranslation('board')
   return (
     <div>

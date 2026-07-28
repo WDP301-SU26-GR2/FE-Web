@@ -116,7 +116,8 @@
       "role": "All roles",
       "status": "All statuses",
       "apply": "Apply",
-      "includeDeleted": "Include soft-deleted accounts"
+      "includeDeleted": "Include soft-deleted accounts",
+      "onlyDeleted": "Show only soft-deleted accounts"
     },
     "table": {
       "user": "User",
@@ -371,6 +372,31 @@
     "publicationVersions": {
       "title": "Publication versions",
       "description": "Create, update, or delete series language editions and reading directions."
+    },
+    "reference": {
+      "title": "Operational reference data",
+      "description": "Inspect production, ranking, directory, reprint, deadline and transfer evidence across the platform.",
+      "series": "Series defense and ranking trend",
+      "selectSeries": "Select a series",
+      "seriesNameId": "Proposal Name ID (optional)",
+      "chapter": "Chapter production reference",
+      "chapterId": "Chapter ID",
+      "chapterNameId": "Chapter Name ID (optional)",
+      "ranking": "Board ranking",
+      "selectPeriod": "Select a survey period",
+      "directories": "Mangaka and assistant directories",
+      "workflows": "Workflow details",
+      "reprintId": "Reprint request ID",
+      "reprintChapterId": "Reprint chapter ID",
+      "deadlineId": "Deadline request ID",
+      "transferRequestId": "Transfer request ID",
+      "transferContractId": "Transfer contract ID",
+      "taskFile": "Protected task file",
+      "taskId": "Task ID",
+      "fileKey": "Task file key",
+      "load": "Load data",
+      "createDownload": "Create download link",
+      "openDownload": "Open protected download"
     }
   },
   "boardOversight": {

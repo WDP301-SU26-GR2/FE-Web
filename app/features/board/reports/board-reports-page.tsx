@@ -27,7 +27,8 @@ export function BoardReportsPage({
   const filteredReports = reports.filter(
     (report) =>
       (!reportType || report.reportType === reportType) &&
-      (!search || `${report.content} ${seriesTitles[report.seriesId ?? ''] ?? ''}`.toLowerCase().includes(search.toLowerCase()))
+      (!search ||
+        `${report.content} ${seriesTitles[report.seriesId ?? ''] ?? ''}`.toLowerCase().includes(search.toLowerCase()))
   )
   return (
     <div className='space-y-6 pb-12'>
@@ -53,7 +54,11 @@ export function BoardReportsPage({
             onChange={(event) => setReportType(event.target.value)}
           >
             <option value=''>{t('filters.allReportTypes')}</option>
-            {reportTypes.map((value) => <option key={value} value={value}>{value}</option>)}
+            {reportTypes.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
           </select>
         </div>
       )}
@@ -62,14 +67,19 @@ export function BoardReportsPage({
           <article key={report.id} className='rounded-xl border border-border bg-card p-5 shadow-sm'>
             <h2 className='font-bold'>
               {decisionBasePath && report.boardDecisionId ? (
-                <Link className='hover:text-primary hover:underline' to={`${decisionBasePath}/${report.boardDecisionId}`}>
+                <Link
+                  className='hover:text-primary hover:underline'
+                  to={`${decisionBasePath}/${report.boardDecisionId}`}
+                >
                   {report.reportType ?? t('reports.title')}
                 </Link>
               ) : (
-                report.reportType ?? t('reports.title')
+                (report.reportType ?? t('reports.title'))
               )}
             </h2>
-            <p className='mt-1 text-xs text-muted-foreground'>{seriesTitles[report.seriesId ?? ''] ?? t('reports.unknownSeries')}</p>
+            <p className='mt-1 text-xs text-muted-foreground'>
+              {seriesTitles[report.seriesId ?? ''] ?? t('reports.unknownSeries')}
+            </p>
             <p className='mt-3 whitespace-pre-wrap text-sm text-muted-foreground'>{report.content}</p>
           </article>
         ))}

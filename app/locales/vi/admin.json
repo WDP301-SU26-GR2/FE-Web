@@ -116,7 +116,8 @@
       "role": "Tất cả vai trò",
       "status": "Tất cả trạng thái",
       "apply": "Áp dụng",
-      "includeDeleted": "Bao gồm tài khoản đã xoá mềm"
+      "includeDeleted": "Bao gồm tài khoản đã xoá mềm",
+      "onlyDeleted": "Chỉ hiển thị tài khoản đã xoá mềm"
     },
     "table": {
       "user": "Người dùng",
@@ -371,6 +372,31 @@
     "publicationVersions": {
       "title": "Phiên bản xuất bản",
       "description": "Tạo, cập nhật hoặc xóa phiên bản ngôn ngữ và hướng đọc của series."
+    },
+    "reference": {
+      "title": "Dữ liệu tham chiếu vận hành",
+      "description": "Tra cứu tiến độ sản xuất, xếp hạng, danh bạ, tái bản, deadline và chuyển nhượng trên toàn hệ thống.",
+      "series": "Hồ sơ bảo vệ và xu hướng xếp hạng",
+      "selectSeries": "Chọn bộ truyện",
+      "seriesNameId": "ID Name đề xuất (không bắt buộc)",
+      "chapter": "Tham chiếu tiến độ chương",
+      "chapterId": "ID chương",
+      "chapterNameId": "ID Name của chương (không bắt buộc)",
+      "ranking": "Bảng xếp hạng Hội đồng",
+      "selectPeriod": "Chọn kỳ khảo sát",
+      "directories": "Danh bạ Mangaka và trợ lý",
+      "workflows": "Chi tiết quy trình",
+      "reprintId": "ID yêu cầu tái bản",
+      "reprintChapterId": "ID chương tái bản",
+      "deadlineId": "ID yêu cầu deadline",
+      "transferRequestId": "ID yêu cầu chuyển nhượng",
+      "transferContractId": "ID hợp đồng chuyển nhượng",
+      "taskFile": "File tác vụ được bảo vệ",
+      "taskId": "ID tác vụ",
+      "fileKey": "Khóa file thuộc tác vụ",
+      "load": "Tải dữ liệu",
+      "createDownload": "Tạo liên kết tải",
+      "openDownload": "Mở liên kết tải được bảo vệ"
     }
   },
   "boardOversight": {

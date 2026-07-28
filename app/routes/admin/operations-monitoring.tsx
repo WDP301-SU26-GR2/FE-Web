@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { Form, Link } from 'react-router'
 import { useState, type ReactNode } from 'react'
 
-import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
+import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { RevisionRequestListResDtoOutputItemsItem } from '~/api/model/revision'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
-import { deadlineControllerList } from '~/api/operations/deadline-requests/deadline-requests'
-import { reprintRequestControllerFindAll, reprintRequestControllerFindById } from '~/api/operations/reprint-requests/reprint-requests'
+import { deadlineControllerGetOne, deadlineControllerList } from '~/api/operations/deadline-requests/deadline-requests'
+import {
+  reprintRequestControllerFindAll,
+  reprintRequestControllerFindById
+} from '~/api/operations/reprint-requests/reprint-requests'
 import { revisionControllerList } from '~/api/operations/revision/revision'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 
@@ -17,7 +20,7 @@ interface MonitoringData {
   revisions: RevisionRequestListResDtoOutputItemsItem[]
   reprints: ReprintRequestResDtoOutput[]
   selectedReprint: ReprintRequestResDtoOutput | null
-  deadlines: DeadlineRequestListResDtoOutputItemsItem[]
+  deadlines: DeadlineRequestResDtoOutput[]
   chapterId: string
   hasError: boolean
 }
@@ -42,21 +45,38 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
     !chapterId ||
     (deadlineResult.status === 'fulfilled' && deadlineResult.value !== null && deadlineResult.value.status === 200)
 
+  const detailedReprints = reprintOk
+    ? await Promise.all(
+        reprintResult.value.data.map((item) =>
+          reprintRequestControllerFindById({ id: item.id })
+            .then((detail) => detail.data)
+            .catch(() => null)
+        )
+      )
+    : []
+  const detailedDeadlines =
+    chapterId && deadlineResult.status === 'fulfilled' && deadlineResult.value?.status === 200
+      ? await Promise.all(
+          deadlineResult.value.data.items.map((item) =>
+            deadlineControllerGetOne({ id: item.id })
+              .then((detail) => detail.data)
+              .catch(() => null)
+          )
+        )
+      : []
+
   return {
     series: seriesOk ? seriesResult.value.data.items : [],
     revisions:
       revisionResult.status === 'fulfilled' && revisionResult.value.status === 200
         ? revisionResult.value.data.items
         : [],
-    reprints: reprintOk ? reprintResult.value.data : [],
+    reprints: detailedReprints.filter((item) => item !== null),
     selectedReprint:
       reprintId && reprintDetailResult.status === 'fulfilled' && reprintDetailResult.value?.status === 200
         ? reprintDetailResult.value.data
         : null,
-    deadlines:
-      chapterId && deadlineResult.status === 'fulfilled' && deadlineResult.value?.status === 200
-        ? deadlineResult.value.data.items
-        : [],
+    deadlines: detailedDeadlines.filter((item) => item !== null),
     chapterId,
     hasError: !seriesOk || !revisionOk || !reprintOk || !deadlineOk
   }
@@ -91,10 +111,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link
-        to='/dashboard/admin/operations'
-        className='inline-flex items-center gap-2 text-sm font-bold text-primary'
-      >
+      <Link to='/dashboard/admin/operations' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('operations.back')}
       </Link>
@@ -120,7 +137,9 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
       {selectedReprint && (
         <section className='rounded-xl border border-primary/30 bg-card p-5 shadow-sm'>
           <div className='flex flex-wrap items-center justify-between gap-2'>
-            <h2 className='font-bold text-foreground'>{selectedReprint.series?.title ?? t('operations.monitoring.unknownSeries')}</h2>
+            <h2 className='font-bold text-foreground'>
+              {selectedReprint.series?.title ?? t('operations.monitoring.unknownSeries')}
+            </h2>
             <span className='rounded-full bg-secondary px-2 py-1 text-xs font-bold'>
               {localize('reprintStatuses', selectedReprint.status)}
             </span>
@@ -129,7 +148,8 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           <div className='mt-3 flex flex-wrap gap-2'>
             {selectedReprint.chapters.map((chapter, index) => (
               <span key={chapter.originalChapterId} className='rounded-md border border-border px-2 py-1 text-xs'>
-                {t('operations.monitoring.reprintChapter', { number: index + 1 })} · {localize('reprintChapterStatuses', chapter.status)}
+                {t('operations.monitoring.reprintChapter', { number: index + 1 })} ·{' '}
+                {localize('reprintChapterStatuses', chapter.status)}
               </span>
             ))}
           </div>
@@ -165,10 +185,23 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           title={t('operations.monitoring.series')}
           filters={
             <FilterGrid>
-              <input className={filterInput} value={seriesSearch} onChange={(event) => setSeriesSearch(event.target.value)} placeholder={t('operations.monitoring.filters.searchSeries')} />
-              <select className={filterInput} value={seriesStatus} onChange={(event) => setSeriesStatus(event.target.value)}>
+              <input
+                className={filterInput}
+                value={seriesSearch}
+                onChange={(event) => setSeriesSearch(event.target.value)}
+                placeholder={t('operations.monitoring.filters.searchSeries')}
+              />
+              <select
+                className={filterInput}
+                value={seriesStatus}
+                onChange={(event) => setSeriesStatus(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allStatuses')}</option>
-                {[...new Set(series.map((item) => item.status))].map((value) => <option key={value} value={value}>{localize('seriesStatuses', value)}</option>)}
+                {[...new Set(series.map((item) => item.status))].map((value) => (
+                  <option key={value} value={value}>
+                    {localize('seriesStatuses', value)}
+                  </option>
+                ))}
               </select>
             </FilterGrid>
           }
@@ -183,11 +216,23 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           title={t('operations.monitoring.revisions')}
           filters={
             <FilterGrid>
-              <select className={filterInput} value={revisionType} onChange={(event) => setRevisionType(event.target.value)}>
+              <select
+                className={filterInput}
+                value={revisionType}
+                onChange={(event) => setRevisionType(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allRevisionTypes')}</option>
-                {[...new Set(revisions.map((item) => item.targetType))].map((value) => <option key={value} value={value}>{localize('revisionTypes', value)}</option>)}
+                {[...new Set(revisions.map((item) => item.targetType))].map((value) => (
+                  <option key={value} value={value}>
+                    {localize('revisionTypes', value)}
+                  </option>
+                ))}
               </select>
-              <select className={filterInput} value={revisionState} onChange={(event) => setRevisionState(event.target.value)}>
+              <select
+                className={filterInput}
+                value={revisionState}
+                onChange={(event) => setRevisionState(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allResolutionStates')}</option>
                 <option value='OPEN'>{t('operations.monitoring.open')}</option>
                 <option value='RESOLVED'>{t('operations.monitoring.resolved')}</option>
@@ -205,10 +250,23 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           title={t('operations.monitoring.reprints')}
           filters={
             <FilterGrid>
-              <input className={filterInput} value={reprintSearch} onChange={(event) => setReprintSearch(event.target.value)} placeholder={t('operations.monitoring.filters.searchReprints')} />
-              <select className={filterInput} value={reprintStatus} onChange={(event) => setReprintStatus(event.target.value)}>
+              <input
+                className={filterInput}
+                value={reprintSearch}
+                onChange={(event) => setReprintSearch(event.target.value)}
+                placeholder={t('operations.monitoring.filters.searchReprints')}
+              />
+              <select
+                className={filterInput}
+                value={reprintStatus}
+                onChange={(event) => setReprintStatus(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allStatuses')}</option>
-                {[...new Set(reprints.map((item) => item.status))].map((value) => <option key={value} value={value}>{localize('reprintStatuses', value)}</option>)}
+                {[...new Set(reprints.map((item) => item.status))].map((value) => (
+                  <option key={value} value={value}>
+                    {localize('reprintStatuses', value)}
+                  </option>
+                ))}
               </select>
             </FilterGrid>
           }
@@ -232,7 +290,17 @@ interface ReadOnlyItem {
   href?: string
 }
 
-function ReadOnlyPanel({ title, filters, items, empty }: { title: string; filters?: ReactNode; items: ReadOnlyItem[]; empty: string }) {
+function ReadOnlyPanel({
+  title,
+  filters,
+  items,
+  empty
+}: {
+  title: string
+  filters?: ReactNode
+  items: ReadOnlyItem[]
+  empty: string
+}) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <h2 className='font-bold text-foreground'>{title}</h2>
@@ -252,9 +320,13 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
   if (!items.length) return <p className='mt-3 text-sm text-muted-foreground'>{empty}</p>
   return (
     <div className='mt-3 max-h-[32rem] space-y-2 overflow-y-auto'>
-      {items.map((item) => (
+      {items.map((item) =>
         item.href ? (
-          <Link key={item.id} to={item.href} className='block rounded-lg border border-border bg-background/50 p-3 hover:border-primary'>
+          <Link
+            key={item.id}
+            to={item.href}
+            className='block rounded-lg border border-border bg-background/50 p-3 hover:border-primary'
+          >
             <p className='text-sm font-bold text-foreground'>{item.title}</p>
             <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
           </Link>
@@ -265,7 +337,7 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
             <p className='mt-1 break-all font-mono text-[10px] text-muted-foreground'>{item.id}</p>
           </article>
         )
-      ))}
+      )}
     </div>
   )
 }

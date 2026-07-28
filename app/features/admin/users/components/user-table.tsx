@@ -8,7 +8,7 @@ import type { AdminUserAction, SelectedUserAction } from '../types'
 
 export interface UserTableProps {
   users: AdminUserListResDtoOutputItemsItem[]
-  includeDeleted: boolean
+  mode: 'active' | 'mixed' | 'deleted'
   onAction: (selection: SelectedUserAction) => void
 }
 
@@ -19,7 +19,7 @@ const STATUS_STYLES = {
   BANNED: 'border-destructive/30 bg-destructive text-destructive-foreground'
 } as const
 
-export function UserTable({ users, includeDeleted, onAction }: UserTableProps) {
+export function UserTable({ users, mode, onAction }: UserTableProps) {
   const { t, i18n } = useTranslation('admin')
   const dateFormatter = new Intl.DateTimeFormat(i18n.language, {
     day: '2-digit',
@@ -107,7 +107,7 @@ export function UserTable({ users, includeDeleted, onAction }: UserTableProps) {
                     >
                       <Eye className='size-4' />
                     </Link>
-                    {user.role !== 'SUPER_ADMIN' && (
+                    {user.role !== 'SUPER_ADMIN' && mode !== 'mixed' && (
                       <>
                         <ActionButton
                           action='status'
@@ -123,7 +123,7 @@ export function UserTable({ users, includeDeleted, onAction }: UserTableProps) {
                           user={user}
                           onAction={onAction}
                         />
-                        {includeDeleted ? (
+                        {mode === 'deleted' ? (
                           <ActionButton
                             action='restore'
                             label={t('users.actions.restore')}

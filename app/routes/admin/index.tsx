@@ -1,4 +1,5 @@
-import { dashboardControllerAdmin } from '~/api/operations/dashboard/dashboard'
+import { adminDashboardControllerAdmin } from '~/api/operations/dashboard/dashboard'
+import { usersControllerGetAdminStats } from '~/api/operations/users/users'
 import { AdminDashboard } from '~/features/admin'
 
 import type { Route } from './+types/index'
@@ -9,8 +10,12 @@ export function meta() {
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   try {
-    const response = await dashboardControllerAdmin()
-    return { stats: response.data.systemStats, unreadNotifications: response.data.unreadNotifications, hasError: false }
+    const [dashboard, stats] = await Promise.all([adminDashboardControllerAdmin(), usersControllerGetAdminStats()])
+    return {
+      stats: stats.data,
+      unreadNotifications: dashboard.data.unreadNotifications,
+      hasError: false
+    }
   } catch {
     return { stats: null, unreadNotifications: 0, hasError: true }
   }

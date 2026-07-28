@@ -31,7 +31,9 @@
     "transferScreeningApproved": "Đã duyệt sàng lọc chuyển nhượng thành công.",
     "transferScreeningRejected": "Đã từ chối sàng lọc chuyển nhượng.",
     "fullBuyoutAssigned": "Đã thiết lập phương án mua đứt chuyển nhượng.",
-    "transferContractSigned": "Đã ký hợp đồng chuyển nhượng thành công."
+    "transferContractSigned": "Đã ký hợp đồng chuyển nhượng thành công.",
+    "tankobonSalesRecorded": "Đã ghi nhận doanh số tankobon.",
+    "taskDownloadReady": "Liên kết tải file tác vụ đã sẵn sàng."
   },
   "nav": {
     "sessions": "Phiên Hội đồng",
@@ -44,6 +46,7 @@
     "reprints": "Yêu cầu tái bản",
     "transfers": "Chuyển nhượng series",
     "audit": "Lịch sử kiểm toán",
+    "reference": "Dữ liệu tham chiếu quyết định",
     "notifications": "Thông báo",
     "profile": "Hồ sơ Hội đồng"
   },
@@ -178,6 +181,11 @@
     "emptyPending": "Không có quyết định đang hoạt động cần bạn xử lý.",
     "emptyRisk": "Không có series rủi ro nghiêm trọng.",
     "unranked": "Chưa xếp hạng trong kỳ gần nhất",
+    "config": {
+      "members": "Số thành viên Hội đồng cấu hình",
+      "defaultRoster": "Sĩ số roster mặc định",
+      "majority": "Tỷ lệ thông qua"
+    },
     "sections": {
       "sessions": "Xem các phiên được phân công và nội dung phiên họp.",
       "decisions": "Kiểm tra quyết định đang hoạt động và bỏ phiếu.",
@@ -189,6 +197,7 @@
       "reprints": "Xem xét và duyệt quy trình tái bản.",
       "transfers": "Sàng lọc yêu cầu và ký hợp đồng chuyển nhượng.",
       "audit": "Theo dõi thay đổi trạng thái và thao tác hệ thống.",
+      "reference": "Xem hồ sơ bảo vệ, khảo sát, xuất bản và tiến độ sản xuất.",
       "notifications": "Theo dõi công việc cần Hội đồng xử lý.",
       "profile": "Cập nhật chuyên môn dùng khi phân công phiên."
     }
@@ -545,5 +554,31 @@
     "filter": "Áp dụng bộ lọc",
     "system": "Hệ thống",
     "empty": "Không tìm thấy bản ghi kiểm toán."
+  },
+  "reference": {
+    "title": "Dữ liệu tham chiếu quyết định",
+    "description": "Xem các dữ liệu làm căn cứ cho quyết định Hội đồng mà không thay đổi trạng thái sản xuất.",
+    "seriesTitle": "Bảo vệ series và phiên bản xuất bản",
+    "selectSeries": "Chọn bộ truyện",
+    "seriesNameId": "ID Name đề xuất (không bắt buộc)",
+    "publicationVersionId": "ID phiên bản xuất bản (không bắt buộc)",
+    "surveyTitle": "Dữ liệu khảo sát và xếp hạng",
+    "selectSurvey": "Chọn kỳ khảo sát",
+    "productionTitle": "Tham chiếu tiến độ chương",
+    "chapterId": "ID chương",
+    "chapterNameId": "ID Name của chương (không bắt buộc)",
+    "enterChapter": "Nhập ID chương để xem tiến độ sản xuất.",
+    "directoriesTitle": "Danh bạ Mangaka và trợ lý",
+    "revisionsTitle": "Lịch sử yêu cầu chỉnh sửa",
+    "salesTitle": "Ghi nhận doanh số tankobon",
+    "period": "Kỳ, ví dụ 2026-Q2",
+    "volume": "Số tập",
+    "unitsSold": "Số bản đã bán",
+    "recordSales": "Ghi nhận doanh số",
+    "taskFileTitle": "File tác vụ được bảo vệ",
+    "taskId": "ID tác vụ",
+    "fileKey": "Khóa file thuộc tác vụ",
+    "signDownload": "Tạo liên kết tải",
+    "openDownload": "Mở liên kết tải được bảo vệ"
   }
 }

@@ -23,6 +23,8 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
   const [selectedAction, setSelectedAction] = useState<SelectedUserAction | null>(null)
 
   const includeDeleted = searchParams.get('includeDeleted') === 'true'
+  const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+  const userMode = onlyDeleted ? 'deleted' : includeDeleted ? 'mixed' : 'active'
   const limit = data?.limit ?? 20
   const offset = data?.offset ?? 0
   const total = data?.total ?? 0
@@ -108,28 +110,40 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
             {t('users.filters.apply')}
           </button>
         </div>
-        <label className='mt-3 inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground'>
-          <input
-            type='checkbox'
-            name='includeDeleted'
-            value='true'
-            defaultChecked={includeDeleted}
-            className='size-4 rounded border-input accent-[var(--color-primary)]'
-          />
-          {t('users.filters.includeDeleted')}
-        </label>
+        <div className='mt-3 flex flex-wrap gap-4'>
+          <label className='inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground'>
+            <input
+              type='checkbox'
+              name='includeDeleted'
+              value='true'
+              defaultChecked={includeDeleted}
+              className='size-4 rounded border-input accent-[var(--color-primary)]'
+            />
+            {t('users.filters.includeDeleted')}
+          </label>
+          <label className='inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground'>
+            <input
+              type='checkbox'
+              name='onlyDeleted'
+              value='true'
+              defaultChecked={onlyDeleted}
+              className='size-4 rounded border-input accent-[var(--color-primary)]'
+            />
+            {t('users.filters.onlyDeleted')}
+          </label>
+        </div>
       </Form>
 
       <div className='flex items-center justify-between gap-4'>
         <p className='text-sm font-semibold text-foreground'>{t('users.total', { count: total })}</p>
-        {includeDeleted && (
+        {userMode !== 'active' && (
           <span className='rounded-full border border-border bg-muted px-3 py-1 text-[11px] font-bold text-muted-foreground'>
             {t('users.restoreMode')}
           </span>
         )}
       </div>
 
-      <UserTable users={data?.items ?? []} includeDeleted={includeDeleted} onAction={setSelectedAction} />
+      <UserTable users={data?.items ?? []} mode={userMode} onAction={setSelectedAction} />
 
       {totalPages > 1 && (
         <nav className='flex items-center justify-between gap-4' aria-label={t('users.pagination.label')}>

@@ -25,10 +25,16 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       chapterId ? deadlineControllerList({ chapterId, status: 'ESCALATED' }) : null
     ])
     return {
-      requests: [
-        ...(review?.status === 200 ? review.data.items : []),
-        ...(escalated?.status === 200 ? escalated.data.items : [])
-      ],
+      requests: await Promise.all(
+        [
+          ...(review?.status === 200 ? review.data.items : []),
+          ...(escalated?.status === 200 ? escalated.data.items : [])
+        ].map((item) =>
+          deadlineControllerGetOne({ id: item.id })
+            .then((detail) => detail.data)
+            .catch(() => null)
+        )
+      ).then((items) => items.filter((item) => item !== null)),
       series: seriesResponse.data.items,
       chapters: chaptersResponse?.status === 200 ? chaptersResponse.data.items : [],
       seriesId,
@@ -36,7 +42,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: Boolean(chapterId && (review?.status !== 200 || escalated?.status !== 200))
     }
   } catch {
-    return { requests: [], series: [], chapters: [], seriesId: requestedSeriesId, chapterId: requestedChapterId, hasError: true }
+    return {
+      requests: [],
+      series: [],
+      chapters: [],
+      seriesId: requestedSeriesId,
+      chapterId: requestedChapterId,
+      hasError: true
+    }
   }
 }
 

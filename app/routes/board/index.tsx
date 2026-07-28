@@ -1,5 +1,6 @@
 import { BoardDashboardPage } from '~/features/board'
-import { dashboardControllerBoard } from '~/api/operations/dashboard/dashboard'
+import { boardControllerGetConfig } from '~/api/operations/board/board'
+import { boardDashboardControllerBoard } from '~/api/operations/dashboard/dashboard'
 import type { Route } from './+types/index'
 
 export function meta() {
@@ -8,10 +9,13 @@ export function meta() {
 
 export async function clientLoader() {
   try {
-    const response = await dashboardControllerBoard()
-    return { dashboard: response.data, hasError: false }
+    const [response, config] = await Promise.all([
+      boardDashboardControllerBoard(),
+      boardControllerGetConfig().catch(() => null)
+    ])
+    return { dashboard: response.data, config: config?.status === 200 ? config.data : null, hasError: false }
   } catch {
-    return { dashboard: null, hasError: true }
+    return { dashboard: null, config: null, hasError: true }
   }
 }
 

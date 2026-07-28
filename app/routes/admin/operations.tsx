@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { ArrowLeft, BarChart3, Library, Search, ShieldAlert, Wrench } from 'lucide-react'
+import { ArrowLeft, BarChart3, Library, Search, ShieldAlert, Telescope, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
@@ -30,6 +30,12 @@ export default function AdminOperationsRoute() {
       icon: Library,
       title: t('operations.publicationVersions.title'),
       description: t('operations.publicationVersions.description')
+    },
+    {
+      href: '/dashboard/admin/operations/reference',
+      icon: Telescope,
+      title: t('operations.reference.title'),
+      description: t('operations.reference.description')
     }
   ]
 

@@ -9,24 +9,38 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [phase, setPhase] = useState('')
-  const filteredSessions = sessions.filter((session) =>
-    (!search || `${session.title} ${session.description ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!status || session.status === status) &&
-    (!phase || session.phase === phase)
+  const filteredSessions = sessions.filter(
+    (session) =>
+      (!search || `${session.title} ${session.description ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
+      (!status || session.status === status) &&
+      (!phase || session.phase === phase)
   )
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('sessions.title')} description={t('sessions.description')} />
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
-        <input className={boardInput} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('filters.searchSessions')} />
+        <input
+          className={boardInput}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t('filters.searchSessions')}
+        />
         <select className={boardInput} value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value=''>{t('filters.allSessionStatuses')}</option>
-          {['UPCOMING', 'ACTIVE', 'CONCLUDED'].map((value) => <option key={value} value={value}>{t(`filters.sessionStatuses.${value}`)}</option>)}
+          {['UPCOMING', 'ACTIVE', 'CONCLUDED'].map((value) => (
+            <option key={value} value={value}>
+              {t(`filters.sessionStatuses.${value}`)}
+            </option>
+          ))}
         </select>
         <select className={boardInput} value={phase} onChange={(event) => setPhase(event.target.value)}>
           <option value=''>{t('filters.allPhases')}</option>
-          {['PRESENTING', 'QA', 'VOTING'].map((value) => <option key={value} value={value}>{t(`filters.sessionPhases.${value}`)}</option>)}
+          {['PRESENTING', 'QA', 'VOTING'].map((value) => (
+            <option key={value} value={value}>
+              {t(`filters.sessionPhases.${value}`)}
+            </option>
+          ))}
         </select>
       </div>
       <div className='grid gap-4 md:grid-cols-2'>

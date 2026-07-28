@@ -194,8 +194,8 @@ export function BoardContractDetailPage({
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
             <p>
-              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend sẽ
-              kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
+              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend
+              sẽ kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
             </p>
           </div>
         )}
@@ -364,16 +364,6 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
     <Dialog open onClose={onClose} titleId='board-contract-sign-title' title={t('contracts.boardSignature')} size='sm'>
       <fetcher.Form method='post' className='grid gap-3'>
         <p className='text-sm text-muted-foreground'>{t('contracts.otpInstruction')}</p>
-        <button
-          type='submit'
-          name='intent'
-          value='sendOtp'
-          formNoValidate
-          disabled={fetcher.state !== 'idle'}
-          className='h-10 rounded-md border border-border px-3 text-sm font-bold disabled:opacity-60'
-        >
-          {t('contracts.sendOtp')}
-        </button>
         <input
           className={boardInput}
           name='otpCode'
@@ -439,16 +429,6 @@ function AmendmentSignDialog({
         <input type='hidden' name='contractId' value={contractId} />
         <input type='hidden' name='amendmentId' value={amendmentId} />
         <p className='text-sm text-muted-foreground'>{t('contracts.otpInstruction')}</p>
-        <button
-          type='submit'
-          name='intent'
-          value='sendOtp'
-          formNoValidate
-          disabled={fetcher.state !== 'idle'}
-          className='h-10 rounded-md border border-border px-3 text-sm font-bold disabled:opacity-60'
-        >
-          {t('contracts.sendOtp')}
-        </button>
         <input
           className={boardInput}
           name='otpCode'
