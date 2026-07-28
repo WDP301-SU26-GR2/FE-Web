@@ -1,4 +1,9 @@
-import { contractControllerCheckStatus, contractControllerGetContractById } from '~/api/operations/contracts/contracts'
+import {
+  contractAmendmentControllerGetAmendment,
+  contractControllerCheckStatus,
+  contractControllerGetContractById
+} from '~/api/operations/contracts/contracts'
+import type { AmendmentListItemDtoOutput, AmendmentResDtoOutput } from '~/api/model/contracts'
 
 export async function loadContractBase(id: string) {
   const [contract, progress] = await Promise.all([
@@ -7,6 +12,16 @@ export async function loadContractBase(id: string) {
   ])
   if (contract.status !== 200) throw new Response('Contract not found', { status: contract.status })
   return { contract: contract.data, progress: progress?.status === 200 ? progress.data : null }
+}
+
+export async function hydrateAmendments(contractId: string, items: AmendmentListItemDtoOutput[]) {
+  const details = await Promise.all(
+    items.map(async (item) => {
+      const response = await contractAmendmentControllerGetAmendment({ contractId, id: item.id }).catch(() => null)
+      return response?.status === 200 ? response.data : null
+    })
+  )
+  return details.filter((item): item is AmendmentResDtoOutput => item != null)
 }
 
 export function required(form: FormData, key: string) {

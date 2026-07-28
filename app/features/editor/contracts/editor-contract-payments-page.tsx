@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import type { ContractResDtoOutput, ContractStatusProgressResDtoOutput } from '~/api/model/contracts'
-import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
+import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
 import { ContractPageLayout, contractInput } from './components/contract-shared'
 
 export function EditorContractPaymentsPage({
@@ -14,7 +14,7 @@ export function EditorContractPaymentsPage({
 }: {
   contract: ContractResDtoOutput
   progress: ContractStatusProgressResDtoOutput | null
-  payments: PaymentRecordListResDtoOutputDataItem[]
+  payments: PaymentRecordResDtoOutput[]
   hasError: boolean
 }) {
   const { t, i18n } = useTranslation('editor')
@@ -148,15 +148,7 @@ export function EditorContractPaymentsPage({
   )
 }
 
-function PaymentFact({
-  label,
-  value,
-  emptyValue
-}: {
-  label: string
-  value?: ReactNode
-  emptyValue?: string
-}) {
+function PaymentFact({ label, value, emptyValue }: { label: string; value?: ReactNode; emptyValue?: string }) {
   const { t } = useTranslation('editor')
   return (
     <div>

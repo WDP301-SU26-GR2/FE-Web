@@ -1,4 +1,7 @@
-import { paymentControllerGetPaymentsByContract } from '~/api/operations/payments/payments'
+import {
+  paymentControllerGetPaymentById,
+  paymentControllerGetPaymentsByContract
+} from '~/api/operations/payments/payments'
 import { EditorContractPaymentsPage } from '~/features/editor'
 import { loadContractBase } from './contract-route-utils'
 import type { Route } from './+types/contract-payments'
@@ -12,9 +15,16 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     loadContractBase(params.id),
     paymentControllerGetPaymentsByContract({ id: params.id }).catch(() => null)
   ])
+  const paymentItems = response?.status === 200 ? response.data.data : []
+  const paymentDetails = await Promise.all(
+    paymentItems.map(async (payment) => {
+      const detail = await paymentControllerGetPaymentById({ id: payment.id }).catch(() => null)
+      return detail?.status === 200 ? detail.data : null
+    })
+  )
   return {
     ...base,
-    payments: response?.status === 200 ? response.data.data : [],
+    payments: paymentDetails.filter((payment) => payment != null),
     hasError: response == null
   }
 }

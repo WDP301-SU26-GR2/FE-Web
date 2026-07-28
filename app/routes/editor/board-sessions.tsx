@@ -4,10 +4,17 @@ import {
   boardControllerGetConfig,
   boardControllerGetDecisions,
   boardControllerGetSessions,
+  boardControllerSuggestMembers,
   boardControllerStartSession
 } from '~/api/operations/board/board'
 import { EditorBoardSessionsPage, type EditorActionResult } from '~/features/editor'
-import { loadBoardSessionSeries, optionalDate, required } from './board-route-utils'
+import {
+  hydrateBoardDecisions,
+  hydrateBoardSessions,
+  loadBoardSessionSeries,
+  optionalDate,
+  required
+} from './board-route-utils'
 import type { Route } from './+types/board-sessions'
 
 export async function clientLoader() {
@@ -22,8 +29,8 @@ export async function clientLoader() {
     const suggestedMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount + 1 : configuredMemberCount
     return {
       series,
-      sessions: sessions.data,
-      decisions: decisions.data,
+      sessions: await hydrateBoardSessions(sessions.data),
+      decisions: await hydrateBoardDecisions(decisions.data),
       suggestedMemberCount,
       hasError: false
     }
@@ -44,12 +51,15 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   try {
     if (intent === 'createSession') {
       const endTime = optionalDate(form, 'endTime')
+      const seriesId = required(form, 'rosterSourceSeriesId')
+      const suggested = await boardControllerSuggestMembers({ seriesId })
       await boardControllerCreateSession({
         title: required(form, 'title'),
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(required(form, 'startTime')).toISOString(),
         ...(endTime ? { endTime } : {}),
-        seriesId: required(form, 'rosterSourceSeriesId')
+        seriesId,
+        allowedEditorIds: suggested.data.items.map((member) => member.userId)
       })
     } else if (intent === 'startSession') {
       await boardControllerStartSession({ id: required(form, 'sessionId') })

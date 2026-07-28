@@ -1,11 +1,12 @@
 import {
   boardControllerCreateSeriesReport,
   boardControllerGetDecisions,
+  boardControllerGetReportById,
   boardControllerGetReports
 } from '~/api/operations/board/board'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorBoardReportsPage, type EditorActionResult } from '~/features/editor'
-import { loadBoardLifecycleSeries, required } from './board-route-utils'
+import { hydrateBoardDecisions, loadBoardLifecycleSeries, required } from './board-route-utils'
 import type { Route } from './+types/board-reports'
 
 export async function clientLoader() {
@@ -17,7 +18,18 @@ export async function clientLoader() {
       boardControllerGetReports()
     ])
     const series = [...new Map([...pitched.data.items, ...lifecycle].map((item) => [item.id, item])).values()]
-    return { series, decisions: decisions.data, reports: reports.data, hasError: false }
+    const reportDetails = await Promise.all(
+      reports.data.map(async (report) => {
+        const detail = await boardControllerGetReportById({ id: report.id }).catch(() => null)
+        return detail?.status === 200 ? detail.data : report
+      })
+    )
+    return {
+      series,
+      decisions: await hydrateBoardDecisions(decisions.data),
+      reports: reportDetails,
+      hasError: false
+    }
   } catch {
     return { series: [], decisions: [], reports: [], hasError: true }
   }

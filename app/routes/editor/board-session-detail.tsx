@@ -11,7 +11,7 @@ import {
 import { seriesControllerGetSeries, seriesControllerPitch } from '~/api/operations/series/series'
 import type { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
 import { EditorBoardMeetingRoomPage, type EditorActionResult } from '~/features/editor'
-import { loadBoardSessionSeries, required } from './board-route-utils'
+import { hydrateBoardDecisions, loadBoardSessionSeries, required } from './board-route-utils'
 import type { Route } from './+types/board-session-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -25,7 +25,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   return {
     session: session.data,
     phase: readBoardSessionPhase(session.data),
-    decisions: decisions.data,
+    decisions: await hydrateBoardDecisions(decisions.data),
     messages: messages?.status === 200 ? messages.data.items : [],
     series
   }

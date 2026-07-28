@@ -114,10 +114,15 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     if (intent === 'createSurvey') {
       const startDate = date(form, 'startDate')
       const endDate = date(form, 'endDate')
+      const eligibleSeriesIds = form.getAll('eligibleSeriesId').map(String).filter(Boolean)
       if (new Date(endDate) <= new Date(startDate)) return { ok: false, intent, errorKey: 'invalidState' }
+      if (eligibleSeriesIds.length === 0) return { ok: false, intent, errorKey: 'invalidState' }
       await surveyControllerCreateSurveyPeriod({
-        issueNumber: optionalNumber(form, 'issueNumber'),
+        issueNumber: Number(required(form, 'issueNumber')),
         reflectedIssueNumber: optionalNumber(form, 'reflectedIssueNumber'),
+        magazine: required(form, 'magazine'),
+        publicationType: required(form, 'publicationType') as 'WEEKLY' | 'MONTHLY' | 'IRREGULAR',
+        eligibleSeriesIds,
         startDate,
         endDate,
         status: 'DRAFT'

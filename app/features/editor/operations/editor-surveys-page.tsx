@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import type { PublicSeriesListResDtoOutputItemsItem } from '~/api/model/public'
 import type {
   RankingRecordListResDtoOutputItemsItem,
-  ReaderVoteResDtoOutput,
+  ReaderVoteListItemDtoOutput,
   SurveyDataResDtoOutput,
   SurveyPeriodResDtoOutput
 } from '~/api/model/survey'
@@ -45,7 +45,7 @@ export function EditorSurveysPage({
   surveys: SurveyPeriodResDtoOutput[]
   selectedSurvey: SurveyPeriodResDtoOutput | null
   selectedSurveyId: string
-  votes: ReaderVoteResDtoOutput[]
+  votes: ReaderVoteListItemDtoOutput[]
   surveyData: SurveyDataResDtoOutput[]
   rankings: RankingRecordListResDtoOutputItemsItem[]
   hasError: boolean
@@ -111,7 +111,8 @@ export function EditorSurveysPage({
                 <input
                   name='issueNumber'
                   type='number'
-                  min={0}
+                  min={1}
+                  required
                   className={operationInput}
                   placeholder={t('operations.issue')}
                 />
@@ -122,6 +123,31 @@ export function EditorSurveysPage({
                   className={operationInput}
                   placeholder={t('operations.reflectedIssue')}
                 />
+                <input
+                  name='magazine'
+                  required
+                  className={operationInput}
+                  placeholder={t('operations.magazine', { defaultValue: 'Magazine' })}
+                />
+                <select name='publicationType' required className={operationInput}>
+                  <option value=''>{t('operations.publicationType', { defaultValue: 'Publication type' })}</option>
+                  {['WEEKLY', 'MONTHLY', 'IRREGULAR'].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <fieldset className='grid max-h-44 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:col-span-2'>
+                  <legend className='px-1 text-xs font-bold text-foreground'>
+                    {t('operations.eligibleSeries', { defaultValue: 'Eligible series' })}
+                  </legend>
+                  {series.map((item) => (
+                    <label key={item.id} className='flex items-center gap-2 text-xs text-foreground'>
+                      <input type='checkbox' name='eligibleSeriesId' value={item.id} />
+                      {item.title}
+                    </label>
+                  ))}
+                </fieldset>
                 <label className='grid gap-1 text-xs font-bold text-foreground'>
                   {t('operations.startDate')}
                   <input name='startDate' type='datetime-local' required className={operationInput} />
@@ -294,7 +320,7 @@ function OnlineVotes({
   locale,
   flaggedVotes
 }: {
-  votes: ReaderVoteResDtoOutput[]
+  votes: ReaderVoteListItemDtoOutput[]
   seriesTitles: Record<string, string>
   locale: string
   flaggedVotes: number
@@ -426,16 +452,14 @@ function RankingResults({
         </p>
       )}
       {!rankings.length && (
-        <EmptySurveyData
-          text={reflected ? t('operations.emptyRanking') : t('operations.emptyProvisionalRanking')}
-        />
+        <EmptySurveyData text={reflected ? t('operations.emptyRanking') : t('operations.emptyProvisionalRanking')} />
       )}
     </div>
   )
 }
 
 function buildProvisionalRankings(
-  votes: ReaderVoteResDtoOutput[],
+  votes: ReaderVoteListItemDtoOutput[],
   surveyData: SurveyDataResDtoOutput[],
   flaggedVotes: number
 ): SurveyRankingDisplayItem[] {

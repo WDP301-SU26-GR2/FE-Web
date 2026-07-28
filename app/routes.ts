@@ -85,6 +85,7 @@ export default [
       route('operations/reprints', 'routes/editor/operations-reprints.tsx'),
       route('operations/transfers', 'routes/editor/operations-transfers.tsx'),
       route('operations/versions', 'routes/editor/operations-versions.tsx'),
+      route('operations/insights', 'routes/editor/operations-insights.tsx'),
       route('notifications', 'routes/editor/notifications.tsx'),
       route('profile', 'routes/editor/profile.tsx'),
       route('publication', 'routes/editor/publication.tsx'),

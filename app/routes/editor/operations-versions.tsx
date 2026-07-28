@@ -1,5 +1,6 @@
 import {
   publicationControllerCreate,
+  publicationControllerGetOne,
   publicationControllerList,
   publicationControllerRemove,
   publicationControllerUpdate
@@ -16,7 +17,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       seriesControllerListSeries({ limit: 100, offset: 0 }).then((response) => response.data.items),
       focusSeriesId ? publicationControllerList({ seriesId: focusSeriesId }).catch(() => null) : null
     ])
-    return { series, focusSeriesId, versions: response?.status === 200 ? response.data.items : [], hasError: false }
+    const listItems = response?.status === 200 ? response.data.items : []
+    const versions = await Promise.all(
+      listItems.map(async (item) => {
+        const detail = await publicationControllerGetOne({ id: item.id }).catch(() => null)
+        return detail?.status === 200 ? detail.data : item
+      })
+    )
+    return { series, focusSeriesId, versions, hasError: false }
   } catch {
     return { series: [], focusSeriesId, versions: [], hasError: true }
   }

@@ -8,7 +8,7 @@ import {
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorBoardDecisionsPage, type EditorActionResult } from '~/features/editor'
-import { required } from './board-route-utils'
+import { hydrateBoardDecisions, hydrateBoardSessions, required } from './board-route-utils'
 import type { Route } from './+types/board-decisions'
 
 export async function clientLoader() {
@@ -18,11 +18,14 @@ export async function clientLoader() {
       boardControllerGetSessions(),
       boardControllerGetDecisions()
     ])
+    const detailedSessions = await hydrateBoardSessions(sessions.data)
     return {
       series: series.data.items,
-      sessions: sessions.data,
-      decisions: decisions.data,
-      sessionPhases: Object.fromEntries(sessions.data.map((session) => [session.id, readBoardSessionPhase(session)])),
+      sessions: detailedSessions,
+      decisions: await hydrateBoardDecisions(decisions.data),
+      sessionPhases: Object.fromEntries(
+        detailedSessions.map((session) => [session.id, readBoardSessionPhase(session)])
+      ),
       hasError: false
     }
   } catch {

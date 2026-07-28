@@ -27,8 +27,15 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       focusSeriesId ? chapterControllerListBySeries({ seriesId: focusSeriesId }) : null,
       resolvedChapterId ? deadlineControllerList({ chapterId: resolvedChapterId }) : null
     ])
+    const listItems = response?.status === 200 ? response.data.items : []
+    const items = await Promise.all(
+      listItems.map(async (item) => {
+        const detail = await deadlineControllerGetOne({ id: item.id }).catch(() => null)
+        return detail?.status === 200 ? detail.data : null
+      })
+    )
     return {
-      items: response?.status === 200 ? response.data.items : [],
+      items: items.filter((item) => item != null),
       series,
       chapters: chaptersResponse?.status === 200 ? chaptersResponse.data.items : [],
       focusSeriesId,
@@ -37,7 +44,15 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: false
     }
   } catch {
-    return { items: [], series: [], chapters: [], focusSeriesId: requestedSeriesId, focusChapterId, focusRequestId, hasError: true }
+    return {
+      items: [],
+      series: [],
+      chapters: [],
+      focusSeriesId: requestedSeriesId,
+      focusChapterId,
+      focusRequestId,
+      hasError: true
+    }
   }
 }
 

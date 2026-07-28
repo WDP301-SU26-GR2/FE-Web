@@ -17,10 +17,10 @@ export function EditorProposalsPage({
   const { t } = useTranslation('editor')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
-  const statuses = [...new Set(items.map((item) => item.proposal?.status ?? item.status))]
-  const filteredItems = items.filter((item) =>
-    (!search || `${item.title} ${item.proposal?.synopsis ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!status || (item.proposal?.status ?? item.status) === status)
+  const statuses = [...new Set(items.map((item) => item.status))]
+  const filteredItems = items.filter(
+    (item) =>
+      (!search || item.title.toLowerCase().includes(search.toLowerCase())) && (!status || item.status === status)
   )
   return (
     <div className='space-y-6 pb-12'>
@@ -34,10 +34,19 @@ export function EditorProposalsPage({
       </header>
       {hasError && <ErrorBanner />}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
-        <input className={filterInput} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('filters.searchProposals')} />
+        <input
+          className={filterInput}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t('filters.searchProposals')}
+        />
         <select className={filterInput} value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value=''>{t('filters.allProposalStatuses')}</option>
-          {statuses.map((value) => <option key={value} value={value}>{t(`filters.proposalStatuses.${value}`, { defaultValue: value })}</option>)}
+          {statuses.map((value) => (
+            <option key={value} value={value}>
+              {t(`filters.proposalStatuses.${value}`, { defaultValue: value })}
+            </option>
+          ))}
         </select>
       </div>
       <ProposalSection
@@ -54,7 +63,8 @@ export function EditorProposalsPage({
   )
 }
 
-const filterInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+const filterInput =
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
 
 function ProposalSection({
   title,
@@ -96,9 +106,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
           <span className='inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-            {item.proposal?.status
-              ? t(`filters.proposalStatuses.${item.proposal.status}`)
-              : t(`filters.seriesStatuses.${item.status}`)}
+            {t(`filters.seriesStatuses.${item.status}`)}
           </span>
           <h3 className='mt-3 text-lg font-bold text-foreground'>{item.title}</h3>
           <p className='mt-1 text-xs text-muted-foreground'>
@@ -111,9 +119,6 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
           {item.demographic ?? t('common.notAvailable')}
         </span>
       </div>
-      <p className='mt-4 line-clamp-3 text-sm leading-6 text-muted-foreground'>
-        {item.proposal?.synopsis || t('proposals.noSynopsis')}
-      </p>
       <div className='mt-4 flex flex-wrap gap-2'>
         {item.genres.map((genre) => (
           <span
@@ -146,7 +151,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
             <input type='hidden' name='intent' value={item.editorId ? 'release' : 'claim'} />
             <button
               type='submit'
-              disabled={busy || Boolean(item.editorId && item.reviewStartedAt)}
+              disabled={busy}
               className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
             >
               {busy ? (

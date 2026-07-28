@@ -72,6 +72,49 @@ export function EditorProposalDetailPage({
         </div>
       </header>
       <EditorActionToast data={fetcher.data} scope={`editor-proposal-detail-${series.id}`} />
+      {assigned && (
+        <fetcher.Form method='post' className='grid gap-3 rounded-xl border border-border bg-card p-5 shadow-sm'>
+          <input type='hidden' name='seriesId' value={series.id} />
+          <h2 className='font-bold text-foreground'>
+            {t('proposalDetail.metadataTitle', { defaultValue: 'Series metadata' })}
+          </h2>
+          <input
+            name='title'
+            required
+            maxLength={200}
+            defaultValue={series.title}
+            className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
+          />
+          <textarea
+            name='synopsis'
+            maxLength={5000}
+            defaultValue={series.proposal?.synopsis ?? ''}
+            className='min-h-28 rounded-md border border-input bg-background p-3 text-sm text-foreground'
+          />
+          <input
+            name='coverImage'
+            defaultValue={series.coverImage ?? ''}
+            className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
+            placeholder={t('proposalDetail.coverImageKey', { defaultValue: 'Cover image object key' })}
+          />
+          <textarea
+            name='characterDesigns'
+            defaultValue={(series.proposal?.characterDesigns ?? []).join('\n')}
+            className='min-h-24 rounded-md border border-input bg-background p-3 text-sm text-foreground'
+            placeholder={t('proposalDetail.characterDesignKeys', {
+              defaultValue: 'Character design object keys, one per line'
+            })}
+          />
+          <button
+            name='intent'
+            value='updateMetadata'
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 justify-self-end rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          >
+            {t('actions.save', { defaultValue: 'Save' })}
+          </button>
+        </fetcher.Form>
+      )}
       <div className='grid gap-6 xl:grid-cols-2'>
         <ReviewPanel
           title={t('proposalDetail.proposalTitle')}
@@ -292,4 +335,3 @@ function ReviewForm({
     </fetcher.Form>
   )
 }
-

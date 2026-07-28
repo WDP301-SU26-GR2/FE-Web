@@ -2,7 +2,10 @@ import {
   reprintRequestControllerApproveChapter,
   reprintRequestControllerAssignReviser,
   reprintRequestControllerCreate,
-  reprintRequestControllerFindAll
+  reprintRequestControllerFindAll,
+  reprintRequestControllerFindById,
+  reprintRequestControllerGetChapterById,
+  reprintRequestControllerGetChapters
 } from '~/api/operations/reprint-requests/reprint-requests'
 import { usersControllerListMangakas } from '~/api/operations/users/users'
 import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
@@ -28,14 +31,39 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
         })
       )
     )
-    const reprints = Array.from(
+    const reprintList = Array.from(
       new Map(responses.flatMap((response) => response.data).map((item) => [item.id, item])).values()
     )
-    const chapterResponses = await Promise.all(series.map((item) => chapterControllerListBySeries({ seriesId: item.id })))
+    const reprints = await Promise.all(
+      reprintList.map(async (item) => {
+        const [detail, chapters] = await Promise.all([
+          reprintRequestControllerFindById({ id: item.id }).catch(() => null),
+          reprintRequestControllerGetChapters({ id: item.id }).catch(() => null)
+        ])
+        if (chapters?.status === 200) {
+          await Promise.all(
+            chapters.data.flatMap((chapter) =>
+              chapter.originalChapterId
+                ? [
+                    reprintRequestControllerGetChapterById({
+                      id: item.id,
+                      chapterId: chapter.originalChapterId
+                    }).catch(() => null)
+                  ]
+                : []
+            )
+          )
+        }
+        return detail?.status === 200 ? detail.data : null
+      })
+    )
+    const chapterResponses = await Promise.all(
+      series.map((item) => chapterControllerListBySeries({ seriesId: item.id }))
+    )
     return {
       series,
       chapters: chapterResponses.flatMap((response) => response.data.items),
-      reprints,
+      reprints: reprints.filter((item) => item != null),
       mangakas: mangakasResponse.data.items,
       contractTypes: Object.fromEntries(
         contractsResponse.data
@@ -57,7 +85,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     if (intent === 'createReprint') {
       const chapterRangeStart = Number(required(form, 'chapterStart'))
       const chapterRangeEnd = Number(required(form, 'chapterEnd'))
-      if (!Number.isInteger(chapterRangeStart) || !Number.isInteger(chapterRangeEnd) || chapterRangeStart < 0 || chapterRangeEnd < chapterRangeStart)
+      if (
+        !Number.isInteger(chapterRangeStart) ||
+        !Number.isInteger(chapterRangeEnd) ||
+        chapterRangeStart < 0 ||
+        chapterRangeEnd < chapterRangeStart
+      )
         return { ok: false, intent, errorKey: 'invalidChapterRange' }
       await reprintRequestControllerCreate({
         seriesId: required(form, 'seriesId'),

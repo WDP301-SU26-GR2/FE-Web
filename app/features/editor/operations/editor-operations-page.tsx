@@ -9,6 +9,7 @@ import {
   RefreshCcw,
   Star,
   TrendingUp,
+  UsersRound,
   Wrench
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -23,7 +24,8 @@ export function EditorOperationsPage() {
     ['surveys', BarChart3],
     ['reprints', BookCopy],
     ['transfers', GitPullRequestArrow],
-    ['versions', Library]
+    ['versions', Library],
+    ['insights', UsersRound]
   ] as const
 
   return (

@@ -24,12 +24,7 @@ import { EditorActionToast } from '../components/editor-action-toast'
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
-const HOLDABLE_MANUSCRIPT_STATUSES = new Set([
-  'IN_PRODUCTION',
-  'EDITOR_REVIEW',
-  'EDITOR_REVISION',
-  'READY_FOR_PRINT'
-])
+const HOLDABLE_MANUSCRIPT_STATUSES = new Set(['IN_PRODUCTION', 'EDITOR_REVIEW', 'EDITOR_REVISION', 'READY_FOR_PRINT'])
 
 export function EditorChapterReviewPage({
   data,
@@ -125,6 +120,16 @@ export function EditorChapterReviewPage({
         </button>
       )}
       <EditorActionToast data={fetcher.data} scope={`editor-chapter-${chapter.id}`} />
+      {fetcher.data?.downloadUrl && (
+        <a
+          href={fetcher.data.downloadUrl}
+          target='_blank'
+          rel='noreferrer'
+          className='inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
+          {t('actions.download', { defaultValue: 'Download task file' })}
+        </a>
+      )}
       <WorkflowActionPanel data={data} />
       <nav
         aria-label={t('chapterReview.reviewSections')}
@@ -175,6 +180,12 @@ export function EditorChapterReviewPage({
                   </span>
                   <span className='text-muted-foreground'>{page.status.replaceAll('_', ' ')}</span>
                 </figcaption>
+                <p className='border-t border-border px-3 py-2 text-[11px] text-muted-foreground'>
+                  {t('chapterReview.regionCount', {
+                    count: data.regionsByPage[page.id]?.length ?? 0,
+                    defaultValue: '{{count}} regions'
+                  })}
+                </p>
               </figure>
             ))}
           </div>
@@ -313,6 +324,58 @@ export function EditorChapterReviewPage({
                 />
               </div>
             )}
+            {data.stages && (
+              <div className='mt-4 space-y-3 rounded-lg border border-border p-4'>
+                <div>
+                  <h3 className='font-bold text-foreground'>
+                    {t('chapterReview.productionStages', { defaultValue: 'Production stages' })}
+                  </h3>
+                  <p className='mt-1 text-xs text-muted-foreground'>
+                    {t('chapterReview.currentRevisionRound', {
+                      defaultValue: 'Stage timing reflects the current revision round.'
+                    })}
+                  </p>
+                </div>
+                {data.stages.stages.map((stage) => (
+                  <div key={stage.id} className='grid gap-2 rounded-md bg-muted p-3 text-xs sm:grid-cols-4'>
+                    <strong className='text-foreground'>
+                      {stage.order}. {stage.name}
+                    </strong>
+                    <span>{stage.status}</span>
+                    <span>{stage.analytics.openCount} open</span>
+                    <span>
+                      {data.stagePages.filter((page) => page.stageId === stage.id && page.outputReady).length}/
+                      {data.stagePages.filter((page) => page.stageId === stage.id).length} outputs
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <fetcher.Form
+              method='post'
+              className='mt-4 grid gap-2 rounded-lg border border-border p-4 sm:grid-cols-[1fr_1fr_auto]'
+            >
+              <input type='hidden' name='chapterId' value={chapter.id} />
+              <input
+                name='taskId'
+                required
+                className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
+                placeholder='Task ID'
+              />
+              <input
+                name='key'
+                required
+                className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
+                placeholder='Task file key'
+              />
+              <button
+                name='intent'
+                value='downloadTaskFile'
+                className='h-10 rounded-md border border-border px-4 text-sm font-bold text-foreground'
+              >
+                {t('actions.download', { defaultValue: 'Download' })}
+              </button>
+            </fetcher.Form>
             <fetcher.Form method='post' className='mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]'>
               <input type='hidden' name='chapterId' value={chapter.id} />
               <label className='grid gap-1.5 text-xs font-bold text-foreground'>

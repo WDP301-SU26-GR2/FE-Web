@@ -1,5 +1,6 @@
 import {
   transferControllerCreateTransferContract,
+  transferControllerGetSignatures,
   transferControllerGetTransferRequestById,
   transferControllerStartNegotiation
 } from '~/api/operations/transfer/transfer'
@@ -10,16 +11,23 @@ import type { Route } from './+types/operations-transfers'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const requestId = new URL(request.url).searchParams.get('requestId')?.trim() ?? ''
-  if (!requestId) return { request: null, requestId: '', hasError: false }
+  const contractId = new URL(request.url).searchParams.get('contractId')?.trim() ?? ''
+  if (!requestId && !contractId)
+    return { request: null, requestId: '', contractId: '', signatures: [], hasError: false }
   try {
-    const response = await transferControllerGetTransferRequestById({ id: requestId })
+    const [response, signatures] = await Promise.all([
+      requestId ? transferControllerGetTransferRequestById({ id: requestId }) : null,
+      contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
+    ])
     return {
-      request: response.status === 200 ? response.data : null,
+      request: response?.status === 200 ? response.data : null,
       requestId,
-      hasError: response.status !== 200
+      contractId,
+      signatures: signatures?.status === 200 ? signatures.data.signatures : [],
+      hasError: Boolean(requestId && response?.status !== 200)
     }
   } catch {
-    return { request: null, requestId, hasError: true }
+    return { request: null, requestId, contractId, signatures: [], hasError: true }
   }
 }
 

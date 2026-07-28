@@ -1,7 +1,7 @@
 import {
-  contractControllerGetPaymentConditions,
   contractControllerUpdateContract,
-  contractControllerUpdateStatus
+  contractControllerUpdateStatus,
+  paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
 import { EditorContractTermsPage, type EditorActionResult } from '~/features/editor'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
@@ -18,7 +18,7 @@ import type { Route } from './+types/contract-terms'
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, conditions] = await Promise.all([
     loadContractBase(params.id),
-    contractControllerGetPaymentConditions({ contractId: params.id }).catch(() => null)
+    paymentConditionControllerGetPaymentConditions({ contractId: params.id }).catch(() => null)
   ])
   return { ...base, conditions: conditions?.status === 200 ? conditions.data.data : [] }
 }
@@ -77,7 +77,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
 }
 
 async function contractHasValidPaymentCondition(contractId: string) {
-  const response = await contractControllerGetPaymentConditions({ contractId })
+  const response = await paymentConditionControllerGetPaymentConditions({ contractId })
   return response.status === 200 && hasValidPaymentCondition(response.data.data)
 }
 

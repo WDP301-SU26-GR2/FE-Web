@@ -21,7 +21,7 @@ export function EditorContractTermsPage({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
-  const editable = contract.status === 'NEGOTIATION'
+  const editable = ['MANGAKA_REVIEW', 'MANGAKA_APPROVED', 'BOARD_APPROVED', 'NEGOTIATION'].includes(contract.status)
   const canSendDraft = contract.status === 'DRAFT'
   const validConditionCount = conditions.filter(
     (condition) =>
