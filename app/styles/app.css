@@ -57,6 +57,23 @@ html.dark {
    Tailwind utility đặt trực tiếp trên component vẫn có thể ghi đè khi cần
    các chế độ đặc biệt như kéo, vẽ hoặc chọn vùng. */
 @layer base {
+  /* Status chips must stay readable even inside narrow flex/grid cells. */
+  span.rounded-full {
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  dt,
+  dd {
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
   button:not(:disabled),
   a[href],
   summary,

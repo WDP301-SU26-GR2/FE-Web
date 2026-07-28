@@ -1,6 +1,10 @@
 import { paymentControllerGetPaymentsBySeries } from '~/api/operations/payments/payments'
 import { revisionControllerList } from '~/api/operations/revision/revision'
-import { surveyControllerGetBoardRanking, surveyControllerGetSeriesTrend } from '~/api/operations/survey/survey'
+import {
+  surveyControllerGetBoardRanking,
+  surveyControllerGetSeriesTrend,
+  surveyControllerGetSurveyPeriods
+} from '~/api/operations/survey/survey'
 import { usersControllerListAssistants } from '~/api/operations/users/users'
 import { EditorInsightsPage } from '~/features/editor'
 import { loadOperationalSeries } from './operations-route-utils'
@@ -11,8 +15,9 @@ export async function clientLoader({ request }: LoaderFunctionArgs) {
   const seriesId = searchParams.get('seriesId') ?? ''
   const surveyPeriodId = searchParams.get('surveyPeriodId') ?? ''
   try {
-    const [series, assistants, revisions, trend, boardRanking, payments] = await Promise.all([
+    const [series, periods, assistants, revisions, trend, boardRanking, payments] = await Promise.all([
       loadOperationalSeries(),
+      surveyControllerGetSurveyPeriods(),
       usersControllerListAssistants({ limit: 100, offset: 0 }),
       revisionControllerList({ limit: 100, offset: 0 }),
       seriesId ? surveyControllerGetSeriesTrend({ seriesId, periods: 12 }).catch(() => null) : null,
@@ -21,6 +26,7 @@ export async function clientLoader({ request }: LoaderFunctionArgs) {
     ])
     return {
       series,
+      periods: periods.data,
       seriesId,
       surveyPeriodId,
       assistants: assistants.data.items,
@@ -33,6 +39,7 @@ export async function clientLoader({ request }: LoaderFunctionArgs) {
   } catch {
     return {
       series: [],
+      periods: [],
       seriesId,
       surveyPeriodId,
       assistants: [],

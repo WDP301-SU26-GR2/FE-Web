@@ -154,8 +154,25 @@
     "pageAlt": "Manuscript page {{number}}",
     "characterAlt": "Character design {{number}}",
     "metadataTitle": "Series metadata",
-    "coverImageKey": "Cover image object key",
-    "characterDesignKeys": "Character design object keys, one per line",
+    "metadataDescription": "Edit presentation details while this submission is in editorial review.",
+    "editable": "Editable",
+    "locked": "Locked",
+    "lockedDescription": "Series metadata is locked because the submission is no longer in editorial review. If the Board rejects it and review is reopened, this form will become editable again.",
+    "seriesTitle": "Series title",
+    "synopsis": "Synopsis",
+    "coverImage": "Cover image",
+    "characterDesigns": "Character designs",
+    "noCover": "No cover image",
+    "addCover": "Add cover",
+    "replaceCover": "Replace cover",
+    "removeImage": "Remove image",
+    "noCharacterDesigns": "No character designs have been added.",
+    "addCharacterDesigns": "Add character images",
+    "removeCharacter": "Remove character design {{number}}",
+    "imageCount": "{{count}} images",
+    "imageHint": "PNG, JPG and WEBP are supported. Internal storage paths are hidden from the interface.",
+    "uploading": "Uploading images...",
+    "uploadError": "Images could not be uploaded. Please try again.",
     "rejectTitle": "Reject this concept",
     "rejectDescription": "This permanently closes the current submission as abandoned.",
     "rejectPlaceholder": "Explain why the concept is being rejected...",
@@ -181,6 +198,19 @@
     "regionCount": "{{count}} regions",
     "productionStages": "Production stages",
     "currentRevisionRound": "Stage timing reflects the current revision round.",
+    "openTasks": "{{count}} open tasks",
+    "stageOutputs": "{{ready}}/{{total}} completed outputs",
+    "stageStatuses": {
+      "LOCKED": "Not started",
+      "ACTIVE": "In progress",
+      "COMPLETED": "Completed"
+    },
+    "stageNames": {
+      "INKING": "Inking",
+      "DETAILING": "Detailing",
+      "LETTERING": "Lettering",
+      "FINAL_CHECK": "Final check"
+    },
     "publishGate": "The backend verifies a FULLY_EXECUTED contract and co-owner gates before publication.",
     "nameTitle": "Chapter storyboard Name",
     "production": "Production schedule and progress",
@@ -353,6 +383,7 @@
       "emptyChat": "No messages have been sent in this session.",
       "chatPlaceholder": "Write a message...",
       "chatLocked": "Discussion is locked during voting.",
+      "unknownMember": "Board member",
       "decisionAgendaHint": "Serialization and series lifecycle voting items are prepared directly inside this session.",
       "addDecisionTitle": "Add a voting item",
       "addDecisionDescription": "Select a decision type and its series. The form only shows the information required for that decision type.",
@@ -575,6 +606,40 @@
     }
   },
   "operations": {
+    "unknownAssistant": "Assistant unavailable",
+    "selectLanguage": "Select a language",
+    "languages": {
+      "JA": "Japanese",
+      "EN": "English",
+      "VI": "Vietnamese"
+    },
+    "readingDirections": {
+      "RTL": "Right to left",
+      "LTR": "Left to right"
+    },
+    "versionTypes": {
+      "ORIGINAL": "Original edition",
+      "TRANSLATION": "Translated edition",
+      "LOCALIZATION": "Localized edition"
+    },
+    "revisionTypes": {
+      "PROPOSAL": "Series proposal",
+      "NAME": "Storyboard",
+      "MANUSCRIPT": "Manuscript",
+      "TASK": "Production task"
+    },
+    "availabilityStatuses": {
+      "AVAILABLE": "Available",
+      "UNAVAILABLE": "Unavailable",
+      "BUSY": "Currently busy"
+    },
+    "specializations": {
+      "BACKGROUND": "Background",
+      "INKING": "Inking",
+      "DETAILING": "Detailing",
+      "LETTERING": "Lettering",
+      "COLORING": "Coloring"
+    },
     "eyebrow": "Editorial operations",
     "title": "Series operations desk",
     "subtitle": "Manage deadlines, ranking cycles, lifecycle changes, reprints, transfers and publication editions.",
@@ -588,6 +653,8 @@
     "versions": "Publication versions",
     "insights": "Editorial insights",
     "surveyPeriodId": "Survey period ID",
+    "selectSurveyPeriod": "Select a survey period",
+    "surveyIssue": "Issue {{issue}}",
     "seriesRankingTrend": "Series ranking trend",
     "boardRanking": "Board ranking",
     "paymentsBySeries": "Payments by series",
@@ -608,6 +675,15 @@
     "reflectedIssue": "Reflected issue",
     "transferAmount": "Transfer amount",
     "transferRequestId": "Transfer request ID",
+    "transferSignatures": "Transfer signatures",
+    "noSignatures": "No signatures have been recorded.",
+    "transferContractCreated": "The transfer agreement was created.",
+    "viewSignatureProgress": "View signature progress",
+    "transferSignatureRoles": {
+      "MANGAKA_A": "Transferring Mangaka",
+      "MANGAKA_B": "Receiving Mangaka",
+      "BOARD": "Board representative"
+    },
     "coOwner": "Require co-owner chapter approval",
     "notes": "Edition notes",
     "explorer": "Operational data explorer",
@@ -861,6 +937,7 @@
     "claimed": "The submission has been assigned to you.",
     "released": "The submission has been returned to the queue.",
     "approved": "Approved successfully.",
+    "updated": "Series information has been updated.",
     "revisionRequested": "The revision request has been sent.",
     "manuscriptApproved": "The manuscript is approved and ready for publication.",
     "published": "The chapter has been published.",
@@ -930,6 +1007,7 @@
     "reviewStarted": "The submission cannot be released because review has started.",
     "notAssigned": "You are not the assigned Editor for this content.",
     "invalidState": "The current state does not allow this action.",
+    "metadataLocked": "Series metadata is locked after editorial review ends.",
     "contractRequired": "A fully executed series contract is required before publication.",
     "pagesNotReadyForPublish": "Publication is blocked because some pages have not been approved. Resubmit the manuscript or remove the extra pages.",
     "revisionReasonRequired": "Enter a revision reason before sending the manuscript back.",

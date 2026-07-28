@@ -88,7 +88,7 @@ export function EditorBoardMeetingRoomPage({
             <h1 className='text-3xl font-bold text-foreground'>{session.title}</h1>
             <p className='mt-2 text-sm text-muted-foreground'>{session.description}</p>
           </div>
-          <div className='flex gap-2'>
+          <div className='flex flex-wrap justify-end gap-2'>
             <BoardStatus value={session.status} />
             <BoardStatus value={meeting.phase} />
           </div>
@@ -179,7 +179,7 @@ export function EditorBoardMeetingRoomPage({
         </section>
       )}
 
-      <div className='grid gap-6 xl:grid-cols-[1.2fr_0.8fr]'>
+      <div className='space-y-6'>
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='flex items-center gap-2 text-lg font-bold'>
             <MessageSquareText className='size-5 text-primary' />
@@ -189,7 +189,9 @@ export function EditorBoardMeetingRoomPage({
             {meeting.messages.map((message) => (
               <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
                 <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-                  <strong className='text-foreground'>{message.sender.displayName || message.sender.id}</strong>
+                  <strong className='text-foreground'>
+                    {message.sender.displayName || t('board.meeting.unknownMember')}
+                  </strong>
                   <span>
                     {new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(new Date(message.createdAt))}
                   </span>
@@ -241,16 +243,16 @@ export function EditorBoardMeetingRoomPage({
           <div className='mt-4 space-y-3'>
             {orderBoardDecisions(meeting.decisions).map((decision) => (
               <article key={decision.id} className='rounded-lg border border-border p-3'>
-                <div className='flex justify-between gap-2'>
+                <div className='flex items-start justify-between gap-3'>
                   {decisionBasePath ? (
                     <Link
-                      className='font-bold hover:text-primary hover:underline'
+                      className='min-w-0 text-pretty font-bold leading-6 hover:text-primary hover:underline'
                       to={`${decisionBasePath}/${decision.id}`}
                     >
                       {getDecisionTitle(decision, t)}
                     </Link>
                   ) : (
-                    <strong>{getDecisionTitle(decision, t)}</strong>
+                    <strong className='min-w-0 text-pretty leading-6'>{getDecisionTitle(decision, t)}</strong>
                   )}
                   <BoardStatus value={decision.result || 'PENDING'} />
                 </div>

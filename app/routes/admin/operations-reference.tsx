@@ -1,4 +1,4 @@
-import { useLoaderData, type ClientActionFunctionArgs, type ClientLoaderFunctionArgs } from 'react-router'
+import { useLoaderData, type ClientLoaderFunctionArgs } from 'react-router'
 import { chapterControllerListPages, chapterControllerProgress } from '~/api/operations/chapters/chapters'
 import { deadlineControllerGetOne } from '~/api/operations/deadline-requests/deadline-requests'
 import {
@@ -20,14 +20,12 @@ import {
   surveyControllerGetSurveyPeriods
 } from '~/api/operations/survey/survey'
 import { tankobonControllerDashboard } from '~/api/operations/tankobon/tankobon'
-import { taskControllerGetTaskFileDownloadUrl } from '~/api/operations/task/task'
 import {
   transferControllerGetSignatures,
   transferControllerGetTransferRequestById
 } from '~/api/operations/transfer/transfer'
 import { usersControllerListAssistants, usersControllerListMangakas } from '~/api/operations/users/users'
-import { AdminReferencePage, type AdminReferenceActionResult } from '~/features/admin'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { AdminReferencePage } from '~/features/admin'
 
 export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   const search = new URL(request.url).searchParams
@@ -107,30 +105,6 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   }
 }
 
-export async function clientAction({ request }: ClientActionFunctionArgs): Promise<AdminReferenceActionResult> {
-  const form = await request.formData()
-  const intent = String(form.get('intent') ?? '')
-  try {
-    if (intent !== 'downloadTaskFile') return { ok: false, intent }
-    const response = await taskControllerGetTaskFileDownloadUrl(
-      { id: required(form, 'taskId') },
-      { key: required(form, 'key') }
-    )
-    return {
-      ok: true,
-      intent,
-      downloadUrl: response.data.downloadUrl,
-      expiresAt: response.data.expiresAt
-    }
-  } catch (error) {
-    return {
-      ok: false,
-      intent,
-      message: extractApiErrorMessage(error, 'Không thể tạo liên kết tải file tác vụ.')
-    }
-  }
-}
-
 async function settle<T>(promise: Promise<{ data: T } | { data: void }>): Promise<T | null> {
   try {
     const data = (await promise).data
@@ -142,12 +116,6 @@ async function settle<T>(promise: Promise<{ data: T } | { data: void }>): Promis
 
 function clean(value: string | null) {
   return value?.trim() ?? ''
-}
-
-function required(form: FormData, key: string) {
-  const value = String(form.get(key) ?? '').trim()
-  if (!value) throw new Error(`Missing ${key}`)
-  return value
 }
 
 export default function RouteComponent() {

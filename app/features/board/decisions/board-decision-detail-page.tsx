@@ -140,13 +140,13 @@ export function BoardDecisionDetailPage({
           {t('decisions.finalizedSessionHint', { phase: t(`filters.sessionPhases.${livePhase}`) })}
         </p>
       )}
-      <div className='grid gap-5 xl:grid-cols-2'>
+      <div className='space-y-5'>
         <BoardPanel title={t('decisions.votes')}>
           <div className='space-y-2'>
             {votes.map((vote, index) => (
               <div
                 key={`${vote.voterId ?? 'vote'}-${index}`}
-                className='flex justify-between rounded-lg border border-border p-3 text-sm'
+                className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm'
               >
                 <span>{vote.voterId}</span>
                 <StatusBadge value={vote.voteValue ?? 'ABSTAIN'} />

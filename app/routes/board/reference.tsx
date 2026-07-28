@@ -22,7 +22,6 @@ import {
   surveyControllerGetSurveyPeriodVotes
 } from '~/api/operations/survey/survey'
 import { tankobonControllerCreate, tankobonControllerDashboard } from '~/api/operations/tankobon/tankobon'
-import { taskControllerGetTaskFileDownloadUrl } from '~/api/operations/task/task'
 import { usersControllerListAssistants, usersControllerListMangakas } from '~/api/operations/users/users'
 import { BoardReferencePage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
@@ -108,19 +107,6 @@ export async function clientAction({ request }: ClientActionFunctionArgs): Promi
         period: required(form, 'period')
       })
       return { ok: true, intent, messageKey: 'tankobonSalesRecorded' }
-    }
-    if (intent === 'downloadTaskFile') {
-      const response = await taskControllerGetTaskFileDownloadUrl(
-        { id: required(form, 'taskId') },
-        { key: required(form, 'key') }
-      )
-      return {
-        ok: true,
-        intent,
-        messageKey: 'taskDownloadReady',
-        downloadUrl: response.data.downloadUrl,
-        expiresAt: response.data.expiresAt
-      }
     }
     return { ok: false, intent }
   } catch (error) {

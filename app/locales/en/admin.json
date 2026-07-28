@@ -299,9 +299,12 @@
       "revisions": "Recent revision rounds",
       "reprints": "Reprint requests",
       "deadlines": "Deadline lookup by chapter",
-      "chapterId": "Enter chapter ID",
+      "selectSeries": "Select a series",
+      "selectChapter": "Select a chapter",
+      "chapterOption": "Chapter {{number}} {{title}}",
       "search": "Search",
-      "deadlineHint": "Enter a chapter ID to review its deadline requests.",
+      "deadlineHint": "Select a series and chapter to review its deadline requests.",
+      "noReason": "No reason was provided.",
       "resolved": "Resolved",
       "open": "Open",
       "unknownSeries": "Unknown series",
@@ -396,7 +399,17 @@
       "fileKey": "Task file key",
       "load": "Load data",
       "createDownload": "Create download link",
-      "openDownload": "Open protected download"
+      "openDownload": "Open protected download",
+      "datasets": {
+        "detail": "Series information",
+        "defense": "Performance and defense data",
+        "names": "Series storyboards",
+        "selectedName": "Selected storyboard",
+        "rankingTrend": "Ranking trend",
+        "boardRanking": "Board assessment",
+        "assistants": "Assistants",
+        "mangakas": "Mangakas"
+      }
     }
   },
   "boardOversight": {
@@ -437,6 +450,42 @@
     }
   },
   "audit": {
+    "userActor": "Staff member",
+    "record": "Business record",
+    "entityTypes": {
+      "SERIES": "Series",
+      "MANUSCRIPT": "Manuscript",
+      "PAGE": "Page",
+      "CHAPTER": "Chapter",
+      "TASK": "Production task",
+      "DEADLINE_REQUEST": "Deadline request",
+      "USER": "User account",
+      "REGION": "Page region",
+      "APP_CONFIG": "System configuration",
+      "CONTRACT": "Contract",
+      "BOARD_DECISION": "Board decision",
+      "REPRINT_REQUEST": "Reprint request",
+      "TRANSFER_REQUEST": "Transfer request",
+      "PAYMENT_RECORD": "Payment",
+      "SURVEY_PERIOD": "Survey period",
+      "PUBLICATION_VERSION": "Publication edition"
+    },
+    "actions": {
+      "CREATE": "Created",
+      "UPDATE": "Updated",
+      "DELETE": "Deleted",
+      "STATUS_CHANGED": "Status changed",
+      "APPROVE": "Approved",
+      "REJECT": "Rejected"
+    },
+    "states": {
+      "ACTIVE": "Active",
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
     "eyebrow": "Monitoring and traceability",
     "title": "System audit log",
     "subtitle": "Track state transitions, administrative actions, and automated events across the platform.",

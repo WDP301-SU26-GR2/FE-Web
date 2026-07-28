@@ -4,7 +4,11 @@ import { surveyControllerGetVotingConfig, surveyControllerUpdateVotingConfig } f
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import type { VotingConfigBodyDtoAuthMode } from '~/api/model/survey'
 import { AdminSettingsPage, type AdminSettingsActionResult, type AdminSettingsData } from '~/features/admin'
-import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
+import {
+  extractApiErrorCode,
+  extractApiErrorMessage,
+  extractApiSuccessMessage
+} from '~/shared/lib/api/extract-api-error'
 
 import type { Route } from './+types/settings'
 
@@ -49,7 +53,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         assignmentGraceDays: integer(formData, 'assignmentGraceDays')
       })
       if (response.status !== 200) return failure(intent, 'validation')
-      return success(intent, 'appUpdated')
+      return success(intent, 'appUpdated', extractApiSuccessMessage(response, 'Đã cập nhật cấu hình hệ thống.'))
     }
 
     if (intent === 'boardConfig') {
@@ -63,7 +67,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         }
       )
       if (response.status !== 200) return failure(intent, response.status === 404 ? 'notFound' : 'boardLocked')
-      return success(intent, 'boardUpdated')
+      return success(intent, 'boardUpdated', extractApiSuccessMessage(response, 'Đã cập nhật cấu hình Hội đồng.'))
     }
 
     if (intent === 'votingConfig') {
@@ -80,12 +84,16 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         captchaThreshold: number(formData, 'captchaThreshold')
       })
       if (response.status !== 200) return failure(intent, 'notFound')
-      return success(intent, 'votingUpdated')
+      return success(intent, 'votingUpdated', extractApiSuccessMessage(response, 'Đã cập nhật cấu hình bình chọn.'))
     }
 
     return failure(intent, 'invalidAction')
   } catch (error) {
-    return failure(intent, mapError(error))
+    return failure(
+      intent,
+      mapError(error),
+      extractApiErrorMessage(error, 'Không thể cập nhật cấu hình. Vui lòng kiểm tra dữ liệu và thử lại.')
+    )
   }
 }
 
@@ -111,12 +119,12 @@ function integer(formData: FormData, key: string) {
   return value
 }
 
-function success(intent: string, messageKey: string): AdminSettingsActionResult {
-  return { ok: true, intent, messageKey }
+function success(intent: string, messageKey: string, message: string): AdminSettingsActionResult {
+  return { ok: true, intent, messageKey, message }
 }
 
-function failure(intent: string, errorKey: string): AdminSettingsActionResult {
-  return { ok: false, intent, errorKey }
+function failure(intent: string, errorKey: string, message?: string): AdminSettingsActionResult {
+  return { ok: false, intent, errorKey, message }
 }
 
 function mapError(error: unknown) {

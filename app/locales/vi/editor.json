@@ -154,8 +154,25 @@
     "pageAlt": "Trang bản thảo {{number}}",
     "characterAlt": "Thiết kế nhân vật {{number}}",
     "metadataTitle": "Thông tin series",
-    "coverImageKey": "Object key ảnh bìa",
-    "characterDesignKeys": "Object key thiết kế nhân vật, mỗi dòng một key",
+    "metadataDescription": "Chỉnh tiêu đề, tóm tắt và hình ảnh trình bày trong thời gian Editor review hồ sơ.",
+    "editable": "Đang chỉnh sửa",
+    "locked": "Đã khóa",
+    "lockedDescription": "Thông tin series đã được khóa vì hồ sơ không còn ở giai đoạn Editor review. Nếu Hội đồng từ chối và vòng review được mở lại, form sẽ tự động cho phép chỉnh sửa.",
+    "seriesTitle": "Tên series",
+    "synopsis": "Tóm tắt nội dung",
+    "coverImage": "Ảnh bìa",
+    "characterDesigns": "Thiết kế nhân vật",
+    "noCover": "Chưa có ảnh bìa",
+    "addCover": "Thêm ảnh bìa",
+    "replaceCover": "Thay ảnh bìa",
+    "removeImage": "Xóa ảnh",
+    "noCharacterDesigns": "Chưa có ảnh thiết kế nhân vật.",
+    "addCharacterDesigns": "Thêm ảnh nhân vật",
+    "removeCharacter": "Xóa thiết kế nhân vật {{number}}",
+    "imageCount": "{{count}} ảnh",
+    "imageHint": "Hỗ trợ PNG, JPG và WEBP. Đường dẫn lưu trữ nội bộ được ẩn khỏi giao diện.",
+    "uploading": "Đang tải ảnh...",
+    "uploadError": "Không thể tải ảnh lên. Vui lòng thử lại.",
     "rejectTitle": "Từ chối concept",
     "rejectDescription": "Thao tác này sẽ đóng vĩnh viễn hồ sơ hiện tại ở trạng thái abandoned.",
     "rejectPlaceholder": "Giải thích lý do từ chối concept...",
@@ -181,6 +198,19 @@
     "regionCount": "{{count}} vùng",
     "productionStages": "Các giai đoạn sản xuất",
     "currentRevisionRound": "Thời gian stage phản ánh vòng chỉnh sửa hiện tại.",
+    "openTasks": "{{count}} công việc đang mở",
+    "stageOutputs": "{{ready}}/{{total}} đầu ra đã hoàn thành",
+    "stageStatuses": {
+      "LOCKED": "Chưa bắt đầu",
+      "ACTIVE": "Đang thực hiện",
+      "COMPLETED": "Đã hoàn thành"
+    },
+    "stageNames": {
+      "INKING": "Đi nét",
+      "DETAILING": "Hoàn thiện chi tiết",
+      "LETTERING": "Chèn chữ",
+      "FINAL_CHECK": "Kiểm tra cuối"
+    },
     "publishGate": "Backend sẽ kiểm tra hợp đồng FULLY_EXECUTED và gate đồng sở hữu trước khi cho phép xuất bản.",
     "nameTitle": "Name storyboard của chương",
     "production": "Tiến độ và lịch sản xuất",
@@ -353,6 +383,7 @@
       "emptyChat": "Chưa có tin nhắn nào trong phiên họp.",
       "chatPlaceholder": "Nhập nội dung trao đổi...",
       "chatLocked": "Thảo luận đã khóa trong giai đoạn bỏ phiếu.",
+      "unknownMember": "Thành viên Hội đồng",
       "decisionAgendaHint": "Các nội dung serial hóa và vòng đời series được chuẩn bị trực tiếp trong phiên này.",
       "addDecisionTitle": "Thêm nội dung biểu quyết",
       "addDecisionDescription": "Chọn loại quyết định và bộ truyện tương ứng. Biểu mẫu sẽ chỉ hiển thị những thông tin cần thiết cho loại quyết định đó.",
@@ -575,6 +606,40 @@
     }
   },
   "operations": {
+    "unknownAssistant": "Trợ lý không còn khả dụng",
+    "selectLanguage": "Chọn ngôn ngữ",
+    "languages": {
+      "JA": "Tiếng Nhật",
+      "EN": "Tiếng Anh",
+      "VI": "Tiếng Việt"
+    },
+    "readingDirections": {
+      "RTL": "Đọc từ phải sang trái",
+      "LTR": "Đọc từ trái sang phải"
+    },
+    "versionTypes": {
+      "ORIGINAL": "Phiên bản gốc",
+      "TRANSLATION": "Phiên bản dịch",
+      "LOCALIZATION": "Phiên bản bản địa hóa"
+    },
+    "revisionTypes": {
+      "PROPOSAL": "Đề xuất bộ truyện",
+      "NAME": "Name phân cảnh",
+      "MANUSCRIPT": "Bản thảo",
+      "TASK": "Công việc sản xuất"
+    },
+    "availabilityStatuses": {
+      "AVAILABLE": "Sẵn sàng nhận việc",
+      "UNAVAILABLE": "Chưa thể nhận việc",
+      "BUSY": "Đang bận"
+    },
+    "specializations": {
+      "BACKGROUND": "Vẽ nền",
+      "INKING": "Đi nét",
+      "DETAILING": "Hoàn thiện chi tiết",
+      "LETTERING": "Chèn chữ",
+      "COLORING": "Tô màu"
+    },
     "eyebrow": "Vận hành biên tập",
     "title": "Bàn vận hành series",
     "subtitle": "Quản lý deadline, kỳ xếp hạng, vòng đời series, tái bản, chuyển nhượng và phiên bản phát hành.",
@@ -588,6 +653,8 @@
     "versions": "Phiên bản phát hành",
     "insights": "Dữ liệu biên tập",
     "surveyPeriodId": "ID kỳ khảo sát",
+    "selectSurveyPeriod": "Chọn kỳ khảo sát",
+    "surveyIssue": "Kỳ số {{issue}}",
     "seriesRankingTrend": "Xu hướng xếp hạng series",
     "boardRanking": "Bảng xếp hạng Hội đồng",
     "paymentsBySeries": "Thanh toán theo series",
@@ -608,6 +675,15 @@
     "reflectedIssue": "Kỳ phản ánh kết quả",
     "transferAmount": "Giá trị chuyển nhượng",
     "transferRequestId": "ID yêu cầu chuyển nhượng",
+    "transferSignatures": "Tiến độ ký chuyển nhượng",
+    "noSignatures": "Chưa có chữ ký nào được ghi nhận.",
+    "transferContractCreated": "Đã tạo hợp đồng chuyển nhượng.",
+    "viewSignatureProgress": "Xem tiến độ ký",
+    "transferSignatureRoles": {
+      "MANGAKA_A": "Mangaka chuyển giao",
+      "MANGAKA_B": "Mangaka tiếp nhận",
+      "BOARD": "Đại diện Hội đồng"
+    },
     "coOwner": "Yêu cầu đồng sở hữu duyệt chương",
     "notes": "Ghi chú phiên bản",
     "explorer": "Tra cứu dữ liệu vận hành",
@@ -861,6 +937,7 @@
     "claimed": "Đã nhận phụ trách hồ sơ.",
     "released": "Đã trả hồ sơ về hàng đợi.",
     "approved": "Đã duyệt thành công.",
+    "updated": "Đã cập nhật thông tin series.",
     "revisionRequested": "Đã gửi yêu cầu chỉnh sửa.",
     "manuscriptApproved": "Đã duyệt bản thảo, chương sẵn sàng để xuất bản.",
     "published": "Chương đã được xuất bản.",
@@ -930,6 +1007,7 @@
     "reviewStarted": "Không thể nhả hồ sơ vì quá trình review đã bắt đầu.",
     "notAssigned": "Bạn không phải Editor phụ trách nội dung này.",
     "invalidState": "Trạng thái hiện tại không cho phép thao tác này.",
+    "metadataLocked": "Thông tin series đã khóa sau khi kết thúc giai đoạn Editor review.",
     "contractRequired": "Series cần hợp đồng đã ký đầy đủ trước khi xuất bản.",
     "pagesNotReadyForPublish": "Không thể xuất bản vì vẫn còn trang chưa được duyệt. Hãy nộp lại bản thảo hoặc xoá trang thừa.",
     "revisionReasonRequired": "Hãy nhập lý do trước khi yêu cầu sửa bản thảo.",

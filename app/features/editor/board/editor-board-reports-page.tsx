@@ -22,10 +22,14 @@ export function EditorBoardReportsPage({
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [reportType, setReportType] = useState('')
-  const reportTypes = [...new Set(reports.flatMap((report) => report.reportType ? [report.reportType] : []))]
-  const filteredReports = reports.filter((report) =>
-    (!search || `${report.content ?? ''} ${series.find((item) => item.id === report.seriesId)?.title ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!reportType || report.reportType === reportType)
+  const reportTypes = [...new Set(reports.flatMap((report) => (report.reportType ? [report.reportType] : [])))]
+  const filteredReports = reports.filter(
+    (report) =>
+      (!search ||
+        `${report.content ?? ''} ${series.find((item) => item.id === report.seriesId)?.title ?? ''}`
+          .toLowerCase()
+          .includes(search.toLowerCase())) &&
+      (!reportType || report.reportType === reportType)
   )
   return (
     <BoardPageLayout
@@ -34,25 +38,38 @@ export function EditorBoardReportsPage({
       hasError={hasError}
     >
       <div className='flex justify-end'>
-        <button type='button' onClick={() => setCreateOpen(true)} className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+        <button
+          type='button'
+          onClick={() => setCreateOpen(true)}
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+        >
           <Plus className='size-4' />
           {t('actions.createReport')}
         </button>
       </div>
       <BoardPanel title={t('board.reportList')}>
-          <div className='mb-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>
-            <input className={boardInput} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('filters.searchReports')} />
-            <select className={boardInput} value={reportType} onChange={(event) => setReportType(event.target.value)}>
-              <option value=''>{t('filters.allReportTypes')}</option>
-              {reportTypes.map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>
-          </div>
-          <div className='grid gap-3'>
-            {filteredReports.map((report) => (
-              <ReportCard key={report.id} report={report} series={series} />
+        <div className='mb-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>
+          <input
+            className={boardInput}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t('filters.searchReports')}
+          />
+          <select className={boardInput} value={reportType} onChange={(event) => setReportType(event.target.value)}>
+            <option value=''>{t('filters.allReportTypes')}</option>
+            {reportTypes.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
             ))}
-            {!filteredReports.length && <p className='text-sm text-muted-foreground'>{t('board.emptyReports')}</p>}
-          </div>
+          </select>
+        </div>
+        <div className='grid gap-3'>
+          {filteredReports.map((report) => (
+            <ReportCard key={report.id} report={report} series={series} />
+          ))}
+          {!filteredReports.length && <p className='text-sm text-muted-foreground'>{t('board.emptyReports')}</p>}
+        </div>
       </BoardPanel>
       {createOpen && <CreateReportDialog series={series} decisions={decisions} onClose={() => setCreateOpen(false)} />}
     </BoardPageLayout>
@@ -123,7 +140,9 @@ function CreateReportDialog({
             </option>
             {matchingDecisions.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.decisionType ?? 'DECISION'} · {item.targetSeriesId?.slice(-6) ?? '—'}
+                {item.decisionType
+                  ? t(`board.decisionTypeLabels.${item.decisionType}`, { defaultValue: item.decisionType })
+                  : t('board.decisionList')}
               </option>
             ))}
           </select>
@@ -145,7 +164,11 @@ function CreateReportDialog({
           />
         </label>
         <div className='flex justify-end gap-2 border-t border-border pt-4'>
-          <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+          >
             {t('actions.cancel')}
           </button>
           <button
@@ -169,13 +192,13 @@ function ReportCard({
   report: SeriesReportResDtoOutput
   series: SeriesListResDtoOutputItemsItem[]
 }) {
-  const { i18n } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
           <h3 className='font-bold text-foreground'>
-            {series.find((item) => item.id === report.seriesId)?.title ?? report.seriesId ?? '—'}
+            {series.find((item) => item.id === report.seriesId)?.title ?? t('board.unknownSeries')}
           </h3>
           <p className='mt-1 text-xs font-semibold text-primary'>{report.reportType ?? '—'}</p>
         </div>

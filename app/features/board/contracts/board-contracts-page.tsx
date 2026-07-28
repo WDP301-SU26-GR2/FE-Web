@@ -19,7 +19,7 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
   )
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('contracts.title')} description={t('contracts.description')} />
+      <BoardHeader title={t('contracts.title')} description={t('contracts.description')} backHref='/dashboard/board' />
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
         <input

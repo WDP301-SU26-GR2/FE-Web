@@ -32,7 +32,11 @@ export function BoardSessionDetailPage({
   })
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={session.title} description={session.description || t('common.noDescription')} />
+      <BoardHeader
+        title={session.title}
+        description={session.description || t('common.noDescription')}
+        backHref='/dashboard/board/sessions'
+      />
       <BoardPanel title={t('sessions.details')}>
         <div className='grid gap-3 text-sm sm:grid-cols-4'>
           <div>
@@ -65,7 +69,7 @@ export function BoardSessionDetailPage({
               className='inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold'
             >
               <Users className='size-3.5 text-primary' />
-              {member.displayName || member.id}
+              {member.displayName || t('sessions.unknownMember')}
             </span>
           ))}
         </div>
@@ -106,8 +110,8 @@ export function BoardSessionDetailPage({
               to={`/dashboard/board/decisions/${decision.id}`}
               className='rounded-lg border border-border p-4 hover:border-primary'
             >
-              <div className='flex justify-between gap-3'>
-                <strong>{decision.decisionType ?? 'DECISION'}</strong>
+              <div className='flex flex-wrap items-start justify-between gap-3'>
+                <strong className='min-w-0 text-pretty leading-6'>{decision.decisionType ?? 'DECISION'}</strong>
                 <StatusBadge value={decision.result ?? 'PENDING'} />
               </div>
               <p className='mt-2 text-sm text-muted-foreground'>
@@ -161,7 +165,7 @@ function MeetingChat({
         {messages.map((message) => (
           <article key={message.id} className='rounded-md bg-muted p-3 text-sm'>
             <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-              <strong className='text-foreground'>{message.sender.displayName ?? message.sender.id}</strong>
+              <strong className='text-foreground'>{message.sender.displayName ?? t('sessions.unknownMember')}</strong>
               <time>{new Date(message.createdAt).toLocaleTimeString()}</time>
             </div>
             <p className='mt-1 whitespace-pre-wrap'>{message.content}</p>

@@ -69,8 +69,7 @@ export async function customFetch<T>(url: string, options?: any): Promise<T> {
   if (options?.body !== undefined) {
     config.data = options.body
   } else if (options?.data !== undefined) {
-    config.data =
-      typeof options.data === 'string' ? options.data : JSON.stringify(options.data)
+    config.data = typeof options.data === 'string' ? options.data : JSON.stringify(options.data)
   }
 
   if (options?.signal) {
@@ -105,7 +104,11 @@ export async function customFetch<T>(url: string, options?: any): Promise<T> {
           message: raw.message || 'API error'
         })
       }
-      return { data: raw.data, status } as T
+      return {
+        data: raw.data,
+        status,
+        message: typeof raw.message === 'string' ? raw.message : undefined
+      } as T
     }
 
     // Fallback: response doesn't follow the envelope contract. Pass raw

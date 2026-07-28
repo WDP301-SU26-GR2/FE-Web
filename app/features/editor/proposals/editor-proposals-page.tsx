@@ -104,11 +104,11 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
   return (
     <article className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
-        <div>
+        <div className='min-w-0'>
           <span className='inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
             {t(`filters.seriesStatuses.${item.status}`)}
           </span>
-          <h3 className='mt-3 text-lg font-bold text-foreground'>{item.title}</h3>
+          <h3 className='mt-3 text-pretty text-lg font-bold leading-6 text-foreground'>{item.title}</h3>
           <p className='mt-1 text-xs text-muted-foreground'>
             {t('proposals.submittedAt', {
               date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(item.createdAt))

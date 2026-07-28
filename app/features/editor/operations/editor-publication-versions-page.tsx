@@ -45,13 +45,19 @@ export function EditorPublicationVersionsPage({
           {versions.map((item) => (
             <article key={item.id} className='rounded-lg border border-border p-3'>
               <strong>
-                {item.language} · {item.versionType ?? '—'}
+                {t(`operations.languages.${item.language}`, { defaultValue: item.language })} ·{' '}
+                {item.versionType
+                  ? t(`operations.versionTypes.${item.versionType}`, {
+                      defaultValue: item.versionType.replaceAll('_', ' ')
+                    })
+                  : '—'}
               </strong>
               <p className='text-sm text-muted-foreground'>
-                {item.readingDirection}
+                {t(`operations.readingDirections.${item.readingDirection}`, {
+                  defaultValue: item.readingDirection
+                })}
                 {item.notes ? ` · ${item.notes}` : ''}
               </p>
-              <p className='break-all text-xs text-muted-foreground'>{item.id}</p>
             </article>
           ))}
         </div>
@@ -59,10 +65,15 @@ export function EditorPublicationVersionsPage({
       <OperationDialogPanel icon={Library} title={t('operations.createVersionSection')}>
         <fetcher.Form method='post' className='grid gap-3'>
           <SeriesSelect series={series} />
-          <input name='language' required className={operationInput} placeholder='JA / EN / VI' />
+          <select name='language' required className={operationInput}>
+            <option value=''>{t('operations.selectLanguage')}</option>
+            <option value='JA'>{t('operations.languages.JA')}</option>
+            <option value='EN'>{t('operations.languages.EN')}</option>
+            <option value='VI'>{t('operations.languages.VI')}</option>
+          </select>
           <select name='readingDirection' className={operationInput}>
-            <option>RTL</option>
-            <option>LTR</option>
+            <option value='RTL'>{t('operations.readingDirections.RTL')}</option>
+            <option value='LTR'>{t('operations.readingDirections.LTR')}</option>
           </select>
           <select name='versionType' className={operationInput}>
             <option>ORIGINAL</option>
@@ -77,7 +88,9 @@ export function EditorPublicationVersionsPage({
       <OperationDialogPanel icon={Library} title={t('operations.updateVersionSection')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <select name='versionId' required className={operationInput} defaultValue=''>
-            <option value='' disabled>{t('operations.selectPublicationVersion')}</option>
+            <option value='' disabled>
+              {t('operations.selectPublicationVersion')}
+            </option>
             {versions.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.language} · {item.versionType ?? item.readingDirection}

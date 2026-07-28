@@ -117,7 +117,7 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
         </Link>
       )}
 
-      <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
+      <div className='space-y-4'>
         <DistributionPanel
           title={t('dashboard.sections.roles.title')}
           description={t('dashboard.sections.roles.description')}

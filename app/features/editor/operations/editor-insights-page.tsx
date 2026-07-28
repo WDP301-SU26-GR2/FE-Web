@@ -2,12 +2,13 @@ import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/us
 import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
 import type { RevisionRequestListResDtoOutputItemsItem } from '~/api/model/revision'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
-import type { BoardRankingListResDtoOutputItemsItem } from '~/api/model/survey'
+import type { BoardRankingListResDtoOutputItemsItem, SurveyPeriodResDtoOutput } from '~/api/model/survey'
 import { useTranslation } from 'react-i18next'
 import { OperationsLayout, operationInput } from './components/operations-shared'
 
 export function EditorInsightsPage({
   series,
+  periods,
   seriesId,
   surveyPeriodId,
   assistants,
@@ -18,6 +19,7 @@ export function EditorInsightsPage({
   hasError
 }: {
   series: SeriesListResDtoOutputItemsItem[]
+  periods: SurveyPeriodResDtoOutput[]
   seriesId: string
   surveyPeriodId: string
   assistants: AssistantDirectoryListResDtoOutputItemsItem[]
@@ -27,7 +29,7 @@ export function EditorInsightsPage({
   payments: PaymentRecordListResDtoOutputDataItem[]
   hasError: boolean
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   return (
     <OperationsLayout
       titleKey='operations.insights'
@@ -43,12 +45,15 @@ export function EditorInsightsPage({
             </option>
           ))}
         </select>
-        <input
-          name='surveyPeriodId'
-          defaultValue={surveyPeriodId}
-          className={operationInput}
-          placeholder={t('operations.surveyPeriodId')}
-        />
+        <select name='surveyPeriodId' defaultValue={surveyPeriodId} className={operationInput}>
+          <option value=''>{t('operations.selectSurveyPeriod')}</option>
+          {periods.map((period) => (
+            <option key={period.id} value={period.id}>
+              {t('operations.surveyIssue', { issue: period.issueNumber ?? '—' })} ·{' '}
+              {t(`operations.surveyStatuses.${period.status}`, { defaultValue: period.status.replaceAll('_', ' ') })}
+            </option>
+          ))}
+        </select>
         <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
           {t('actions.load')}
         </button>
@@ -58,8 +63,11 @@ export function EditorInsightsPage({
         empty={t('operations.noInsightsData')}
         items={trend.map((item) => ({
           id: `${item.seriesId}-${item.surveyPeriodId}`,
-          title: series.find((entry) => entry.id === item.seriesId)?.title ?? item.seriesId,
-          detail: `#${item.rankPosition ?? '—'} · ${t('operations.voteCount', { count: item.voteCount })} · ${item.riskLevel}`
+          title: series.find((entry) => entry.id === item.seriesId)?.title ?? t('operations.unknownSeries'),
+          detail: `#${item.rankPosition ?? '—'} · ${t('operations.voteCount', { count: item.voteCount })} · ${t(
+            `operations.riskLevels.${item.riskLevel}`,
+            { defaultValue: t('common.notAvailable') }
+          )}`
         }))}
       />
       <DataPanel
@@ -67,8 +75,11 @@ export function EditorInsightsPage({
         empty={t('operations.noInsightsData')}
         items={boardRanking.map((item) => ({
           id: `${item.seriesId}-${item.surveyPeriodId}`,
-          title: series.find((entry) => entry.id === item.seriesId)?.title ?? item.seriesId,
-          detail: `#${item.rankPosition ?? '—'} · ${t('operations.voteCount', { count: item.voteCount })} · ${item.riskLevel}`
+          title: series.find((entry) => entry.id === item.seriesId)?.title ?? t('operations.unknownSeries'),
+          detail: `#${item.rankPosition ?? '—'} · ${t('operations.voteCount', { count: item.voteCount })} · ${t(
+            `operations.riskLevels.${item.riskLevel}`,
+            { defaultValue: t('common.notAvailable') }
+          )}`
         }))}
       />
       <DataPanel
@@ -76,8 +87,12 @@ export function EditorInsightsPage({
         empty={t('operations.noInsightsData')}
         items={payments.map((item) => ({
           id: item.id,
-          title: `${item.paymentType} · ${item.amount}`,
-          detail: `${item.status}${item.period ? ` · ${item.period}` : ''}`
+          title: `${t(`contractDetail.payments.types.${item.paymentType}`, {
+            defaultValue: item.paymentType.replaceAll('_', ' ')
+          })} · ${new Intl.NumberFormat(i18n.language).format(item.amount)}`,
+          detail: `${t(`contractDetail.payments.statuses.${item.status}`, {
+            defaultValue: item.status.replaceAll('_', ' ')
+          })}${item.period ? ` · ${item.period}` : ''}`
         }))}
       />
       <DataPanel
@@ -85,7 +100,9 @@ export function EditorInsightsPage({
         empty={t('operations.noInsightsData')}
         items={revisions.map((item) => ({
           id: item.id,
-          title: `${item.targetType} · ${t('operations.revisionRound', { round: item.round })}`,
+          title: `${t(`operations.revisionTypes.${item.targetType}`, {
+            defaultValue: item.targetType.replaceAll('_', ' ')
+          })} · ${t('operations.revisionRound', { round: item.round })}`,
           detail: `${t(item.isResolved ? 'operations.resolved' : 'operations.openRevision')} · ${item.reason}`
         }))}
       />
@@ -94,8 +111,18 @@ export function EditorInsightsPage({
         empty={t('operations.noInsightsData')}
         items={assistants.map((item) => ({
           id: item.userId,
-          title: item.displayName ?? item.userId,
-          detail: `${item.specializations.join(', ') || t('operations.noSpecialization')} · ${item.availabilityStatus ?? t('operations.unknown')}`
+          title: item.displayName ?? t('operations.unknownAssistant'),
+          detail: `${
+            item.specializations
+              .map((value) => t(`operations.specializations.${value}`, { defaultValue: value.replaceAll('_', ' ') }))
+              .join(', ') || t('operations.noSpecialization')
+          } · ${
+            item.availabilityStatus
+              ? t(`operations.availabilityStatuses.${item.availabilityStatus}`, {
+                  defaultValue: item.availabilityStatus.replaceAll('_', ' ')
+                })
+              : t('operations.unknown')
+          }`
         }))}
       />
     </OperationsLayout>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Form, useFetcher, useNavigate } from 'react-router'
+import { useFetcher, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { PenLine } from 'lucide-react'
 import type { BoardSessionListItemDtoOutput } from '~/api/model/board'
@@ -48,7 +48,11 @@ export function BoardTransfersPage({
   )
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('transfers.title')} description={t('transfers.description')} />
+      <BoardHeader
+        title={t('transfers.title')}
+        description={t('transfers.description')}
+        backHref='/dashboard/board/operations'
+      />
       <div>
         {canBoardSign ? (
           <button
@@ -67,34 +71,26 @@ export function BoardTransfersPage({
           </p>
         ) : (
           <p className='rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground'>
-            Nút ký chỉ xuất hiện khi bạn mở hợp đồng từ thông báo hoặc tải mã hợp đồng ở bên dưới.
+            {t('transfers.openFromNotification')}
           </p>
         )}
       </div>
       {signOpen && <TransferSignDialog contractId={contractId} onClose={() => setSignOpen(false)} />}
-      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <h2 className='font-bold text-foreground'>{t('transfers.signatureProgress')}</h2>
-        <Form method='get' className='mt-3 grid gap-2 sm:grid-cols-[1fr_auto]'>
-          <input
-            className={boardInput}
-            name='contractId'
-            defaultValue={contractId}
-            placeholder={t('transfers.contractId')}
-            required
-          />
-          <button className='h-10 rounded-md border border-border px-4 text-sm font-bold'>{t('common.load')}</button>
-        </Form>
-        {!!signatures.length && (
-          <div className='mt-3 grid gap-2'>
-            {signatures.map((signature) => (
-              <div key={signature.id} className='flex justify-between rounded-lg border border-border p-3 text-sm'>
-                <span>{signatureRoleLabel(signature.role)}</span>
-                <span>{new Date(signature.signedAt).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {contractId && (
+        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+          <h2 className='font-bold text-foreground'>{t('transfers.signatureProgress')}</h2>
+          {!!signatures.length && (
+            <div className='mt-3 grid gap-2'>
+              {signatures.map((signature) => (
+                <div key={signature.id} className='flex justify-between rounded-lg border border-border p-3 text-sm'>
+                  <span>{signatureRoleLabel(signature.role)}</span>
+                  <span>{new Date(signature.signedAt).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
         <input
@@ -140,13 +136,7 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
       size='sm'
     >
       <fetcher.Form method='post' className='grid gap-3'>
-        <input
-          className={boardInput}
-          name='contractId'
-          defaultValue={contractId}
-          placeholder={t('transfers.contractId')}
-          required
-        />
+        <input type='hidden' name='contractId' value={contractId} />
         <input
           className={boardInput}
           name='otpCode'
@@ -156,6 +146,15 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
           required
         />
         <div className='flex justify-end gap-2'>
+          <button
+            name='intent'
+            value='sendOtp'
+            formNoValidate
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-60'
+          >
+            {t('contracts.sendOtp')}
+          </button>
           <button
             type='button'
             onClick={onClose}
@@ -173,7 +172,12 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
           </button>
         </div>
       </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
+      {fetcher.data?.intent === 'sendOtp' && (
+        <p className={`text-sm ${fetcher.data.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+          {fetcher.data.ok ? t('messages.otpSent') : fetcher.data.message || t('common.failure')}
+        </p>
+      )}
+      <BoardFeedback data={fetcher.data?.intent === 'sign' ? fetcher.data : undefined} />
     </Dialog>
   )
 }
@@ -197,9 +201,12 @@ function TransferCard({
     <article className='rounded-xl border border-border bg-card p-5'>
       <div className='flex justify-between gap-3'>
         <div>
-          <strong>{item.series?.title ?? item.seriesId}</strong>
+          <strong>{item.series?.title ?? t('transfers.unknownSeries')}</strong>
           <p className='mt-1 text-xs text-muted-foreground'>
-            {item.proposedType ?? '—'} · {item.requestingMangaka?.displayName ?? item.requestingMangakaId}
+            {t(`transfers.types.${item.proposedType}`, {
+              defaultValue: item.proposedType?.replaceAll('_', ' ') ?? '—'
+            })}{' '}
+            · {item.requestingMangaka?.displayName ?? t('transfers.unknownMangaka')}
           </p>
         </div>
         <StatusBadge value={item.status} />
@@ -285,8 +292,8 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
           required
         />
         <div className='space-y-3 rounded-lg border border-border p-3'>
-          <div className='flex items-center justify-between gap-2'>
-            <strong className='text-sm'>Điều kiện hợp đồng mới</strong>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <strong className='min-w-0 text-pretty text-sm'>Điều kiện hợp đồng mới</strong>
             <button
               type='button'
               onClick={() => setConditionCount((count) => count + 1)}

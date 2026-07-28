@@ -58,11 +58,13 @@ export function BoardContractDetailPage({
   )
   const hasCurrentMemberSigned = Boolean(currentBoardSignature)
   const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
+  const canSignContract = contract.status === 'BOARD_APPROVED' || contract.status === 'MANGAKA_SIGNED'
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
         title={`${t('contracts.detail')} — ${contract.series?.title ?? t('contracts.unknownSeries')}`}
         description={t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
+        backHref='/dashboard/board/contracts'
       />
       <div className='flex justify-end'>
         <ContractPdfButton
@@ -114,11 +116,11 @@ export function BoardContractDetailPage({
         </div>
         <p className='mt-4 text-sm text-muted-foreground'>{contract.terminationClause}</p>
         <p className='mt-3 text-xs text-muted-foreground'>
-          {contract.mangaka?.displayName ?? contract.mangakaId}
+          {contract.mangaka?.displayName ?? t('contracts.unknownMangaka')}
           {contract.editor ? ` · ${contract.editor.displayName}` : ''}
         </p>
       </BoardPanel>
-      <div className='grid gap-4 lg:grid-cols-2'>
+      <div className='space-y-4'>
         <BoardPanel title={t('contracts.conditions')}>
           <PaymentConditionsSummary conditions={conditions} loadFailed={conditionsLoadFailed} />
         </BoardPanel>
@@ -226,14 +228,14 @@ export function BoardContractDetailPage({
                 <p className='mt-1 text-xs text-muted-foreground'>
                   {hasCurrentMemberSigned
                     ? `${t('contracts.signed')}: ${new Date(currentBoardSignature!.actionAt).toLocaleString()}`
-                    : contract.status === 'MANGAKA_SIGNED'
+                    : canSignContract
                       ? t('contracts.readyToSign')
                       : contract.boardSignedAt
                         ? `${t('contracts.signed')}: ${new Date(contract.boardSignedAt).toLocaleString()}`
                         : t('contracts.waitingMangakaSignature')}
                 </p>
               </div>
-              {canAttemptBoardAction && !hasCurrentMemberSigned && contract.status === 'MANGAKA_SIGNED' && (
+              {canAttemptBoardAction && !hasCurrentMemberSigned && canSignContract && (
                 <button
                   type='button'
                   disabled={!conditionsReady}
@@ -331,8 +333,8 @@ function AmendmentRow({
   const [signOpen, setSignOpen] = useState(false)
   return (
     <article className='rounded-lg border border-border p-4'>
-      <div className='flex justify-between gap-3'>
-        <strong>{amendment.reason ?? t('contracts.amendment')}</strong>
+      <div className='flex flex-wrap items-start justify-between gap-3'>
+        <strong className='min-w-0 text-pretty leading-6'>{amendment.reason ?? t('contracts.amendment')}</strong>
         <StatusBadge value={amendment.status} />
       </div>
       {canSign && amendment.status === 'PENDING_SIGNATURES' && (
@@ -374,6 +376,15 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
         />
         <div className='flex justify-end gap-2'>
           <button
+            name='intent'
+            value='sendOtp'
+            formNoValidate
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-60'
+          >
+            {t('contracts.sendOtp')}
+          </button>
+          <button
             type='button'
             onClick={onClose}
             className='h-10 rounded-md border border-border px-4 text-sm font-bold'
@@ -390,7 +401,8 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
+      <OtpRequestFeedback data={fetcher.data?.intent === 'sendOtp' ? fetcher.data : undefined} />
+      <BoardFeedback data={fetcher.data?.intent === 'sign' ? fetcher.data : undefined} />
     </Dialog>
   )
 }
@@ -439,6 +451,15 @@ function AmendmentSignDialog({
         />
         <div className='flex justify-end gap-2'>
           <button
+            name='intent'
+            value='sendOtp'
+            formNoValidate
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-60'
+          >
+            {t('contracts.sendOtp')}
+          </button>
+          <button
             type='button'
             onClick={onClose}
             className='h-10 rounded-md border border-border px-4 text-sm font-bold'
@@ -455,7 +476,18 @@ function AmendmentSignDialog({
           </button>
         </div>
       </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
+      <OtpRequestFeedback data={fetcher.data?.intent === 'sendOtp' ? fetcher.data : undefined} />
+      <BoardFeedback data={fetcher.data?.intent === 'signAmendment' ? fetcher.data : undefined} />
     </Dialog>
+  )
+}
+
+function OtpRequestFeedback({ data }: { data?: BoardActionResult }) {
+  const { t } = useTranslation('board')
+  if (!data) return null
+  return (
+    <p className={`mt-3 text-sm ${data.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+      {data.ok ? t('messages.otpSent') : data.message || t('common.failure')}
+    </p>
   )
 }

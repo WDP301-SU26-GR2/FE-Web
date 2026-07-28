@@ -1,4 +1,5 @@
 import { boardControllerGetSessions } from '~/api/operations/board/board'
+import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   transferControllerBoardApproveScreening,
   transferControllerBoardAssignFullBuyout,
@@ -9,6 +10,7 @@ import {
   transferControllerSignTransferContract
 } from '~/api/operations/transfer/transfer'
 import type { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
+import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardTransfersPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/transfers'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
@@ -82,6 +84,10 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           }))
         }
       )
+    } else if (intent === 'sendOtp') {
+      const me = await usersControllerGetMe()
+      if (me.status !== 200) throw new Error('Không thể đọc thông tin tài khoản.')
+      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
     } else if (intent === 'sign') {
       const contractId = required(form, 'contractId')
       const signatures = await transferControllerGetSignatures({ id: contractId })
@@ -102,7 +108,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
             ? 'transferScreeningRejected'
             : intent === 'fullBuyout'
               ? 'fullBuyoutAssigned'
-              : 'transferContractSigned',
+              : intent === 'sendOtp'
+                ? 'otpSent'
+                : 'transferContractSigned',
       requestId: String(form.get('requestId') ?? '') || undefined
     }
   } catch (error) {

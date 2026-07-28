@@ -14,4 +14,5 @@ export type AdminSettingsActionResult = {
   intent: string
   messageKey?: string
   errorKey?: string
+  message?: string
 }

@@ -75,7 +75,6 @@ export function EditorDeadlinesPage({
                 {item.requestedDeadline ? new Date(item.requestedDeadline).toLocaleString() : '—'} ·{' '}
                 {item.reason ?? '—'}
               </p>
-              <p className='mt-1 break-all text-xs text-muted-foreground'>{item.id}</p>
             </article>
           ))}
         </div>
@@ -103,9 +102,6 @@ export function EditorDeadlinesPage({
                 {item.requestedDeadline ? new Date(item.requestedDeadline).toLocaleString() : '—'}
               </option>
             ))}
-            {focusRequestId && !items.some((item) => item.id === focusRequestId) && (
-              <option value={focusRequestId}>{focusRequestId}</option>
-            )}
           </select>
           <input name='deadline' type='datetime-local' className={operationInput} />
           <input name='reason' className={operationInput} placeholder={t('operations.reason')} />

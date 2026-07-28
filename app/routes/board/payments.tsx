@@ -76,5 +76,12 @@ function required(form: FormData, key: string) {
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardPaymentsPage {...loaderData} enableFilters contractBasePath='/dashboard/board/contracts' />
+  return (
+    <BoardPaymentsPage
+      {...loaderData}
+      enableFilters
+      backPath='/dashboard/board'
+      contractBasePath='/dashboard/board/contracts'
+    />
+  )
 }

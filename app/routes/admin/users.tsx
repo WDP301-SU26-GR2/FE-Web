@@ -14,7 +14,11 @@ import type {
   UsersControllerListUsersStatus
 } from '~/api/model/users'
 import { AdminUsersPage, type AdminUserActionIntent, type AdminUserActionResult } from '~/features/admin'
-import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
+import {
+  extractApiErrorCode,
+  extractApiErrorMessage,
+  extractApiSuccessMessage
+} from '~/shared/lib/api/extract-api-error'
 
 import type { Route } from './+types/users'
 
@@ -73,6 +77,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ok: true,
         intent,
         messageKey: 'created',
+        message: extractApiSuccessMessage(response, 'Đã tạo tài khoản nội bộ thành công.'),
         temporaryPassword: response.data.temporaryPassword,
         email: response.data.email
       }
@@ -84,21 +89,32 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const status = readEnum(String(formData.get('status') ?? ''), MUTABLE_STATUSES)
       if (!status) return failure(intent, 'validation')
       const reason = String(formData.get('reason') ?? '').trim() || undefined
-      await usersControllerUpdateUserStatus(
+      const response = await usersControllerUpdateUserStatus(
         { id: userId },
         { status: status as AdminUpdateUserStatusBodyDtoStatus, reason }
       )
-      return success(intent, 'statusUpdated')
+      return success(
+        intent,
+        'statusUpdated',
+        extractApiSuccessMessage(
+          response,
+          status === 'ACTIVE'
+            ? 'Đã kích hoạt lại tài khoản.'
+            : status === 'BANNED'
+              ? 'Đã cấm tài khoản.'
+              : 'Đã khóa tài khoản.'
+        )
+      )
     }
 
     if (intent === 'delete') {
-      await usersControllerDeleteUser({ id: userId })
-      return success(intent, 'deleted')
+      const response = await usersControllerDeleteUser({ id: userId })
+      return success(intent, 'deleted', extractApiSuccessMessage(response, 'Đã xóa mềm tài khoản.'))
     }
 
     if (intent === 'restore') {
-      await usersControllerRestoreUser({ id: userId })
-      return success(intent, 'restored')
+      const response = await usersControllerRestoreUser({ id: userId })
+      return success(intent, 'restored', extractApiSuccessMessage(response, 'Đã khôi phục tài khoản.'))
     }
 
     if (intent === 'resetPassword') {
@@ -108,6 +124,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ok: true,
         intent,
         messageKey: 'passwordReset',
+        message: extractApiSuccessMessage(response, 'Đã cấp lại mật khẩu tạm thời.'),
         temporaryPassword: response.data.temporaryPassword,
         email: String(formData.get('userEmail') ?? '') || undefined
       }
@@ -115,7 +132,11 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
 
     return failure('unknown', 'invalidAction')
   } catch (error) {
-    return failure(intent, mapErrorKey(error))
+    return failure(
+      intent,
+      mapErrorKey(error),
+      extractApiErrorMessage(error, 'Không thể hoàn tất thao tác với tài khoản. Vui lòng thử lại.')
+    )
   }
 }
 
@@ -137,12 +158,12 @@ function isActionIntent(value: string): value is AdminUserActionIntent {
   return ['create', 'status', 'delete', 'restore', 'resetPassword'].includes(value)
 }
 
-function success(intent: AdminUserActionIntent, messageKey: string): AdminUserActionResult {
-  return { ok: true, intent, messageKey }
+function success(intent: AdminUserActionIntent, messageKey: string, message: string): AdminUserActionResult {
+  return { ok: true, intent, messageKey, message }
 }
 
-function failure(intent: AdminUserActionIntent | 'unknown', errorKey: string): AdminUserActionResult {
-  return { ok: false, intent, errorKey }
+function failure(intent: AdminUserActionIntent | 'unknown', errorKey: string, message?: string): AdminUserActionResult {
+  return { ok: false, intent, errorKey, message }
 }
 
 function mapErrorKey(error: unknown): string {
@@ -152,5 +173,6 @@ function mapErrorKey(error: unknown): string {
   if (code === 'Error.UserAlreadyDeleted') return 'alreadyDeleted'
   if (code === 'Error.UserNotDeleted') return 'notDeleted'
   if (code === 'Error.UserNotFound') return 'notFound'
+  if (code === 'Error.UserHasActiveCommitments') return 'activeCommitments'
   return 'actionFailed'
 }

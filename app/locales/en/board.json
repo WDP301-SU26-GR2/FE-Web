@@ -22,6 +22,7 @@
     "contractApproved": "The contract terms were approved successfully.",
     "contractChangesRequested": "The contract change request was sent.",
     "contractSigned": "The contract was signed successfully.",
+    "otpSent": "A contract-signing OTP was sent to your email.",
     "amendmentSigned": "The contract amendment was signed successfully.",
     "revenueReported": "The contract revenue was recorded successfully.",
     "reprintApproved": "The reprint request was approved successfully.",
@@ -283,6 +284,7 @@
     "chatPlaceholder": "Write a message...",
     "chatLocked": "Discussion is locked during voting.",
     "sendMessage": "Send message",
+    "unknownMember": "Board member",
     "chatErrors": {
       "NOT_PARTICIPANT": "You are not a participant in this session.",
       "SESSION_NOT_ACTIVE": "Chat is only available while the session is active.",
@@ -341,6 +343,7 @@
     "unknownSeries": "Unknown series"
   },
   "contracts": {
+    "unknownMangaka": "Mangaka unavailable",
     "title": "Contract review",
     "description": "Approve negotiated terms, sign agreements and review amendments.",
     "empty": "No contracts are available.",
@@ -371,9 +374,9 @@
     "emptyAmendments": "No amendments are available.",
     "signAmendment": "Sign amendment",
     "boardSignature": "Board signature",
-    "readyToSign": "Mangaka has signed. Complete the Board signature with an OTP.",
+    "readyToSign": "The contract is ready. Complete the Board signature with an OTP.",
     "signed": "Signed",
-    "waitingMangakaSignature": "Available after the contract is approved and Mangaka has signed.",
+    "waitingMangakaSignature": "Available after the Board approves the contract.",
     "sendOtp": "Send OTP",
     "otpInstruction": "Request an OTP, then enter the six-digit code to confirm the signature.",
     "paymentWorkflow": "Contract payments",
@@ -384,6 +387,8 @@
     "revenueAmount": "Revenue for the period"
   },
   "payments": {
+    "unknownReceiver": "Recipient unavailable",
+    "relatedContract": "Related contract",
     "title": "Payment approval",
     "description": "Approve triggered payouts, record payment references or cancel invalid records.",
     "empty": "No payment records are available.",
@@ -418,6 +423,13 @@
     "awaitingApproval": "Awaiting Board approval",
     "awaitingPayment": "Approved and awaiting payment confirmation",
     "notAvailable": "Not available"
+  },
+  "operations": {
+    "title": "Board operations",
+    "description": "Access arbitration, risk assessment and decision-control workflows within the Board's authority.",
+    "listLabel": "Board operation list",
+    "open": "Open function",
+    "hint": "Each function uses current workflow data and only exposes actions available to Board members."
   },
   "deadlines": {
     "title": "Deadline arbitration",
@@ -509,8 +521,15 @@
     }
   },
   "transfers": {
+    "unknownSeries": "Series unavailable",
+    "unknownMangaka": "Mangaka unavailable",
+    "types": {
+      "FULL_TRANSFER": "Full transfer",
+      "PARTIAL_TRANSFER": "Partial transfer"
+    },
     "title": "Series transfer screening",
     "description": "Screen transfer candidates, execute full buyouts and sign transfer contracts.",
+    "openFromNotification": "Open a transfer agreement from its notification to review signature progress and sign it.",
     "empty": "No transfer requests await Board review.",
     "session": "Select active Board session",
     "details": "Screening note",
@@ -546,6 +565,40 @@
     "cancel": "Cancel"
   },
   "audit": {
+    "userActor": "Board or staff member",
+    "record": "Business record",
+    "entityTypes": {
+      "SERIES": "Series",
+      "MANUSCRIPT": "Manuscript",
+      "PAGE": "Page",
+      "CHAPTER": "Chapter",
+      "TASK": "Production task",
+      "DEADLINE_REQUEST": "Deadline request",
+      "USER": "User account",
+      "CONTRACT": "Contract",
+      "BOARD_DECISION": "Board decision",
+      "REPRINT_REQUEST": "Reprint request",
+      "TRANSFER_REQUEST": "Transfer request",
+      "PAYMENT_RECORD": "Payment",
+      "SURVEY_PERIOD": "Survey period",
+      "PUBLICATION_VERSION": "Publication edition"
+    },
+    "actions": {
+      "CREATE": "Created",
+      "UPDATE": "Updated",
+      "DELETE": "Deleted",
+      "STATUS_CHANGED": "Status changed",
+      "APPROVE": "Approved",
+      "REJECT": "Rejected"
+    },
+    "states": {
+      "ACTIVE": "Active",
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
     "title": "Audit history",
     "description": "Review business transitions and actions relevant to Board oversight.",
     "entityId": "Entity ID",
@@ -579,6 +632,22 @@
     "taskId": "Task ID",
     "fileKey": "Task file key",
     "signDownload": "Create download link",
-    "openDownload": "Open protected download"
+    "openDownload": "Open protected download",
+    "datasets": {
+      "detail": "Series information",
+      "defense": "Performance and defense data",
+      "names": "Series storyboards",
+      "selectedName": "Selected storyboard",
+      "publicationVersions": "Publication editions",
+      "selectedPublicationVersion": "Selected publication edition",
+      "rankingTrend": "Ranking trend",
+      "period": "Survey period",
+      "rankings": "Ranking results",
+      "offlineData": "Recorded survey data",
+      "readerVotes": "Reader votes",
+      "boardRanking": "Board assessment",
+      "assistants": "Assistants",
+      "mangakas": "Mangakas"
+    }
   }
 }

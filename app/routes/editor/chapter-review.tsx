@@ -29,7 +29,7 @@ import {
   productionStageControllerList,
   productionStageControllerListPages
 } from '~/api/operations/production-stages/production-stages'
-import { taskControllerGetTaskFileDownloadUrl, taskControllerListRegions } from '~/api/operations/task/task'
+import { taskControllerListRegions } from '~/api/operations/task/task'
 import {
   EditorChapterReviewPage,
   type EditorActionResult,
@@ -185,13 +185,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'resolveAnnotation')
       await annotationControllerResolve({ id: required(formData, 'annotationId') })
     else if (intent === 'removeAnnotation') await annotationControllerRemove({ id: required(formData, 'annotationId') })
-    else if (intent === 'downloadTaskFile') {
-      const response = await taskControllerGetTaskFileDownloadUrl(
-        { id: required(formData, 'taskId') },
-        { key: required(formData, 'key') }
-      )
-      return { ok: true, intent, messageKey: intent, downloadUrl: response.data.downloadUrl }
-    } else return { ok: false, intent, errorKey: 'invalidAction' }
+    else return { ok: false, intent, errorKey: 'invalidAction' }
     return {
       ok: true,
       intent,

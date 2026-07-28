@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, KeyRound, Mail, Phone, Shield, UserRound } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Mail, Phone, Shield, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
@@ -89,8 +89,8 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
         </div>
       </header>
 
-      <div className='grid grid-cols-1 gap-5 lg:grid-cols-3'>
-        <section className='rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2'>
+      <div className='space-y-5'>
+        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <div className='flex items-center gap-3'>
             <div className='flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
               <UserRound className='size-5' aria-hidden='true' />
@@ -106,7 +106,6 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
             <DetailItem icon={UserRound} label={t('users.fields.name')} value={user.name} />
             <DetailItem icon={Shield} label={t('users.fields.role')} value={t(`dashboard.roles.${user.role}`)} />
             <DetailItem icon={CalendarDays} label={t('users.detail.createdAt')} value={createdAt} />
-            <DetailItem icon={KeyRound} label={t('users.detail.userId')} value={user.id} mono />
           </dl>
         </section>
 
@@ -146,17 +145,16 @@ interface DetailItemProps {
   icon: typeof Mail
   label: string
   value: string
-  mono?: boolean
 }
 
-function DetailItem({ icon: Icon, label, value, mono }: DetailItemProps) {
+function DetailItem({ icon: Icon, label, value }: DetailItemProps) {
   return (
     <div className='rounded-lg border border-border bg-background/50 p-4'>
       <dt className='flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
         <Icon className='size-4' aria-hidden='true' />
         {label}
       </dt>
-      <dd className={cn('mt-2 break-words text-sm font-bold text-foreground', mono && 'font-mono text-xs')}>{value}</dd>
+      <dd className='mt-2 break-words text-sm font-bold text-foreground'>{value}</dd>
     </div>
   )
 }

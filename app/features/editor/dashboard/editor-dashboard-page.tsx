@@ -29,26 +29,60 @@ export function EditorDashboardPage({
       {dashboard ? (
         <>
           <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
-            <SummaryCard label={t('dashboard.summary.reviewQueue')} value={dashboard.reviewQueue} href='/dashboard/editor/proposals' />
-            <SummaryCard label={t('dashboard.summary.mySeries')} value={dashboard.mySeries.total} href='/dashboard/editor/proposals' />
-            <SummaryCard label={t('dashboard.summary.pendingContracts')} value={dashboard.pendingContracts.length} href='/dashboard/editor/contracts' />
-            <SummaryCard label={t('dashboard.summary.unread')} value={dashboard.unreadNotifications} href='/dashboard/editor/notifications' />
+            <SummaryCard
+              label={t('dashboard.summary.reviewQueue')}
+              value={dashboard.reviewQueue}
+              href='/dashboard/editor/proposals'
+            />
+            <SummaryCard
+              label={t('dashboard.summary.mySeries')}
+              value={dashboard.mySeries.total}
+              href='/dashboard/editor/proposals'
+            />
+            <SummaryCard
+              label={t('dashboard.summary.pendingContracts')}
+              value={dashboard.pendingContracts.length}
+              href='/dashboard/editor/contracts'
+            />
+            <SummaryCard
+              label={t('dashboard.summary.unread')}
+              value={dashboard.unreadNotifications}
+              href='/dashboard/editor/notifications'
+            />
           </div>
           {(dashboard.productionAlerts.length > 0 || dashboard.atRisk.length > 0) && (
-            <section className='grid gap-4 lg:grid-cols-2'>
+            <section className='space-y-4'>
               <DashboardList title={t('dashboard.alerts.production')} icon={AlertTriangle}>
                 {dashboard.productionAlerts.slice(0, 5).map((alert) => (
-                  <Link key={alert.chapterId} to={`/dashboard/editor/publication/${alert.seriesId}/${alert.chapterId}`} className='block rounded-lg border border-border p-3 hover:border-primary'>
-                    <p className='font-semibold text-foreground'>{alert.seriesTitle} · #{alert.chapterNumber}</p>
-                    <p className='mt-1 text-xs text-muted-foreground'>{alert.warningLevel} · {alert.progressPct}% · {alert.pagesReady}/{alert.totalPages} {t('dashboard.alerts.pagesReady')}</p>
+                  <Link
+                    key={alert.chapterId}
+                    to={`/dashboard/editor/publication/${alert.seriesId}/${alert.chapterId}`}
+                    className='block rounded-lg border border-border p-3 hover:border-primary'
+                  >
+                    <p className='font-semibold text-foreground'>
+                      {alert.seriesTitle} · #{alert.chapterNumber}
+                    </p>
+                    <p className='mt-1 text-xs text-muted-foreground'>
+                      {alert.warningLevel} · {alert.progressPct}% · {alert.pagesReady}/{alert.totalPages}{' '}
+                      {t('dashboard.alerts.pagesReady')}
+                    </p>
                   </Link>
                 ))}
               </DashboardList>
               <DashboardList title={t('dashboard.alerts.atRisk')} icon={Bell}>
                 {dashboard.atRisk.slice(0, 5).map((series) => (
-                  <Link key={series.seriesId} to={`/dashboard/editor/proposals/${series.seriesId}`} className='block rounded-lg border border-border p-3 hover:border-primary'>
+                  <Link
+                    key={series.seriesId}
+                    to={`/dashboard/editor/proposals/${series.seriesId}`}
+                    className='block rounded-lg border border-border p-3 hover:border-primary'
+                  >
                     <p className='font-semibold text-foreground'>{series.title}</p>
-                    <p className='mt-1 text-xs text-muted-foreground'>{series.riskLevel}{series.rankPosition ? ` · #${series.rankPosition}` : ''}</p>
+                    <p className='mt-1 text-xs text-muted-foreground'>
+                      {t(`operations.riskLevels.${series.riskLevel}`, {
+                        defaultValue: series.riskLevel?.replaceAll('_', ' ') ?? t('common.notAvailable')
+                      })}
+                      {series.rankPosition ? ` · #${series.rankPosition}` : ''}
+                    </p>
                   </Link>
                 ))}
               </DashboardList>
@@ -99,17 +133,31 @@ export function EditorDashboardPage({
 
 function SummaryCard({ label, value, href }: { label: string; value: number; href: string }) {
   return (
-    <Link to={href} className='rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary'>
+    <Link
+      to={href}
+      className='rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary'
+    >
       <p className='text-sm text-muted-foreground'>{label}</p>
       <p className='mt-2 text-3xl font-bold text-foreground'>{value}</p>
     </Link>
   )
 }
 
-function DashboardList({ title, icon: Icon, children }: { title: string; icon: typeof AlertTriangle; children: React.ReactNode }) {
+function DashboardList({
+  title,
+  icon: Icon,
+  children
+}: {
+  title: string
+  icon: typeof AlertTriangle
+  children: React.ReactNode
+}) {
   return (
     <article className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='flex items-center gap-2 font-bold text-foreground'><Icon className='size-5 text-primary' />{title}</h2>
+      <h2 className='flex items-center gap-2 font-bold text-foreground'>
+        <Icon className='size-5 text-primary' />
+        {title}
+      </h2>
       <div className='mt-4 space-y-2'>{children}</div>
     </article>
   )

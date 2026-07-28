@@ -372,9 +372,9 @@ function FormFooter({
     const data = fetcher.data
     if (!data || lastData.current === data) return
     lastData.current = data
-    const message = data.ok
-      ? t(`settings.messages.${data.messageKey}`)
-      : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`)
+    const message =
+      data.message ||
+      (data.ok ? t(`settings.messages.${data.messageKey}`) : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`))
     if (data.ok) {
       toast.success(message, { id: `admin-settings-${data.intent}-success` })
       closeDialog?.()

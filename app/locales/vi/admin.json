@@ -299,9 +299,12 @@
       "revisions": "Vòng yêu cầu sửa gần nhất",
       "reprints": "Yêu cầu tái bản",
       "deadlines": "Tra cứu deadline theo chương",
-      "chapterId": "Nhập mã chương",
+      "selectSeries": "Chọn bộ truyện",
+      "selectChapter": "Chọn chương",
+      "chapterOption": "Chương {{number}} {{title}}",
       "search": "Tra cứu",
-      "deadlineHint": "Nhập mã chương để xem các yêu cầu deadline liên quan.",
+      "deadlineHint": "Chọn bộ truyện và chương để xem các yêu cầu deadline liên quan.",
+      "noReason": "Không có lý do được cung cấp.",
       "resolved": "Đã xử lý",
       "open": "Chưa xử lý",
       "unknownSeries": "Chưa xác định bộ truyện",
@@ -396,7 +399,17 @@
       "fileKey": "Khóa file thuộc tác vụ",
       "load": "Tải dữ liệu",
       "createDownload": "Tạo liên kết tải",
-      "openDownload": "Mở liên kết tải được bảo vệ"
+      "openDownload": "Mở liên kết tải được bảo vệ",
+      "datasets": {
+        "detail": "Thông tin bộ truyện",
+        "defense": "Hiệu suất và hồ sơ bảo vệ",
+        "names": "Name của bộ truyện",
+        "selectedName": "Name đang chọn",
+        "rankingTrend": "Xu hướng xếp hạng",
+        "boardRanking": "Đánh giá của Hội đồng",
+        "assistants": "Trợ lý",
+        "mangakas": "Mangaka"
+      }
     }
   },
   "boardOversight": {
@@ -437,6 +450,42 @@
     }
   },
   "audit": {
+    "userActor": "Nhân sự hệ thống",
+    "record": "Bản ghi nghiệp vụ",
+    "entityTypes": {
+      "SERIES": "Bộ truyện",
+      "MANUSCRIPT": "Bản thảo",
+      "PAGE": "Trang truyện",
+      "CHAPTER": "Chương",
+      "TASK": "Công việc sản xuất",
+      "DEADLINE_REQUEST": "Yêu cầu deadline",
+      "USER": "Tài khoản",
+      "REGION": "Vùng nội dung",
+      "APP_CONFIG": "Cấu hình hệ thống",
+      "CONTRACT": "Hợp đồng",
+      "BOARD_DECISION": "Quyết định Hội đồng",
+      "REPRINT_REQUEST": "Yêu cầu tái bản",
+      "TRANSFER_REQUEST": "Yêu cầu chuyển nhượng",
+      "PAYMENT_RECORD": "Thanh toán",
+      "SURVEY_PERIOD": "Kỳ khảo sát",
+      "PUBLICATION_VERSION": "Phiên bản xuất bản"
+    },
+    "actions": {
+      "CREATE": "Đã tạo",
+      "UPDATE": "Đã cập nhật",
+      "DELETE": "Đã xóa",
+      "STATUS_CHANGED": "Đã đổi trạng thái",
+      "APPROVE": "Đã duyệt",
+      "REJECT": "Đã từ chối"
+    },
+    "states": {
+      "ACTIVE": "Đang hoạt động",
+      "PENDING": "Đang chờ",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối",
+      "COMPLETED": "Đã hoàn thành",
+      "CANCELLED": "Đã hủy"
+    },
     "eyebrow": "Giám sát và truy vết",
     "title": "Nhật ký hệ thống",
     "subtitle": "Theo dõi các thay đổi trạng thái, thao tác quản trị và sự kiện tự động trên toàn nền tảng.",

@@ -8,7 +8,7 @@ import {
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
 
@@ -45,8 +45,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const intent = String(form.get('intent') ?? '')
   const id = required(form, 'paymentId')
   try {
+    let message = ''
     if (intent === 'pay') {
-      await paymentControllerPayPayment(
+      const response = await paymentControllerPayPayment(
         { id },
         {
           paymentMethod: required(form, 'paymentMethod'),
@@ -54,10 +55,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           ...(String(form.get('note') ?? '').trim() ? { note: String(form.get('note')).trim() } : {})
         }
       )
+      message = extractApiSuccessMessage(response, 'Đã xác nhận khoản thanh toán được chi trả.')
     } else if (intent === 'cancel') {
-      await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
+      const response = await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
+      message = extractApiSuccessMessage(response, 'Đã hủy khoản thanh toán.')
     } else return { ok: false, intent }
-    return { ok: true, intent, messageKey: intent === 'pay' ? 'paymentPaid' : 'paymentCancelled' }
+    return {
+      ok: true,
+      intent,
+      messageKey: intent === 'pay' ? 'paymentPaid' : 'paymentCancelled',
+      message
+    }
   } catch (error) {
     return {
       ok: false,

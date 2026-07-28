@@ -8,6 +8,7 @@ import {
   boardControllerStartSession
 } from '~/api/operations/board/board'
 import { EditorBoardSessionsPage, type EditorActionResult } from '~/features/editor'
+import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import {
   hydrateBoardDecisions,
   hydrateBoardSessions,
@@ -49,11 +50,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
+    let message = ''
     if (intent === 'createSession') {
       const endTime = optionalDate(form, 'endTime')
       const seriesId = required(form, 'rosterSourceSeriesId')
       const suggested = await boardControllerSuggestMembers({ seriesId })
-      await boardControllerCreateSession({
+      const response = await boardControllerCreateSession({
         title: required(form, 'title'),
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(required(form, 'startTime')).toISOString(),
@@ -61,16 +63,24 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         seriesId,
         allowedEditorIds: suggested.data.items.map((member) => member.userId)
       })
+      message = extractApiSuccessMessage(response, 'Đã tạo phiên họp Hội đồng.')
     } else if (intent === 'startSession') {
-      await boardControllerStartSession({ id: required(form, 'sessionId') })
+      const response = await boardControllerStartSession({ id: required(form, 'sessionId') })
+      message = extractApiSuccessMessage(response, 'Đã bắt đầu phiên họp Hội đồng.')
     } else if (intent === 'concludeSession') {
-      await boardControllerConcludeSession({ id: required(form, 'sessionId') })
+      const response = await boardControllerConcludeSession({ id: required(form, 'sessionId') })
+      message = extractApiSuccessMessage(response, 'Đã kết thúc phiên họp Hội đồng.')
     } else {
       return { ok: false, intent, errorKey: 'invalidAction' }
     }
-    return { ok: true, intent, messageKey: intent }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+    return { ok: true, intent, messageKey: intent, message }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      errorKey: 'actionFailed',
+      message: extractApiErrorMessage(error, 'Không thể cập nhật phiên họp Hội đồng.')
+    }
   }
 }
 

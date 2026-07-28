@@ -31,7 +31,11 @@ export function BoardDeadlinesPage({
   const { t } = useTranslation('board')
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('deadlines.title')} description={t('deadlines.description')} />
+      <BoardHeader
+        title={t('deadlines.title')}
+        description={t('deadlines.description')}
+        backHref='/dashboard/board/operations'
+      />
       <Form method='get' className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
         <select className={boardInput} name='seriesId' defaultValue={seriesId}>
           <option value=''>{t('deadlines.selectSeries')}</option>

@@ -1,5 +1,5 @@
 import { Form, Link, useSearchParams } from 'react-router'
-import { Activity, ArrowLeft, ArrowRight, Filter, Search, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Filter, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { AuditLogListResDtoOutput } from '~/api/model/audit'
@@ -57,33 +57,15 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
       )}
 
       <Form method='get' className='rounded-xl border border-border bg-card p-4 shadow-sm'>
-        <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-[200px_1fr_1fr_1fr_auto]'>
+        <div className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'>
           <select name='entityType' defaultValue={searchParams.get('entityType') ?? ''} className={inputClassName}>
             <option value=''>{t('audit.filters.allEntities')}</option>
             {ENTITY_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type.replaceAll('_', ' ')}
+                {t(`audit.entityTypes.${type}`, { defaultValue: type.replaceAll('_', ' ') })}
               </option>
             ))}
           </select>
-          <FilterInput
-            icon={Activity}
-            name='action'
-            value={searchParams.get('action') ?? ''}
-            placeholder={t('audit.filters.action')}
-          />
-          <FilterInput
-            icon={Search}
-            name='entityId'
-            value={searchParams.get('entityId') ?? ''}
-            placeholder={t('audit.filters.entityId')}
-          />
-          <FilterInput
-            icon={Search}
-            name='actorId'
-            value={searchParams.get('actorId') ?? ''}
-            placeholder={t('audit.filters.actorId')}
-          />
           <button
             type='submit'
             className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-bold text-background'
@@ -94,7 +76,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
         </div>
       </Form>
 
-      <div className='flex items-center justify-between gap-4'>
+      <div className='flex flex-wrap items-center justify-between gap-4'>
         <p className='text-sm font-bold text-foreground'>{t('audit.total', { count: data?.total ?? 0 })}</p>
       </div>
 
@@ -110,15 +92,19 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
                 <div className='min-w-0'>
                   <div className='flex flex-wrap items-center gap-2'>
                     <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary'>
-                      {item.action.replaceAll('_', ' ')}
+                      {t(`audit.actions.${item.action}`, { defaultValue: item.action.replaceAll('_', ' ') })}
                     </span>
                     <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
-                      {item.entityType.replaceAll('_', ' ')}
+                      {t(`audit.entityTypes.${item.entityType}`, {
+                        defaultValue: item.entityType.replaceAll('_', ' ')
+                      })}
                     </span>
                   </div>
-                  <p className='mt-3 break-all text-sm font-bold text-foreground'>{item.entityId}</p>
+                  <p className='mt-3 text-sm font-bold text-foreground'>
+                    {t(`audit.entityTypes.${item.entityType}`, { defaultValue: t('audit.record') })}
+                  </p>
                   <p className='mt-1 text-xs text-muted-foreground'>
-                    {item.actorId ? t('audit.actor', { id: item.actorId }) : t('audit.systemActor')}
+                    {item.actorId ? t('audit.userActor') : t('audit.systemActor')}
                   </p>
                 </div>
                 <time className='shrink-0 text-xs font-semibold text-muted-foreground'>
@@ -129,9 +115,17 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
               </div>
               {(item.fromState || item.toState) && (
                 <div className='mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-bold text-foreground'>
-                  <span>{item.fromState ?? '—'}</span>
+                  <span>
+                    {item.fromState
+                      ? t(`audit.states.${item.fromState}`, { defaultValue: item.fromState.replaceAll('_', ' ') })
+                      : '—'}
+                  </span>
                   <ArrowRight className='size-3.5 text-primary' />
-                  <span>{item.toState ?? '—'}</span>
+                  <span>
+                    {item.toState
+                      ? t(`audit.states.${item.toState}`, { defaultValue: item.toState.replaceAll('_', ' ') })
+                      : '—'}
+                  </span>
                 </div>
               )}
               {item.reason && <p className='mt-3 text-sm leading-6 text-muted-foreground'>{item.reason}</p>}
@@ -141,7 +135,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
       )}
 
       {totalPages > 1 && (
-        <nav className='flex items-center justify-between gap-4' aria-label={t('audit.pagination.label')}>
+        <nav className='flex flex-wrap items-center justify-between gap-4' aria-label={t('audit.pagination.label')}>
           <PageLink page={page - 1} disabled={page <= 1} params={searchParams} label={t('audit.pagination.previous')} />
           <span className='text-xs font-bold text-muted-foreground'>
             {t('audit.pagination.page', { page, totalPages })}
@@ -155,26 +149,6 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
         </nav>
       )}
     </div>
-  )
-}
-
-function FilterInput({
-  icon: Icon,
-  name,
-  value,
-  placeholder
-}: {
-  icon: typeof Search
-  name: string
-  value: string
-  placeholder: string
-}) {
-  return (
-    <label className='relative'>
-      <span className='sr-only'>{placeholder}</span>
-      <Icon className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
-      <input name={name} defaultValue={value} placeholder={placeholder} className={`${inputClassName} pl-9`} />
-    </label>
   )
 }
 

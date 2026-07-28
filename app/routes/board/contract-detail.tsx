@@ -1,4 +1,5 @@
 import { boardControllerGetSessionById } from '~/api/operations/board/board'
+import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   contractAmendmentControllerGetAmendment,
   contractAmendmentControllerListAmendments,
@@ -13,6 +14,7 @@ import {
   contractControllerSignBoard,
   paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
+import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
@@ -66,7 +68,11 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
     if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
     else if (intent === 'changes')
       await contractControllerBoardRequestChanges({ id: params.id }, { reason: required(form, 'reason') })
-    else if (intent === 'sign')
+    else if (intent === 'sendOtp') {
+      const me = await usersControllerGetMe()
+      if (me.status !== 200) throw new Error('Không thể đọc thông tin tài khoản.')
+      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
+    } else if (intent === 'sign')
       await contractControllerSignBoard({ id: params.id }, { otpCode: required(form, 'otpCode') })
     else if (intent === 'signAmendment')
       await contractAmendmentControllerSignAmendmentBoard(
@@ -87,11 +93,13 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
           ? 'contractApproved'
           : intent === 'changes'
             ? 'contractChangesRequested'
-            : intent === 'sign'
-              ? 'contractSigned'
-              : intent === 'signAmendment'
-                ? 'amendmentSigned'
-                : 'revenueReported'
+            : intent === 'sendOtp'
+              ? 'otpSent'
+              : intent === 'sign'
+                ? 'contractSigned'
+                : intent === 'signAmendment'
+                  ? 'amendmentSigned'
+                  : 'revenueReported'
     }
   } catch (error) {
     return {

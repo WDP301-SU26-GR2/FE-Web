@@ -22,6 +22,7 @@
     "contractApproved": "Đã duyệt điều khoản hợp đồng thành công.",
     "contractChangesRequested": "Đã gửi yêu cầu chỉnh sửa hợp đồng.",
     "contractSigned": "Đã ký hợp đồng thành công.",
+    "otpSent": "Mã OTP ký hợp đồng đã được gửi đến email của bạn.",
     "amendmentSigned": "Đã ký phụ lục hợp đồng thành công.",
     "revenueReported": "Đã ghi nhận doanh thu hợp đồng thành công.",
     "reprintApproved": "Đã duyệt yêu cầu tái bản thành công.",
@@ -283,6 +284,7 @@
     "chatPlaceholder": "Nhập nội dung trao đổi...",
     "chatLocked": "Thảo luận đã khóa trong giai đoạn bỏ phiếu.",
     "sendMessage": "Gửi tin nhắn",
+    "unknownMember": "Thành viên Hội đồng",
     "chatErrors": {
       "NOT_PARTICIPANT": "Bạn không phải người tham gia phiên họp này.",
       "SESSION_NOT_ACTIVE": "Chỉ có thể chat khi phiên họp đang hoạt động.",
@@ -341,6 +343,7 @@
     "unknownSeries": "Chưa xác định bộ truyện"
   },
   "contracts": {
+    "unknownMangaka": "Không có thông tin Mangaka",
     "title": "Duyệt hợp đồng",
     "description": "Duyệt điều khoản, ký thỏa thuận và xem phụ lục.",
     "empty": "Chưa có hợp đồng.",
@@ -371,9 +374,9 @@
     "emptyAmendments": "Chưa có phụ lục.",
     "signAmendment": "Ký phụ lục",
     "boardSignature": "Chữ ký Hội đồng",
-    "readyToSign": "Mangaka đã ký. Hãy hoàn tất chữ ký Hội đồng bằng mã OTP.",
+    "readyToSign": "Hợp đồng đã sẵn sàng. Hãy hoàn tất chữ ký Hội đồng bằng mã OTP.",
     "signed": "Đã ký",
-    "waitingMangakaSignature": "Chỉ có thể ký sau khi hợp đồng được duyệt và Mangaka đã ký.",
+    "waitingMangakaSignature": "Có thể ký sau khi Hội đồng duyệt hợp đồng.",
     "sendOtp": "Gửi mã OTP",
     "otpInstruction": "Yêu cầu mã OTP, sau đó nhập mã gồm 6 chữ số để xác nhận chữ ký.",
     "paymentWorkflow": "Thanh toán hợp đồng",
@@ -384,6 +387,8 @@
     "revenueAmount": "Doanh thu trong kỳ"
   },
   "payments": {
+    "unknownReceiver": "Không có thông tin người nhận",
+    "relatedContract": "Hợp đồng liên quan",
     "title": "Duyệt thanh toán",
     "description": "Duyệt khoản chi, ghi nhận tham chiếu thanh toán hoặc hủy bản ghi không hợp lệ.",
     "empty": "Chưa có khoản thanh toán.",
@@ -418,6 +423,13 @@
     "awaitingApproval": "Đang chờ Hội đồng duyệt chi",
     "awaitingPayment": "Đã duyệt, đang chờ xác nhận thanh toán",
     "notAvailable": "Chưa có"
+  },
+  "operations": {
+    "title": "Vận hành Hội đồng",
+    "description": "Truy cập các nghiệp vụ phân xử, đánh giá rủi ro và kiểm soát quyết định thuộc phạm vi Hội đồng.",
+    "listLabel": "Danh sách chức năng vận hành Hội đồng",
+    "open": "Mở chức năng",
+    "hint": "Mỗi chức năng sử dụng dữ liệu nghiệp vụ hiện tại và chỉ hiển thị các thao tác được phép đối với thành viên Hội đồng."
   },
   "deadlines": {
     "title": "Phân xử deadline",
@@ -509,8 +521,15 @@
     }
   },
   "transfers": {
+    "unknownSeries": "Bộ truyện không còn khả dụng",
+    "unknownMangaka": "Không có thông tin Mangaka",
+    "types": {
+      "FULL_TRANSFER": "Chuyển nhượng toàn bộ",
+      "PARTIAL_TRANSFER": "Chuyển nhượng một phần"
+    },
     "title": "Sàng lọc chuyển nhượng",
     "description": "Sàng lọc ứng viên, xử lý mua đứt và ký hợp đồng chuyển nhượng.",
+    "openFromNotification": "Mở hợp đồng chuyển nhượng từ thông báo để xem tiến độ chữ ký và thực hiện ký.",
     "empty": "Không có yêu cầu chờ Hội đồng.",
     "session": "Chọn phiên Hội đồng đang hoạt động",
     "details": "Ghi chú sàng lọc",
@@ -546,6 +565,40 @@
     "cancel": "Hủy"
   },
   "audit": {
+    "userActor": "Thành viên Hội đồng hoặc nhân sự",
+    "record": "Bản ghi nghiệp vụ",
+    "entityTypes": {
+      "SERIES": "Bộ truyện",
+      "MANUSCRIPT": "Bản thảo",
+      "PAGE": "Trang truyện",
+      "CHAPTER": "Chương",
+      "TASK": "Công việc sản xuất",
+      "DEADLINE_REQUEST": "Yêu cầu deadline",
+      "USER": "Tài khoản",
+      "CONTRACT": "Hợp đồng",
+      "BOARD_DECISION": "Quyết định Hội đồng",
+      "REPRINT_REQUEST": "Yêu cầu tái bản",
+      "TRANSFER_REQUEST": "Yêu cầu chuyển nhượng",
+      "PAYMENT_RECORD": "Thanh toán",
+      "SURVEY_PERIOD": "Kỳ khảo sát",
+      "PUBLICATION_VERSION": "Phiên bản xuất bản"
+    },
+    "actions": {
+      "CREATE": "Đã tạo",
+      "UPDATE": "Đã cập nhật",
+      "DELETE": "Đã xóa",
+      "STATUS_CHANGED": "Đã đổi trạng thái",
+      "APPROVE": "Đã duyệt",
+      "REJECT": "Đã từ chối"
+    },
+    "states": {
+      "ACTIVE": "Đang hoạt động",
+      "PENDING": "Đang chờ",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối",
+      "COMPLETED": "Đã hoàn thành",
+      "CANCELLED": "Đã hủy"
+    },
     "title": "Lịch sử kiểm toán",
     "description": "Xem các chuyển trạng thái và thao tác thuộc phạm vi giám sát của Hội đồng.",
     "entityId": "ID đối tượng",
@@ -579,6 +632,22 @@
     "taskId": "ID tác vụ",
     "fileKey": "Khóa file thuộc tác vụ",
     "signDownload": "Tạo liên kết tải",
-    "openDownload": "Mở liên kết tải được bảo vệ"
+    "openDownload": "Mở liên kết tải được bảo vệ",
+    "datasets": {
+      "detail": "Thông tin bộ truyện",
+      "defense": "Hiệu suất và hồ sơ bảo vệ",
+      "names": "Name của bộ truyện",
+      "selectedName": "Name đang chọn",
+      "publicationVersions": "Các phiên bản xuất bản",
+      "selectedPublicationVersion": "Phiên bản xuất bản đang chọn",
+      "rankingTrend": "Xu hướng xếp hạng",
+      "period": "Kỳ khảo sát",
+      "rankings": "Kết quả xếp hạng",
+      "offlineData": "Dữ liệu khảo sát đã ghi nhận",
+      "readerVotes": "Phiếu độc giả",
+      "boardRanking": "Đánh giá của Hội đồng",
+      "assistants": "Trợ lý",
+      "mangakas": "Mangaka"
+    }
   }
 }

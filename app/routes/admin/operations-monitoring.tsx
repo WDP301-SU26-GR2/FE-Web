@@ -4,10 +4,12 @@ import { Form, Link } from 'react-router'
 import { useState, type ReactNode } from 'react'
 
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
+import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { RevisionRequestListResDtoOutputItemsItem } from '~/api/model/revision'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { deadlineControllerGetOne, deadlineControllerList } from '~/api/operations/deadline-requests/deadline-requests'
+import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
 import {
   reprintRequestControllerFindAll,
   reprintRequestControllerFindById
@@ -17,27 +19,33 @@ import { seriesControllerListSeries } from '~/api/operations/series/series'
 
 interface MonitoringData {
   series: SeriesListResDtoOutputItemsItem[]
+  chapters: ChapterListResDtoOutputItemsItem[]
   revisions: RevisionRequestListResDtoOutputItemsItem[]
   reprints: ReprintRequestResDtoOutput[]
   selectedReprint: ReprintRequestResDtoOutput | null
   deadlines: DeadlineRequestResDtoOutput[]
   chapterId: string
+  seriesId: string
   hasError: boolean
 }
 
 export async function clientLoader({ request }: { request: Request }): Promise<MonitoringData> {
-  const chapterId = new URL(request.url).searchParams.get('chapterId')?.trim() ?? ''
-  const reprintId = new URL(request.url).searchParams.get('reprintId')?.trim() ?? ''
-  const [seriesResult, revisionResult, reprintResult, deadlineResult, reprintDetailResult] = await Promise.allSettled([
-    seriesControllerListSeries({ limit: 100, offset: 0 }),
-    revisionControllerList({ limit: 20, offset: 0 }),
-    reprintRequestControllerFindAll({
-      status: undefined as unknown as string,
-      seriesId: undefined as unknown as string
-    }),
-    chapterId ? deadlineControllerList({ chapterId }) : null,
-    reprintId ? reprintRequestControllerFindById({ id: reprintId }) : null
-  ])
+  const searchParams = new URL(request.url).searchParams
+  const chapterId = searchParams.get('chapterId')?.trim() ?? ''
+  const seriesId = searchParams.get('seriesId')?.trim() ?? ''
+  const reprintId = searchParams.get('reprintId')?.trim() ?? ''
+  const [seriesResult, chapterResult, revisionResult, reprintResult, deadlineResult, reprintDetailResult] =
+    await Promise.allSettled([
+      seriesControllerListSeries({ limit: 100, offset: 0 }),
+      seriesId ? chapterControllerListBySeries({ seriesId }) : null,
+      revisionControllerList({ limit: 20, offset: 0 }),
+      reprintRequestControllerFindAll({
+        status: undefined as unknown as string,
+        seriesId: undefined as unknown as string
+      }),
+      chapterId ? deadlineControllerList({ chapterId }) : null,
+      reprintId ? reprintRequestControllerFindById({ id: reprintId }) : null
+    ])
   const seriesOk = seriesResult.status === 'fulfilled' && seriesResult.value.status === 200
   const revisionOk = revisionResult.status === 'fulfilled' && revisionResult.value.status === 200
   const reprintOk = reprintResult.status === 'fulfilled' && reprintResult.value.status === 200
@@ -67,6 +75,8 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
 
   return {
     series: seriesOk ? seriesResult.value.data.items : [],
+    chapters:
+      chapterResult.status === 'fulfilled' && chapterResult.value?.status === 200 ? chapterResult.value.data.items : [],
     revisions:
       revisionResult.status === 'fulfilled' && revisionResult.value.status === 200
         ? revisionResult.value.data.items
@@ -78,13 +88,15 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
         : null,
     deadlines: detailedDeadlines.filter((item) => item !== null),
     chapterId,
+    seriesId,
     hasError: !seriesOk || !revisionOk || !reprintOk || !deadlineOk
   }
 }
 
 export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderData: MonitoringData }) {
   const { t } = useTranslation('admin')
-  const { series, revisions, reprints, selectedReprint, deadlines, chapterId, hasError } = loaderData
+  const { series, chapters, revisions, reprints, selectedReprint, deadlines, chapterId, seriesId, hasError } =
+    loaderData
   const [seriesSearch, setSeriesSearch] = useState('')
   const [seriesStatus, setSeriesStatus] = useState('')
   const [revisionType, setRevisionType] = useState('')
@@ -158,14 +170,35 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
 
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <h2 className='font-bold text-foreground'>{t('operations.monitoring.deadlines')}</h2>
-        <Form method='get' className='mt-3 flex flex-col gap-2 sm:flex-row'>
-          <input
+        <Form method='get' className='mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
+          <select
+            name='seriesId'
+            defaultValue={seriesId}
+            className='h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-sm'
+          >
+            <option value=''>{t('operations.monitoring.selectSeries')}</option>
+            {series.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+          <select
             name='chapterId'
             defaultValue={chapterId}
-            required
-            className='h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm'
-            placeholder={t('operations.monitoring.chapterId')}
-          />
+            disabled={!seriesId}
+            className='h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-sm disabled:opacity-60'
+          >
+            <option value=''>{t('operations.monitoring.selectChapter')}</option>
+            {chapters.map((item) => (
+              <option key={item.id} value={item.id}>
+                {t('operations.monitoring.chapterOption', {
+                  number: item.chapterNumber,
+                  title: item.title || ''
+                })}
+              </option>
+            ))}
+          </select>
           <button className='h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground'>
             {t('operations.monitoring.search')}
           </button>
@@ -174,13 +207,13 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           items={deadlines.map((item) => ({
             id: item.id,
             title: `${localize('deadlineStatuses', item.status)} · ${item.requestedDeadline ?? '—'}`,
-            description: item.reason ?? item.chapterId ?? ''
+            description: item.reason ?? t('operations.monitoring.noReason')
           }))}
           empty={chapterId ? t('operations.monitoring.empty') : t('operations.monitoring.deadlineHint')}
         />
       </section>
 
-      <div className='grid gap-4 xl:grid-cols-3'>
+      <div className='space-y-4'>
         <ReadOnlyPanel
           title={t('operations.monitoring.series')}
           filters={
@@ -242,7 +275,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           items={filteredRevisions.map((item) => ({
             id: item.id,
             title: `${localize('revisionTypes', item.targetType)} · ${item.isResolved ? t('operations.monitoring.resolved') : t('operations.monitoring.open')}`,
-            description: item.reason ?? item.targetId
+            description: item.reason ?? t('operations.monitoring.noReason')
           }))}
           empty={t('operations.monitoring.empty')}
         />
@@ -272,7 +305,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           }
           items={filteredReprints.slice(0, 20).map((item) => ({
             id: item.id,
-            title: item.series?.title ?? item.seriesId,
+            title: item.series?.title ?? t('operations.monitoring.unknownSeries'),
             description: localize('reprintStatuses', item.status),
             href: `/dashboard/admin/operations/monitoring?reprintId=${encodeURIComponent(item.id)}`
           }))}
@@ -334,7 +367,6 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
           <article key={item.id} className='rounded-lg border border-border bg-background/50 p-3'>
             <p className='text-sm font-bold text-foreground'>{item.title}</p>
             <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
-            <p className='mt-1 break-all font-mono text-[10px] text-muted-foreground'>{item.id}</p>
           </article>
         )
       )}

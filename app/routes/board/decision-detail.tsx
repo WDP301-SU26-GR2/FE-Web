@@ -54,5 +54,5 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardDecisionDetailPage {...loaderData} />
+  return <BoardDecisionDetailPage {...loaderData} backPath='/dashboard/board/decisions' />
 }

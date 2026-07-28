@@ -136,6 +136,7 @@ export function SeriesSelect({
   name?: string
   required?: boolean
 }) {
+  const { t } = useTranslation('editor')
   return (
     <select
       name={name}
@@ -145,10 +146,11 @@ export function SeriesSelect({
       required={required}
       className={operationInput}
     >
-      <option value=''>Series</option>
+      <option value=''>{t('operations.selectSeries')}</option>
       {series.map((item) => (
         <option key={item.id} value={item.id}>
-          {item.title} · {item.status}
+          {item.title} ·{' '}
+          {t(`filters.seriesStatuses.${item.status}`, { defaultValue: item.status.replaceAll('_', ' ') })}
         </option>
       ))}
     </select>

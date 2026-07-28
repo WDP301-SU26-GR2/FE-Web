@@ -92,7 +92,7 @@ export function BoardStatus({ value }: { value: string }) {
     { defaultValue: value.replaceAll('_', ' ') }
   )
   return (
-    <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
+    <span className='inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold leading-none text-secondary-foreground'>
       {label}
     </span>
   )

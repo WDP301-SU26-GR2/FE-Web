@@ -12,7 +12,7 @@ export function BoardProfilePage({ profile }: { profile: StaffProfileResDtoOutpu
   const [editOpen, setEditOpen] = useState(false)
   return (
     <div className='mx-auto max-w-3xl space-y-6 pb-12'>
-      <BoardHeader title={t('profile.title')} description={t('profile.description')} />
+      <BoardHeader title={t('profile.title')} description={t('profile.description')} backHref='/dashboard/board' />
       <BoardPanel title={t('profile.form')}>
         <div className='grid gap-4 sm:grid-cols-2'>
           <ProfileValue label={t('profile.genres')} value={profile.specialtyGenres.join(', ') || '—'} />

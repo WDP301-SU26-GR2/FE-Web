@@ -17,7 +17,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
   )
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('sessions.title')} description={t('sessions.description')} />
+      <BoardHeader title={t('sessions.title')} description={t('sessions.description')} backHref='/dashboard/board' />
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
         <input

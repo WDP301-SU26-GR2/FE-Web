@@ -113,7 +113,7 @@ export function EditorBoardDecisionsPage({
             ))}
           </select>
         </div>
-        <div className='grid gap-3 md:grid-cols-2'>
+        <div className='space-y-3'>
           {visibleDecisions.map((decision) => (
             <DecisionCard
               key={decision.id}
@@ -171,8 +171,8 @@ function DecisionCard({
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex items-start justify-between gap-3'>
-        <div>
-          <h3 className='font-bold text-foreground'>
+        <div className='min-w-0'>
+          <h3 className='text-pretty font-bold leading-6 text-foreground'>
             {detailBasePath ? (
               <Link className='hover:text-primary hover:underline' to={`${detailBasePath}/${decision.id}`}>
                 {displayTitle}

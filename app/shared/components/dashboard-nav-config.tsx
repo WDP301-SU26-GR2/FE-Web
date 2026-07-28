@@ -17,8 +17,7 @@ import {
   Gavel,
   Settings2,
   ScrollText,
-  Wrench,
-  ArrowRightLeft
+  Wrench
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -142,7 +141,7 @@ function buildBoardConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
       { label: t('nav.boardWorkflow'), href: '/dashboard/board/sessions', icon: Gavel },
       { label: t('nav.contracts'), href: '/dashboard/board/contracts', icon: FileText },
       { label: t('nav.payments'), href: '/dashboard/board/payments', icon: Briefcase },
-      { label: t('nav.operations'), href: '/dashboard/board/deadlines', icon: ClipboardList },
+      { label: t('nav.operations'), href: '/dashboard/board/operations', icon: ClipboardList },
       { label: t('nav.notifications'), href: '/dashboard/board/notifications', icon: Bell, badge: true }
     ]),
     profileFallback: {

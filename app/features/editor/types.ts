@@ -30,7 +30,7 @@ export type EditorProposalDetailData = {
   series: SeriesResDtoOutput
   name: NameListResDtoOutputItemsItem | null
   coverUrl: string | null
-  characterDesignUrls: string[]
+  characterDesigns: Array<{ key: string; url: string | null }>
   namePageUrls: Array<{ pageNumber: number; url: string | null }>
   nameAnnotations: AnnotationListResDtoOutputItemsItem[]
 }

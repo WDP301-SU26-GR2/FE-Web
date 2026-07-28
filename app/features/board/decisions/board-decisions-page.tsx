@@ -36,7 +36,7 @@ export function BoardDecisionsPage({
   )
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('decisions.title')} description={t('decisions.description')} />
+      <BoardHeader title={t('decisions.title')} description={t('decisions.description')} backHref='/dashboard/board' />
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-4'>
         <input
@@ -72,7 +72,7 @@ export function BoardDecisionsPage({
       </div>
       <div className='grid gap-4 md:grid-cols-2'>
         {filteredDecisions.map((decision) => {
-          const seriesTitle = decision.targetSeries?.title ?? decision.targetSeriesId ?? t('decisions.unknownSeries')
+          const seriesTitle = decision.targetSeries?.title ?? t('decisions.unknownSeries')
           const session = sessions.find((item) => item.id === decision.boardSessionId)
           const typeLabel = decision.decisionType
             ? t(`filters.decisionTypes.${decision.decisionType}`, { defaultValue: decision.decisionType })

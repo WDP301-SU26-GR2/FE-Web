@@ -155,5 +155,59 @@
       "updateFailed": "Không thể cập nhật thông báo. Vui lòng thử lại."
     }
   },
-  "refresh": "Làm mới"
+  "refresh": "Làm mới",
+  "businessData": {
+    "empty": "Chưa có thông tin.",
+    "yes": "Có",
+    "no": "Không",
+    "fields": {
+      "displayName": "Tên hiển thị",
+      "name": "Tên",
+      "title": "Tiêu đề",
+      "email": "Email",
+      "role": "Vai trò",
+      "status": "Trạng thái",
+      "description": "Mô tả",
+      "specializations": "Chuyên môn",
+      "availabilityStatus": "Khả năng nhận việc",
+      "availabilityFrom": "Có thể nhận từ",
+      "availabilityTo": "Có thể nhận đến",
+      "reputationScore": "Điểm uy tín",
+      "ratingAvg": "Đánh giá trung bình",
+      "ratingCount": "Số lượt đánh giá",
+      "genres": "Thể loại",
+      "demographics": "Nhóm độc giả",
+      "yearsOfExperience": "Số năm kinh nghiệm",
+      "taskTypes": "Loại công việc",
+      "reason": "Lý do",
+      "round": "Vòng chỉnh sửa",
+      "isResolved": "Đã xử lý",
+      "createdAt": "Thời điểm tạo",
+      "updatedAt": "Cập nhật gần nhất",
+      "progressPct": "Tiến độ",
+      "warningLevel": "Mức cảnh báo",
+      "currentStage": "Giai đoạn hiện tại",
+      "stages": "Các giai đoạn sản xuất"
+    },
+    "values": {
+      "ACTIVE": "Đang hoạt động",
+      "AVAILABLE": "Sẵn sàng nhận việc",
+      "UNAVAILABLE": "Chưa thể nhận việc",
+      "LOCKED": "Chưa mở",
+      "COMPLETED": "Đã hoàn thành",
+      "PENDING": "Đang chờ",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối",
+      "OPEN": "Đang mở",
+      "CLOSED": "Đã đóng",
+      "IN_REVIEW": "Đang được duyệt",
+      "IN_PROGRESS": "Đang thực hiện",
+      "REVISION_REQUESTED": "Đã yêu cầu chỉnh sửa",
+      "BACKGROUND": "Vẽ nền",
+      "INKING": "Đi nét",
+      "DETAILING": "Hoàn thiện chi tiết",
+      "LETTERING": "Chèn chữ",
+      "FINAL_CHECK": "Kiểm tra cuối"
+    }
+  }
 }

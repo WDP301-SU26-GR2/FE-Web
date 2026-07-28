@@ -20,7 +20,11 @@ export function BoardRankingsPage({
   const { t } = useTranslation('board')
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('rankings.title')} description={t('rankings.description')} />
+      <BoardHeader
+        title={t('rankings.title')}
+        description={t('rankings.description')}
+        backHref='/dashboard/board/operations'
+      />
       <Form method='get' className='flex gap-2'>
         <select className={boardInput} name='surveyPeriodId' defaultValue={surveyPeriodId} required>
           <option value='' disabled>

@@ -27,5 +27,5 @@ export async function clientLoader() {
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardReportsPage {...loaderData} enableFilters />
+  return <BoardReportsPage {...loaderData} enableFilters backPath='/dashboard/board' />
 }

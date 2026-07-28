@@ -168,7 +168,7 @@ export function EditorSurveysPage({
 
       {selectedSurvey && <SurveyWorkflow status={selectedSurvey.status} />}
 
-      <div className='grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_21rem]'>
+      <div className='space-y-5'>
         {selectedSurvey ? (
           <OperationPanel icon={BarChart3} title={t('operations.surveyDetail')}>
             <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
@@ -235,7 +235,7 @@ export function EditorSurveysPage({
           <EmptySurveyData text={t('operations.surveyEmpty')} />
         )}
 
-        <aside className='space-y-3 xl:sticky xl:top-5'>
+        <aside className='space-y-3'>
           <OperationDialogPanel icon={ListChecks} title={t('operations.surveyStatusSection')} compact>
             <fetcher.Form method='post' className='grid gap-3'>
               <input type='hidden' name='surveyId' value={selectedSurveyId} />
@@ -397,7 +397,9 @@ function OfflineVotes({
                 className='flex justify-between rounded-md bg-muted p-3 text-sm'
               >
                 <span>
-                  {entry.seriesId ? (seriesTitles[entry.seriesId] ?? entry.seriesId) : t('common.notAvailable')}
+                  {entry.seriesId
+                    ? (seriesTitles[entry.seriesId] ?? t('operations.unknownSeries'))
+                    : t('common.notAvailable')}
                 </span>
                 <strong>{entry.voteCount}</strong>
               </div>
@@ -429,7 +431,7 @@ function RankingResults({
         >
           <strong>#{item.rankPosition ?? '—'}</strong>
           <div>
-            <p className='font-bold'>{seriesTitles[item.seriesId] ?? item.seriesId}</p>
+            <p className='font-bold'>{seriesTitles[item.seriesId] ?? t('operations.unknownSeries')}</p>
             <p className='text-xs text-muted-foreground'>
               {item.isReliable ? t('operations.reliable') : t('operations.unreliable')}
             </p>

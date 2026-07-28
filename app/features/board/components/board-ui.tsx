@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Gavel, Loader2, PencilLine } from 'lucide-react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { ArrowLeft, Gavel, Loader2, PencilLine } from 'lucide-react'
+import { Link, useFetcher, useRevalidator } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { BoardActionResult } from '../types'
@@ -9,10 +9,27 @@ import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 export const boardInput =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
 
-export function BoardHeader({ title, description }: { title: string; description: string }) {
+export function BoardHeader({
+  title,
+  description,
+  backHref
+}: {
+  title: string
+  description: string
+  backHref?: string
+}) {
   const { t } = useTranslation('board')
   return (
     <header>
+      {backHref && (
+        <Link
+          to={backHref}
+          className='mb-4 inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline'
+        >
+          <ArrowLeft className='size-4' aria-hidden='true' />
+          {t('common.back')}
+        </Link>
+      )}
       <p className='flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary'>
         <Gavel className='size-4' />
         {t('common.eyebrow')}
@@ -68,12 +85,14 @@ export function StatusBadge({ value }: { value: string }) {
       `filters.transferStatuses.${value}`,
       `sessions.seriesBrief.seriesStatuses.${value}`,
       `deadlines.statuses.${value}`,
-      `rankings.riskLevels.${value}`
+      `rankings.riskLevels.${value}`,
+      `audit.entityTypes.${value}`,
+      `audit.actions.${value}`
     ],
     { defaultValue: value.replaceAll('_', ' ') }
   )
   return (
-    <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
+    <span className='inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold leading-none text-secondary-foreground'>
       {label}
     </span>
   )

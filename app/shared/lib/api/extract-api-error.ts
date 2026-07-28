@@ -24,6 +24,40 @@ export function extractApiErrorMessage(error: unknown, fallback: string): string
   return fallback
 }
 
+/**
+ * Read the success message preserved by `customFetch`.
+ *
+ * Message-bearing payloads (for example `{ data: { message } }`) take
+ * precedence over the generic response envelope. Generic envelope messages
+ * such as "Thành công" are replaced by the action-specific fallback so the
+ * feedback still tells the user what actually happened.
+ */
+export function extractApiSuccessMessage(response: unknown, fallback: string): string {
+  if (!response || typeof response !== 'object') return fallback
+
+  const candidate = response as {
+    message?: unknown
+    data?: { message?: unknown } | null
+  }
+  const payloadMessage = cleanMessage(candidate.data?.message)
+  if (payloadMessage) return payloadMessage
+
+  const envelopeMessage = cleanMessage(candidate.message)
+  if (envelopeMessage && !isGenericSuccessMessage(envelopeMessage)) return envelopeMessage
+
+  return fallback
+}
+
+function cleanMessage(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const message = value.trim()
+  return message || undefined
+}
+
+function isGenericSuccessMessage(message: string): boolean {
+  return ['success', 'successful', 'ok', 'thành công', 'thao tác thành công'].includes(message.toLocaleLowerCase('vi'))
+}
+
 /** Stable machine-readable BE error code (Spec 21). */
 export function extractApiErrorCode(error: unknown): string | undefined {
   if (!(error instanceof Error)) return undefined

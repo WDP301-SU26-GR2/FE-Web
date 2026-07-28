@@ -7,6 +7,7 @@ import {
 } from '~/api/operations/publication-versions/publication-versions'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorPublicationVersionsPage, type EditorActionResult } from '~/features/editor'
+import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import { optional, required } from './operations-route-utils'
 import type { Route } from './+types/operations-versions'
 
@@ -34,8 +35,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = required(form, 'intent')
   try {
-    if (intent === 'createPublicationVersion')
-      await publicationControllerCreate(
+    let message = ''
+    if (intent === 'createPublicationVersion') {
+      const response = await publicationControllerCreate(
         { seriesId: required(form, 'seriesId') },
         {
           language: required(form, 'language'),
@@ -44,8 +46,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           notes: optional(form, 'notes') ?? null
         }
       )
-    else if (intent === 'updatePublicationVersion')
-      await publicationControllerUpdate(
+      message = extractApiSuccessMessage(response, 'Đã tạo phiên bản xuất bản.')
+    } else if (intent === 'updatePublicationVersion') {
+      const response = await publicationControllerUpdate(
         { id: required(form, 'versionId') },
         {
           language: optional(form, 'language'),
@@ -54,12 +57,19 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           notes: optional(form, 'notes')
         }
       )
-    else if (intent === 'removePublicationVersion')
-      await publicationControllerRemove({ id: required(form, 'versionId') })
-    else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: intent }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+      message = extractApiSuccessMessage(response, 'Đã cập nhật phiên bản xuất bản.')
+    } else if (intent === 'removePublicationVersion') {
+      const response = await publicationControllerRemove({ id: required(form, 'versionId') })
+      message = extractApiSuccessMessage(response, 'Đã xóa phiên bản xuất bản.')
+    } else return { ok: false, intent, errorKey: 'invalidAction' }
+    return { ok: true, intent, messageKey: intent, message }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      errorKey: 'actionFailed',
+      message: extractApiErrorMessage(error, 'Không thể cập nhật phiên bản xuất bản.')
+    }
   }
 }
 

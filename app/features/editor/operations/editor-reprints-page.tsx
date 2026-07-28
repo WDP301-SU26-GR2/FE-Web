@@ -36,7 +36,9 @@ export function EditorReprintsPage({
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const eligibleSeries = series.filter(
-    (item) => contractTypes[item.id] && chapters.some((chapter) => chapter.seriesId === item.id && chapter.status === 'PUBLISHED')
+    (item) =>
+      contractTypes[item.id] &&
+      chapters.some((chapter) => chapter.seriesId === item.id && chapter.status === 'PUBLISHED')
   )
   const orderedReprints = [...reprints].sort(
     (left, right) => Number(right.id === focusRequestId) - Number(left.id === focusRequestId)
@@ -56,8 +58,22 @@ export function EditorReprintsPage({
           </select>
           <input name='reason' required className={operationInput} placeholder={t('operations.reason')} />
           <div className='grid grid-cols-2 gap-3'>
-            <input name='chapterStart' type='number' min={0} required className={operationInput} placeholder={t('operations.fromChapter')} />
-            <input name='chapterEnd' type='number' min={0} required className={operationInput} placeholder={t('operations.toChapter')} />
+            <input
+              name='chapterStart'
+              type='number'
+              min={0}
+              required
+              className={operationInput}
+              placeholder={t('operations.fromChapter')}
+            />
+            <input
+              name='chapterEnd'
+              type='number'
+              min={0}
+              required
+              className={operationInput}
+              placeholder={t('operations.toChapter')}
+            />
           </div>
           <OperationAction intent='createReprint' label={t('actions.createReprint')} />
           <OperationFeedback data={fetcher.data} />
@@ -106,7 +122,10 @@ export function EditorReprintsPage({
                 {item.chapters.map((chapter) => (
                   <span key={chapter.originalChapterId} className='rounded-md border border-border px-2 py-1 text-xs'>
                     {chapter.originalChapterId
-                      ? chapterLabel(chapters.find((candidate) => candidate.id === chapter.originalChapterId), t)
+                      ? chapterLabel(
+                          chapters.find((candidate) => candidate.id === chapter.originalChapterId),
+                          t
+                        )
                       : t('operations.unknownChapter')}{' '}
                     · {t(`operations.reprintChapterStatuses.${chapter.status}`)}
                   </span>
@@ -141,19 +160,21 @@ function ReprintChapterForm({
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const [reprintId, setReprintId] = useState('')
-  const [reviserType, setReviserType] = useState<'OTHER_MANGAKA' | 'INTERNAL_TEAM'>('OTHER_MANGAKA')
   const eligibleItems = items.filter((item) =>
     intent === 'approveReprintChapter'
       ? ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) &&
         item.chapters.some((chapter) => chapter.status === 'READY')
-      : item.revisionMode === 'WITH_REVISION' && contractTypes[item.seriesId] === 'FULL_BUYOUT' &&
+      : item.revisionMode === 'WITH_REVISION' &&
+        contractTypes[item.seriesId] === 'FULL_BUYOUT' &&
         ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) &&
         item.chapters.some((chapter) => ['PENDING', 'IN_REVISION'].includes(chapter.status))
   )
   const selected = eligibleItems.find((item) => item.id === reprintId)
   const chapterIds = (selected?.chapters ?? [])
     .filter((chapter) =>
-      intent === 'approveReprintChapter' ? chapter.status === 'READY' : ['PENDING', 'IN_REVISION'].includes(chapter.status)
+      intent === 'approveReprintChapter'
+        ? chapter.status === 'READY'
+        : ['PENDING', 'IN_REVISION'].includes(chapter.status)
     )
     .map((chapter) => chapter.originalChapterId)
     .filter((id): id is string => Boolean(id))
@@ -189,27 +210,15 @@ function ReprintChapterForm({
       </select>
       {intent === 'assignReviser' && (
         <>
-          <select
-            name='reviserType'
-            className={operationInput}
-            value={reviserType}
-            onChange={(event) => setReviserType(event.target.value as typeof reviserType)}
-          >
-            <option value='OTHER_MANGAKA'>{t('operations.reviserTypes.OTHER_MANGAKA')}</option>
-            <option value='INTERNAL_TEAM'>{t('operations.reviserTypes.INTERNAL_TEAM')}</option>
+          <input type='hidden' name='reviserType' value='OTHER_MANGAKA' />
+          <select name='reviserId' required className={operationInput}>
+            <option value=''>{t('operations.selectReviser')}</option>
+            {mangakas.map((mangaka) => (
+              <option key={mangaka.userId} value={mangaka.userId}>
+                {mangaka.penName || mangaka.displayName || t('operations.unknownMangaka')}
+              </option>
+            ))}
           </select>
-          {reviserType === 'OTHER_MANGAKA' ? (
-            <select name='reviserId' required className={operationInput}>
-              <option value=''>{t('operations.selectReviser')}</option>
-              {mangakas.map((mangaka) => (
-                <option key={mangaka.userId} value={mangaka.userId}>
-                  {mangaka.penName || mangaka.displayName || t('operations.unknownMangaka')}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input name='reviserId' required className={operationInput} placeholder={t('operations.internalReviserId')} />
-          )}
         </>
       )}
       <div className='flex flex-wrap gap-2'>

@@ -50,9 +50,9 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       series,
       name,
       coverUrl: await signKey(series.coverImage),
-      characterDesignUrls: (
-        await Promise.all((series.proposal?.characterDesigns ?? []).map((key) => signKey(key)))
-      ).filter((url): url is string => Boolean(url)),
+      characterDesigns: await Promise.all(
+        (series.proposal?.characterDesigns ?? []).map(async (key) => ({ key, url: await signKey(key) }))
+      ),
       namePageUrls: await Promise.all(
         (name?.pages ?? []).map(async (page) => ({ pageNumber: page.pageNumber, url: await signKey(page.fileUrl) }))
       ),
@@ -96,20 +96,24 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       await seriesControllerReject({ id: seriesId }, { reason: reason ?? 'Rejected by Editor' })
     else if (intent === 'reopenReview')
       await seriesControllerReopenReview({ id: seriesId }, { reason: required(formData, 'reason') })
-    else if (intent === 'updateMetadata')
+    else if (intent === 'updateMetadata') {
+      const currentSeries = await seriesControllerGetSeries({ id: seriesId })
+      if (currentSeries.status !== 200 || currentSeries.data.status !== 'IN_REVIEW') {
+        return { ok: false, intent, errorKey: 'metadataLocked' }
+      }
       await seriesControllerUpdateSeriesMetadata(
         { id: seriesId },
         {
           title: required(formData, 'title'),
-          synopsis: String(formData.get('synopsis') ?? '').trim() || null,
-          coverImage: String(formData.get('coverImage') ?? '').trim() || null,
+          synopsis: String(formData.get('synopsis') ?? '').trim(),
+          coverImage: String(formData.get('coverImage') ?? '').trim(),
           characterDesigns: String(formData.get('characterDesigns') ?? '')
             .split(/[\n,]/)
             .map((key) => key.trim())
             .filter(Boolean)
         }
       )
-    else return { ok: false, intent, errorKey: 'invalidAction' }
+    } else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
       : intent === 'rejectSeries'

@@ -36,7 +36,11 @@ export function BoardReprintsPage({
   const filteredRequests = requests.filter((item) => !status || item.status === status)
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('reprints.title')} description={t('reprints.description')} />
+      <BoardHeader
+        title={t('reprints.title')}
+        description={t('reprints.description')}
+        backHref='/dashboard/board/operations'
+      />
       <BoardPanel title={t('reprints.lookup')}>
         <Form method='get' className='flex flex-col gap-3 sm:flex-row'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId} required>
@@ -95,7 +99,7 @@ function ReprintCard({
     <article className='rounded-xl border border-border bg-card p-5'>
       <div className='flex justify-between gap-3'>
         <div>
-          <strong>{item.series?.title ?? item.seriesId}</strong>
+          <strong>{item.series?.title ?? t('reprints.unknownSeries')}</strong>
           {item.requester ? <p className='mt-1 text-xs text-muted-foreground'>{item.requester.displayName}</p> : null}
           <p className='mt-1 text-xs text-muted-foreground'>
             {t(`reprints.revisionModes.${item.revisionMode}`, { defaultValue: item.revisionMode })} ·{' '}
@@ -153,7 +157,6 @@ function AssignReviserDialog({
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
-  const [reviserType, setReviserType] = useState<'OTHER_MANGAKA' | 'INTERNAL_TEAM'>('OTHER_MANGAKA')
   return (
     <BoardActionDialog title={t('reprints.assignReviser')}>
       <fetcher.Form method='post' className='grid gap-3'>
@@ -167,28 +170,19 @@ function AssignReviserDialog({
             </option>
           ))}
         </select>
-        <select
-          className={boardInput}
-          name='reviserType'
-          value={reviserType}
-          onChange={(event) => setReviserType(event.target.value as typeof reviserType)}
-        >
-          <option value='OTHER_MANGAKA'>{t('reprints.reviserTypes.OTHER_MANGAKA')}</option>
-          <option value='INTERNAL_TEAM'>{t('reprints.reviserTypes.INTERNAL_TEAM')}</option>
+        <input type='hidden' name='reviserType' value='OTHER_MANGAKA' />
+        <select className={boardInput} name='reviserId' required>
+          <option value=''>{t('reprints.selectReviser')}</option>
+          {mangakas.map((mangaka) => (
+            <option key={mangaka.userId} value={mangaka.userId}>
+              {mangaka.penName || mangaka.displayName || t('reprints.unknownMangaka')}
+            </option>
+          ))}
         </select>
-        {reviserType === 'OTHER_MANGAKA' ? (
-          <select className={boardInput} name='reviserId' required>
-            <option value=''>{t('reprints.selectReviser')}</option>
-            {mangakas.map((mangaka) => (
-              <option key={mangaka.userId} value={mangaka.userId}>
-                {mangaka.penName || mangaka.displayName || t('reprints.unknownMangaka')}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input className={boardInput} name='reviserId' required placeholder={t('reprints.internalReviserId')} />
-        )}
-        <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+        <button
+          disabled={!mangakas.length}
+          className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+        >
           {t('reprints.assignReviser')}
         </button>
       </fetcher.Form>

@@ -14,6 +14,7 @@ export type AdminUserActionResult =
       ok: true
       intent: AdminUserActionIntent
       messageKey: string
+      message?: string
       temporaryPassword?: string
       email?: string
     }
@@ -21,4 +22,5 @@ export type AdminUserActionResult =
       ok: false
       intent: AdminUserActionIntent | 'unknown'
       errorKey: string
+      message?: string
     }

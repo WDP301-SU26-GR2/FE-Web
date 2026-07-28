@@ -159,7 +159,7 @@ function PaymentCard({
           <strong>{payment.series?.title ?? payment.paymentType}</strong>
           <p className='mt-1 text-xs text-muted-foreground'>
             {t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })} ·{' '}
-            {payment.receiver?.displayName ?? payment.receiverId}
+            {payment.receiver?.displayName ?? t('payments.unknownReceiver')}
           </p>
           {payment.description ? <p className='mt-1 text-xs text-muted-foreground'>{payment.description}</p> : null}
         </div>
@@ -194,7 +194,7 @@ function PaymentCard({
                         {t('payments.openContract')}
                       </Link>
                     ) : (
-                      shortId(payment.contractId)
+                      t('payments.relatedContract')
                     )
                   }
                 />
@@ -210,11 +210,7 @@ function PaymentCard({
                 <PaymentFact label={t('payments.period')} value={payment.period} />
                 <PaymentFact
                   label={t('payments.receiver')}
-                  value={payment.receiver?.displayName ?? payment.receiverId}
-                />
-                <PaymentFact
-                  label={t('payments.condition')}
-                  value={payment.conditionId && shortId(payment.conditionId)}
+                  value={payment.receiver?.displayName ?? t('payments.unknownReceiver')}
                 />
                 <PaymentFact label={t('payments.createdAt')} value={formatDate(payment.createdAt)} />
                 <PaymentFact label={t('payments.descriptionLabel')} value={payment.description} />
@@ -315,10 +311,6 @@ function PaymentFact({ label, value, emptyValue }: { label: string; value?: Reac
       </dd>
     </div>
   )
-}
-
-function shortId(value: string) {
-  return value.length > 12 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value
 }
 
 function formatDate(value: string | null) {

@@ -155,5 +155,59 @@
       "updateFailed": "Unable to update notifications. Please try again."
     }
   },
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "businessData": {
+    "empty": "No information available.",
+    "yes": "Yes",
+    "no": "No",
+    "fields": {
+      "displayName": "Display name",
+      "name": "Name",
+      "title": "Title",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "description": "Description",
+      "specializations": "Specialties",
+      "availabilityStatus": "Availability",
+      "availabilityFrom": "Available from",
+      "availabilityTo": "Available until",
+      "reputationScore": "Reputation score",
+      "ratingAvg": "Average rating",
+      "ratingCount": "Number of ratings",
+      "genres": "Genres",
+      "demographics": "Demographics",
+      "yearsOfExperience": "Years of experience",
+      "taskTypes": "Task types",
+      "reason": "Reason",
+      "round": "Revision round",
+      "isResolved": "Resolved",
+      "createdAt": "Created",
+      "updatedAt": "Last updated",
+      "progressPct": "Progress",
+      "warningLevel": "Warning level",
+      "currentStage": "Current stage",
+      "stages": "Production stages"
+    },
+    "values": {
+      "ACTIVE": "Active",
+      "AVAILABLE": "Available",
+      "UNAVAILABLE": "Unavailable",
+      "LOCKED": "Locked",
+      "COMPLETED": "Completed",
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "OPEN": "Open",
+      "CLOSED": "Closed",
+      "IN_REVIEW": "In review",
+      "IN_PROGRESS": "In progress",
+      "REVISION_REQUESTED": "Revision requested",
+      "BACKGROUND": "Background",
+      "INKING": "Inking",
+      "DETAILING": "Detailing",
+      "LETTERING": "Lettering",
+      "FINAL_CHECK": "Final check"
+    }
+  }
 }

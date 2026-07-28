@@ -82,7 +82,7 @@ export function BoardDashboardPage({
               href='/dashboard/board/notifications'
             />
           </div>
-          <div className='grid gap-4 lg:grid-cols-2'>
+          <div className='space-y-4'>
             <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
               <h2 className='font-bold text-foreground'>{t('dashboard.pendingDecisions')}</h2>
               <div className='mt-4 space-y-2'>

@@ -105,6 +105,7 @@ export default [
       route('contracts', 'routes/board/contracts.tsx'),
       route('contracts/:id', 'routes/board/contract-detail.tsx'),
       route('payments', 'routes/board/payments.tsx'),
+      route('operations', 'routes/board/operations.tsx'),
       route('deadlines', 'routes/board/deadlines.tsx'),
       route('rankings', 'routes/board/rankings.tsx'),
       route('reprints', 'routes/board/reprints.tsx'),

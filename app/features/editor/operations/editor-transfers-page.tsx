@@ -1,6 +1,7 @@
 import { GitPullRequestArrow, Info, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
 import type { TransferRequestResDtoOutput, TransferSignatureListResDtoOutputSignaturesItem } from '~/api/model/transfer'
 import {
   OperationAction,
@@ -38,45 +39,30 @@ export function EditorTransfersPage({
       descriptionKey='operations.descriptions.transfers'
       hasError={hasError}
     >
-      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
-          <input
-            name='requestId'
-            defaultValue={requestId}
-            className={operationInput}
-            placeholder={t('operations.transferRequestId')}
-          />
-          <input
-            name='contractId'
-            defaultValue={contractId}
-            className={operationInput}
-            placeholder='Transfer contract ID'
-          />
-          <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
-            {t('actions.load')}
-          </button>
-        </form>
-        {request && (
-          <div className='mt-4 rounded-lg border border-border p-4 text-sm'>
+      {request && (
+        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+          <div className='rounded-lg border border-border p-4 text-sm'>
             <div className='flex flex-wrap justify-between gap-2'>
               <strong>{displayRequest?.series?.title ?? t('operations.unknownSeries')}</strong>
               <span className='font-bold text-primary'>{t(`operations.transferStatuses.${request.status}`)}</span>
             </div>
             <p className='mt-2 text-muted-foreground'>{request.planDescription}</p>
           </div>
-        )}
-      </section>
+        </section>
+      )}
       {contractId && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <h2 className='font-bold text-foreground'>Transfer signatures</h2>
+          <h2 className='font-bold text-foreground'>{t('operations.transferSignatures')}</h2>
           <div className='mt-3 grid gap-2'>
             {signatures.map((signature) => (
               <div key={signature.id} className='flex justify-between rounded-md bg-muted p-3 text-xs'>
-                <strong>{signature.role}</strong>
+                <strong>
+                  {t(`operations.transferSignatureRoles.${signature.role}`, { defaultValue: signature.role })}
+                </strong>
                 <span>{new Date(signature.signedAt).toLocaleString()}</span>
               </div>
             ))}
-            {!signatures.length && <p className='text-sm text-muted-foreground'>No signatures yet.</p>}
+            {!signatures.length && <p className='text-sm text-muted-foreground'>{t('operations.noSignatures')}</p>}
           </div>
         </section>
       )}
@@ -156,11 +142,13 @@ export function EditorTransfersPage({
           <OperationFeedback data={fetcher.data} />
           {fetcher.data?.ok && fetcher.data.transferContractId && (
             <div className='mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm'>
-              <strong>Đã tạo hợp đồng chuyển nhượng.</strong>
-              <p className='mt-1 text-muted-foreground'>
-                Mã hợp đồng để ba bên ký:{' '}
-                <code className='font-mono text-foreground'>{fetcher.data.transferContractId}</code>
-              </p>
+              <strong>{t('operations.transferContractCreated')}</strong>
+              <Link
+                className='mt-2 inline-flex font-bold text-primary underline'
+                to={`/dashboard/editor/operations/transfers?requestId=${encodeURIComponent(requestId)}&contractId=${encodeURIComponent(fetcher.data.transferContractId)}`}
+              >
+                {t('operations.viewSignatureProgress')}
+              </Link>
             </div>
           )}
         </OperationDialogPanel>

@@ -101,16 +101,12 @@ export function EditorContractPaymentsPage({
                 }
               />
               <PaymentFact
-                label={t('contractDetail.payments.condition')}
-                value={payment.conditionId ? shortId(payment.conditionId) : null}
-              />
-              <PaymentFact
                 label={t('contractDetail.payments.createdAt')}
                 value={formatDate(payment.createdAt, i18n.language)}
               />
               <PaymentFact
                 label={t('contractDetail.payments.receiver')}
-                value={payment.receiver?.displayName ?? payment.receiverId}
+                value={payment.receiver?.displayName ?? t('common.notAvailable')}
               />
               <PaymentFact
                 label={t('contractDetail.payments.approver')}
@@ -158,10 +154,6 @@ function PaymentFact({ label, value, emptyValue }: { label: string; value?: Reac
       </dd>
     </div>
   )
-}
-
-function shortId(value: string) {
-  return value.length > 12 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value
 }
 
 function formatDate(value: string | null, locale: string) {

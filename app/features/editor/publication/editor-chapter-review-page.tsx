@@ -120,16 +120,6 @@ export function EditorChapterReviewPage({
         </button>
       )}
       <EditorActionToast data={fetcher.data} scope={`editor-chapter-${chapter.id}`} />
-      {fetcher.data?.downloadUrl && (
-        <a
-          href={fetcher.data.downloadUrl}
-          target='_blank'
-          rel='noreferrer'
-          className='inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
-        >
-          {t('actions.download', { defaultValue: 'Download task file' })}
-        </a>
-      )}
       <WorkflowActionPanel data={data} />
       <nav
         aria-label={t('chapterReview.reviewSections')}
@@ -204,10 +194,12 @@ export function EditorChapterReviewPage({
       )}
       {activeSection === 'name' && data.name && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <div className='flex items-center justify-between gap-3'>
-            <h2 className='text-lg font-bold text-foreground'>{t('chapterReview.nameTitle')}</h2>
+          <div className='flex flex-wrap items-start justify-between gap-3'>
+            <h2 className='min-w-0 text-pretty text-lg font-bold leading-6 text-foreground'>
+              {t('chapterReview.nameTitle')}
+            </h2>
             <span className='rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground'>
-              {data.name.status}
+              {t(`filters.nameStatuses.${data.name.status}`, { defaultValue: data.name.status.replaceAll('_', ' ') })}
             </span>
           </div>
           <div className='mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4'>
@@ -339,43 +331,27 @@ export function EditorChapterReviewPage({
                 {data.stages.stages.map((stage) => (
                   <div key={stage.id} className='grid gap-2 rounded-md bg-muted p-3 text-xs sm:grid-cols-4'>
                     <strong className='text-foreground'>
-                      {stage.order}. {stage.name}
+                      {stage.order}.{' '}
+                      {t(`chapterReview.stageNames.${stage.name}`, {
+                        defaultValue: stage.name.replaceAll('_', ' ')
+                      })}
                     </strong>
-                    <span>{stage.status}</span>
-                    <span>{stage.analytics.openCount} open</span>
                     <span>
-                      {data.stagePages.filter((page) => page.stageId === stage.id && page.outputReady).length}/
-                      {data.stagePages.filter((page) => page.stageId === stage.id).length} outputs
+                      {t(`chapterReview.stageStatuses.${stage.status}`, {
+                        defaultValue: stage.status.replaceAll('_', ' ')
+                      })}
+                    </span>
+                    <span>{t('chapterReview.openTasks', { count: stage.analytics.openCount })}</span>
+                    <span>
+                      {t('chapterReview.stageOutputs', {
+                        ready: data.stagePages.filter((page) => page.stageId === stage.id && page.outputReady).length,
+                        total: data.stagePages.filter((page) => page.stageId === stage.id).length
+                      })}
                     </span>
                   </div>
                 ))}
               </div>
             )}
-            <fetcher.Form
-              method='post'
-              className='mt-4 grid gap-2 rounded-lg border border-border p-4 sm:grid-cols-[1fr_1fr_auto]'
-            >
-              <input type='hidden' name='chapterId' value={chapter.id} />
-              <input
-                name='taskId'
-                required
-                className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
-                placeholder='Task ID'
-              />
-              <input
-                name='key'
-                required
-                className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground'
-                placeholder='Task file key'
-              />
-              <button
-                name='intent'
-                value='downloadTaskFile'
-                className='h-10 rounded-md border border-border px-4 text-sm font-bold text-foreground'
-              >
-                {t('actions.download', { defaultValue: 'Download' })}
-              </button>
-            </fetcher.Form>
             <fetcher.Form method='post' className='mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]'>
               <input type='hidden' name='chapterId' value={chapter.id} />
               <label className='grid gap-1.5 text-xs font-bold text-foreground'>
