@@ -1,6 +1,6 @@
 # §05 — EDITOR (Biên tập viên phụ trách — Tantou)
 
-> **Nguồn:** đọc trực tiếp `BE-dev/src/modules/{series,name,chapter,task,board,contract,payment,reprint,transfer,tankobon,deadline,survey,publication,dashboard,users,reviews,revision,annotation}/*`, `BE-dev/prisma/schema.prisma`, `BE-dev/test/flows/route-roles.ts` (nguồn sự thật duy nhất về quyền — **122 route** có `RoleCode.EDITOR` trong `allowed[]`, sinh lúc 2026-07-27T09:56:32Z). **KHÔNG** copy lại từ `FE-API-Guide-v3.md` cũ.
+> **Nguồn:** đọc trực tiếp `BE-dev/src/modules/{series,name,chapter,task,board,contract,payment,reprint,transfer,tankobon,deadline,survey,publication,dashboard,users,reviews,revision,annotation}/*`, `BE-dev/prisma/schema.prisma`, `BE-dev/test/flows/route-roles.ts` (nguồn sự thật duy nhất về quyền — **119 route** có `RoleCode.EDITOR` trong `allowed[]` — 122 lúc dựng 2026-07-27, +1 do **Spec 27** (2026-07-29) thêm `GET /transfers/contracts/:id` = 123, **−4 do §84 (2026-07-29)** chuyển 4 route vận hành kỳ bình chọn sang SUPER_ADMIN → **119**). **KHÔNG** copy lại từ `FE-API-Guide-v3.md` cũ.
 > File này giả định bạn đã đọc `01-conventions-and-auth.md` (envelope, lỗi, phân trang, upload R2 §3, enum dictionary §7, FE env vars). Enum trong bảng field ghi `enum X` — tra giá trị đầy đủ ở đó.
 
 ---
@@ -23,8 +23,12 @@ Route được nhóm thành 5 phần, đúng số route xác nhận lại từ `
 | B | Chapter/Name-chapter/Production + task file download | 17 |
 | C | Board session (Editor tổ chức họp) | 17 |
 | D | Contract/Payment/Reprint/Transfer/Tankobon | 35 |
-| E | Deadline/Survey/Publication/Dashboard/Directory/Reviews/Revision/Annotation | 33 |
-| **Tổng** | | **122** |
+| E | Deadline/Survey/Publication/Dashboard/Directory/Reviews/Revision/Annotation | 29 |
+| **Tổng** | | **119** |
+
+> 🔴 **§84 (2026-07-29):** Nhóm E giảm 33 → **29**. 4 route vận hành kỳ bình chọn (`POST /survey-periods`,
+> `PATCH /survey-periods/:id/status`, `POST /survey-data/import`, `POST /survey-periods/:id/finalize`) chuyển
+> sang **SUPER_ADMIN-only** — Editor gọi → **403**. Quyền ĐỌC survey/ranking giữ nguyên. Xem Narrative Flow 4.
 
 > ⚠️ Task brief gốc liệt kê Nhóm B có 16 route và Nhóm C có 18 route — đối chiếu `route-roles.ts` thực tế: Nhóm B có **17** (thiếu `POST /tasks/:id/download-url`, đã bổ sung ở cuối Nhóm B) và Nhóm C có **17** (không phải 18 — `GET/PATCH /board/config` chỉ 1 route `GET` cho Editor, `PATCH /board/config/:id` là `SUPER_ADMIN` riêng). Xem xác nhận cuối file.
 
@@ -857,9 +861,21 @@ Chỉ áp dụng khi `revisionMode=WITH_REVISION` VÀ contract gốc `FULL_BUYOU
 
 **Lỗi:** `Error.TransferContractNotFound` · `Error.TransferAccessDenied`.
 
+### 33b. `GET /transfers/contracts/:id` — 🆕 Chi tiết hợp đồng chuyển nhượng (Spec 27, 2026-07-29)
+
+Editor phụ trách series đọc lại hợp đồng mình đã soạn (route #32) — điều khoản + tiến độ ký của cả 3 bên trong 1 lần gọi. Cùng RBAC với `/signatures` (Mangaka A/B, Editor phụ trách, Board trong roster, Super Admin).
+
+**Response `TransferContractRes`:** `id, transferRequestId, seriesId, fromMangakaId, toMangakaId, series/fromMangaka/toMangaka (Mini)/null, transferType (TransferType)/null, transferAmount/null, newOwnershipSplit (Record<string,number>)/null, coOwnerApprovalRequired (bool), status (TransferContractStatus), createdAt, signatures[]`.
+
+Thứ tự ký bắt buộc đọc từ `status`: `DRAFT` (chờ A) → `A_SIGNED` (chờ B) → `B_SIGNED` (chờ Board) → `BOARD_SIGNED` → `FULLY_EXECUTED`. Editor **không** ký hợp đồng chuyển nhượng (chỉ soạn) — dùng route này để theo dõi và nhắc bên còn thiếu.
+
+**Lỗi:** `Error.TransferContractNotFound` (404, kể cả id rác) · `Error.TransferAccessDenied` (403).
+
 ### 34. `GET /transfers/requests/:id` — Chi tiết yêu cầu chuyển nhượng
 
-**Response `TransferRequestRes`:** `id, seriesId, requestingMangakaId, originalMangakaId, series/requestingMangaka/originalMangaka (Mini)/null, originalContractType/null, proposedType/null, proposedPercentage/null, planDescription/null, originalContractId/null, status (TransferRequestStatus), boardDecisionId/null, createdAt`.
+**Response `TransferRequestRes`:** `id, seriesId, requestingMangakaId, originalMangakaId, series/requestingMangaka/originalMangaka (Mini)/null, originalContractType/null, proposedType/null, proposedPercentage/null, planDescription/null, originalContractId/null, `**`transferContractId/null`**` (🆕 Spec 27), status (TransferRequestStatus), boardDecisionId/null, createdAt`.
+
+🆕 **`transferContractId`** — id hợp đồng **chuyển nhượng** đã soạn cho yêu cầu này (`null` nếu chưa soạn). Dùng để gọi route #33b/#33. ⚠️ Đừng nhầm với `originalContractId` = **Contract (hợp đồng xuất bản)** cũ của series, khác entity, không dùng được với `/transfers/contracts/:id/*`. Field chỉ đảm bảo ở route GET request; response route mutation không mang (quy ước Spec 20).
 
 **Lỗi:** `Error.TransferRequestNotFound` · `Error.TransferAccessDenied`.
 
@@ -871,7 +887,7 @@ Không body. `UNDER_REVIEW → NEGOTIATING`. Chỉ áp dụng khi hợp đồng 
 
 ---
 
-## Nhóm E — Deadline / Survey / Publication / Dashboard / Directory / Reviews / Revision / Annotation (33 route)
+## Nhóm E — Deadline / Survey / Publication / Dashboard / Directory / Reviews / Revision / Annotation (29 route)
 
 ### Narrative — Flow 10 (Deadline Negotiation)
 
@@ -881,15 +897,30 @@ Editor có quyền gia hạn đơn phương (`PATCH /chapters/:id/schedule/exten
 2. Bên kia: **`POST .../counter`** (đề xuất khác → `COUNTER_PROPOSED`, loop) hoặc **`POST .../agree`** (→ `AGREED_BY_PARTIES`) hoặc **`POST .../reject`** (bất đồng → `ESCALATED`, Board quyết định cuối) hoặc bên khởi tạo **`POST .../withdraw`** (→ `REJECTED` terminal).
 3. Khi `AGREED_BY_PARTIES`: Editor **`POST .../finalize`** — nếu **không** ảnh hưởng slot → `APPROVED` ngay (cập nhật Schedule); nếu ảnh hưởng slot → `BOARD_REVIEW` (Board tự quyết qua route riêng `POST /deadline-requests/:id/board-resolve`, không thuộc phạm vi Editor).
 
-### Narrative — Flow 4 (Survey/Ranking, phần Editor quản trị)
+### Narrative — Flow 4 (Survey/Ranking) — 🔴 **BREAKING 2026-07-29: Editor nay CHỈ ĐỌC**
 
-Editor (hoặc Admin) chủ động mở kỳ bình chọn theo lịch phát hành tạp chí (KHÔNG tự động theo chapter):
+> **Đổi quyền (§84).** Kỳ bình chọn (`SurveyPeriod`) là đơn vị theo **KỲ PHÁT HÀNH của cả tạp chí**, không phải
+> theo series. Editor/Tantou chỉ phụ trách một vài series nên **không còn thẩm quyền vận hành kỳ**; riêng
+> `finalize` còn là **xung đột lợi ích** vì nó chốt xếp hạng so sánh toàn bộ series, gồm cả series của chính Editor.
+> 4 route dưới đây nay **SUPER_ADMIN-only** — Editor gọi sẽ nhận **403**:
+>
+> | Route | Trước | Nay |
+> |---|---|---|
+> | `POST /survey-periods` | EDITOR + SUPER_ADMIN | **SUPER_ADMIN** |
+> | `PATCH /survey-periods/:id/status` | EDITOR + SUPER_ADMIN | **SUPER_ADMIN** |
+> | `POST /survey-data/import` | EDITOR + SUPER_ADMIN | **SUPER_ADMIN** |
+> | `POST /survey-periods/:id/finalize` | EDITOR + SUPER_ADMIN | **SUPER_ADMIN** |
+>
+> **FE phải làm:** ẩn/bỏ mọi nút mở kỳ · đổi trạng thái kỳ · nhập postcard · chốt ranking khỏi màn Editor.
+> Luồng vận hành kỳ xem `07-super-admin.md` §14.
 
-1. **`POST /survey-periods`** → `DRAFT`/`OPEN`/`CLOSED` (tuỳ chọn lúc tạo).
-2. **`PATCH /survey-periods/:id/status`** → `OPEN` (mở cho độc giả vote qua `/vote/*` public — xem `02-guest-reader.md`) rồi `CLOSED`.
-3. Song song: **`POST /survey-data/import`** nhập vote offline (postcard) — chỉ hợp lệ khi kỳ chưa `REFLECTED`.
-4. **`POST /survey-periods/:id/finalize`** — tổng hợp cả 2 nguồn (online weighted + offline weight=1.0), tính `RankingRecord`, đánh dấu series nguy cơ (bottom 1/3 liên tục N kỳ) → kỳ chuyển `REFLECTED`.
-5. Editor xem kết quả: `GET /survey-periods/:id/rankings`, `GET /rankings` (trend 1 series, scope theo owner), `GET /rankings/board` (bảng toàn tạp chí 1 kỳ, full mọi role nội bộ).
+**Editor GIỮ NGUYÊN toàn bộ quyền ĐỌC** (cần để bảo vệ series trước Hội đồng — Requiment §2.3b):
+
+- `GET /survey-periods` · `GET /survey-periods/:id` — danh sách/chi tiết kỳ.
+- `GET /survey-periods/:id/rankings` — bảng xếp hạng kỳ (kèm `riskLevel`, `consecutiveAtRiskCount`).
+- `GET /survey-periods/:id/votes` · `GET /survey-periods/:id/survey-data` — dữ liệu phiếu của kỳ.
+- `GET /rankings?seriesId=&periods=` — trend 1 series (scope theo owner).
+- `GET /rankings/board?surveyPeriodId=` — bảng toàn tạp chí 1 kỳ. ⚠ **bắt buộc `surveyPeriodId`**; thiếu → **404** (không phải 403).
 
 ### Narrative — Publication Version (registry độc lập, không gắn flow)
 
@@ -959,7 +990,9 @@ Không body. Chỉ người khởi tạo. → `REJECTED` (terminal).
 
 **Lỗi:** `Error.DeadlineRequestNotFound` · `Error.DeadlineRequestAccessDenied` · `Error.InvalidDeadlineRequestTransition`.
 
-### 9. `POST /survey-data/import` — Nhập vote offline
+### 9. ~~`POST /survey-data/import`~~ — 🔴 **CHUYỂN SANG SUPER_ADMIN (§84)**
+
+> Editor gọi → **403**. Xem `07-super-admin.md` §14. Giữ mô tả body bên dưới để đối chiếu lịch sử.
 
 | Field | Bắt buộc | Kiểu | Ghi chú |
 |---|---|---|---|
@@ -971,7 +1004,10 @@ Không body. Chỉ người khởi tạo. → `REJECTED` (terminal).
 
 **Lỗi:** `Error.SurveyPeriodNotFound` · `Error.SurveyDataImportNotAllowed` (400 — kỳ đã `REFLECTED`).
 
-### 10-11. `GET/POST /survey-periods` — Danh sách / Tạo kỳ bình chọn
+### 10-11. `GET /survey-periods` (Editor ✅) / ~~`POST /survey-periods`~~ (🔴 **SUPER_ADMIN — §84**)
+
+> **`GET` giữ nguyên cho Editor.** Riêng **`POST` nay SUPER_ADMIN-only** — Editor gọi → **403**.
+> Xem `07-super-admin.md` §14. Body dưới đây giữ để đối chiếu.
 
 **POST body:**
 
@@ -1001,7 +1037,9 @@ Không error khai báo (404 chuẩn nếu không tồn tại — cần verify qu
 
 **Response:** `[SurveyDataRes]` — `id, surveyPeriodId, importedBy/null, surveyDate/null, importedAt, entries[] ({seriesId/null, voteCount})`.
 
-### 15. `PATCH /survey-periods/:id/status` — Cập nhật trạng thái kỳ
+### 15. ~~`PATCH /survey-periods/:id/status`~~ — 🔴 **CHUYỂN SANG SUPER_ADMIN (§84)**
+
+> Editor gọi → **403**. Xem `07-super-admin.md` §14.
 
 | Field | Bắt buộc | Kiểu/enum | Ghi chú |
 |---|---|---|---|
@@ -1009,7 +1047,10 @@ Không error khai báo (404 chuẩn nếu không tồn tại — cần verify qu
 
 **Lỗi:** `Error.SurveyPeriodNotFound`.
 
-### 16. `POST /survey-periods/:id/finalize` — Chốt ranking kỳ bình chọn
+### 16. ~~`POST /survey-periods/:id/finalize`~~ — 🔴 **CHUYỂN SANG SUPER_ADMIN (§84)**
+
+> Editor gọi → **403**. Chốt ranking so sánh TOÀN BỘ series trong kỳ nên không thể do Editor phụ trách
+> một vài series trong đó thực hiện (xung đột lợi ích). Xem `07-super-admin.md` §14.
 
 Không body. Tổng hợp online (weighted) + offline (weight=1.0), tạo `RankingRecord` cho mỗi series, so sánh kỳ trước, đánh dấu nguy cơ. Kỳ → `REFLECTED`.
 
@@ -1055,6 +1096,15 @@ Query: `seriesId` (✅), `periods` (tuỳ, 1-60, mặc định 12).
 Query: `surveyPeriodId` (✅).
 
 **Response:** cùng shape route #23. **Lỗi:** `Error.SurveyPeriodNotFound`.
+
+### 24b. ⚠️ Xem xếp hạng TỔNG HỢP nhiều kỳ (weekly/monthly cộng dồn) — chỉ có route PUBLIC
+
+Không có API nội bộ nào trả bảng xếp hạng gộp nhiều kỳ. Hiện chỉ có **`GET /rankings/aggregate?magazine=&publicationType=&level=MONTH|YEAR&year=&month=`** — route **`@IsPublic()`** (mô tả đầy đủ ở `02-guest-reader.md` §4.4). FE Editor cứ gọi thẳng route này (có/không gửi token đều được), nhưng phải biết 2 giới hạn:
+
+- **Mất tín hiệu nội bộ:** payload public **không có** `isAtRisk`, `riskLevel`, `isReliable`, `consecutiveAtRiskCount`. Muốn đánh giá series nguy cơ theo nhiều kỳ, phải tự ghép: gọi `GET /rankings?seriesId=&periods=N` (route #23, tối đa 60 kỳ, có đủ tín hiệu nội bộ) cho **từng** series — hoặc đọc `consecutiveAtRiskCount` ở `GET /survey-periods/:id/rankings` (route #17) của kỳ mới nhất, field đó đã là bộ đếm "N kỳ liên tiếp nằm vùng nguy cơ".
+- **Chỉ gom theo tháng/năm dương lịch** (`level=MONTH` bắt buộc kèm `month`, hoặc `level=YEAR`) — **không** hỗ trợ "10 kỳ gần nhất". Rank tính theo `averageNormalizedScore`; item có `isProvisional=true` nghĩa là series đó tham gia quá ít kỳ trong khoảng (dưới `AppConfig.rankingAggregateMinCoverageRatio`) nên số liệu chưa đáng tin.
+
+Ngoài ra `GET /survey-periods` (route #10) **không có filter nào** — không `magazine`, không `publicationType`, không `status`, không phân trang. Muốn lọc "các kỳ WEEKLY của tạp chí X" thì lọc client-side sau khi lấy full list, hoặc dùng route public `GET /vote/periods?magazine=&publicationType=&limit=` (chỉ trả kỳ đã `REFLECTED`).
 
 ### 25. `GET /dashboard/editor` — Dashboard tổng quan Editor
 
@@ -1140,19 +1190,19 @@ Query: `targetType` (✅ enum `AnnotationTargetType`), `targetId` (✅), `limit`
 
 **Lỗi:** `Error.AnnotationForbidden` (403) · `Error.AnnotationTargetNotFound` (422) · `Error.AnnotationTaskBindingInvalid` (422, path `taskId` — task không khớp target).
 
-> Route `PATCH /annotations/:id/resolve` và `DELETE /annotations/:id` là `AUTH` (mọi role tự resolve/xoá annotation MÌNH tạo) — không thuộc danh sách 122 route độc quyền Editor, xem `01-conventions-and-auth.md` §8.
+> Route `PATCH /annotations/:id/resolve` và `DELETE /annotations/:id` là `AUTH` (mọi role tự resolve/xoá annotation MÌNH tạo) — không thuộc danh sách 119 route độc quyền Editor, xem `01-conventions-and-auth.md` §8.
 
 ---
 
 ## Xác nhận phạm vi
 
-**Đã viết đủ 122/122 route** đối chiếu `test/flows/route-roles.ts` (`RoleCode.EDITOR` trong `allowed[]`). Đối chiếu theo nhóm:
+**Đã viết đủ 119/119 route** đối chiếu `test/flows/route-roles.ts` (`RoleCode.EDITOR` trong `allowed[]`). Đối chiếu theo nhóm:
 
 - Nhóm A (Series) — 20/20.
 - Nhóm B (Chapter/Name-chapter/Production) — 17/17 (**bổ sung `POST /tasks/:id/download-url`** — route brief ban đầu không liệt kê route này, xác minh có thật trong `route-roles.ts` và thuộc phạm vi Editor theo dõi/tải file production).
 - Nhóm C (Board) — 17/17 (**điều chỉnh** so với brief ban đầu ghi 18 — `PATCH /board/config/:id` là `SUPER_ADMIN`-only, Editor chỉ có `GET /board/config`).
 - Nhóm D (Contract/Payment/Reprint/Transfer/Tankobon) — 35/35.
-- Nhóm E (Deadline/Survey/Publication/Dashboard/Directory/Reviews/Revision/Annotation) — 33/33.
+- Nhóm E (Deadline/Survey/Publication/Dashboard/Directory/Reviews/Revision/Annotation) — **29/29** (§84: −4 — 4 route vận hành kỳ bình chọn chuyển sang SUPER_ADMIN, xem Narrative Flow 4).
 
 ### Phát hiện đáng chú ý so với guide cũ / brief ban đầu
 

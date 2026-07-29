@@ -33,7 +33,8 @@ Response **lỗi** luôn qua `CatchEverythingFilter` (bộ lọc lỗi DUY NHẤ
   "errors": [ { "message": "Địa chỉ email không hợp lệ", "path": "email" } ] }
 
 // Lỗi đơn (không gắn field cụ thể):
-{ "success": false, "statusCode": 403, "message": "Error.EmailNotVerified" }
+{ "success": false, "statusCode": 403,
+  "code": "Error.EmailNotVerified", "message": "Email chưa được xác thực" }
 
 // Rate-limit (OTP) — thêm code + retryAfter cho UI cooldown:
 { "success": false, "statusCode": 429, "message": "Error.OtpRateLimited",
@@ -41,7 +42,10 @@ Response **lỗi** luôn qua `CatchEverythingFilter` (bộ lọc lỗi DUY NHẤ
 ```
 
 - `message` **luôn là string**. Có `errors[]` khi lỗi gắn field cụ thể (1 issue → `message` = message của issue đó; nhiều issue → `message: "Validation failed"`).
-- Mã lỗi nghiệp vụ nằm trong `message` dạng **`Error.PascalCase`** (vd `Error.EmailNotVerified`, `Error.SeriesNotSerialized`) — **FE phân nhánh logic theo chuỗi `message` này** (đây là "code" ổn định của hệ thống hiện tại — không có field `code` riêng cho lỗi thường, trừ nhánh rate-limit OTP có thêm `code`+`retryAfter`).
+- Mã lỗi nghiệp vụ nằm trong field **`code`** dạng `Error.PascalCase`
+  (vd `Error.EmailNotVerified`, `Error.SeriesNotSerialized`) — FE phân nhánh logic theo
+  `code`; `message` là thông điệp tiếng Việt để hiển thị/fallback. Nhánh rate-limit OTP
+  có thêm `retryAfter`.
 - Prisma `P2002` (trùng unique) → 409. Lỗi không xác định → 500 (đã log server, FE hiện thông báo lỗi hệ thống chung).
 - **Validation fail = 422**, KHÔNG PHẢI 400 — đây là design quyết định cố ý (`CustomZodValidationPipe`).
 - 401 = thiếu/sai/hết hạn Bearer token. 403 = có token nhưng sai role, hoặc đúng role nhưng sai **scope sở hữu** (không phải chủ sở hữu/người được phân công). 404 = không tìm thấy (gồm id không phải ObjectId 24-hex hợp lệ — mọi route `:id` đều guard trước khi query, trả 404 sạch thay vì 500). 409 = state machine sai bước hoặc trùng dữ liệu. 503 = tính năng phụ thuộc service ngoài đang tắt (vd AI segmentation khi `AI_SERVICE_URL` rỗng).

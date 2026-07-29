@@ -1,16 +1,16 @@
 # §07 — SUPER_ADMIN (Quản trị hệ thống)
 
-> **Nguồn:** đọc trực tiếp `BE-dev/src/modules/users/*` (users.controller/schemas/services/repositories — Nhóm A), `BE-dev/src/modules/app-config/*`, `BE-dev/src/modules/board/{board.controller.ts, schemas/board-schema.ts, schemas/board.model.ts, services/board-governance.service.ts, board.repo.ts}` (Nhóm B — Board Config), `BE-dev/src/modules/survey/{survey.controller.ts, schemas/survey-config.schemas.ts, services/survey-config.service.ts, repositories/survey-config.repository.ts}` (Nhóm B — Voting Config), `BE-dev/src/modules/audit/*` (Nhóm C), và toàn bộ controller/schema các module còn lại cho Nhóm D (dashboard, deadline, payment, publication, reprint, revision, series, survey (period/ranking/vote), tankobon, task, transfer). Đối chiếu quyền route với `BE-dev/test/flows/route-roles.ts` (nguồn sự thật duy nhất, 276 route). Ngày dựng: 2026-07-27.
+> **Nguồn:** đọc trực tiếp `BE-dev/src/modules/users/*` (users.controller/schemas/services/repositories — Nhóm A), `BE-dev/src/modules/app-config/*`, `BE-dev/src/modules/board/{board.controller.ts, schemas/board-schema.ts, schemas/board.model.ts, services/board-governance.service.ts, board.repo.ts}` (Nhóm B — Board Config), `BE-dev/src/modules/survey/{survey.controller.ts, schemas/survey-config.schemas.ts, services/survey-config.service.ts, repositories/survey-config.repository.ts}` (Nhóm B — Voting Config), `BE-dev/src/modules/audit/*` (Nhóm C), và toàn bộ controller/schema các module còn lại cho Nhóm D (dashboard, deadline, payment, publication, reprint, revision, series, survey (period/ranking/vote), tankobon, task, transfer). Đối chiếu quyền route với `BE-dev/test/flows/route-roles.ts` (nguồn sự thật duy nhất, 276 route lúc dựng → **279 route** sau Spec 26/27). Ngày dựng: 2026-07-27, cập nhật 2026-07-29.
 > Đọc trước [`00-INDEX.md`](00-INDEX.md) (mục lục) và **bắt buộc** [`01-conventions-and-auth.md`](01-conventions-and-auth.md) (envelope, lỗi, phân trang, upload R2, enum §7, `GET/PATCH /me`) — file này KHÔNG lặp lại các quy ước đó.
 > Enum ghi dạng `enum X` → tra giá trị đầy đủ ở `01-conventions-and-auth.md` §7.
 
 ---
 
-## 0. Tổng quan phạm vi — 75 route độc quyền SUPER_ADMIN
+## 0. Tổng quan phạm vi — 76 route độc quyền SUPER_ADMIN
 
-Đối chiếu `test/flows/route-roles.ts`: SUPER_ADMIN có đúng **75 route** trong `allowed[]`. Phần lớn (60/75) là route **đọc để theo dõi toàn hệ thống** (Nhóm D) — các route này đã/sẽ được mô tả đầy đủ ở file role sở hữu chính (Editor `05-editor.md`, Board `06-board-member.md`, Mangaka `03-mangaka.md`); ở đây chỉ tóm tắt đủ để dựng màn "Admin xem tổng" + các trường hợp Admin có **quyền ghi ngang Editor/Board** (POST/PATCH/DELETE) trên vài route.
+Đối chiếu `test/flows/route-roles.ts`: SUPER_ADMIN có đúng **76 route** trong `allowed[]` (75 → 76 do **Spec 27** thêm `GET /transfers/contracts/:id`, xem §16). Phần lớn (61/76) là route **đọc để theo dõi toàn hệ thống** (Nhóm D) — các route này đã/sẽ được mô tả đầy đủ ở file role sở hữu chính (Editor `05-editor.md`, Board `06-board-member.md`, Mangaka `03-mangaka.md`); ở đây chỉ tóm tắt đủ để dựng màn "Admin xem tổng" + các trường hợp Admin có **quyền ghi ngang Editor/Board** (POST/PATCH/DELETE) trên vài route.
 
-Ngoài 75 route này, Admin còn dùng các route **AUTH** dùng chung mọi role (xem `01-conventions-and-auth.md` §5.8, §3, §4): `GET/PATCH /me`, `POST /uploads/sign` + `/sign-download`, `GET /notifications` + đánh dấu đã đọc.
+Ngoài 76 route này, Admin còn dùng các route **AUTH** dùng chung mọi role (xem `01-conventions-and-auth.md` §5.8, §3, §4): `GET/PATCH /me`, `POST /uploads/sign` + `/sign-download`, `GET /notifications` + đánh dấu đã đọc.
 
 | # | Method | Path | Nhóm | Mục |
 |---|---|---|---|---|
@@ -88,9 +88,17 @@ Ngoài 75 route này, Admin còn dùng các route **AUTH** dùng chung mọi rol
 | 72 | GET | `/survey-periods/:id/votes` | D | §14 |
 | 73 | POST | `/tasks/:id/download-url` | D | §15 Task file download |
 | 74 | GET | `/transfers/contracts/:id/signatures` | D | §16 Transfers |
+| 74b 🆕 | GET | `/transfers/contracts/:id` | D | §16 Transfers (Spec 27) |
 | 75 | GET | `/transfers/requests/:id` | D | §16 |
 
-**Phát hiện quan trọng — Admin KHÔNG chỉ đọc:** 15 route trong Nhóm D là **hành động ghi** (POST/PATCH/DELETE) mà Admin có quyền ngang Editor (Board sessions/decisions, Publication versions, Survey periods/import/finalize/status) hoặc ngang Board Member (Payments pay/cancel). Đây là điểm khác với mô tả "Admin chỉ quản lý tài khoản" ở `Requiment.md` §2.6 (xem ghi chú cuối file).
+**Phát hiện quan trọng — Admin KHÔNG chỉ đọc:** 15 route trong Nhóm D là **hành động ghi** (POST/PATCH/DELETE) mà Admin có quyền ngang Editor (Board sessions/decisions, Publication versions) hoặc ngang Board Member (Payments pay/cancel). Đây là điểm khác với mô tả "Admin chỉ quản lý tài khoản" ở `Requiment.md` §2.6 (xem ghi chú cuối file).
+
+> 🔴 **§84 (2026-07-29) — 4 route vận hành kỳ bình chọn nay ĐỘC QUYỀN Admin (trước là ngang Editor):**
+> `POST /survey-periods` · `PATCH /survey-periods/:id/status` · `POST /survey-data/import` ·
+> `POST /survey-periods/:id/finalize`. Lý do nghiệp vụ: `SurveyPeriod` là đơn vị theo **kỳ phát hành của cả
+> tạp chí**, trong khi Editor/Tantou chỉ phụ trách vài series (Requiment §2.6 — scoping theo sở hữu/phân công);
+> riêng `finalize` chốt xếp hạng so sánh toàn bộ series nên Editor thực hiện là **xung đột lợi ích**.
+> Editor **vẫn đọc được** toàn bộ survey/ranking. ⇒ **FE: màn vận hành kỳ bình chọn giờ chỉ có ở Admin.**
 
 ---
 
@@ -510,7 +518,7 @@ Field response (`RevisionRequestRes`): `targetType`, `targetId`, `seriesId` (nul
 
 ---
 
-## 14. Survey/Voting Periods (ghi ngang Editor) — 9 route
+## 14. Survey/Voting Periods (🔴 §84: 4 route ghi nay ĐỘC QUYỀN Admin) — 9 route
 
 Nguồn: `survey.controller.ts` (phần period/ranking/import), chi tiết đầy đủ ở `05-editor.md` (B-VOT-*). Admin có **toàn quyền ghi** giống Editor trên toàn bộ vòng đời kỳ bình chọn.
 
@@ -546,6 +554,7 @@ Nguồn: `transfer.controller.ts`, chi tiết đầy đủ ở `05-editor.md`/`0
 
 | Route | Field chính |
 |---|---|
+| `GET /transfers/contracts/:id` 🆕 | **Spec 27** — chi tiết hợp đồng chuyển nhượng: điều khoản (`transferAmount`, `newOwnershipSplit`, `transferType`, `coOwnerApprovalRequired`), `status` (`enum TransferContractStatus`) và `signatures[]`. Lấy `:id` từ field `transferContractId` trên `GET /transfers/requests/:id`. Shape đầy đủ xem `03-mangaka.md` §5.6 |
 | `GET /transfers/contracts/:id/signatures` | `{ signatures: TransferContractSignature[] }` — mỗi chữ ký: `role` (`enum TransferSignerRole`), `signedAt` |
 | `GET /transfers/requests/:id` | `status` (`enum TransferRequestStatus`), `proposedType` (`enum TransferType`), `originalMangaka`/`requestingMangaka` mini object |
 

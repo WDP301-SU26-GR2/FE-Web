@@ -6,9 +6,9 @@
 
 ---
 
-## 0. Tổng quan phạm vi — 127 route độc quyền MANGAKA
+## 0. Tổng quan phạm vi — 128 route độc quyền MANGAKA
 
-Đối chiếu `test/flows/route-roles.ts`: MANGAKA có đúng **127 route** trong `allowed[]` (126 → 127 do Spec 26 thêm `POST /chapters/:id/stages/:stageId/reopen`, xem §2.7.1) (đếm lại bằng script parse trực tiếp file — khớp con số đã công bố ở `01` §8). Chia 6 nhóm theo module:
+Đối chiếu `test/flows/route-roles.ts`: MANGAKA có đúng **128 route** trong `allowed[]` (126 → 127 do Spec 26 thêm `POST /chapters/:id/stages/:stageId/reopen` (§2.7.1); 127 → 128 do **Spec 27** thêm `GET /transfers/contracts/:id` (§5.6)) (đếm lại bằng script parse trực tiếp file — khớp con số đã công bố ở `01` §8). Chia 6 nhóm theo module:
 
 | Nhóm | Module | Số route | Mục |
 |---|---|---|---|
@@ -19,7 +19,7 @@
 | E | `contract` + `payment` + `transfer` + `reprint` | 31 | §5 |
 | F | `deadline` + `publication` + `survey` (rankings) + `dashboard` + `revision` + `annotation` | 17 | §6 |
 
-Ngoài 127 route độc quyền này, Mangaka còn dùng các route **AUTH** dùng chung mọi role (xem `01` §5.8, §3, §4): `POST /auth/change-password`, `GET/PATCH /me`, `GET /notifications` + đánh dấu đã đọc, `POST /uploads/sign` + `/sign-download`, `GET /chapters` + `GET /chapters/:id` (đọc, scoping riêng trong service), `GET /assistants/:userId`, `GET /mangakas/:userId`, `GET /staff/:userId`, `GET /assistant-reviews`, `GET /mangaka-reviews`, `GET /contracts/health`, `DELETE /annotations/:id`, `PATCH /annotations/:id/resolve`.
+Ngoài 128 route độc quyền này, Mangaka còn dùng các route **AUTH** dùng chung mọi role (xem `01` §5.8, §3, §4): `POST /auth/change-password`, `GET/PATCH /me`, `GET /notifications` + đánh dấu đã đọc, `POST /uploads/sign` + `/sign-download`, `GET /chapters` + `GET /chapters/:id` (đọc, scoping riêng trong service), `GET /assistants/:userId`, `GET /mangakas/:userId`, `GET /staff/:userId`, `GET /assistant-reviews`, `GET /mangaka-reviews`, `GET /contracts/health`, `DELETE /annotations/:id`, `PATCH /annotations/:id/resolve`.
 
 **Xác nhận đủ 127/127** — không route MANGAKA nào trong `route-roles.ts` bị bỏ sót trong 6 nhóm bên dưới (đối chiếu 1-1, xem ghi chú cuối file §7).
 
@@ -1186,13 +1186,16 @@ Mangaka **B** (bên xin nhận) dùng: `POST /transfers/requests`, `GET .../mine
 
 Response 201 `TransferRequestRes`. Lỗi: `Error.NoActiveContractForSeries` (400) · `Error.TransferRequestingMangakaInactive` (403) · `Error.TransferRequesterAlreadyOwnsSeries` (409) · `Error.InvalidTransferProposal` (422).
 
-#### `GET /transfers/requests/mine` — danh sách yêu cầu của tôi (B)
+#### `GET /transfers/requests/mine` — danh sách yêu cầu của tôi
 
-Không query. Response `TransferRequestListRes = { data: TransferRequestListItem[] }` (bỏ `planDescription`).
+Không query. Response `TransferRequestListRes = { data: TransferRequestListItem[] }` (15 field — giống detail nhưng bỏ `planDescription`).
+⚠️ Route trả yêu cầu mà mình là **một trong hai phía** — cả tư cách B (người xin nhận) lẫn A (chủ gốc bị xin). Nếu bạn chưa từng gửi/nhận yêu cầu nào thì mảng rỗng là đúng, không phải lỗi.
 
 #### `GET /transfers/requests/:id` — chi tiết
 
-`TransferRequestRes`: `{id, seriesId, requestingMangakaId, originalMangakaId, series?, requestingMangaka?, originalMangaka?, originalContractType, proposedType, proposedPercentage, planDescription, originalContractId, status: enum TransferRequestStatus, boardDecisionId, createdAt}`. Lỗi: `Error.TransferRequestNotFound` (404) · `Error.TransferAccessDenied` (403).
+`TransferRequestRes`: `{id, seriesId, requestingMangakaId, originalMangakaId, series?, requestingMangaka?, originalMangaka?, originalContractType, proposedType, proposedPercentage, planDescription, originalContractId, `**`transferContractId`**`, status: enum TransferRequestStatus, boardDecisionId, createdAt}`. Lỗi: `Error.TransferRequestNotFound` (404) · `Error.TransferAccessDenied` (403).
+
+🆕 **`transferContractId`** (Spec 27, 2026-07-29) — id hợp đồng **chuyển nhượng** đã soạn cho yêu cầu này; `null` khi Editor chưa soạn. **Đây là cách duy nhất Mangaka lấy được id để gọi `GET /transfers/contracts/:id` và `POST /transfers/contracts/:id/sign`.** Có mặt ở cả `/mine` lẫn `/:id`. ⚠️ Field này **chỉ đảm bảo ở 3 route GET request**; response của các route mutation (`POST /transfers/requests`, `mangaka-accept`, `mangaka-reject`…) **không mang** field này — đúng quy ước embed additive (Spec 20), và ở các mốc đó hợp đồng chưa tồn tại nên cũng không mất gì.
 
 #### `POST /transfers/requests/:id/mangaka-accept` / `mangaka-reject` — Mangaka **A** (chủ gốc) phản hồi
 
@@ -1200,15 +1203,58 @@ Không body. Chỉ khi `status === NEGOTIATING`. `accept` → tiếp tục soạ
 
 #### `POST /transfers/contracts/:id/sign` — ký hợp đồng chuyển nhượng 3 bên
 
+**Lấy `:id` (`transferContractId`) ở đâu — 🆕 Spec 27 (2026-07-29):** đọc field **`transferContractId`** ở bất kỳ route GET request nào (`GET /transfers/requests/mine`, `GET /transfers/requests/:id`). Field này `null` khi Editor chưa soạn hợp đồng, có giá trị ngay khi Editor tạo xong. Trước Spec 27 field này **không tồn tại** ⇒ Mangaka không có đường lấy id để ký (chỉ Editor thấy id trong response lúc tạo); nếu bạn đọc tài liệu/code cũ hơn 2026-07-29 thì đó là lý do.
+
+🔔 **Nay CÓ notification chủ động (§84, 2026-07-29) — không phải tự vào dò nữa.** Trước đó cả chuỗi ký
+A → B → Hội đồng **im lặng hoàn toàn**: hợp đồng soạn xong không ai được báo, A ký xong B không biết đến lượt.
+Nay mỗi mốc đều bắn notification (`NotificationType.CONTRACT`, đọc qua `GET /notifications`):
+
+| Thời điểm | Người nhận | `referenceType` | `referenceId` |
+|---|---|---|---|
+| Editor soạn xong hợp đồng | **Mangaka A** (ký trước) + **Mangaka B** | `TRANSFER_CONTRACT_DRAFTED` | `transferContractId` |
+| A ký xong → tới lượt B | **Mangaka B** | `TRANSFER_CONTRACT_AWAITING_SIGNATURE` | `transferContractId` |
+| B ký xong → tới lượt Hội đồng | **Board roster của phiên** | `TRANSFER_CONTRACT_AWAITING_SIGNATURE` | `transferContractId` |
+| Hoàn tất chuyển nhượng | Mangaka B | `TRANSFER_SETTLEMENT_COMPLETED` | `transferRequestId` |
+
+⚠️ `referenceId` của 3 dòng đầu là **`transferContractId`** (dùng thẳng cho `GET /transfers/contracts/:id`),
+dòng cuối là **`transferRequestId`** — đừng dùng lẫn. Notification là **best-effort** (`notifySafe`): nếu hệ thống
+thông báo lỗi thì hợp đồng **vẫn được tạo/ký bình thường** — FE không được coi "không thấy notification" là
+"chưa có hợp đồng", vẫn phải đọc `transferContractId` từ route GET làm nguồn sự thật.
+
+⚠️ **Đừng nhầm `originalContractId` với `transferContractId`** — `originalContractId` là **Contract (hợp đồng XUẤT BẢN)** đang có hiệu lực của series, dùng làm căn cứ chuyển nhượng; nó **không** gọi được với `/transfers/contracts/:id/*`.
+
+**Nên gọi `GET /transfers/contracts/:id` (🆕 Spec 27, mô tả ngay dưới) TRƯỚC khi ký** để đọc điều khoản — nếu không thì đang ký mù.
+
 | Field | Bắt buộc | Kiểu |
 |---|---|---|
 | `otpCode` | ✅ | string (6 ký tự) |
 
 Vai trò ký (`TransferSignerRole`): `MANGAKA_A` (chủ gốc) → `MANGAKA_B` (bên nhận) → `BOARD`. Route dùng chung MANGAKA (cả A lẫn B) và BOARD_MEMBER — service tự xác định vai trò theo `userId`. Response 201 `MessageResDto`. Lỗi: `Error.TransferContractNotFound` (404) · `Error.TransferSignerNotFound` (404) · `Error.TransferAlreadySigned` (400) · `Error.TransferContractNotFoundAfterUpdate` (404) · `Error.TransferAccessDenied` (403).
 
+#### `GET /transfers/contracts/:id` — 🆕 chi tiết hợp đồng chuyển nhượng (đọc điều khoản trước khi ký)
+
+Không tham số ngoài `:id`. Cho phép: **Mangaka A** (bên nhượng) · **Mangaka B** (bên nhận) · **Editor phụ trách series** · **Board member trong roster quyết định TRANSFER** · **Super Admin**. Mangaka ngoài giao dịch → 403.
+
+| Field response | Kiểu | Ghi chú |
+|---|---|---|
+| `id`, `transferRequestId`, `seriesId` | string \| null | |
+| `fromMangakaId` / `toMangakaId` | string \| null | A (nhượng) / B (nhận) |
+| `series`, `fromMangaka`, `toMangaka` | mini embed | hiển thị tên, không phải logic |
+| `transferType` | `enum TransferType` | `FULL_TRANSFER` \| `PARTIAL_TRANSFER` |
+| `transferAmount` | number \| null | **số tiền B trả A** |
+| `newOwnershipSplit` | `Record<string, number>` \| null | tỷ lệ sở hữu MỚI, tổng = 100. `null` nếu dữ liệu cũ ghi sai shape (BE narrow an toàn thay vì ném lỗi) |
+| `coOwnerApprovalRequired` | boolean | `true` ⇒ sau khi ký xong, mỗi chapter mới phải A duyệt (BR-TRANSFER-03) |
+| `status` | `enum TransferContractStatus` | `DRAFT → A_SIGNED → B_SIGNED → BOARD_SIGNED → FULLY_EXECUTED` (hoặc `VOIDED`) |
+| `createdAt` | string (ISO) | |
+| `signatures[]` | array | `{id, transferContractId, userId, role: enum TransferSignerRole, signedAt}` |
+
+**Dùng `status` để biết tới lượt ai ký:** `DRAFT` = chờ A · `A_SIGNED` = chờ B · `B_SIGNED` = chờ Board. Ký sai lượt → `Error.InvalidTransferState` (409).
+**Lỗi:** `Error.TransferContractNotFound` (404 — kể cả id rác không phải ObjectId) · `Error.TransferAccessDenied` (403).
+
 #### `GET /transfers/contracts/:id/signatures` — danh sách chữ ký
 
 Response `{ signatures: [{id, transferContractId, userId, role: enum TransferSignerRole, signedAt}] }`. Lỗi: `Error.TransferContractNotFound` (404) · `Error.TransferAccessDenied` (403).
+> Route này là **tập con** của `GET /transfers/contracts/:id` ở trên (cùng RBAC). Nếu cần cả điều khoản lẫn chữ ký thì gọi route detail, khỏi gọi 2 lần.
 
 ### 5.7. Reprint (Flow 7 — Tái bản, chỉ đọc + phản hồi với Mangaka)
 
@@ -1356,6 +1402,12 @@ Query `GetSeriesTrendQuery`: `seriesId` (✅), `periods` (tuỳ, 1-60, default 1
 
 Query `surveyPeriodId` (string, path qua `@Query`). Response cùng shape `BoardRankingListRes` ở trên nhưng liệt kê **mọi** series trong kỳ đó (không giới hạn series của mình — dùng để Mangaka so sánh vị trí mình với series khác). Lỗi: `Error.SurveyPeriodNotFound` (404).
 
+⚠️ **Lấy `surveyPeriodId` ở đâu? Mangaka KHÔNG gọi được `GET /survey-periods`** (route đó chỉ EDITOR/BOARD/SUPER_ADMIN). 2 đường hợp lệ cho Mangaka:
+1. **`GET /dashboard/mangaka`** (§6.4) → `rankings[].surveyPeriodId`… — thực tế `DashboardRankingItem` **không trả** `surveyPeriodId`, chỉ có `recordedAt`, nên đường này **chỉ dùng để hiển thị hạng kỳ gần nhất**, không lấy được id để gọi `/rankings/board`.
+2. **`GET /vote/periods?magazine=&publicationType=&limit=`** — route **public** (không cần token, xem `02-guest-reader.md` §4.2), trả danh sách kỳ đã `REFLECTED` kèm `id`. **Đây là cách duy nhất Mangaka lấy được `surveyPeriodId`** để gọi `/rankings/board`. FE cứ gọi thẳng route public này từ trang Mangaka (không gửi Authorization header cũng được).
+
+Ngoài ra: **không có API nội bộ nào trả bảng xếp hạng tổng hợp NHIỀU kỳ.** Muốn xem "xếp hạng trung bình cả tháng/cả năm", dùng route public **`GET /rankings/aggregate?magazine=&publicationType=&level=MONTH|YEAR&year=&month=`** (xem `02-guest-reader.md` §4.4) — lưu ý bản public này **không có** `isAtRisk`/`riskLevel`/`isReliable`, và chỉ gom theo **tháng/năm dương lịch**, không hỗ trợ "N kỳ gần nhất". Muốn xem xu hướng nhiều kỳ **có tín hiệu nguy cơ** thì phải dùng `GET /rankings?seriesId=&periods=N` (route #trên) — nhưng nó chỉ cho **1 series**, không phải bảng xếp hạng.
+
 > **Lưu ý nghiệp vụ (đối chiếu Requiment 2.1d):** Requiment mô tả "ranking phản ánh kết quả bình chọn từ ~8 tuần trước" cho mô hình postcard giấy — nhưng hệ thống số hoá vote online **ghi nhận tức thời, không có độ trễ nhân tạo** (xem Flow 4 note "Quyết định logic về độ trễ 8 tuần"). Field `issueNumber` (kỳ áp dụng) và `reflectedIssueNumber` (kỳ dữ liệu thực phản ánh) chỉ khác nhau khi Editor **nhập offline** (postcard); vote online mặc định 2 trường bằng nhau. Series mới có `< 8 chương` hoặc đang `HIATUS` được loại trừ khỏi đánh giá nguy cơ (`isAtRisk`).
 
 ### 6.4. Dashboard
@@ -1424,7 +1476,7 @@ Query `ListAnnotationQuery`: `targetType` (✅, `enum AnnotationTargetType`), `t
 
 ## 7. Xác nhận cuối cùng & phát hiện đáng chú ý
 
-**Đủ 127/127 route** — đối chiếu script parse `route-roles.ts` (đếm bằng regex trực tiếp, không dựa danh sách gợi ý trong đề bài) cho đúng 127 route có `RoleCode.MANGAKA` trong `allowed[]`, tất cả đã xuất hiện trong 6 nhóm §1-§6 (A=17, B=**29**, C=20, D=13, E=31, F=17 = 127; nhóm B +1 do Spec 26 thêm `POST /chapters/:id/stages/:stageId/reopen`). Danh sách gợi ý ban đầu trong đề bài lệch nhẹ (thiếu/dư vài route so với 6 nhóm A-F thực tế, vd `GET /studio/overview` nằm ở module `chapter` chứ không phải `studio`; `GET /mangakas` không có trong danh sách gợi ý nhưng có thật trong `allowed[]`; nhóm F gộp cả `GET/POST /annotations` dù đề bài liệt kê rời) — đã tự đối chiếu lại theo `route-roles.ts` làm chuẩn.
+**Đủ 128/128 route** — đối chiếu script parse `route-roles.ts` (đếm bằng regex trực tiếp, không dựa danh sách gợi ý trong đề bài) cho đúng 128 route có `RoleCode.MANGAKA` trong `allowed[]`, tất cả đã xuất hiện trong 6 nhóm §1-§6 (A=17, B=**29**, C=20, D=**14**, E=31, F=17 = 128; nhóm B +1 do Spec 26 thêm `POST /chapters/:id/stages/:stageId/reopen`, nhóm D +1 do **Spec 27** thêm `GET /transfers/contracts/:id`). Danh sách gợi ý ban đầu trong đề bài lệch nhẹ (thiếu/dư vài route so với 6 nhóm A-F thực tế, vd `GET /studio/overview` nằm ở module `chapter` chứ không phải `studio`; `GET /mangakas` không có trong danh sách gợi ý nhưng có thật trong `allowed[]`; nhóm F gộp cả `GET/POST /annotations` dù đề bài liệt kê rời) — đã tự đối chiếu lại theo `route-roles.ts` làm chuẩn.
 
 **Phát hiện đáng chú ý so với 2 guide cũ (`FE-API-Guide-v3.md`/`FE-Mobile-RN-Guide.md` — chỉ liếc văn phong, không dùng làm nguồn):**
 

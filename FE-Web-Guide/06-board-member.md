@@ -6,9 +6,9 @@
 
 ---
 
-## 0. Tổng quan phạm vi — 76 route độc quyền BOARD_MEMBER
+## 0. Tổng quan phạm vi — 77 route độc quyền BOARD_MEMBER
 
-Đối chiếu `test/flows/route-roles.ts` (sinh tự động từ Reflect metadata runtime — nguồn sự thật duy nhất về quyền): BOARD_MEMBER có đúng **76 route** trong `allowed[]`. Không suy đoán từ brief ban đầu — đã grep lại toàn bộ file và khớp đủ 76.
+Đối chiếu `test/flows/route-roles.ts` (sinh tự động từ Reflect metadata runtime — nguồn sự thật duy nhất về quyền): BOARD_MEMBER có đúng **77 route** trong `allowed[]` (76 → 77 do **Spec 27** thêm `GET /transfers/contracts/:id`, xem §5.2). Không suy đoán từ brief ban đầu — đã grep lại toàn bộ file và khớp đủ 77.
 
 | # | Method | Path | Nhóm |
 |---|---|---|---|
@@ -52,6 +52,7 @@
 | 38 | GET | `/reprint-requests/:id/chapters/:chapterId` | §5 Reprint |
 | 39 | PATCH | `/reprint-requests/:id/chapters/:chapterId/assign-reviser` | §5 Reprint |
 | 40 | POST | `/transfers/contracts/:id/sign` | §5 Transfer |
+| 40b 🆕 | GET | `/transfers/contracts/:id` | §5 Transfer (Spec 27) |
 | 41 | GET | `/transfers/contracts/:id/signatures` | §5 Transfer |
 | 42 | GET | `/transfers/requests/:id` | §5 Transfer |
 | 43 | GET | `/transfers/requests/pending-board` | §5 Transfer |
@@ -89,7 +90,7 @@
 | 75 | GET | `/revision-requests` | §6 Production ref |
 | 76 | POST | `/tasks/:id/download-url` | §6 Production ref |
 
-Ngoài 76 route này, Board còn dùng các route **AUTH** dùng chung mọi role (xem `01-conventions-and-auth.md` §5.8, §3, §4): `GET/PATCH /me`, `POST /uploads/sign` + `/sign-download`, `GET /notifications` + đánh dấu đã đọc, `GET /assistants/:userId`/`GET /mangakas/:userId`/`GET /staff/:userId` (xem hồ sơ công khai), `GET /chapters` + `GET /chapters/:id` (đọc chi tiết chapter — có manuscript/schedule).
+Ngoài 77 route này, Board còn dùng các route **AUTH** dùng chung mọi role (xem `01-conventions-and-auth.md` §5.8, §3, §4): `GET/PATCH /me`, `POST /uploads/sign` + `/sign-download`, `GET /notifications` + đánh dấu đã đọc, `GET /assistants/:userId`/`GET /mangakas/:userId`/`GET /staff/:userId` (xem hồ sơ công khai), `GET /chapters` + `GET /chapters/:id` (đọc chi tiết chapter — có manuscript/schedule).
 
 ⚠️ **Khác biệt lớn nhất so với guide cũ / Requiment gốc:** Board KHÔNG có route `POST /board/decisions` (tạo quyết định) — chỉ **EDITOR/SUPER_ADMIN** tạo được. Board cũng KHÔNG tự tạo/mở/kết thúc phiên họp (`POST /board/sessions`, `PATCH .../start`, `.../conclude`, `.../phase` đều chỉ EDITOR/SUPER_ADMIN). Vai trò của Board trong module `board` chỉ có: **xem** (config/sessions/decisions/reports/messages) và **bỏ phiếu** (`POST /board/decisions/:id/vote`). Toàn bộ phần "vận hành phiên họp" (mời, mở phase, chốt phiên) là việc của Editor — Board chỉ là người dự họp và bỏ phiếu qua UI.
 
@@ -112,12 +113,21 @@ Hội đồng Biên tập (Editorial Board) là cơ quan ra quyết định tậ
 | `SERIALIZATION` | `SeriesSerializeService.serialize` — Series `PITCHED → SERIALIZED`, gán `magazine`/`startIssueNumber`/`publicationType` từ `details` | Series → `REJECTED`, notify Mangaka + Editor |
 | `CANCELLATION` | `SeriesLifecycleService.cancel` — Series → `CANCELLING`, `endingChapterAllowance` (1–10 chương) từ `details` | không đổi |
 | `COMPLETION` | `SeriesLifecycleService.complete` — Series → `COMPLETING` | không đổi |
-| `FORMAT_CHANGE` | `SeriesLifecycleService.changeFormat` — chỉ đổi `publicationType`, **không** đổi `status` | không đổi |
+| `FORMAT_CHANGE` | `SeriesLifecycleService.changeFormat` — chỉ đổi `publicationType`, **không** đổi `status`. ⚠ **bắt buộc `details.publicationType`** (xem cảnh báo dưới bảng) | không đổi |
 | `CONTRACT` | Không tự động — Board member phải tự gọi `POST /contracts/:id/board-approve` (Nhóm B) | — |
 | `TRANSFER` | Không tự động — Board member phải tự gọi các route `board-approve`/`board-reject`/`assign-full-buyout` ở `transfers/requests/:id/...` (Nhóm D), route sẽ tự đọc lại `BoardDecision` này qua `boardDecisionId` để xác thực | — |
 | `REPRINT` | Route `board-approve` của reprint (Nhóm D) là bước quyết định trực tiếp (KHÔNG cần `BoardDecision` loại `REPRINT` trước) | — |
 
 → **FE quan trọng cần nhớ:** với `SERIALIZATION`/`CANCELLATION`/`COMPLETION`/`FORMAT_CHANGE`, sau khi bỏ phiếu đủ để APPROVED thì **không cần thao tác gì thêm** — Series tự chuyển trạng thái. Với `CONTRACT`/`TRANSFER`, bỏ phiếu APPROVED chỉ là bước 1 — Board member (bất kỳ ai trong roster phiên đó) còn phải vào Contract/Transfer detail bấm nút hành động tương ứng để "thực thi" quyết định.
+
+> ✅ **ĐÃ FIX (§84, 2026-07-29) — `FORMAT_CHANGE` không còn silent no-op.**
+> **Trước:** tạo decision `FORMAT_CHANGE` mà thiếu `details.publicationType` vẫn được nhận **201**; Board vote
+> APPROVED xong listener chỉ ghi `logger.warn` rồi `return` ⇒ series **đứng yên**, không notify, không sinh
+> Amendment — mà UI vẫn báo thành công. Guide cũ phải dặn FE tự validate client-side.
+> **Nay:** `POST /board/decisions` **chặn ngay ở tầng Zod** → **422** với `errors[].path = "details.publicationType"`
+> nếu thiếu hoặc không thuộc `WEEKLY | MONTHLY | IRREGULAR`. Không còn tồn tại decision `FORMAT_CHANGE` vô nghĩa.
+> **FE:** vẫn nên validate client-side để báo sớm, nhưng **không còn là lớp bảo vệ duy nhất**; hãy hiển thị
+> `errors[].message` từ 422 thay vì tự đoán.
 
 ---
 
@@ -675,6 +685,18 @@ Response: `MessageResDto { message, newContractId }`. Request chuyển `UNDER_RE
 
 #### `POST /transfers/contracts/:id/sign` — ký hợp đồng chuyển nhượng 3 bên bằng OTP
 
+**Lấy `:id` (`transferContractId`) ở đâu — 🆕 Spec 27 (2026-07-29):** đọc field **`transferContractId`** trên `GET /transfers/requests/pending-board` hoặc `GET /transfers/requests/:id` (`null` khi Editor chưa soạn hợp đồng). Trước Spec 27 field này không tồn tại ⇒ Board không có đường lấy id để ký; nếu bạn đọc code/tài liệu cũ hơn 2026-07-29 thì đó là lý do.
+
+🔔 **Nay CÓ notification tới lượt ký (§84, 2026-07-29).** Board ký **thứ ba** (sau A rồi B). Khi Mangaka B ký
+xong, **toàn bộ roster Board của phiên** nhận notification `NotificationType.CONTRACT` với
+`referenceType: 'TRANSFER_CONTRACT_AWAITING_SIGNATURE'` và `referenceId = transferContractId` (dùng thẳng cho
+`GET /transfers/contracts/:id` + `POST /transfers/contracts/:id/sign`). Trước §84 chuỗi ký im lặng hoàn toàn —
+Board phải tự vào `pending-board` dò. Notification là **best-effort**: vẫn phải coi route GET là nguồn sự thật.
+
+⚠️ **Đừng nhầm với `originalContractId`** — đó là **Contract (hợp đồng XUẤT BẢN)** cũ của series, khác entity, không dùng được với `/transfers/contracts/:id/*`.
+
+**Board ký SAU CÙNG nên bắt buộc đọc điều khoản trước:** gọi 🆕 **`GET /transfers/contracts/:id`** (route mới, Board xem được) để thấy `transferAmount`, `newOwnershipSplit`, `coOwnerApprovalRequired`, `status` và danh sách chữ ký A/B — trước đó chỉ có route xem chữ ký, tức Board ký mà không thấy điều khoản. Chi tiết field xem `03-mangaka.md` §5.6 (cùng shape, cùng RBAC).
+
 | Field | Bắt buộc | Kiểu | Ghi chú |
 |---|---|---|---|
 | `otpCode` | ✅ | string (6 ký tự) | |
@@ -830,6 +852,12 @@ Response `{ items: RankingRecordRes[] }`, mỗi item đầy đủ nội bộ (kh
 Response `{ items: BoardRankingItem[] }` — giống `RankingRecordRes` nhưng **bớt** `consecutiveAtRiskCount` (không cần thiết ở view toàn tạp chí), thêm `recordedAt`.
 **Lỗi:** `Error.SurveyPeriodNotFound` (404).
 
+⚠️ **Xem xếp hạng TỔNG HỢP nhiều kỳ (weekly/monthly cộng dồn) — chỉ có route PUBLIC.** Không có API nội bộ nào gộp nhiều kỳ. Dùng **`GET /rankings/aggregate?magazine=&publicationType=&level=MONTH|YEAR&year=&month=`** — route **`@IsPublic()`** (chi tiết ở `02-guest-reader.md` §4.4), FE Board gọi thẳng được. Hai giới hạn phải biết khi dựng UI cho Board:
+- **Không có tín hiệu nội bộ** (`isAtRisk`/`riskLevel`/`isReliable`/`consecutiveAtRiskCount` bị ẩn khỏi bản public). Board cần đánh giá series nguy cơ qua nhiều kỳ thì dùng `consecutiveAtRiskCount` ở `GET /survey-periods/:id/rankings` (kỳ mới nhất — field này đã là bộ đếm "N kỳ liên tiếp nằm vùng nguy cơ", chính là ngưỡng trigger Flow 5), hoặc `GET /rankings?seriesId=&periods=N` cho từng series.
+- **Chỉ gom theo tháng/năm dương lịch**, không hỗ trợ "N kỳ gần nhất". `isProvisional=true` = series tham gia quá ít kỳ trong khoảng → số liệu chưa đáng tin, đừng dùng làm căn cứ vote hủy series.
+
+`GET /survey-periods` (§6.5 trên) cũng **không có filter** (`magazine`/`publicationType`/`status`/phân trang đều không có) — lọc client-side, hoặc dùng route public `GET /vote/periods?magazine=&publicationType=&limit=` (chỉ trả kỳ `REFLECTED`).
+
 #### `GET /rankings` — trend ranking của 1 series (scoped theo owner, Board luôn qua)
 
 | Query | Bắt buộc | Kiểu | Ghi chú |
@@ -892,7 +920,7 @@ Response cùng dạng phân trang, ẩn email/phone.
 
 ### 6.8. Production reference (đọc để nắm tiến độ sản xuất trước khi bỏ phiếu/duyệt)
 
-7 route sau đây **không nằm trong danh sách định hướng ban đầu** của nhiệm vụ (chỉ liệt kê Series/Survey/Publication/Audit/Reference) nhưng có thật trong `route-roles.ts` với `BOARD_MEMBER` trong `allowed[]` — đã bổ sung đủ để khớp 76 route:
+7 route sau đây **không nằm trong danh sách định hướng ban đầu** của nhiệm vụ (chỉ liệt kê Series/Survey/Publication/Audit/Reference) nhưng có thật trong `route-roles.ts` với `BOARD_MEMBER` trong `allowed[]` — đã bổ sung đủ để khớp 76 route (+1 route Spec 27 = 77):
 
 #### `GET /chapters/:id/names` / `GET /chapters/:id/names/:nameId` — Name của 1 chapter cụ thể (khác `/series/:id/names` ở §6.1, đây là Name gắn theo chapter, thực tế 0..1)
 
@@ -954,9 +982,9 @@ Response: `{ downloadUrl, expiresAt }`. Board (cùng Super Admin) được xem *
 
 ---
 
-## 7. Đối chiếu hoàn thiện — 76/76 route
+## 7. Đối chiếu hoàn thiện — 77/77 route
 
-Đã viết đủ **76/76 route** BOARD_MEMBER theo `route-roles.ts` (không route nào bỏ sót). 7 route production-reference (`/chapters/:id/names`, `/chapters/:id/names/:nameId`, `/chapters/:id/pages`, `/chapters/:id/progress`, `/chapters/:id/stages`, `/revision-requests`, `/tasks/:id/download-url`) không nằm trong định hướng đọc ban đầu của nhiệm vụ nhưng đã được phát hiện qua grep `route-roles.ts` và bổ sung ở §6.8.
+Đã viết đủ **77/77 route** BOARD_MEMBER theo `route-roles.ts` (không route nào bỏ sót). 7 route production-reference (`/chapters/:id/names`, `/chapters/:id/names/:nameId`, `/chapters/:id/pages`, `/chapters/:id/progress`, `/chapters/:id/stages`, `/revision-requests`, `/tasks/:id/download-url`) không nằm trong định hướng đọc ban đầu của nhiệm vụ nhưng đã được phát hiện qua grep `route-roles.ts` và bổ sung ở §6.8.
 
 ### Phát hiện đáng chú ý so với guide cũ / Requiment gốc
 
