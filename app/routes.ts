@@ -39,7 +39,6 @@ export default [
       route('payments/:id', 'routes/mangaka/payment-detail.tsx'),
       route('deadlines', 'routes/mangaka/deadlines.tsx'),
       route('transfers', 'routes/mangaka/transfers.tsx'),
-      route('reprints', 'routes/mangaka/reprints.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('studio/overview', 'routes/mangaka/studio-overview.tsx'),
       route('studio/tasks/:id', 'routes/mangaka/task-detail.tsx'),

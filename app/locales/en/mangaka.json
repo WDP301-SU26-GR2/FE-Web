@@ -2,6 +2,9 @@
   "common": {
     "retry": "Retry"
   },
+  "state": {
+    "unknown": "Unknown status"
+  },
   "routeMeta": {
     "dashboard": {
       "title": "Mangaka dashboard",
@@ -887,41 +890,6 @@
         }
       }
     },
-    "publicationVersions": {
-      "title": "Publication versions",
-      "description": "View the release formats registered for this series.",
-      "loading": "Loading publication versions...",
-      "empty": "No publication versions have been registered for this series yet.",
-      "refresh": "Refresh",
-      "retry": "Retry",
-      "viewDetails": "View details",
-      "close": "Close",
-      "notSpecified": "Not specified",
-      "createdAt": "Created {{date}}",
-      "readingDirection": {
-        "RTL": "Right to left",
-        "LTR": "Left to right"
-      },
-      "versionType": {
-        "ORIGINAL": "Original",
-        "DIGITAL": "Digital",
-        "FLIPPED": "Flipped"
-      },
-      "detail": {
-        "title": "Publication version details",
-        "description": "Release metadata registered by the publishing team.",
-        "loading": "Loading version details...",
-        "language": "Language",
-        "versionType": "Version type",
-        "readingDirection": "Reading direction",
-        "createdAt": "Created",
-        "notes": "Notes"
-      },
-      "error": {
-        "loadFailed": "Could not load publication versions for this series.",
-        "detailFailed": "Could not load this publication version."
-      }
-    },
     "production": {
       "management": {
         "error": "Could not change the production stages. Please try again.",
@@ -1376,35 +1344,6 @@
     "estimatedLengthPlaceholder": "E.g. 50",
     "estimatedLengthHint": "Approximate total chapters planned for the entire series (minimum 1).",
     "selectOption": "Select...",
-    "franchise": {
-      "title": "Franchise relationship",
-      "toggle": "This proposal is derived from an existing series",
-      "description": "Declare a sequel, spin-off, side story, or reboot. The original creator may need to approve it before submission.",
-      "searchLabel": "Find the original series",
-      "searchPlaceholder": "Search the published series catalog",
-      "loading": "Loading series",
-      "parentLabel": "Original series",
-      "parentPlaceholder": "Select the original series",
-      "parentHint": "Only post-serialization series available in the public catalog can be selected.",
-      "loadError": "The published series catalog could not be loaded. Try searching again.",
-      "empty": "No matching published series were found.",
-      "relationshipLabel": "Relationship",
-      "relationshipPlaceholder": "Select a relationship",
-      "relationship": {
-        "SEQUEL": "Sequel",
-        "SPINOFF": "Spin-off",
-        "SIDE_STORY": "Side story",
-        "REBOOT": "Reboot"
-      },
-      "status": {
-        "SERIALIZED": "Serializing",
-        "HIATUS": "On hiatus",
-        "COMPLETING": "Completing",
-        "CANCELLING": "Ending early",
-        "COMPLETED": "Completed",
-        "CANCELLED": "Cancelled"
-      }
-    },
     "enums": {
       "genres": {
         "ACTION": "Action",
@@ -1452,10 +1391,6 @@
     "errors": {
       "unauthenticated": "You must be signed in to create a proposal.",
       "titleRequired": "Enter a series title before continuing.",
-      "parentSeriesRequired": "Select the original series for this derivative proposal.",
-      "relationshipTypeRequired": "Select how this proposal relates to the original series.",
-      "franchisePairRequired": "The original series and relationship must be provided together.",
-      "parentSeriesNotFound": "The selected original series is no longer available. Choose another series.",
       "submitFailed": "Failed to create proposal. Please try again."
     },
     "toolbar": {
@@ -2384,69 +2319,6 @@
     "error": {
       "loadFailed": "Could not load rankings. Please try again.",
       "retry": "Retry"
-    }
-  },
-  "reprints": {
-    "eyebrow": "Flow 7 · Reprints",
-    "title": "Reprint requests",
-    "description": "Track publisher reprint requests, respond to author-rights decisions, and submit revised manuscripts chapter by chapter.",
-    "guideTitle": "What you need to do",
-    "guide": "For revenue-share contracts, review the reason and scope before accepting. For revised reprints, upload a new manuscript only to its assigned chapter; the Editor reviews each chapter before publication.",
-    "requestList": "Requests involving you",
-    "unknownSeries": "Unknown series",
-    "chapterRange": "Chapters {{from}} – {{to}}",
-    "empty": "No reprint requests yet.",
-    "selectHint": "Select a request to view its details.",
-    "mode": "Reprint mode",
-    "range": "Chapter range",
-    "chapterCount": "Chapters",
-    "reason": "Publisher reason and requirements",
-    "noReason": "No additional notes were provided.",
-    "reviewTitle": "Respond to reprint rights",
-    "reviewGuide": "Your decision is sent to the Board. If you reject it, provide a clear reason so the Editor can follow up.",
-    "reviewReason": "Response note",
-    "reviewReasonPlaceholder": "State your acceptance conditions or rejection reason…",
-    "accept": "Accept reprint",
-    "reject": "Reject",
-    "chaptersTitle": "Chapter manuscripts",
-    "chaptersGuide": "Each entry uses the original chapter ID. Do not upload a file to the wrong chapter.",
-    "noChapters": "No chapters are available for this request.",
-    "chapter": "Chapter {{number}}",
-    "download": "View current file",
-    "submitManuscript": "Submit revision",
-    "modes": {
-      "AS_IS": "Use original",
-      "WITH_REVISION": "With revisions",
-      "UNKNOWN": "Not specified"
-    },
-    "statuses": {
-      "PROPOSED": "Awaiting Mangaka",
-      "MANGAKA_REVIEW": "Awaiting Board",
-      "MANGAKA_APPROVED": "Accepted by Mangaka",
-      "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
-      "APPROVED": "Approved",
-      "IN_PRODUCTION": "In production",
-      "PUBLISHED": "Published",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
-    },
-    "chapterStatuses": {
-      "PENDING": "Pending",
-      "IN_REVISION": "In revision",
-      "SUBMITTED": "Submitted for Editor review",
-      "APPROVED": "Approved",
-      "PUBLISHED": "Published"
-    },
-    "feedback": {
-      "accepted": "Reprint request accepted.",
-      "rejected": "Rejection submitted.",
-      "manuscriptSubmitted": "The revised manuscript was uploaded and submitted."
-    },
-    "errors": {
-      "load": "Reprint data could not be loaded. Please try again.",
-      "fileRequired": "Select a manuscript to submit.",
-      "invalidAction": "This reprint action is invalid.",
-      "generic": "The reprint action could not be completed. Check its status and try again."
     }
   },
   "transfers": {

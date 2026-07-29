@@ -20,8 +20,7 @@ import {
   ScrollText,
   Wrench,
   CalendarClock,
-  ArrowRightLeft,
-  BookCopy
+  ArrowRightLeft
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -88,7 +87,6 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
       { label: t('nav.payments'), href: '/dashboard/mangaka/payments', icon: Briefcase },
       { label: t('nav.deadlines'), href: '/dashboard/mangaka/deadlines', icon: CalendarClock },
       { label: t('nav.transfers'), href: '/dashboard/mangaka/transfers', icon: ArrowRightLeft },
-      { label: t('nav.reprints'), href: '/dashboard/mangaka/reprints', icon: BookCopy },
       { label: t('nav.notifications'), href: '/dashboard/mangaka/notifications', icon: Bell, badge: true }
     ]),
     profileFallback: {
