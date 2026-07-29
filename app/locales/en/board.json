@@ -104,7 +104,10 @@
       "PROPOSED": "Proposed",
       "ACCEPTED": "Accepted",
       "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "AWAITING_REPLACEMENT_SIGNATURES": "Awaiting replacement contract signatures",
+      "AWAITING_TRANSFER_SIGNATURES": "Awaiting transfer agreement signatures",
+      "COMPLETED": "Completed"
     },
     "sessionStatuses": { "UPCOMING": "Upcoming", "ACTIVE": "Active", "CONCLUDED": "Concluded" },
     "sessionPhases": { "PRESENTING": "Presenting", "QA": "Q&A", "VOTING": "Voting" },
@@ -682,6 +685,10 @@
     "addCondition": "+ Add condition",
     "removeLastCondition": "Remove last condition",
     "missingDecisionLink": "This request is missing its Board decision reference. Reload it after screening or ask an Editor to verify the workflow.",
+    "replacementContractNextStep": "Payment conditions were created before signing. The replacement contract now awaits Mangaka and Board review and signatures in Contracts.",
+    "openReplacementContracts": "Open contracts",
+    "transferContractSigningStep": "The transfer agreement is waiting for both Mangaka signatures before the Board's signing turn.",
+    "openTransferContract": "Open transfer agreement",
     "conditionTypes": {
       "CHAPTER_MILESTONE": "Chapter milestone",
       "RECURRING_CHAPTER": "Recurring chapter payment",

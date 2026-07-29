@@ -43,7 +43,7 @@ export function BoardReprintsPage({
         backHref='/dashboard/board/operations'
       />
       <BoardPanel title={t('reprints.lookup')}>
-        <Form method='get' className='flex flex-col gap-3 sm:flex-row'>
+        <Form method='get' replace preventScrollReset className='flex flex-col gap-3 sm:flex-row'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId} required>
             <option value=''>{t('reprints.selectSeries')}</option>
             {series.map((item) => (

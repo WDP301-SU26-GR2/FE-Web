@@ -46,7 +46,7 @@ export function BoardReferencePage({
 
       <BoardPanel title={t('reference.seriesTitle')}>
         <p className='mb-4 text-xs leading-5 text-muted-foreground'>{t('reference.seriesHelp')}</p>
-        <Form method='get' className='grid gap-3 lg:grid-cols-3'>
+        <Form method='get' replace preventScrollReset className='grid gap-3 lg:grid-cols-3'>
           <select className={boardInput} name='seriesId' defaultValue={selected.seriesId} required>
             <option value=''>{t('reference.selectSeries')}</option>
             {series.map((item) => (
@@ -80,7 +80,12 @@ export function BoardReferencePage({
 
       <BoardPanel title={t('reference.productionTitle')}>
         <p className='mb-4 text-xs leading-5 text-muted-foreground'>{t('reference.productionHelp')}</p>
-        <Form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
+        <Form
+          method='get'
+          replace
+          preventScrollReset
+          className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'
+        >
           <input
             className={boardInput}
             name='chapterId'
@@ -104,7 +109,7 @@ export function BoardReferencePage({
       </BoardPanel>
 
       <BoardPanel title={t('reference.surveyTitle')}>
-        <Form method='get' className='flex flex-col gap-3 sm:flex-row'>
+        <Form method='get' replace preventScrollReset className='flex flex-col gap-3 sm:flex-row'>
           <select className={boardInput} name='surveyPeriodId' defaultValue={selected.surveyPeriodId} required>
             <option value=''>{t('reference.selectSurvey')}</option>
             {periods.map((item) => (

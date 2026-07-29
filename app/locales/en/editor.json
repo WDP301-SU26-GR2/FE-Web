@@ -808,7 +808,10 @@
       "PROPOSED": "Proposed",
       "ACCEPTED": "Accepted",
       "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "AWAITING_REPLACEMENT_SIGNATURES": "Awaiting replacement contract signatures",
+      "AWAITING_TRANSFER_SIGNATURES": "Awaiting transfer agreement signatures",
+      "COMPLETED": "Completed"
     },
     "ownershipSplit": "New revenue ownership percentages",
     "publisherShare": "Publisher (%)",
@@ -818,7 +821,12 @@
     "transferLoadHint": "Open a transfer request or agreement to see its current workflow step and available actions.",
     "transferNegotiatingHint": "Waiting for the original Mangaka to accept or reject the proposal. No Editor action is required yet.",
     "transferStartHint": "Start negotiation only after Board screening. The request will move to the original Mangaka for consent.",
-    "transferAcceptedHint": "The API has recorded the original Mangaka's consent. Review the commercial terms before creating the agreement.",
+    "transferAcceptedHint": "Create the agreement only after confirming the original Mangaka has consented. Review the commercial terms before continuing.",
+    "transferStagePrompt": "Select the request's current step",
+    "transferStagePlaceholder": "Choose the action to perform",
+    "transferStageScreened": "Board-screened — start negotiation",
+    "transferStageConsented": "Original Mangaka consented — create agreement",
+    "transferStageTemporaryHint": "This temporary confirmation is required because the API currently uses UNDER_REVIEW both before and after Mangaka consent.",
     "partialTransferHint": "A partial transfer keeps the original Mangaka as co-owner and requires their approval for future chapters.",
     "fullTransferHint": "A full transfer removes the original Mangaka's ownership share and does not require future co-owner approval.",
     "transferContractSummary": {

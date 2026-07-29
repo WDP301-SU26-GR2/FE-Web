@@ -312,7 +312,15 @@ function ReportAttachmentLink({ attachment }: { attachment: string }) {
     try {
       const response = await storageControllerSignDownload({ key: attachment })
       if (target) target.location.href = response.data.downloadUrl
-      else window.location.assign(response.data.downloadUrl)
+      else {
+        const link = document.createElement('a')
+        link.href = response.data.downloadUrl
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
     } catch {
       target?.close()
       setError(true)

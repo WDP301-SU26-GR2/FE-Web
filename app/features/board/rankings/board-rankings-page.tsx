@@ -25,7 +25,7 @@ export function BoardRankingsPage({
         description={t('rankings.description')}
         backHref='/dashboard/board/operations'
       />
-      <Form method='get' className='flex gap-2'>
+      <Form method='get' replace preventScrollReset className='flex gap-2'>
         <select className={boardInput} name='surveyPeriodId' defaultValue={surveyPeriodId} required>
           <option value='' disabled>
             {t('rankings.selectPeriod')}

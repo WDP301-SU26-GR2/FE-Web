@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useFetcher, useNavigate } from 'react-router'
+import { Link, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { PenLine } from 'lucide-react'
 import type { BoardDecisionListItemDtoOutput } from '~/api/model/board'
@@ -220,35 +220,32 @@ function TransferCard({
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
-  const navigate = useNavigate()
-  const eligibleDecisions = decisions.filter((decision) => decision.targetSeriesId === item.seriesId)
+  const fullBuyoutFetcher = useFetcher<BoardActionResult>()
+  const currentItem = fullBuyoutFetcher.data?.request ?? fetcher.data?.request ?? item
+  const eligibleDecisions = decisions.filter((decision) => decision.targetSeriesId === currentItem.seriesId)
   const [decisionId, setDecisionId] = useState('')
   const selectedDecision = eligibleDecisions.find((decision) => decision.id === decisionId)
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.requestId) {
-      navigate(`/dashboard/board/transfers?requestId=${encodeURIComponent(fetcher.data.requestId)}`, { replace: true })
-    }
-  }, [fetcher.data, fetcher.state, navigate])
+
   return (
     <article className='rounded-xl border border-border bg-card p-5'>
       <div className='flex justify-between gap-3'>
         <div>
-          <strong>{item.series?.title ?? t('transfers.unknownSeries')}</strong>
+          <strong>{currentItem.series?.title ?? t('transfers.unknownSeries')}</strong>
           <p className='mt-1 text-xs text-muted-foreground'>
-            {t(`transfers.types.${item.proposedType}`, {
-              defaultValue: item.proposedType?.replaceAll('_', ' ') ?? '—'
+            {t(`transfers.types.${currentItem.proposedType}`, {
+              defaultValue: currentItem.proposedType?.replaceAll('_', ' ') ?? '—'
             })}{' '}
-            · {item.requestingMangaka?.displayName ?? t('transfers.unknownMangaka')}
+            · {currentItem.requestingMangaka?.displayName ?? t('transfers.unknownMangaka')}
           </p>
         </div>
-        <StatusBadge value={item.status} />
+        <StatusBadge value={currentItem.status} />
       </div>
-      <p className='mt-3 text-xs text-muted-foreground'>{item.planDescription}</p>
-      {item.status === 'SUBMITTED' && (
+      <p className='mt-3 text-xs text-muted-foreground'>{currentItem.planDescription}</p>
+      {currentItem.status === 'SUBMITTED' && (
         <div className='mt-4'>
           <BoardActionDialog title={t('transfers.review')}>
             <fetcher.Form method='post' className='mt-4 grid gap-2 sm:grid-cols-2'>
-              <input type='hidden' name='requestId' value={item.id} />
+              <input type='hidden' name='requestId' value={currentItem.id} />
               <p className='rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground sm:col-span-2'>
                 {t('transfers.decisionHelp')}
               </p>
@@ -265,7 +262,7 @@ function TransferCard({
                 {eligibleDecisions.map((decision) => (
                   <option key={decision.id} value={decision.id}>
                     {t(`filters.decisionResults.${decision.result}`, { defaultValue: decision.result ?? '' })} ·{' '}
-                    {decision.targetSeries?.title ?? item.series?.title ?? t('transfers.unknownSeries')}
+                    {decision.targetSeries?.title ?? currentItem.series?.title ?? t('transfers.unknownSeries')}
                   </option>
                 ))}
               </select>
@@ -294,21 +291,52 @@ function TransferCard({
           </BoardActionDialog>
         </div>
       )}{' '}
-      {item.status === 'UNDER_REVIEW' && item.originalContractType === 'FULL_BUYOUT' && (
+      {currentItem.status === 'UNDER_REVIEW' && currentItem.originalContractType === 'FULL_BUYOUT' && (
         <div className='mt-4'>
           <BoardActionDialog title={t('transfers.fullBuyout')}>
-            <FullBuyoutForm itemId={item.id} boardDecisionId={item.boardDecisionId} />
+            <FullBuyoutForm
+              itemId={currentItem.id}
+              boardDecisionId={currentItem.boardDecisionId}
+              fetcher={fullBuyoutFetcher}
+            />
           </BoardActionDialog>
+        </div>
+      )}
+      {currentItem.status === 'AWAITING_REPLACEMENT_SIGNATURES' && (
+        <div className='mt-4 rounded-lg border border-primary/25 bg-primary/5 p-3 text-xs leading-5'>
+          <p className='text-foreground'>{t('transfers.replacementContractNextStep')}</p>
+          <Link className='mt-2 inline-flex font-bold text-primary underline' to='/dashboard/board/contracts'>
+            {t('transfers.openReplacementContracts')}
+          </Link>
+        </div>
+      )}
+      {currentItem.status === 'AWAITING_TRANSFER_SIGNATURES' && currentItem.transferContractId && (
+        <div className='mt-4 rounded-lg border border-border bg-muted/40 p-3 text-xs leading-5'>
+          <p className='text-muted-foreground'>{t('transfers.transferContractSigningStep')}</p>
+          <Link
+            className='mt-2 inline-flex font-bold text-primary underline'
+            to={`?requestId=${encodeURIComponent(currentItem.id)}&contractId=${encodeURIComponent(currentItem.transferContractId)}`}
+          >
+            {t('transfers.openTransferContract')}
+          </Link>
         </div>
       )}
     </article>
   )
 }
 
-function FullBuyoutForm({ itemId, boardDecisionId }: { itemId: string; boardDecisionId?: string | null }) {
+function FullBuyoutForm({
+  itemId,
+  boardDecisionId,
+  fetcher
+}: {
+  itemId: string
+  boardDecisionId?: string | null
+  fetcher: ReturnType<typeof useFetcher<BoardActionResult>>
+}) {
   const { t } = useTranslation('board')
-  const fetcher = useFetcher<BoardActionResult>()
   const [conditionCount, setConditionCount] = useState(1)
+
   return (
     <>
       <fetcher.Form method='post' className='mt-4 grid gap-3'>

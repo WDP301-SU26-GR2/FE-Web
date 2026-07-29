@@ -808,7 +808,10 @@
       "PROPOSED": "Đã gửi đề xuất",
       "ACCEPTED": "Đã chấp thuận",
       "REJECTED": "Đã từ chối",
-      "CANCELLED": "Đã hủy"
+      "CANCELLED": "Đã hủy",
+      "AWAITING_REPLACEMENT_SIGNATURES": "Chờ ký hợp đồng thay thế",
+      "AWAITING_TRANSFER_SIGNATURES": "Chờ ký hợp đồng chuyển nhượng",
+      "COMPLETED": "Đã hoàn tất"
     },
     "ownershipSplit": "Tỷ lệ sở hữu doanh thu mới",
     "publisherShare": "Nhà xuất bản (%)",
@@ -818,7 +821,12 @@
     "transferLoadHint": "Mở yêu cầu hoặc hợp đồng chuyển nhượng để xem đúng bước nghiệp vụ và các thao tác hiện có.",
     "transferNegotiatingHint": "Đang chờ Mangaka ban đầu đồng ý hoặc từ chối đề nghị. Editor chưa cần thực hiện thêm thao tác.",
     "transferStartHint": "Chỉ bắt đầu thương lượng sau khi Hội đồng sàng lọc. Yêu cầu sẽ được chuyển tới Mangaka ban đầu để lấy sự đồng thuận.",
-    "transferAcceptedHint": "API đã ghi nhận sự đồng thuận của Mangaka ban đầu. Hãy kiểm tra điều khoản thương mại trước khi tạo hợp đồng.",
+    "transferAcceptedHint": "Chỉ tạo hợp đồng khi đã xác nhận Mangaka ban đầu đồng ý. Hãy kiểm tra điều khoản thương mại trước khi tiếp tục.",
+    "transferStagePrompt": "Chọn bước hiện tại của yêu cầu",
+    "transferStagePlaceholder": "Chọn thao tác cần thực hiện",
+    "transferStageScreened": "Mới được Hội đồng duyệt — bắt đầu thương lượng",
+    "transferStageConsented": "Mangaka ban đầu đã đồng ý — tạo hợp đồng",
+    "transferStageTemporaryHint": "Đây là bước xác nhận tạm thời vì API đang dùng cùng trạng thái UNDER_REVIEW trước và sau khi Mangaka đồng ý.",
     "partialTransferHint": "Chuyển nhượng một phần giữ Mangaka ban đầu làm đồng sở hữu và yêu cầu họ duyệt các chương về sau.",
     "fullTransferHint": "Chuyển nhượng toàn bộ đưa tỷ lệ của Mangaka ban đầu về 0% và không yêu cầu duyệt đồng sở hữu về sau.",
     "transferContractSummary": {

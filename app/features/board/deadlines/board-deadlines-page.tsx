@@ -43,7 +43,7 @@ export function BoardDeadlinesPage({
           <h2 className='text-sm font-bold text-foreground'>{t('deadlines.queueTitle')}</h2>
           <p className='mt-1 text-xs text-muted-foreground'>{t('deadlines.queueHint')}</p>
         </div>
-        <Form method='get' className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
+        <Form method='get' replace preventScrollReset className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId}>
             <option value=''>{t('deadlines.selectSeries')}</option>
             {series.map((item) => (

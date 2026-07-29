@@ -104,7 +104,10 @@
       "PROPOSED": "Đã đề xuất",
       "ACCEPTED": "Đã chấp nhận",
       "REJECTED": "Đã từ chối",
-      "CANCELLED": "Đã hủy"
+      "CANCELLED": "Đã hủy",
+      "AWAITING_REPLACEMENT_SIGNATURES": "Chờ ký hợp đồng thay thế",
+      "AWAITING_TRANSFER_SIGNATURES": "Chờ ký hợp đồng chuyển nhượng",
+      "COMPLETED": "Đã hoàn tất"
     },
     "sessionStatuses": { "UPCOMING": "Sắp diễn ra", "ACTIVE": "Đang họp", "CONCLUDED": "Đã kết thúc" },
     "sessionPhases": { "PRESENTING": "Trình bày", "QA": "Hỏi đáp", "VOTING": "Biểu quyết" },
@@ -682,6 +685,10 @@
     "addCondition": "+ Thêm điều kiện",
     "removeLastCondition": "Bỏ điều kiện cuối",
     "missingDecisionLink": "Yêu cầu chưa có tham chiếu quyết định Hội đồng. Hãy tải lại sau khi sàng lọc hoặc nhờ Editor kiểm tra quy trình.",
+    "replacementContractNextStep": "Điều kiện thanh toán đã được tạo trước khi ký. Hợp đồng thay thế đang chờ Mangaka và Hội đồng duyệt, ký tại khu vực Hợp đồng.",
+    "openReplacementContracts": "Mở danh sách hợp đồng",
+    "transferContractSigningStep": "Hợp đồng chuyển nhượng đang chờ đủ chữ ký của hai Mangaka trước lượt ký Hội đồng.",
+    "openTransferContract": "Mở hợp đồng chuyển nhượng",
     "conditionTypes": {
       "CHAPTER_MILESTONE": "Mốc số chương",
       "RECURRING_CHAPTER": "Thanh toán định kỳ theo chương",

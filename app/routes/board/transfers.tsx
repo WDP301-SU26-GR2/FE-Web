@@ -15,18 +15,23 @@ import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardTransfersPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/transfers'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import type { ShouldRevalidateFunction } from 'react-router'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
-  const contractId = url.searchParams.get('contractId')?.trim() ?? ''
+  const requestedContractId = url.searchParams.get('contractId')?.trim() ?? ''
   const requestId = url.searchParams.get('requestId')?.trim() ?? ''
   try {
-    const [requests, sessions, contract, signatures, focusedRequest] = await Promise.all([
+    const [requests, sessions, focusedRequest] = await Promise.all([
       transferControllerGetPendingBoardRequests(),
       boardControllerGetSessions({ mine: 'true' }),
-      contractId ? transferControllerGetTransferContractById({ id: contractId }).catch(() => null) : null,
-      contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null,
       requestId ? transferControllerGetTransferRequestById({ id: requestId }).catch(() => null) : null
+    ])
+    const contractId =
+      requestedContractId || (focusedRequest?.status === 200 ? focusedRequest.data.transferContractId : '') || ''
+    const [contract, signatures] = await Promise.all([
+      contractId ? transferControllerGetTransferContractById({ id: contractId }).catch(() => null) : null,
+      contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
     ])
     const requestItems = await Promise.all(
       requests.data.data.map((item) =>
@@ -63,7 +68,15 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: false
     }
   } catch {
-    return { requests: [], decisions: [], contract: null, contractId, requestId, signatures: [], hasError: true }
+    return {
+      requests: [],
+      decisions: [],
+      contract: null,
+      contractId: requestedContractId,
+      requestId,
+      signatures: [],
+      hasError: true
+    }
   }
 }
 
@@ -118,6 +131,13 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       }
       await transferControllerSignTransferContract({ id: contractId }, { otpCode: required(form, 'otpCode') })
     } else return { ok: false, intent }
+    const requestId = String(form.get('requestId') ?? '') || undefined
+    const updatedRequest =
+      requestId && ['approve', 'reject', 'fullBuyout'].includes(intent)
+        ? await transferControllerGetTransferRequestById({ id: requestId })
+            .then((response) => response.data)
+            .catch(() => undefined)
+        : undefined
     return {
       ok: true,
       intent,
@@ -131,11 +151,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
               : intent === 'sendOtp'
                 ? 'otpSent'
                 : 'transferContractSigned',
-      requestId: String(form.get('requestId') ?? '') || undefined
+      requestId,
+      request: updatedRequest
     }
   } catch (error) {
     return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.') }
   }
+}
+
+export const shouldRevalidate: ShouldRevalidateFunction = ({ actionResult, defaultShouldRevalidate }) => {
+  const result = actionResult as BoardActionResult | undefined
+  return result?.request ? false : defaultShouldRevalidate
 }
 
 function required(form: FormData, key: string) {
