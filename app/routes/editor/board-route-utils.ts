@@ -6,6 +6,7 @@ import type {
   BoardSessionListItemDtoOutput,
   BoardSessionResDtoOutput
 } from '~/api/model/board'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 
 export function required(form: FormData, key: string) {
   const value = String(form.get(key) ?? '').trim()
@@ -21,19 +22,25 @@ export function optionalDate(form: FormData, key: string) {
 export async function loadBoardLifecycleSeries() {
   const statuses = ['SERIALIZED', 'HIATUS', 'COMPLETING', 'CANCELLING'] as const
   const responses = await Promise.all(
-    statuses.map((status) => seriesControllerListSeries({ status, limit: 100, offset: 0 }))
+    statuses.map((status) =>
+      loadAllOffsetItems((pagination) =>
+        seriesControllerListSeries({ status, ...pagination }).then((response) => response.data)
+      )
+    )
   )
-  return responses.flatMap((response) => response.data.items)
+  return responses.flat()
 }
 
 export async function loadBoardSessionSeries() {
   const statuses = ['READY_TO_PITCH', 'PITCHED', 'SERIALIZED'] as const
   const responses = await Promise.all(
-    statuses.map((status) => seriesControllerListSeries({ status, limit: 100, offset: 0 }))
+    statuses.map((status) =>
+      loadAllOffsetItems((pagination) =>
+        seriesControllerListSeries({ status, ...pagination }).then((response) => response.data)
+      )
+    )
   )
-  return [
-    ...new Map(responses.flatMap((response) => response.data.items).map((series) => [series.id, series])).values()
-  ]
+  return [...new Map(responses.flat().map((series) => [series.id, series])).values()]
 }
 
 export async function hydrateBoardSessions(items: BoardSessionListItemDtoOutput[]) {

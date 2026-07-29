@@ -19,7 +19,7 @@ import { toast } from 'sonner'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../../types'
-import { Dialog, useDialogClose } from '~/shared/ui/dialog'
+import { Dialog, useDialogClose, type DialogProps } from '~/shared/ui/dialog'
 
 export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
 
@@ -85,12 +85,16 @@ export function OperationDialogPanel({
   icon: Icon,
   title,
   children,
-  compact = false
+  compact = false,
+  size = 'lg',
+  className
 }: {
   icon: typeof Wrench
   title: string
   children: React.ReactNode
   compact?: boolean
+  size?: DialogProps['size']
+  className?: string
 }) {
   const [open, setOpen] = useState(false)
   const titleId = `operation-dialog-${useId().replaceAll(':', '')}`
@@ -126,7 +130,15 @@ export function OperationDialogPanel({
         </button>
       </section>
       {open && (
-        <Dialog compact open onClose={() => setOpen(false)} titleId={titleId} title={title} size='lg'>
+        <Dialog
+          compact
+          open
+          onClose={() => setOpen(false)}
+          titleId={titleId}
+          title={title}
+          size={size}
+          className={className}
+        >
           {children}
         </Dialog>
       )}

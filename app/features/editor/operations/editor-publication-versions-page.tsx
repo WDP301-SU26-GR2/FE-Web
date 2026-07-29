@@ -76,9 +76,11 @@ export function EditorPublicationVersionsPage({
             <option value='LTR'>{t('operations.readingDirections.LTR')}</option>
           </select>
           <select name='versionType' className={operationInput}>
-            <option>ORIGINAL</option>
-            <option>DIGITAL</option>
-            <option>FLIPPED</option>
+            {['ORIGINAL', 'DIGITAL', 'FLIPPED'].map((value) => (
+              <option key={value} value={value}>
+                {t(`operations.versionTypes.${value}`)}
+              </option>
+            ))}
           </select>
           <input name='notes' className={operationInput} placeholder={t('operations.notes')} />
           <OperationAction intent='createPublicationVersion' label={t('actions.createVersion')} />
@@ -93,21 +95,26 @@ export function EditorPublicationVersionsPage({
             </option>
             {versions.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.language} · {item.versionType ?? item.readingDirection}
+                {t(`operations.languages.${item.language}`, { defaultValue: item.language })} ·{' '}
+                {item.versionType
+                  ? t(`operations.versionTypes.${item.versionType}`)
+                  : t(`operations.readingDirections.${item.readingDirection}`)}
               </option>
             ))}
           </select>
           <input name='language' className={operationInput} placeholder='JA / EN / VI' />
           <select name='readingDirection' className={operationInput} defaultValue=''>
             <option value=''>{t('operations.keepCurrent')}</option>
-            <option>RTL</option>
-            <option>LTR</option>
+            <option value='RTL'>{t('operations.readingDirections.RTL')}</option>
+            <option value='LTR'>{t('operations.readingDirections.LTR')}</option>
           </select>
           <select name='versionType' className={operationInput} defaultValue=''>
             <option value=''>{t('operations.keepCurrent')}</option>
-            <option>ORIGINAL</option>
-            <option>DIGITAL</option>
-            <option>FLIPPED</option>
+            {['ORIGINAL', 'DIGITAL', 'FLIPPED'].map((value) => (
+              <option key={value} value={value}>
+                {t(`operations.versionTypes.${value}`)}
+              </option>
+            ))}
           </select>
           <input name='notes' className={`${operationInput} sm:col-span-2`} placeholder={t('operations.notes')} />
           <div className='grid grid-cols-2 gap-2 sm:col-span-2'>

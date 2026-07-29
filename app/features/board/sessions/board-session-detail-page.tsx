@@ -111,7 +111,9 @@ export function BoardSessionDetailPage({
               className='rounded-lg border border-border p-4 hover:border-primary'
             >
               <div className='flex flex-wrap items-start justify-between gap-3'>
-                <strong className='min-w-0 text-pretty leading-6'>{decision.decisionType ?? 'DECISION'}</strong>
+                <strong className='min-w-0 text-pretty leading-6'>
+                  {decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
+                </strong>
                 <StatusBadge value={decision.result ?? 'PENDING'} />
               </div>
               <p className='mt-2 text-xs text-muted-foreground'>
@@ -205,7 +207,9 @@ function DecisionProgress({ decision, memberCount }: { decision: BoardDecisionRe
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <strong>{decision.decisionType ?? t('decisions.title')}</strong>
+          <strong>
+            {decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
+          </strong>
           <p className='mt-1 text-xs text-muted-foreground'>
             {t('sessions.votedMembers', { voted: totalVotes, total: memberCount })}
           </p>

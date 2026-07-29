@@ -2,7 +2,12 @@ import { GitPullRequestArrow, Info, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import type { TransferRequestResDtoOutput, TransferSignatureListResDtoOutputSignaturesItem } from '~/api/model/transfer'
+import type {
+  TransferContractResDtoOutput,
+  TransferRequestResDtoOutput,
+  TransferSignatureListResDtoOutputSignaturesItem
+} from '~/api/model/transfer'
+import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
 import {
   OperationAction,
   OperationFeedback,
@@ -14,25 +19,29 @@ import {
 
 export function EditorTransfersPage({
   request,
+  contract,
   requestId,
   contractId,
   signatures,
   hasError
 }: {
   request: TransferRequestResDtoOutput | null
+  contract: TransferContractResDtoOutput | null
   requestId: string
   contractId: string
   signatures: TransferSignatureListResDtoOutputSignaturesItem[]
   hasError: boolean
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const displayRequest = request as TransferRequestWithRelations | null
   const [transferType, setTransferType] = useState<'FULL_TRANSFER' | 'PARTIAL_TRANSFER'>('FULL_TRANSFER')
   const isRevenueShare = request?.originalContractType === 'REVENUE_SHARE'
   const isUnderReview = request?.status === 'UNDER_REVIEW'
   const canStartNegotiation = Boolean(request && isRevenueShare && isUnderReview)
-  const canCreateContract = Boolean(request && isRevenueShare && isUnderReview)
+  const canCreateContract = Boolean(
+    request && isRevenueShare && request.status === 'ACCEPTED' && !request.transferContractId
+  )
   return (
     <OperationsLayout
       titleKey='operations.transfers'
@@ -50,6 +59,31 @@ export function EditorTransfersPage({
           </div>
         </section>
       )}
+      {contract && (
+        <TransferContractSummary
+          contract={contract}
+          locale={i18n.language}
+          labels={{
+            title: t('operations.transferContractSummary.title'),
+            description: t('operations.transferContractSummary.editorDescription'),
+            status: t('operations.transferContractSummary.status'),
+            statusValue: t(`operations.transferContractStatuses.${contract.status}`),
+            type: t('operations.transferContractSummary.type'),
+            typeValue: contract.transferType
+              ? t(`operations.transferTypes.${contract.transferType}`)
+              : t('common.notAvailable'),
+            amount: t('operations.transferContractSummary.amount'),
+            parties: t('operations.transferContractSummary.parties'),
+            ownership: t('operations.transferContractSummary.ownership'),
+            publisher: t('operations.publisherShare'),
+            originalMangaka: t('operations.originalMangakaShare'),
+            newMangaka: t('operations.newMangakaShare'),
+            coOwnerRequired: t('operations.transferContractSummary.coOwnerRequired'),
+            coOwnerNotRequired: t('operations.transferContractSummary.coOwnerNotRequired'),
+            unknown: t('common.notAvailable')
+          }}
+        />
+      )}
       {contractId && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='font-bold text-foreground'>{t('operations.transferSignatures')}</h2>
@@ -66,24 +100,21 @@ export function EditorTransfersPage({
           </div>
         </section>
       )}
-      {!request && (
+      {!request && !contract && (
         <p className='rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground'>
-          Tải một yêu cầu chuyển nhượng để xem đúng bước nghiệp vụ có thể thực hiện.
+          {t('operations.transferLoadHint')}
         </p>
       )}
       {request?.status === 'NEGOTIATING' && (
         <p className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
-          Đang chờ Mangaka gốc đồng ý hoặc từ chối đề nghị. Editor chưa cần thực hiện thêm thao tác.
+          {t('operations.transferNegotiatingHint')}
         </p>
       )}
       {canStartNegotiation && (
         <OperationDialogPanel icon={GitPullRequestArrow} title={t('operations.startTransferSection')}>
           <fetcher.Form method='post' className='grid gap-3'>
             <input type='hidden' name='transferRequestId' value={request!.id} />
-            <p className='rounded-lg bg-muted p-3 text-xs text-muted-foreground'>
-              Chỉ bắt đầu bước này sau khi Hội đồng đã qua vòng sàng lọc. Hệ thống sẽ chuyển yêu cầu sang chờ Mangaka
-              gốc phản hồi.
-            </p>
+            <p className='rounded-lg bg-muted p-3 text-xs text-muted-foreground'>{t('operations.transferStartHint')}</p>
             <OperationAction intent='startTransfer' label={t('actions.startNegotiation')} />
           </fetcher.Form>
         </OperationDialogPanel>
@@ -92,14 +123,10 @@ export function EditorTransfersPage({
         <OperationDialogPanel icon={ShieldCheck} title={t('operations.createTransferSection')}>
           <fetcher.Form method='post' className='grid gap-3'>
             <input type='hidden' name='transferRequestId' value={request!.id} />
-            <div className='flex gap-2 rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-xs text-amber-950 dark:bg-amber-950/20 dark:text-amber-100'>
+            <div className='flex gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground'>
               <Info className='mt-0.5 size-4 shrink-0' />
-              Chỉ tạo hợp đồng sau khi Mangaka gốc đã đồng ý thương lượng và yêu cầu quay lại trạng thái đang xử lý.
+              {t('operations.transferAcceptedHint')}
             </div>
-            <label className='flex items-start gap-2 text-xs text-foreground'>
-              <input type='checkbox' required className='mt-1' />
-              Tôi đã xác nhận Mangaka gốc đồng ý chuyển nhượng.
-            </label>
             <input
               name='transferAmount'
               type='number'
@@ -133,9 +160,9 @@ export function EditorTransfersPage({
               <p className='text-xs text-muted-foreground sm:col-span-3'>{t('operations.ownershipHint')}</p>
             </fieldset>
             <p className='rounded-lg bg-muted p-3 text-xs text-muted-foreground'>
-              {transferType === 'PARTIAL_TRANSFER'
-                ? 'Chuyển nhượng một phần bắt buộc giữ Mangaka gốc làm đồng sở hữu và duyệt chương mới.'
-                : 'Chuyển nhượng toàn bộ sẽ không yêu cầu đồng sở hữu duyệt chương mới.'}
+              {t(
+                transferType === 'PARTIAL_TRANSFER' ? 'operations.partialTransferHint' : 'operations.fullTransferHint'
+              )}
             </p>
             <OperationAction intent='createTransferContract' label={t('actions.createTransferContract')} />
           </fetcher.Form>

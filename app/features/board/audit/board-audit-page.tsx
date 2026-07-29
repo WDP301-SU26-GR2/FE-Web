@@ -31,11 +31,15 @@ export function BoardAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
             </p>
             <p className='mt-2 text-xs text-muted-foreground'>
               {item.fromState
-                ? t(`audit.states.${item.fromState}`, { defaultValue: item.fromState.replaceAll('_', ' ') })
+                ? t([`audit.states.${item.fromState}`, `common:businessData.values.${item.fromState}`], {
+                    defaultValue: item.fromState.replaceAll('_', ' ')
+                  })
                 : '—'}{' '}
               →{' '}
               {item.toState
-                ? t(`audit.states.${item.toState}`, { defaultValue: item.toState.replaceAll('_', ' ') })
+                ? t([`audit.states.${item.toState}`, `common:businessData.values.${item.toState}`], {
+                    defaultValue: item.toState.replaceAll('_', ' ')
+                  })
                 : '—'}{' '}
               · {item.actorId ? t('audit.userActor') : t('audit.system')}
             </p>

@@ -66,7 +66,10 @@ export function EditorDashboardPage({
                       {alert.seriesTitle} · #{alert.chapterNumber}
                     </p>
                     <div className='mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
-                      <SemanticStatusBadge value={alert.warningLevel} label={alert.warningLevel.replaceAll('_', ' ')} />
+                      <SemanticStatusBadge
+                        value={alert.warningLevel}
+                        label={t(`operations.riskLevels.${alert.warningLevel}`)}
+                      />
                       <span>
                         {ratioToPercent(alert.progressPct)}% · {alert.pagesReady}/{alert.totalPages}{' '}
                         {t('dashboard.alerts.pagesReady')}

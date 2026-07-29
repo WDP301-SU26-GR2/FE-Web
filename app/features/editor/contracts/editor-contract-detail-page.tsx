@@ -39,7 +39,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
       </Link>
       <ContractHeader contract={data.contract} progress={data.progress} />
       <div className='flex justify-end'>
-        <ContractPdfButton contract={data.contract} conditionsCount={validConditionCount} />
+        <ContractPdfButton contract={data.contract} />
       </div>
       <ContractDecisionBasis contract={data.contract} decisionPath='/dashboard/editor/board/decisions' />
       <div className='grid gap-4 md:grid-cols-2'>

@@ -13,7 +13,7 @@
     "lint:fix": "eslint . --fix",
     "start:csr": "vite preview",
     "orval": "orval --config orval.config.ts",
-    "orval:fetch": "node scripts/fetch-swagger.mjs",
+    "orval:fetch": "node scripts/fetch-swagger.mjs && orval --config orval.config.ts",
     "orval:watch": "orval --config orval.config.ts --watch"
   },
   "dependencies": {

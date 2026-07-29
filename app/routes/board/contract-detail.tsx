@@ -10,14 +10,12 @@ import {
   contractControllerGetContractById,
   contractControllerGetContractVersionById,
   contractControllerGetContractVersions,
-  contractControllerReportRevenue,
   contractControllerSignBoard,
   paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 import type { Route } from './+types/contract-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -64,7 +62,6 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (['approve', 'sign'].includes(intent)) await assertValidPaymentConditions(params.id)
     if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
     else if (intent === 'changes')
       await contractControllerBoardRequestChanges({ id: params.id }, { reason: required(form, 'reason') })
@@ -79,11 +76,6 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
         { contractId: params.id, id: required(form, 'amendmentId') },
         { otpCode: required(form, 'otpCode') }
       )
-    else if (intent === 'reportRevenue')
-      await contractControllerReportRevenue(
-        { id: params.id },
-        { revenue: positiveNumber(form, 'revenue'), period: required(form, 'period') }
-      )
     else return { ok: false, intent }
     return {
       ok: true,
@@ -97,9 +89,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
               ? 'otpSent'
               : intent === 'sign'
                 ? 'contractSigned'
-                : intent === 'signAmendment'
-                  ? 'amendmentSigned'
-                  : 'revenueReported'
+                : 'amendmentSigned'
     }
   } catch (error) {
     return {
@@ -110,21 +100,9 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   }
 }
 
-async function assertValidPaymentConditions(contractId: string) {
-  const response = await paymentConditionControllerGetPaymentConditions({ contractId })
-  if (response.status !== 200 || !hasValidPaymentCondition(response.data.data))
-    throw new Error('Không thể duyệt hoặc ký vì hợp đồng chưa có điều kiện thanh toán hợp lệ.')
-}
-
 function required(form: FormData, key: string) {
   const value = String(form.get(key) ?? '').trim()
   if (!value) throw new Error(`Missing ${key}`)
-  return value
-}
-
-function positiveNumber(form: FormData, key: string) {
-  const value = Number(required(form, key))
-  if (!Number.isFinite(value) || value <= 0) throw new Error(`Invalid ${key}`)
   return value
 }
 

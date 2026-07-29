@@ -12961,7 +12961,7 @@
             "bearer": []
           }
         ],
-        "summary": "Editor tạo kỳ bình chọn mới → DRAFT/OPEN/CLOSED",
+        "summary": "Super Admin tạo kỳ bình chọn mới → DRAFT/OPEN/CLOSED. Kỳ bình chọn là đơn vị theo KỲ PHÁT HÀNH (toàn tạp chí) nên thuộc thẩm quyền vận hành toà soạn; Editor/Tantou chỉ phụ trách series nên KHÔNG mở được kỳ (vẫn đọc được mọi route GET).",
         "tags": [
           "survey"
         ]
@@ -13134,7 +13134,7 @@
             "bearer": []
           }
         ],
-        "summary": "Editor cập nhật trạng thái kỳ bình chọn → OPEN/CLOSED/REFLECTED",
+        "summary": "Super Admin cập nhật trạng thái kỳ bình chọn → OPEN/CLOSED/REFLECTED. Đóng/mở kỳ ảnh hưởng toàn bộ series trong kỳ nên là quyết định cấp tạp chí, không phải cấp series.",
         "tags": [
           "survey"
         ]
@@ -13197,7 +13197,7 @@
             "bearer": []
           }
         ],
-        "summary": "Editor nhập vote offline từ postcard",
+        "summary": "Super Admin nhập vote offline từ postcard cho cả kỳ. Dữ liệu phiếu giấy gộp nhiều series nên không thuộc phạm vi một Editor.",
         "tags": [
           "survey"
         ]
@@ -13259,7 +13259,7 @@
             "bearer": []
           }
         ],
-        "summary": "Editor finalize ranking cho kỳ bình chọn",
+        "summary": "Super Admin finalize ranking cho kỳ bình chọn. Chốt xếp hạng so sánh TOÀN BỘ series trong kỳ — Editor phụ trách một vài series không thể là người chốt (xung đột lợi ích).",
         "tags": [
           "survey"
         ]
@@ -18148,6 +18148,71 @@
           }
         ],
         "summary": "Mangaka/Board ký hợp đồng chuyển nhượng bằng OTP",
+        "tags": [
+          "transfer"
+        ]
+      }
+    },
+    "/transfers/contracts/{id}": {
+      "get": {
+        "operationId": "TransferController_getTransferContractById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            },
+            "description": "MongoDB ObjectId (24 hexadecimal characters)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferContractResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.TransferAccessDenied - caller is outside the request/contract participant, assignment, or Board roster scope",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.TransferAccessDenied",
+                  "message": "Người dùng không thuộc phạm vi của tài nguyên chuyển nhượng"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.TransferContractNotFound",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.TransferContractNotFound",
+                  "message": "Không tìm thấy hợp đồng chuyển nhượng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chi tiết hợp đồng chuyển nhượng (điều khoản + chữ ký) — bên ký đọc trước khi ký",
         "tags": [
           "transfer"
         ]
@@ -33378,6 +33443,12 @@
           },
           "originalContractId": {
             "type": "string",
+            "description": "Contract (hợp đồng XUẤT BẢN) đang có hiệu lực của series — căn cứ chuyển nhượng, KHÔNG phải hợp đồng chuyển nhượng",
+            "nullable": true
+          },
+          "transferContractId": {
+            "type": "string",
+            "description": "TransferContract (hợp đồng CHUYỂN NHƯỢNG 3 bên) đã soạn cho yêu cầu này; null khi Editor chưa soạn. Dùng id này gọi GET /transfers/contracts/:id và POST /transfers/contracts/:id/sign. CHỈ có ở 3 route GET request; response của route mutation không mang field này",
             "nullable": true
           },
           "status": {
@@ -33516,6 +33587,12 @@
                 },
                 "originalContractId": {
                   "type": "string",
+                  "description": "Contract (hợp đồng XUẤT BẢN) đang có hiệu lực của series — căn cứ chuyển nhượng, KHÔNG phải hợp đồng chuyển nhượng",
+                  "nullable": true
+                },
+                "transferContractId": {
+                  "type": "string",
+                  "description": "TransferContract (hợp đồng CHUYỂN NHƯỢNG 3 bên) đã soạn cho yêu cầu này; null khi Editor chưa soạn. Dùng id này gọi GET /transfers/contracts/:id và POST /transfers/contracts/:id/sign. CHỈ có ở 3 route GET request; response của route mutation không mang field này",
                   "nullable": true
                 },
                 "status": {

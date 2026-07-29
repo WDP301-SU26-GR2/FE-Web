@@ -9,21 +9,13 @@ import type {
   ContractVersionResDtoOutput,
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
-import {
-  boardInput,
-  BoardActionDialog,
-  BoardFeedback,
-  BoardHeader,
-  BoardPanel,
-  StatusBadge
-} from '../components/board-ui'
+import { boardInput, BoardFeedback, BoardHeader, BoardPanel, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
 import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
 import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
 import { PaymentConditionsSummary } from '~/features/contracts/components/payment-conditions-summary'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export function BoardContractDetailPage({
   contract,
@@ -57,7 +49,6 @@ export function BoardContractDetailPage({
     (editor) => editor.id === authSession?.user.id
   )
   const hasCurrentMemberSigned = Boolean(currentBoardSignature)
-  const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
   const canSignContract = contract.status === 'BOARD_APPROVED' || contract.status === 'MANGAKA_SIGNED'
   return (
     <div className='space-y-6 pb-12'>
@@ -67,15 +58,7 @@ export function BoardContractDetailPage({
         backHref='/dashboard/board/contracts'
       />
       <div className='flex justify-end'>
-        <ContractPdfButton
-          contract={contract}
-          conditionsCount={
-            conditions.filter(
-              (condition) =>
-                condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
-            ).length
-          }
-        />
+        <ContractPdfButton contract={contract} />
       </div>
       <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
       {hasSupplementaryDataError && (
@@ -96,7 +79,7 @@ export function BoardContractDetailPage({
             <p className='mt-1 font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
           </div>
           <div>
-            <span className='text-muted-foreground'>Loại hợp đồng</span>
+            <span className='text-muted-foreground'>{t('contracts.contractType')}</span>
             <p className='mt-1 font-bold'>{t(`filters.contractTypes.${contract.contractType}`)}</p>
           </div>
           <div>
@@ -106,11 +89,11 @@ export function BoardContractDetailPage({
             </p>
           </div>
           <div>
-            <span className='text-muted-foreground'>Ngày bắt đầu</span>
+            <span className='text-muted-foreground'>{t('contracts.startDate')}</span>
             <p className='mt-1 font-bold'>{formatDate(contract.contractStart)}</p>
           </div>
           <div>
-            <span className='text-muted-foreground'>Ngày kết thúc</span>
+            <span className='text-muted-foreground'>{t('contracts.endDate')}</span>
             <p className='mt-1 font-bold'>{formatDate(contract.contractEnd)}</p>
           </div>
         </div>
@@ -149,56 +132,19 @@ export function BoardContractDetailPage({
               {t('contracts.openPayments')}
             </Link>
           </div>
-          {contract.contractType === 'REVENUE_SHARE' && contract.status === 'FULLY_EXECUTED' && (
-            <BoardActionDialog title={t('contracts.reportRevenue')}>
-              <fetcher.Form method='post' className='grid gap-3'>
-                <input name='period' required className={boardInput} placeholder={t('contracts.revenuePeriod')} />
-                <input
-                  name='revenue'
-                  required
-                  type='number'
-                  min={0.01}
-                  step='any'
-                  className={boardInput}
-                  placeholder={t('contracts.revenueAmount')}
-                />
-                <button
-                  name='intent'
-                  value='reportRevenue'
-                  disabled={fetcher.state !== 'idle'}
-                  className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
-                >
-                  {t('contracts.reportRevenue')}
-                </button>
-              </fetcher.Form>
-              <BoardFeedback data={fetcher.data?.intent === 'reportRevenue' ? fetcher.data : undefined} />
-            </BoardActionDialog>
-          )}
         </div>
       </BoardPanel>
       <BoardPanel title={t('contracts.actions')}>
-        {!conditionsReady && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
-            <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>Không thể duyệt hoặc ký cho tới khi tải được ít nhất một điều kiện thanh toán hợp lệ.</p>
-          </div>
-        )}
         {!canAttemptBoardAction && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200'>
+          <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>
-              Bạn có thể xem hợp đồng, nhưng chỉ thành viên thuộc phiên Hội đồng đã phê duyệt serial hóa mới được duyệt
-              hoặc ký.
-            </p>
+            <p>{t('contracts.notInDecisionRoster')}</p>
           </div>
         )}
         {canAttemptBoardAction && !isRosterMember && contract.boardDecisionId && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200'>
+          <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>
-              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend
-              sẽ kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
-            </p>
+            <p>{t('contracts.rosterUnavailable')}</p>
           </div>
         )}
         <fetcher.Form method='post' className='grid gap-3'>
@@ -208,7 +154,7 @@ export function BoardContractDetailPage({
                 <button
                   name='intent'
                   value='approve'
-                  disabled={fetcher.state !== 'idle' || !conditionsReady}
+                  disabled={fetcher.state !== 'idle'}
                   className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
                 >
                   {t('contracts.approve')}
@@ -238,7 +184,6 @@ export function BoardContractDetailPage({
               {canAttemptBoardAction && !hasCurrentMemberSigned && canSignContract && (
                 <button
                   type='button'
-                  disabled={!conditionsReady}
                   onClick={() => setSignOpen(true)}
                   className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
                 >
@@ -308,7 +253,7 @@ export function BoardContractDetailPage({
         </fetcher.Form>
         <BoardFeedback data={fetcher.data?.intent === 'changes' ? fetcher.data : undefined} />
       </Dialog>
-      {signOpen && conditionsReady && <ContractSignDialog onClose={() => setSignOpen(false)} />}
+      {signOpen && <ContractSignDialog onClose={() => setSignOpen(false)} />}
       <BoardPanel title={t('contracts.amendments')}>
         <div className='space-y-3'>
           {amendments.map((item) => (
@@ -416,7 +361,7 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
 }
 
 function formatDate(value: string | null) {
-  if (!value) return 'Chưa xác định'
+  if (!value) return '—'
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN')
 }
@@ -495,7 +440,7 @@ function OtpRequestFeedback({ data }: { data?: BoardActionResult }) {
   const { t } = useTranslation('board')
   if (!data) return null
   return (
-    <p className={`mt-3 text-xs ${data.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+    <p className={`mt-3 text-xs ${data.ok ? 'text-primary' : 'text-destructive'}`}>
       {data.ok ? t('messages.otpSent') : data.message || t('common.failure')}
     </p>
   )

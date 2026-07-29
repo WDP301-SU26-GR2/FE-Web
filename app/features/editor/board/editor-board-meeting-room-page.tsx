@@ -20,6 +20,7 @@ export function EditorBoardMeetingRoomPage({
   decisions: initialDecisions,
   series,
   manageAll = false,
+  allowChat = true,
   backPath = '/dashboard/editor/board/sessions',
   decisionBasePath
 }: {
@@ -29,6 +30,7 @@ export function EditorBoardMeetingRoomPage({
   decisions: BoardDecisionResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
   manageAll?: boolean
+  allowChat?: boolean
   backPath?: string
   decisionBasePath?: string
 }) {
@@ -47,7 +49,7 @@ export function EditorBoardMeetingRoomPage({
   })
   const { updatePhase } = meeting
   const isCreator = manageAll || session.creatorId === authSession?.user.id
-  const canChat = session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
+  const canChat = allowChat && session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
   const allDecisionsFinal =
     meeting.decisions.length > 0 &&
     meeting.decisions.every((decision) => ['APPROVED', 'REJECTED', 'EXPIRED'].includes(decision.result ?? ''))
@@ -362,7 +364,7 @@ function AddSessionDecisionDialog({
             </option>
             {eligibleSeries.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.title} · {t(`seriesStatuses.${item.status}`, { defaultValue: item.status })}
+                {item.title} · {t(`filters.seriesStatuses.${item.status}`)}
               </option>
             ))}
           </select>

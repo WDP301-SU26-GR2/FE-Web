@@ -1,6 +1,6 @@
 /**
  * Fetches swagger.json from the backend and saves it locally.
- * Orval will read from this local file for stable builds.
+ * The package-level `orval:fetch` script runs Orval immediately afterward.
  *
  * Usage: npm run orval:fetch
  */

@@ -5,12 +5,14 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { BoardRankingListResDtoOutputItemsItem, SurveyPeriodResDtoOutput } from '~/api/model/survey'
 import { useTranslation } from 'react-i18next'
 import { OperationsLayout, operationInput } from './components/operations-shared'
+import { ProtectedTaskFilePanel } from '~/shared/components/protected-task-file-panel'
 
 export function EditorInsightsPage({
   series,
   periods,
   seriesId,
   surveyPeriodId,
+  revisionId,
   assistants,
   revisions,
   trend,
@@ -22,6 +24,7 @@ export function EditorInsightsPage({
   periods: SurveyPeriodResDtoOutput[]
   seriesId: string
   surveyPeriodId: string
+  revisionId: string
   assistants: AssistantDirectoryListResDtoOutputItemsItem[]
   revisions: RevisionRequestListResDtoOutputItemsItem[]
   trend: BoardRankingListResDtoOutputItemsItem[]
@@ -70,6 +73,19 @@ export function EditorInsightsPage({
           )}`
         }))}
       />
+      <ProtectedTaskFilePanel
+        inputClassName={operationInput}
+        labels={{
+          title: t('operations.taskFileTitle'),
+          description: t('operations.taskFileHelp'),
+          taskId: t('operations.taskId'),
+          fileKey: t('operations.taskFileKey'),
+          createLink: t('operations.signTaskDownload'),
+          openDownload: t('operations.openTaskDownload'),
+          loading: t('operations.signingTaskDownload'),
+          expiresAt: t('operations.taskDownloadExpiresAt')
+        }}
+      />
       <DataPanel
         title={t('operations.boardRanking')}
         empty={t('operations.noInsightsData')}
@@ -98,13 +114,16 @@ export function EditorInsightsPage({
       <DataPanel
         title={t('operations.revisionHistory')}
         empty={t('operations.noInsightsData')}
-        items={revisions.map((item) => ({
-          id: item.id,
-          title: `${t(`operations.revisionTypes.${item.targetType}`, {
-            defaultValue: item.targetType.replaceAll('_', ' ')
-          })} · ${t('operations.revisionRound', { round: item.round })}`,
-          detail: `${t(item.isResolved ? 'operations.resolved' : 'operations.openRevision')} · ${item.reason}`
-        }))}
+        focusId={revisionId}
+        items={[...revisions]
+          .sort((a, b) => Number(b.id === revisionId) - Number(a.id === revisionId))
+          .map((item) => ({
+            id: item.id,
+            title: `${t(`operations.revisionTypes.${item.targetType}`, {
+              defaultValue: item.targetType.replaceAll('_', ' ')
+            })} · ${t('operations.revisionRound', { round: item.round })}`,
+            detail: `${t(item.isResolved ? 'operations.resolved' : 'operations.openRevision')} · ${item.reason}`
+          }))}
       />
       <DataPanel
         title={t('operations.assistantDirectory')}
@@ -132,18 +151,25 @@ export function EditorInsightsPage({
 function DataPanel({
   title,
   items,
-  empty
+  empty,
+  focusId
 }: {
   title: string
   items: Array<{ id: string; title: string; detail: string }>
   empty: string
+  focusId?: string
 }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <h2 className='font-bold text-foreground'>{title}</h2>
       <div className='mt-3 grid gap-2'>
         {items.map((item) => (
-          <article key={item.id} className='rounded-md bg-muted p-3 text-xs'>
+          <article
+            key={item.id}
+            className={`rounded-md border p-3 text-xs ${
+              item.id === focusId ? 'border-primary bg-primary/5 ring-2 ring-primary/15' : 'border-transparent bg-muted'
+            }`}
+          >
             <strong className='text-foreground'>{item.title}</strong>
             <p className='mt-1 text-xs text-muted-foreground'>{item.detail}</p>
           </article>

@@ -88,7 +88,8 @@ export function BoardStatus({ value }: { value: string }) {
       `filters.contractStatuses.${value}`,
       `filters.proposalStatuses.${value}`,
       `operations.reprintStatuses.${value}`,
-      `operations.transferStatuses.${value}`
+      `operations.transferStatuses.${value}`,
+      `common:businessData.values.${value}`
     ],
     { defaultValue: value.replaceAll('_', ' ') }
   )

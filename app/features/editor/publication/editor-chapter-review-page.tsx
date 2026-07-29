@@ -169,7 +169,7 @@ export function EditorChapterReviewPage({
                   <span className='font-bold text-foreground'>
                     {t('proposalDetail.page', { number: page.pageNumber })}
                   </span>
-                  <span className='text-muted-foreground'>{page.status.replaceAll('_', ' ')}</span>
+                  <span className='text-muted-foreground'>{t(`chapterReview.pageStatuses.${page.status}`)}</span>
                 </figcaption>
                 <p className='border-t border-border px-3 py-2 text-[11px] text-muted-foreground'>
                   {t('chapterReview.regionCount', {

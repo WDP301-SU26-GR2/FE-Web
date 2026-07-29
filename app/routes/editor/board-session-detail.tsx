@@ -32,7 +32,14 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   }
 }
 
-export async function clientAction({ request, params }: Route.ClientActionArgs): Promise<EditorActionResult> {
+export function clientAction(args: Route.ClientActionArgs): Promise<EditorActionResult> {
+  return runBoardSessionAction(args, { allowPitch: true })
+}
+
+export async function runBoardSessionAction(
+  { request, params }: Route.ClientActionArgs,
+  { allowPitch }: { allowPitch: boolean }
+): Promise<EditorActionResult> {
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
@@ -56,7 +63,10 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       if (decisionType === 'SERIALIZATION') {
         if (!['READY_TO_PITCH', 'PITCHED'].includes(series.data.status))
           return { ok: false, intent, errorKey: 'invalidState' }
-        if (series.data.status === 'READY_TO_PITCH') await seriesControllerPitch({ id: seriesId })
+        if (series.data.status === 'READY_TO_PITCH') {
+          if (!allowPitch) return { ok: false, intent, errorKey: 'invalidState' }
+          await seriesControllerPitch({ id: seriesId })
+        }
         const startIssueNumber = Number(required(form, 'startIssueNumber'))
         if (!Number.isInteger(startIssueNumber) || startIssueNumber < 1)
           return { ok: false, intent, errorKey: 'invalidState' }

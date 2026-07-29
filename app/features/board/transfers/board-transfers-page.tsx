@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react'
 import { useFetcher, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { PenLine } from 'lucide-react'
-import type { BoardSessionListItemDtoOutput } from '~/api/model/board'
-import type { TransferRequestResDtoOutput, TransferSignatureListResDtoOutputSignaturesItem } from '~/api/model/transfer'
+import type { BoardDecisionListItemDtoOutput } from '~/api/model/board'
+import type {
+  TransferContractResDtoOutput,
+  TransferRequestResDtoOutput,
+  TransferSignatureListResDtoOutputSignaturesItem
+} from '~/api/model/transfer'
 import {
   BoardActionDialog,
   boardInput,
@@ -14,29 +18,32 @@ import {
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
+import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
 
 export function BoardTransfersPage({
   requests,
-  sessions,
+  decisions,
+  contract,
   contractId,
   signatures,
   hasError
 }: {
   requests: TransferRequestResDtoOutput[]
-  sessions: BoardSessionListItemDtoOutput[]
+  decisions: BoardDecisionListItemDtoOutput[]
+  contract: TransferContractResDtoOutput | null
   contractId: string
   requestId: string
   signatures: TransferSignatureListResDtoOutputSignaturesItem[]
   hasError: boolean
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const [signOpen, setSignOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const hasMangakaA = signatures.some((signature) => signature.role === 'MANGAKA_A')
   const hasMangakaB = signatures.some((signature) => signature.role === 'MANGAKA_B')
   const hasBoard = signatures.some((signature) => signature.role === 'BOARD')
-  const canBoardSign = Boolean(contractId && hasMangakaA && hasMangakaB && !hasBoard)
+  const canBoardSign = Boolean(contract && hasMangakaA && hasMangakaB && !hasBoard)
   const statuses = [...new Set(requests.map((item) => item.status))]
   const filteredRequests = requests.filter(
     (item) =>
@@ -53,6 +60,29 @@ export function BoardTransfersPage({
         description={t('transfers.description')}
         backHref='/dashboard/board/operations'
       />
+      {contract && (
+        <TransferContractSummary
+          contract={contract}
+          locale={i18n.language}
+          labels={{
+            title: t('transfers.contractSummary.title'),
+            description: t('transfers.contractSummary.boardDescription'),
+            status: t('transfers.contractSummary.status'),
+            statusValue: t(`transfers.contractStatuses.${contract.status}`),
+            type: t('transfers.contractSummary.type'),
+            typeValue: contract.transferType ? t(`transfers.types.${contract.transferType}`) : t('common.notAvailable'),
+            amount: t('transfers.contractSummary.amount'),
+            parties: t('transfers.contractSummary.parties'),
+            ownership: t('transfers.contractSummary.ownership'),
+            publisher: t('transfers.contractSummary.publisher'),
+            originalMangaka: t('transfers.contractSummary.originalMangaka'),
+            newMangaka: t('transfers.contractSummary.newMangaka'),
+            coOwnerRequired: t('transfers.contractSummary.coOwnerRequired'),
+            coOwnerNotRequired: t('transfers.contractSummary.coOwnerNotRequired'),
+            unknown: t('common.notAvailable')
+          }}
+        />
+      )}
       <div>
         {canBoardSign ? (
           <button
@@ -65,9 +95,7 @@ export function BoardTransfersPage({
           </button>
         ) : contractId ? (
           <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
-            {hasBoard
-              ? 'Hội đồng đã ký hợp đồng này.'
-              : 'Đang chờ đủ chữ ký của Mangaka chuyển giao và Mangaka tiếp nhận.'}
+            {hasBoard ? t('transfers.boardAlreadySigned') : t('transfers.awaitingMangakaSignatures')}
           </p>
         ) : (
           <p className='rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground'>
@@ -83,7 +111,7 @@ export function BoardTransfersPage({
             <div className='mt-3 grid gap-2'>
               {signatures.map((signature) => (
                 <div key={signature.id} className='flex justify-between rounded-lg border border-border p-3 text-xs'>
-                  <span>{signatureRoleLabel(signature.role)}</span>
+                  <span>{t(`transfers.signatureRoles.${signature.role}`, { defaultValue: signature.role })}</span>
                   <span>{new Date(signature.signedAt).toLocaleString()}</span>
                 </div>
               ))}
@@ -110,7 +138,7 @@ export function BoardTransfersPage({
       </div>
       <div className='grid gap-4'>
         {filteredRequests.map((item) => (
-          <TransferCard key={item.id} item={item} sessions={sessions} />
+          <TransferCard key={item.id} item={item} decisions={decisions} />
         ))}
       </div>
       {!filteredRequests.length && <EmptyState text={t('transfers.empty')} />}
@@ -174,7 +202,7 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
         </div>
       </fetcher.Form>
       {fetcher.data?.intent === 'sendOtp' && (
-        <p className={`text-xs ${fetcher.data.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+        <p className={`text-xs ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}>
           {fetcher.data.ok ? t('messages.otpSent') : fetcher.data.message || t('common.failure')}
         </p>
       )}
@@ -185,14 +213,17 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
 
 function TransferCard({
   item,
-  sessions
+  decisions
 }: {
   item: TransferRequestResDtoOutput
-  sessions: BoardSessionListItemDtoOutput[]
+  decisions: BoardDecisionListItemDtoOutput[]
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const navigate = useNavigate()
+  const eligibleDecisions = decisions.filter((decision) => decision.targetSeriesId === item.seriesId)
+  const [decisionId, setDecisionId] = useState('')
+  const selectedDecision = eligibleDecisions.find((decision) => decision.id === decisionId)
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.requestId) {
       navigate(`/dashboard/board/transfers?requestId=${encodeURIComponent(fetcher.data.requestId)}`, { replace: true })
@@ -218,26 +249,34 @@ function TransferCard({
           <BoardActionDialog title={t('transfers.review')}>
             <fetcher.Form method='post' className='mt-4 grid gap-2 sm:grid-cols-2'>
               <input type='hidden' name='requestId' value={item.id} />
-              <select className={boardInput} name='sessionId' required defaultValue=''>
+              <p className='rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground sm:col-span-2'>
+                {t('transfers.decisionHelp')}
+              </p>
+              <select
+                className={`${boardInput} sm:col-span-2`}
+                name='boardDecisionId'
+                required
+                value={decisionId}
+                onChange={(event) => setDecisionId(event.target.value)}
+              >
                 <option value='' disabled>
-                  {t('transfers.session')}
+                  {t('transfers.decision')}
                 </option>
-                {sessions.map((session) => (
-                  <option key={session.id} value={session.id}>
-                    {session.title}
+                {eligibleDecisions.map((decision) => (
+                  <option key={decision.id} value={decision.id}>
+                    {t(`filters.decisionResults.${decision.result}`, { defaultValue: decision.result ?? '' })} ·{' '}
+                    {decision.targetSeries?.title ?? item.series?.title ?? t('transfers.unknownSeries')}
                   </option>
                 ))}
               </select>
-              {!sessions.length && (
-                <p className='text-xs text-destructive sm:col-span-2'>
-                  Bạn cần thuộc một phiên Hội đồng đang hoạt động để sàng lọc yêu cầu.
-                </p>
+              {!eligibleDecisions.length && (
+                <p className='text-xs text-destructive sm:col-span-2'>{t('transfers.noTerminalDecision')}</p>
               )}
               <input className={boardInput} name='details' placeholder={t('transfers.details')} />
               <button
                 name='intent'
                 value='approve'
-                disabled={!sessions.length}
+                disabled={selectedDecision?.result !== 'APPROVED'}
                 className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {t('transfers.approve')}
@@ -245,7 +284,7 @@ function TransferCard({
               <button
                 name='intent'
                 value='reject'
-                disabled={!sessions.length}
+                disabled={selectedDecision?.result !== 'REJECTED'}
                 className='h-10 rounded-md border border-destructive px-3 text-xs font-bold text-destructive disabled:opacity-50'
               >
                 {t('transfers.reject')}
@@ -258,7 +297,7 @@ function TransferCard({
       {item.status === 'UNDER_REVIEW' && item.originalContractType === 'FULL_BUYOUT' && (
         <div className='mt-4'>
           <BoardActionDialog title={t('transfers.fullBuyout')}>
-            <FullBuyoutForm itemId={item.id} sessions={sessions} />
+            <FullBuyoutForm itemId={item.id} boardDecisionId={item.boardDecisionId} />
           </BoardActionDialog>
         </div>
       )}
@@ -266,7 +305,7 @@ function TransferCard({
   )
 }
 
-function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardSessionListItemDtoOutput[] }) {
+function FullBuyoutForm({ itemId, boardDecisionId }: { itemId: string; boardDecisionId?: string | null }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const [conditionCount, setConditionCount] = useState(1)
@@ -274,16 +313,9 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
     <>
       <fetcher.Form method='post' className='mt-4 grid gap-3'>
         <input type='hidden' name='requestId' value={itemId} />
-        <select className={boardInput} name='sessionId' required defaultValue=''>
-          <option value='' disabled>
-            {t('transfers.session')}
-          </option>
-          {sessions.map((session) => (
-            <option key={session.id} value={session.id}>
-              {session.title}
-            </option>
-          ))}
-        </select>
+        <p className='rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground'>
+          {t('transfers.fullBuyoutHelp')}
+        </p>
         <input
           className={boardInput}
           name='valuationAmount'
@@ -294,22 +326,23 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
         />
         <div className='space-y-3 rounded-lg border border-border p-3'>
           <div className='flex flex-wrap items-center justify-between gap-2'>
-            <strong className='min-w-0 text-pretty text-xs'>Điều kiện hợp đồng mới</strong>
+            <strong className='min-w-0 text-pretty text-xs'>{t('transfers.newContractConditions')}</strong>
             <button
               type='button'
               onClick={() => setConditionCount((count) => count + 1)}
               className='text-xs font-bold text-primary'
             >
-              + Thêm điều kiện
+              {t('transfers.addCondition')}
             </button>
           </div>
           {Array.from({ length: conditionCount }, (_, index) => (
             <div key={index} className='grid gap-2 rounded-md bg-muted/50 p-3 sm:grid-cols-2'>
               <select className={boardInput} name='conditionType' defaultValue='CHAPTER_MILESTONE'>
-                <option value='CHAPTER_MILESTONE'>Mốc số chương</option>
-                <option value='RECURRING_CHAPTER'>Thanh toán định kỳ theo chương</option>
-                <option value='RANKING_MILESTONE'>Mốc xếp hạng</option>
-                <option value='TIME_BOUND'>Mốc theo thời hạn</option>
+                {['CHAPTER_MILESTONE', 'RECURRING_CHAPTER', 'RANKING_MILESTONE', 'TIME_BOUND'].map((type) => (
+                  <option key={type} value={type}>
+                    {t(`transfers.conditionTypes.${type}`)}
+                  </option>
+                ))}
               </select>
               <input
                 className={boardInput}
@@ -331,19 +364,17 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
                   onClick={() => setConditionCount((count) => Math.max(1, count - 1))}
                   className='justify-self-start text-xs font-bold text-destructive'
                 >
-                  Bỏ điều kiện cuối
+                  {t('transfers.removeLastCondition')}
                 </button>
               )}
             </div>
           ))}
         </div>
-        {!sessions.length && (
-          <p className='text-xs text-destructive'>Bạn cần thuộc một phiên Hội đồng đang hoạt động để xử lý.</p>
-        )}
+        {!boardDecisionId && <p className='text-xs text-destructive'>{t('transfers.missingDecisionLink')}</p>}
         <button
           name='intent'
           value='fullBuyout'
-          disabled={!sessions.length}
+          disabled={!boardDecisionId}
           className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
           {t('transfers.fullBuyout')}
@@ -352,11 +383,4 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
       <BoardFeedback data={fetcher.data} />
     </>
   )
-}
-
-function signatureRoleLabel(role: string) {
-  if (role === 'MANGAKA_A') return 'Mangaka chuyển giao'
-  if (role === 'MANGAKA_B') return 'Mangaka tiếp nhận'
-  if (role === 'BOARD') return 'Hội đồng'
-  return role
 }

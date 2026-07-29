@@ -14,6 +14,7 @@ export async function clientLoader({ request }: LoaderFunctionArgs) {
   const searchParams = new URL(request.url).searchParams
   const seriesId = searchParams.get('seriesId') ?? ''
   const surveyPeriodId = searchParams.get('surveyPeriodId') ?? ''
+  const revisionId = searchParams.get('revisionId') ?? ''
   try {
     const [series, periods, assistants, revisions, trend, boardRanking, payments] = await Promise.all([
       loadOperationalSeries(),
@@ -29,6 +30,7 @@ export async function clientLoader({ request }: LoaderFunctionArgs) {
       periods: periods.data,
       seriesId,
       surveyPeriodId,
+      revisionId,
       assistants: assistants.data.items,
       revisions: revisions.status === 200 ? revisions.data.items : [],
       trend: trend?.status === 200 ? trend.data.items : [],
@@ -42,6 +44,7 @@ export async function clientLoader({ request }: LoaderFunctionArgs) {
       periods: [],
       seriesId,
       surveyPeriodId,
+      revisionId,
       assistants: [],
       revisions: [],
       trend: [],

@@ -139,10 +139,13 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
 
     return failure('unknown', 'invalidAction')
   } catch (error) {
+    const errorKey = mapErrorKey(error)
     return failure(
       intent,
-      mapErrorKey(error),
-      extractApiErrorMessage(error, 'Không thể hoàn tất thao tác với tài khoản. Vui lòng thử lại.')
+      errorKey,
+      errorKey === 'actionFailed'
+        ? extractApiErrorMessage(error, 'Không thể hoàn tất thao tác với tài khoản. Vui lòng thử lại.')
+        : undefined
     )
   }
 }

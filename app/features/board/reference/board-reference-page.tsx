@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { BoardActionResult } from '../types'
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel, EmptyState } from '../components/board-ui'
 import { BusinessDataView } from '~/shared/components/business-data-view'
+import { ProtectedTaskFilePanel } from '~/shared/components/protected-task-file-panel'
 
 type SelectItem = { id: string; title?: string; issueNumber?: string | number | null; status?: string }
 
@@ -13,7 +14,8 @@ export function BoardReferencePage({
   directories,
   revisions,
   seriesData,
-  surveyData
+  surveyData,
+  chapterData
 }: {
   series: SelectItem[]
   periods: SelectItem[]
@@ -29,6 +31,7 @@ export function BoardReferencePage({
   revisions: unknown
   seriesData: Record<string, unknown>
   surveyData: Record<string, unknown>
+  chapterData: Record<string, unknown>
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
@@ -42,7 +45,8 @@ export function BoardReferencePage({
       />
 
       <BoardPanel title={t('reference.seriesTitle')}>
-        <Form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'>
+        <p className='mb-4 text-xs leading-5 text-muted-foreground'>{t('reference.seriesHelp')}</p>
+        <Form method='get' className='grid gap-3 lg:grid-cols-3'>
           <select className={boardInput} name='seriesId' defaultValue={selected.seriesId} required>
             <option value=''>{t('reference.selectSeries')}</option>
             {series.map((item) => (
@@ -51,11 +55,52 @@ export function BoardReferencePage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <select className={boardInput} name='seriesNameId' defaultValue={selected.seriesNameId}>
+            <option value=''>{t('reference.seriesNameId')}</option>
+            {selectItems(seriesData.names).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <select className={boardInput} name='publicationVersionId' defaultValue={selected.publicationVersionId}>
+            <option value=''>{t('reference.publicationVersionId')}</option>
+            {selectItems(seriesData.publicationVersions).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground lg:col-span-3'>
             {t('common.load')}
           </button>
         </Form>
         <DatasetGrid data={seriesData} emptyText={t('reference.selectSeries')} />
+      </BoardPanel>
+
+      <BoardPanel title={t('reference.productionTitle')}>
+        <p className='mb-4 text-xs leading-5 text-muted-foreground'>{t('reference.productionHelp')}</p>
+        <Form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
+          <input
+            className={boardInput}
+            name='chapterId'
+            defaultValue={selected.chapterId}
+            placeholder={t('reference.chapterId')}
+            required
+          />
+          <select className={boardInput} name='chapterNameId' defaultValue={selected.chapterNameId}>
+            <option value=''>{t('reference.chapterNameId')}</option>
+            {selectItems(chapterData.chapterNames).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+            {t('common.load')}
+          </button>
+        </Form>
+        <DatasetGrid data={chapterData} emptyText={t('reference.enterChapter')} />
       </BoardPanel>
 
       <BoardPanel title={t('reference.surveyTitle')}>
@@ -79,6 +124,19 @@ export function BoardReferencePage({
       </BoardPanel>
 
       <div className='space-y-6'>
+        <ProtectedTaskFilePanel
+          inputClassName={boardInput}
+          labels={{
+            title: t('reference.taskFileTitle'),
+            description: t('reference.taskFileHelp'),
+            taskId: t('reference.taskId'),
+            fileKey: t('reference.fileKey'),
+            createLink: t('reference.signDownload'),
+            openDownload: t('reference.openDownload'),
+            loading: t('reference.signingDownload'),
+            expiresAt: t('reference.downloadExpiresAt')
+          }}
+        />
         <BoardPanel title={t('reference.directoriesTitle')}>
           <DatasetGrid data={directories} emptyText={t('common.loadError')} />
         </BoardPanel>
@@ -155,4 +213,20 @@ function DatasetGrid({ data, emptyText }: { data: Record<string, unknown>; empty
 
 function humanize(value: string) {
   return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ')
+}
+
+function selectItems(value: unknown): Array<{ id: string; label: string }> {
+  const source = Array.isArray(value)
+    ? value
+    : value && typeof value === 'object' && 'items' in value && Array.isArray(value.items)
+      ? value.items
+      : []
+  return source.flatMap((item) => {
+    if (!item || typeof item !== 'object' || !('id' in item) || typeof item.id !== 'string') return []
+    const record = item as Record<string, unknown>
+    const label = [record.title, record.name, record.language, record.versionType, record.status].find(
+      (entry) => typeof entry === 'string' && entry.length > 0
+    )
+    return [{ id: item.id, label: typeof label === 'string' ? label : item.id }]
+  })
 }

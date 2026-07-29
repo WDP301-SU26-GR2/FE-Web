@@ -79,16 +79,20 @@ export function StatusBadge({ value }: { value: string }) {
     [
       `filters.sessionStatuses.${value}`,
       `filters.sessionPhases.${value}`,
+      `filters.decisionTypes.${value}`,
       `filters.decisionResults.${value}`,
       `filters.contractStatuses.${value}`,
       `filters.paymentStatuses.${value}`,
       `filters.reprintStatuses.${value}`,
       `filters.transferStatuses.${value}`,
+      `filters.amendmentStatuses.${value}`,
+      `decisions.voteValues.${value}`,
       `sessions.seriesBrief.seriesStatuses.${value}`,
       `deadlines.statuses.${value}`,
       `rankings.riskLevels.${value}`,
       `audit.entityTypes.${value}`,
-      `audit.actions.${value}`
+      `audit.actions.${value}`,
+      `common:businessData.values.${value}`
     ],
     { defaultValue: value.replaceAll('_', ' ') }
   )

@@ -158,7 +158,13 @@ export function BoardDecisionDetailPage({
           <div className='space-y-3'>
             {reports.map((report) => (
               <article key={report.id} className='rounded-lg border border-border p-3'>
-                <strong>{report.reportType ?? t('reports.title')}</strong>
+                <strong>
+                  {report.reportType
+                    ? t(`reports.types.${report.reportType}`, {
+                        defaultValue: report.reportType.toLowerCase().replaceAll('_', ' ')
+                      })
+                    : t('reports.title')}
+                </strong>
                 <p className='mt-2 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>
               </article>
             ))}

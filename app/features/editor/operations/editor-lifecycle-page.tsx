@@ -45,7 +45,10 @@ export function EditorLifecyclePage({
             <Metric label={t('operations.publishedChapters')} value={defense.serialization.chaptersPublished} />
             <Metric label={t('operations.totalUnitsSold')} value={defense.tankobon.totalUnitsSold} />
             <Metric label={t('operations.latestRank')} value={latest?.rankPosition ?? '—'} />
-            <Metric label={t('operations.riskLevel')} value={latest?.riskLevel ?? '—'} />
+            <Metric
+              label={t('operations.riskLevel')}
+              value={latest?.riskLevel ? t(`operations.riskLevels.${latest.riskLevel}`) : '—'}
+            />
           </div>
         )}
       </section>

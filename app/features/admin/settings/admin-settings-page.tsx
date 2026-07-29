@@ -100,6 +100,15 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
                 label={t('settings.app.lowVoteReliabilityThreshold')}
               />
               <NumberField
+                name='rankingAggregateMinCoveragePercent'
+                value={config.rankingAggregateMinCoverageRatio * 100}
+                min={1}
+                max={100}
+                step={1}
+                label={t('settings.app.rankingAggregateMinCoverageRatio')}
+                unit='%'
+              />
+              <NumberField
                 name='maxUploadMb'
                 value={bytesToMb(config.maxUploadBytes)}
                 min={1}
@@ -212,9 +221,11 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
               <label className='space-y-1.5'>
                 <span className='text-xs font-bold text-foreground'>{t('settings.voting.authMode')}</span>
                 <select name='authMode' defaultValue={config.authMode} className={inputClassName}>
-                  <option value='OTP'>OTP</option>
-                  <option value='CAPTCHA'>CAPTCHA</option>
-                  <option value='HYBRID'>HYBRID</option>
+                  {(['OTP', 'CAPTCHA', 'HYBRID'] as const).map((mode) => (
+                    <option key={mode} value={mode}>
+                      {t(`settings.voting.authModes.${mode}`)}
+                    </option>
+                  ))}
                 </select>
               </label>
               <NumberField

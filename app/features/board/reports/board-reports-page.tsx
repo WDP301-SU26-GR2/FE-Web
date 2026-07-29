@@ -56,7 +56,7 @@ export function BoardReportsPage({
             <option value=''>{t('filters.allReportTypes')}</option>
             {reportTypes.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {t(`reports.types.${value}`, { defaultValue: humanizeEnum(value) })}
               </option>
             ))}
           </select>
@@ -71,10 +71,14 @@ export function BoardReportsPage({
                   className='hover:text-primary hover:underline'
                   to={`${decisionBasePath}/${report.boardDecisionId}`}
                 >
-                  {report.reportType ?? t('reports.title')}
+                  {report.reportType
+                    ? t(`reports.types.${report.reportType}`, { defaultValue: humanizeEnum(report.reportType) })
+                    : t('reports.title')}
                 </Link>
+              ) : report.reportType ? (
+                t(`reports.types.${report.reportType}`, { defaultValue: humanizeEnum(report.reportType) })
               ) : (
-                (report.reportType ?? t('reports.title'))
+                t('reports.title')
               )}
             </h2>
             <p className='mt-1 text-xs text-muted-foreground'>
@@ -87,4 +91,11 @@ export function BoardReportsPage({
       {!filteredReports.length && <EmptyState text={t('reports.empty')} />}
     </div>
   )
+}
+
+function humanizeEnum(value: string) {
+  return value
+    .toLowerCase()
+    .replaceAll('_', ' ')
+    .replace(/^./, (character) => character.toUpperCase())
 }

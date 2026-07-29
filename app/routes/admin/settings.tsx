@@ -49,6 +49,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         reputationRecommendThreshold: number(formData, 'reputationRecommendThreshold'),
         hiatusTooLongDays: integer(formData, 'hiatusTooLongDays'),
         lowVoteReliabilityThreshold: integer(formData, 'lowVoteReliabilityThreshold'),
+        rankingAggregateMinCoverageRatio: number(formData, 'rankingAggregateMinCoveragePercent') / 100,
         maxUploadBytes: integer(formData, 'maxUploadMb') * 1024 * 1024,
         assignmentGraceDays: integer(formData, 'assignmentGraceDays')
       })
@@ -89,10 +90,13 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
 
     return failure(intent, 'invalidAction')
   } catch (error) {
+    const errorKey = mapError(error)
     return failure(
       intent,
-      mapError(error),
-      extractApiErrorMessage(error, 'Không thể cập nhật cấu hình. Vui lòng kiểm tra dữ liệu và thử lại.')
+      errorKey,
+      errorKey === 'actionFailed'
+        ? extractApiErrorMessage(error, 'Không thể cập nhật cấu hình. Vui lòng kiểm tra dữ liệu và thử lại.')
+        : undefined
     )
   }
 }

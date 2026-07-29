@@ -16,6 +16,11 @@ import type { Route } from './+types/payments'
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   try {
     const query = paymentQuery(request)
+    const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
+    if (focusPaymentId) {
+      const focused = await paymentControllerGetPaymentById({ id: focusPaymentId })
+      return { payments: focused.status === 200 ? [focused.data] : [], focusPaymentId, hasError: false }
+    }
     const response = query.contractId
       ? await paymentControllerGetPaymentsByContract({ id: query.contractId })
       : query.seriesId
@@ -30,9 +35,9 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
           .catch(() => null)
       )
     )
-    return { payments: payments.filter((payment) => payment !== null), hasError: false }
+    return { payments: payments.filter((payment) => payment !== null), focusPaymentId, hasError: false }
   } catch {
-    return { payments: [], hasError: true }
+    return { payments: [], focusPaymentId: '', hasError: true }
   }
 }
 

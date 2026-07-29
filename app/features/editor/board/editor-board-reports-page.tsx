@@ -59,7 +59,7 @@ export function EditorBoardReportsPage({
             <option value=''>{t('filters.allReportTypes')}</option>
             {reportTypes.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {t(`board.reportTypeLabels.${value}`, { defaultValue: humanizeEnum(value) })}
               </option>
             ))}
           </select>
@@ -149,7 +149,11 @@ function CreateReportDialog({
         </label>
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.reportType')}
-          <input className={boardInput} name='reportType' required />
+          <select className={boardInput} name='reportType' required defaultValue='DEFENSE'>
+            <option value='DEFENSE'>{t('board.reportTypeLabels.DEFENSE')}</option>
+            <option value='PERFORMANCE'>{t('board.reportTypeLabels.PERFORMANCE')}</option>
+            <option value='LIFECYCLE'>{t('board.reportTypeLabels.LIFECYCLE')}</option>
+          </select>
         </label>
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.reportContent')}
@@ -200,7 +204,11 @@ function ReportCard({
           <h3 className='font-bold text-foreground'>
             {series.find((item) => item.id === report.seriesId)?.title ?? t('board.unknownSeries')}
           </h3>
-          <p className='mt-1 text-xs font-semibold text-primary'>{report.reportType ?? '—'}</p>
+          <p className='mt-1 text-xs font-semibold text-primary'>
+            {report.reportType
+              ? t(`board.reportTypeLabels.${report.reportType}`, { defaultValue: humanizeEnum(report.reportType) })
+              : '—'}
+          </p>
         </div>
         <time className='text-xs text-muted-foreground'>
           {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(report.createdAt))}
@@ -209,4 +217,11 @@ function ReportCard({
       {report.content && <p className='mt-3 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>}
     </article>
   )
+}
+
+function humanizeEnum(value: string) {
+  return value
+    .toLowerCase()
+    .replaceAll('_', ' ')
+    .replace(/^./, (character) => character.toUpperCase())
 }

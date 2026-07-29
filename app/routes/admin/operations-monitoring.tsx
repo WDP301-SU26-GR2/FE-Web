@@ -16,6 +16,7 @@ import {
 } from '~/api/operations/reprint-requests/reprint-requests'
 import { revisionControllerList } from '~/api/operations/revision/revision'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 
 interface MonitoringData {
   series: SeriesListResDtoOutputItemsItem[]
@@ -36,7 +37,9 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
   const reprintId = searchParams.get('reprintId')?.trim() ?? ''
   const [seriesResult, chapterResult, revisionResult, reprintResult, deadlineResult, reprintDetailResult] =
     await Promise.allSettled([
-      seriesControllerListSeries({ limit: 100, offset: 0 }),
+      loadAllOffsetItems((pagination) => seriesControllerListSeries(pagination).then((response) => response.data)).then(
+        (items) => ({ status: 200 as const, data: { items } })
+      ),
       seriesId ? chapterControllerListBySeries({ seriesId }) : null,
       revisionControllerList({ limit: 20, offset: 0 }),
       reprintRequestControllerFindAll({

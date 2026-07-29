@@ -3,24 +3,44 @@
     "backDashboard": "Quay lại tổng quan quản trị"
   },
   "dashboard": {
-    "eyebrow": "Trung tâm vận hành",
-    "title": "Tổng quan hệ thống",
-    "subtitle": "Theo dõi người dùng, nội dung xuất bản và khối lượng sản xuất trên toàn nền tảng.",
+    "eyebrow": "Bảng điều hành quản trị",
+    "title": "Tổng quan nền tảng",
+    "subtitle": "Ảnh chụp hiện tại về tài khoản, bộ truyện, chương phát hành và khối lượng sản xuất trên toàn nền tảng.",
     "overview": "Các chỉ số tổng quan",
     "refresh": "Làm mới dữ liệu",
     "refreshing": "Đang làm mới...",
     "loadErrorTitle": "Không thể tải số liệu hệ thống",
-    "loadErrorDescription": "Hãy kiểm tra kết nối hoặc quyền SUPER_ADMIN, sau đó thử làm mới.",
+    "loadErrorDescription": "Hãy kiểm tra kết nối hoặc quyền Quản trị viên cấp cao, sau đó thử làm mới.",
     "empty": "Chưa có dữ liệu để hiển thị.",
     "unreadNotifications": "Bạn có {{count}} thông báo chưa đọc cần kiểm tra.",
+    "quickActions": {
+      "users": "Quản lý tài khoản",
+      "board": "Giám sát Hội đồng",
+      "operations": "Vận hành nghiệp vụ",
+      "audit": "Lịch sử hoạt động",
+      "settings": "Cấu hình"
+    },
+    "pulse": {
+      "eyebrow": "Tín hiệu cần chú ý",
+      "title": "Nhịp vận hành hiện tại",
+      "description": "Các chỉ số được tính trực tiếp từ ảnh chụp hệ thống, không phải dữ liệu xu hướng.",
+      "accessAttention": "Tài khoản cần kiểm tra",
+      "accessAttentionDescription": "Chưa kích hoạt, bị khóa hoặc bị cấm",
+      "activeSeries": "Bộ truyện đang vận hành",
+      "activeSeriesDescription": "Đang phát hành, tạm ngưng hoặc trong luồng kết thúc",
+      "reviewTasks": "Công việc chờ xử lý",
+      "reviewTasksDescription": "Đã nộp, đang duyệt hoặc được yêu cầu sửa",
+      "publicationRate": "Tỷ lệ chương đã phát hành",
+      "publicationRateDescription": "Tính trên toàn bộ chương hiện có"
+    },
     "kpis": {
       "users": {
-        "label": "Người dùng đang hoạt động",
+        "label": "Tài khoản hiện có",
         "description": "{{deleted}} tài khoản đã bị xoá mềm"
       },
       "series": {
-        "label": "Tổng số series",
-        "description": "Tất cả series trong mọi giai đoạn"
+        "label": "Tổng số bộ truyện",
+        "description": "Tất cả bộ truyện trong mọi giai đoạn"
       },
       "chapters": {
         "label": "Chương đã xuất bản",
@@ -34,15 +54,17 @@
     "sections": {
       "roles": {
         "title": "Phân bố vai trò",
-        "description": "Số tài khoản đang hoạt động theo từng vai trò."
+        "description": "Tài khoản chưa xóa mềm được nhóm theo từng vai trò.",
+        "centerLabel": "tài khoản"
       },
       "users": {
         "title": "Tình trạng tài khoản",
-        "description": "Phân bố trạng thái truy cập của người dùng."
+        "description": "Tài khoản chưa xóa mềm được nhóm theo trạng thái truy cập.",
+        "centerLabel": "tài khoản"
       },
       "series": {
-        "title": "Vòng đời series",
-        "description": "Series được nhóm theo trạng thái nghiệp vụ hiện tại."
+        "title": "Vòng đời bộ truyện",
+        "description": "Bộ truyện được nhóm theo trạng thái nghiệp vụ hiện tại."
       },
       "tasks": {
         "title": "Tiến độ nhiệm vụ",
@@ -96,15 +118,15 @@
     "restoreMode": "Đang hiển thị cả tài khoản đã xoá",
     "create": {
       "button": "Tạo tài khoản nhân sự",
-      "title": "Tạo tài khoản Editor hoặc Board",
-      "description": "Mangaka và Trợ lý tự đăng ký; Super Admin chỉ cấp trực tiếp tài khoản nhân sự NXB.",
+      "title": "Tạo tài khoản Biên tập viên hoặc Thành viên Hội đồng",
+      "description": "Mangaka và Trợ lý tự đăng ký; Quản trị viên cấp cao chỉ cấp trực tiếp tài khoản nhân sự nhà xuất bản.",
       "passwordNotice": "Mật khẩu tạm chỉ được trả về một lần. Người dùng bắt buộc đổi mật khẩu khi đăng nhập lần đầu.",
       "submit": "Tạo tài khoản"
     },
     "fields": {
       "name": "Họ và tên",
       "email": "Email",
-      "phoneNumber": "Số điện thoại E.164",
+      "phoneNumber": "Số điện thoại kèm mã quốc gia",
       "role": "Vai trò",
       "status": "Trạng thái mới",
       "reason": "Lý do",
@@ -134,7 +156,7 @@
     },
     "registrationTypes": {
       "SELF_REGISTERED": "Tự đăng ký",
-      "ADMIN_CREATED": "Admin cấp tài khoản"
+      "ADMIN_CREATED": "Quản trị viên cấp tài khoản"
     },
     "actions": {
       "close": "Đóng",
@@ -159,7 +181,7 @@
       },
       "restore": {
         "title": "Khôi phục tài khoản",
-        "description": "Thao tác này khôi phục tài khoản đã bị xoá mềm. API hiện chưa trả cờ deletedAt, vì vậy hãy dùng trong chế độ bao gồm tài khoản đã xoá.",
+        "description": "Tài khoản sẽ xuất hiện lại trong danh sách và có thể được quản lý theo trạng thái truy cập hiện tại.",
         "submit": "Khôi phục"
       },
       "resetPassword": {
@@ -184,14 +206,15 @@
       "actionFailed": "Không thể hoàn tất thao tác. Vui lòng thử lại.",
       "invalidAction": "Thao tác không được hỗ trợ.",
       "emailExists": "Email này đã được sử dụng.",
-      "cannotModifyAdmin": "Không thể thay đổi tài khoản Super Admin.",
+      "cannotModifyAdmin": "Không thể thay đổi tài khoản Quản trị viên cấp cao.",
       "alreadyDeleted": "Tài khoản này đã bị xoá.",
       "notDeleted": "Tài khoản này chưa bị xoá nên không thể khôi phục.",
-      "notFound": "Không tìm thấy tài khoản."
+      "notFound": "Không tìm thấy tài khoản.",
+      "activeCommitments": "Tài khoản vẫn còn ràng buộc nghiệp vụ đang hoạt động. Hãy xử lý các ràng buộc trước khi khoá, cấm hoặc xoá."
     },
     "loadError": {
       "title": "Không thể tải danh sách người dùng",
-      "description": "Hãy kiểm tra kết nối hoặc quyền SUPER_ADMIN rồi thử lại."
+      "description": "Hãy kiểm tra kết nối hoặc quyền Quản trị viên cấp cao rồi thử lại."
     },
     "empty": {
       "title": "Không tìm thấy người dùng",
@@ -223,7 +246,7 @@
   "settings": {
     "eyebrow": "Quản trị chính sách",
     "title": "Cấu hình hệ thống",
-    "subtitle": "Điều chỉnh các tham số nghiệp vụ runtime, quy tắc biểu quyết Hội đồng và cơ chế chống gian lận bình chọn.",
+    "subtitle": "Điều chỉnh tham số nghiệp vụ đang áp dụng, quy tắc biểu quyết Hội đồng và cơ chế chống gian lận bình chọn.",
     "save": "Lưu cấu hình",
     "edit": "Chỉnh sửa cấu hình",
     "saving": "Đang lưu...",
@@ -234,20 +257,21 @@
     },
     "app": {
       "title": "Tham số nghiệp vụ",
-      "description": "Các ngưỡng vận hành dùng chung; thay đổi có thể cần tối đa 30 giây để cache backend làm mới.",
-      "coOwnerApprovalGraceDays": "Thời hạn đồng sở hữu duyệt chương",
-      "nameMaxReviewRounds": "Số vòng review Name tối đa",
-      "reputationRecommendThreshold": "Ngưỡng reputation được đề xuất",
-      "hiatusTooLongDays": "Ngưỡng hiatus quá lâu",
-      "lowVoteReliabilityThreshold": "Ngưỡng vote thiếu tin cậy",
-      "maxUploadBytes": "Dung lượng upload tối đa",
-      "assignmentGraceDays": "Thời gian gia hạn assignment"
+      "description": "Các ngưỡng vận hành dùng chung; thay đổi có thể cần tối đa 30 giây để bộ nhớ đệm máy chủ làm mới.",
+      "coOwnerApprovalGraceDays": "Thời gian chờ đồng sở hữu duyệt chương",
+      "nameMaxReviewRounds": "Số vòng duyệt bản phân cảnh tối đa",
+      "reputationRecommendThreshold": "Ngưỡng uy tín để được đề xuất",
+      "hiatusTooLongDays": "Số ngày tạm ngưng được xem là kéo dài",
+      "lowVoteReliabilityThreshold": "Số phiếu tối thiểu để dữ liệu đáng tin cậy",
+      "rankingAggregateMinCoverageRatio": "Độ phủ tối thiểu của xếp hạng tổng hợp",
+      "maxUploadBytes": "Kích thước tệp tải lên tối đa",
+      "assignmentGraceDays": "Thời gian gia hạn phân công"
     },
     "board": {
       "title": "Quy tắc Hội đồng",
-      "description": "Thiết lập tổng số thành viên, sĩ số roster mặc định và tỷ lệ phiếu thuận. Quorum của từng phiên được tính tự động bằng 2/3 roster.",
+      "description": "Thiết lập tổng số thành viên, số người được mời mặc định và tỷ lệ phiếu thuận. Số người tối thiểu để phiên hợp lệ được tính tự động bằng 2/3 danh sách được mời.",
       "boardTotalMembers": "Tổng số thành viên",
-      "quorumMin": "Sĩ số roster mặc định",
+      "quorumMin": "Số thành viên được mời mặc định",
       "approveMajorityRatio": "Tỷ lệ phiếu thuận",
       "lockNotice": "Không thể thay đổi cấu hình khi có phiên họp ACTIVE hoặc UPCOMING."
     },
@@ -255,11 +279,16 @@
       "title": "Cấu hình bình chọn độc giả",
       "description": "Kiểm soát xác thực OTP/CAPTCHA, giới hạn tần suất và điều kiện kích hoạt chống gian lận.",
       "authMode": "Phương thức xác thực",
-      "maxSeriesPerVote": "Series tối đa mỗi phiếu",
+      "authModes": {
+        "OTP": "Mã xác thực OTP",
+        "CAPTCHA": "Xác minh CAPTCHA",
+        "HYBRID": "Kết hợp OTP và CAPTCHA"
+      },
+      "maxSeriesPerVote": "Số bộ truyện tối đa trong mỗi phiếu",
       "otpExpirySeconds": "Thời gian OTP hết hạn",
       "otpMaxAttempts": "Số lần nhập OTP tối đa",
-      "ipRateLimit": "Giới hạn request theo IP",
-      "phoneRateLimit": "Giới hạn request theo SĐT",
+      "ipRateLimit": "Giới hạn yêu cầu theo địa chỉ IP",
+      "phoneRateLimit": "Giới hạn yêu cầu theo số điện thoại",
       "otpCooldownSeconds": "Thời gian chờ gửi lại OTP",
       "ipVotesPerPeriod": "Số phiếu mỗi IP trong một kỳ",
       "captchaThreshold": "Ngưỡng kích hoạt CAPTCHA"
@@ -278,46 +307,50 @@
     },
     "loadError": {
       "title": "Không thể tải cấu hình hệ thống",
-      "description": "Hãy kiểm tra kết nối và quyền SUPER_ADMIN rồi thử lại."
+      "description": "Hãy kiểm tra kết nối và quyền Quản trị viên cấp cao rồi thử lại."
     }
   },
   "operations": {
-    "back": "Quay lại khu vực vận hành",
-    "eyebrow": "Công cụ vận hành",
-    "title": "Vận hành hệ thống",
-    "subtitle": "Các công cụ nghiệp vụ mà Super Admin được phép sử dụng để hỗ trợ vận hành toàn hệ thống.",
+    "back": "Quay lại trung tâm vận hành",
+    "eyebrow": "Trung tâm nghiệp vụ",
+    "title": "Vận hành nghiệp vụ",
+    "subtitle": "Tra cứu dữ liệu liên vai trò và thực hiện các thao tác vận hành dành riêng cho Quản trị viên cấp cao.",
+    "summary": {
+      "readOnly": "2 khu vực tra cứu",
+      "write": "2 khu vực có thể thay đổi dữ liệu"
+    },
     "notice": {
       "title": "Thao tác có ảnh hưởng trên toàn hệ thống",
-      "description": "Hãy kiểm tra kỳ khảo sát hoặc series mục tiêu trước khi lưu. Các thay đổi tại đây có thể ảnh hưởng tới bảng xếp hạng và bản phát hành."
+      "description": "Hãy kiểm tra kỳ bình chọn hoặc bộ truyện mục tiêu trước khi lưu. Các thay đổi tại đây có thể ảnh hưởng tới bảng xếp hạng và bản phát hành."
     },
     "monitoring": {
       "eyebrow": "Tra cứu chỉ đọc",
       "title": "Giám sát nghiệp vụ",
-      "description": "Tra cứu series, vòng yêu cầu sửa, yêu cầu tái bản và deadline mà không thực hiện hành động thay đổi trạng thái.",
+      "description": "Tra cứu bộ truyện, vòng yêu cầu sửa, yêu cầu tái bản và thời hạn mà không thực hiện hành động thay đổi trạng thái.",
       "subtitle": "Dữ liệu tổng hợp chỉ đọc dành cho việc kiểm tra và hỗ trợ xử lý sự cố.",
-      "series": "Series toàn hệ thống",
+      "series": "Bộ truyện toàn hệ thống",
       "revisions": "Vòng yêu cầu sửa gần nhất",
       "reprints": "Yêu cầu tái bản",
-      "deadlines": "Tra cứu deadline theo chương",
+      "deadlines": "Tra cứu thời hạn theo chương",
       "selectSeries": "Chọn bộ truyện",
       "selectChapter": "Chọn chương",
       "chapterOption": "Chương {{number}} {{title}}",
       "search": "Tra cứu",
-      "deadlineHint": "Chọn bộ truyện và chương để xem các yêu cầu deadline liên quan.",
+      "deadlineHint": "Chọn bộ truyện và chương để xem các yêu cầu thay đổi thời hạn liên quan.",
       "noReason": "Không có lý do được cung cấp.",
       "resolved": "Đã xử lý",
       "open": "Chưa xử lý",
       "unknownSeries": "Chưa xác định bộ truyện",
       "reprintChapter": "Chương tái bản {{number}}",
       "filters": {
-        "searchSeries": "Tìm theo tên series",
-        "searchReprints": "Tìm series tái bản",
+        "searchSeries": "Tìm theo tên bộ truyện",
+        "searchReprints": "Tìm bộ truyện tái bản",
         "allStatuses": "Tất cả trạng thái",
         "allRevisionTypes": "Tất cả loại yêu cầu sửa",
         "allResolutionStates": "Tất cả tình trạng xử lý"
       },
       "revisionTypes": {
-        "PROPOSAL": "Đề xuất series",
+        "PROPOSAL": "Đề xuất bộ truyện",
         "NAME": "Bản phân cảnh",
         "MANUSCRIPT": "Bản thảo",
         "TASK": "Công việc sản xuất"
@@ -369,48 +402,79 @@
       "loadError": "Không thể tải đầy đủ dữ liệu giám sát. Vui lòng thử lại."
     },
     "surveys": {
-      "title": "Khảo sát và xếp hạng",
-      "description": "Tạo kỳ khảo sát, điều khiển trạng thái, nhập phiếu ngoại tuyến và chốt bảng xếp hạng."
+      "title": "Kỳ bình chọn độc giả",
+      "description": "Tạo kỳ bình chọn theo tạp chí/số phát hành, điều khiển trạng thái, nhập phiếu ngoại tuyến và chốt bảng xếp hạng.",
+      "adminOnly": "Thao tác dành riêng cho Quản trị viên cấp cao"
     },
     "publicationVersions": {
       "title": "Phiên bản xuất bản",
-      "description": "Tạo, cập nhật hoặc xóa phiên bản ngôn ngữ và hướng đọc của series."
+      "description": "Tạo, cập nhật hoặc xóa bản phát hành theo ngôn ngữ và hướng đọc của bộ truyện."
     },
     "reference": {
       "title": "Dữ liệu tham chiếu vận hành",
-      "description": "Tra cứu tiến độ sản xuất, xếp hạng, danh bạ, tái bản, deadline và chuyển nhượng trên toàn hệ thống.",
+      "description": "Tra cứu tiến độ sản xuất, xếp hạng, danh bạ, tái bản, thời hạn và chuyển nhượng trên toàn hệ thống.",
       "series": "Hồ sơ bảo vệ và xu hướng xếp hạng",
       "selectSeries": "Chọn bộ truyện",
-      "seriesNameId": "ID Name đề xuất (không bắt buộc)",
+      "seriesNameId": "Mã bản phân cảnh đề xuất (không bắt buộc)",
       "chapter": "Tham chiếu tiến độ chương",
-      "chapterId": "ID chương",
-      "chapterNameId": "ID Name của chương (không bắt buộc)",
+      "chapterId": "Mã chương",
+      "chapterNameId": "Mã bản phân cảnh của chương (không bắt buộc)",
       "ranking": "Bảng xếp hạng Hội đồng",
       "selectPeriod": "Chọn kỳ khảo sát",
       "directories": "Danh bạ Mangaka và trợ lý",
       "workflows": "Chi tiết quy trình",
-      "reprintId": "ID yêu cầu tái bản",
-      "reprintChapterId": "ID chương tái bản",
-      "deadlineId": "ID yêu cầu deadline",
-      "transferRequestId": "ID yêu cầu chuyển nhượng",
-      "transferContractId": "ID hợp đồng chuyển nhượng",
-      "taskFile": "File tác vụ được bảo vệ",
-      "taskId": "ID tác vụ",
-      "fileKey": "Khóa file thuộc tác vụ",
+      "reprintId": "Mã yêu cầu tái bản",
+      "reprintChapterId": "Mã chương tái bản",
+      "deadlineId": "Mã yêu cầu thay đổi thời hạn",
+      "transferRequestId": "Mã yêu cầu chuyển nhượng",
+      "transferContractId": "Mã hợp đồng chuyển nhượng",
+      "taskFile": "Tệp công việc được bảo vệ",
+      "taskId": "Mã công việc",
+      "fileKey": "Khóa tệp thuộc công việc",
       "load": "Tải dữ liệu",
       "createDownload": "Tạo liên kết tải",
       "openDownload": "Mở liên kết tải được bảo vệ",
+      "downloadExpires": "Liên kết hết hạn lúc {{date}}.",
+      "downloadFailed": "Không thể tạo liên kết tải tệp được bảo vệ.",
       "datasets": {
         "detail": "Thông tin bộ truyện",
         "defense": "Hiệu suất và hồ sơ bảo vệ",
-        "names": "Name của bộ truyện",
-        "selectedName": "Name đang chọn",
+        "names": "Bản phân cảnh của bộ truyện",
+        "selectedName": "Bản phân cảnh đang chọn",
+        "pages": "Các trang của chương",
+        "progress": "Tiến độ chương",
+        "stages": "Các giai đoạn sản xuất",
         "rankingTrend": "Xu hướng xếp hạng",
         "boardRanking": "Đánh giá của Hội đồng",
         "assistants": "Trợ lý",
-        "mangakas": "Mangaka"
+        "mangakas": "Mangaka",
+        "reprint": "Yêu cầu tái bản",
+        "reprintChapters": "Các chương tái bản",
+        "reprintChapter": "Chương tái bản đang chọn",
+        "deadline": "Yêu cầu thay đổi thời hạn",
+        "transferRequest": "Yêu cầu chuyển nhượng",
+        "transferContract": "Hợp đồng chuyển nhượng",
+        "transferSignatures": "Chữ ký chuyển nhượng"
       }
+    },
+    "workspace": {
+      "title": "Không gian làm việc",
+      "description": "Chọn khu vực phù hợp với mục tiêu kiểm tra hoặc can thiệp.",
+      "open": "Mở khu vực"
+    },
+    "mode": {
+      "readOnly": "Chỉ đọc",
+      "write": "Có thay đổi dữ liệu"
     }
+  },
+  "surveyWorkspace": {
+    "eyebrow": "Quyền vận hành độc quyền",
+    "title": "Điều phối kỳ bình chọn độc giả",
+    "description": "Mỗi kỳ áp dụng cho toàn bộ tạp chí và số phát hành, không thuộc riêng một bộ truyện. Quản trị viên cấp cao chịu trách nhiệm mở, đóng, nhập dữ liệu ngoại tuyến và công bố kết quả.",
+    "step": "Bước {{step}}",
+    "scope": "Xác định tạp chí và bộ truyện đủ điều kiện",
+    "authority": "Mở hoặc đóng nhận phiếu đúng thời điểm",
+    "finalization": "Kiểm tra dữ liệu rồi công bố xếp hạng"
   },
   "boardOversight": {
     "eyebrow": "Giám sát nghiệp vụ",
@@ -418,7 +482,34 @@
     "subtitle": "Theo dõi hoạt động của Hội đồng và chỉ sử dụng quyền quản trị khi quy trình của Biên tập viên hoặc Thành viên Hội đồng gặp sự cố.",
     "notice": {
       "title": "Đây là quyền can thiệp dự phòng",
-      "description": "Super Admin không tham gia họp hoặc bỏ phiếu như một thành viên Hội đồng. Hãy ưu tiên để Biên tập viên điều hành phiên và chỉ can thiệp khi cần khôi phục quy trình."
+      "description": "Quản trị viên cấp cao không tham gia họp hoặc bỏ phiếu như một Thành viên Hội đồng. Hãy ưu tiên để Biên tập viên điều hành phiên và chỉ can thiệp khi cần khôi phục quy trình."
+    },
+    "roleBoundary": {
+      "title": "Ranh giới trách nhiệm",
+      "description": "Biên tập viên tạo và điều hành phiên; Thành viên Hội đồng thảo luận, biểu quyết và phê duyệt; Quản trị viên cấp cao giám sát và khôi phục luồng khi có sự cố."
+    },
+    "workflow": {
+      "editor": {
+        "title": "Biên tập viên điều phối",
+        "description": "Chuẩn bị hồ sơ, tạo phiên và quản lý tiến trình."
+      },
+      "board": {
+        "title": "Hội đồng quyết định",
+        "description": "Thảo luận, biểu quyết và phê duyệt nghiệp vụ."
+      },
+      "admin": {
+        "title": "Quản trị viên giám sát",
+        "description": "Theo dõi, truy vết và can thiệp dự phòng khi cần."
+      }
+    },
+    "tools": {
+      "title": "Công cụ giám sát và can thiệp",
+      "description": "Mỗi khu vực đều ghi rõ chế độ sử dụng để tránh nhầm quyền nghiệp vụ.",
+      "open": "Mở công cụ"
+    },
+    "mode": {
+      "monitoring": "Theo dõi",
+      "intervention": "Can thiệp dự phòng"
     },
     "monitoring": {
       "title": "Theo dõi",
@@ -434,11 +525,11 @@
     },
     "reports": {
       "title": "Báo cáo Hội đồng",
-      "description": "Đọc báo cáo phân tích series được chuẩn bị cho các quyết định Hội đồng."
+      "description": "Đọc báo cáo phân tích bộ truyện được chuẩn bị cho các quyết định Hội đồng."
     },
     "decisions": {
-      "title": "Quyết định serial hóa",
-      "description": "Kiểm tra và khôi phục luồng quyết định serial hóa khi quy trình thông thường bị gián đoạn."
+      "title": "Quyết định Hội đồng",
+      "description": "Kiểm tra và khôi phục các luồng quyết định của Hội đồng khi quy trình thông thường bị gián đoạn."
     },
     "lifecycle": {
       "title": "Quyết định vòng đời",
@@ -450,15 +541,15 @@
     }
   },
   "audit": {
-    "userActor": "Nhân sự hệ thống",
-    "record": "Bản ghi nghiệp vụ",
+    "userActor": "Người thực hiện",
+    "record": "Đối tượng bị tác động",
     "entityTypes": {
       "SERIES": "Bộ truyện",
       "MANUSCRIPT": "Bản thảo",
       "PAGE": "Trang truyện",
       "CHAPTER": "Chương",
       "TASK": "Công việc sản xuất",
-      "DEADLINE_REQUEST": "Yêu cầu deadline",
+      "DEADLINE_REQUEST": "Yêu cầu thay đổi thời hạn",
       "USER": "Tài khoản",
       "REGION": "Vùng nội dung",
       "APP_CONFIG": "Cấu hình hệ thống",
@@ -467,35 +558,78 @@
       "REPRINT_REQUEST": "Yêu cầu tái bản",
       "TRANSFER_REQUEST": "Yêu cầu chuyển nhượng",
       "PAYMENT_RECORD": "Thanh toán",
-      "SURVEY_PERIOD": "Kỳ khảo sát",
-      "PUBLICATION_VERSION": "Phiên bản xuất bản"
+      "SURVEY_PERIOD": "Kỳ bình chọn độc giả",
+      "PUBLICATION_VERSION": "Bản phát hành",
+      "BOARD_SESSION": "Phiên họp Hội đồng"
     },
     "actions": {
       "CREATE": "Đã tạo",
       "UPDATE": "Đã cập nhật",
       "DELETE": "Đã xóa",
+      "SOFT_DELETE": "Đã đưa vào thùng rác",
+      "RESTORE": "Đã khôi phục",
+      "TRANSITION": "Đã chuyển trạng thái",
       "STATUS_CHANGED": "Đã đổi trạng thái",
       "APPROVE": "Đã duyệt",
-      "REJECT": "Đã từ chối"
+      "REJECT": "Đã từ chối",
+      "RESET_PASSWORD": "Đã đặt lại mật khẩu",
+      "BAN": "Đã cấm tài khoản",
+      "BLOCK": "Đã khóa tài khoản",
+      "REACTIVATE": "Đã kích hoạt lại",
+      "CONFIG_UPDATE": "Đã cập nhật cấu hình",
+      "HOLD": "Đã tạm giữ",
+      "RESUME": "Đã tiếp tục",
+      "CLAIM": "Đã nhận xử lý",
+      "RELEASE": "Đã nhả quyền xử lý",
+      "SESSION_TRANSITION": "Đã chuyển trạng thái phiên họp",
+      "PHASE_ADVANCED": "Đã chuyển giai đoạn họp",
+      "DECISION_FINALIZED": "Đã chốt quyết định",
+      "RANKING_FINALIZED": "Đã công bố xếp hạng",
+      "PRODUCTION_STAGE_COMPLETE": "Đã hoàn tất công đoạn",
+      "PRODUCTION_STAGE_REOPEN": "Đã mở lại công đoạn"
     },
     "states": {
       "ACTIVE": "Đang hoạt động",
+      "INACTIVE": "Chưa kích hoạt",
+      "BANNED": "Bị cấm",
+      "BLOCKED": "Bị khóa",
+      "DRAFT": "Bản nháp",
+      "OPEN": "Đang mở",
+      "CLOSED": "Đã đóng",
+      "REFLECTED": "Đã công bố xếp hạng",
       "PENDING": "Đang chờ",
+      "UPCOMING": "Sắp diễn ra",
+      "IN_PROGRESS": "Đang thực hiện",
+      "UNDER_REVIEW": "Đang xem xét",
+      "SUBMITTED": "Đã nộp",
+      "REVISION_REQUESTED": "Đã yêu cầu sửa",
+      "ON_HOLD": "Đang tạm dừng",
       "APPROVED": "Đã duyệt",
       "REJECTED": "Đã từ chối",
       "COMPLETED": "Đã hoàn thành",
-      "CANCELLED": "Đã hủy"
+      "CANCELLED": "Đã hủy",
+      "CONCLUDED": "Đã kết thúc",
+      "SERIALIZED": "Đang phát hành",
+      "HIATUS": "Đang tạm ngưng",
+      "PUBLISHED": "Đã phát hành"
     },
     "eyebrow": "Giám sát và truy vết",
-    "title": "Nhật ký hệ thống",
-    "subtitle": "Theo dõi các thay đổi trạng thái, thao tác quản trị và sự kiện tự động trên toàn nền tảng.",
+    "title": "Lịch sử hoạt động hệ thống",
+    "subtitle": "Theo dõi ai đã tác động đến đối tượng nào, thay đổi trạng thái ra sao và thời điểm sự kiện xảy ra.",
     "total": "Tổng cộng {{count}} sự kiện",
-    "actor": "Thực hiện bởi user {{id}}",
-    "systemActor": "Thao tác tự động của hệ thống",
-    "empty": "Không có sự kiện audit phù hợp với bộ lọc.",
+    "actor": "Người thực hiện: {{id}}",
+    "systemActor": "Tác vụ tự động của hệ thống",
+    "openRecord": "Mở chi tiết đối tượng",
+    "openActor": "Mở hồ sơ người thực hiện",
+    "reason": "Lý do được ghi nhận",
+    "entityId": "Mã đối tượng",
+    "actorId": "Mã người thực hiện",
+    "empty": "Không có hoạt động nào phù hợp với bộ lọc.",
     "filters": {
+      "title": "Lọc lịch sử hoạt động",
+      "description": "Có thể lọc theo loại đối tượng, hành động hoặc mã kỹ thuật khi cần điều tra một sự kiện cụ thể.",
       "allEntities": "Tất cả loại đối tượng",
-      "action": "Hành động, ví dụ BAN...",
+      "action": "Hành động, ví dụ khóa tài khoản...",
       "entityId": "Mã đối tượng",
       "actorId": "Mã người thực hiện",
       "apply": "Áp dụng"
@@ -507,8 +641,8 @@
       "page": "Trang {{page}} / {{totalPages}}"
     },
     "loadError": {
-      "title": "Không thể tải nhật ký hệ thống",
-      "description": "Bộ lọc có thể không hợp lệ hoặc dịch vụ audit hiện không khả dụng."
+      "title": "Không thể tải lịch sử hoạt động",
+      "description": "Bộ lọc có thể không hợp lệ hoặc dịch vụ nhật ký hiện không khả dụng."
     }
   }
 }

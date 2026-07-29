@@ -95,12 +95,20 @@ export function BoardDashboardPage({
                     className='block rounded-lg border border-border p-3 hover:border-primary'
                   >
                     <p className='font-semibold text-foreground'>
-                      {decision.targetSeries?.title ?? decision.decisionType}
+                      {decision.targetSeries?.title ?? t(`filters.decisionTypes.${decision.decisionType}`)}
                     </p>
                     <div className='mt-2 flex flex-wrap items-center gap-1.5'>
-                      <span className='text-xs text-muted-foreground'>{decision.decisionType}</span>
-                      <SemanticStatusBadge value={decision.phase} label={decision.phase.replaceAll('_', ' ')} />
-                      <SemanticStatusBadge value={decision.result} label={decision.result.replaceAll('_', ' ')} />
+                      <span className='text-xs text-muted-foreground'>
+                        {t(`filters.decisionTypes.${decision.decisionType}`)}
+                      </span>
+                      <SemanticStatusBadge
+                        value={decision.phase}
+                        label={t(`filters.sessionPhases.${decision.phase}`)}
+                      />
+                      <SemanticStatusBadge
+                        value={decision.result}
+                        label={t(`filters.decisionResults.${decision.result}`)}
+                      />
                     </div>
                   </Link>
                 ))}

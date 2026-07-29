@@ -24,7 +24,8 @@ export function EditorBoardDecisionsPage({
   sessionPhases,
   hasError,
   backPath = '/dashboard/editor/board',
-  detailBasePath
+  detailBasePath,
+  allowVoting = true
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
@@ -33,6 +34,7 @@ export function EditorBoardDecisionsPage({
   hasError: boolean
   backPath?: string
   detailBasePath?: string
+  allowVoting?: boolean
 }) {
   const { t } = useTranslation('editor')
   const { session: authSession } = useAuth()
@@ -123,6 +125,7 @@ export function EditorBoardDecisionsPage({
               detailBasePath={detailBasePath}
               canVote={sessions.some(
                 (session) =>
+                  allowVoting &&
                   session.id === decision.boardSessionId &&
                   session.status === 'ACTIVE' &&
                   (realtime.sessionPhases[session.id] ?? sessionPhases[session.id]) === 'VOTING' &&

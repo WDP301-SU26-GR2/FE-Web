@@ -128,6 +128,13 @@
       "REJECTED": "Đã từ chối",
       "EXPIRED": "Đã hết hiệu lực"
     },
+    "amendmentStatuses": {
+      "DRAFT": "Bản nháp",
+      "PENDING_SIGNATURES": "Chờ ký",
+      "FULLY_EXECUTED": "Đã ký hoàn tất",
+      "REJECTED": "Đã từ chối",
+      "VOIDED": "Đã hủy hiệu lực"
+    },
     "contractTypes": { "FULL_BUYOUT": "Mua đứt toàn bộ", "REVENUE_SHARE": "Chia sẻ doanh thu" },
     "contractStatuses": {
       "DRAFT": "Bản nháp",
@@ -140,6 +147,7 @@
       "FULFILLED": "Đã hoàn thành",
       "TERMINATED": "Đã chấm dứt",
       "TERMINATED_BY_BREACH": "Chấm dứt do vi phạm",
+      "ACTIVATION_PENDING": "Chờ kích hoạt",
       "EXPIRED": "Đã hết hạn",
       "VOIDED": "Đã hủy hiệu lực"
     },
@@ -327,6 +335,11 @@
     "submitVote": "Gửi phiếu",
     "voteConfirmation": "Hãy kiểm tra kỹ lựa chọn. Mỗi thành viên chỉ được bỏ phiếu một lần cho quyết định này.",
     "votes": "Phiếu đã ghi nhận",
+    "voteValues": {
+      "APPROVE": "Đồng ý",
+      "REJECT": "Từ chối",
+      "ABSTAIN": "Không biểu quyết"
+    },
     "voteUnavailable": {
       "closed": "Quyết định đã được chốt theo điều kiện quorum và đa số của toàn bộ danh sách thành viên.",
       "alreadyVoted": "Bạn đã bỏ phiếu cho quyết định này.",
@@ -340,7 +353,12 @@
     "title": "Báo cáo Hội đồng",
     "description": "Đọc bằng chứng và phân tích biên tập đính kèm quyết định.",
     "empty": "Chưa có báo cáo.",
-    "unknownSeries": "Chưa xác định bộ truyện"
+    "unknownSeries": "Chưa xác định bộ truyện",
+    "types": {
+      "DEFENSE": "Báo cáo bảo vệ series",
+      "PERFORMANCE": "Báo cáo hiệu suất",
+      "LIFECYCLE": "Đề xuất vòng đời series"
+    }
   },
   "contracts": {
     "unknownMangaka": "Không có thông tin Mangaka",
@@ -354,6 +372,9 @@
     "terms": "Điều khoản thương mại",
     "valuation": "Định giá",
     "ownership": "Sở hữu NXB / Mangaka",
+    "contractType": "Loại hợp đồng",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
     "conditions": "Điều kiện thanh toán",
     "emptyConditions": "Chưa cấu hình điều kiện thanh toán.",
     "versions": "Lịch sử hợp đồng",
@@ -380,7 +401,9 @@
     "sendOtp": "Gửi mã OTP",
     "otpInstruction": "Yêu cầu mã OTP, sau đó nhập mã gồm 6 chữ số để xác nhận chữ ký.",
     "paymentWorkflow": "Thanh toán hợp đồng",
-    "paymentWorkflowDescription": "Xem các khoản chi của hợp đồng hoặc ghi nhận doanh thu định kỳ nếu hợp đồng đủ điều kiện.",
+    "paymentWorkflowDescription": "Xem các khoản chi phát sinh từ hợp đồng. Doanh thu định kỳ do Editor phụ trách ghi nhận.",
+    "notInDecisionRoster": "Bạn có thể xem hợp đồng, nhưng chỉ thành viên thuộc phiên Hội đồng đã phê duyệt serial hóa mới được duyệt hoặc ký.",
+    "rosterUnavailable": "Chưa xác minh được roster trong giao diện. Bạn vẫn có thể gửi thao tác; backend sẽ kiểm tra quyền thành viên Hội đồng trước khi duyệt hoặc ký.",
     "openPayments": "Mở các khoản thanh toán",
     "reportRevenue": "Ghi nhận doanh thu",
     "revenuePeriod": "Kỳ doanh thu, ví dụ 2026-Q2",
@@ -391,6 +414,12 @@
     "relatedContract": "Hợp đồng liên quan",
     "title": "Duyệt thanh toán",
     "description": "Duyệt khoản chi, ghi nhận tham chiếu thanh toán hoặc hủy bản ghi không hợp lệ.",
+    "adminTitle": "Quản lý thanh toán",
+    "adminDescription": "Theo dõi toàn bộ khoản chi và xác nhận kết quả thanh toán sau khi Hội đồng phê duyệt.",
+    "boardPermissionTitle": "Quyền xử lý của thành viên Hội đồng",
+    "boardPermissionHint": "Khoản chi ở trạng thái Đã phát sinh có thể được duyệt hoặc hủy. Sau khi duyệt, bạn có thể xác nhận đã trả hoặc hủy khoản chi.",
+    "adminPermissionTitle": "Quyền xử lý của Quản trị hệ thống",
+    "adminPermissionHint": "Bạn không duyệt khoản chi ở trạng thái Đã phát sinh, nhưng có thể hủy khoản chi đó. Chỉ khi Hội đồng đã duyệt chi, bạn mới có thể xác nhận đã trả hoặc hủy.",
     "empty": "Chưa có khoản thanh toán.",
     "approve": "Duyệt khoản chi",
     "method": "Phương thức thanh toán",
@@ -399,6 +428,10 @@
     "cancelReason": "Lý do hủy",
     "cancel": "Hủy thanh toán",
     "details": "Chi tiết khoản thanh toán",
+    "detailSubtitle": "Theo dõi nguồn phát sinh, người nhận và toàn bộ tiến trình xử lý khoản chi.",
+    "paymentSummary": "Tổng quan khoản chi",
+    "paymentCode": "Mã {{code}}",
+    "unknownSeries": "Khoản chi không gắn với bộ truyện",
     "source": "Nguồn phát sinh",
     "period": "Kỳ thanh toán",
     "receiver": "Người nhận",
@@ -408,7 +441,20 @@
     "note": "Ghi chú",
     "noteOptional": "Ghi chú thanh toán (không bắt buộc)",
     "originDetails": "Thông tin phát sinh",
+    "recipientDetails": "Thông tin người nhận",
     "processingDetails": "Thông tin xử lý",
+    "processingTimeline": "Tiến trình xử lý",
+    "paymentEvidence": "Thông tin xác nhận thanh toán",
+    "triggeredStep": "Khoản chi phát sinh",
+    "approvedStep": "Hội đồng duyệt chi",
+    "paidStep": "Xác nhận đã thanh toán",
+    "cancelledStep": "Khoản chi đã hủy",
+    "failedStep": "Thanh toán thất bại",
+    "missedStep": "Không đạt điều kiện chi trả",
+    "awaitingApprovalShort": "Đang chờ Hội đồng phê duyệt",
+    "awaitingPaymentShort": "Đang chờ xác nhận đã thanh toán",
+    "contractReference": "Hợp đồng · {{code}}",
+    "receiverCode": "Mã người nhận · {{code}}",
     "series": "Bộ truyện",
     "contract": "Hợp đồng",
     "openSeries": "Xem bộ truyện",
@@ -478,7 +524,10 @@
       "NONE": "Không có rủi ro",
       "LOW": "Rủi ro thấp",
       "MEDIUM": "Rủi ro trung bình",
-      "SEVERE": "Rủi ro nghiêm trọng"
+      "SEVERE": "Rủi ro nghiêm trọng",
+      "CRITICAL": "Rủi ro đặc biệt nghiêm trọng",
+      "YELLOW": "Cảnh báo vàng",
+      "RED": "Cảnh báo đỏ"
     },
     "empty": "Kỳ này chưa có dữ liệu xếp hạng."
   },
@@ -532,6 +581,9 @@
     "openFromNotification": "Mở hợp đồng chuyển nhượng từ thông báo để xem tiến độ chữ ký và thực hiện ký.",
     "empty": "Không có yêu cầu chờ Hội đồng.",
     "session": "Chọn phiên Hội đồng đang hoạt động",
+    "decision": "Chọn quyết định chuyển nhượng đã chốt",
+    "decisionHelp": "Chọn quyết định TRANSFER đã kết luận cho series này. Kết quả quyết định sẽ xác định yêu cầu được duyệt hay từ chối sàng lọc.",
+    "noTerminalDecision": "Chưa có quyết định TRANSFER đã kết luận cho series này. Hãy hoàn tất biểu quyết Hội đồng trước khi sàng lọc yêu cầu.",
     "details": "Ghi chú sàng lọc",
     "review": "Xem xét yêu cầu chuyển nhượng",
     "approve": "Duyệt sàng lọc",
@@ -542,7 +594,47 @@
     "sign": "Ký hợp đồng chuyển nhượng",
     "contractId": "ID hợp đồng chuyển nhượng",
     "signInstruction": "Nhập ID hợp đồng chuyển nhượng và xác nhận chữ ký bằng mã OTP.",
-    "signatureProgress": "Tiến độ ký hợp đồng chuyển nhượng"
+    "signatureProgress": "Tiến độ ký hợp đồng chuyển nhượng",
+    "boardAlreadySigned": "Hội đồng đã ký hợp đồng chuyển nhượng này.",
+    "awaitingMangakaSignatures": "Chữ ký Hội đồng bị khóa cho tới khi cả Mangaka chuyển giao và Mangaka tiếp nhận đã ký.",
+    "fullBuyoutHelp": "Hệ thống sẽ dùng quyết định Hội đồng đã gắn với yêu cầu. Hãy khai báo định giá và các mốc thanh toán cho hợp đồng thay thế.",
+    "newContractConditions": "Điều kiện hợp đồng mới",
+    "addCondition": "+ Thêm điều kiện",
+    "removeLastCondition": "Bỏ điều kiện cuối",
+    "missingDecisionLink": "Yêu cầu chưa có tham chiếu quyết định Hội đồng. Hãy tải lại sau khi sàng lọc hoặc nhờ Editor kiểm tra quy trình.",
+    "conditionTypes": {
+      "CHAPTER_MILESTONE": "Mốc số chương",
+      "RECURRING_CHAPTER": "Thanh toán định kỳ theo chương",
+      "RANKING_MILESTONE": "Mốc xếp hạng",
+      "TIME_BOUND": "Mốc theo thời hạn"
+    },
+    "signatureRoles": {
+      "MANGAKA_A": "Mangaka chuyển giao",
+      "MANGAKA_B": "Mangaka tiếp nhận",
+      "BOARD": "Đại diện Hội đồng"
+    },
+    "contractSummary": {
+      "title": "Điều khoản hợp đồng chuyển nhượng",
+      "boardDescription": "Đọc kỹ toàn bộ điều khoản bên dưới trước khi yêu cầu OTP và thêm chữ ký Hội đồng.",
+      "status": "Trạng thái",
+      "type": "Loại chuyển nhượng",
+      "amount": "Giá trị chuyển nhượng",
+      "parties": "Các bên chuyển nhượng",
+      "ownership": "Tỷ lệ sở hữu doanh thu mới",
+      "publisher": "Nhà xuất bản",
+      "originalMangaka": "Mangaka ban đầu",
+      "newMangaka": "Mangaka mới",
+      "coOwnerRequired": "Mangaka ban đầu vẫn là đồng sở hữu và phải duyệt các chương về sau.",
+      "coOwnerNotRequired": "Không yêu cầu đồng sở hữu duyệt chương sau chuyển nhượng."
+    },
+    "contractStatuses": {
+      "DRAFT": "Bản nháp",
+      "A_SIGNED": "Mangaka chuyển giao đã ký",
+      "B_SIGNED": "Mangaka tiếp nhận đã ký",
+      "BOARD_SIGNED": "Hội đồng đã ký",
+      "FULLY_EXECUTED": "Đã ký hoàn tất",
+      "VOIDED": "Đã hủy hiệu lực"
+    }
   },
   "notifications": {
     "title": "Thông báo Hội đồng",
@@ -612,12 +704,14 @@
     "title": "Dữ liệu tham chiếu quyết định",
     "description": "Xem các dữ liệu làm căn cứ cho quyết định Hội đồng mà không thay đổi trạng thái sản xuất.",
     "seriesTitle": "Bảo vệ series và phiên bản xuất bản",
+    "seriesHelp": "Chọn series, sau đó có thể thu hẹp hồ sơ theo Name hoặc phiên bản xuất bản. Quyền Hội đồng chỉ dùng để tra cứu.",
     "selectSeries": "Chọn bộ truyện",
     "seriesNameId": "ID Name đề xuất (không bắt buộc)",
     "publicationVersionId": "ID phiên bản xuất bản (không bắt buộc)",
     "surveyTitle": "Dữ liệu khảo sát và xếp hạng",
     "selectSurvey": "Chọn kỳ khảo sát",
     "productionTitle": "Tham chiếu tiến độ chương",
+    "productionHelp": "Nhập ID chương để xem Name, trang truyện, tiến độ và các công đoạn sản xuất mà không thay đổi trạng thái.",
     "chapterId": "ID chương",
     "chapterNameId": "ID Name của chương (không bắt buộc)",
     "enterChapter": "Nhập ID chương để xem tiến độ sản xuất.",
@@ -629,10 +723,13 @@
     "unitsSold": "Số bản đã bán",
     "recordSales": "Ghi nhận doanh số",
     "taskFileTitle": "File tác vụ được bảo vệ",
+    "taskFileHelp": "Tài nguyên task dùng liên kết ngắn hạn có kiểm tra quyền. Hãy dán ID task và đúng object key hiển thị trong hồ sơ task.",
     "taskId": "ID tác vụ",
     "fileKey": "Khóa file thuộc tác vụ",
     "signDownload": "Tạo liên kết tải",
     "openDownload": "Mở liên kết tải được bảo vệ",
+    "signingDownload": "Đang tạo liên kết bảo mật…",
+    "downloadExpiresAt": "Liên kết hết hạn",
     "datasets": {
       "detail": "Thông tin bộ truyện",
       "defense": "Hiệu suất và hồ sơ bảo vệ",
@@ -646,6 +743,11 @@
       "offlineData": "Dữ liệu khảo sát đã ghi nhận",
       "readerVotes": "Phiếu độc giả",
       "boardRanking": "Đánh giá của Hội đồng",
+      "chapterNames": "Các Name của chương",
+      "chapterSelectedName": "Name chương đã chọn",
+      "pages": "Các trang chương",
+      "progress": "Tiến độ sản xuất",
+      "stages": "Các công đoạn sản xuất",
       "assistants": "Trợ lý",
       "mangakas": "Mangaka"
     }

@@ -138,6 +138,7 @@ export default [
       route('operations/publication-versions', 'routes/admin/operations-versions.tsx'),
       route('operations/reference', 'routes/admin/operations-reference.tsx'),
       route('notifications', 'routes/admin/notifications.tsx'),
+      route('profile', 'routes/admin/profile.tsx'),
       route('settings', 'routes/admin/settings.tsx')
     ])
   ]),

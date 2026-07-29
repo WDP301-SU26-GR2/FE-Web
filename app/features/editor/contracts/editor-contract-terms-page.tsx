@@ -47,17 +47,11 @@ export function EditorContractTermsPage({
   }
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.terms')}>
-      <section
-        className={`rounded-xl border p-4 text-xs ${
-          hasValidCondition
-            ? 'border-primary/25 bg-primary/5 text-foreground'
-            : 'border-destructive/30 bg-destructive/10 text-destructive'
-        }`}
-      >
+      <section className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
         <p className='font-bold'>
           {hasValidCondition
             ? t('contractDetail.paymentConditionReady', { count: validConditionCount })
-            : t('contractDetail.paymentConditionMissing')}
+            : t('contractDetail.paymentConditionPostExecutionHint')}
         </p>
         <Link
           to={`/dashboard/editor/contracts/${contract.id}/conditions`}
@@ -157,11 +151,11 @@ export function EditorContractTermsPage({
               <button
                 name='intent'
                 value='advanceContract'
-                disabled={fetcher.state !== 'idle' || !hasValidCondition}
+                disabled={fetcher.state !== 'idle'}
                 className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
-                Gửi Mangaka xem xét
+                {t('actions.sendForMangakaReview')}
               </button>
             </div>
           )}
@@ -178,7 +172,7 @@ export function EditorContractTermsPage({
               <button
                 name='intent'
                 value='saveAndAdvanceContract'
-                disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid || !hasValidCondition}
+                disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid}
                 className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}

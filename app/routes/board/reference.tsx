@@ -91,7 +91,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
       rankingTrend: trend
     },
     surveyData: { period: surveyPeriod, rankings, offlineData: surveyData, readerVotes, boardRanking },
-    chapterData: { names: chapterNames, selectedName: chapterName, pages, progress, stages }
+    chapterData: { chapterNames, chapterSelectedName: chapterName, pages, progress, stages }
   }
 }
 

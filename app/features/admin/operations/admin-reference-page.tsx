@@ -1,9 +1,16 @@
-import { Form } from 'react-router'
+import { Form, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 import { BusinessDataView } from '~/shared/components/business-data-view'
 
 type SelectItem = { id: string; title?: string; issueNumber?: string | number | null; status?: string }
+type TaskDownloadResult = {
+  ok: boolean
+  intent: 'taskDownload'
+  downloadUrl?: string
+  expiresAt?: string
+  message?: string
+}
 
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
@@ -14,14 +21,18 @@ export function AdminReferencePage({
   selected,
   directories,
   seriesData,
-  rankingData
+  chapterData,
+  rankingData,
+  workflowData
 }: {
   series: SelectItem[]
   periods: SelectItem[]
   selected: Record<string, string>
   directories: Record<string, unknown>
   seriesData: Record<string, unknown>
+  chapterData: Record<string, unknown>
   rankingData: Record<string, unknown>
+  workflowData: Record<string, unknown>
 }) {
   const { t } = useTranslation('admin')
   return (
@@ -33,7 +44,7 @@ export function AdminReferencePage({
       </header>
 
       <Panel title={t('operations.reference.series')}>
-        <Form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'>
+        <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
           <select className={inputClass} name='seriesId' defaultValue={selected.seriesId} required>
             <option value=''>{t('operations.reference.selectSeries')}</option>
             {series.map((item) => (
@@ -42,12 +53,38 @@ export function AdminReferencePage({
               </option>
             ))}
           </select>
+          <input
+            className={inputClass}
+            name='seriesNameId'
+            defaultValue={selected.seriesNameId}
+            placeholder={t('operations.reference.seriesNameId')}
+          />
           <LoadButton label={t('operations.reference.load')} />
         </Form>
         <DatasetGrid data={seriesData} />
       </Panel>
 
-      <div className='space-y-6'>
+      <Panel title={t('operations.reference.chapter')}>
+        <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
+          <input
+            className={inputClass}
+            name='chapterId'
+            defaultValue={selected.chapterId}
+            placeholder={t('operations.reference.chapterId')}
+            required
+          />
+          <input
+            className={inputClass}
+            name='chapterNameId'
+            defaultValue={selected.chapterNameId}
+            placeholder={t('operations.reference.chapterNameId')}
+          />
+          <LoadButton label={t('operations.reference.load')} />
+        </Form>
+        <DatasetGrid data={chapterData} />
+      </Panel>
+
+      <div className='grid gap-6 xl:grid-cols-2'>
         <Panel title={t('operations.reference.ranking')}>
           <Form method='get' className='flex gap-3'>
             <select className={inputClass} name='surveyPeriodId' defaultValue={selected.surveyPeriodId} required>
@@ -71,7 +108,88 @@ export function AdminReferencePage({
           <DatasetGrid data={directories} />
         </Panel>
       </div>
+
+      <Panel title={t('operations.reference.workflows')}>
+        <Form method='get' className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
+          <input
+            className={inputClass}
+            name='reprintId'
+            defaultValue={selected.reprintId}
+            placeholder={t('operations.reference.reprintId')}
+          />
+          <input
+            className={inputClass}
+            name='reprintChapterId'
+            defaultValue={selected.reprintChapterId}
+            placeholder={t('operations.reference.reprintChapterId')}
+          />
+          <input
+            className={inputClass}
+            name='deadlineId'
+            defaultValue={selected.deadlineId}
+            placeholder={t('operations.reference.deadlineId')}
+          />
+          <input
+            className={inputClass}
+            name='transferRequestId'
+            defaultValue={selected.transferRequestId}
+            placeholder={t('operations.reference.transferRequestId')}
+          />
+          <input
+            className={inputClass}
+            name='transferContractId'
+            defaultValue={selected.transferContractId}
+            placeholder={t('operations.reference.transferContractId')}
+          />
+          <LoadButton label={t('operations.reference.load')} />
+        </Form>
+        <DatasetGrid data={workflowData} />
+      </Panel>
+
+      <TaskDownloadPanel />
     </div>
+  )
+}
+
+function TaskDownloadPanel() {
+  const { t } = useTranslation('admin')
+  const fetcher = useFetcher<TaskDownloadResult>()
+  return (
+    <Panel title={t('operations.reference.taskFile')}>
+      <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
+        <input type='hidden' name='intent' value='taskDownload' />
+        <input className={inputClass} name='taskId' placeholder={t('operations.reference.taskId')} required />
+        <input className={inputClass} name='fileKey' placeholder={t('operations.reference.fileKey')} required />
+        <button
+          disabled={fetcher.state !== 'idle'}
+          className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+        >
+          {t('operations.reference.createDownload')}
+        </button>
+      </fetcher.Form>
+      {fetcher.data?.ok && fetcher.data.downloadUrl && (
+        <div className='mt-4 rounded-lg border border-primary/30 bg-primary/10 p-4'>
+          <a
+            href={fetcher.data.downloadUrl}
+            target='_blank'
+            rel='noreferrer'
+            className='text-xs font-bold text-primary underline'
+          >
+            {t('operations.reference.openDownload')}
+          </a>
+          {fetcher.data.expiresAt && (
+            <p className='mt-2 text-xs text-muted-foreground'>
+              {t('operations.reference.downloadExpires', { date: fetcher.data.expiresAt })}
+            </p>
+          )}
+        </div>
+      )}
+      {fetcher.data && !fetcher.data.ok && (
+        <p className='mt-4 text-xs font-semibold text-destructive'>
+          {fetcher.data.message ?? t('operations.reference.downloadFailed')}
+        </p>
+      )}
+    </Panel>
   )
 }
 
