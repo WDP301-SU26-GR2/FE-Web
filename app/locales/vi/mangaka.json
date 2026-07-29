@@ -2,6 +2,9 @@
   "common": {
     "retry": "Thử lại"
   },
+  "state": {
+    "unknown": "Trạng thái chưa xác định"
+  },
   "routeMeta": {
     "dashboard": {
       "title": "Bảng điều khiển Mangaka",
@@ -887,41 +890,6 @@
         }
       }
     },
-    "publicationVersions": {
-      "title": "Phiên bản phát hành",
-      "description": "Xem các định dạng phát hành đã được đăng ký cho series này.",
-      "loading": "Đang tải các phiên bản phát hành...",
-      "empty": "Series này chưa có phiên bản phát hành nào được đăng ký.",
-      "refresh": "Làm mới",
-      "retry": "Thử lại",
-      "viewDetails": "Xem chi tiết",
-      "close": "Đóng",
-      "notSpecified": "Chưa xác định",
-      "createdAt": "Tạo {{date}}",
-      "readingDirection": {
-        "RTL": "Phải sang trái",
-        "LTR": "Trái sang phải"
-      },
-      "versionType": {
-        "ORIGINAL": "Bản gốc",
-        "DIGITAL": "Bản số",
-        "FLIPPED": "Bản lật chiều"
-      },
-      "detail": {
-        "title": "Chi tiết phiên bản phát hành",
-        "description": "Thông tin phát hành do nhóm xuất bản đăng ký.",
-        "loading": "Đang tải chi tiết phiên bản...",
-        "language": "Ngôn ngữ",
-        "versionType": "Loại phiên bản",
-        "readingDirection": "Hướng đọc",
-        "createdAt": "Ngày tạo",
-        "notes": "Ghi chú"
-      },
-      "error": {
-        "loadFailed": "Không thể tải các phiên bản phát hành của series này.",
-        "detailFailed": "Không thể tải phiên bản phát hành này."
-      }
-    },
     "production": {
       "management": {
         "error": "Không thể thay đổi giai đoạn sản xuất. Vui lòng thử lại.",
@@ -1376,35 +1344,6 @@
     "estimatedLengthPlaceholder": "VD: 50",
     "estimatedLengthHint": "Ước lượng tổng số chương dự kiến của toàn bộ series (tối thiểu 1).",
     "selectOption": "Chọn...",
-    "franchise": {
-      "title": "Quan hệ nhượng quyền",
-      "toggle": "Proposal này phát triển từ một series đã có",
-      "description": "Khai báo phần tiếp theo, ngoại truyện, truyện bên lề hoặc bản làm lại. Mangaka gốc có thể phải đồng ý trước khi nộp.",
-      "searchLabel": "Tìm series gốc",
-      "searchPlaceholder": "Tìm trong danh mục series đã phát hành",
-      "loading": "Đang tải series",
-      "parentLabel": "Series gốc",
-      "parentPlaceholder": "Chọn series gốc",
-      "parentHint": "Chỉ có thể chọn series hậu kỳ phát hành đang hiển thị trong danh mục công khai.",
-      "loadError": "Không thể tải danh mục series đã phát hành. Hãy thử tìm lại.",
-      "empty": "Không tìm thấy series đã phát hành phù hợp.",
-      "relationshipLabel": "Mối quan hệ",
-      "relationshipPlaceholder": "Chọn mối quan hệ",
-      "relationship": {
-        "SEQUEL": "Phần tiếp theo",
-        "SPINOFF": "Ngoại truyện",
-        "SIDE_STORY": "Truyện bên lề",
-        "REBOOT": "Bản làm lại"
-      },
-      "status": {
-        "SERIALIZED": "Đang phát hành",
-        "HIATUS": "Tạm ngưng",
-        "COMPLETING": "Đang hoàn tất",
-        "CANCELLING": "Đang kết thúc sớm",
-        "COMPLETED": "Đã hoàn thành",
-        "CANCELLED": "Đã hủy"
-      }
-    },
     "enums": {
       "genres": {
         "ACTION": "Hành động",
@@ -1452,10 +1391,6 @@
     "errors": {
       "unauthenticated": "Bạn cần đăng nhập để tạo proposal.",
       "titleRequired": "Hãy nhập tiêu đề series trước khi tiếp tục.",
-      "parentSeriesRequired": "Hãy chọn series gốc cho proposal phái sinh này.",
-      "relationshipTypeRequired": "Hãy chọn mối quan hệ giữa proposal và series gốc.",
-      "franchisePairRequired": "Series gốc và mối quan hệ phải được khai báo cùng nhau.",
-      "parentSeriesNotFound": "Series gốc đã chọn không còn khả dụng. Hãy chọn series khác.",
       "submitFailed": "Không thể tạo proposal. Vui lòng thử lại."
     },
     "toolbar": {
@@ -2384,69 +2319,6 @@
     "error": {
       "loadFailed": "Không tải được bảng xếp hạng. Vui lòng thử lại.",
       "retry": "Thử lại"
-    }
-  },
-  "reprints": {
-    "eyebrow": "Flow 7 · Tái bản",
-    "title": "Yêu cầu tái bản",
-    "description": "Theo dõi đề nghị tái bản từ Nhà xuất bản, phản hồi quyền lợi tác giả và nộp bản thảo sửa đổi theo từng chapter.",
-    "guideTitle": "Bạn cần làm gì?",
-    "guide": "Với hợp đồng chia sẻ doanh thu, hãy đọc lý do và phạm vi trước khi đồng ý. Nếu tái bản có chỉnh sửa, chỉ upload bản mới vào đúng chapter được giao; Editor sẽ duyệt từng chapter trước khi xuất bản.",
-    "requestList": "Các yêu cầu liên quan đến bạn",
-    "unknownSeries": "Series chưa xác định",
-    "chapterRange": "Chapter {{from}} – {{to}}",
-    "empty": "Chưa có yêu cầu tái bản nào.",
-    "selectHint": "Chọn một yêu cầu để xem chi tiết.",
-    "mode": "Chế độ tái bản",
-    "range": "Phạm vi chapter",
-    "chapterCount": "Số chapter",
-    "reason": "Lý do và yêu cầu từ Nhà xuất bản",
-    "noReason": "Không có ghi chú bổ sung.",
-    "reviewTitle": "Phản hồi quyền tái bản",
-    "reviewGuide": "Quyết định này được chuyển tiếp tới Hội đồng. Nếu từ chối, hãy ghi rõ lý do để Editor có thể xử lý.",
-    "reviewReason": "Ghi chú phản hồi",
-    "reviewReasonPlaceholder": "Nêu điều kiện đồng ý hoặc lý do từ chối…",
-    "accept": "Đồng ý tái bản",
-    "reject": "Từ chối",
-    "chaptersTitle": "Bản thảo theo chapter",
-    "chaptersGuide": "Mỗi bản ghi dùng ID của chapter gốc. Không upload nhầm file giữa các chapter.",
-    "noChapters": "Yêu cầu chưa có chapter khả dụng.",
-    "chapter": "Chapter {{number}}",
-    "download": "Xem bản hiện tại",
-    "submitManuscript": "Nộp bản sửa",
-    "modes": {
-      "AS_IS": "Giữ nguyên bản gốc",
-      "WITH_REVISION": "Có chỉnh sửa",
-      "UNKNOWN": "Chưa xác định"
-    },
-    "statuses": {
-      "PROPOSED": "Chờ Mangaka phản hồi",
-      "MANGAKA_REVIEW": "Chờ Hội đồng",
-      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
-      "REJECTED_BY_MANGAKA": "Mangaka từ chối",
-      "APPROVED": "Đã duyệt",
-      "IN_PRODUCTION": "Đang sản xuất",
-      "PUBLISHED": "Đã xuất bản",
-      "REJECTED": "Đã từ chối",
-      "CANCELLED": "Đã hủy"
-    },
-    "chapterStatuses": {
-      "PENDING": "Chờ xử lý",
-      "IN_REVISION": "Đang chỉnh sửa",
-      "SUBMITTED": "Đã nộp, chờ Editor duyệt",
-      "APPROVED": "Đã duyệt",
-      "PUBLISHED": "Đã xuất bản"
-    },
-    "feedback": {
-      "accepted": "Đã xác nhận đồng ý tái bản.",
-      "rejected": "Đã gửi quyết định từ chối.",
-      "manuscriptSubmitted": "Đã upload và nộp bản thảo sửa đổi."
-    },
-    "errors": {
-      "load": "Không thể tải dữ liệu tái bản. Vui lòng thử lại.",
-      "fileRequired": "Hãy chọn bản thảo cần nộp.",
-      "invalidAction": "Thao tác tái bản không hợp lệ.",
-      "generic": "Không thể hoàn tất thao tác tái bản. Vui lòng kiểm tra trạng thái và thử lại."
     }
   },
   "transfers": {
