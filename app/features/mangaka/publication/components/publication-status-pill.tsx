@@ -23,9 +23,7 @@ export function PublicationStatusPill() {
         {t('publication.statusPill.label')}
       </span>
       <NameStatusBadge status={name.status} />
-      <span className={cn('text-[10px] font-semibold text-muted-foreground')}>
-        v{name.version}
-      </span>
+      <span className={cn('text-[10px] font-semibold text-muted-foreground')}>v{name.version}</span>
     </div>
   )
 }

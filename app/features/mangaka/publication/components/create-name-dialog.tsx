@@ -6,6 +6,7 @@ import { cn } from '~/shared/lib/cn'
 import { Button } from '~/shared/ui'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 import { SignUploadBodyDtoAssetType } from '~/api/model/uploads/signUploadBodyDtoAssetType'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export type PendingPage = {
   /** Local id used for React keys. */
@@ -99,7 +100,11 @@ export function CreateNameDialog({
         setError(t('upload.errors.tooLarge'))
         continue
       }
-      next.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, file: f, previewUrl: URL.createObjectURL(f) })
+      next.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        file: f,
+        previewUrl: URL.createObjectURL(f)
+      })
     }
     setPending((prev) => [...prev, ...next])
     setError(null)
@@ -134,7 +139,7 @@ export function CreateNameDialog({
         setPending([])
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('publication.error.generic'))
+      setError(extractApiErrorMessage(err, t('publication.error.generic')))
     }
   }
 
@@ -143,7 +148,7 @@ export function CreateNameDialog({
       role='dialog'
       aria-modal='true'
       aria-labelledby='create-name-dialog-title'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
       }}
@@ -151,7 +156,9 @@ export function CreateNameDialog({
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className={cn('relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl')}
+        className={cn(
+          'relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl'
+        )}
       >
         <div className='space-y-4 overflow-y-auto p-5'>
           <div className='flex items-start justify-between gap-3'>
@@ -204,21 +211,17 @@ export function CreateNameDialog({
               {pending.map((p, idx) => (
                 <li key={p.id} className='space-y-1.5'>
                   <div className='relative'>
-                    <img
-                      src={p.previewUrl}
-                      alt={p.file.name}
-                      className='aspect-[3/4] w-full rounded-md object-cover'
-                    />
+                    <img src={p.previewUrl} alt={p.file.name} className='aspect-[3/4] w-full rounded-md object-cover' />
                     <button
                       type='button'
                       disabled={isSubmitting}
                       onClick={() => removeAt(idx)}
-                      className='absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-destructive disabled:cursor-not-allowed disabled:opacity-50'
+                      className='absolute right-1 top-1 rounded-full bg-background/70 p-1 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50'
                       aria-label={t('publication.nameSection.create.removeFile')}
                     >
                       <Trash2 className='h-3 w-3' />
                     </button>
-                    <span className='absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white'>
+                    <span className='absolute bottom-1 left-1 rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-bold text-foreground'>
                       #{startingPageNumber + idx}
                     </span>
                   </div>
@@ -228,7 +231,10 @@ export function CreateNameDialog({
           )}
 
           {error && (
-            <div role='alert' className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive'>
+            <div
+              role='alert'
+              className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive'
+            >
               {error}
             </div>
           )}

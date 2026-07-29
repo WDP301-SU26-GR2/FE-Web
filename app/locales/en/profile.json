@@ -22,6 +22,7 @@
     "edit": "Edit account",
     "email": "Email",
     "phoneNumber": "Phone number",
+    "phoneNumberHint": "Use international E.164 format, for example +84912345678.",
     "name": "Name",
     "displayName": "Display name",
     "displayNamePlaceholder": "Leave blank to use real name",
@@ -36,6 +37,11 @@
     "emailUnverified": "Email not verified",
     "mustChangePassword": "You need to change your password before continuing.",
     "saveSuccess": "Account information updated.",
+    "avatarErrors": {
+      "type": "Only PNG, JPEG, or WebP files are accepted.",
+      "size": "The file must be {{max}}MB or smaller.",
+      "uploadGeneric": "Could not upload the avatar."
+    },
     "errors": {
       "nameTooShort": "Name must be at least 2 characters.",
       "nameTooLong": "Name must be 100 characters or fewer.",

@@ -7,11 +7,7 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { PublicationContext } from './publication-shell-context'
 import { usePublicationData } from './hooks/use-publication-data'
 import { PublicationShellHeader } from './components/publication-shell-header'
-import {
-  LoadingScreen,
-  NotFoundView,
-  ErrorScreen
-} from '~/shared/components/publication-fallbacks'
+import { LoadingScreen, NotFoundView, ErrorScreen } from '~/shared/components/publication-fallbacks'
 
 /**
  * Layout shell for the publication workbench.
@@ -21,7 +17,7 @@ import {
  * Also renders the workbench header with the Name/Page segmented toggle that
  * swaps between the two child routes:
  *
- *   /publish/:seriesId/:chapterId           → redirects to "name" (default)
+ *   /publish/:seriesId/:chapterId           → Name or Pages (by Name approval)
  *   /publish/:seriesId/:chapterId/name     → storyboard Name editor
  *   /publish/:seriesId/:chapterId/pages    → composite page reader
  */

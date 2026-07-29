@@ -711,8 +711,8 @@ Khi tắt, code MSW bị **tree-shake** khỏi production bundle (dynamic import
 | Thêm mock endpoint            | `app/mocks/factories/` + `app/mocks/handlers/` (xem mục 9)                |
 | Bật / tắt mock                | `.env.local` → `VITE_ENABLE_MOCK`                                         |
 | Codegen từ swagger            | đặt `swagger.json` + `npm run orval`                                      |
-| Đọc state machine / enum      | `FE-Web-Guide/01-conventions-and-auth.md` §7                              |
-| Đọc business flow             | `FE-Web-Guide/00-INDEX.md` + file theo role                               |
+| Đọc state machine / enum      | `FE-API-Guide-v3.md` §1 (60 enum)                                         |
+| Đọc business flow             | `FE-API-Guide-v3.md` §0–§10                                               |
 
 ---
 

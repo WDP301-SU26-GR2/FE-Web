@@ -102,7 +102,7 @@ export function CreateChapterDialog({
       aria-modal='true'
       aria-labelledby='create-chapter-dialog-title'
       aria-describedby='create-chapter-dialog-desc'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
       }}

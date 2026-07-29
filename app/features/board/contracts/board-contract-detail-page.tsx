@@ -12,9 +12,7 @@ import type {
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
-import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
-import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
-import { PaymentConditionsSummary } from '~/features/contracts/components/payment-conditions-summary'
+import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
 import { useAuth } from '~/features/auth/context/auth-context'
 
 export function BoardContractDetailPage({

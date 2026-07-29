@@ -1,4 +1,5 @@
 import { Loader2, Send } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '~/shared/lib/cn'
@@ -20,22 +21,34 @@ import { usePublicationContext } from '../publication-shell-context'
  *
  * Terminal states display a read-only banner so Mangaka knows where they stand.
  */
-export function ManuscriptActionPanel() {
+export function ManuscriptActionPanel({
+  productionReady = true,
+  hasOpenRecipientRevisions = false
+}: {
+  productionReady?: boolean
+  hasOpenRecipientRevisions?: boolean
+}) {
   const { t } = useTranslation('mangaka')
   const { chapter, pages, refreshAll } = usePublicationContext()
   const { progress, refresh: refreshProgress } = useChapterProgress(chapter?.id)
   const { run, activeAction } = useManuscriptActions()
-
-  if (!chapter?.manuscriptStatus) return null
-
-  const status = chapter.manuscriptStatus
   const totalPages = pages.length
+  const previousPageCount = useRef(totalPages)
+
+  useEffect(() => {
+    if (!chapter?.id || previousPageCount.current === totalPages) return
+    previousPageCount.current = totalPages
+    refreshProgress()
+  }, [chapter?.id, refreshProgress, totalPages])
+
+  const status = chapter?.manuscriptStatus ?? null
+  const isAwaitingCoOwner = status === 'AWAITING_CO_OWNER_APPROVAL'
 
   // Terminal states — display info banner, no action button.
   const isReadyForPrint = status === 'READY_FOR_PRINT'
-  const isAwaitingCoOwner = status === 'AWAITING_CO_OWNER_APPROVAL'
   const isPublished = status === 'PUBLISHED'
   const isTerminal = isReadyForPrint || isAwaitingCoOwner || isPublished
+  if (!chapter || !status) return null
 
   // Submit is allowed when manuscript is IN_PRODUCTION, has ≥1 page,
   // AND BE confirms all tasks are done (pagesReady === totalPages).
@@ -43,9 +56,10 @@ export function ManuscriptActionPanel() {
     status === 'IN_PRODUCTION' &&
     totalPages > 0 &&
     progress !== null &&
-    progress.pagesReady === totalPages
+    progress.pagesReady === totalPages &&
+    productionReady
 
-  const canResubmit = status === 'EDITOR_REVISION'
+  const canResubmit = status === 'EDITOR_REVISION' && productionReady && !hasOpenRecipientRevisions
 
   const action: 'submit' | 'resubmit' | null = canSubmit ? 'submit' : canResubmit ? 'resubmit' : null
 
@@ -105,6 +119,9 @@ export function ManuscriptActionPanel() {
                 })}
               </span>
             </div>
+          )}
+          {status === 'EDITOR_REVISION' && hasOpenRecipientRevisions && (
+            <p className='mt-2 text-xs font-medium text-warning'>{t('publication.manuscript.resolveRevisionsHint')}</p>
           )}
         </div>
 

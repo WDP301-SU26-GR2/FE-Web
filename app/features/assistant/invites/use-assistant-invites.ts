@@ -74,8 +74,8 @@ export function useAssistantInvites(): UseAssistantInvitesResult {
       const res = await studioControllerListInvites(params, { signal })
       if (signal.aborted) return
 
-      setItems(res.data.items ?? [])
-      setTotal(res.data.total)
+      setItems(res.data?.items ?? [])
+      setTotal(res.data?.total ?? 0)
     },
     []
   )

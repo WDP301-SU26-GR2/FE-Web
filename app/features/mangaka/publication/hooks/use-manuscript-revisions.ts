@@ -9,7 +9,7 @@ import {
   type RevisionRequestListResDtoOutputItemsItem
 } from '~/api/model/revision'
 
-type UseManuscriptRevisionsResult = {
+export type UseManuscriptRevisionsResult = {
   revisions: RevisionRequestListResDtoOutputItemsItem[]
   isLoading: boolean
   resolvingRevisionId: string | null
@@ -60,9 +60,7 @@ export function useManuscriptRevisions(chapterId: string | null | undefined): Us
       setResolvingRevisionId(revisionId)
       try {
         await revisionControllerResolve({ id: revisionId })
-        setRevisions((items) =>
-          items.map((item) => (item.id === revisionId ? { ...item, isResolved: true } : item))
-        )
+        setRevisions((items) => items.map((item) => (item.id === revisionId ? { ...item, isResolved: true } : item)))
         toast.success(t('publication.pagesReader.revisions.resolveSuccess'))
       } catch {
         toast.error(t('publication.pagesReader.revisions.resolveError'))

@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router'
+import { Outlet } from 'react-router'
 
 import { useAuth } from '~/features/auth/context/auth-context'
 import { DashboardLayout, useDashboardNavConfig } from '~/shared/components'

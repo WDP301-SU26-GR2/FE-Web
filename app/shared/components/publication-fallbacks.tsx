@@ -38,9 +38,7 @@ export function NotFoundView({
       <div className='flex max-w-md flex-col items-center gap-3 text-center'>
         <ImageOff className='h-12 w-12 text-muted-foreground/40' />
         <h2 className='text-lg font-semibold'>{t('publication.notFound.title')}</h2>
-        <p className='text-sm text-muted-foreground'>
-          {t(description ?? 'publication.notFound.description')}
-        </p>
+        <p className='text-sm text-muted-foreground'>{t(description ?? 'publication.notFound.description')}</p>
         <a
           href={backHref}
           className={cn(

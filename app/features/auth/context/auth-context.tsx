@@ -107,17 +107,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isGarbage(next.refreshToken)
     ) {
       // eslint-disable-next-line no-console
-      console.error(
-        '[AuthProvider.setSession] refusing to persist incomplete or garbage session',
-        {
-          hasUser: !!next?.user,
-          hasId: !!next?.user?.id,
-          hasAccess: !!next?.accessToken,
-          hasRefresh: !!next?.refreshToken,
-          accessIsString: typeof next?.accessToken === 'string',
-          refreshIsString: typeof next?.refreshToken === 'string'
-        }
-      )
+      console.error('[AuthProvider.setSession] refusing to persist incomplete or garbage session', {
+        hasUser: !!next?.user,
+        hasId: !!next?.user?.id,
+        hasAccess: !!next?.accessToken,
+        hasRefresh: !!next?.refreshToken,
+        accessIsString: typeof next?.accessToken === 'string',
+        refreshIsString: typeof next?.refreshToken === 'string'
+      })
       throw new Error('AuthProvider.setSession received an incomplete session')
     }
 

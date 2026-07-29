@@ -2,11 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { chapterControllerListPages } from '~/api/operations/chapters/chapters'
-import type {
-  PageListResDtoOutput,
-  PageListResDtoOutputItemsItem
-} from '~/api/model/chapters'
+import type { PageListResDtoOutput, PageListResDtoOutputItemsItem } from '~/api/model/chapters'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseChapterPagesResult = {
   pages: PageListResDtoOutputItemsItem[]
@@ -53,7 +51,7 @@ export function useChapterPages(chapterId: string | null | undefined): UseChapte
           setPages([])
           setError(t('publication.pagesReader.accessDenied'))
         } else {
-          setError(err instanceof Error ? err.message : t('publication.error.generic'))
+          setError(extractApiErrorMessage(err, t('publication.error.generic')))
         }
       }
       if (!signal.aborted) {

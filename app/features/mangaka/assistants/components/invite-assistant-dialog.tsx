@@ -6,20 +6,11 @@ import { cn } from '~/shared/lib/cn'
 import { Button } from '~/shared/ui'
 import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import type { CreateInviteBodyDto } from '~/api/model/studio/createInviteBodyDto'
-import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useMangakaSeries } from '~/features/mangaka/series/use-mangaka-series'
 
 type TaskType = (typeof TASK_TYPES)[number]
 
 const TASK_TYPES = ['BACKGROUND', 'SCREENTONE', 'EFFECT_LINES', 'INKING', 'COLORING', 'LETTERING'] as const
-
-const HIREABLE_STATUSES: ReadonlySet<SeriesListResDtoOutputItemsItem['status']> = new Set([
-  'IN_REVIEW',
-  'READY_TO_PITCH',
-  'PITCHED',
-  'SERIALIZED',
-  'HIATUS'
-])
 
 function toLocalDateInputValue(d: Date): string {
   // YYYY-MM-DDTHH:mm in local time
@@ -72,10 +63,7 @@ export function InviteAssistantDialog({
   const { items: series, isLoading: isSeriesLoading } = useMangakaSeries()
 
   // Pre-fill seriesId with the first hireable series (sorted by createdAt desc).
-  const hireableSeries = useMemo(
-    () => series.filter((s) => HIREABLE_STATUSES.has(s.status)).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-    [series]
-  )
+  const ownedSeries = useMemo(() => [...series].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)), [series])
 
   const [seriesId, setSeriesId] = useState<string>('')
   const [hireStart, setHireStart] = useState<string>('')
@@ -92,14 +80,14 @@ export function InviteAssistantDialog({
     const oneMonthLater = new Date(now)
     oneMonthLater.setDate(oneMonthLater.getDate() + 30)
     void Promise.resolve().then(() => {
-      setSeriesId(hireableSeries[0]?.id ?? '')
+      setSeriesId(ownedSeries[0]?.id ?? '')
       setHireStart(toLocalDateInputValue(now))
       setHireEnd(toLocalDateInputValue(oneMonthLater))
       setTaskTypes(
-        assistant.specializations.filter((s): s is TaskType => (TASK_TYPES as readonly string[]).includes(s))
+        (assistant.specializations ?? []).filter((s): s is TaskType => (TASK_TYPES as readonly string[]).includes(s))
       )
     })
-  }, [open, assistant, hireableSeries])
+  }, [open, assistant, ownedSeries])
 
   // Escape closes the dialog when not submitting.
   useEffect(() => {
@@ -160,7 +148,7 @@ export function InviteAssistantDialog({
       aria-modal='true'
       aria-labelledby='invite-assistant-dialog-title'
       aria-describedby='invite-assistant-dialog-desc'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
       }}
@@ -206,7 +194,7 @@ export function InviteAssistantDialog({
                 className='block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
               >
                 <option value=''>{t('assistantDirectory.invite.seriesNone')}</option>
-                {hireableSeries.map((s) => (
+                {ownedSeries.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.title}
                   </option>

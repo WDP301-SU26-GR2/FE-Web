@@ -34,11 +34,7 @@ export function SignedImage({
   const signed = useSignedImageUrl(r2Key ?? null)
   const [imgErrored, setImgErrored] = useState(false)
 
-  const containerCls = cn(
-    'relative overflow-hidden rounded-md bg-muted/40',
-    aspectClassName,
-    className
-  )
+  const containerCls = cn('relative overflow-hidden rounded-md bg-muted/40', aspectClassName, className)
 
   // No key at all — render empty muted placeholder.
   if (!r2Key) {

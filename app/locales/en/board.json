@@ -513,6 +513,7 @@
       "REFLECTED": "Ranking finalized"
     },
     "series": "Series",
+    "unknownSeries": "Unknown series",
     "votes": "Votes",
     "change": "Rank change",
     "reliability": "Reliability",

@@ -155,6 +155,9 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
             <h2 className='font-bold text-foreground'>
               {selectedReprint.series?.title ?? t('operations.monitoring.unknownSeries')}
             </h2>
+            <h2 className='font-bold text-foreground'>
+              {selectedReprint.series?.title ?? t('operations.monitoring.unknownSeries')}
+            </h2>
             <span className='rounded-full bg-secondary px-2 py-1 text-xs font-bold'>
               {localize('reprintStatuses', selectedReprint.status)}
             </span>
@@ -163,6 +166,8 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           <div className='mt-3 flex flex-wrap gap-2'>
             {selectedReprint.chapters.map((chapter, index) => (
               <span key={chapter.originalChapterId} className='rounded-md border border-border px-2 py-1 text-xs'>
+                {t('operations.monitoring.reprintChapter', { number: index + 1 })} ·{' '}
+                {localize('reprintChapterStatuses', chapter.status)}
                 {t('operations.monitoring.reprintChapter', { number: index + 1 })} ·{' '}
                 {localize('reprintChapterStatuses', chapter.status)}
               </span>
@@ -232,7 +237,23 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
                 value={seriesStatus}
                 onChange={(event) => setSeriesStatus(event.target.value)}
               >
+              <input
+                className={filterInput}
+                value={seriesSearch}
+                onChange={(event) => setSeriesSearch(event.target.value)}
+                placeholder={t('operations.monitoring.filters.searchSeries')}
+              />
+              <select
+                className={filterInput}
+                value={seriesStatus}
+                onChange={(event) => setSeriesStatus(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allStatuses')}</option>
+                {[...new Set(series.map((item) => item.status))].map((value) => (
+                  <option key={value} value={value}>
+                    {localize('seriesStatuses', value)}
+                  </option>
+                ))}
                 {[...new Set(series.map((item) => item.status))].map((value) => (
                   <option key={value} value={value}>
                     {localize('seriesStatuses', value)}
@@ -257,13 +278,28 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
                 value={revisionType}
                 onChange={(event) => setRevisionType(event.target.value)}
               >
+              <select
+                className={filterInput}
+                value={revisionType}
+                onChange={(event) => setRevisionType(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allRevisionTypes')}</option>
                 {[...new Set(revisions.map((item) => item.targetType))].map((value) => (
                   <option key={value} value={value}>
                     {localize('revisionTypes', value)}
                   </option>
                 ))}
+                {[...new Set(revisions.map((item) => item.targetType))].map((value) => (
+                  <option key={value} value={value}>
+                    {localize('revisionTypes', value)}
+                  </option>
+                ))}
               </select>
+              <select
+                className={filterInput}
+                value={revisionState}
+                onChange={(event) => setRevisionState(event.target.value)}
+              >
               <select
                 className={filterInput}
                 value={revisionState}
@@ -297,7 +333,23 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
                 value={reprintStatus}
                 onChange={(event) => setReprintStatus(event.target.value)}
               >
+              <input
+                className={filterInput}
+                value={reprintSearch}
+                onChange={(event) => setReprintSearch(event.target.value)}
+                placeholder={t('operations.monitoring.filters.searchReprints')}
+              />
+              <select
+                className={filterInput}
+                value={reprintStatus}
+                onChange={(event) => setReprintStatus(event.target.value)}
+              >
                 <option value=''>{t('operations.monitoring.filters.allStatuses')}</option>
+                {[...new Set(reprints.map((item) => item.status))].map((value) => (
+                  <option key={value} value={value}>
+                    {localize('reprintStatuses', value)}
+                  </option>
+                ))}
                 {[...new Set(reprints.map((item) => item.status))].map((value) => (
                   <option key={value} value={value}>
                     {localize('reprintStatuses', value)}
@@ -337,6 +389,17 @@ function ReadOnlyPanel({
   items: ReadOnlyItem[]
   empty: string
 }) {
+function ReadOnlyPanel({
+  title,
+  filters,
+  items,
+  empty
+}: {
+  title: string
+  filters?: ReactNode
+  items: ReadOnlyItem[]
+  empty: string
+}) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <h2 className='font-bold text-foreground'>{title}</h2>
@@ -357,6 +420,7 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
   return (
     <div className='mt-3 max-h-[32rem] space-y-2 overflow-y-auto'>
       {items.map((item) =>
+      {items.map((item) =>
         item.href ? (
           <Link
             key={item.id}
@@ -372,6 +436,7 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
             <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
           </article>
         )
+      )}
       )}
     </div>
   )

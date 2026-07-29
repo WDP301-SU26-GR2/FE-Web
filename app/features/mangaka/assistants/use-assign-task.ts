@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react'
-import { taskControllerCreateTask, taskControllerCreateTaskGroup } from '~/api/operations/task/task'
+import { useTranslation } from 'react-i18next'
+
 import type { CreateTaskBodyDto, CreateTaskGroupBodyDto, TaskResDtoOutput } from '~/api/model/task'
+import { taskControllerCreateTask, taskControllerCreateTaskGroup } from '~/api/operations/task/task'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export interface UseAssignTaskResult {
@@ -11,52 +13,48 @@ export interface UseAssignTaskResult {
   isSubmitting: boolean
 }
 
-/**
- * Hook for `POST /tasks` (Mangaka assigns a task to an Assistant).
- *
- * Per FE-API-Guide-v3.md §6 the BE enforces BR-ASSIST-01:
- *  - `assistantId` must reference a User with an ACTIVE StudioAssignment
- *    covering the page's series and the current time. Otherwise the BE
- *    returns 409 `Error.AssistantNotHired`.
- *  - `taskType` must be in the assignment's `assignedTaskTypes[]`.
- *
- * The hook only wraps the network call + error extraction; validation of the
- * taskType whitelist is done by the caller (see `useAssignTaskForm`).
- */
+function readableError(error: unknown, fallback: string): string {
+  const message = extractApiErrorMessage(error, fallback)
+  return message.startsWith('Error.') ? fallback : message
+}
+
+/** Wrap the Mangaka task and task-group creation endpoints. */
 export function useAssignTask(): UseAssignTaskResult {
+  const { t } = useTranslation('mangaka')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const assignTask = useCallback(
     async (input: CreateTaskBodyDto): Promise<{ success: boolean; data?: TaskResDtoOutput; error?: string }> => {
-      if (isSubmitting) return { success: false, error: 'Đang giao task, vui lòng đợi.' }
+      if (isSubmitting) return { success: false, error: t('studio.tasks.composer.errors.assigning') }
+
       setIsSubmitting(true)
       try {
         const res = await taskControllerCreateTask(input)
         return { success: true, data: res.data as TaskResDtoOutput | undefined }
-      } catch (err) {
-        const message = extractApiErrorMessage(err, 'Không thể giao task. Vui lòng thử lại.')
-        return { success: false, error: message }
+      } catch (error) {
+        return { success: false, error: readableError(error, t('studio.tasks.composer.errors.assignFailed')) }
       } finally {
         setIsSubmitting(false)
       }
     },
-    [isSubmitting]
+    [isSubmitting, t]
   )
 
   const assignTaskGroup = useCallback(
     async (input: CreateTaskGroupBodyDto): Promise<{ success: boolean; error?: string }> => {
-      if (isSubmitting) return { success: false, error: 'Đang giao task, vui lòng đợi.' }
+      if (isSubmitting) return { success: false, error: t('studio.tasks.composer.errors.assigning') }
+
       setIsSubmitting(true)
       try {
         await taskControllerCreateTaskGroup(input)
         return { success: true }
-      } catch (err) {
-        return { success: false, error: extractApiErrorMessage(err, 'Không thể giao nhóm task. Vui lòng thử lại.') }
+      } catch (error) {
+        return { success: false, error: readableError(error, t('studio.tasks.composer.errors.assignGroupFailed')) }
       } finally {
         setIsSubmitting(false)
       }
     },
-    [isSubmitting]
+    [isSubmitting, t]
   )
 
   return { assignTask, assignTaskGroup, isSubmitting }

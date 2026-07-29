@@ -3,12 +3,17 @@ import { useTranslation } from 'react-i18next'
 import {
   taskControllerListTasks,
   taskControllerApproveTask,
+  taskControllerApproveTaskGroup,
+  taskControllerReassignTask,
   taskControllerRequestRevision,
-  taskControllerCancelTask
+  taskControllerCancelTask,
+  taskControllerUpdateTask
 } from '~/api/operations/task/task'
+import type { ApproveTaskGroupResDtoOutput } from '~/api/model/task/approveTaskGroupResDtoOutput'
 import type { TaskControllerListTasksParams } from '~/api/model/task/taskControllerListTasksParams'
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task/taskListResDtoOutputItemsItem'
+import type { UpdateTaskBodyDto } from '~/api/model/task/updateTaskBodyDto'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export interface UseMangakaTasksOptions {
@@ -38,9 +43,18 @@ export interface UseMangakaTasksResult {
   reloadToken: number
   refresh: () => void
   approveTask: (taskId: string) => Promise<{ success: boolean; error?: string }>
+  approveTaskGroup: (groupId: string) => Promise<TaskGroupApprovalResult>
   requestRevision: (taskId: string, reviewerNote: string) => Promise<{ success: boolean; error?: string }>
   cancelTask: (taskId: string, reason?: string) => Promise<{ success: boolean; error?: string }>
+  updateTask: (taskId: string, update: UpdateTaskBodyDto) => Promise<TaskMutationResult>
+  reassignTask: (taskId: string, assistantId: string) => Promise<TaskMutationResult>
 }
+
+export type TaskMutationResult = { success: true } | { success: false; error: string }
+
+export type TaskGroupApprovalResult =
+  | { success: true; data: ApproveTaskGroupResDtoOutput }
+  | { success: false; error: string }
 
 /**
  * Mangaka task list hook — per FE-API-Guide-v3.md §6 (2026-07-21 update).
@@ -124,6 +138,19 @@ export function useMangakaTasks(options: UseMangakaTasksOptions): UseMangakaTask
     [t]
   )
 
+  const approveTaskGroup = useCallback(
+    async (groupId: string): Promise<TaskGroupApprovalResult> => {
+      try {
+        const res = await taskControllerApproveTaskGroup({ groupId })
+        setReloadToken((n) => n + 1)
+        return { success: true, data: res.data }
+      } catch (err) {
+        return { success: false, error: extractApiErrorMessage(err, t('tasks.errors.groupApproveFailed')) }
+      }
+    },
+    [t]
+  )
+
   const requestRevision = useCallback(
     async (taskId: string, reviewerNote: string) => {
       try {
@@ -150,5 +177,46 @@ export function useMangakaTasks(options: UseMangakaTasksOptions): UseMangakaTask
     [t]
   )
 
-  return { tasks, total, page, totalPages, isLoading, error, reloadToken, refresh, approveTask, requestRevision, cancelTask }
+  const updateTask = useCallback(
+    async (taskId: string, update: UpdateTaskBodyDto): Promise<TaskMutationResult> => {
+      try {
+        await taskControllerUpdateTask({ id: taskId }, update)
+        setReloadToken((n) => n + 1)
+        return { success: true }
+      } catch (err) {
+        return { success: false, error: extractApiErrorMessage(err, t('tasks.errors.updateFailed')) }
+      }
+    },
+    [t]
+  )
+
+  const reassignTask = useCallback(
+    async (taskId: string, assistantId: string): Promise<TaskMutationResult> => {
+      try {
+        await taskControllerReassignTask({ id: taskId }, { assistantId })
+        setReloadToken((n) => n + 1)
+        return { success: true }
+      } catch (err) {
+        return { success: false, error: extractApiErrorMessage(err, t('tasks.errors.reassignFailed')) }
+      }
+    },
+    [t]
+  )
+
+  return {
+    tasks,
+    total,
+    page,
+    totalPages,
+    isLoading,
+    error,
+    reloadToken,
+    refresh,
+    approveTask,
+    approveTaskGroup,
+    requestRevision,
+    cancelTask,
+    updateTask,
+    reassignTask
+  }
 }

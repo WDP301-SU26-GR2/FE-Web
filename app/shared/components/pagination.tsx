@@ -55,7 +55,7 @@ type PaginationProps = {
    */
   tKeyPrefix: string
   /** The i18n `t` function from the parent's `useTranslation(namespace)`. */
-  t: ReturnType<typeof useTranslation>[ 't' ]
+  t: ReturnType<typeof useTranslation>['t']
 }
 
 /**
@@ -107,9 +107,7 @@ export function Pagination({ page, totalPages, setPage, from, to, total, tKeyPre
           <ChevronRight className='h-4 w-4' />
         </button>
       </div>
-      <span className='text-xs text-muted-foreground'>
-        {t(`${tKeyPrefix}.showingRange`, { from, to, total })}
-      </span>
+      <span className='text-xs text-muted-foreground'>{t(`${tKeyPrefix}.showingRange`, { from, to, total })}</span>
     </div>
   )
 }

@@ -22,29 +22,29 @@ type StatusMeta = {
 
 const STATUS_META: Record<SeriesStatus, StatusMeta> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
-  IN_REVIEW: { className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-  READY_TO_PITCH: { className: 'bg-sky-500/10 text-sky-600 border-sky-500/20' },
-  PITCHED: { className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20' },
-  SERIALIZED: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-  HIATUS: { className: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
-  COMPLETING: { className: 'bg-teal-500/10 text-teal-600 border-teal-500/20' },
-  CANCELLING: { className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
-  COMPLETED: { className: 'bg-green-500/10 text-green-600 border-green-500/20' },
-  CANCELLED: { className: 'bg-rose-500/10 text-rose-500 border-rose-500/20' },
-  REJECTED: { className: 'bg-rose-600/10 text-rose-600 border-rose-600/20' },
-  ABANDONED: { className: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20' },
-  WITHDRAWN: { className: 'bg-stone-500/10 text-stone-500 border-stone-500/20' }
+  IN_REVIEW: { className: 'bg-warning/10 text-warning border-warning/20' },
+  READY_TO_PITCH: { className: 'bg-info/10 text-info border-info/20' },
+  PITCHED: { className: 'bg-primary/10 text-primary border-primary/20' },
+  SERIALIZED: { className: 'bg-success/10 text-success border-success/20' },
+  HIATUS: { className: 'bg-muted text-muted-foreground border-border' },
+  COMPLETING: { className: 'bg-info/10 text-info border-info/20' },
+  CANCELLING: { className: 'bg-warning/10 text-warning border-warning/20' },
+  COMPLETED: { className: 'bg-success/10 text-success border-success/20' },
+  CANCELLED: { className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  REJECTED: { className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  ABANDONED: { className: 'bg-muted text-muted-foreground border-border' },
+  WITHDRAWN: { className: 'bg-muted text-muted-foreground border-border' }
 }
 
 // ─── Cover placeholder palette ─────────────────────────────────────────────────
 
 const COVER_GRADIENTS = [
-  'from-blue-600 to-indigo-700',
-  'from-purple-600 to-pink-700',
-  'from-neutral-700 to-slate-900',
-  'from-amber-600 to-orange-800',
-  'from-emerald-600 to-teal-800',
-  'from-sky-600 to-cyan-800'
+  'from-info to-info/70 text-info-foreground',
+  'from-primary to-primary/70 text-primary-foreground',
+  'from-muted-foreground to-foreground text-background',
+  'from-warning to-warning/70 text-warning-foreground',
+  'from-success to-success/70 text-success-foreground',
+  'from-accent to-accent/70 text-accent-foreground'
 ] as const
 
 function pickGradient(seed: string): string {
@@ -239,7 +239,7 @@ export function MySeriesPage() {
                     ) : (
                       <div
                         className={cn(
-                          'flex h-10 w-8 shrink-0 items-center justify-center rounded bg-gradient-to-br font-extrabold text-[10px] text-white shadow-sm',
+                          'flex h-10 w-8 shrink-0 items-center justify-center rounded bg-gradient-to-br font-extrabold text-[10px] shadow-sm',
                           pickGradient(series.id)
                         )}
                         aria-label={series.title}
@@ -249,7 +249,7 @@ export function MySeriesPage() {
                     )}
                     <div className='min-w-0'>
                       <p className='truncate text-sm font-semibold'>{series.title}</p>
-                      {series.genres.length > 0 && (
+                      {series.genres?.length > 0 && (
                         <p className='truncate text-xs text-muted-foreground'>{series.genres.join(' · ')}</p>
                       )}
                     </div>
@@ -298,7 +298,11 @@ export function MySeriesPage() {
                                 <span>{t('mySeries.view')}</span>
                               </button>
                               <button
-                                disabled={series.status !== 'DRAFT' && series.proposal?.status !== 'PROPOSAL_REVISION'}
+                                // GET /series is a compact list and intentionally omits
+                                // `proposal.status`. DRAFT is always editable; an
+                                // IN_REVIEW series may be in PROPOSAL_REVISION and the
+                                // edit page verifies the detailed state before saving.
+                                disabled={series.status !== 'DRAFT' && series.status !== 'IN_REVIEW'}
                                 onClick={() => {
                                   setActiveMenu(null)
                                   navigate(`/dashboard/mangaka/series/${series.id}/edit`)

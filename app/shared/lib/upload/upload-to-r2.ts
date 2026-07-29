@@ -25,12 +25,7 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
  *   3. Return persisted identifiers.
  */
 
-const ALLOWED_CONTENT_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'application/pdf'
-] as const
+const ALLOWED_CONTENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'] as const
 
 type ContentType = (typeof ALLOWED_CONTENT_TYPES)[number]
 
@@ -46,10 +41,7 @@ export interface UploadedAsset {
   assetId: string
 }
 
-async function signAndPut(
-  file: File,
-  assetType: SignUploadBodyDtoAssetType | undefined
-): Promise<UploadedAsset> {
+async function signAndPut(file: File, assetType: SignUploadBodyDtoAssetType | undefined): Promise<UploadedAsset> {
   const response = await storageControllerSignUpload({
     fileName: file.name,
     contentType: narrowContentType(file),
@@ -78,10 +70,7 @@ async function signAndPut(
  * Throws the original `FetchError` if signing fails, or a plain Error if the
  * R2 PUT itself rejects.
  */
-export async function uploadToR2(
-  file: File,
-  assetType?: SignUploadBodyDtoAssetType
-): Promise<string> {
+export async function uploadToR2(file: File, assetType?: SignUploadBodyDtoAssetType): Promise<string> {
   const { key } = await signAndPut(file, assetType)
   return key
 }

@@ -18,6 +18,7 @@ import {
   type ProfileFormFields
 } from '../hooks/use-profile-form'
 import type { ProfileMode } from '../api/profile-api'
+import { EXPERIENCE_LEVELS, normalizeExperienceLevel } from '../lib/experience-level'
 import { PortfolioUploader } from './portfolio-uploader'
 
 // ── Enum sources ────────────────────────────────────────────────────────────
@@ -26,8 +27,10 @@ import { PortfolioUploader } from './portfolio-uploader'
 // (so cast in hooks keeps BE in lock-step).
 
 export const GENRES = Object.values(MangakaProfileBodyDtoGenresItem) as readonly MangakaProfileBodyDtoGenresItem[]
-export const SPECIALIZATIONS = ['BACKGROUND','SCREENTONE','EFFECT_LINES','INKING','COLORING','LETTERING'] as const
-export const AVAILABILITY_STATUSES = Object.values(AssistantProfileBodyDtoAvailabilityStatus) as readonly AssistantProfileBodyDtoAvailabilityStatus[]
+export const SPECIALIZATIONS = ['BACKGROUND', 'SCREENTONE', 'EFFECT_LINES', 'INKING', 'COLORING', 'LETTERING'] as const
+export const AVAILABILITY_STATUSES = Object.values(
+  AssistantProfileBodyDtoAvailabilityStatus
+) as readonly AssistantProfileBodyDtoAvailabilityStatus[]
 
 type ProfileEditFormProps = {
   mode: ProfileMode
@@ -54,7 +57,7 @@ export function ProfileEditForm({ mode, data, onCancel, onSaved }: ProfileEditFo
       return {
         penName: m.penName ?? '',
         genres: m.genres ?? [],
-        experienceLevel: m.experienceLevel ?? '',
+        experienceLevel: normalizeExperienceLevel(m.experienceLevel),
         bio: m.bio ?? '',
         portfolioFiles: m.portfolioFiles ?? []
       } as MangakaFormFields
@@ -62,7 +65,7 @@ export function ProfileEditForm({ mode, data, onCancel, onSaved }: ProfileEditFo
     const a = data as AssistantProfileResDtoOutput
     return {
       specializations: a.specializations ?? [],
-      experienceLevel: a.experienceLevel ?? '',
+      experienceLevel: normalizeExperienceLevel(a.experienceLevel),
       portfolioFiles: a.portfolioFiles ?? [],
       availabilityStatus: a.availabilityStatus ?? '',
       availabilityFrom: a.availabilityFrom ?? '',
@@ -70,7 +73,7 @@ export function ProfileEditForm({ mode, data, onCancel, onSaved }: ProfileEditFo
     } as AssistantFormFields
   }, [data, mode])
 
-  // Form state mirrors `initial` so the user can type.
+  // Form state mirrors the normalized initial snapshot.
   // We use `useState` with the initializer form so we lock the initial
   // snapshot. If you ever need to re-init after parent reload, key this
   // component with the data id.
@@ -94,14 +97,19 @@ export function ProfileEditForm({ mode, data, onCancel, onSaved }: ProfileEditFo
       </div>
 
       {/* ── Common fields ─────────────────────────────────────────────── */}
-      <FieldRow label={t('fields.experienceLevel')} hint={t('hints.experienceLevel')}>
-        <input
-          type='text'
+      <FieldRow label={t('fields.experienceLevel')}>
+        <select
           value={(fields as MangakaFormFields & AssistantFormFields).experienceLevel}
-          onChange={(e) => setField('experienceLevel', e.target.value)}
-          maxLength={50}
+          onChange={(e) => setField('experienceLevel', normalizeExperienceLevel(e.target.value))}
           className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none'
-        />
+        >
+          <option value=''>--</option>
+          {EXPERIENCE_LEVELS.map((level) => (
+            <option key={level} value={level}>
+              {level}
+            </option>
+          ))}
+        </select>
       </FieldRow>
 
       {/* ── Role-specific fields ──────────────────────────────────────── */}
@@ -185,10 +193,7 @@ function MangakaFields({
       </FieldRow>
 
       <FieldRow label={tKey('fields.portfolio')} hint={tKey('hints.portfolio')}>
-        <PortfolioUploader
-          keys={fields.portfolioFiles}
-          onChange={(keys) => setField('portfolioFiles', keys)}
-        />
+        <PortfolioUploader keys={fields.portfolioFiles} onChange={(keys) => setField('portfolioFiles', keys)} />
       </FieldRow>
     </>
   )
@@ -257,10 +262,7 @@ function AssistantFields({
       </div>
 
       <FieldRow label={tKey('fields.portfolio')} hint={tKey('hints.portfolio')}>
-        <PortfolioUploader
-          keys={fields.portfolioFiles}
-          onChange={(keys) => setField('portfolioFiles', keys)}
-        />
+        <PortfolioUploader keys={fields.portfolioFiles} onChange={(keys) => setField('portfolioFiles', keys)} />
       </FieldRow>
     </>
   )
@@ -297,7 +299,9 @@ function FieldRow({
 function inputCls(hasError: boolean): string {
   return cn(
     'w-full rounded-md border bg-background px-3 py-2 text-sm focus:ring-1 focus:outline-none',
-    hasError ? 'border-destructive focus:border-destructive focus:ring-destructive' : 'border-input focus:border-primary focus:ring-ring'
+    hasError
+      ? 'border-destructive focus:border-destructive focus:ring-destructive'
+      : 'border-input focus:border-primary focus:ring-ring'
   )
 }
 
@@ -322,9 +326,7 @@ function CheckboxGroup<T extends string>({
             key={opt.value}
             className={cn(
               'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
-              checked
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-border bg-background hover:bg-muted/30'
+              checked ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background hover:bg-muted/30'
             )}
           >
             <input

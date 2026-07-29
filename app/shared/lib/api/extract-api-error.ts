@@ -13,11 +13,23 @@ import type { FetchError } from '~/api/mutator/custom-fetch'
 export function extractApiErrorMessage(error: unknown, fallback: string): string {
   if (!error) return fallback
 
+  if (
+    !(error instanceof Error) &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    const message = error.message.trim()
+    if (message && !message.startsWith('Error.')) return message
+  }
+
   if (error instanceof Error) {
     const fetchError = error as FetchError
-    if (fetchError.data?.message) return fetchError.data.message
+    if (fetchError.data?.message) {
+      return fetchError.data.message.startsWith('Error.') ? fallback : fetchError.data.message
+    }
     if (error.message && error.message !== 'API error') {
-      return error.message
+      return error.message.startsWith('Error.') ? fallback : error.message
     }
   }
 
@@ -61,7 +73,11 @@ function isGenericSuccessMessage(message: string): boolean {
 /** Stable machine-readable BE error code (Spec 21). */
 export function extractApiErrorCode(error: unknown): string | undefined {
   if (!(error instanceof Error)) return undefined
-  return (error as FetchError).data?.code
+  const data = (error as FetchError).data
+  if (data?.code) return data.code
+  if (data?.message?.startsWith('Error.')) return data.message
+  const fieldCode = data?.errors?.find((item) => item.code?.startsWith('Error.'))?.code
+  return fieldCode ?? undefined
 }
 
 /**

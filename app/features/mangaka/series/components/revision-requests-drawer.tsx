@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2, MessageSquareWarning, RefreshCw, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -22,10 +22,7 @@ const TARGET_LABEL_KEY = {
   NAME: 'seriesDetail.revisions.target.NAME',
   MANUSCRIPT: 'seriesDetail.revisions.target.MANUSCRIPT',
   TASK: 'seriesDetail.revisions.target.TASK'
-} as const satisfies Record<
-  RevisionRequestListResDtoOutputItemsItem['targetType'],
-  string
->
+} as const satisfies Record<RevisionRequestListResDtoOutputItemsItem['targetType'], string>
 
 function formatDateTime(iso: string, locale: string): string {
   const d = new Date(iso)
@@ -42,29 +39,15 @@ function formatDateTime(iso: string, locale: string): string {
  * - Pagination: PAGE_SIZE rounds per page.
  * - Items are intentionally rendered WITHOUT the backend id.
  */
-export function RevisionRequestsDrawer({
-  open,
-  onClose,
-  seriesId,
-  nameId
-}: RevisionRequestsDrawerProps) {
+export function RevisionRequestsDrawer({ open, onClose, seriesId, nameId }: RevisionRequestsDrawerProps) {
   const { t, i18n } = useTranslation('mangaka')
   const { session } = useAuth()
   const currentUserId = session?.user?.id ?? null
   const locale = i18n.language
+  const [pendingResolution, setPendingResolution] = useState<RevisionRequestListResDtoOutputItemsItem | null>(null)
 
-  const {
-    items,
-    isLoading,
-    error,
-    page,
-    totalPages,
-    setPage,
-    paginatedItems,
-    resolvingId,
-    resolve,
-    refresh
-  } = useRevisionRequestsDrawer(open, seriesId, nameId)
+  const { items, isLoading, error, page, totalPages, setPage, paginatedItems, resolvingId, resolve, refresh } =
+    useRevisionRequestsDrawer(open, seriesId, nameId)
 
   // Lock body scroll + listen for ESC while the drawer is open.
   useEffect(() => {
@@ -93,7 +76,7 @@ export function RevisionRequestsDrawer({
         aria-hidden='true'
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300',
+          'fixed inset-0 z-40 bg-muted-foreground/60 backdrop-blur-sm transition-opacity duration-300',
           open ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
       />
@@ -169,13 +152,9 @@ export function RevisionRequestsDrawer({
               {paginatedItems.map((item) => {
                 const targetKey = TARGET_LABEL_KEY[item.targetType]
                 const targetLabel = i18n.exists(targetKey) ? t(targetKey) : item.targetType
-                const canResolve =
-                  !!currentUserId && item.recipientId === currentUserId && !item.isResolved
+                const canResolve = !!currentUserId && item.recipientId === currentUserId && !item.isResolved
                 return (
-                  <li
-                    key={item.id}
-                    className='rounded-lg border border-border bg-background/40 p-3 text-sm'
-                  >
+                  <li key={item.id} className='rounded-lg border border-border bg-background/40 p-3 text-sm'>
                     <div className='mb-2 flex items-center justify-between gap-2'>
                       <span className='inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary'>
                         {targetLabel}
@@ -192,7 +171,7 @@ export function RevisionRequestsDrawer({
                         {formatDateTime(item.createdAt, locale)}
                       </span>
                       {item.isResolved && (
-                        <span className='inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600'>
+                        <span className='inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success'>
                           {t('seriesDetail.revisions.drawer.resolved')}
                         </span>
                       )}
@@ -201,7 +180,7 @@ export function RevisionRequestsDrawer({
                       <button
                         type='button'
                         disabled={resolvingId !== null}
-                        onClick={() => void resolve(item)}
+                        onClick={() => setPendingResolution(item)}
                         className='mt-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
                       >
                         {resolvingId === item.id && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
@@ -221,9 +200,7 @@ export function RevisionRequestsDrawer({
         <footer className='flex shrink-0 flex-col gap-2 border-t border-border px-5 py-3 text-xs text-muted-foreground'>
           {items.length > 0 && (
             <div className='flex items-center justify-between gap-3'>
-              <span>
-                {t('seriesDetail.revisions.drawer.paginationInfo', { from, to, total: items.length })}
-              </span>
+              <span>{t('seriesDetail.revisions.drawer.paginationInfo', { from, to, total: items.length })}</span>
               <div className='flex items-center gap-1'>
                 <button
                   type='button'
@@ -252,6 +229,48 @@ export function RevisionRequestsDrawer({
           <span className='block'>{t('seriesDetail.revisions.drawer.footerHint')}</span>
         </footer>
       </aside>
+
+      {pendingResolution && (
+        <div className='fixed inset-0 z-[60] flex items-center justify-center p-4' role='presentation'>
+          <div
+            aria-hidden='true'
+            className='absolute inset-0 bg-muted-foreground/60 backdrop-blur-sm'
+            onClick={() => setPendingResolution(null)}
+          />
+          <div
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby='confirm-series-revision-title'
+            className='relative w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-2xl'
+          >
+            <h3 id='confirm-series-revision-title' className='text-base font-bold text-foreground'>
+              {t('seriesDetail.revisions.confirmTitle')}
+            </h3>
+            <p className='mt-2 text-sm text-muted-foreground'>{t('seriesDetail.revisions.confirmDescription')}</p>
+            <p className='mt-3 text-sm text-foreground'>{t('seriesDetail.revisions.confirmNotice')}</p>
+            <div className='mt-5 flex justify-end gap-2'>
+              <button
+                type='button'
+                onClick={() => setPendingResolution(null)}
+                className='rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted'
+              >
+                {t('seriesDetail.revisions.drawer.close')}
+              </button>
+              <button
+                type='button'
+                disabled={resolvingId !== null}
+                onClick={() => {
+                  void resolve(pendingResolution)
+                  setPendingResolution(null)
+                }}
+                className='rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+              >
+                {t('seriesDetail.revisions.confirmCta')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

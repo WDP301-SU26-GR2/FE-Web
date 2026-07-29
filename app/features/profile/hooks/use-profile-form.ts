@@ -17,6 +17,7 @@ import {
   type AssistantProfileResDtoOutput,
   type MangakaProfileResDtoOutput
 } from '~/api/model/users'
+import type { ExperienceLevel } from '../lib/experience-level'
 
 // ── Field shapes used by the edit form ──────────────────────────────────────
 // These are flat strings (no nested enums) so the form state stays trivial;
@@ -25,14 +26,14 @@ import {
 export type MangakaFormFields = {
   penName: string
   genres: MangakaProfileBodyDtoGenresItem[]
-  experienceLevel: string
+  experienceLevel: ExperienceLevel | ''
   bio: string
   portfolioFiles: string[]
 }
 
 export type AssistantFormFields = {
   specializations: AssistantProfileBodyDtoSpecializationsItem[]
-  experienceLevel: string
+  experienceLevel: ExperienceLevel | ''
   portfolioFiles: string[]
   availabilityStatus: string
   availabilityFrom: string
@@ -99,7 +100,7 @@ export function useProfileForm(): UseProfileFormResult {
           const saved: MangakaProfileResDtoOutput = await saveMangakaProfile({
             penName: m.penName.trim(),
             genres: m.genres as MangakaProfileBodyDtoGenresItem[],
-            ...(m.experienceLevel.trim() ? { experienceLevel: m.experienceLevel.trim() } : {}),
+            ...(m.experienceLevel ? { experienceLevel: m.experienceLevel } : {}),
             ...(m.bio.trim() ? { bio: m.bio.trim() } : {}),
             portfolioFiles: m.portfolioFiles
           })
@@ -112,7 +113,7 @@ export function useProfileForm(): UseProfileFormResult {
           : undefined
         const saved: AssistantProfileResDtoOutput = await saveAssistantProfile({
           specializations: a.specializations,
-          ...(a.experienceLevel.trim() ? { experienceLevel: a.experienceLevel.trim() } : {}),
+          ...(a.experienceLevel ? { experienceLevel: a.experienceLevel } : {}),
           portfolioFiles: a.portfolioFiles,
           ...(status ? { availabilityStatus: status } : {}),
           ...(a.availabilityFrom ? { availabilityFrom: a.availabilityFrom } : {}),

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { chapterControllerUpdatePage } from '~/api/operations/chapters/chapters'
 import type { PageResDtoOutput, UpdatePageBodyDto } from '~/api/model/chapters'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseUpdatePageResult = {
   updatePage: (input: { pageId: string; body: UpdatePageBodyDto }) => Promise<PageResDtoOutput | null>
@@ -25,10 +25,15 @@ export function useUpdatePage(): UseUpdatePageResult {
       setIsUpdating(true)
       try {
         const res = await chapterControllerUpdatePage({ pageId: input.pageId }, input.body)
-        toast.success(t('publication.pagesSection.update.success'))
+        toast.success(t('publication.pagesReader.updatePageNumber.success'))
         return res.data as PageResDtoOutput
       } catch (err) {
-        toast.error(extractApiErrorMessage(err, t('publication.error.generic')))
+        const code = extractApiErrorCode(err)
+        const fallback =
+          code === 'Error.DuplicatePageNumber' || code === 'Error.PageNumberDuplicate'
+            ? t('publication.pagesReader.updatePageNumber.errorDuplicate')
+            : t('publication.pagesReader.updatePageNumber.errorGeneric')
+        toast.error(extractApiErrorMessage(err, fallback))
         return null
       } finally {
         setIsUpdating(false)

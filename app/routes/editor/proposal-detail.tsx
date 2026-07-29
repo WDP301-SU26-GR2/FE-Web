@@ -137,6 +137,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         : code === 'Error.InvalidProposalState' ||
             code === 'Error.InvalidNameState' ||
             code === 'Error.InvalidSeriesTransition'
+        : code === 'Error.InvalidProposalState' ||
+            code === 'Error.InvalidNameState' ||
+            code === 'Error.InvalidSeriesTransition'
           ? 'invalidState'
           : 'actionFailed'
     return { ok: false, intent, errorKey }

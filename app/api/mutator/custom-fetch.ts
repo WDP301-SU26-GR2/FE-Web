@@ -70,6 +70,7 @@ export async function customFetch<T>(url: string, options?: any): Promise<T> {
     config.data = options.body
   } else if (options?.data !== undefined) {
     config.data = typeof options.data === 'string' ? options.data : JSON.stringify(options.data)
+    config.data = typeof options.data === 'string' ? options.data : JSON.stringify(options.data)
   }
 
   if (options?.signal) {
@@ -153,6 +154,7 @@ function normalizeAxiosError(err: unknown): Error {
   if (status === 401) {
     removeStorage(STORAGE_KEYS.accessToken)
     removeStorage(STORAGE_KEYS.refreshToken)
+    removeStorage(STORAGE_KEYS.user)
   }
 
   const fetchError = Object.assign(new Error(errorBody.message), {

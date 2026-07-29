@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { revisionControllerResolve } from '~/api/operations/revision/revision'
 import { taskControllerStartTask, taskControllerSubmitTask } from '~/api/operations/task/task'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
@@ -14,6 +15,7 @@ export interface UseAssistantTaskActionsResult {
    * Returns `true` only if both legs succeed.
    */
   submit: (taskId: string, file: File) => Promise<boolean>
+  resolveRevision: (revisionId: string) => Promise<boolean>
 }
 
 /**
@@ -51,6 +53,10 @@ export function useAssistantTaskActions(): UseAssistantTaskActionsResult {
         toast.error(t('tasks.error.noFileToSubmit'))
         return false
       }
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(t('tasks.error.fileTooLarge'))
+        return false
+      }
       setIsMutating(true)
       try {
         const key = await uploadToR2(file)
@@ -67,5 +73,22 @@ export function useAssistantTaskActions(): UseAssistantTaskActionsResult {
     [t]
   )
 
-  return { isMutating, start, submit }
+  const resolveRevision = useCallback(
+    async (revisionId: string) => {
+      setIsMutating(true)
+      try {
+        await revisionControllerResolve({ id: revisionId })
+        toast.success(t('tasks.success.revisionResolved'))
+        return true
+      } catch (err) {
+        toast.error(extractApiErrorMessage(err, t('tasks.error.resolveRevisionFailed')))
+        return false
+      } finally {
+        setIsMutating(false)
+      }
+    },
+    [t]
+  )
+
+  return { isMutating, start, submit, resolveRevision }
 }

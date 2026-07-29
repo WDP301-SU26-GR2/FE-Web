@@ -47,6 +47,18 @@ export type AssistantProfileSubmit = {
   availabilityTo?: string
 }
 
+function normalizeAssistantProfile(profile: AssistantProfileResDtoOutput): AssistantProfileResDtoOutput {
+  return {
+    ...profile,
+    specializations: Array.isArray(profile.specializations) ? profile.specializations : [],
+    portfolioFiles: Array.isArray(profile.portfolioFiles) ? profile.portfolioFiles : [],
+    reputationScore: typeof profile.reputationScore === 'number' ? profile.reputationScore : 0,
+    ratingAvg: typeof profile.ratingAvg === 'number' ? profile.ratingAvg : 0,
+    ratingCount: typeof profile.ratingCount === 'number' ? profile.ratingCount : 0,
+    hasProfile: Boolean(profile.hasProfile)
+  }
+}
+
 /**
  * Fetch the "my profile" record matching the role. Returns null on 404 so
  * callers can show an "empty profile" empty state.
@@ -63,7 +75,7 @@ export async function fetchMyProfile(mode: ProfileMode): Promise<MyProfileData |
   }
   const res = await usersControllerGetMyAssistantProfile()
   if (!res.data) return null
-  return { data: res.data, mode }
+  return { data: normalizeAssistantProfile(res.data), mode }
 }
 
 /**
@@ -74,9 +86,7 @@ export { extractApiErrorMessage as readProfileError }
 /**
  * Persist a Mangaka profile (upsert). Returns the new state from BE.
  */
-export async function saveMangakaProfile(
-  payload: MangakaProfileSubmit
-): Promise<MangakaProfileResDtoOutput> {
+export async function saveMangakaProfile(payload: MangakaProfileSubmit): Promise<MangakaProfileResDtoOutput> {
   const res = await usersControllerUpsertMangakaProfile(payload)
   if (!res.data) {
     throw new Error('Empty response saving Mangaka profile')
@@ -87,14 +97,12 @@ export async function saveMangakaProfile(
 /**
  * Persist an Assistant profile (upsert). Returns the new state from BE.
  */
-export async function saveAssistantProfile(
-  payload: AssistantProfileSubmit
-): Promise<AssistantProfileResDtoOutput> {
+export async function saveAssistantProfile(payload: AssistantProfileSubmit): Promise<AssistantProfileResDtoOutput> {
   const res = await usersControllerUpsertAssistantProfile(payload)
   if (!res.data) {
     throw new Error('Empty response saving Assistant profile')
   }
-  return res.data
+  return normalizeAssistantProfile(res.data)
 }
 
 // ── Account info (PATCH /me) ─────────────────────────────────────────────────
@@ -124,9 +132,7 @@ export async function fetchAccountInfo(): Promise<AccountInfo> {
  * - omit/null = keep current
  * - '' (empty string) = delete nullable fields (displayName, avatar)
  */
-export async function saveAccountInfo(
-  payload: AccountInfoSubmit
-): Promise<AccountInfo> {
+export async function saveAccountInfo(payload: AccountInfoSubmit): Promise<AccountInfo> {
   const res = await usersControllerUpdateMe(payload as UpdateMeBodyDto)
   if (!res.data) {
     throw new Error('Empty response saving account info')

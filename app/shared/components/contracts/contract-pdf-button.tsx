@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Loader2 } from 'lucide-react'
+import { AlertTriangle, Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 
@@ -25,7 +25,6 @@ export function ContractPdfButton({
   conditionsCount?: number
   className?: string
 }) {
-  const { t } = useTranslation('common')
   const [isLoading, setIsLoading] = useState(false)
 
   if (!PDF_STATUSES.has(contract.status)) return null
@@ -39,24 +38,33 @@ export function ContractPdfButton({
       else window.location.assign(response.data.downloadUrl)
     } catch (error) {
       target?.close()
-      toast.error(extractApiErrorMessage(error, t('contractPdf.error')))
+      toast.error(extractApiErrorMessage(error, 'Không thể tạo bản PDF hợp đồng. Vui lòng thử lại.'))
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <button
-      type='button'
-      onClick={() => void download()}
-      disabled={isLoading}
-      className={cn(
-        'inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-bold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60',
-        className
+    <div className='flex max-w-sm flex-col items-end gap-1.5'>
+      <button
+        type='button'
+        onClick={() => void download()}
+        disabled={isLoading || conditionsMissing}
+        title={conditionsMissing ? 'Hợp đồng chưa có điều kiện thanh toán hợp lệ.' : undefined}
+        className={cn(
+          'inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-bold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60',
+          className
+        )}
+      >
+        {isLoading ? <Loader2 className='size-4 animate-spin' /> : <Download className='size-4' />}
+        {isLoading ? 'Đang chuẩn bị PDF…' : 'Tải hợp đồng PDF'}
+      </button>
+      {conditionsMissing && (
+        <p className='inline-flex items-center gap-1 text-right text-xs font-semibold text-destructive'>
+          <AlertTriangle className='size-3.5 shrink-0' />
+          Chưa có điều kiện thanh toán hợp lệ nên chưa thể tạo PDF đầy đủ.
+        </p>
       )}
-    >
-      {isLoading ? <Loader2 className='size-4 animate-spin' /> : <Download className='size-4' />}
-      {isLoading ? t('contractPdf.preparing') : t('contractPdf.download')}
-    </button>
+    </div>
   )
 }

@@ -7,7 +7,7 @@ import {
   ImageIcon,
   Loader2,
   MessageSquareText,
-  Pencil,
+  PencilLine,
   Plus,
   Trash2,
   Upload,
@@ -15,7 +15,8 @@ import {
 } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
-import type { PageListResDtoOutputItemsItem, UpdatePageBodyDto } from '~/api/model/chapters'
+import { Dialog } from '~/shared/ui/dialog'
+import type { PageListResDtoOutputItemsItem } from '~/api/model/chapters'
 
 import { usePublicationContext } from './publication-shell-context'
 import { PageStatusBadge } from './lib/name-status-meta'
@@ -27,9 +28,8 @@ import { useUpdatePage } from './hooks/use-update-page'
 import { useManuscriptRevisions } from './hooks/use-manuscript-revisions'
 import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
 import { ManuscriptActionPanel } from './components/manuscript-action-panel'
-import { Dialog } from '~/shared/ui/dialog'
-import { taskControllerListTasks } from '~/api/operations/task/task'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { ProductionStagePanel } from './components/production-stage-panel'
 
 /**
  * Pages view — composite reader for Mangaka.
@@ -48,18 +48,17 @@ import { useAuth } from '~/features/auth/context/auth-context'
  *   - Each page is identified by `pageNumber`. We use IntersectionObserver
  *     to keep the TOC "selected" item in sync as the user scrolls.
  *   - `originalFile` is uploaded by Mangaka (raw pencil/ink scan).
- *   - `compositeFile` is produced by Assistant Task approval — FE NEVER
- *     uploads compositeFile manually. It's read-only from the Task flow.
+ *   - Stage outputs are uploaded and confirmed only through
+ *     `ProductionStagePanel`, which preserves the stage receipt chain.
  *   - Mangaka uploads `originalFile` via "Add page" button → `POST /chapters/:id/pages`.
- *   - After Name APPROVED, Mangaka creates Regions → assigns Tasks → Assistant
- *     submits → Mangaka approves → BE writes `compositeFile` to the Page.
- *   - Submit manuscript: BE checks that every non-CANCELLED Task is APPROVED.
+ *   - After Name APPROVED, Mangaka follows the visible stage sequence:
+ *     assign compatible tasks → confirm all page outputs → complete the
+ *     stage. FINAL_CHECK is closed only by manuscript submission.
  *
  * Delete / Update per FE-API-Guide-v3 §5 (2026-07-21):
  *   - `DELETE /pages/:pageId` — delete single page (cascade Region + Task).
  *   - `DELETE /chapters/:id/pages` with `{pageIds}` — bulk delete (all-or-nothing, max 50).
- *   - `PATCH /pages/:pageId` — update `pageNumber` (only; `originalFile` immutable).
- *   - Pages must be `DRAFT`/`REVISING` to edit/delete. `COMPLETED` pages are locked.
+ *   - Pages must be `DRAFT`/`REVISING` to delete. `COMPLETED` pages are locked.
  *
  * The right rail shows MANUSCRIPT revision requests (`targetId = chapter.id`).
  * These are the canonical Editor feedback rounds for a manuscript.
@@ -67,7 +66,12 @@ import { useAuth } from '~/features/auth/context/auth-context'
 export function PublicationPagesReaderView() {
   const { t } = useTranslation('mangaka')
   const { chapter, name, pages, refreshAll } = usePublicationContext()
+  const { session } = useAuth()
   const refreshPages = refreshAll
+  const manuscriptRevisions = useManuscriptRevisions(chapter?.id)
+  const hasOpenRecipientRevisions = manuscriptRevisions.revisions.some(
+    (revision) => !revision.isResolved && revision.recipientId === session?.user?.id
+  )
 
   // All hooks at top level — never inside callbacks or conditionals.
   const { createPage, isCreating } = useCreatePage()
@@ -86,7 +90,15 @@ export function PublicationPagesReaderView() {
   // Confirm dialog state.
   const [deleteConfirmPage, setDeleteConfirmPage] = useState<PageListResDtoOutputItemsItem | null>(null)
   const [deleteBulkConfirm, setDeleteBulkConfirm] = useState(false)
-  const [updatePageTarget, setUpdatePageTarget] = useState<PageListResDtoOutputItemsItem | null>(null)
+  const [renumberPage, setRenumberPage] = useState<PageListResDtoOutputItemsItem | null>(null)
+  const [productionReady, setProductionReady] = useState(false)
+  const [pageSetLocked, setPageSetLocked] = useState(false)
+  const [productionVersion, setProductionVersion] = useState(0)
+
+  const refreshProduction = useCallback(() => {
+    setProductionVersion((version) => version + 1)
+    void refreshAll()
+  }, [refreshAll])
 
   const sortedPages = useMemo(() => [...pages].sort((a, b) => a.pageNumber - b.pageNumber), [pages])
 
@@ -167,8 +179,6 @@ export function PublicationPagesReaderView() {
     return page.status === 'DRAFT' || page.status === 'REVISING'
   }, [])
 
-  if (!chapter || !name) return null
-
   // Actions that call API hooks.
   const handleDeletePage = useCallback(
     async (pageId: string) => {
@@ -180,265 +190,285 @@ export function PublicationPagesReaderView() {
   )
 
   const handleDeleteBulk = useCallback(async () => {
+    if (!chapter) return
     await deletePagesBulk(chapter.id, Array.from(selectedPageIds))
     exitBulkMode()
     refreshPages()
-  }, [deletePagesBulk, chapter.id, selectedPageIds, exitBulkMode, refreshPages])
+  }, [deletePagesBulk, chapter, selectedPageIds, exitBulkMode, refreshPages])
 
-  const handleUpdatePage = useCallback(
-    async (pageId: string, input: { pageNumber: number; compositeFile: string | null }) => {
-      const body: UpdatePageBodyDto = { pageNumber: input.pageNumber }
-      if (input.compositeFile) {
-        body.compositeFile = input.compositeFile
-      }
-      const result = await updatePage({ pageId, body })
-      if (result) {
-        setUpdatePageTarget(null)
-        refreshPages()
-      }
+  const handleRenumberPage = useCallback(
+    async (pageId: string, pageNumber: number) => {
+      const updated = await updatePage({ pageId, body: { pageNumber } })
+      if (!updated) return
+      setRenumberPage(null)
+      await refreshPages()
     },
-    [updatePage, refreshPages]
+    [refreshPages, updatePage]
   )
 
+  const handlePageSetLockChange = useCallback((locked: boolean) => {
+    setPageSetLocked(locked)
+    if (locked) {
+      setBulkMode(false)
+      setSelectedPageIds(new Set())
+    }
+  }, [])
+
+  if (!chapter || !name) return null
+
   return (
-    <div className='mx-auto flex max-w-[1400px] flex-col gap-4 p-4 md:p-6 lg:flex-row'>
-      {/* LEFT: page TOC */}
-      <aside className='lg:w-56 lg:shrink-0'>
-        <div className='sticky top-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
-          <header className='border-b border-border px-4 py-3'>
-            <h2 className='text-xs font-bold uppercase tracking-widest text-muted-foreground'>
-              {t('publication.pagesReader.toc.title')}
-            </h2>
-            <p className='mt-0.5 text-xs text-muted-foreground/80'>
-              {t('publication.pagesReader.toc.count', { n: sortedPages.length })}
-            </p>
-          </header>
-          <ol className='max-h-[calc(100vh-220px)] overflow-y-auto p-2'>
-            {sortedPages.length === 0 ? (
-              <li className='px-3 py-6 text-center text-xs text-muted-foreground'>
-                {t('publication.pagesReader.toc.empty')}
-              </li>
-            ) : (
-              sortedPages.map((p) => (
-                <li key={p.id}>
-                  <button
-                    type='button'
-                    onClick={() => jumpToPage(p.id)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors cursor-pointer',
-                      effectiveActivePageId === p.id ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
-                    )}
-                  >
-                    {bulkMode && (
-                      <span
-                        className={cn(
-                          'flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition-colors',
-                          selectedPageIds.has(p.id)
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border text-transparent'
-                        )}
-                        aria-hidden='true'
-                      >
-                        {selectedPageIds.has(p.id) && <Check className='h-3 w-3' />}
-                      </span>
-                    )}
-                    <span
+    <>
+      <div className='mx-auto w-full max-w-[1400px] px-4 pt-4 md:px-6 md:pt-6'>
+        <ProductionStagePanel
+          key={productionVersion}
+          chapterId={chapter.id}
+          manuscriptStatus={chapter.manuscriptStatus}
+          onChanged={refreshProduction}
+          onReadinessChange={setProductionReady}
+          onPageSetLockChange={handlePageSetLockChange}
+        />
+      </div>
+      <div className='mx-auto flex max-w-[1400px] flex-col gap-4 p-4 md:p-6 lg:flex-row'>
+        {/* LEFT: page TOC */}
+        <aside className='lg:w-56 lg:shrink-0'>
+          <div className='sticky top-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
+            <header className='border-b border-border px-4 py-3'>
+              <h2 className='text-xs font-bold uppercase tracking-widest text-muted-foreground'>
+                {t('publication.pagesReader.toc.title')}
+              </h2>
+              <p className='mt-0.5 text-xs text-muted-foreground/80'>
+                {t('publication.pagesReader.toc.count', { n: sortedPages.length })}
+              </p>
+            </header>
+            <ol className='max-h-[calc(100vh-220px)] overflow-y-auto p-2'>
+              {sortedPages.length === 0 ? (
+                <li className='px-3 py-6 text-center text-xs text-muted-foreground'>
+                  {t('publication.pagesReader.toc.empty')}
+                </li>
+              ) : (
+                sortedPages.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      type='button'
+                      onClick={() => jumpToPage(p.id)}
                       className={cn(
-                        'flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-bold',
-                        effectiveActivePageId === p.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                        'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors cursor-pointer',
+                        effectiveActivePageId === p.id ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
                       )}
                     >
-                      {p.pageNumber}
-                    </span>
-                    <span className='min-w-0 flex-1 truncate'>
-                      {t('publication.pagesReader.toc.pageLabel', { n: p.pageNumber })}
-                    </span>
+                      {bulkMode && (
+                        <span
+                          className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition-colors',
+                            selectedPageIds.has(p.id)
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border text-transparent'
+                          )}
+                          aria-hidden='true'
+                        >
+                          {selectedPageIds.has(p.id) && <Check className='h-3 w-3' />}
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          'flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-bold',
+                          effectiveActivePageId === p.id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {p.pageNumber}
+                      </span>
+                      <span className='min-w-0 flex-1 truncate'>
+                        {t('publication.pagesReader.toc.pageLabel', { n: p.pageNumber })}
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ol>
+            <footer className='border-t border-border p-2'>
+              {bulkMode ? (
+                <div className='flex flex-col gap-1'>
+                  <p className='px-1 py-0.5 text-[10px] text-muted-foreground'>
+                    {t('publication.pagesReader.deleteBulk.selectedCount', { count: selectedPageIds.size })}
+                  </p>
+                  <button
+                    type='button'
+                    onClick={selectAll}
+                    disabled={selectedPageIds.size === sortedPages.length}
+                    className='flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
+                  >
+                    {t('publication.pagesReader.deleteBulk.selectAll')}
                   </button>
-                </li>
-              ))
-            )}
-          </ol>
-          <footer className='border-t border-border p-2'>
-            {bulkMode ? (
-              <div className='flex flex-col gap-1'>
-                <p className='px-1 py-0.5 text-[10px] text-muted-foreground'>
-                  {t('publication.pagesReader.deleteBulk.selectedCount', { count: selectedPageIds.size })}
+                  <button
+                    type='button'
+                    onClick={deselectAll}
+                    disabled={selectedPageIds.size === 0}
+                    className='flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
+                  >
+                    {t('publication.pagesReader.deleteBulk.deselectAll')}
+                  </button>
+                  <button
+                    type='button'
+                    onClick={exitBulkMode}
+                    className='flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium hover:bg-muted'
+                  >
+                    {t('publication.pagesReader.delete.cancellingButton')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type='button'
+                  onClick={() => setComposerOpen(true)}
+                  disabled={!!chapter.hold || chapter.manuscriptStatus === null || pageSetLocked}
+                  className='flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  <Plus className='h-3.5 w-3.5' />
+                  {t('publication.pagesReader.addPage')}
+                </button>
+              )}
+            </footer>
+          </div>
+        </aside>
+
+        {/* CENTER: page stack */}
+        <main className='flex-1 min-w-0'>
+          <header className='mb-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
+            <div className='flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3'>
+              <div>
+                <p className='text-[11px] font-bold uppercase tracking-widest text-muted-foreground'>
+                  {t('publication.pagesReader.compositeLabel')}
                 </p>
-                <button
-                  type='button'
-                  onClick={selectAll}
-                  disabled={selectedPageIds.size === sortedPages.length}
-                  className='flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  {t('publication.pagesReader.deleteBulk.selectAll')}
-                </button>
-                <button
-                  type='button'
-                  onClick={deselectAll}
-                  disabled={selectedPageIds.size === 0}
-                  className='flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  {t('publication.pagesReader.deleteBulk.deselectAll')}
-                </button>
-                <button
-                  type='button'
-                  onClick={exitBulkMode}
-                  className='flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium hover:bg-muted'
-                >
-                  {t('publication.pagesReader.delete.cancellingButton')}
-                </button>
+                <h1 className='mt-1 text-lg font-bold tracking-tight'>
+                  {t('publication.pagesReader.title', {
+                    chapterTitle: chapter.title || t('publication.header.workbenchLabel'),
+                    n: chapter.chapterNumber
+                  })}
+                </h1>
               </div>
-            ) : (
+              <div className='flex items-center gap-2'>
+                {!bulkMode && sortedPages.length > 0 && (
+                  <button
+                    type='button'
+                    onClick={() => setBulkMode(true)}
+                    disabled={!!chapter.hold || chapter.manuscriptStatus === null || pageSetLocked}
+                    className='flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
+                  >
+                    <Trash2 className='h-3.5 w-3.5' />
+                    {t('publication.pagesReader.deleteBulk.enterSelectMode')}
+                  </button>
+                )}
+                {bulkMode && selectedPageIds.size > 0 && (
+                  <button
+                    type='button'
+                    onClick={() => setDeleteBulkConfirm(true)}
+                    disabled={!!chapter.hold || isDeletingBulk || pageSetLocked}
+                    className='flex items-center gap-1.5 rounded-md bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
+                  >
+                    <Trash2 className='h-3.5 w-3.5' />
+                    {t('publication.pagesReader.deleteBulk.confirmButton', { count: selectedPageIds.size })}
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className='px-5 py-3 text-xs text-muted-foreground'>{t('publication.pagesReader.subtitle')}</p>
+            <ManuscriptActionPanel
+              productionReady={productionReady}
+              hasOpenRecipientRevisions={hasOpenRecipientRevisions}
+            />
+          </header>
+
+          {sortedPages.length === 0 ? (
+            <div className='flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card/40 px-6 py-16 text-center'>
+              <div className='flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground'>
+                <ImageIcon className='h-5 w-5' />
+              </div>
+              <h2 className='text-base font-semibold'>{t('publication.pagesReader.emptyTitle')}</h2>
+              <p className='max-w-md text-sm text-muted-foreground'>{t('publication.pagesReader.emptyDesc')}</p>
+            </div>
+          ) : (
+            <div
+              ref={stackRef}
+              className='flex max-h-[calc(100vh-220px)] flex-col gap-6 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-sm'
+            >
+              {sortedPages.map((p) => (
+                <PageCard
+                  key={p.id}
+                  page={p}
+                  setRef={setPageRef(p.id)}
+                  bulkMode={bulkMode}
+                  selected={selectedPageIds.has(p.id)}
+                  onToggleSelect={() => togglePageSelection(p.id)}
+                  onDelete={() => setDeleteConfirmPage(p)}
+                  onRenumber={() => setRenumberPage(p)}
+                  isEditable={isPageEditable(p)}
+                  deleteLocked={pageSetLocked || Boolean(chapter.hold)}
+                  renumberLocked={Boolean(chapter.hold)}
+                />
+              ))}
               <button
                 type='button'
-                onClick={() => setComposerOpen(true)}
-                disabled={!!chapter.hold || chapter.manuscriptStatus === null}
-                className='flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+                onClick={() => {
+                  const first = pageRefs.current.entries().next().value
+                  if (first) (first[1] as HTMLDivElement | undefined)?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className='mx-auto flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted cursor-pointer'
               >
-                <Plus className='h-3.5 w-3.5' />
-                {t('publication.pagesReader.addPage')}
+                <ChevronUp className='h-3.5 w-3.5' />
+                {t('publication.pagesReader.backToTop')}
               </button>
-            )}
-          </footer>
-        </div>
-      </aside>
+            </div>
+          )}
 
-      {/* CENTER: page stack */}
-      <main className='flex-1 min-w-0'>
-        <header className='mb-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
-          <div className='flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3'>
-            <div>
-              <p className='text-[11px] font-bold uppercase tracking-widest text-muted-foreground'>
-                {t('publication.pagesReader.compositeLabel')}
-              </p>
-              <h1 className='mt-1 text-lg font-bold tracking-tight'>
-                {t('publication.pagesReader.title', {
-                  chapterTitle: chapter.title || t('publication.header.workbenchLabel'),
-                  n: chapter.chapterNumber
-                })}
-              </h1>
-            </div>
-            <div className='flex items-center gap-2'>
-              {!bulkMode && sortedPages.length > 0 && (
-                <button
-                  type='button'
-                  onClick={() => setBulkMode(true)}
-                  disabled={!!chapter.hold || chapter.manuscriptStatus === null}
-                  className='flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
-                >
-                  <Trash2 className='h-3.5 w-3.5' />
-                  {t('publication.pagesReader.deleteBulk.enterSelectMode')}
-                </button>
-              )}
-              {bulkMode && selectedPageIds.size > 0 && (
-                <button
-                  type='button'
-                  onClick={() => setDeleteBulkConfirm(true)}
-                  disabled={!!chapter.hold || isDeletingBulk}
-                  className='flex items-center gap-1.5 rounded-md bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
-                >
-                  <Trash2 className='h-3.5 w-3.5' />
-                  {t('publication.pagesReader.deleteBulk.confirmButton', { count: selectedPageIds.size })}
-                </button>
-              )}
-            </div>
-          </div>
-          <p className='px-5 py-3 text-xs text-muted-foreground'>{t('publication.pagesReader.subtitle')}</p>
-          <ManuscriptActionPanel />
-        </header>
-
-        {sortedPages.length === 0 ? (
-          <div className='flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card/40 px-6 py-16 text-center'>
-            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground'>
-              <ImageIcon className='h-5 w-5' />
-            </div>
-            <h2 className='text-base font-semibold'>{t('publication.pagesReader.emptyTitle')}</h2>
-            <p className='max-w-md text-sm text-muted-foreground'>{t('publication.pagesReader.emptyDesc')}</p>
-          </div>
-        ) : (
-          <div
-            ref={stackRef}
-            className='flex max-h-[calc(100vh-220px)] flex-col gap-6 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-sm'
-          >
-            {sortedPages.map((p) => (
-              <PageCard
-                key={p.id}
-                page={p}
-                setRef={setPageRef(p.id)}
-                bulkMode={bulkMode}
-                selected={selectedPageIds.has(p.id)}
-                onToggleSelect={() => togglePageSelection(p.id)}
-                onDelete={() => setDeleteConfirmPage(p)}
-                onUpdatePage={() => setUpdatePageTarget(p)}
-                isEditable={isPageEditable(p)}
-              />
-            ))}
-            <button
-              type='button'
-              onClick={() => {
-                const first = pageRefs.current.entries().next().value
-                if (first) (first[1] as HTMLDivElement | undefined)?.scrollIntoView({ behavior: 'smooth' })
+          {composerOpen && chapter.manuscriptStatus !== null && !chapter.hold && (
+            <PageComposerModal
+              chapterId={chapter.id}
+              createPage={createPage}
+              isCreating={isCreating}
+              nextPageNumber={sortedPages.length === 0 ? 1 : Math.max(...sortedPages.map((p) => p.pageNumber)) + 1}
+              onCancel={() => setComposerOpen(false)}
+              onUploaded={() => {
+                setComposerOpen(false)
+                refreshAll()
               }}
-              className='mx-auto flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted cursor-pointer'
-            >
-              <ChevronUp className='h-3.5 w-3.5' />
-              {t('publication.pagesReader.backToTop')}
-            </button>
-          </div>
-        )}
+            />
+          )}
 
-        {composerOpen && chapter.manuscriptStatus !== null && !chapter.hold && (
-          <PageComposerModal
-            chapterId={chapter.id}
-            createPage={createPage}
-            isCreating={isCreating}
-            nextPageNumber={
-              sortedPages.length === 0 ? 1 : Math.max(...sortedPages.map((p) => p.pageNumber)) + 1
-            }
-            onCancel={() => setComposerOpen(false)}
-            onUploaded={() => {
-              setComposerOpen(false)
-              refreshAll()
-            }}
-          />
-        )}
+          {deleteConfirmPage && (
+            <DeletePageConfirmDialog
+              page={deleteConfirmPage}
+              isDeleting={isDeleting}
+              onConfirm={() => handleDeletePage(deleteConfirmPage.id)}
+              onCancel={() => setDeleteConfirmPage(null)}
+            />
+          )}
 
-        {deleteConfirmPage && (
-          <DeletePageConfirmDialog
-            page={deleteConfirmPage}
-            isDeleting={isDeleting}
-            onConfirm={() => handleDeletePage(deleteConfirmPage.id)}
-            onCancel={() => setDeleteConfirmPage(null)}
-          />
-        )}
+          {deleteBulkConfirm && (
+            <DeleteBulkConfirmDialog
+              count={selectedPageIds.size}
+              isDeleting={isDeletingBulk}
+              onConfirm={handleDeleteBulk}
+              onCancel={() => setDeleteBulkConfirm(false)}
+            />
+          )}
 
-        {deleteBulkConfirm && (
-          <DeleteBulkConfirmDialog
-            count={selectedPageIds.size}
-            isDeleting={isDeletingBulk}
-            onConfirm={handleDeleteBulk}
-            onCancel={() => setDeleteBulkConfirm(false)}
-          />
-        )}
+          {renumberPage && (
+            <UpdatePageNumberDialog
+              page={renumberPage}
+              isUpdating={isUpdating}
+              onConfirm={(pageNumber) => void handleRenumberPage(renumberPage.id, pageNumber)}
+              onCancel={() => setRenumberPage(null)}
+            />
+          )}
+        </main>
 
-        {updatePageTarget && (
-          <UpdatePageDialog
-            page={updatePageTarget}
-            takenPageNumbers={sortedPages.map((p) => p.pageNumber)}
-            isUpdating={isUpdating}
-            onConfirm={(input) => handleUpdatePage(updatePageTarget.id, input)}
-            onCancel={() => setUpdatePageTarget(null)}
-          />
-        )}
-      </main>
-
-      {/* RIGHT: manuscript revision rail */}
-      <aside className='lg:w-80 lg:shrink-0'>
-        <ManuscriptRevisionsRail chapterId={chapter.id} />
-      </aside>
-    </div>
+        {/* RIGHT: manuscript revision rail */}
+        <aside className='lg:w-80 lg:shrink-0'>
+          <ManuscriptRevisionsRail revisionState={manuscriptRevisions} />
+        </aside>
+      </div>
+    </>
   )
 }
 
@@ -453,8 +483,10 @@ function PageCard({
   selected,
   onToggleSelect,
   onDelete,
-  onUpdatePage,
-  isEditable
+  onRenumber,
+  isEditable,
+  deleteLocked,
+  renumberLocked
 }: {
   page: PageListResDtoOutputItemsItem
   setRef: (el: HTMLDivElement | null) => void
@@ -462,8 +494,10 @@ function PageCard({
   selected: boolean
   onToggleSelect: () => void
   onDelete: () => void
-  onUpdatePage: () => void
+  onRenumber: () => void
   isEditable: boolean
+  deleteLocked: boolean
+  renumberLocked: boolean
 }) {
   const { t } = useTranslation('mangaka')
 
@@ -498,17 +532,19 @@ function PageCard({
           <div className='ml-auto flex items-center gap-1'>
             <button
               type='button'
-              onClick={onUpdatePage}
-              aria-label={t('publication.pagesReader.updatePage.dialogTitle')}
-              className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground'
+              onClick={onRenumber}
+              disabled={renumberLocked}
+              aria-label={t('publication.pagesReader.updatePageNumber.dialogTitle')}
+              className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40'
             >
-              <Pencil className='h-3.5 w-3.5' />
+              <PencilLine className='h-3.5 w-3.5' />
             </button>
             <button
               type='button'
               onClick={onDelete}
+              disabled={deleteLocked}
               aria-label={t('publication.pagesReader.delete.confirmButton')}
-              className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
+              className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40'
             >
               <Trash2 className='h-3.5 w-3.5' />
             </button>
@@ -523,6 +559,70 @@ function PageCard({
         className='w-full'
       />
     </div>
+  )
+}
+
+function UpdatePageNumberDialog({
+  page,
+  isUpdating,
+  onConfirm,
+  onCancel
+}: {
+  page: PageListResDtoOutputItemsItem
+  isUpdating: boolean
+  onConfirm: (pageNumber: number) => void
+  onCancel: () => void
+}) {
+  const { t } = useTranslation('mangaka')
+  const [pageNumber, setPageNumber] = useState(String(page.pageNumber))
+  const parsedPageNumber = Number(pageNumber)
+  const isValid = Number.isInteger(parsedPageNumber) && parsedPageNumber > 0 && parsedPageNumber !== page.pageNumber
+
+  return (
+    <Dialog
+      open
+      onClose={onCancel}
+      titleId='update-page-number-title'
+      title={t('publication.pagesReader.updatePageNumber.dialogTitle')}
+      description={t('publication.pagesReader.updatePageNumber.currentLabel', { number: page.pageNumber })}
+      size='sm'
+      footer={
+        <div className='flex justify-end gap-2'>
+          <button
+            type='button'
+            onClick={onCancel}
+            disabled={isUpdating}
+            className='rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50'
+          >
+            {t('publication.pagesReader.updatePageNumber.cancel')}
+          </button>
+          <button
+            type='button'
+            onClick={() => onConfirm(parsedPageNumber)}
+            disabled={isUpdating || !isValid}
+            className='inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50'
+          >
+            {isUpdating && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
+            {isUpdating
+              ? t('publication.pagesReader.updatePageNumber.saving')
+              : t('publication.pagesReader.updatePageNumber.confirm')}
+          </button>
+        </div>
+      }
+    >
+      <label className='grid gap-1.5 text-sm font-medium' htmlFor='page-number-input'>
+        {t('publication.pagesReader.updatePageNumber.newLabel')}
+        <input
+          id='page-number-input'
+          type='number'
+          min={1}
+          step={1}
+          value={pageNumber}
+          onChange={(event) => setPageNumber(event.target.value)}
+          className='rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring'
+        />
+      </label>
+    </Dialog>
   )
 }
 
@@ -551,15 +651,17 @@ function PageComposerModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDivElement | null>(null)
 
+  const changeFile = (nextFile: File | null) => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setFile(nextFile)
+    setPreviewUrl(nextFile ? URL.createObjectURL(nextFile) : null)
+  }
+
   useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null)
-      return
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
+  }, [previewUrl])
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
@@ -603,7 +705,7 @@ function PageComposerModal({
 
   const modal = (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4 backdrop-blur-sm'
       role='dialog'
       aria-modal='true'
       aria-labelledby='page-composer-title'
@@ -650,14 +752,14 @@ function PageComposerModal({
                 type='file'
                 accept='image/png,image/jpeg,image/webp,application/pdf'
                 className='hidden'
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => changeFile(e.target.files?.[0] ?? null)}
               />
             </label>
           )}
           {file && (
             <button
               type='button'
-              onClick={() => setFile(null)}
+              onClick={() => changeFile(null)}
               className='self-center cursor-pointer text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline'
             >
               {t('publication.pagesReader.composer.chooseAnother')}
@@ -720,7 +822,7 @@ function DeletePageConfirmDialog({
 
   const modal = (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4 backdrop-blur-sm'
       role='dialog'
       aria-modal='true'
       aria-labelledby='delete-page-title'
@@ -804,7 +906,7 @@ function DeleteBulkConfirmDialog({
 
   const modal = (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4 backdrop-blur-sm'
       role='dialog'
       aria-modal='true'
       aria-labelledby='delete-bulk-title'
@@ -860,272 +962,113 @@ function DeleteBulkConfirmDialog({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Update page dialog (number + composite image)                               */
-/* -------------------------------------------------------------------------- */
-
-function UpdatePageDialog({
-  page,
-  takenPageNumbers,
-  isUpdating,
-  onConfirm,
-  onCancel
-}: {
-  page: PageListResDtoOutputItemsItem
-  takenPageNumbers: number[]
-  isUpdating: boolean
-  onConfirm: (input: { pageNumber: number; compositeFile: string | null }) => void
-  onCancel: () => void
-}) {
-  const { t } = useTranslation('mangaka')
-  const dialogRef = useRef<HTMLDivElement | null>(null)
-  const [inputValue, setInputValue] = useState(String(page.pageNumber))
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-
-  useEffect(() => {
-    dialogRef.current?.focus()
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prevOverflow
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null)
-      return
-    }
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
-
-  const isValidPageNumber = (() => {
-    const n = parseInt(inputValue, 10)
-    if (isNaN(n) || n < 1) return false
-    if (n === page.pageNumber) return true
-    return !takenPageNumbers.includes(n)
-  })()
-
-  const hasChanges = () => {
-    const n = parseInt(inputValue, 10)
-    const pageNumberChanged = n !== page.pageNumber
-    const hasNewFile = file !== null
-    return pageNumberChanged || hasNewFile
-  }
-
-  const handleSubmit = async () => {
-    const n = parseInt(inputValue, 10)
-    if (isNaN(n) || n < 1) return
-
-    let compositeFile: string | null = null
-
-    if (file) {
-      setIsUploading(true)
-      try {
-        const uploaded = await uploadToR2WithMessage(file, t('publication.error.generic'))
-        if (!uploaded || !uploaded.key) return
-        compositeFile = uploaded.key
-      } finally {
-        setIsUploading(false)
-      }
-    }
-
-    onConfirm({ pageNumber: n, compositeFile })
-  }
-
-  const busy = isUpdating || isUploading
-
-  const modal = (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm'
-      role='dialog'
-      aria-modal='true'
-      aria-labelledby='update-page-title'
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel()
-      }}
-    >
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        className='flex w-full max-w-sm flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl outline-none'
-      >
-        <header className='flex shrink-0 items-center justify-between border-b border-border px-5 py-3'>
-          <h3 id='update-page-title' className='text-sm font-bold'>
-            {t('publication.pagesReader.updatePage.dialogTitle')}
-          </h3>
-          <button
-            type='button'
-            onClick={onCancel}
-            className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground'
-          >
-            <X className='h-4 w-4' />
-          </button>
-        </header>
-        <div className='flex flex-col gap-4 p-5'>
-          <div className='flex items-center gap-3'>
-            <label className='w-24 text-xs text-muted-foreground'>
-              {t('publication.pagesReader.updatePageNumber.currentLabel')}
-            </label>
-            <span className='text-sm font-semibold'>{page.pageNumber}</span>
-          </div>
-          <div className='flex items-center gap-3'>
-            <label className='w-24 text-xs text-muted-foreground' htmlFor='new-page-number'>
-              {t('publication.pagesReader.updatePageNumber.newLabel')}
-            </label>
-            <input
-              id='new-page-number'
-              type='number'
-              min={1}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              className='flex-1 rounded-md border border-border bg-card px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring'
-            />
-          </div>
-          {!isValidPageNumber && inputValue !== String(page.pageNumber) && (
-            <p className='text-xs text-destructive'>
-              {takenPageNumbers.includes(parseInt(inputValue, 10))
-                ? t('publication.pagesReader.updatePageNumber.errorDuplicate')
-                : t('publication.pagesReader.updatePageNumber.errorGeneric')}
-            </p>
-          )}
-
-          <div className='border-t border-border pt-4'>
-            <label className='mb-2 block text-xs font-medium text-muted-foreground'>
-              {t('publication.pagesReader.updatePage.imageLabel')}
-            </label>
-            {previewUrl ? (
-              <div className='flex flex-col items-center gap-2'>
-                <img src={previewUrl} alt='preview' className='max-h-32 rounded-md border border-border object-contain' />
-                <button
-                  type='button'
-                  onClick={() => setFile(null)}
-                  className='cursor-pointer text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline'
-                >
-                  {t('publication.pagesReader.composer.chooseAnother')}
-                </button>
-              </div>
-            ) : (
-              <label className='flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4 text-xs text-muted-foreground hover:bg-muted/40'>
-                <Upload className='h-5 w-5' />
-                <span className='font-medium text-foreground'>{t('publication.pagesReader.composer.dropOrClick')}</span>
-                <span className='text-[10px] uppercase tracking-widest'>
-                  {t('publication.pagesReader.composer.allowedTypes')}
-                </span>
-                <input
-                  type='file'
-                  accept='image/png,image/jpeg,image/webp'
-                  className='hidden'
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
-            )}
-          </div>
-        </div>
-        <footer className='flex shrink-0 items-center justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3'>
-          <button
-            type='button'
-            onClick={onCancel}
-            disabled={busy}
-            className='cursor-pointer rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            {t('publication.pagesReader.updatePageNumber.cancel')}
-          </button>
-          <button
-            type='button'
-            onClick={() => void handleSubmit()}
-            disabled={!isValidPageNumber || !hasChanges() || busy}
-            className='flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
-          >
-            {busy && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
-            {t('publication.pagesReader.updatePage.confirm')}
-          </button>
-        </footer>
-      </div>
-    </div>
-  )
-
-  if (typeof document === 'undefined') return null
-  return createPortal(modal, document.body)
-}
-
-/* -------------------------------------------------------------------------- */
 /*  Manuscript revisions rail                                                 */
 /* -------------------------------------------------------------------------- */
 
-function ManuscriptRevisionsRail({ chapterId }: { chapterId: string }) {
+function ManuscriptRevisionsRail({ revisionState }: { revisionState: ReturnType<typeof useManuscriptRevisions> }) {
   const { t, i18n } = useTranslation('mangaka')
   const { session } = useAuth()
-  const { revisions, isLoading, resolvingRevisionId, resolveRevision } = useManuscriptRevisions(chapterId)
+  const { revisions, isLoading, resolvingRevisionId, resolveRevision } = revisionState
   const currentUserId = session?.user?.id ?? null
+  const [confirmRevisionId, setConfirmRevisionId] = useState<string | null>(null)
 
   return (
-    <div className='sticky top-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
-      <header className='border-b border-border px-4 py-3'>
-        <h2 className='flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground'>
-          <MessageSquareText className='h-3.5 w-3.5' />
-          {t('publication.pagesReader.revisions.title')}
-        </h2>
-        <p className='mt-0.5 text-xs text-muted-foreground/80'>
-          {t('publication.pagesReader.revisions.subtitle')}
-        </p>
-      </header>
-      <div className='max-h-[calc(100vh-260px)] overflow-y-auto p-3'>
-        {isLoading && revisions.length === 0 ? (
-          <div className='flex justify-center py-6 text-muted-foreground'>
-            <Loader2 className='h-4 w-4 animate-spin' />
-          </div>
-        ) : revisions.length === 0 ? (
-          <p className='px-3 py-6 text-center text-xs text-muted-foreground'>
-            {t('publication.pagesReader.revisions.empty')}
-          </p>
-        ) : (
-          <ul className='flex flex-col gap-3'>
-            {revisions.map((revision) => (
-              <li
-                key={revision.id}
-                className={cn(
-                  'rounded-lg border px-3 py-2.5',
-                  revision.isResolved ? 'border-border bg-muted/40 opacity-70' : 'border-info/30 bg-info/5'
-                )}
-              >
-                <div className='mb-1 flex items-center justify-between gap-2'>
-                  <span className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>
-                    {t('publication.pagesReader.revisions.round', { round: revision.round })}
-                  </span>
-                  {revision.isResolved && (
-                    <span className='text-[10px] font-semibold text-success'>
-                      {t('publication.pagesReader.revisions.resolved')}
-                    </span>
+    <>
+      <div className='sticky top-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
+        <header className='border-b border-border px-4 py-3'>
+          <h2 className='flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground'>
+            <MessageSquareText className='h-3.5 w-3.5' />
+            {t('publication.pagesReader.revisions.title')}
+          </h2>
+          <p className='mt-0.5 text-xs text-muted-foreground/80'>{t('publication.pagesReader.revisions.subtitle')}</p>
+        </header>
+        <div className='max-h-[calc(100vh-260px)] overflow-y-auto p-3'>
+          {isLoading && revisions.length === 0 ? (
+            <div className='flex justify-center py-6 text-muted-foreground'>
+              <Loader2 className='h-4 w-4 animate-spin' />
+            </div>
+          ) : revisions.length === 0 ? (
+            <p className='px-3 py-6 text-center text-xs text-muted-foreground'>
+              {t('publication.pagesReader.revisions.empty')}
+            </p>
+          ) : (
+            <ul className='flex flex-col gap-3'>
+              {revisions.map((revision) => (
+                <li
+                  key={revision.id}
+                  className={cn(
+                    'rounded-lg border px-3 py-2.5',
+                    revision.isResolved ? 'border-border bg-muted/40 opacity-70' : 'border-info/30 bg-info/5'
                   )}
-                </div>
-                <p className='whitespace-pre-wrap text-sm text-foreground'>{revision.reason}</p>
-                <p className='mt-2 text-[10px] text-muted-foreground'>
-                  {t('publication.pagesReader.revisions.requestedAt', {
-                    date: new Date(revision.createdAt).toLocaleString(i18n.language)
-                  })}
-                </p>
-                {currentUserId === revision.recipientId && !revision.isResolved && (
-                  <button
-                    type='button'
-                    disabled={resolvingRevisionId !== null}
-                    onClick={() => void resolveRevision(revision.id)}
-                    className='mt-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
-                  >
-                    {resolvingRevisionId === revision.id && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
-                    {resolvingRevisionId === revision.id
-                      ? t('publication.pagesReader.revisions.resolving')
-                      : t('publication.pagesReader.revisions.resolve')}
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+                >
+                  <div className='mb-1 flex items-center justify-between gap-2'>
+                    <span className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>
+                      {t('publication.pagesReader.revisions.round', { round: revision.round })}
+                    </span>
+                    {revision.isResolved && (
+                      <span className='text-[10px] font-semibold text-success'>
+                        {t('publication.pagesReader.revisions.resolved')}
+                      </span>
+                    )}
+                  </div>
+                  <p className='whitespace-pre-wrap text-sm text-foreground'>{revision.reason}</p>
+                  <p className='mt-2 text-[10px] text-muted-foreground'>
+                    {t('publication.pagesReader.revisions.requestedAt', {
+                      date: new Date(revision.createdAt).toLocaleString(i18n.language)
+                    })}
+                  </p>
+                  {currentUserId === revision.recipientId && !revision.isResolved && (
+                    <button
+                      type='button'
+                      disabled={resolvingRevisionId !== null}
+                      onClick={() => setConfirmRevisionId(revision.id)}
+                      className='mt-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50'
+                    >
+                      {resolvingRevisionId === revision.id && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
+                      {resolvingRevisionId === revision.id
+                        ? t('publication.pagesReader.revisions.resolving')
+                        : t('publication.pagesReader.revisions.resolve')}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
+      <Dialog
+        open={confirmRevisionId !== null}
+        onClose={() => setConfirmRevisionId(null)}
+        titleId='confirm-manuscript-revision-title'
+        title={t('publication.pagesReader.revisions.confirmTitle')}
+        description={t('publication.pagesReader.revisions.confirmDescription')}
+        size='sm'
+        footer={
+          <div className='flex justify-end gap-2'>
+            <button
+              type='button'
+              onClick={() => setConfirmRevisionId(null)}
+              className='rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted'
+            >
+              {t('publication.cancel')}
+            </button>
+            <button
+              type='button'
+              disabled={resolvingRevisionId !== null}
+              onClick={() => {
+                if (!confirmRevisionId) return
+                setConfirmRevisionId(null)
+                void resolveRevision(confirmRevisionId)
+              }}
+              className='rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+            >
+              {t('publication.pagesReader.revisions.confirmCta')}
+            </button>
+          </div>
+        }
+      >
+        <p className='text-sm text-foreground'>{t('publication.pagesReader.revisions.confirmNotice')}</p>
+      </Dialog>
+    </>
   )
 }

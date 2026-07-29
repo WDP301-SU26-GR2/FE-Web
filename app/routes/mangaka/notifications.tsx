@@ -1,7 +1,7 @@
-import { MangakaNotificationsPage } from '~/features/mangaka'
+import { MangakaNotificationsPage, mangakaRouteMeta } from '~/features/mangaka'
 
 export function meta() {
-  return [{ title: 'Notifications - MangakaStudio Pro' }]
+  return mangakaRouteMeta('routeMeta.notifications.title', 'routeMeta.notifications.description')
 }
 
 export default function MangakaNotificationsRoute() {
