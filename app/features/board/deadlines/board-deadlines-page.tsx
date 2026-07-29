@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { AlertTriangle, CalendarRange, CheckCircle2, Clock3, Loader2, UserRound, XCircle } from 'lucide-react'
 import {
   BoardActionDialog,
   boardInput,
@@ -37,33 +37,55 @@ export function BoardDeadlinesPage({
         description={t('deadlines.description')}
         backHref='/dashboard/board/operations'
       />
-      <Form method='get' className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
-        <select className={boardInput} name='seriesId' defaultValue={seriesId}>
-          <option value=''>{t('deadlines.selectSeries')}</option>
-          {series.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.title}
-            </option>
-          ))}
-        </select>
-        <select className={boardInput} name='chapterId' defaultValue={chapterId} disabled={!seriesId}>
-          <option value=''>{t('deadlines.selectChapter')}</option>
-          {chapters.map((item) => (
-            <option key={item.id} value={item.id}>
-              {t('deadlines.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
-            </option>
-          ))}
-        </select>
-        <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
-          {t('common.load')}
-        </button>
-      </Form>
-      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
+
+      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div className='mb-4'>
+          <h2 className='text-sm font-bold text-foreground'>{t('deadlines.queueTitle')}</h2>
+          <p className='mt-1 text-xs text-muted-foreground'>{t('deadlines.queueHint')}</p>
+        </div>
+        <Form method='get' className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
+          <select className={boardInput} name='seriesId' defaultValue={seriesId}>
+            <option value=''>{t('deadlines.selectSeries')}</option>
+            {series.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+          <select className={boardInput} name='chapterId' defaultValue={chapterId} disabled={!seriesId}>
+            <option value=''>{t('deadlines.selectChapter')}</option>
+            {chapters.map((item) => (
+              <option key={item.id} value={item.id}>
+                {t('deadlines.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
+              </option>
+            ))}
+          </select>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+            {t('common.load')}
+          </button>
+        </Form>
+      </section>
+
+      {hasError && (
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
+          {t('common.loadError')}
+        </p>
+      )}
+
+      {chapterId && requests.length > 0 && (
+        <div className='flex items-center justify-between gap-3'>
+          <h2 className='text-sm font-bold text-foreground'>{t('deadlines.pendingTitle')}</h2>
+          <span className='rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary'>
+            {t('deadlines.pendingCount', { count: requests.length })}
+          </span>
+        </div>
+      )}
       <div className='grid gap-4'>
         {requests.map((item) => (
           <DeadlineCard key={item.id} item={item} />
         ))}
       </div>
+      {!chapterId && <EmptyState text={t('deadlines.selectHint')} />}
       {seriesId && chapterId && !requests.length && <EmptyState text={t('deadlines.empty')} />}
     </div>
   )
@@ -73,43 +95,131 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const canResolve = item.status === 'BOARD_REVIEW' || item.status === 'ESCALATED'
+  const isSubmitting = fetcher.state !== 'idle'
+
   return (
-    <article className='rounded-xl border border-border bg-card p-5'>
-      <div className='flex justify-between gap-3'>
-        <strong>{t('deadlines.request')}</strong>
+    <article className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+      <div className='flex flex-wrap items-start justify-between gap-3'>
+        <div>
+          <p className='text-xs font-bold text-foreground'>
+            {item.series?.title ?? t('deadlines.unknownSeries')} ·{' '}
+            {item.chapter
+              ? t('deadlines.chapterOption', {
+                  number: item.chapter.chapterNumber,
+                  title: item.chapter.title || ''
+                })
+              : t('deadlines.unknownChapter')}
+          </p>
+          <p className='mt-1 text-xs text-muted-foreground'>
+            {t('deadlines.createdAt', { date: formatDate(item.createdAt) })}
+          </p>
+        </div>
         <StatusBadge value={item.status} />
       </div>
-      <p className='mt-3 text-xs text-muted-foreground'>{item.reason}</p>
-      <p className='mt-2 text-xs'>
-        {item.currentDeadline ?? '—'} → {item.requestedDeadline ?? '—'}
+
+      <dl className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        <DeadlineDetail icon={Clock3} label={t('deadlines.currentDeadline')} value={formatDate(item.currentDeadline)} />
+        <DeadlineDetail
+          icon={CalendarRange}
+          label={t('deadlines.requestedDeadline')}
+          value={formatDate(item.requestedDeadline)}
+        />
+        <DeadlineDetail
+          icon={UserRound}
+          label={t('deadlines.requestedBy')}
+          value={t(`deadlines.parties.${item.requestedBy ?? 'UNKNOWN'}`)}
+        />
+        <DeadlineDetail
+          icon={UserRound}
+          label={t('deadlines.lastProposedBy')}
+          value={t(`deadlines.parties.${item.lastProposedBy ?? 'UNKNOWN'}`)}
+        />
+      </dl>
+
+      <div className='mt-3 rounded-lg border border-border bg-muted/30 p-3'>
+        <p className='text-xs font-bold text-foreground'>{t('deadlines.reason')}</p>
+        <p className='mt-1 whitespace-pre-wrap text-xs text-muted-foreground'>{item.reason || '—'}</p>
+      </div>
+
+      <p
+        className={`mt-3 flex items-center gap-2 rounded-lg border p-3 text-xs font-medium ${
+          item.affectsSlot
+            ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+            : 'border-sky-500/30 bg-sky-500/10 text-sky-800 dark:text-sky-300'
+        }`}
+      >
+        <AlertTriangle className='size-4 shrink-0' aria-hidden='true' />
+        {item.affectsSlot ? t('deadlines.affectsSlot') : t('deadlines.escalatedWithoutSlot')}
       </p>
+
       {canResolve && (
-        <div className='mt-4'>
+        <div className='mt-4 flex justify-end'>
           <BoardActionDialog title={t('deadlines.resolve')}>
-            <fetcher.Form method='post' className='mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]'>
+            <p className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300'>
+              {t('deadlines.resolveWarning')}
+            </p>
+            <fetcher.Form method='post' className='grid gap-3'>
               <input type='hidden' name='requestId' value={item.id} />
-              <input className={boardInput} name='note' placeholder={t('deadlines.note')} />
-              <button
-                name='intent'
-                value='approve'
-                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700'
-              >
-                <CheckCircle2 className='mr-1.5 inline size-4' aria-hidden='true' />
-                {t('deadlines.approve')}
-              </button>
-              <button
-                name='intent'
-                value='reject'
-                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
-              >
-                <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
-                {t('deadlines.reject')}
-              </button>
+              <label className='grid gap-1.5 text-xs font-bold text-foreground'>
+                {t('deadlines.note')}
+                <textarea
+                  className='min-h-24 rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
+                  name='note'
+                  maxLength={1000}
+                  placeholder={t('deadlines.notePlaceholder')}
+                />
+              </label>
+              <div className='grid gap-2 sm:grid-cols-2'>
+                <button
+                  name='intent'
+                  value='approve'
+                  disabled={isSubmitting}
+                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50'
+                >
+                  {isSubmitting ? (
+                    <Loader2 className='size-4 animate-spin' aria-hidden='true' />
+                  ) : (
+                    <CheckCircle2 className='size-4' aria-hidden='true' />
+                  )}
+                  {t('deadlines.approve')}
+                </button>
+                <button
+                  name='intent'
+                  value='reject'
+                  disabled={isSubmitting}
+                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50'
+                >
+                  {isSubmitting ? (
+                    <Loader2 className='size-4 animate-spin' aria-hidden='true' />
+                  ) : (
+                    <XCircle className='size-4' aria-hidden='true' />
+                  )}
+                  {t('deadlines.reject')}
+                </button>
+              </div>
+              <BoardFeedback data={fetcher.data} />
             </fetcher.Form>
-            <BoardFeedback data={fetcher.data} />
           </BoardActionDialog>
         </div>
       )}
     </article>
   )
+}
+
+function DeadlineDetail({ icon: Icon, label, value }: { icon: typeof Clock3; label: string; value: string }) {
+  return (
+    <div className='rounded-lg border border-border p-3'>
+      <dt className='flex items-center gap-2 text-xs text-muted-foreground'>
+        <Icon className='size-3.5' aria-hidden='true' />
+        {label}
+      </dt>
+      <dd className='mt-1 text-xs font-bold text-foreground'>{value}</dd>
+    </div>
+  )
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
 }

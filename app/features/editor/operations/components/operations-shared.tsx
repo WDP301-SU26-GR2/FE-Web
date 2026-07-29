@@ -86,6 +86,7 @@ export function OperationDialogPanel({
   title,
   children,
   compact = false,
+  defaultOpen = false,
   size = 'lg',
   className
 }: {
@@ -93,10 +94,11 @@ export function OperationDialogPanel({
   title: string
   children: React.ReactNode
   compact?: boolean
+  defaultOpen?: boolean
   size?: DialogProps['size']
   className?: string
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const titleId = `operation-dialog-${useId().replaceAll(':', '')}`
 
   return (

@@ -151,7 +151,7 @@ export function EditorContractTermsPage({
               <button
                 name='intent'
                 value='advanceContract'
-                disabled={fetcher.state !== 'idle'}
+                disabled={fetcher.state !== 'idle' || !hasValidCondition}
                 className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
@@ -172,7 +172,7 @@ export function EditorContractTermsPage({
               <button
                 name='intent'
                 value='saveAndAdvanceContract'
-                disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid}
+                disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid || !hasValidCondition}
                 className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}

@@ -22,7 +22,7 @@ export function EditorBoardMeetingRoomPage({
   manageAll = false,
   allowChat = true,
   backPath = '/dashboard/editor/board/sessions',
-  decisionBasePath
+  decisionBasePath = '/dashboard/editor/board/decisions'
 }: {
   session: BoardMeetingSession
   phase: BoardSessionPhase
@@ -92,7 +92,7 @@ export function EditorBoardMeetingRoomPage({
           </div>
           <div className='flex flex-wrap justify-end gap-2'>
             <BoardStatus value={session.status} />
-            <BoardStatus value={meeting.phase} />
+            {session.status !== 'CONCLUDED' && <BoardStatus value={meeting.phase} />}
           </div>
         </div>
         <div className='mt-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
@@ -227,7 +227,7 @@ export function EditorBoardMeetingRoomPage({
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <div className='flex flex-wrap items-center justify-between gap-3'>
             <div>
-              <h2 className='text-base font-bold'>{t('board.votingProgress')}</h2>
+              <h2 className='text-base font-bold'>{t('board.decisionList')}</h2>
               <p className='mt-1 text-xs text-muted-foreground'>{t('board.meeting.decisionAgendaHint')}</p>
             </div>
             {canPrepareSession && (
@@ -304,11 +304,9 @@ function AddSessionDecisionDialog({
   const fetcher = useBoardFetcher()
   const [decisionType, setDecisionType] = useState('SERIALIZATION')
   const [seriesId, setSeriesId] = useState('')
-  const eligibleStatuses = decisionType === 'SERIALIZATION' ? ['READY_TO_PITCH', 'PITCHED'] : ['SERIALIZED']
+  const eligibleStatuses = decisionType === 'SERIALIZATION' ? ['READY_TO_PITCH', 'PITCHED'] : ['SERIALIZED', 'HIATUS']
   const eligibleSeries = series.filter(
-    (item) =>
-      eligibleStatuses.includes(item.status) &&
-      !decisions.some((decision) => decision.targetSeriesId === item.id && decision.decisionType === decisionType)
+    (item) => eligibleStatuses.includes(item.status) && !hasDecisionConflict(decisions, item.id, decisionType)
   )
   const selectedSeries = eligibleSeries.find((item) => item.id === seriesId)
 
@@ -345,9 +343,16 @@ function AddSessionDecisionDialog({
           >
             <option value='SERIALIZATION'>{t('board.decisionTypeLabels.SERIALIZATION')}</option>
             <option value='CONTINUE'>{t('board.decisionTypeLabels.CONTINUE')}</option>
+            <option value='HIATUS'>{t('board.decisionTypeLabels.HIATUS')}</option>
             <option value='CANCELLATION'>{t('board.decisionTypeLabels.CANCELLATION')}</option>
+            <option value='CANCEL'>{t('board.decisionTypeLabels.CANCEL')}</option>
+            <option value='ENDING_ALLOWANCE'>{t('board.decisionTypeLabels.ENDING_ALLOWANCE')}</option>
             <option value='FORMAT_CHANGE'>{t('board.decisionTypeLabels.FORMAT_CHANGE')}</option>
             <option value='COMPLETION'>{t('board.decisionTypeLabels.COMPLETION')}</option>
+            <option value='SERIES_CONTRACT_APPROVAL'>{t('board.decisionTypeLabels.SERIES_CONTRACT_APPROVAL')}</option>
+            <option value='CONTRACT'>{t('board.decisionTypeLabels.CONTRACT')}</option>
+            <option value='REPRINT'>{t('board.decisionTypeLabels.REPRINT')}</option>
+            <option value='TRANSFER'>{t('board.decisionTypeLabels.TRANSFER')}</option>
           </select>
         </label>
         <label className='grid gap-1.5 text-xs font-semibold'>
@@ -403,7 +408,7 @@ function AddSessionDecisionDialog({
             </div>
           </>
         )}
-        {decisionType === 'CANCELLATION' && (
+        {(decisionType === 'CANCELLATION' || decisionType === 'ENDING_ALLOWANCE') && (
           <label className='grid gap-1.5 text-xs font-semibold'>
             {t('board.endingChapterAllowance')}
             <input
@@ -411,7 +416,7 @@ function AddSessionDecisionDialog({
               name='endingChapterAllowance'
               type='number'
               min={1}
-              required
+              max={10}
               disabled={!selectedSeries}
             />
           </label>
@@ -457,6 +462,16 @@ function AddSessionDecisionDialog({
       </fetcher.Form>
       <BoardFeedback data={fetcher.data} />
     </Dialog>
+  )
+}
+
+function hasDecisionConflict(decisions: BoardDecisionResDtoOutput[], seriesId: string, decisionType: string) {
+  const endingTypes = new Set(['COMPLETION', 'CANCELLATION', 'CANCEL'])
+  return decisions.some(
+    (decision) =>
+      decision.targetSeriesId === seriesId &&
+      (decision.decisionType === decisionType ||
+        (endingTypes.has(decision.decisionType ?? '') && endingTypes.has(decisionType)))
   )
 }
 

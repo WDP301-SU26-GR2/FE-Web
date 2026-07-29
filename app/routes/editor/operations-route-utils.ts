@@ -1,11 +1,16 @@
 import { seriesControllerListSeries } from '~/api/operations/series/series'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 
 export async function loadOperationalSeries() {
-  const statuses = ['SERIALIZED', 'HIATUS', 'COMPLETING', 'CANCELLING'] as const
+  const statuses = ['SERIALIZED', 'HIATUS', 'COMPLETING', 'CANCELLING', 'COMPLETED', 'CANCELLED'] as const
   const responses = await Promise.all(
-    statuses.map((status) => seriesControllerListSeries({ status, limit: 100, offset: 0 }))
+    statuses.map((status) =>
+      loadAllOffsetItems((pagination) =>
+        seriesControllerListSeries({ status, ...pagination }).then((response) => response.data)
+      )
+    )
   )
-  return responses.flatMap((response) => response.data.items)
+  return responses.flat()
 }
 
 export function required(form: FormData, key: string) {

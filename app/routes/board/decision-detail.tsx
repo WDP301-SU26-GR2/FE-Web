@@ -1,33 +1,15 @@
 import {
   boardControllerCastVote,
   boardControllerGetDecisionDetails,
-  boardControllerGetDecisionVotes,
-  boardControllerGetReports,
   boardControllerGetSessionById
 } from '~/api/operations/board/board'
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import { BoardDecisionDetailPage, type BoardActionResult } from '~/features/board'
+import { loadBoardDecisionDetail } from './decision-detail-loader'
 import type { Route } from './+types/decision-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const decision = await boardControllerGetDecisionDetails({ id: params.id })
-  if (decision.status !== 200) throw new Response('Not found', { status: 404 })
-  const [votes, reports, session] = await Promise.all([
-    boardControllerGetDecisionVotes({ id: params.id }),
-    boardControllerGetReports({ boardDecisionId: params.id }),
-    boardControllerGetSessionById({ id: decision.data.boardSessionId })
-  ])
-  if (votes.status !== 200 || session.status !== 200) throw new Response('Not found', { status: 404 })
-  return {
-    decision: decision.data,
-    votes: votes.data,
-    reports: reports.data,
-    sessionStatus: session.data.status,
-    sessionPhase: readBoardSessionPhase(session.data),
-    sessionTitle: session.data.title,
-    sessionStartTime: session.data.startTime,
-    allowedEditorIds: session.data.allowedEditorIds
-  }
+  return loadBoardDecisionDetail(params.id)
 }
 
 export async function clientAction({ request, params }: Route.ClientActionArgs): Promise<BoardActionResult> {
@@ -54,5 +36,10 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardDecisionDetailPage {...loaderData} backPath='/dashboard/board/decisions' />
+  return (
+    <BoardDecisionDetailPage
+      {...loaderData}
+      backPath={`/dashboard/board/sessions/${loaderData.decision.boardSessionId}`}
+    />
+  )
 }

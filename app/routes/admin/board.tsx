@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   ClipboardList,
-  FileText,
   Gavel,
   Radio,
   ShieldAlert,
@@ -31,13 +30,6 @@ export default function AdminBoardRoute() {
       title: t('boardOversight.sessions.title'),
       description: t('boardOversight.sessions.description'),
       mode: 'intervention'
-    },
-    {
-      href: '/dashboard/admin/board/reports',
-      icon: FileText,
-      title: t('boardOversight.reports.title'),
-      description: t('boardOversight.reports.description'),
-      mode: 'monitoring'
     },
     {
       href: '/dashboard/admin/board/decisions',

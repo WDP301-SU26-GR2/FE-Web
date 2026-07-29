@@ -88,7 +88,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (
         !Number.isInteger(chapterRangeStart) ||
         !Number.isInteger(chapterRangeEnd) ||
-        chapterRangeStart < 0 ||
+        chapterRangeStart <= 0 ||
         chapterRangeEnd < chapterRangeStart
       )
         return { ok: false, intent, errorKey: 'invalidChapterRange' }

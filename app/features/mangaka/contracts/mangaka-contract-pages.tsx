@@ -132,6 +132,7 @@ export function MangakaContractDetailPage({
           <div className='flex flex-wrap items-center justify-end gap-2'>
             <ContractPdfButton
               contract={contract}
+              conditionsLoadFailed={conditionsLoadFailed}
               conditionsCount={
                 conditions.filter(
                   (condition) =>

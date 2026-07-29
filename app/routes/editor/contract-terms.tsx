@@ -13,6 +13,7 @@ import {
   required
 } from './contract-route-utils'
 import type { Route } from './+types/contract-terms'
+import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, conditions] = await Promise.all([
@@ -26,6 +27,11 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = required(form, 'intent')
   try {
+    if (intent === 'advanceContract' || intent === 'saveAndAdvanceContract') {
+      const conditions = await paymentConditionControllerGetPaymentConditions({ contractId: params.id })
+      if (conditions.status !== 200 || !hasValidPaymentCondition(conditions.data.data))
+        return { ok: false, intent, errorKey: 'paymentConditionRequired' }
+    }
     if (intent === 'advanceContract') {
       await contractControllerUpdateStatus(
         { id: params.id },

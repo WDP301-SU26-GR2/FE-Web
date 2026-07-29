@@ -5,7 +5,6 @@ import {
   ChartNoAxesCombined,
   ClipboardCheck,
   FileSignature,
-  FileText,
   History,
   LibraryBig,
   RefreshCcw,
@@ -24,7 +23,6 @@ import { cn } from '~/shared/lib/cn'
 const sections = [
   ['sessions', UsersRound, 'bg-sky-500/10 text-sky-700 dark:text-sky-300'],
   ['decisions', ClipboardCheck, 'bg-violet-500/10 text-violet-700 dark:text-violet-300'],
-  ['reports', FileText, 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'],
   ['contracts', FileSignature, 'bg-amber-500/10 text-amber-700 dark:text-amber-300'],
   ['payments', BadgeDollarSign, 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'],
   ['deadlines', CalendarClock, 'bg-orange-500/10 text-orange-700 dark:text-orange-300'],
