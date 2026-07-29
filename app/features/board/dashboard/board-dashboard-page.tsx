@@ -18,21 +18,23 @@ import { useTranslation } from 'react-i18next'
 import { BoardHeader } from '../components/board-ui'
 import type { BoardConfigResDtoOutput } from '~/api/model/board'
 import type { BoardDashboardResDtoOutput } from '~/api/model/dashboard/boardDashboardResDtoOutput'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
+import { cn } from '~/shared/lib/cn'
 
 const sections = [
-  ['sessions', UsersRound],
-  ['decisions', ClipboardCheck],
-  ['reports', FileText],
-  ['contracts', FileSignature],
-  ['payments', BadgeDollarSign],
-  ['deadlines', CalendarClock],
-  ['rankings', ChartNoAxesCombined],
-  ['reprints', RefreshCcw],
-  ['transfers', Scale],
-  ['audit', History],
-  ['reference', LibraryBig],
-  ['notifications', Bell],
-  ['profile', UserRoundCog]
+  ['sessions', UsersRound, 'bg-sky-500/10 text-sky-700 dark:text-sky-300'],
+  ['decisions', ClipboardCheck, 'bg-violet-500/10 text-violet-700 dark:text-violet-300'],
+  ['reports', FileText, 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'],
+  ['contracts', FileSignature, 'bg-amber-500/10 text-amber-700 dark:text-amber-300'],
+  ['payments', BadgeDollarSign, 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'],
+  ['deadlines', CalendarClock, 'bg-orange-500/10 text-orange-700 dark:text-orange-300'],
+  ['rankings', ChartNoAxesCombined, 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'],
+  ['reprints', RefreshCcw, 'bg-teal-500/10 text-teal-700 dark:text-teal-300'],
+  ['transfers', Scale, 'bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300'],
+  ['audit', History, 'bg-slate-500/10 text-slate-700 dark:text-slate-300'],
+  ['reference', LibraryBig, 'bg-blue-500/10 text-blue-700 dark:text-blue-300'],
+  ['notifications', Bell, 'bg-rose-500/10 text-rose-700 dark:text-rose-300'],
+  ['profile', UserRoundCog, 'bg-purple-500/10 text-purple-700 dark:text-purple-300']
 ] as const
 
 export function BoardDashboardPage({
@@ -95,9 +97,11 @@ export function BoardDashboardPage({
                     <p className='font-semibold text-foreground'>
                       {decision.targetSeries?.title ?? decision.decisionType}
                     </p>
-                    <p className='mt-1 text-xs text-muted-foreground'>
-                      {decision.decisionType} · {decision.phase} · {decision.result}
-                    </p>
+                    <div className='mt-2 flex flex-wrap items-center gap-1.5'>
+                      <span className='text-xs text-muted-foreground'>{decision.decisionType}</span>
+                      <SemanticStatusBadge value={decision.phase} label={decision.phase.replaceAll('_', ' ')} />
+                      <SemanticStatusBadge value={decision.result} label={decision.result.replaceAll('_', ' ')} />
+                    </div>
                   </Link>
                 ))}
                 {dashboard.pendingDecisions.length === 0 ? (
@@ -129,13 +133,15 @@ export function BoardDashboardPage({
         </>
       ) : null}
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-        {sections.map(([key, Icon]) => (
+        {sections.map(([key, Icon, tone]) => (
           <Link
             key={key}
             to={`/dashboard/board/${key}`}
             className='rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary'
           >
-            <Icon className='size-6 text-primary' />
+            <span className={cn('inline-flex size-11 items-center justify-center rounded-xl', tone)}>
+              <Icon className='size-6' />
+            </span>
             <h2 className='mt-4 font-bold text-foreground'>{t(`nav.${key}`)}</h2>
             <p className='mt-2 text-sm text-muted-foreground'>{t(`dashboard.sections.${key}`)}</p>
           </Link>

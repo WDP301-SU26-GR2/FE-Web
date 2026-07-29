@@ -12,10 +12,11 @@ import type { AdminUserActionResult, SelectedUserAction } from './types'
 
 export interface AdminUsersPageProps {
   data: AdminUserListResDtoOutput | null
+  deletedUserIds: string[]
   hasError: boolean
 }
 
-export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
+export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPageProps) {
   const { t } = useTranslation('admin')
   const [searchParams] = useSearchParams()
   const fetcher = useFetcher<AdminUserActionResult>()
@@ -30,6 +31,7 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
   const total = data?.total ?? 0
   const currentPage = Math.floor(offset / limit) + 1
   const totalPages = Math.max(Math.ceil(total / limit), 1)
+  const deletedUserIdSet = new Set(deletedUserIds)
 
   return (
     <div className='space-y-6 pb-12'>
@@ -143,7 +145,7 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
         )}
       </div>
 
-      <UserTable users={data?.items ?? []} mode={userMode} onAction={setSelectedAction} />
+      <UserTable users={data?.items ?? []} deletedUserIds={deletedUserIdSet} onAction={setSelectedAction} />
 
       {totalPages > 1 && (
         <nav className='flex flex-wrap items-center justify-between gap-4' aria-label={t('users.pagination.label')}>

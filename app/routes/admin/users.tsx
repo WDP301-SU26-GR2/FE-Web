@@ -37,12 +37,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const roleCode = readEnum(searchParams.get('roleCode'), ROLE_CODES)
   const status = readEnum(searchParams.get('status'), USER_STATUSES)
   const search = searchParams.get('search')?.trim() || undefined
+  const includeDeleted = searchParams.get('includeDeleted') === 'true'
+  const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
 
   const params: UsersControllerListUsersParams = {
     limit,
     offset: (page - 1) * limit,
-    includeDeleted: searchParams.get('includeDeleted') === 'true' ? 'true' : 'false',
-    onlyDeleted: searchParams.get('onlyDeleted') === 'true' ? 'true' : 'false',
+    includeDeleted: includeDeleted ? 'true' : 'false',
+    onlyDeleted: onlyDeleted ? 'true' : 'false',
     roleCode: roleCode as UsersControllerListUsersRoleCode | undefined,
     status: status as UsersControllerListUsersStatus | undefined,
     search
@@ -50,9 +52,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 
   try {
     const response = await usersControllerListUsers(params)
-    return { data: response.data, hasError: false }
+    const deletedUserIds = onlyDeleted
+      ? response.data.items.map((user) => user.id)
+      : includeDeleted
+        ? await listDeletedUserIds({ roleCode, status, search })
+        : []
+    return { data: response.data, deletedUserIds, hasError: false }
   } catch {
-    return { data: null, hasError: true }
+    return { data: null, deletedUserIds: [], hasError: true }
   }
 }
 
@@ -141,7 +148,35 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
 }
 
 export default function DashboardAdminUsersRoute({ loaderData }: Route.ComponentProps) {
-  return <AdminUsersPage data={loaderData.data} hasError={loaderData.hasError} />
+  return (
+    <AdminUsersPage data={loaderData.data} deletedUserIds={loaderData.deletedUserIds} hasError={loaderData.hasError} />
+  )
+}
+
+async function listDeletedUserIds({
+  roleCode,
+  status,
+  search
+}: Pick<UsersControllerListUsersParams, 'roleCode' | 'status' | 'search'>): Promise<string[]> {
+  const limit = 100
+  const ids: string[] = []
+  let offset = 0
+
+  while (true) {
+    const response = await usersControllerListUsers({
+      roleCode,
+      status,
+      search,
+      limit,
+      offset,
+      includeDeleted: 'false',
+      onlyDeleted: 'true'
+    })
+    ids.push(...response.data.items.map((user) => user.id))
+    offset += response.data.items.length
+
+    if (offset >= response.data.total || response.data.items.length === 0) return ids
+  }
 }
 
 function requiredValue(formData: FormData, key: string): string {

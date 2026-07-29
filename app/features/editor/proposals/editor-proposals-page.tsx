@@ -1,6 +1,7 @@
 import { Link, useFetcher } from 'react-router'
 import { BookOpen, Inbox, Loader2, LockKeyhole, Unlock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
 import { useState } from 'react'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
@@ -105,9 +106,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
     <article className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div className='min-w-0'>
-          <span className='inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-            {t(`filters.seriesStatuses.${item.status}`)}
-          </span>
+          <SemanticStatusBadge value={item.status} label={t(`filters.seriesStatuses.${item.status}`)} />
           <h3 className='mt-3 text-pretty text-lg font-bold leading-6 text-foreground'>{item.title}</h3>
           <p className='mt-1 text-xs text-muted-foreground'>
             {t('proposals.submittedAt', {

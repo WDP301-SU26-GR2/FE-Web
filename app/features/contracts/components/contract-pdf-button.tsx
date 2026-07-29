@@ -3,7 +3,7 @@ import { AlertTriangle, Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import type { ContractResDtoOutput } from '~/api/model/contracts'
-import { getContractPdf } from '~/api/manual/contract-latest'
+import { contractControllerExportPdf } from '~/api/operations/contracts/contracts'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { cn } from '~/shared/lib/cn'
 
@@ -34,7 +34,7 @@ export function ContractPdfButton({
     if (target) target.opener = null
     setIsLoading(true)
     try {
-      const response = await getContractPdf(contract.id)
+      const response = await contractControllerExportPdf({ id: contract.id })
       if (target) target.location.href = response.data.downloadUrl
       else window.location.assign(response.data.downloadUrl)
     } catch (error) {

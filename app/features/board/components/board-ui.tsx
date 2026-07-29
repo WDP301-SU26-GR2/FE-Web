@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { BoardActionResult } from '../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
 
 export const boardInput =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -91,11 +92,7 @@ export function StatusBadge({ value }: { value: string }) {
     ],
     { defaultValue: value.replaceAll('_', ' ') }
   )
-  return (
-    <span className='inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold leading-none text-secondary-foreground'>
-      {label}
-    </span>
-  )
+  return <SemanticStatusBadge value={value} label={label} />
 }
 
 export function Feedback({ data }: { data?: BoardActionResult }) {

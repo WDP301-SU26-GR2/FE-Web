@@ -1,4 +1,14 @@
 import type { LucideIcon } from 'lucide-react'
+import { getStatusTone, type StatusTone } from '~/shared/components/status-badge'
+import { cn } from '~/shared/lib/cn'
+
+const BAR_TONES: Record<StatusTone, string> = {
+  success: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-destructive',
+  info: 'bg-sky-500',
+  neutral: 'bg-primary'
+}
 
 export interface DistributionItem {
   key: string
@@ -37,6 +47,7 @@ export function DistributionPanel({ title, description, icon: Icon, items, empty
         <div className='mt-6 space-y-4'>
           {items.map((item) => {
             const percentage = maxValue === 0 ? 0 : Math.max((item.value / maxValue) * 100, 3)
+            const tone = getStatusTone(item.key)
             return (
               <div key={item.key}>
                 <div className='mb-1.5 flex items-center justify-between gap-4 text-xs'>
@@ -45,7 +56,7 @@ export function DistributionPanel({ title, description, icon: Icon, items, empty
                 </div>
                 <div className='h-2 overflow-hidden rounded-full bg-muted'>
                   <div
-                    className='h-full rounded-full bg-primary transition-[width] duration-500'
+                    className={cn('h-full rounded-full transition-[width] duration-500', BAR_TONES[tone])}
                     style={{ width: `${percentage}%` }}
                   />
                 </div>

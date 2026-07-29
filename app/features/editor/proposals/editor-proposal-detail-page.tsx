@@ -21,6 +21,7 @@ import { EditorActionToast } from '../components/editor-action-toast'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
 
 export function EditorProposalDetailPage({
   data,
@@ -526,9 +527,7 @@ function ReviewPanel({
           <FileText className='mt-0.5 size-5 shrink-0 text-primary' />
           <span>{title}</span>
         </h2>
-        <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
-          {statusLabel}
-        </span>
+        <SemanticStatusBadge value={status} label={statusLabel} />
       </div>
       <dl className='my-5 grid grid-cols-2 gap-3 rounded-lg bg-muted p-4'>
         {facts.map(([label, value]) => (

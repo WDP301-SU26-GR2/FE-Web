@@ -1,6 +1,19 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
-import { ArrowLeft, Plus, Wrench } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Ban,
+  CheckCircle2,
+  Play,
+  Plus,
+  RotateCcw,
+  Save,
+  Trash2,
+  Upload,
+  Wrench,
+  type LucideIcon
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -166,17 +179,57 @@ export function OperationAction({
   label: string
   destructive?: boolean
 }) {
+  const visual = getActionVisual(intent, destructive)
+  const Icon = visual.icon
   return (
     <button
       name='intent'
       value={intent}
-      className={`min-h-9 rounded-md px-3 text-xs font-bold ${
-        destructive ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-primary-foreground'
-      }`}
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors ${visual.className}`}
     >
+      <Icon className='size-3.5' aria-hidden='true' />
       {label}
     </button>
   )
+}
+
+function getActionVisual(intent: string, destructive?: boolean): { icon: LucideIcon; className: string } {
+  const value = intent.toLowerCase()
+  if (destructive) {
+    return {
+      icon: value.includes('remove') || value.includes('delete') ? Trash2 : Ban,
+      className: 'border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90'
+    }
+  }
+  if (/(approve|finalize|complete|pay)/.test(value)) {
+    return {
+      icon: CheckCircle2,
+      className:
+        'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-500 dark:text-emerald-950'
+    }
+  }
+  if (/(start|open|resume)/.test(value)) {
+    return {
+      icon: Play,
+      className: 'border-sky-600 bg-sky-600 text-white hover:bg-sky-700 dark:border-sky-500 dark:bg-sky-500'
+    }
+  }
+  if (/(revision|reopen|return)/.test(value)) {
+    return {
+      icon: RotateCcw,
+      className: 'border-amber-500/40 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:text-amber-300'
+    }
+  }
+  if (/(import|upload)/.test(value)) {
+    return { icon: Upload, className: 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700' }
+  }
+  if (/(create|add)/.test(value)) {
+    return { icon: Plus, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
+  }
+  if (/(update|save|status)/.test(value)) {
+    return { icon: Save, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
+  }
+  return { icon: ArrowRight, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
 }
 
 export function OperationFeedback({ data }: { data?: EditorActionResult }) {

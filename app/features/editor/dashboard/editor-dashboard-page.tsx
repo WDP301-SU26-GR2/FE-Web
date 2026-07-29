@@ -2,6 +2,9 @@ import { Link } from 'react-router'
 import { AlertTriangle, Bell, BookCheck, FileClock, FileSignature, Gavel, Send, Sparkles, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { EditorDashboardResDtoOutput } from '~/api/model/dashboard/editorDashboardResDtoOutput'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
+import { cn } from '~/shared/lib/cn'
+import { ratioToPercent } from '~/shared/lib/progress'
 
 export function EditorDashboardPage({
   dashboard,
@@ -62,10 +65,13 @@ export function EditorDashboardPage({
                     <p className='font-semibold text-foreground'>
                       {alert.seriesTitle} · #{alert.chapterNumber}
                     </p>
-                    <p className='mt-1 text-xs text-muted-foreground'>
-                      {alert.warningLevel} · {alert.progressPct}% · {alert.pagesReady}/{alert.totalPages}{' '}
-                      {t('dashboard.alerts.pagesReady')}
-                    </p>
+                    <div className='mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+                      <SemanticStatusBadge value={alert.warningLevel} label={alert.warningLevel.replaceAll('_', ' ')} />
+                      <span>
+                        {ratioToPercent(alert.progressPct)}% · {alert.pagesReady}/{alert.totalPages}{' '}
+                        {t('dashboard.alerts.pagesReady')}
+                      </span>
+                    </div>
                   </Link>
                 ))}
               </DashboardList>
@@ -77,12 +83,15 @@ export function EditorDashboardPage({
                     className='block rounded-lg border border-border p-3 hover:border-primary'
                   >
                     <p className='font-semibold text-foreground'>{series.title}</p>
-                    <p className='mt-1 text-xs text-muted-foreground'>
-                      {t(`operations.riskLevels.${series.riskLevel}`, {
-                        defaultValue: series.riskLevel?.replaceAll('_', ' ') ?? t('common.notAvailable')
-                      })}
-                      {series.rankPosition ? ` · #${series.rankPosition}` : ''}
-                    </p>
+                    <div className='mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+                      <SemanticStatusBadge
+                        value={series.riskLevel ?? ''}
+                        label={t(`operations.riskLevels.${series.riskLevel}`, {
+                          defaultValue: series.riskLevel?.replaceAll('_', ' ') ?? t('common.notAvailable')
+                        })}
+                      />
+                      {series.rankPosition ? <span>#{series.rankPosition}</span> : null}
+                    </div>
                   </Link>
                 ))}
               </DashboardList>
@@ -97,6 +106,7 @@ export function EditorDashboardPage({
           description={t('dashboard.proposals.description')}
           href='/dashboard/editor/proposals'
           action={t('dashboard.proposals.action')}
+          tone='bg-amber-500/10 text-amber-700 dark:text-amber-300'
         />
         <WorkflowCard
           icon={Gavel}
@@ -104,6 +114,7 @@ export function EditorDashboardPage({
           description={t('dashboard.board.description')}
           href='/dashboard/editor/board'
           action={t('dashboard.board.action')}
+          tone='bg-violet-500/10 text-violet-700 dark:text-violet-300'
         />
         <WorkflowCard
           icon={FileSignature}
@@ -111,6 +122,7 @@ export function EditorDashboardPage({
           description={t('dashboard.contracts.description')}
           href='/dashboard/editor/contracts'
           action={t('dashboard.contracts.action')}
+          tone='bg-sky-500/10 text-sky-700 dark:text-sky-300'
         />
         <WorkflowCard
           icon={BookCheck}
@@ -118,6 +130,7 @@ export function EditorDashboardPage({
           description={t('dashboard.publication.description')}
           href='/dashboard/editor/publication'
           action={t('dashboard.publication.action')}
+          tone='bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
         />
         <WorkflowCard
           icon={Wrench}
@@ -125,6 +138,7 @@ export function EditorDashboardPage({
           description={t('dashboard.operations.description')}
           href='/dashboard/editor/operations'
           action={t('dashboard.operations.action')}
+          tone='bg-orange-500/10 text-orange-700 dark:text-orange-300'
         />
       </div>
     </div>
@@ -168,17 +182,19 @@ function WorkflowCard({
   title,
   description,
   href,
-  action
+  action,
+  tone
 }: {
   icon: typeof FileClock
   title: string
   description: string
   href: string
   action: string
+  tone: string
 }) {
   return (
     <article className='rounded-2xl border border-border bg-card p-6 shadow-sm'>
-      <div className='flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+      <div className={cn('flex size-11 items-center justify-center rounded-xl', tone)}>
         <Icon className='size-5' />
       </div>
       <h2 className='mt-5 text-xl font-bold text-foreground'>{title}</h2>

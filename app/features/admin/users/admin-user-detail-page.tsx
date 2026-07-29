@@ -3,19 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
 import type { AdminUserResDtoOutput } from '~/api/model/users'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
 import { cn } from '~/shared/lib/cn'
 
 export interface AdminUserDetailPageProps {
   user: AdminUserResDtoOutput | null
   hasError: boolean
 }
-
-const STATUS_STYLES = {
-  ACTIVE: 'border-primary/25 bg-primary/10 text-primary',
-  INACTIVE: 'border-border bg-muted text-muted-foreground',
-  BLOCKED: 'border-destructive/20 bg-destructive/10 text-destructive',
-  BANNED: 'border-destructive/30 bg-destructive text-destructive-foreground'
-} as const
 
 export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps) {
   const { t, i18n } = useTranslation('admin')
@@ -76,14 +70,11 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
               <span className='rounded-md border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground'>
                 {t(`dashboard.roles.${user.role}`)}
               </span>
-              <span
-                className={cn(
-                  'rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider',
-                  STATUS_STYLES[user.status]
-                )}
-              >
-                {t(`dashboard.userStatuses.${user.status}`)}
-              </span>
+              <SemanticStatusBadge
+                value={user.status}
+                label={t(`dashboard.userStatuses.${user.status}`)}
+                className='text-[10px] uppercase tracking-wider'
+              />
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import {
   BoardActionDialog,
   boardInput,
@@ -118,15 +119,17 @@ function ReprintCard({
               <button
                 name='intent'
                 value='approve'
-                className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+                className='h-10 rounded-md bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700'
               >
+                <CheckCircle2 className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('reprints.approve')}
               </button>
               <button
                 name='intent'
                 value='reject'
-                className='h-10 rounded-md border border-destructive px-3 text-sm font-bold text-destructive'
+                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-bold text-destructive hover:bg-destructive/20'
               >
+                <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('reprints.reject')}
               </button>
             </fetcher.Form>

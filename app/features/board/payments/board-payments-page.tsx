@@ -1,7 +1,7 @@
 import { Link, useFetcher, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Banknote, XCircle } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import {
   BoardActionDialog,
@@ -252,6 +252,7 @@ function PaymentCard({
               value='approve'
               className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
             >
+              <BadgeCheck className='mr-1.5 inline size-4' aria-hidden='true' />
               {t('payments.approve')}
             </button>
           </fetcher.Form>
@@ -271,8 +272,9 @@ function PaymentCard({
               <button
                 name='intent'
                 value='pay'
-                className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+                className='h-10 rounded-md bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700'
               >
+                <Banknote className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.pay')}
               </button>
             </fetcher.Form>
@@ -287,8 +289,9 @@ function PaymentCard({
               <button
                 name='intent'
                 value='cancel'
-                className='h-10 rounded-md border border-destructive px-3 text-sm font-bold text-destructive'
+                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-bold text-destructive hover:bg-destructive/20'
               >
+                <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.cancel')}
               </button>
             </fetcher.Form>

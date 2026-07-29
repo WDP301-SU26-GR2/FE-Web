@@ -1,6 +1,6 @@
 # AGENTS.md — mangaka-web
 
-> Hợp đồng giữa codebase và mọi AI agent (Cursor, Codex, Cline, Claude Code, ...) khi sinh code, refactor hay review. **Đọc file này trước khi chạm vào code.** Tài liệu đi kèm: [`ARCHITECTURE.md`](./ARCHITECTURE.md) (giải thích cho dev mới), `FE-API-Guide-v3.md` (luồng nghiệp vụ + chi tiết endpoint), `swagger.json` (OpenAPI 3.0 — nguồn sự thật về types).
+> Hợp đồng giữa codebase và mọi AI agent (Cursor, Codex, Cline, Claude Code, ...) khi sinh code, refactor hay review. **Đọc file này trước khi chạm vào code.** Tài liệu đi kèm: [`ARCHITECTURE.md`](./ARCHITECTURE.md) (giải thích cho dev mới), `FE-Web-Guide` (luồng nghiệp vụ + chi tiết endpoint), `swagger.json` (OpenAPI 3.0 — nguồn sự thật về types).
 
 ---
 

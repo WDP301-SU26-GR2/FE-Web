@@ -22,6 +22,7 @@ import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
 import { EditorActionToast } from '../components/editor-action-toast'
 
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
+import { ratioToPercent } from '~/shared/lib/progress'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 const HOLDABLE_MANUSCRIPT_STATUSES = new Set(['IN_PRODUCTION', 'EDITOR_REVIEW', 'EDITOR_REVISION', 'READY_FOR_PRINT'])
@@ -93,7 +94,7 @@ export function EditorChapterReviewPage({
         <HeaderMetric
           icon={<CheckCircle2 className='size-4' />}
           label={t('chapterReview.progress')}
-          value={data.progress ? `${data.progress.progressPct}%` : t('common.notAvailable')}
+          value={data.progress ? `${ratioToPercent(data.progress.progressPct)}%` : t('common.notAvailable')}
         />
         <HeaderMetric
           icon={<CalendarClock className='size-4' />}
@@ -304,7 +305,7 @@ export function EditorChapterReviewPage({
             )}
             {data.progress && (
               <div className='mt-4 grid grid-cols-2 gap-3 rounded-lg bg-muted p-4 text-sm'>
-                <Metric label={t('chapterReview.progress')} value={`${data.progress.progressPct}%`} />
+                <Metric label={t('chapterReview.progress')} value={`${ratioToPercent(data.progress.progressPct)}%`} />
                 <Metric label={t('chapterReview.warning')} value={data.progress.warningLevel} />
                 <Metric
                   label={t('chapterReview.pagesProgress')}
