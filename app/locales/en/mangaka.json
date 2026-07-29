@@ -2,6 +2,68 @@
   "common": {
     "retry": "Retry"
   },
+  "routeMeta": {
+    "dashboard": {
+      "title": "Mangaka dashboard",
+      "description": "Manage manga production and actions requiring your attention."
+    },
+    "assistantDirectory": {
+      "title": "Assistant directory",
+      "description": "Find and invite assistants to collaborate on your series."
+    },
+    "deadlines": {
+      "title": "Deadline requests",
+      "description": "Track and manage deadline extension requests for your chapters."
+    },
+    "contractVersion": {
+      "title": "Contract version",
+      "description": "Review the archived terms of this contract version."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Review production alerts and open their related workspaces."
+    },
+    "franchiseConsent": {
+      "title": "Franchise consent",
+      "description": "Review and respond to a derivative-series consent request."
+    },
+    "myStudio": {
+      "title": "My studio",
+      "description": "Manage assistant assignments and completed collaborations."
+    },
+    "paymentDetail": {
+      "title": "Payment detail",
+      "description": "Review the status and evidence for this payment."
+    },
+    "payments": {
+      "title": "Finance",
+      "description": "Track earnings and payments by user, series, or contract."
+    },
+    "proposeSeries": {
+      "title": "Propose a new series",
+      "description": "Create and submit a new series proposal."
+    },
+    "rankings": {
+      "title": "Rankings",
+      "description": "Review public audience rankings and board rankings for your series."
+    },
+    "seriesDetail": {
+      "title": "Series detail",
+      "description": "Manage this series, its chapters, and publication lifecycle."
+    },
+    "studioOverview": {
+      "title": "Production overview",
+      "description": "Monitor production status and deadline warnings for active chapters."
+    },
+    "seriesEdit": {
+      "title": "Edit proposal",
+      "description": "Update an editable series proposal."
+    },
+    "series": {
+      "title": "My series",
+      "description": "Manage your proposals and published series."
+    }
+  },
   "dashboard": {
     "title": "Production Dashboard",
     "subtitle": "Welcome back. You have {{count}} critical tasks requiring immediate attention.",
@@ -16,9 +78,6 @@
     "viewAnalyticsReport": "View Analytics Report",
     "activeSeries": "Active Series",
     "actionInbox": "Action Inbox",
-    "uploadBatch": "Upload Batch",
-    "editorSupport": "Editor Support",
-    "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Sync: {{time}} ago",
     "noCriticalDeadlines": "No critical deadlines",
     "noActiveSeries": "No series in production",
     "noRankings": "No ranking data yet",
@@ -51,8 +110,7 @@
     "subtitle": "Browse and invite assistants to collaborate on your series.",
     "filters": {
       "specialization": "Specialization",
-      "all": "All",
-      "levelPlaceholder": "Filter by level (e.g. 3 years)"
+      "all": "All"
     },
     "card": {
       "recommended": "Recommended",
@@ -63,6 +121,7 @@
       "unnamedAssistant": "Unnamed assistant",
       "activeAssignment": "Active hire",
       "activeAssignmentTitle": "You already have an ACTIVE collaboration with this assistant",
+      "viewDetails": "View details",
       "invite": "Invite to collaborate",
       "inviteAriaLabel": "Invite {{name}} to collaborate",
       "portfolioCount": "{{count}} portfolio",
@@ -118,6 +177,186 @@
       "errorHireOrder": "Hire end must be after hire start.",
       "errorHirePast": "Hire end must be in the future.",
       "errorNoTaskType": "Please select at least one task type."
+    },
+    "profile": {
+      "title": "{{name}}'s profile",
+      "description": "Review the assistant's public profile, portfolio, availability, reputation, and recent feedback before collaborating.",
+      "close": "Close",
+      "retry": "Retry",
+      "loadFailed": "Could not load this assistant profile. Please try again.",
+      "notProvided": "Experience level not provided",
+      "incomplete": "This assistant has not completed their public profile yet.",
+      "reputation": "reputation",
+      "rating": "rating",
+      "ratingValue": "{{average}} · {{count}} reviews",
+      "specializations": "Specializations",
+      "emptySpecializations": "No specializations have been added.",
+      "availableWindow": "Available {{from}} – {{to}}",
+      "portfolio": "Portfolio",
+      "portfolioCount_one": "{{count}} portfolio item",
+      "portfolioCount_other": "{{count}} portfolio items",
+      "portfolioAlt": "Portfolio item {{index}}",
+      "emptyPortfolio": "No portfolio work has been published.",
+      "reviews": "Recent reviews",
+      "reviewsHint": "Showing up to 10 most recent reviews.",
+      "emptyReviews": "This assistant has not received any reviews yet.",
+      "anonymousReviewer": "Anonymous Mangaka",
+      "noComment": "No written feedback."
+    }
+  },
+  "mangakaDirectory": {
+    "meta": {
+      "title": "Mangaka Directory",
+      "description": "Browse public Mangaka profiles, portfolios, and peer reputation."
+    },
+    "title": "Mangaka Directory",
+    "subtitle": "Discover peer creators for franchise collaboration and review their public craft profile.",
+    "filters": {
+      "search": "Name or pen name",
+      "searchPlaceholder": "Search Mangaka",
+      "level": "Experience level",
+      "levelPlaceholder": "Example: senior",
+      "genre": "Genre",
+      "allGenres": "All genres"
+    },
+    "actions": {
+      "search": "Search",
+      "clear": "Clear filters",
+      "viewProfile": "View profile",
+      "close": "Close",
+      "retry": "Retry"
+    },
+    "card": {
+      "unnamed": "Unnamed Mangaka",
+      "recommended": "Recommended",
+      "levelUnknown": "Experience level not provided",
+      "rating": "{{average}} · {{count}} reviews",
+      "reputation": "{{score}} reputation",
+      "bioEmpty": "No biography has been published.",
+      "portfolioCount_one": "{{count}} portfolio item",
+      "portfolioCount_other": "{{count}} portfolio items"
+    },
+    "genres": {
+      "ACTION": "Action",
+      "ADVENTURE": "Adventure",
+      "COMEDY": "Comedy",
+      "DRAMA": "Drama",
+      "FANTASY": "Fantasy",
+      "HORROR": "Horror",
+      "MYSTERY": "Mystery",
+      "ROMANCE": "Romance",
+      "SCI_FI": "Sci-Fi",
+      "SLICE_OF_LIFE": "Slice of life",
+      "SPORTS": "Sports",
+      "SUPERNATURAL": "Supernatural",
+      "THRILLER": "Thriller",
+      "HISTORICAL": "Historical",
+      "ISEKAI": "Isekai",
+      "MECHA": "Mecha",
+      "PSYCHOLOGICAL": "Psychological"
+    },
+    "profile": {
+      "title": "{{name}}'s profile",
+      "description": "Public professional profile, portfolio, reputation, and feedback from Editors.",
+      "incomplete": "This Mangaka has not completed their public professional profile yet.",
+      "reputation": "reputation",
+      "rating": "rating",
+      "ratingValue": "{{average}} · {{count}} reviews",
+      "level": "experience",
+      "bio": "Biography",
+      "genres": "Genres",
+      "emptyGenres": "No genres have been added.",
+      "portfolio": "Portfolio",
+      "portfolioCount_one": "{{count}} portfolio item",
+      "portfolioCount_other": "{{count}} portfolio items",
+      "portfolioAlt": "Portfolio item {{index}}",
+      "emptyPortfolio": "No portfolio work has been published.",
+      "reviews": "Recent Editor reviews",
+      "reviewsHint": "Showing up to 10 recent reviews that contribute to this public reputation.",
+      "emptyReviews": "This Mangaka has not received any Editor reviews yet.",
+      "anonymousReviewer": "Anonymous Editor",
+      "noComment": "No written feedback."
+    },
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}} Mangaka"
+    },
+    "empty": {
+      "title": "No Mangaka match these filters",
+      "description": "Try another name, experience level, or genre."
+    },
+    "errors": {
+      "loadFailed": "Could not load the Mangaka directory. Please try again.",
+      "profileLoadFailed": "Could not load this Mangaka profile. It may no longer be available.",
+      "reviewsLoadFailed": "The profile loaded, but recent reviews could not be retrieved."
+    }
+  },
+  "outgoingInvites": {
+    "title": "Outgoing collaboration invites",
+    "subtitle": "Track invitations you have sent and cancel ones that are still pending.",
+    "loading": "Loading outgoing invites...",
+    "filters": {
+      "pending": "Pending",
+      "all": "All"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined",
+      "EXPIRED": "Expired",
+      "CANCELLED": "Cancelled"
+    },
+    "card": {
+      "unknownAssistant": "Unknown assistant",
+      "noSeries": "No series context",
+      "hireWindow": "{{from}} – {{to}}"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "retry": "Retry",
+      "showDetails": "View details",
+      "hideDetails": "Hide details",
+      "cancel": "Cancel invite",
+      "keep": "Keep invite",
+      "confirmCancel": "Cancel invite",
+      "cancelling": "Cancelling..."
+    },
+    "detail": {
+      "loading": "Loading invitation details...",
+      "loadFailed": "Could not load this invitation's details. Please try again.",
+      "unavailable": "This invitation's details are no longer available.",
+      "assistant": "Assistant",
+      "series": "Series",
+      "hireWindow": "Collaboration period",
+      "createdAt": "Sent at",
+      "taskTypes": "Task scope",
+      "noTaskTypes": "No task types were recorded for this invitation."
+    },
+    "confirm": {
+      "title": "Cancel this invitation?",
+      "description": "{{name}} will no longer be able to accept this collaboration invitation.",
+      "notice": "This cannot be undone. You can send a new invitation later if needed."
+    },
+    "empty": {
+      "title": "No outgoing invites",
+      "description": "Invitations you send to assistants will appear here."
+    },
+    "limited": "Showing the latest {{count}} of {{total}} invites.",
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "showingRange": "Showing {{from}}–{{to}} of {{total}} invites"
+    },
+    "success": {
+      "cancelled": "Collaboration invitation cancelled."
+    },
+    "error": {
+      "loadFailed": "Could not load your outgoing invites. Please try again.",
+      "cancelFailed": "Could not cancel this invitation. Please try again.",
+      "notPending": "Only pending invitations can be cancelled.",
+      "notOwner": "You can only cancel invitations you sent.",
+      "notFound": "This invitation is no longer available."
     }
   },
   "myStudio": {
@@ -167,6 +406,33 @@
     "error": {
       "loadFailed": "Could not load your studio. Please try again.",
       "retry": "Retry"
+    },
+    "details": {
+      "show": "Show assigned task types",
+      "hide": "Hide assigned task types",
+      "loadFailed": "Could not load the assignment details."
+    },
+    "lifecycle": {
+      "terminate": "End collaboration",
+      "review": "Rate assistant",
+      "reviewed": "Reviewed",
+      "terminateTitle": "End this collaboration?",
+      "terminateDescription": "This immediately ends the active studio assignment. Add a clear reason for the Assistant.",
+      "reviewTitle": "Rate this collaboration",
+      "reviewDescription": "Reviews are available only after the collaboration has ended and can be submitted once per assistant.",
+      "forAssistant": "Assistant: {{name}}",
+      "reason": "Reason",
+      "comment": "Comment (optional)",
+      "rating": "Rating",
+      "stars": "{{count}} stars",
+      "reasonRequired": "Please enter a reason for ending the collaboration.",
+      "cancel": "Cancel",
+      "confirmTerminate": "End collaboration",
+      "confirmReview": "Submit rating",
+      "terminateSuccess": "Collaboration ended.",
+      "reviewSuccess": "Assistant rating submitted.",
+      "terminateFailed": "Could not end this collaboration.",
+      "reviewFailed": "Could not submit the assistant rating."
     }
   },
   "mySeries": {
@@ -266,6 +532,82 @@
       "unsavedChangesStay": "Stay on page",
       "back": "Back to series"
     },
+    "lifecycle": {
+      "metadata": {
+        "button": "Edit series details",
+        "dialogTitle": "Edit series details",
+        "dialogDescription": "Update the public title, summary and artwork for this series.",
+        "titleLabel": "Title",
+        "titleRequired": "Enter a series title.",
+        "titleTooLong": "The title must be 200 characters or fewer.",
+        "synopsisLabel": "Synopsis",
+        "synopsisPlaceholder": "Add or update the public series summary.",
+        "synopsisTooLong": "The synopsis must be 5,000 characters or fewer.",
+        "coverLabel": "Cover image",
+        "chooseCover": "Choose cover",
+        "replaceCover": "Replace cover",
+        "removeCover": "Remove cover",
+        "coverWillBeRemoved": "The current cover will be removed.",
+        "coverRequired": "Choose a replacement cover image.",
+        "characterDesignsLabel": "Character designs",
+        "addDesigns": "Add designs",
+        "remove": "Remove",
+        "imageHint": "PNG, JPG or WEBP only. Each file can be up to 15MB.",
+        "invalidImage": "Choose a PNG, JPG or WEBP image no larger than 15MB.",
+        "cancel": "Cancel",
+        "confirm": "Save details",
+        "submitting": "Saving...",
+        "success": "Series details updated.",
+        "errorPermission": "You do not have permission to edit this series.",
+        "errorNotFound": "This series no longer exists.",
+        "errorNotEditable": "This series can no longer be edited.",
+        "errorConflict": "Series details changed elsewhere. Reload and try again.",
+        "errorGeneric": "Could not update series details. Please try again."
+      },
+      "franchise": {
+        "title": "Franchise consent requested",
+        "description": "A related series needs your decision before its Mangaka can submit it for review.",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveDialogTitle": "Approve this franchise series?",
+        "approveDialogDescription": "Allow {{title}} to proceed to review when its Mangaka is ready.",
+        "rejectDialogTitle": "Reject this franchise series?",
+        "rejectDialogDescription": "{{title}} will remain available to its Mangaka, but cannot be submitted for review.",
+        "decisionHint": "This decision applies to the current consent request. The series is not deleted either way.",
+        "cancel": "Cancel",
+        "submitting": "Saving...",
+        "approveSuccess": "Franchise consent approved.",
+        "rejectSuccess": "Franchise consent rejected.",
+        "errorPermission": "Only the original Mangaka can make this decision.",
+        "errorNotFound": "This series no longer exists.",
+        "errorNoLongerPending": "This franchise consent request is no longer pending.",
+        "errorGeneric": "Could not save the franchise decision. Please try again."
+      },
+      "completion": {
+        "button": "Propose completion",
+        "dialogTitle": "Propose natural completion",
+        "dialogDescription": "Send a completion proposal for {{title}} to its Editor.",
+        "flowHint": "This does not end the series immediately. The Editor reviews the proposal and the later lifecycle decision.",
+        "reasonLabel": "Reason for completion",
+        "reasonPlaceholder": "Explain why this series is ready to conclude.",
+        "reasonRequired": "Enter a reason for completion.",
+        "endingChaptersLabel": "Estimated final chapter (optional)",
+        "endingChaptersPlaceholder": "For example, 24",
+        "endingChaptersHint": "This is a planning estimate only; it does not create or close chapters.",
+        "endingChaptersInvalid": "Enter a positive whole chapter number.",
+        "cancel": "Cancel",
+        "confirm": "Send proposal",
+        "submitting": "Sending...",
+        "success": "Completion proposal sent to the Editor.",
+        "errorPermission": "You do not have permission to propose completion for this series.",
+        "errorNotFound": "This series no longer exists.",
+        "errorNotAvailable": "Completion can only be proposed while the series is serialized or on hiatus.",
+        "errorGeneric": "Could not send the completion proposal. Please try again.",
+        "proposedTitle": "Completion proposal sent",
+        "noEndingChapter": "No final chapter estimate",
+        "endingChaptersValue": "Estimated final chapter: {{count}}"
+      }
+    },
     "demographic": "Demographic",
     "publicationType": "Cadence",
     "editor": "Editor",
@@ -287,6 +629,10 @@
       },
       "resolve": "Mark changes addressed",
       "resolving": "Updating...",
+      "confirmTitle": "Mark changes addressed?",
+      "confirmDescription": "Confirm only after you have completed the Editor's requested changes.",
+      "confirmNotice": "This marks the revision round as addressed.",
+      "confirmCta": "Mark addressed",
       "resolveSuccess": "Revision request marked as addressed.",
       "resolveError": "Could not update the revision request. Please try again.",
       "drawer": {
@@ -410,8 +756,10 @@
         "button": "Withdraw",
         "title": "Withdraw this proposal?",
         "description": "\"{{title}}\" will leave the editorial workflow and move to Withdrawn.",
-        "reasonLabel": "Reason (optional)",
+        "reasonLabel": "Reason",
         "reasonPlaceholder": "Tell the Editor why you are withdrawing...",
+        "reasonHint": "{{count}}/1000 characters · required",
+        "reasonRequired": "Enter a reason before withdrawing this proposal.",
         "confirm": "Withdraw proposal",
         "success": "Proposal withdrawn."
       },
@@ -509,6 +857,130 @@
         "success": "New chapter created.",
         "errorGeneric": "Failed to create the chapter. Please try again.",
         "errorInvalidNumber": "Chapter number must be an integer ≥ 1."
+      },
+      "manage": {
+        "cancel": "Cancel",
+        "edit": {
+          "trigger": "Edit chapter {{number}}",
+          "title": "Edit draft chapter",
+          "description": "Update the chapter number or title before production begins.",
+          "draftOnly": "Draft chapters can be edited before entering production.",
+          "draftHint": "You can update the chapter number and title while this chapter is still a draft.",
+          "numberLockedHint": "The chapter number is locked after production starts, but the title can still be updated until publication.",
+          "save": "Save changes",
+          "saving": "Saving...",
+          "success": "Chapter updated.",
+          "error": "Could not update this chapter. Please try again.",
+          "invalidNumber": "Chapter number must be a positive integer."
+        },
+        "delete": {
+          "trigger": "Delete chapter {{number}}",
+          "title": "Delete draft chapter",
+          "description": "Delete Chapter {{number}} permanently?",
+          "warning": "This permanently removes the chapter draft and its associated Name, manuscript, schedule, and pages.",
+          "confirmationWord": "DELETE",
+          "confirmationLabel": "Type {{word}} to enable deletion.",
+          "confirm": "Delete chapter",
+          "deleting": "Deleting...",
+          "success": "Chapter deleted.",
+          "error": "Could not delete this chapter. Please try again."
+        }
+      }
+    },
+    "publicationVersions": {
+      "title": "Publication versions",
+      "description": "View the release formats registered for this series.",
+      "loading": "Loading publication versions...",
+      "empty": "No publication versions have been registered for this series yet.",
+      "refresh": "Refresh",
+      "retry": "Retry",
+      "viewDetails": "View details",
+      "close": "Close",
+      "notSpecified": "Not specified",
+      "createdAt": "Created {{date}}",
+      "readingDirection": {
+        "RTL": "Right to left",
+        "LTR": "Left to right"
+      },
+      "versionType": {
+        "ORIGINAL": "Original",
+        "DIGITAL": "Digital",
+        "FLIPPED": "Flipped"
+      },
+      "detail": {
+        "title": "Publication version details",
+        "description": "Release metadata registered by the publishing team.",
+        "loading": "Loading version details...",
+        "language": "Language",
+        "versionType": "Version type",
+        "readingDirection": "Reading direction",
+        "createdAt": "Created",
+        "notes": "Notes"
+      },
+      "error": {
+        "loadFailed": "Could not load publication versions for this series.",
+        "detailFailed": "Could not load this publication version."
+      }
+    },
+    "production": {
+      "management": {
+        "error": "Could not change the production stages. Please try again.",
+        "created": "Production stage created.",
+        "updated": "Production stage updated.",
+        "removed": "Production stage removed.",
+        "name": "Stage name",
+        "nameRequired": "Enter a stage name.",
+        "deadline": "Deadline (optional)",
+        "taskTypes": "Task types",
+        "taskTypesHint": "Choose at least one task type so work can be assigned to this stage.",
+        "taskTypesRequired": "Choose at least one task type.",
+        "create": {
+          "title": "Add a stage after {{name}}",
+          "description": "The new stage will be inserted before the final check.",
+          "action": "Add stage"
+        },
+        "edit": {
+          "title": "Edit {{name}}",
+          "description": "Completed stages cannot be changed.",
+          "action": "Edit"
+        },
+        "remove": {
+          "title": "Remove {{name}}",
+          "description": "Only a locked stage with no tasks can be removed.",
+          "action": "Delete",
+          "notice": "This removes the selected locked stage from the production sequence.",
+          "confirmTitle": "Remove this production stage?",
+          "confirmDescription": "Remove {{name}} permanently? This cannot be undone.",
+          "confirm": "Remove stage"
+        }
+      },
+      "label": "Production stages",
+      "description": "Finish tasks, confirm every page output, then advance to the next stage.",
+      "loading": "Loading production stages…",
+      "error": "Could not update the production stage. Please try again.",
+      "active": "Active: {{name}}",
+      "stageNumber": "Stage {{n}}",
+      "taskCount": "{{approved}} approved · {{open}} open",
+      "finalCheck": "Final check is active. When every production stage is complete, submit the manuscript.",
+      "confirmOutputs": "Confirm outputs",
+      "complete": "Complete stage",
+      "completeSuccess": "Production stage completed.",
+      "reopen": "Reopen for revision",
+      "reopenSuccess": "Production stage reopened for revision.",
+      "outputsSuccess": "Stage outputs confirmed.",
+      "outputsLocked": "Outputs locked",
+      "uploadFailed": "Could not upload the stage output.",
+      "status": { "LOCKED": "Locked", "ACTIVE": "Active", "COMPLETED": "Complete" },
+      "outputDialog": {
+        "title": "Confirm {{name}} outputs",
+        "description": "Confirm one output for every page before completing this stage.",
+        "confirmTitle": "Lock these outputs?",
+        "confirmDescription": "The output for every page in this stage will be locked.",
+        "confirmNotice": "After confirmation, you cannot edit this stage's outputs. Review them carefully before completing the stage.",
+        "confirmCta": "Lock outputs",
+        "page": "Page …{{id}}",
+        "preserve": "Existing output will be preserved unless you upload a replacement.",
+        "reuseInput": "Reuse this stage input"
       }
     }
   },
@@ -737,6 +1209,10 @@
         "resolved": "Resolved",
         "resolve": "Mark changes addressed",
         "resolving": "Updating...",
+        "confirmTitle": "Mark changes addressed?",
+        "confirmDescription": "Confirm only after you have completed the Editor's feedback.",
+        "confirmNotice": "This marks the manuscript revision request as addressed.",
+        "confirmCta": "Mark addressed",
         "resolveSuccess": "Revision request marked as addressed.",
         "resolveError": "Could not update the revision request. Please try again."
       },
@@ -768,11 +1244,12 @@
       "updatePage": {
         "dialogTitle": "Edit page",
         "imageLabel": "Edited image",
+        "imageHint": "PNG, JPG or WEBP. Maximum 15MB.",
         "confirm": "Save"
       },
       "updatePageNumber": {
         "dialogTitle": "Change page number",
-        "currentLabel": "Current number",
+        "currentLabel": "Current page: {{number}}",
         "newLabel": "New number",
         "cancel": "Cancel",
         "confirm": "Save",
@@ -789,8 +1266,55 @@
       "completePagesHint": "Complete every page before submitting the manuscript to the Editor.",
       "noPagesHint": "Upload at least 1 page before submitting the manuscript.",
       "tasksPendingHint": "Please complete all tasks (assigned to assistants) before submitting the manuscript.",
+      "resolveRevisionsHint": "Resolve every open manuscript revision in the feedback panel before resubmitting.",
       "readyForPrintHint": "Manuscript is ready. Waiting for the Editor to publish.",
       "coOwnerPending": "Waiting for the co-owner to approve before publishing.",
+      "coOwner": {
+        "decisionHint": "As co-owner, review this manuscript and decide whether it can be published.",
+        "actions": {
+          "approve": {
+            "button": "Approve publication",
+            "success": "Manuscript approved and chapter published."
+          },
+          "reject": {
+            "button": "Request revision",
+            "success": "Manuscript returned for Editor revision."
+          }
+        },
+        "rejectDialog": {
+          "title": "Request manuscript revision?",
+          "description": "This returns the manuscript to Editor revision for the primary Mangaka to address.",
+          "notice": "Confirm only when the manuscript needs changes. You may include a reason for the revision.",
+          "reasonLabel": "Reason",
+          "reasonOptional": "(optional)",
+          "characterCount": "{{count}} / 1000",
+          "submitting": "Requesting..."
+        },
+        "errors": {
+          "notCoOwner": "Only the assigned co-owner can make this decision.",
+          "notAvailable": "This co-owner approval is no longer available.",
+          "noLongerPending": "This manuscript is no longer awaiting your decision. Refresh to see its current status.",
+          "generic": "Could not save the co-owner decision. Please try again."
+        },
+        "notification": {
+          "eyebrow": "Chapter workflow",
+          "title": "Chapter and manuscript update",
+          "description": "Review the chapter status and manuscript pages referenced by this notification.",
+          "back": "Back to notifications",
+          "loading": "Loading chapter status…",
+          "notFound": "This chapter is no longer available.",
+          "retry": "Try again",
+          "chapter": "Chapter",
+          "chapterValue": "Chapter {{number}}",
+          "status": "Manuscript status",
+          "pagesTitle": "Manuscript pages",
+          "pagesLoading": "Loading manuscript pages…",
+          "pagesEmpty": "No manuscript pages are available.",
+          "pageAlt": "Manuscript page {{number}}",
+          "pageLabel": "Page {{number}}",
+          "resolved": "This manuscript is no longer awaiting a co-owner decision."
+        }
+      },
       "publishedHint": "Chapter has been published successfully.",
       "status": {
         "DRAFT": "Draft",
@@ -852,6 +1376,35 @@
     "estimatedLengthPlaceholder": "E.g. 50",
     "estimatedLengthHint": "Approximate total chapters planned for the entire series (minimum 1).",
     "selectOption": "Select...",
+    "franchise": {
+      "title": "Franchise relationship",
+      "toggle": "This proposal is derived from an existing series",
+      "description": "Declare a sequel, spin-off, side story, or reboot. The original creator may need to approve it before submission.",
+      "searchLabel": "Find the original series",
+      "searchPlaceholder": "Search the published series catalog",
+      "loading": "Loading series",
+      "parentLabel": "Original series",
+      "parentPlaceholder": "Select the original series",
+      "parentHint": "Only post-serialization series available in the public catalog can be selected.",
+      "loadError": "The published series catalog could not be loaded. Try searching again.",
+      "empty": "No matching published series were found.",
+      "relationshipLabel": "Relationship",
+      "relationshipPlaceholder": "Select a relationship",
+      "relationship": {
+        "SEQUEL": "Sequel",
+        "SPINOFF": "Spin-off",
+        "SIDE_STORY": "Side story",
+        "REBOOT": "Reboot"
+      },
+      "status": {
+        "SERIALIZED": "Serializing",
+        "HIATUS": "On hiatus",
+        "COMPLETING": "Completing",
+        "CANCELLING": "Ending early",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+      }
+    },
     "enums": {
       "genres": {
         "ACTION": "Action",
@@ -899,6 +1452,10 @@
     "errors": {
       "unauthenticated": "You must be signed in to create a proposal.",
       "titleRequired": "Enter a series title before continuing.",
+      "parentSeriesRequired": "Select the original series for this derivative proposal.",
+      "relationshipTypeRequired": "Select how this proposal relates to the original series.",
+      "franchisePairRequired": "The original series and relationship must be provided together.",
+      "parentSeriesNotFound": "The selected original series is no longer available. Choose another series.",
       "submitFailed": "Failed to create proposal. Please try again."
     },
     "toolbar": {
@@ -927,6 +1484,9 @@
       "selectSeriesPlaceholder": "— Select series —",
       "selectChapter": "Select Chapter",
       "selectChapterPlaceholder": "— Select chapter —",
+      "selectStage": "Production stage",
+      "selectStagePlaceholder": "— Select active stage —",
+      "stageOption": "Stage {{order}}: {{name}}",
       "selectPage": "Select page",
       "selectPagePlaceholder": "— Select page —",
       "selectRegion": "Select region (optional)",
@@ -948,6 +1508,7 @@
       "deadlineHint": "Leave empty if no specific deadline",
       "priority": "Priority",
       "priorityHint": "Lower number = higher priority",
+      "priorityInvalid": "Priority must be an integer of 0 or greater.",
       "attachments": {
         "label": "Reference Files (optional)",
         "dropzoneLabel": "Drag and drop or click to select files"
@@ -961,6 +1522,7 @@
       "confirm": {
         "description": "Review the information before assigning the task.",
         "taskType": "Task type",
+        "stage": "Stage",
         "page": "Page",
         "region": "Region",
         "deadline": "Deadline",
@@ -995,7 +1557,11 @@
       "loadFailed": "Could not load tasks.",
       "approveFailed": "Could not approve the task.",
       "revisionFailed": "Could not request a task revision.",
-      "cancelFailed": "Could not cancel the task."
+      "cancelFailed": "Could not cancel the task.",
+      "loadDetailFailed": "Could not load task details. Please try again.",
+      "updateFailed": "Could not update this task. Please try again.",
+      "reassignFailed": "Could not reassign this task. Please try again.",
+      "groupApproveFailed": "Could not approve this task group. Please try again."
     },
     "filters": {
       "allStatuses": "All statuses"
@@ -1022,9 +1588,87 @@
       "showing": "Showing {{from}}-{{to}} / {{total}}",
       "prev": "Previous",
       "next": "Next"
+    },
+    "detail": {
+      "back": "Back to Studio tasks",
+      "eyebrow": "Task detail",
+      "untitled": "Production task",
+      "type": "Task type",
+      "priority": "Priority",
+      "assistant": "Assistant",
+      "deadline": "Deadline",
+      "unassigned": "Unassigned",
+      "none": "Not set",
+      "statusReason": "Status note",
+      "source": "Assigned source",
+      "sourceAlt": "Assigned task source",
+      "latestSubmission": "Latest submission",
+      "submissionAlt": "Latest task submission",
+      "summary": "{{regions}} assigned regions · {{versions}} submitted versions",
+      "errorTitle": "Unable to open task",
+      "errors": {
+        "notFound": "This task no longer exists or is outside your series.",
+        "generic": "Could not load task details. Please return to Studio and try again."
+      }
     }
   },
   "studio": {
+    "overview": {
+      "open": "Production overview",
+      "eyebrow": "Production studio",
+      "title": "Chapter production overview",
+      "description": "Review active chapter production in warning and deadline order. Open a chapter to continue the work that needs attention.",
+      "listLabel": "Active chapter production",
+      "count_one": "{{count}} active chapter",
+      "count_other": "{{count}} active chapters",
+      "chapter": "Chapter {{number}} · {{title}}",
+      "untitled": "Untitled chapter",
+      "unknown": "Unknown",
+      "noDeadline": "No deadline",
+      "dueNow": "Due now",
+      "overdue": "Overdue by {{hours}}h",
+      "remainingHours": "{{hours}}h remaining",
+      "remainingDays": "{{days}}d remaining",
+      "taskCount": "{{open}} open · {{ready}} ready · {{pending}} pending",
+      "progress": "{{value}}%",
+      "onHold": "Production is currently on hold.",
+      "loading": "Loading production overview…",
+      "labels": {
+        "status": "Manuscript status",
+        "deadline": "Deadline",
+        "timeRemaining": "Time remaining",
+        "tasks": "Work status",
+        "progress": "Progress"
+      },
+      "warning": {
+        "NONE": "On track",
+        "YELLOW": "Watch",
+        "RED": "At risk",
+        "CRITICAL": "Critical"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "IN_PRODUCTION": "In production",
+        "EDITOR_REVIEW": "Editor review",
+        "EDITOR_REVISION": "Editor revision",
+        "READY_FOR_PRINT": "Ready for print",
+        "AWAITING_CO_OWNER_APPROVAL": "Awaiting co-owner approval",
+        "PUBLISHED": "Published"
+      },
+      "actions": {
+        "refresh": "Refresh",
+        "retry": "Try again",
+        "backToStudio": "Back to Studio",
+        "openChapter": "Open chapter"
+      },
+      "empty": {
+        "title": "No active chapter production",
+        "description": "Production chapters will appear here once there is work to track."
+      },
+      "error": {
+        "loadFailed": "Could not load the production overview. Please try again."
+      }
+    },
     "tasks": {
       "title": "Tasks",
       "composer": {
@@ -1042,6 +1686,9 @@
         "selectSeriesPlaceholder": "— Select series —",
         "selectChapter": "Select Chapter",
         "selectChapterPlaceholder": "— Select chapter —",
+        "selectStage": "Production stage",
+        "selectStagePlaceholder": "— Select active stage —",
+        "stageOption": "Stage {{order}}: {{name}}",
         "selectPage": "Select page",
         "selectMultiplePages": "Select one or more pages",
         "multiplePagesHint": "Selecting multiple pages creates one grouped task. Region selection is available for a single page only.",
@@ -1052,6 +1699,7 @@
         "selectRegionsHint": "Choose one or more regions on this page, or leave empty to assign the whole page.",
         "regionSelected": "Region selected",
         "regionClear": "Clear",
+        "regionOption": "Region {{number}}",
         "taskType": "Task type",
         "taskTypeEnum": {
           "BACKGROUND": "Background",
@@ -1065,9 +1713,19 @@
         "deadlineHint": "Leave empty if no specific deadline",
         "priority": "Priority",
         "priorityHint": "Lower number = higher priority",
+        "priorityInvalid": "Priority must be a non-negative integer.",
+        "description": "Work description (optional)",
+        "groupTitle": "Task group title (optional)",
+        "batch": {
+          "title": "Split into {{count}} independent tasks",
+          "description": "Each region becomes its own task in one atomic request. If any item is invalid, the entire batch is rejected."
+        },
         "attachments": {
           "label": "Reference Files (optional)",
-          "dropzoneLabel": "Drag and drop or click to select files"
+          "dropzoneLabel": "Drag and drop or click to select files",
+          "formatHint": "PNG, JPG, WEBP, or PDF — up to 15 MB",
+          "uploaded": "Uploaded",
+          "removeFile": "Remove {{name}}"
         },
         "steps": {
           "aria": "Task assignment steps",
@@ -1078,14 +1736,39 @@
         "assignCta": "Assign task",
         "assignFor": "Assign task to {{name}}",
         "assignDisabledReason": "This assistant is not currently hired (no active collaboration).",
-        "allowedTaskTypesHint": "This assistant was hired for: {{types}}. Other task types will be rejected.",
+        "allowedTaskTypesHint": "Task types allowed in the current production stage: {{types}}.",
+        "errors": {
+          "assigning": "A task is already being assigned. Please wait.",
+          "assignFailed": "Could not assign task. Please try again.",
+          "stageSnapshotError": "Could not load the immutable input snapshot for this production stage.",
+          "assignGroupFailed": "Could not assign the task group. Please try again.",
+          "assignBatchFailed": "Could not assign the region task batch. Check the details and try again.",
+          "incomplete": "Complete the required task information.",
+          "taskTypeNotAllowed": "This task type is not allowed in the active production stage.",
+          "loadAssignments": "Could not load active assistant assignments.",
+          "loadSeries": "Could not load series.",
+          "loadChapters": "Could not load chapters.",
+          "loadPages": "Could not load pages.",
+          "loadRegions": "Could not load regions.",
+          "loadStages": "Could not load production stages."
+        },
+        "validation": {
+          "assistantRequired": "Select an assistant.",
+          "pageRequired": "Select a page.",
+          "taskTypeRequired": "Select a task type.",
+          "deadlineFuture": "The deadline must be in the future.",
+          "priorityNonNegative": "Priority cannot be negative."
+        },
         "confirm": {
           "description": "Review the information before assigning the task.",
           "assistant": "Assistant",
           "taskType": "Task type",
+          "stage": "Stage",
           "page": "Page",
           "pages": "Pages",
           "region": "Region",
+          "creationMode": "Creation mode",
+          "batchMode": "{{count}} independent region tasks",
           "deadline": "Deadline",
           "priority": "Priority",
           "attachments": "Reference files",
@@ -1125,9 +1808,38 @@
         "deadline": "Deadline: {{date}}",
         "priority": "Priority: {{value}}",
         "regions": "Regions: {{count}}",
+        "edit": "Edit",
+        "reassign": "Reassign",
         "approve": "Approve",
+        "approveGroup": "Approve group",
         "revision": "Request revision",
         "cancel": "Cancel"
+      },
+      "edit": {
+        "title": "Edit task",
+        "description": "Only changed fields are sent. Clear references only when you explicitly choose to remove all of them.",
+        "deadline": "Deadline",
+        "priority": "Priority",
+        "priorityInvalid": "Priority must be a whole number of zero or more.",
+        "descriptionLabel": "Work description",
+        "descriptionLocked": "The description can only be edited while the task is assigned.",
+        "clearAttachments": "Remove all {{count}} reference file(s)",
+        "cancel": "Cancel",
+        "save": "Save changes",
+        "saving": "Saving..."
+      },
+      "reassign": {
+        "title": "Reassign task",
+        "description": "Choose an active assistant with the required specialization.",
+        "assistantLabel": "New assistant",
+        "assistantPlaceholder": "— Choose an assistant —",
+        "unnamedAssistant": "Unnamed assistant",
+        "noEligibleAssistant": "No other active assistant is eligible for this task type.",
+        "notEligible": "This task cannot be reassigned in its current status.",
+        "confirmation": "I understand that the current assistant will lose access to this task after reassignment.",
+        "cancel": "Cancel",
+        "submit": "Reassign task",
+        "submitting": "Reassigning..."
       },
       "pagination": {
         "prev": "Previous",
@@ -1180,7 +1892,11 @@
       },
       "toast": {
         "approved": "Task approved.",
-        "approvalFailed": "Couldn't approve.",
+        "approveFailed": "Couldn't approve.",
+        "updated": "Task updated.",
+        "reassigned": "Task reassigned.",
+        "groupApproved": "Approved {{count}} task(s) in this group.",
+        "groupSkipped": "{{count}} task(s) were skipped because they are not ready for approval.",
         "revisionRequested": "Revision requested.",
         "revisionFailed": "Couldn't request revision.",
         "cancelled": "Task cancelled.",
@@ -1239,6 +1955,19 @@
         "draw": "Draw"
       },
       "ai": {
+        "history": {
+          "title": "AI job history",
+          "loading": "Loading history...",
+          "empty": "No AI segmentation jobs yet.",
+          "apply": "Apply this result",
+          "applied": "Applied",
+          "status": {
+            "QUEUED": "Queued",
+            "RUNNING": "Running",
+            "SUCCEEDED": "Succeeded",
+            "FAILED": "Failed"
+          }
+        },
         "start": "AI segment",
         "running": "Running...",
         "apply": "Apply",
@@ -1258,7 +1987,6 @@
         "coords": "Coords",
         "confidence": "Confidence: {{value}}%",
         "confirmAi": "Confirm AI region",
-        "pickThis": "Use this region",
         "delete": "Delete",
         "deleteConfirm": "Delete this region? Regions with tasks will fail."
       },
@@ -1279,6 +2007,34 @@
         "aiApplyFailed": "Could not apply AI proposal.",
         "aiTimeout": "AI segment timed out, please retry."
       }
+    }
+  },
+  "franchiseConsent": {
+    "eyebrow": "Franchise request",
+    "title": "Review franchise consent",
+    "description": "A related series needs the original Mangaka's decision before its owner can submit it for review.",
+    "targetLabel": "Target series identifier",
+    "targetValue": "series {{id}}",
+    "targetMissing": "Identifier unavailable",
+    "limitedDetails": "This pending series belongs to another Mangaka. Its title and metadata are not available through your owner-scoped series view, so only the notification target identifier is shown here.",
+    "actions": {
+      "approve": "Approve request",
+      "reject": "Reject request",
+      "backToNotifications": "Back to notifications",
+      "backToSeries": "Back to my series"
+    },
+    "success": {
+      "approvedTitle": "Franchise request approved",
+      "approvedDescription": "The series owner can now submit this derivative series for review when ready.",
+      "rejectedTitle": "Franchise request rejected",
+      "rejectedDescription": "The derivative series remains available to its owner, but it cannot be submitted while this decision applies."
+    },
+    "errors": {
+      "invalidRequest": "This franchise request link is invalid.",
+      "permission": "Only the original Mangaka of the parent series can make this decision.",
+      "notFound": "The target series no longer exists.",
+      "notPending": "This franchise consent request is no longer waiting for a decision.",
+      "generic": "Could not save the franchise decision. Please try again."
     }
   },
   "notifications": {
@@ -1302,9 +2058,13 @@
     "item": {
       "noContent": "(no content)",
       "openTarget": "Open series",
+      "openFranchiseConsent": "Review franchise request",
       "openChapter": "Open chapter",
       "openTask": "Open task",
       "openContract": "Open contract",
+      "openPayment": "Open payment",
+      "openTransfer": "Open transfer",
+      "openRanking": "Open rankings",
       "openDeadline": "Open deadline",
       "openAssistant": "Open assistant",
       "openRevision": "Open revision",
@@ -1338,6 +2098,199 @@
       "markedAllRead": "All notifications marked as read."
     }
   },
+  "deadlines": {
+    "eyebrow": "Production schedule",
+    "title": "Deadline requests",
+    "subtitle": "Request and negotiate a chapter deadline with your editor. Final decisions stay with the appropriate review role.",
+    "selector": {
+      "series": "Series",
+      "seriesPlaceholder": "Select a series",
+      "chapter": "Chapter",
+      "chapterPlaceholder": "Select a chapter"
+    },
+    "chapterOption": "Chapter {{number}} {{title}}",
+    "loading": {
+      "chapter": "Loading chapter schedule…",
+      "requests": "Loading deadline requests…",
+      "detail": "Loading request details…"
+    },
+    "request": {
+      "title": "Request a new deadline",
+      "currentDeadline": "Current chapter deadline: {{date}}",
+      "noSchedule": "This chapter has no active schedule, or is already published. A deadline request cannot be created.",
+      "openExists": "This chapter already has an open deadline negotiation. Respond to or withdraw that request first."
+    },
+    "list": {
+      "title": "Request history",
+      "empty": "Select a chapter to view its deadline requests."
+    },
+    "detail": {
+      "title": "Request details",
+      "empty": "Select a deadline request to view its details and available actions.",
+      "status": "Status",
+      "current": "Current deadline",
+      "proposed": "Proposed deadline",
+      "reason": "Reason",
+      "waitingTurn": "This request is open, but is waiting for the editor's response."
+    },
+    "status": {
+      "PROPOSED": "Proposed",
+      "COUNTER_PROPOSED": "Counter proposed",
+      "AGREED_BY_PARTIES": "Agreed by parties",
+      "BOARD_REVIEW": "Board review",
+      "ESCALATED": "Escalated",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "form": {
+      "requestedDeadline": "Requested deadline",
+      "futureError": "Choose a deadline in the future.",
+      "reason": "Reason"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "create": "Request deadline change",
+      "counter": "Counter proposal",
+      "agree": "Agree",
+      "reject": "Reject",
+      "withdraw": "Withdraw request",
+      "cancel": "Cancel",
+      "submitting": "Saving…"
+    },
+    "dialog": {
+      "create": {
+        "title": "Request a deadline change",
+        "description": "Propose a new chapter deadline and explain why it is needed."
+      },
+      "counter": {
+        "title": "Make a counter proposal",
+        "description": "Offer an alternative deadline and explain the proposal."
+      },
+      "reject": {
+        "title": "Reject deadline proposal",
+        "description": "This will escalate the negotiation. Provide a clear reason before continuing."
+      },
+      "withdraw": {
+        "title": "Withdraw deadline request",
+        "description": "Withdraw your open request before the editor responds.",
+        "confirmation": "Are you sure you want to withdraw this deadline request? This action cannot be undone."
+      }
+    },
+    "success": {
+      "create": "Deadline request created.",
+      "counter": "Counter proposal sent.",
+      "agree": "Deadline proposal accepted.",
+      "reject": "Deadline proposal rejected.",
+      "withdraw": "Deadline request withdrawn."
+    },
+    "error": {
+      "loadSeriesFailed": "Unable to load your series.",
+      "loadChaptersFailed": "Unable to load chapters for this series.",
+      "loadFailed": "Unable to load deadline requests.",
+      "loadRequestFailed": "Unable to load this deadline request.",
+      "notParticipant": "You do not have permission to act on this deadline request.",
+      "notFound": "This deadline request no longer exists.",
+      "notOpen": "This deadline request is no longer open for negotiation. Refresh to see its latest state.",
+      "createFailed": "Unable to create the deadline request.",
+      "counterFailed": "Unable to send the counter proposal.",
+      "agreeFailed": "Unable to accept the deadline proposal.",
+      "rejectFailed": "Unable to reject the deadline proposal.",
+      "withdrawFailed": "Unable to withdraw the deadline request."
+    }
+  },
+  "finance": {
+    "eyebrow": "Finance",
+    "title": "Earnings and payments",
+    "description": "Track payment records generated for your publishing work. Payment approval and settlement are managed by the publisher and Board.",
+    "unknown": "Unknown",
+    "notAvailable": "Not available",
+    "summary": {
+      "label": "Earnings summary",
+      "paid": "Paid",
+      "pending": "Pending",
+      "missed": "Missed"
+    },
+    "breakdown": {
+      "byStatus": "Breakdown by status",
+      "byType": "Breakdown by type",
+      "empty": "There are no amounts to show yet."
+    },
+    "records": {
+      "title": "Payment records",
+      "description": "Only records payable to your account are shown.",
+      "count": "{{count}} records",
+      "empty": "No payment records are available yet."
+    },
+    "filters": {
+      "label": "Payment view",
+      "all": "All payments to me",
+      "byContract": "By contract",
+      "bySeries": "By series",
+      "unknownContract": "Untitled contract",
+      "apply": "Apply view",
+      "loading": "Loading…",
+      "allDescription": "Showing the full payment ledger payable to your account.",
+      "contractDescription": "Showing payments within the selected contract.",
+      "seriesDescription": "Showing payments across contracts for the selected series."
+    },
+    "actions": {
+      "backToRecords": "Back to payment records"
+    },
+    "detail": {
+      "eyebrow": "Payment record",
+      "created": "Created {{date}}",
+      "origin": "Origin",
+      "processing": "Processing",
+      "type": "Payment type",
+      "source": "Source",
+      "period": "Period",
+      "receiver": "Receiver",
+      "series": "Series",
+      "contract": "Contract",
+      "description": "Description",
+      "status": "Status",
+      "approver": "Approved by",
+      "approvedAt": "Approved at",
+      "paidAt": "Paid at",
+      "method": "Payment method",
+      "reference": "Transaction reference",
+      "cancelledAt": "Cancelled at",
+      "cancelReason": "Cancellation reason",
+      "note": "Note"
+    },
+    "errors": {
+      "earnings": "We could not load your earnings summary. Please try again later.",
+      "records": "We could not load your payment records. Please try again later.",
+      "detail": "We could not load this payment record. It may no longer be available to your account.",
+      "filters": "We could not load your contracts and series. The all-payments view remains available."
+    },
+    "status": {
+      "TRIGGERED": "Triggered",
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "PAID": "Paid",
+      "MISSED": "Missed",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "type": {
+      "CONDITION_PAYOUT": "Condition payout",
+      "REVENUE_SHARE": "Revenue share",
+      "COMPENSATION": "Compensation",
+      "CHAPTER_MILESTONE": "Chapter milestone",
+      "RECURRING_CHAPTER": "Recurring chapter",
+      "RANKING_MILESTONE": "Ranking milestone",
+      "TIME_BOUND": "Time-bound payment",
+      "TRANSFER": "Transfer"
+    },
+    "source": {
+      "CONTRACT": "Contract",
+      "REPRINT": "Reprint",
+      "TRANSFER": "Transfer",
+      "TERMINATION": "Termination",
+      "MANUAL": "Manual"
+    }
+  },
   "rankings": {
     "title": "Rankings",
     "subtitle": "See how your series is performing in the latest and historical readership rankings.",
@@ -1360,6 +2313,33 @@
       "empty": "No results for this period.",
       "prompt": "Pick a period above to see its ranking."
     },
+    "board": {
+      "title": "Magazine-wide comparison",
+      "description": "Compare your series with every series in a reflected magazine period. This view is read-only.",
+      "periodLabel": "Reflected period",
+      "periodOption": "Issue {{issue}} · {{magazine}} · {{publicationType}}",
+      "unknownMagazine": "Magazine not specified",
+      "loadingPeriods": "Loading available reflected periods…",
+      "noPeriods": "No reflected periods are available for comparison yet.",
+      "loading": "Loading the magazine-wide ranking…",
+      "empty": "No rankings were recorded for this period.",
+      "otherSeries": "Another series",
+      "yourSeries": "Your series",
+      "unreliable": "Insufficient data",
+      "table": {
+        "rank": "Rank",
+        "series": "Series",
+        "votes": "Votes",
+        "score": "Score",
+        "change": "Change",
+        "risk": "Risk"
+      },
+      "error": {
+        "loadFailed": "Could not load the magazine-wide ranking. Please try again.",
+        "periodNotFound": "This ranking period is no longer available. Choose another period.",
+        "accessDenied": "You do not have permission to view this ranking."
+      }
+    },
     "trend": {
       "title": "My series trend",
       "description": "Rank over the last 12 reflected periods, colour-coded by risk level. Only series you own are visible (BE-scoped).",
@@ -1379,6 +2359,10 @@
       "WEEKLY": "Weekly",
       "MONTHLY": "Monthly",
       "IRREGULAR": "Irregular"
+    },
+    "magazine": {
+      "label": "Magazine",
+      "placeholder": "Enter magazine code"
     },
     "riskLevel": {
       "NONE": "No risk",
@@ -1400,6 +2384,325 @@
     "error": {
       "loadFailed": "Could not load rankings. Please try again.",
       "retry": "Retry"
+    }
+  },
+  "reprints": {
+    "eyebrow": "Flow 7 · Reprints",
+    "title": "Reprint requests",
+    "description": "Track publisher reprint requests, respond to author-rights decisions, and submit revised manuscripts chapter by chapter.",
+    "guideTitle": "What you need to do",
+    "guide": "For revenue-share contracts, review the reason and scope before accepting. For revised reprints, upload a new manuscript only to its assigned chapter; the Editor reviews each chapter before publication.",
+    "requestList": "Requests involving you",
+    "unknownSeries": "Unknown series",
+    "chapterRange": "Chapters {{from}} – {{to}}",
+    "empty": "No reprint requests yet.",
+    "selectHint": "Select a request to view its details.",
+    "mode": "Reprint mode",
+    "range": "Chapter range",
+    "chapterCount": "Chapters",
+    "reason": "Publisher reason and requirements",
+    "noReason": "No additional notes were provided.",
+    "reviewTitle": "Respond to reprint rights",
+    "reviewGuide": "Your decision is sent to the Board. If you reject it, provide a clear reason so the Editor can follow up.",
+    "reviewReason": "Response note",
+    "reviewReasonPlaceholder": "State your acceptance conditions or rejection reason…",
+    "accept": "Accept reprint",
+    "reject": "Reject",
+    "chaptersTitle": "Chapter manuscripts",
+    "chaptersGuide": "Each entry uses the original chapter ID. Do not upload a file to the wrong chapter.",
+    "noChapters": "No chapters are available for this request.",
+    "chapter": "Chapter {{number}}",
+    "download": "View current file",
+    "submitManuscript": "Submit revision",
+    "modes": {
+      "AS_IS": "Use original",
+      "WITH_REVISION": "With revisions",
+      "UNKNOWN": "Not specified"
+    },
+    "statuses": {
+      "PROPOSED": "Awaiting Mangaka",
+      "MANGAKA_REVIEW": "Awaiting Board",
+      "MANGAKA_APPROVED": "Accepted by Mangaka",
+      "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
+      "APPROVED": "Approved",
+      "IN_PRODUCTION": "In production",
+      "PUBLISHED": "Published",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "chapterStatuses": {
+      "PENDING": "Pending",
+      "IN_REVISION": "In revision",
+      "SUBMITTED": "Submitted for Editor review",
+      "APPROVED": "Approved",
+      "PUBLISHED": "Published"
+    },
+    "feedback": {
+      "accepted": "Reprint request accepted.",
+      "rejected": "Rejection submitted.",
+      "manuscriptSubmitted": "The revised manuscript was uploaded and submitted."
+    },
+    "errors": {
+      "load": "Reprint data could not be loaded. Please try again.",
+      "fileRequired": "Select a manuscript to submit.",
+      "invalidAction": "This reprint action is invalid.",
+      "generic": "The reprint action could not be completed. Check its status and try again."
+    }
+  },
+  "transfers": {
+    "eyebrow": "Transfer workflow",
+    "title": "Series transfers",
+    "description": "Request a transfer, respond as the original Mangaka, and sign the three-party agreement from notification links.",
+    "sections": {
+      "active": "In progress",
+      "history": "History",
+      "empty": "No transfer requests in this group."
+    },
+    "types": {
+      "FULL_TRANSFER": "Full transfer",
+      "PARTIAL_TRANSFER": "Partial transfer"
+    },
+    "status": {
+      "SUBMITTED": "Awaiting Board screening",
+      "UNDER_REVIEW": "Under Board review",
+      "REJECTED_BY_BOARD": "Rejected by Board",
+      "NEGOTIATING": "Awaiting original Mangaka",
+      "REJECTED_BY_ORIGINAL_MANGAKA": "Rejected by original Mangaka",
+      "PROPOSED": "Transfer proposed",
+      "ACCEPTED": "Proposal accepted",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled",
+      "AWAITING_REPLACEMENT_SIGNATURES": "Awaiting replacement signatures",
+      "AWAITING_TRANSFER_SIGNATURES": "Awaiting transfer signatures",
+      "COMPLETED": "Completed"
+    },
+    "actions": {
+      "create": "Create request",
+      "accept": "Accept negotiation",
+      "reject": "Reject",
+      "sign": "Sign transfer contract",
+      "cancel": "Cancel",
+      "submit": "Submit request",
+      "sendOtp": "Send signing OTP",
+      "confirmSign": "Confirm signature",
+      "reviewContract": "Review terms and sign"
+    },
+    "card": {
+      "unknownSeries": "Unknown series",
+      "unknownMangaka": "Unknown Mangaka",
+      "requester": "Requester: {{name}}",
+      "percentage": "Proposed ownership: {{value}}%",
+      "contractReadyHint": "The transfer contract is ready. Review the amount, ownership split, and signature progress before confirming."
+    },
+    "create": {
+      "title": "Create transfer request",
+      "description": "Choose a series and explain how you plan to take over and develop it.",
+      "series": "Series",
+      "seriesPlaceholder": "Select a series",
+      "type": "Transfer type",
+      "percentage": "Ownership percentage (1–99%)",
+      "plan": "Takeover plan",
+      "planPlaceholder": "Describe your experience and development plan"
+    },
+    "sign": {
+      "title": "Sign transfer contract",
+      "description": "Review every term before using an OTP to confirm your signature.",
+      "reviewDescription": "Verify the parties, transfer value, ownership split, and signing order before continuing.",
+      "notificationTitle": "Transfer contract ready for signing",
+      "signatureCount_one": "{{count}} signature recorded",
+      "signatureCount_other": "{{count}} signatures recorded",
+      "signaturesUnavailable": "Signature progress could not be loaded. Reload before signing.",
+      "contractUnavailable": "The contract terms could not be loaded. Signing is locked for your protection.",
+      "reviewBeforeSigning": "The terms are ready for your review before signing.",
+      "contractId": "Transfer contract ID",
+      "contractIdPlaceholder": "Paste the ID from the signing notification",
+      "otp": "Six-digit OTP",
+      "otpPlaceholder": "Enter signing OTP",
+      "legalNoticeTitle": "The OTP signature confirms these terms",
+      "legalNotice": "Continue only if the parties, amount, and ownership split match your agreement. The contract cannot be edited directly after signing.",
+      "series": "Series",
+      "amount": "Transfer value",
+      "from": "Transferring Mangaka",
+      "to": "Receiving Mangaka",
+      "type": "Transfer type",
+      "status": "Contract status",
+      "ownershipTitle": "New ownership split",
+      "noSplit": "No ownership split was supplied for this contract.",
+      "progressTitle": "Three-party signature progress",
+      "pending": "Not signed",
+      "waitYourTurn": "It is not your signing turn yet. This action will unlock after the previous signer finishes.",
+      "notSigner": "The current account is not a signer on this contract.",
+      "roles": {
+        "MANGAKA_A": "Transferring Mangaka",
+        "MANGAKA_B": "Receiving Mangaka",
+        "BOARD": "Board"
+      }
+    },
+    "contractStatus": {
+      "DRAFT": "Awaiting transferring Mangaka",
+      "A_SIGNED": "Awaiting receiving Mangaka",
+      "B_SIGNED": "Awaiting Board",
+      "BOARD_SIGNED": "Signed by Board",
+      "FULLY_EXECUTED": "Fully executed",
+      "VOIDED": "Voided"
+    },
+    "success": {
+      "created": "Transfer request submitted.",
+      "requestUpdated": "Transfer request updated.",
+      "signed": "Transfer contract signed."
+    },
+    "errors": {
+      "invalidAction": "This transfer action is invalid.",
+      "alreadyOwner": "You already own this series.",
+      "inactive": "Your Mangaka account must be active to request a transfer.",
+      "invalidProposal": "The transfer type and percentage do not match.",
+      "notNegotiating": "This request is no longer awaiting the original Mangaka's response.",
+      "accessDenied": "You do not have access to this transfer request.",
+      "alreadySigned": "You have already signed this transfer contract.",
+      "signerNotFound": "The signing identity could not be verified.",
+      "contractNotFound": "The transfer contract is no longer available.",
+      "requestNotFound": "The transfer request from this notification is unavailable or you cannot access it.",
+      "noActiveContract": "This series has no active contract eligible for transfer.",
+      "generic": "Could not complete the transfer action. Please try again.",
+      "notYourTurn": "You are not the current signer or this contract is not ready for your signature."
+    }
+  },
+  "contracts": {
+    "meta": {
+      "listTitle": "Contracts - MangakaStudio Pro",
+      "detailTitle": "Contract details - MangakaStudio Pro"
+    },
+    "unknownSeries": "Unknown series",
+    "notAvailable": "Not available",
+    "list": {
+      "eyebrow": "Contracts",
+      "title": "My contracts",
+      "description": "Review terms, respond to requests, and complete contract signing.",
+      "contractTitle": "Contract — {{series}}",
+      "series": "Series: {{series}}",
+      "empty": "You do not have any contracts yet."
+    },
+    "fields": {
+      "type": "Contract type",
+      "value": "Value",
+      "publisherOwnership": "Publisher ownership",
+      "mangakaOwnership": "Mangaka ownership",
+      "start": "Start date",
+      "end": "End date",
+      "terminationClause": "Termination clause",
+      "otpPlaceholder": "6-digit OTP"
+    },
+    "types": {
+      "FULL_BUYOUT": "Full buyout",
+      "REVENUE_SHARE": "Revenue share"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "MANGAKA_REVIEW": "Mangaka review",
+      "MANGAKA_APPROVED": "Mangaka approved",
+      "BOARD_APPROVED": "Board approved",
+      "NEGOTIATION": "Negotiation",
+      "MANGAKA_SIGNED": "Signed by Mangaka",
+      "ACTIVATION_PENDING": "Activation pending",
+      "FULLY_EXECUTED": "Fully executed",
+      "FULFILLED": "Fulfilled",
+      "TERMINATED": "Terminated",
+      "TERMINATED_BY_BREACH": "Terminated for breach",
+      "EXPIRED": "Expired",
+      "VOIDED": "Voided",
+      "PENDING_SIGNATURES": "Pending signatures"
+    },
+    "detail": {
+      "back": "Back to contracts",
+      "sections": {
+        "terms": "Contract terms",
+        "actions": "Mangaka actions",
+        "paymentConditions": "Payment conditions",
+        "amendments": "Contract amendments"
+      },
+      "paymentConditionsRequired": "You cannot approve or sign until at least one valid payment condition is available.",
+      "mangakaSignature": "Mangaka signature",
+      "signed": "Signed",
+      "notSigned": "Not signed",
+      "boardSignatureProgress": "Board signature progress",
+      "progressLoadFailed": "We could not load the latest signature progress. Reload the page before continuing if you need to verify signatures.",
+      "signatureReady": "The Board has approved this contract. Request an OTP and sign it.",
+      "signedAt": "Signed at {{date}}.",
+      "signatureLocked": "Signing becomes available after the Mangaka accepts the terms and the Board approves the contract.",
+      "amendmentsEmpty": "No amendments are available.",
+      "amendmentFallback": "Contract amendment",
+      "statusHints": {
+        "DRAFT": "The Editor is preparing the contract terms.",
+        "NEGOTIATION": "The Editor is preparing the contract terms.",
+        "MANGAKA_APPROVED": "You accepted the terms; Board approval is pending.",
+        "MANGAKA_SIGNED": "You signed the contract; the remaining Board signatures are pending.",
+        "FULLY_EXECUTED": "The contract has all required signatures and is now effective.",
+        "default": "This contract currently requires no action from you."
+      }
+    },
+    "actions": {
+      "approveTerms": "Accept terms",
+      "requestChanges": "Request changes",
+      "sendOtp": "Send OTP",
+      "sendOtpShort": "Send OTP",
+      "signContract": "Sign contract",
+      "signAmendment": "Sign amendment",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "submitRequest": "Submit request"
+    },
+    "requestChanges": {
+      "title": "Request contract changes",
+      "description": "Describe the terms the Editor should review and update.",
+      "reason": "Reason for changes",
+      "placeholder": "Example: Please revise the ownership split and clarify the termination clause.",
+      "hint": "Required, up to 1,000 characters."
+    },
+    "amendment": {
+      "rejectReason": "Reason for rejection"
+    },
+    "feedback": {
+      "processing": "Processing…",
+      "otpSent": "The OTP was sent to your email address.",
+      "updated": "The action was completed."
+    },
+    "errors": {
+      "loadList": "Could not load contracts.",
+      "notFound": "This contract could not be found.",
+      "accountUnavailable": "Could not load your account.",
+      "invalidAction": "This contract action is invalid.",
+      "actionFailed": "Could not complete the action. Check the current contract status and try again.",
+      "paymentConditionsRequired": "This contract must have at least one valid payment condition before it can be approved or signed.",
+      "requiredField": "Please complete all required fields."
+    },
+    "versions": {
+      "title": "Version history",
+      "description": "Review the saved versions of this contract.",
+      "count_one": "{{count}} version",
+      "count_other": "{{count}} versions",
+      "version": "Version {{number}}",
+      "noNote": "No change note was provided.",
+      "empty": "No saved contract versions are available yet.",
+      "loadFailed": "Could not load version history. You can still review the current contract."
+    },
+    "versionDetail": {
+      "back": "Back to contract",
+      "loadFailed": "Could not load this contract version.",
+      "eyebrow": "Contract version",
+      "createdAtValue": "Saved {{date}}",
+      "terms": "Saved terms",
+      "audit": "Version record",
+      "versionNumber": "Version number",
+      "valuationAmount": "Valuation amount",
+      "publisherOwnershipPct": "Publisher ownership",
+      "mangakaOwnershipPct": "Mangaka ownership",
+      "terminationClause": "Termination clause",
+      "note": "Change note",
+      "versionId": "Version ID",
+      "contractId": "Contract ID",
+      "editedById": "Edited by ID",
+      "createdAt": "Created at",
+      "notAvailable": "Not available"
     }
   }
 }

@@ -27,33 +27,38 @@ export function BoardReportsPage({
   const filteredReports = reports.filter(
     (report) =>
       (!reportType || report.reportType === reportType) &&
-      (!search || `${report.content} ${seriesTitles[report.seriesId ?? ''] ?? ''}`.toLowerCase().includes(search.toLowerCase()))
+      (!search ||
+        `${report.content} ${seriesTitles[report.seriesId ?? ''] ?? ''}`.toLowerCase().includes(search.toLowerCase()))
   )
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
-        <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
           <ArrowLeft className='size-4' />
           {t('common.back')}
         </Link>
       )}
       <BoardHeader title={t('reports.title')} description={t('reports.description')} />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       {enableFilters && (
         <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
           <input
-            className='h-10 rounded-md border border-input bg-background px-3 text-sm'
+            className='h-10 rounded-md border border-input bg-background px-3 text-xs'
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('filters.searchReports')}
           />
           <select
-            className='h-10 rounded-md border border-input bg-background px-3 text-sm'
+            className='h-10 rounded-md border border-input bg-background px-3 text-xs'
             value={reportType}
             onChange={(event) => setReportType(event.target.value)}
           >
             <option value=''>{t('filters.allReportTypes')}</option>
-            {reportTypes.map((value) => <option key={value} value={value}>{value}</option>)}
+            {reportTypes.map((value) => (
+              <option key={value} value={value}>
+                {t(`reports.types.${value}`, { defaultValue: humanizeEnum(value) })}
+              </option>
+            ))}
           </select>
         </div>
       )}
@@ -62,19 +67,35 @@ export function BoardReportsPage({
           <article key={report.id} className='rounded-xl border border-border bg-card p-5 shadow-sm'>
             <h2 className='font-bold'>
               {decisionBasePath && report.boardDecisionId ? (
-                <Link className='hover:text-primary hover:underline' to={`${decisionBasePath}/${report.boardDecisionId}`}>
-                  {report.reportType ?? t('reports.title')}
+                <Link
+                  className='hover:text-primary hover:underline'
+                  to={`${decisionBasePath}/${report.boardDecisionId}`}
+                >
+                  {report.reportType
+                    ? t(`reports.types.${report.reportType}`, { defaultValue: humanizeEnum(report.reportType) })
+                    : t('reports.title')}
                 </Link>
+              ) : report.reportType ? (
+                t(`reports.types.${report.reportType}`, { defaultValue: humanizeEnum(report.reportType) })
               ) : (
-                report.reportType ?? t('reports.title')
+                t('reports.title')
               )}
             </h2>
-            <p className='mt-1 text-xs text-muted-foreground'>{seriesTitles[report.seriesId ?? ''] ?? t('reports.unknownSeries')}</p>
-            <p className='mt-3 whitespace-pre-wrap text-sm text-muted-foreground'>{report.content}</p>
+            <p className='mt-1 text-xs text-muted-foreground'>
+              {seriesTitles[report.seriesId ?? ''] ?? t('reports.unknownSeries')}
+            </p>
+            <p className='mt-3 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>
           </article>
         ))}
       </div>
       {!filteredReports.length && <EmptyState text={t('reports.empty')} />}
     </div>
   )
+}
+
+function humanizeEnum(value: string) {
+  return value
+    .toLowerCase()
+    .replaceAll('_', ' ')
+    .replace(/^./, (character) => character.toUpperCase())
 }

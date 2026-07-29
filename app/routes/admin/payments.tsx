@@ -1,18 +1,40 @@
 import {
   paymentControllerCancelPayment,
+  paymentControllerGetPaymentById,
   paymentControllerGetPayments,
+  paymentControllerGetPaymentsByContract,
+  paymentControllerGetPaymentsBySeries,
+  paymentControllerGetPaymentsByUser,
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
   try {
-    const response = await paymentControllerGetPayments(paymentQuery(request))
-    return { payments: response.data.data, focusPaymentId, hasError: false }
+    const query = paymentQuery(request)
+    const response = query.contractId
+      ? await paymentControllerGetPaymentsByContract({ id: query.contractId })
+      : query.seriesId
+        ? await paymentControllerGetPaymentsBySeries({ id: query.seriesId })
+        : query.receiverId
+          ? await paymentControllerGetPaymentsByUser({ id: query.receiverId })
+          : await paymentControllerGetPayments(query)
+    const payments = await Promise.all(
+      response.data.data.map((payment) =>
+        paymentControllerGetPaymentById({ id: payment.id })
+          .then((detail) => detail.data)
+          .catch(() => null)
+      )
+    )
+    return {
+      payments: payments.filter((payment) => payment !== null),
+      focusPaymentId,
+      hasError: false
+    }
   } catch {
     return { payments: [], focusPaymentId, hasError: true }
   }
@@ -23,8 +45,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const intent = String(form.get('intent') ?? '')
   const id = required(form, 'paymentId')
   try {
+    let message = ''
     if (intent === 'pay') {
-      await paymentControllerPayPayment(
+      const response = await paymentControllerPayPayment(
         { id },
         {
           paymentMethod: required(form, 'paymentMethod'),
@@ -32,10 +55,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           ...(String(form.get('note') ?? '').trim() ? { note: String(form.get('note')).trim() } : {})
         }
       )
+      message = extractApiSuccessMessage(response, 'Đã xác nhận khoản thanh toán được chi trả.')
     } else if (intent === 'cancel') {
-      await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
+      const response = await paymentControllerCancelPayment({ id }, { cancelReason: required(form, 'cancelReason') })
+      message = extractApiSuccessMessage(response, 'Đã hủy khoản thanh toán.')
     } else return { ok: false, intent }
-    return { ok: true, intent, messageKey: intent === 'pay' ? 'paymentPaid' : 'paymentCancelled' }
+    return {
+      ok: true,
+      intent,
+      messageKey: intent === 'pay' ? 'paymentPaid' : 'paymentCancelled',
+      message
+    }
   } catch (error) {
     return {
       ok: false,

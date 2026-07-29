@@ -24,7 +24,8 @@ export function EditorBoardDecisionsPage({
   sessionPhases,
   hasError,
   backPath = '/dashboard/editor/board',
-  detailBasePath
+  detailBasePath,
+  allowVoting = true
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
@@ -33,6 +34,7 @@ export function EditorBoardDecisionsPage({
   hasError: boolean
   backPath?: string
   detailBasePath?: string
+  allowVoting?: boolean
 }) {
   const { t } = useTranslation('editor')
   const { session: authSession } = useAuth()
@@ -113,7 +115,7 @@ export function EditorBoardDecisionsPage({
             ))}
           </select>
         </div>
-        <div className='grid gap-3 md:grid-cols-2'>
+        <div className='space-y-3'>
           {visibleDecisions.map((decision) => (
             <DecisionCard
               key={decision.id}
@@ -123,6 +125,7 @@ export function EditorBoardDecisionsPage({
               detailBasePath={detailBasePath}
               canVote={sessions.some(
                 (session) =>
+                  allowVoting &&
                   session.id === decision.boardSessionId &&
                   session.status === 'ACTIVE' &&
                   (realtime.sessionPhases[session.id] ?? sessionPhases[session.id]) === 'VOTING' &&
@@ -131,7 +134,7 @@ export function EditorBoardDecisionsPage({
             />
           ))}
           {!visibleDecisions.length && (
-            <p className='text-sm text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
+            <p className='text-xs text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
           )}
         </div>
       </BoardPanel>
@@ -171,8 +174,8 @@ function DecisionCard({
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex items-start justify-between gap-3'>
-        <div>
-          <h3 className='font-bold text-foreground'>
+        <div className='min-w-0'>
+          <h3 className='text-pretty font-bold leading-6 text-foreground'>
             {detailBasePath ? (
               <Link className='hover:text-primary hover:underline' to={`${detailBasePath}/${decision.id}`}>
                 {displayTitle}
@@ -188,7 +191,7 @@ function DecisionCard({
         </div>
         <BoardStatus value={decision.result ?? 'PENDING'} />
       </div>
-      <p className='mt-3 text-sm text-muted-foreground'>
+      <p className='mt-3 text-xs text-muted-foreground'>
         {t('board.voteSummary', {
           approve: decision.approveCount,
           reject: decision.rejectCount,

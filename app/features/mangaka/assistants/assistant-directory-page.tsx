@@ -1,16 +1,18 @@
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Filter, Search, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, Users } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import type { AssistantDirectoryListResDtoOutputItemsItemSpecializationsItem } from '~/api/model/users'
 import { AssistantCard } from './components/assistant-card'
+import { AssistantPublicProfileDialog } from './components/assistant-public-profile-dialog'
 import { InviteAssistantDialog } from './components/invite-assistant-dialog'
 import { useAssistantDirectory } from './use-assistant-directory'
 import { useMyStudioAssignments } from '~/features/mangaka/studio/use-my-studio-assignments'
 import { useCreateInvite } from '~/features/mangaka/invites/use-create-invite'
+import { OutgoingInvitesPanel } from '~/features/mangaka/invites/outgoing-invites-panel'
 
 const SPECIALIZATION_FILTERS: ReadonlyArray<AssistantDirectoryListResDtoOutputItemsItemSpecializationsItem> = [
   'BACKGROUND',
@@ -54,26 +56,21 @@ export function AssistantDirectoryPage() {
     error,
     setPage,
     setSpecialization,
-    setLevel,
     specialization,
     refresh
   } = useAssistantDirectory()
-  const { items: enrichedAssignments } = useMyStudioAssignments()
+  const { items: enrichedAssignments } = useMyStudioAssignments({ pageSize: 100, initialStatus: 'ACTIVE' })
   const { createInvite, isCreating } = useCreateInvite()
 
   const activeAssistantIds = new Set(enrichedAssignments.map((e) => e.assignment.assistantId))
 
   const [inviteTarget, setInviteTarget] = useState<AssistantDirectoryListResDtoOutputItemsItem | null>(null)
-  const [searchInput, setSearchInput] = useState('')
+  const [profileTarget, setProfileTarget] = useState<AssistantDirectoryListResDtoOutputItemsItem | null>(null)
+  const [outgoingInviteRefreshToken, setOutgoingInviteRefreshToken] = useState(0)
 
   const totalPages = Math.max(1, Math.ceil(total / perPage))
   const from = total === 0 ? 0 : (page - 1) * perPage + 1
   const to = Math.min(page * perPage, total)
-
-  const handleSearchCommit = (value: string) => {
-    setSearchInput(value)
-    setLevel(value.trim().length > 0 ? value : undefined)
-  }
 
   const handleInviteClick = (assistant: AssistantDirectoryListResDtoOutputItemsItem) => {
     setInviteTarget(assistant)
@@ -88,6 +85,7 @@ export function AssistantDirectoryPage() {
       const invite = await createInvite(body)
       if (invite) {
         setInviteTarget(null)
+        setOutgoingInviteRefreshToken((value) => value + 1)
         // Note: we intentionally do NOT refresh assignments here. The BE only
         // created a PENDING invite; the StudioAssignment flips to ACTIVE only
         // after the Assistant accepts (which is an async user action outside
@@ -148,16 +146,6 @@ export function AssistantDirectoryPage() {
             </button>
           ))}
         </div>
-        <div className='relative sm:w-64'>
-          <Search className='pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground' />
-          <input
-            type='text'
-            value={searchInput}
-            onChange={(e) => handleSearchCommit(e.target.value)}
-            placeholder={t('assistantDirectory.filters.levelPlaceholder')}
-            className='block w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-3 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring'
-          />
-        </div>
       </div>
 
       {/* Error banner */}
@@ -189,8 +177,6 @@ export function AssistantDirectoryPage() {
           <EmptyState
             onClearFilters={() => {
               setSpecialization(undefined)
-              setLevel(undefined)
-              setSearchInput('')
             }}
           />
         ) : (
@@ -202,6 +188,7 @@ export function AssistantDirectoryPage() {
                   assistant={assistant}
                   hasActiveAssignment={activeAssistantIds.has(assistant.userId)}
                   onInvite={handleInviteClick}
+                  onViewDetails={setProfileTarget}
                 />
               ))}
             </div>
@@ -252,12 +239,20 @@ export function AssistantDirectoryPage() {
         )}
       </div>
 
+      <OutgoingInvitesPanel reloadToken={outgoingInviteRefreshToken} />
+
       <InviteAssistantDialog
         assistant={inviteTarget}
         isSubmitting={isCreating}
         open={inviteTarget !== null}
         onCancel={handleInviteCancel}
         onConfirm={handleInviteConfirm}
+      />
+
+      <AssistantPublicProfileDialog
+        assistant={profileTarget}
+        open={profileTarget !== null}
+        onClose={() => setProfileTarget(null)}
       />
     </div>
   )

@@ -2,7 +2,9 @@ import {
   reprintRequestControllerBoardApprove,
   reprintRequestControllerAssignReviser,
   reprintRequestControllerFindAll,
-  reprintRequestControllerFindById
+  reprintRequestControllerFindById,
+  reprintRequestControllerGetChapterById,
+  reprintRequestControllerGetChapters
 } from '~/api/operations/reprint-requests/reprint-requests'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { contractControllerGetContracts } from '~/api/operations/contracts/contracts'
@@ -46,8 +48,30 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       contractControllerGetContracts(),
       usersControllerListMangakas({ limit: 100, offset: 0 })
     ])
+    const requests = await Promise.all(
+      response.data.map((item) =>
+        reprintRequestControllerFindById({ id: item.id })
+          .then(async (detail) => {
+            const chapters = await reprintRequestControllerGetChapters({ id: item.id }).catch(() => null)
+            if (chapters?.status === 200) {
+              await Promise.all(
+                chapters.data.map((chapter) =>
+                  chapter.originalChapterId
+                    ? reprintRequestControllerGetChapterById({
+                        id: item.id,
+                        chapterId: chapter.originalChapterId
+                      }).catch(() => null)
+                    : null
+                )
+              )
+            }
+            return detail.data
+          })
+          .catch(() => null)
+      )
+    )
     return {
-      requests: response.data,
+      requests: requests.filter((item) => item !== null),
       series: seriesResponse.data.items,
       contractTypes: activeContractTypes(contractsResponse.data),
       mangakas: mangakasResponse.data.items,

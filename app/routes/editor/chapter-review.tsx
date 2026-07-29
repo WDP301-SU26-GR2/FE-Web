@@ -12,6 +12,7 @@ import {
 } from '~/api/operations/chapters/chapters'
 import {
   chapterNameControllerApprove,
+  chapterNameControllerGetOne,
   chapterNameControllerList,
   chapterNameControllerRequestRevision
 } from '~/api/operations/names/names'
@@ -22,8 +23,13 @@ import {
   annotationControllerResolve
 } from '~/api/operations/annotations/annotations'
 import { seriesControllerGetSeries } from '~/api/operations/series/series'
-import { contractControllerGetContracts } from '~/api/operations/contracts/contracts'
+import { contractControllerGetContractById, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
+import {
+  productionStageControllerList,
+  productionStageControllerListPages
+} from '~/api/operations/production-stages/production-stages'
+import { taskControllerListRegions } from '~/api/operations/task/task'
 import {
   EditorChapterReviewPage,
   type EditorActionResult,
@@ -72,27 +78,55 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
         }))
     )
     const name = namesResponse.status === 200 ? (namesResponse.data.items[0] ?? null) : null
+    const nameDetailResponse = name
+      ? await chapterNameControllerGetOne({ id: params.chapterId, nameId: name.id }).catch(() => null)
+      : null
+    const detailedName = nameDetailResponse?.status === 200 ? nameDetailResponse.data : name
     const nameAnnotationsResponse = name
       ? await annotationControllerList({ targetType: 'NAME', targetId: name.id }).catch(() => null)
       : null
     const namePages = await Promise.all(
-      (name?.pages ?? []).map(async (page) => ({ pageNumber: page.pageNumber, url: await signKey(page.fileUrl) }))
+      (detailedName?.pages ?? []).map(async (page) => ({
+        pageNumber: page.pageNumber,
+        url: await signKey(page.fileUrl)
+      }))
     )
+    const stagesResponse = await productionStageControllerList({ id: params.chapterId }).catch(() => null)
+    const stagePageResponses =
+      stagesResponse?.status === 200
+        ? await Promise.all(
+            stagesResponse.data.stages.map((stage) =>
+              productionStageControllerListPages({ id: params.chapterId, stageId: stage.id }).catch(() => null)
+            )
+          )
+        : []
+    const stagePages = stagePageResponses.flatMap((response) => (response?.status === 200 ? response.data.items : []))
+    const regionEntries = await Promise.all(
+      pagesResponse.data.items.map(async (page) => {
+        const response = await taskControllerListRegions({ id: page.id }).catch(() => null)
+        return [page.id, response?.status === 200 ? response.data.items : []] as const
+      })
+    )
+    const contractListItem =
+      contractsResponse?.data.find(
+        (contract) => contract.seriesId === params.seriesId && contract.status === 'FULLY_EXECUTED'
+      ) ?? contractsResponse?.data.find((contract) => contract.seriesId === params.seriesId)
+    const contractResponse = contractListItem
+      ? await contractControllerGetContractById({ id: contractListItem.id }).catch(() => null)
+      : null
     const data: EditorChapterReviewData = {
       series: seriesResponse.data,
       chapter: chapterResponse.data,
-      contract:
-        contractsResponse?.data.find(
-          (contract) => contract.seriesId === params.seriesId && contract.status === 'FULLY_EXECUTED'
-        ) ??
-        contractsResponse?.data.find((contract) => contract.seriesId === params.seriesId) ??
-        null,
+      contract: contractResponse?.status === 200 ? contractResponse.data : null,
       pages,
-      name,
+      name: detailedName,
       namePages,
       progress: progressResponse?.status === 200 ? progressResponse.data : null,
       annotations: annotationsResponse?.status === 200 ? annotationsResponse.data.items : [],
-      nameAnnotations: nameAnnotationsResponse?.status === 200 ? nameAnnotationsResponse.data.items : []
+      nameAnnotations: nameAnnotationsResponse?.status === 200 ? nameAnnotationsResponse.data.items : [],
+      stages: stagesResponse?.status === 200 ? stagesResponse.data : null,
+      stagePages,
+      regionsByPage: Object.fromEntries(regionEntries)
     }
     return { data, hasError: false }
   } catch {
@@ -117,9 +151,10 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         response.status === 201 && response.data.manuscriptStatus === 'AWAITING_CO_OWNER_APPROVAL'
     } else if (intent === 'approveChapterName')
       await chapterNameControllerApprove({ id: chapterId, nameId: required(formData, 'nameId') })
-    else if (intent === 'reviseChapterName')
+    else if (intent === 'reviseChapterName') {
+      if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
       await chapterNameControllerRequestRevision({ id: chapterId, nameId: required(formData, 'nameId') }, { reason })
-    else if (intent === 'setSchedule') {
+    } else if (intent === 'setSchedule') {
       const deadline = new Date(required(formData, 'deadline')).toISOString()
       await chapterControllerSetSchedule({ id: chapterId }, { originalDeadline: deadline, currentDeadline: deadline })
     } else if (intent === 'extendSchedule')

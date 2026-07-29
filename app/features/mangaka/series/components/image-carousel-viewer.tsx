@@ -44,9 +44,7 @@ export type ImageCarouselViewerProps = {
 export function ImageCarouselViewer({ items, startIndex = 0, open, onClose }: ImageCarouselViewerProps) {
   const { t } = useTranslation('mangaka')
 
-  const [index, setIndex] = useState(() =>
-    Math.min(Math.max(startIndex, 0), Math.max(items.length - 1, 0))
-  )
+  const [index, setIndex] = useState(() => Math.min(Math.max(startIndex, 0), Math.max(items.length - 1, 0)))
 
   // Re-sync the active image whenever the dialog is freshly opened (handled via
   // the `prevOpenRef` dance — setState inside an effect body is flagged by
@@ -96,7 +94,7 @@ export function ImageCarouselViewer({ items, startIndex = 0, open, onClose }: Im
       role='dialog'
       aria-modal='true'
       aria-label={current?.alt ?? t('lightbox.stripGroupLabel')}
-      className='fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 p-6'
+      className='fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 p-6'
       onClick={onClose}
     >
       {/* Close button */}
@@ -107,7 +105,7 @@ export function ImageCarouselViewer({ items, startIndex = 0, open, onClose }: Im
           onClose()
         }}
         aria-label={t('lightbox.closePreview')}
-        className='absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60 cursor-pointer'
+        className='absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer'
       >
         <X className='h-5 w-5' />
       </button>
@@ -128,8 +126,8 @@ export function ImageCarouselViewer({ items, startIndex = 0, open, onClose }: Im
             disabled={safeIndex === 0}
             aria-label={t('lightbox.previous')}
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer',
-              safeIndex === 0 && 'cursor-not-allowed opacity-30 hover:bg-black/50'
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
+              safeIndex === 0 && 'cursor-not-allowed opacity-30 hover:bg-muted hover:text-foreground'
             )}
           >
             <ChevronLeft className='h-5 w-5' aria-hidden='true' />
@@ -156,8 +154,8 @@ export function ImageCarouselViewer({ items, startIndex = 0, open, onClose }: Im
             disabled={safeIndex >= total - 1}
             aria-label={t('lightbox.next')}
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer',
-              safeIndex >= total - 1 && 'cursor-not-allowed opacity-30 hover:bg-black/50'
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
+              safeIndex >= total - 1 && 'cursor-not-allowed opacity-30 hover:bg-muted hover:text-foreground'
             )}
           >
             <ChevronRight className='h-5 w-5' aria-hidden='true' />
@@ -168,7 +166,7 @@ export function ImageCarouselViewer({ items, startIndex = 0, open, onClose }: Im
       {/* Counter — bottom center, above the bottom edge with some breathing room. */}
       {total > 0 && (
         <div
-          className='mt-4 select-none rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white tabular-nums'
+          className='mt-4 select-none rounded-full bg-muted px-3 py-1 text-sm font-semibold text-muted-foreground tabular-nums'
           aria-live='polite'
           onClick={(e) => e.stopPropagation()}
         >
@@ -189,17 +187,13 @@ function ActiveImage({ r2Key, alt }: { r2Key: string | null; alt: string }) {
 
   if (!r2Key) {
     return (
-      <div className='flex h-64 w-80 items-center justify-center text-muted-foreground'>
-        {t('lightbox.loading')}
-      </div>
+      <div className='flex h-64 w-80 items-center justify-center text-muted-foreground'>{t('lightbox.loading')}</div>
     )
   }
 
   if (signed.status === 'loading' || signed.status === 'idle') {
     return (
-      <div className='flex h-64 w-80 items-center justify-center text-muted-foreground'>
-        {t('lightbox.loading')}
-      </div>
+      <div className='flex h-64 w-80 items-center justify-center text-muted-foreground'>{t('lightbox.loading')}</div>
     )
   }
 
@@ -211,12 +205,5 @@ function ActiveImage({ r2Key, alt }: { r2Key: string | null; alt: string }) {
     )
   }
 
-  return (
-    <img
-      src={signed.url}
-      alt={alt}
-      className='block max-h-[75vh] w-auto object-contain'
-      draggable={false}
-    />
-  )
+  return <img src={signed.url} alt={alt} className='block max-h-[75vh] w-auto object-contain' draggable={false} />
 }

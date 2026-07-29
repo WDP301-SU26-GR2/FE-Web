@@ -39,10 +39,7 @@ export function CompletionProposalDialog({
       setFormError(t('seriesDetail.lifecycle.completion.reasonRequired'))
       return
     }
-    if (
-      parsedEndingChapters !== undefined &&
-      (!Number.isInteger(parsedEndingChapters) || parsedEndingChapters < 1)
-    ) {
+    if (parsedEndingChapters !== undefined && (!Number.isInteger(parsedEndingChapters) || parsedEndingChapters < 1)) {
       setFormError(t('seriesDetail.lifecycle.completion.endingChaptersInvalid'))
       return
     }
@@ -65,7 +62,9 @@ export function CompletionProposalDialog({
             {t('seriesDetail.lifecycle.completion.cancel')}
           </Button>
           <Button type='submit' form='completion-proposal-form' variant='primary' size='sm' disabled={isSubmitting}>
-            {isSubmitting ? t('seriesDetail.lifecycle.completion.submitting') : t('seriesDetail.lifecycle.completion.confirm')}
+            {isSubmitting
+              ? t('seriesDetail.lifecycle.completion.submitting')
+              : t('seriesDetail.lifecycle.completion.confirm')}
           </Button>
         </div>
       }
@@ -109,7 +108,11 @@ export function CompletionProposalDialog({
             {t('seriesDetail.lifecycle.completion.endingChaptersHint')}
           </p>
         </div>
-        {formError && <p className='text-sm text-destructive'>{formError}</p>}
+        {formError && (
+          <p role='alert' className='text-sm text-destructive'>
+            {formError}
+          </p>
+        )}
       </form>
     </Dialog>
   )

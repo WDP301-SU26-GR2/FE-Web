@@ -3,19 +3,39 @@
     "backDashboard": "Back to Admin dashboard"
   },
   "dashboard": {
-    "eyebrow": "Operations center",
-    "title": "System overview",
-    "subtitle": "Monitor users, published content, and production workload across the platform.",
+    "eyebrow": "Administration dashboard",
+    "title": "Platform overview",
+    "subtitle": "A current snapshot of accounts, series, published chapters, and production workload across the platform.",
     "overview": "Overview metrics",
     "refresh": "Refresh data",
     "refreshing": "Refreshing...",
     "loadErrorTitle": "Unable to load system statistics",
-    "loadErrorDescription": "Check your connection or SUPER_ADMIN permissions, then try refreshing.",
+    "loadErrorDescription": "Check your connection or Super Admin permissions, then try refreshing.",
     "empty": "No data is available yet.",
     "unreadNotifications": "You have {{count}} unread notifications to review.",
+    "quickActions": {
+      "users": "Manage accounts",
+      "board": "Board oversight",
+      "operations": "Business operations",
+      "audit": "Activity history",
+      "settings": "Configuration"
+    },
+    "pulse": {
+      "eyebrow": "Attention signals",
+      "title": "Current operational pulse",
+      "description": "These indicators are calculated from the current system snapshot, not historical trends.",
+      "accessAttention": "Accounts to review",
+      "accessAttentionDescription": "Inactive, blocked, or banned",
+      "activeSeries": "Series in operation",
+      "activeSeriesDescription": "Serialized, on hiatus, or moving through closure",
+      "reviewTasks": "Tasks needing attention",
+      "reviewTasksDescription": "Submitted, under review, or revision requested",
+      "publicationRate": "Chapter publication rate",
+      "publicationRateDescription": "Calculated across all existing chapters"
+    },
     "kpis": {
       "users": {
-        "label": "Active users",
+        "label": "Current accounts",
         "description": "{{deleted}} soft-deleted accounts"
       },
       "series": {
@@ -34,11 +54,13 @@
     "sections": {
       "roles": {
         "title": "Role distribution",
-        "description": "Active accounts grouped by platform role."
+        "description": "Non-deleted accounts grouped by platform role.",
+        "centerLabel": "accounts"
       },
       "users": {
         "title": "Account health",
-        "description": "Users grouped by their current access status."
+        "description": "Non-deleted accounts grouped by access status.",
+        "centerLabel": "accounts"
       },
       "series": {
         "title": "Series lifecycle",
@@ -104,7 +126,7 @@
     "fields": {
       "name": "Full name",
       "email": "Email",
-      "phoneNumber": "E.164 phone number",
+      "phoneNumber": "Phone number with country code",
       "role": "Role",
       "status": "New status",
       "reason": "Reason",
@@ -116,7 +138,8 @@
       "role": "All roles",
       "status": "All statuses",
       "apply": "Apply",
-      "includeDeleted": "Include soft-deleted accounts"
+      "includeDeleted": "Include soft-deleted accounts",
+      "onlyDeleted": "Show only soft-deleted accounts"
     },
     "table": {
       "user": "User",
@@ -158,7 +181,7 @@
       },
       "restore": {
         "title": "Restore account",
-        "description": "This restores a soft-deleted account. The API does not currently return deletedAt, so use this from include-deleted mode.",
+        "description": "The account will return to the list and can be managed according to its current access status.",
         "submit": "Restore"
       },
       "resetPassword": {
@@ -186,11 +209,12 @@
       "cannotModifyAdmin": "A Super Admin account cannot be modified.",
       "alreadyDeleted": "This account has already been deleted.",
       "notDeleted": "This account is not deleted and cannot be restored.",
-      "notFound": "The account could not be found."
+      "notFound": "The account could not be found.",
+      "activeCommitments": "This account still has active business commitments. Resolve them before blocking, banning, or deleting it."
     },
     "loadError": {
       "title": "Unable to load users",
-      "description": "Check your connection or SUPER_ADMIN permissions and try again."
+      "description": "Check your connection or Super Admin permissions and try again."
     },
     "empty": {
       "title": "No users found",
@@ -222,7 +246,7 @@
   "settings": {
     "eyebrow": "Policy administration",
     "title": "System configuration",
-    "subtitle": "Manage runtime business parameters, Board voting rules, and reader-vote fraud protection.",
+    "subtitle": "Manage active business parameters, Board voting rules, and reader-vote fraud protection.",
     "save": "Save configuration",
     "edit": "Edit configuration",
     "saving": "Saving...",
@@ -233,12 +257,13 @@
     },
     "app": {
       "title": "Business parameters",
-      "description": "Shared runtime thresholds; backend caches may take up to 30 seconds to refresh.",
+      "description": "Shared operational thresholds; server caches may take up to 30 seconds to refresh.",
       "coOwnerApprovalGraceDays": "Co-owner approval grace period",
-      "nameMaxReviewRounds": "Maximum Name review rounds",
+      "nameMaxReviewRounds": "Maximum storyboard review rounds",
       "reputationRecommendThreshold": "Recommendation reputation threshold",
       "hiatusTooLongDays": "Long-hiatus threshold",
       "lowVoteReliabilityThreshold": "Low vote reliability threshold",
+      "rankingAggregateMinCoverageRatio": "Minimum aggregate ranking coverage",
       "maxUploadBytes": "Maximum upload size",
       "assignmentGraceDays": "Assignment grace period"
     },
@@ -254,6 +279,11 @@
       "title": "Reader voting configuration",
       "description": "Control OTP/CAPTCHA authentication, request limits, and anti-fraud activation conditions.",
       "authMode": "Authentication mode",
+      "authModes": {
+        "OTP": "OTP verification",
+        "CAPTCHA": "CAPTCHA verification",
+        "HYBRID": "Combined OTP and CAPTCHA"
+      },
       "maxSeriesPerVote": "Maximum series per vote",
       "otpExpirySeconds": "OTP expiry",
       "otpMaxAttempts": "Maximum OTP attempts",
@@ -277,17 +307,21 @@
     },
     "loadError": {
       "title": "Unable to load system configuration",
-      "description": "Check your connection and SUPER_ADMIN permissions, then try again."
+      "description": "Check your connection and Super Admin permissions, then try again."
     }
   },
   "operations": {
-    "back": "Back to system operations",
-    "eyebrow": "Operations tools",
-    "title": "System operations",
-    "subtitle": "Business tools that a Super Admin may use to support platform-wide operations.",
+    "back": "Back to operations center",
+    "eyebrow": "Business operations center",
+    "title": "Business operations",
+    "subtitle": "Inspect cross-role data and perform platform operations reserved for Super Admins.",
+    "summary": {
+      "readOnly": "2 read-only areas",
+      "write": "2 data-changing areas"
+    },
     "notice": {
       "title": "These actions affect the whole platform",
-      "description": "Verify the target survey period or series before saving. Changes here may affect rankings and publication editions."
+      "description": "Verify the target voting period or series before saving. Changes here may affect rankings and publication editions."
     },
     "monitoring": {
       "eyebrow": "Read-only lookup",
@@ -298,9 +332,12 @@
       "revisions": "Recent revision rounds",
       "reprints": "Reprint requests",
       "deadlines": "Deadline lookup by chapter",
-      "chapterId": "Enter chapter ID",
+      "selectSeries": "Select a series",
+      "selectChapter": "Select a chapter",
+      "chapterOption": "Chapter {{number}} {{title}}",
       "search": "Search",
-      "deadlineHint": "Enter a chapter ID to review its deadline requests.",
+      "deadlineHint": "Select a series and chapter to review its deadline requests.",
+      "noReason": "No reason was provided.",
       "resolved": "Resolved",
       "open": "Open",
       "unknownSeries": "Unknown series",
@@ -365,13 +402,79 @@
       "loadError": "The monitoring data could not be loaded completely. Please try again."
     },
     "surveys": {
-      "title": "Survey and ranking",
-      "description": "Create survey periods, control status, import offline votes, and finalize rankings."
+      "title": "Reader voting periods",
+      "description": "Create a voting period for a magazine issue, control its state, import offline votes, and finalize rankings.",
+      "adminOnly": "Super Admin operation"
     },
     "publicationVersions": {
       "title": "Publication versions",
       "description": "Create, update, or delete series language editions and reading directions."
+    },
+    "reference": {
+      "title": "Operational reference data",
+      "description": "Inspect production, ranking, directory, reprint, deadline and transfer evidence across the platform.",
+      "series": "Series defense and ranking trend",
+      "selectSeries": "Select a series",
+      "seriesNameId": "Proposal Name ID (optional)",
+      "chapter": "Chapter production reference",
+      "chapterId": "Chapter ID",
+      "chapterNameId": "Chapter Name ID (optional)",
+      "ranking": "Board ranking",
+      "selectPeriod": "Select a survey period",
+      "directories": "Mangaka and assistant directories",
+      "workflows": "Workflow details",
+      "reprintId": "Reprint request ID",
+      "reprintChapterId": "Reprint chapter ID",
+      "deadlineId": "Deadline request ID",
+      "transferRequestId": "Transfer request ID",
+      "transferContractId": "Transfer contract ID",
+      "taskFile": "Protected task file",
+      "taskId": "Task ID",
+      "fileKey": "Task file key",
+      "load": "Load data",
+      "createDownload": "Create download link",
+      "openDownload": "Open protected download",
+      "downloadExpires": "This link expires at {{date}}.",
+      "downloadFailed": "The protected download link could not be created.",
+      "datasets": {
+        "detail": "Series information",
+        "defense": "Performance and defense data",
+        "names": "Series storyboards",
+        "selectedName": "Selected storyboard",
+        "pages": "Chapter pages",
+        "progress": "Chapter progress",
+        "stages": "Production stages",
+        "rankingTrend": "Ranking trend",
+        "boardRanking": "Board assessment",
+        "assistants": "Assistants",
+        "mangakas": "Mangakas",
+        "reprint": "Reprint request",
+        "reprintChapters": "Reprint chapters",
+        "reprintChapter": "Selected reprint chapter",
+        "deadline": "Deadline request",
+        "transferRequest": "Transfer request",
+        "transferContract": "Transfer contract",
+        "transferSignatures": "Transfer signatures"
+      }
+    },
+    "workspace": {
+      "title": "Operations workspace",
+      "description": "Choose the area that matches your investigation or intervention goal.",
+      "open": "Open workspace"
+    },
+    "mode": {
+      "readOnly": "Read only",
+      "write": "Changes data"
     }
+  },
+  "surveyWorkspace": {
+    "eyebrow": "Exclusive operating authority",
+    "title": "Reader voting period control",
+    "description": "Each period covers an entire magazine issue rather than a single series. A Super Admin opens and closes voting, imports offline data, and publishes the final ranking.",
+    "step": "Step {{step}}",
+    "scope": "Set the magazine issue and eligible series",
+    "authority": "Open or close voting at the right time",
+    "finalization": "Review the data and publish the ranking"
   },
   "boardOversight": {
     "eyebrow": "Business oversight",
@@ -380,6 +483,33 @@
     "notice": {
       "title": "These are fallback intervention privileges",
       "description": "A Super Admin does not attend or vote as a Board Member. Let the Editor operate the session and intervene only when the workflow must be restored."
+    },
+    "roleBoundary": {
+      "title": "Responsibility boundary",
+      "description": "Editors create and operate sessions; Board Members discuss, vote, and approve; Super Admins monitor and restore a workflow when an incident occurs."
+    },
+    "workflow": {
+      "editor": {
+        "title": "Editor coordinates",
+        "description": "Prepares evidence, creates the session, and manages its progress."
+      },
+      "board": {
+        "title": "Board decides",
+        "description": "Discusses, votes, and performs Board approvals."
+      },
+      "admin": {
+        "title": "Super Admin oversees",
+        "description": "Monitors, traces, and provides fallback intervention."
+      }
+    },
+    "tools": {
+      "title": "Oversight and intervention tools",
+      "description": "Each area clearly identifies its operating mode to prevent role confusion.",
+      "open": "Open tool"
+    },
+    "mode": {
+      "monitoring": "Monitoring",
+      "intervention": "Fallback intervention"
     },
     "monitoring": {
       "title": "Monitoring",
@@ -398,8 +528,8 @@
       "description": "Read series analysis reports prepared for Board decisions."
     },
     "decisions": {
-      "title": "Serialization decisions",
-      "description": "Inspect and restore a serialization decision flow when the normal workflow is interrupted."
+      "title": "Board decisions",
+      "description": "Inspect and restore Board decision flows when the normal workflow is interrupted."
     },
     "lifecycle": {
       "title": "Lifecycle decisions",
@@ -411,14 +541,93 @@
     }
   },
   "audit": {
+    "userActor": "Performed by",
+    "record": "Affected object",
+    "entityTypes": {
+      "SERIES": "Series",
+      "MANUSCRIPT": "Manuscript",
+      "PAGE": "Page",
+      "CHAPTER": "Chapter",
+      "TASK": "Production task",
+      "DEADLINE_REQUEST": "Deadline request",
+      "USER": "User account",
+      "REGION": "Page region",
+      "APP_CONFIG": "System configuration",
+      "CONTRACT": "Contract",
+      "BOARD_DECISION": "Board decision",
+      "REPRINT_REQUEST": "Reprint request",
+      "TRANSFER_REQUEST": "Transfer request",
+      "PAYMENT_RECORD": "Payment",
+      "SURVEY_PERIOD": "Reader voting period",
+      "PUBLICATION_VERSION": "Publication edition",
+      "BOARD_SESSION": "Board session"
+    },
+    "actions": {
+      "CREATE": "Created",
+      "UPDATE": "Updated",
+      "DELETE": "Deleted",
+      "SOFT_DELETE": "Moved to trash",
+      "RESTORE": "Restored",
+      "TRANSITION": "State transitioned",
+      "STATUS_CHANGED": "Status changed",
+      "APPROVE": "Approved",
+      "REJECT": "Rejected",
+      "RESET_PASSWORD": "Password reset",
+      "BAN": "Account banned",
+      "BLOCK": "Account blocked",
+      "REACTIVATE": "Account reactivated",
+      "CONFIG_UPDATE": "Configuration updated",
+      "HOLD": "Placed on hold",
+      "RESUME": "Resumed",
+      "CLAIM": "Claimed",
+      "RELEASE": "Released",
+      "SESSION_TRANSITION": "Session state changed",
+      "PHASE_ADVANCED": "Session phase advanced",
+      "DECISION_FINALIZED": "Decision finalized",
+      "RANKING_FINALIZED": "Ranking published",
+      "PRODUCTION_STAGE_COMPLETE": "Production stage completed",
+      "PRODUCTION_STAGE_REOPEN": "Production stage reopened"
+    },
+    "states": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "BANNED": "Banned",
+      "BLOCKED": "Blocked",
+      "DRAFT": "Draft",
+      "OPEN": "Open",
+      "CLOSED": "Closed",
+      "REFLECTED": "Ranking published",
+      "PENDING": "Pending",
+      "UPCOMING": "Upcoming",
+      "IN_PROGRESS": "In progress",
+      "UNDER_REVIEW": "Under review",
+      "SUBMITTED": "Submitted",
+      "REVISION_REQUESTED": "Revision requested",
+      "ON_HOLD": "On hold",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "CONCLUDED": "Concluded",
+      "SERIALIZED": "Serialized",
+      "HIATUS": "On hiatus",
+      "PUBLISHED": "Published"
+    },
     "eyebrow": "Monitoring and traceability",
-    "title": "System audit log",
-    "subtitle": "Track state transitions, administrative actions, and automated events across the platform.",
+    "title": "System activity history",
+    "subtitle": "See who affected which object, how its state changed, and when each event occurred.",
     "total": "{{count}} events in total",
     "actor": "Performed by user {{id}}",
     "systemActor": "Automated system action",
-    "empty": "No audit events match the current filters.",
+    "openRecord": "Open object details",
+    "openActor": "Open actor profile",
+    "reason": "Recorded reason",
+    "entityId": "Entity ID",
+    "actorId": "Actor ID",
+    "empty": "No activity matches the current filters.",
     "filters": {
+      "title": "Filter activity history",
+      "description": "Filter by object type or action; use technical identifiers only when investigating a specific event.",
       "allEntities": "All entity types",
       "action": "Action, for example BAN...",
       "entityId": "Entity ID",
@@ -432,8 +641,8 @@
       "page": "Page {{page}} of {{totalPages}}"
     },
     "loadError": {
-      "title": "Unable to load the audit log",
-      "description": "The filters may be invalid or the audit service is currently unavailable."
+      "title": "Unable to load activity history",
+      "description": "The filters may be invalid or the activity-log service is currently unavailable."
     }
   }
 }

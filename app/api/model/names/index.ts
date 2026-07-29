@@ -31,6 +31,7 @@ export * from './nameListResDtoOutputItemsItem'
 export * from './nameListResDtoOutputItemsItemKind'
 export * from './nameListResDtoOutputItemsItemPagesItem'
 export * from './nameListResDtoOutputItemsItemStatus'
+export * from './nameReasonBodyDto'
 export * from './nameResDtoOutput'
 export * from './nameResDtoOutputKind'
 export * from './nameResDtoOutputPagesItem'
@@ -38,5 +39,4 @@ export * from './nameResDtoOutputStatus'
 export * from './updateNamePagesBodyDto'
 export * from './updateNamePagesBodyDtoPagesItem'
 export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
-export type { ReasonBodyDto } from '../chapters/reasonBodyDto';
 

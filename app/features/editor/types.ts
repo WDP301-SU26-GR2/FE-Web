@@ -10,6 +10,8 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
+import type { StageListResDtoOutput, StagePageListResDtoOutputItemsItem } from '~/api/model/production-stages'
+import type { RegionListResDtoOutputItemsItem } from '~/api/model/task'
 import type { SeriesListResDtoOutputItemsItem, SeriesResDtoOutput } from '~/api/model/series'
 
 export type EditorActionResult = {
@@ -21,13 +23,14 @@ export type EditorActionResult = {
   phase?: 'PRESENTING' | 'QA' | 'VOTING'
   transferContractId?: string
   decision?: BoardDecisionResDtoOutput
+  downloadUrl?: string
 }
 
 export type EditorProposalDetailData = {
   series: SeriesResDtoOutput
   name: NameListResDtoOutputItemsItem | null
   coverUrl: string | null
-  characterDesignUrls: string[]
+  characterDesigns: Array<{ key: string; url: string | null }>
   namePageUrls: Array<{ pageNumber: number; url: string | null }>
   nameAnnotations: AnnotationListResDtoOutputItemsItem[]
 }
@@ -59,6 +62,9 @@ export type EditorChapterReviewData = {
   progress: ChapterProgressResDtoOutput | null
   annotations: AnnotationListResDtoOutputItemsItem[]
   nameAnnotations: AnnotationListResDtoOutputItemsItem[]
+  stages: StageListResDtoOutput | null
+  stagePages: StagePageListResDtoOutputItemsItem[]
+  regionsByPage: Record<string, RegionListResDtoOutputItemsItem[]>
 }
 
 export type EditorContractsData = {

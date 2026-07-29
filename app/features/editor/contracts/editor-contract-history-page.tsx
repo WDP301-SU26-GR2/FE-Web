@@ -26,12 +26,12 @@ export function EditorContractHistoryPage({
                 <strong>v{version.versionNumber}</strong>
                 <span className='text-xs text-muted-foreground'>{new Date(version.createdAt).toLocaleString()}</span>
               </div>
-              <p className='mt-2 text-sm text-muted-foreground'>
+              <p className='mt-2 text-xs text-muted-foreground'>
                 {version.note ?? '—'} · {version.valuationAmount ?? '—'}
               </p>
             </article>
           ))}
-          {!versions.length && <p className='text-sm text-muted-foreground'>{t('contractDetail.emptyVersions')}</p>}
+          {!versions.length && <p className='text-xs text-muted-foreground'>{t('contractDetail.emptyVersions')}</p>}
         </div>
       </section>
     </ContractPageLayout>

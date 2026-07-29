@@ -24,7 +24,7 @@ import {
   getNamesMock,
   getReviewsMock,
   getUploadsMock,
-  getUsersMock,
+  getUsersMock
 } from '~/api/operations/index.msw'
 
 export const handlers: RequestHandler[] = [
@@ -36,5 +36,5 @@ export const handlers: RequestHandler[] = [
   ...getUploadsMock(),
   ...getUsersMock(),
   // Handler viết tay — xoá dòng dưới khi orval chạy xong
-  ...exampleHandlers,
+  ...exampleHandlers
 ]

@@ -67,7 +67,7 @@ export function EditorBoardSessionsPage({
         <button
           type='button'
           onClick={() => setCreateDialogOpen(true)}
-          className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+          className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
         >
           <Plus className='size-4' />
           {t('actions.createSession')}
@@ -109,7 +109,7 @@ export function EditorBoardSessionsPage({
               detailBasePath={detailBasePath}
             />
           ))}
-          {!filteredSessions.length && <p className='text-sm text-muted-foreground'>{t('board.emptySessions')}</p>}
+          {!filteredSessions.length && <p className='text-xs text-muted-foreground'>{t('board.emptySessions')}</p>}
         </div>
       </BoardPanel>
       {createDialogOpen && (
@@ -144,6 +144,7 @@ function CreateSessionDialog({
 
   return (
     <Dialog
+      compact
       open
       onClose={onClose}
       titleId='create-board-session-title'
@@ -156,12 +157,12 @@ function CreateSessionDialog({
         <input type='hidden' name='intent' value='createSession' />
         <input type='hidden' name='rosterSourceSeriesId' value={series[0]?.id ?? ''} />
         {!series.length && (
-          <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+          <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
             {t('board.noEligibleSeriesForSession')}
           </p>
         )}
         <aside className='rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100'>
-          <div className='flex items-center gap-2 text-sm font-bold'>
+          <div className='flex items-center gap-2 text-xs font-bold'>
             <CircleAlert className='size-4 shrink-0' />
             {t('board.sessionRulesTitle')}
           </div>
@@ -169,12 +170,12 @@ function CreateSessionDialog({
             {t('board.sessionSystemRosterNotice', { count: suggestedMemberCount })}
           </p>
         </aside>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.sessionName')}
           <input className={boardInput} name='title' minLength={5} required />
         </label>
         <div className='grid min-w-0 gap-3'>
-          <label className='grid min-w-0 gap-1.5 text-sm font-semibold'>
+          <label className='grid min-w-0 gap-1.5 text-xs font-semibold'>
             {t('board.startTime')}
             <input
               className={`${boardInput} min-w-0 [color-scheme:light] dark:[color-scheme:dark]`}
@@ -189,7 +190,7 @@ function CreateSessionDialog({
               }}
             />
           </label>
-          <label className='grid min-w-0 gap-1.5 text-sm font-semibold'>
+          <label className='grid min-w-0 gap-1.5 text-xs font-semibold'>
             {t('board.endTime')}
             <input
               className={`${boardInput} min-w-0 [color-scheme:light] dark:[color-scheme:dark]`}
@@ -201,7 +202,7 @@ function CreateSessionDialog({
             />
           </label>
         </div>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.sessionNote')}
           <textarea className={`${boardInput} min-h-24 py-2`} name='description' maxLength={500} />
         </label>
@@ -210,13 +211,13 @@ function CreateSessionDialog({
             type='button'
             onClick={onClose}
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-bold text-foreground hover:bg-muted disabled:opacity-50'
+            className='inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
           >
             {t('actions.cancel')}
           </button>
           <button
             disabled={fetcher.state !== 'idle' || !series.length || !timeRangeIsValid}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? (
               <Loader2 className='size-4 animate-spin' />
@@ -276,7 +277,7 @@ function SessionCard({
         </div>
         <BoardStatus value={session.status} />
       </div>
-      {session.description && <p className='mt-3 text-sm text-muted-foreground'>{session.description}</p>}
+      {session.description && <p className='mt-3 text-xs text-muted-foreground'>{session.description}</p>}
       <p className='mt-3 text-xs font-semibold text-muted-foreground'>
         {t('board.memberCount', { count: session.allowedEditorIds.length })}
       </p>
@@ -298,7 +299,7 @@ function SessionCard({
           <input type='hidden' name='sessionId' value={session.id} />
           <button
             disabled={fetcher.state !== 'idle' || (session.status === 'UPCOMING' && !hasDecision)}
-            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-bold text-foreground'
+            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground'
           >
             {fetcher.state !== 'idle' ? (
               <Loader2 className='size-4 animate-spin' />

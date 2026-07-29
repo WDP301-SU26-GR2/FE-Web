@@ -8,9 +8,6 @@ import {
   FileText,
   Sparkles,
   MoreVertical,
-  HelpCircle,
-  Upload,
-  RefreshCw,
   Loader2
 } from 'lucide-react'
 import { useMangakaDashboard } from './use-mangaka-dashboard'
@@ -44,9 +41,9 @@ function getWarningColor(warningLevel: string): { text: string } {
   switch (warningLevel) {
     case 'CRITICAL':
     case 'RED':
-      return { text: 'text-rose-500' }
+      return { text: 'text-destructive' }
     case 'YELLOW':
-      return { text: 'text-amber-500' }
+      return { text: 'text-warning' }
     default:
       return { text: 'text-muted-foreground' }
   }
@@ -57,13 +54,13 @@ function getSeriesStatusColor(status: string | null | undefined): string {
   if (!status) return 'text-muted-foreground bg-muted/10 border-muted/20'
   switch (status) {
     case 'SERIALIZED':
-      return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+      return 'text-success bg-success/10 border-success/20'
     case 'HIATUS':
-      return 'text-slate-400 bg-slate-500/10 border-slate-500/20'
+      return 'text-muted-foreground bg-muted/50 border-border'
     case 'COMPLETING':
-      return 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+      return 'text-info bg-info/10 border-info/20'
     case 'CANCELLING':
-      return 'text-rose-500 bg-rose-500/10 border-rose-500/20'
+      return 'text-destructive bg-destructive/10 border-destructive/20'
     default:
       return 'text-muted-foreground bg-muted/10 border-muted/20'
   }
@@ -78,9 +75,9 @@ function getRankChangeDisplay(change: number | null): {
     return { text: 'Steady', color: 'text-muted-foreground' }
   }
   if (change > 0) {
-    return { text: `+${change} pos`, color: 'text-emerald-500' }
+    return { text: `+${change} pos`, color: 'text-success' }
   }
-  return { text: `${change} pos`, color: 'text-rose-500' }
+  return { text: `${change} pos`, color: 'text-destructive' }
 }
 
 export function MangakaDashboard() {
@@ -98,7 +95,7 @@ export function MangakaDashboard() {
   if (error) {
     return (
       <div className='flex flex-col items-center justify-center gap-4 py-20'>
-        <AlertCircle className='h-10 w-10 text-rose-500' />
+        <AlertCircle className='h-10 w-10 text-destructive' />
         <p className='text-destructive text-center'>{error}</p>
         <button
           onClick={reload}
@@ -111,12 +108,10 @@ export function MangakaDashboard() {
   }
 
   // Derived: count critical deadlines (warningLevel RED or CRITICAL)
-  const criticalDeadlines = data?.studio.filter(
-    (item) => item.warningLevel === 'RED' || item.warningLevel === 'CRITICAL'
-  ) ?? []
+  const criticalDeadlines =
+    data?.studio.filter((item) => item.warningLevel === 'RED' || item.warningLevel === 'CRITICAL') ?? []
 
-  const actionCount =
-    (data?.unreadNotifications ?? 0) + (data?.openRevisionRequests ?? 0)
+  const actionCount = (data?.unreadNotifications ?? 0) + (data?.openRevisionRequests ?? 0)
 
   // Get series initials from title (first 2 chars, or split by space)
   function getInitials(title: string): string {
@@ -133,12 +128,12 @@ export function MangakaDashboard() {
 
   // Generate gradient from series title (deterministic)
   const gradients = [
-    'from-blue-600 to-indigo-700',
-    'from-purple-600 to-pink-700',
-    'from-neutral-700 to-slate-900',
-    'from-emerald-600 to-teal-700',
-    'from-amber-600 to-orange-700',
-    'from-rose-600 to-red-700'
+    'from-info to-info/70 text-info-foreground',
+    'from-primary to-primary/70 text-primary-foreground',
+    'from-muted-foreground to-foreground text-background',
+    'from-success to-success/70 text-success-foreground',
+    'from-warning to-warning/70 text-warning-foreground',
+    'from-destructive to-destructive/70 text-destructive-foreground'
   ]
 
   function getGradient(title: string): string {
@@ -150,13 +145,9 @@ export function MangakaDashboard() {
     <div className='space-y-8 pb-16'>
       {/* Dashboard Top Intro */}
       <div>
-        <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-          {t('dashboard.title')}
-        </h1>
+        <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>{t('dashboard.title')}</h1>
         <p className='mt-2 text-sm text-muted-foreground'>
-          {actionCount > 0
-            ? t('dashboard.subtitle', { count: actionCount })
-            : t('dashboard.subtitleIdle')}
+          {actionCount > 0 ? t('dashboard.subtitle', { count: actionCount }) : t('dashboard.subtitleIdle')}
         </p>
       </div>
 
@@ -168,28 +159,24 @@ export function MangakaDashboard() {
           <div className='rounded-xl border border-border bg-card p-6 shadow-md'>
             <div className='flex items-center justify-between'>
               <h2 className='flex items-center gap-2 text-base font-bold tracking-wide'>
-                <AlertTriangle className='h-5 w-5 text-rose-500' />
+                <AlertTriangle className='h-5 w-5 text-destructive' />
                 <span>{t('dashboard.criticalDeadlines')}</span>
               </h2>
               {criticalDeadlines.length > 0 && (
-                <span className='inline-flex items-center rounded-md bg-rose-500/10 border border-rose-500/25 px-2.5 py-0.5 text-xs font-extrabold tracking-wider text-rose-500'>
+                <span className='inline-flex items-center rounded-md bg-destructive/10 border border-destructive/25 px-2.5 py-0.5 text-xs font-extrabold tracking-wider text-destructive'>
                   {t('dashboard.actionRequired')}
                 </span>
               )}
             </div>
 
             {criticalDeadlines.length === 0 ? (
-              <p className='mt-4 text-sm text-muted-foreground'>
-                {t('dashboard.noCriticalDeadlines')}
-              </p>
+              <p className='mt-4 text-sm text-muted-foreground'>{t('dashboard.noCriticalDeadlines')}</p>
             ) : (
               <div className='mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2'>
                 {criticalDeadlines.slice(0, 4).map((item) => {
                   const warning = getWarningColor(item.warningLevel)
                   const chapterTitle: string = item.title ?? ''
-                  const subtitle = chapterTitle
-                    ? chapterTitle
-                    : getManuscriptSubtitle(item.manuscriptStatus, t)
+                  const subtitle = chapterTitle ? chapterTitle : getManuscriptSubtitle(item.manuscriptStatus, t)
                   return (
                     <div
                       key={item.chapterId}
@@ -232,9 +219,7 @@ export function MangakaDashboard() {
           {/* ACTIVE SERIES LIST */}
           <div className='rounded-xl border border-border bg-card p-6 shadow-md'>
             <div className='flex items-center justify-between'>
-              <h2 className='text-base font-bold tracking-wide'>
-                {t('dashboard.activeSeries')}
-              </h2>
+              <h2 className='text-base font-bold tracking-wide'>{t('dashboard.activeSeries')}</h2>
               <a
                 href='/dashboard/mangaka/series'
                 className='rounded-lg p-1.5 hover:bg-muted text-muted-foreground transition-all cursor-pointer'
@@ -249,16 +234,14 @@ export function MangakaDashboard() {
               <div className='mt-4 divide-y divide-border'>
                 {data.studio.slice(0, 5).map((item) => {
                   const chapterTitle: string = item.title ?? ''
-                  const subtitle = chapterTitle
-                    ? chapterTitle
-                    : getManuscriptSubtitle(item.manuscriptStatus, t)
+                  const subtitle = chapterTitle ? chapterTitle : getManuscriptSubtitle(item.manuscriptStatus, t)
                   return (
                     <div key={item.chapterId} className='flex items-center justify-between py-4 first:pt-0 last:pb-0'>
                       <div className='flex items-center gap-4'>
                         {/* Stylized Cover Art Placeholder */}
                         <div
                           className={cn(
-                            'flex h-12 w-9 shrink-0 items-center justify-center rounded bg-gradient-to-br font-extrabold text-[11px] text-white shadow',
+                            'flex h-12 w-9 shrink-0 items-center justify-center rounded bg-gradient-to-br font-extrabold text-[11px] shadow',
                             getGradient(item.seriesTitle)
                           )}
                         >
@@ -288,9 +271,7 @@ export function MangakaDashboard() {
                 })}
               </div>
             ) : (
-              <p className='mt-4 text-sm text-muted-foreground'>
-                {t('dashboard.noActiveSeries')}
-              </p>
+              <p className='mt-4 text-sm text-muted-foreground'>{t('dashboard.noActiveSeries')}</p>
             )}
           </div>
         </div>
@@ -324,17 +305,13 @@ export function MangakaDashboard() {
                             {item.seriesTitle}
                           </span>
                         </div>
-                        <span className={cn('text-xs font-bold', rankDisplay.color)}>
-                          {rankDisplay.text}
-                        </span>
+                        <span className={cn('text-xs font-bold', rankDisplay.color)}>{rankDisplay.text}</span>
                       </div>
                     )
                   })}
                 </div>
               ) : (
-                <p className='mt-4 text-sm text-muted-foreground'>
-                  {t('dashboard.noRankings')}
-                </p>
+                <p className='mt-4 text-sm text-muted-foreground'>{t('dashboard.noRankings')}</p>
               )}
             </div>
 
@@ -350,9 +327,7 @@ export function MangakaDashboard() {
           {/* ACTION INBOX */}
           <div className='rounded-xl border border-border bg-card p-6 shadow-md'>
             <div className='flex items-center justify-between'>
-              <h2 className='text-base font-bold tracking-wide'>
-                {t('dashboard.actionInbox')}
-              </h2>
+              <h2 className='text-base font-bold tracking-wide'>{t('dashboard.actionInbox')}</h2>
               {actionCount > 0 && (
                 <span className='flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow shadow-primary/20'>
                   {actionCount}
@@ -367,7 +342,7 @@ export function MangakaDashboard() {
                   href='/dashboard/mangaka/notifications'
                   className='flex items-start gap-3 rounded-lg border border-border p-4 transition-all hover:scale-[1.01] cursor-pointer'
                 >
-                  <FileText className='h-5 w-5 shrink-0 mt-0.5 text-amber-500' />
+                  <FileText className='h-5 w-5 shrink-0 mt-0.5 text-warning' />
                   <div className='min-w-0'>
                     <h4 className='text-xs font-bold truncate text-foreground'>
                       {t('dashboard.inbox.notifications', { count: data.unreadNotifications })}
@@ -383,9 +358,9 @@ export function MangakaDashboard() {
               {data && data.openRevisionRequests > 0 && (
                 <a
                   href='/dashboard/mangaka/series'
-                  className='flex items-start gap-3 rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 transition-all hover:scale-[1.01] cursor-pointer'
+                  className='flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4 transition-all hover:scale-[1.01] cursor-pointer'
                 >
-                  <AlertCircle className='h-5 w-5 shrink-0 mt-0.5 text-rose-500' />
+                  <AlertCircle className='h-5 w-5 shrink-0 mt-0.5 text-destructive' />
                   <div className='min-w-0'>
                     <h4 className='text-xs font-bold truncate text-foreground'>
                       {t('dashboard.inbox.revisions', { count: data.openRevisionRequests })}
@@ -402,9 +377,7 @@ export function MangakaDashboard() {
                 <div className='flex items-start gap-3 rounded-lg border border-border p-4 transition-all'>
                   <Sparkles className='h-5 w-5 shrink-0 mt-0.5 text-primary' />
                   <div className='min-w-0'>
-                    <h4 className='text-xs font-bold truncate text-foreground'>
-                      {t('dashboard.inbox.allClear')}
-                    </h4>
+                    <h4 className='text-xs font-bold truncate text-foreground'>{t('dashboard.inbox.allClear')}</h4>
                     <p className='mt-1 text-[11px] text-muted-foreground leading-normal'>
                       {t('dashboard.inbox.allClearDesc')}
                     </p>
@@ -416,31 +389,6 @@ export function MangakaDashboard() {
         </div>
       </div>
 
-      {/* Dashboard Footer (Bottom Actions & engine status info) */}
-      <div className='flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row'>
-        <div className='flex items-center gap-6'>
-          <a
-            href='/dashboard/mangaka/series/propose'
-            className='flex items-center gap-2 hover:text-foreground font-semibold transition-colors cursor-pointer'
-          >
-            <Upload className='h-4 w-4' />
-            <span>{t('dashboard.uploadBatch')}</span>
-          </a>
-          <button className='flex items-center gap-2 hover:text-foreground font-semibold transition-colors cursor-pointer'>
-            <HelpCircle className='h-4 w-4' />
-            <span>{t('dashboard.editorSupport')}</span>
-          </button>
-        </div>
-        <div className='flex items-center gap-1.5 text-muted-foreground/80 font-medium'>
-          <RefreshCw
-            className='h-3.5 w-3.5 text-primary shrink-0 cursor-pointer hover:text-foreground transition-colors'
-            onClick={reload}
-            role='button'
-            aria-label={t('dashboard.refresh')}
-          />
-          <span>{t('dashboard.engineStatus', { time: '2m' })}</span>
-        </div>
-      </div>
     </div>
   )
 }

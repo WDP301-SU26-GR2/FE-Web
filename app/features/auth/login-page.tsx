@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Sparkles, Layers } from 'lucide-react'
+import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Layers } from 'lucide-react'
 
 import { useLogin } from '~/features/auth/hooks/use-login'
+import { startGoogleSignIn } from '~/features/auth/lib/google-identity'
 import { ROLE_DASHBOARD_PATH } from '~/shared/components'
+import { env } from '~/shared/config/env'
 import { cn } from '~/shared/lib/cn'
 import { BrandLogo } from '~/shared/components/brand-logo'
 
 export function LoginPage() {
   const { t } = useTranslation('auth')
   const navigate = useNavigate()
-  const { submit, isSubmitting } = useLogin()
+  const { submit, submitGoogle, isSubmitting } = useLogin()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,6 +47,31 @@ export function LoginPage() {
     // Fallback về Mangaka nếu role không map được.
     const target = ROLE_DASHBOARD_PATH[result.user.role] ?? '/dashboard/mangaka'
     navigate(target)
+  }
+
+  const handleGoogleLogin = () => {
+    setValidationError('')
+    if (!env.GOOGLE_CLIENT_ID) {
+      setValidationError(t('login.googleNotConfigured'))
+      return
+    }
+
+    void startGoogleSignIn({
+      clientId: env.GOOGLE_CLIENT_ID,
+      onCredential: async (idToken) => {
+        const result = await submitGoogle(idToken)
+        if (!result) return
+
+        if (result.mustChangePassword) {
+          navigate('/change-password')
+          return
+        }
+
+        const target = ROLE_DASHBOARD_PATH[result.user.role] ?? '/dashboard/mangaka'
+        navigate(target)
+      },
+      onError: () => setValidationError(t('login.googleSignInError'))
+    })
   }
 
   return (
@@ -137,7 +164,7 @@ export function LoginPage() {
                   <label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
                     {t('login.passwordLabel')}
                   </label>
-                  <Link to='#' className='text-xs font-medium text-primary hover:underline'>
+                  <Link to='/forgot-password' className='text-xs font-medium text-primary hover:underline'>
                     {t('login.forgotPassword')}
                   </Link>
                 </div>
@@ -201,11 +228,12 @@ export function LoginPage() {
               </span>
             </div>
 
-            <div className='grid grid-cols-2 gap-4'>
+            <div>
               <button
                 type='button'
+                onClick={handleGoogleLogin}
                 disabled={isSubmitting}
-                className='flex items-center justify-center gap-2 rounded-lg border border-border bg-card/40 py-2.5 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60'
+                className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card/40 py-2.5 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60'
               >
                 {/* SVG for Google logo */}
                 <svg className='h-4 w-4' viewBox='0 0 24 24' width='100%' height='100%'>
@@ -222,19 +250,11 @@ export function LoginPage() {
                     d='M5.36 14.5c-.24-.72-.38-1.5-.38-2.3s.14-1.58.38-2.3L1.5 6.9C.54 8.84 0 11.02 0 12.3s.54 3.46 1.5 5.4l3.86-3.2z'
                   />
                   <path
-                    fill='#34A53'
+                    fill='#34A853'
                     d='M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.1-4.26 1.1-3.1 0-5.73-2.66-6.64-5.46L1.5 16.1C3.4 19.95 7.37 23 12 23z'
                   />
                 </svg>
                 <span>{t('login.googleButton')}</span>
-              </button>
-              <button
-                type='button'
-                disabled={isSubmitting}
-                className='flex items-center justify-center gap-2 rounded-lg border border-border bg-card/40 py-2.5 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60'
-              >
-                <ShieldCheck className='h-4 w-4 text-primary' />
-                <span>{t('login.publisherIdButton')}</span>
               </button>
             </div>
 
@@ -250,12 +270,8 @@ export function LoginPage() {
         {/* Footer info */}
         <div className='mt-8 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-center text-xs text-muted-foreground sm:flex-row'>
           <div className='flex gap-4'>
-            <Link to='#' className='hover:underline'>
-              {t('login.footerTerms')}
-            </Link>
-            <Link to='#' className='hover:underline'>
-              {t('login.footerPrivacy')}
-            </Link>
+            <span>{t('login.footerTerms')}</span>
+            <span>{t('login.footerPrivacy')}</span>
           </div>
           <span>{t('login.version')}</span>
         </div>

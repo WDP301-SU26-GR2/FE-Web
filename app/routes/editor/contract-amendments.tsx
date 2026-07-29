@@ -1,15 +1,16 @@
 import {
-  contractControllerCreateAmendment,
-  contractControllerListAmendments,
-  contractControllerSubmitAmendment,
-  contractControllerUpdateAmendment,
-  contractControllerVoidAmendment
+  contractAmendmentControllerCreateAmendment,
+  contractAmendmentControllerListAmendments,
+  contractAmendmentControllerSubmitAmendment,
+  contractAmendmentControllerUpdateAmendment,
+  contractAmendmentControllerVoidAmendment
 } from '~/api/operations/contracts/contracts'
 import { EditorContractAmendmentsPage, type EditorActionResult } from '~/features/editor'
 import {
   clauses,
   contractErrorKey,
   datesAreValid,
+  hydrateAmendments,
   loadContractBase,
   optionalDate,
   optionalNumber,
@@ -22,9 +23,12 @@ import type { Route } from './+types/contract-amendments'
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, response] = await Promise.all([
     loadContractBase(params.id),
-    contractControllerListAmendments({ contractId: params.id }).catch(() => null)
+    contractAmendmentControllerListAmendments({ contractId: params.id }).catch(() => null)
   ])
-  return { ...base, amendments: response?.status === 200 ? response.data : [] }
+  return {
+    ...base,
+    amendments: response?.status === 200 ? await hydrateAmendments(params.id, response.data) : []
+  }
 }
 
 export async function clientAction({ request, params }: Route.ClientActionArgs): Promise<EditorActionResult> {
@@ -35,7 +39,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       const changes = amendmentChanges(form)
       const validationError = validateChanges(form, changes)
       if (validationError) return { ok: false, intent, errorKey: validationError }
-      await contractControllerCreateAmendment(
+      await contractAmendmentControllerCreateAmendment(
         { contractId: params.id },
         {
           changedClauses: clauses(form),
@@ -47,7 +51,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       const changes = amendmentChanges(form)
       const validationError = validateChanges(form, changes)
       if (validationError) return { ok: false, intent, errorKey: validationError }
-      await contractControllerUpdateAmendment(
+      await contractAmendmentControllerUpdateAmendment(
         { contractId: params.id, id: required(form, 'amendmentId') },
         { changedClauses: clauses(form), reason: optionalText(form, 'reason'), ...changes }
       )
@@ -56,13 +60,13 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       const changes = amendmentChanges(form)
       const validationError = validateChanges(form, changes)
       if (validationError) return { ok: false, intent, errorKey: validationError }
-      await contractControllerUpdateAmendment(
+      await contractAmendmentControllerUpdateAmendment(
         { contractId: params.id, id: amendmentId },
         { changedClauses: clauses(form), reason: optionalText(form, 'reason'), ...changes }
       )
-      await contractControllerSubmitAmendment({ contractId: params.id, id: amendmentId })
+      await contractAmendmentControllerSubmitAmendment({ contractId: params.id, id: amendmentId })
     } else if (intent === 'voidAmendment')
-      await contractControllerVoidAmendment(
+      await contractAmendmentControllerVoidAmendment(
         { contractId: params.id, id: required(form, 'amendmentId') },
         { voidReason: required(form, 'voidReason') }
       )

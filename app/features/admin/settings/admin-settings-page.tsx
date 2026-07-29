@@ -16,7 +16,7 @@ export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData 
         <AdminDashboardBackLink label={t('navigation.backDashboard')} />
         <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive' role='alert'>
           <p className='font-bold'>{t('settings.loadError.title')}</p>
-          <p className='mt-1 text-sm'>{t('settings.loadError.description')}</p>
+          <p className='mt-1 text-xs'>{t('settings.loadError.description')}</p>
         </div>
       </div>
     )
@@ -30,8 +30,8 @@ export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData 
           <Settings2 className='size-4' />
           {t('settings.eyebrow')}
         </div>
-        <h1 className='mt-2 text-2xl font-bold text-foreground md:text-3xl'>{t('settings.title')}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('settings.subtitle')}</p>
+        <h1 className='mt-2 text-xl font-bold text-foreground md:text-2xl'>{t('settings.title')}</h1>
+        <p className='mt-2 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('settings.subtitle')}</p>
       </header>
 
       <AppConfigForm data={data} />
@@ -54,6 +54,7 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
       </ConfigCard>
       {open && (
         <Dialog
+          compact
           open
           onClose={() => setOpen(false)}
           titleId='edit-app-config'
@@ -99,6 +100,15 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
                 label={t('settings.app.lowVoteReliabilityThreshold')}
               />
               <NumberField
+                name='rankingAggregateMinCoveragePercent'
+                value={config.rankingAggregateMinCoverageRatio * 100}
+                min={1}
+                max={100}
+                step={1}
+                label={t('settings.app.rankingAggregateMinCoverageRatio')}
+                unit='%'
+              />
+              <NumberField
                 name='maxUploadMb'
                 value={bytesToMb(config.maxUploadBytes)}
                 min={1}
@@ -125,7 +135,7 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
 
 function AdminDashboardBackLink({ label }: { label: string }) {
   return (
-    <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+    <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
       <ArrowLeft className='size-4' />
       {label}
     </Link>
@@ -145,6 +155,7 @@ function BoardConfigForm({ data }: { data: AdminSettingsData }) {
       </ConfigCard>
       {open && (
         <Dialog
+          compact
           open
           onClose={() => setOpen(false)}
           titleId='edit-board-config'
@@ -196,6 +207,7 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
       </ConfigCard>
       {open && (
         <Dialog
+          compact
           open
           onClose={() => setOpen(false)}
           titleId='edit-voting-config'
@@ -209,9 +221,11 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
               <label className='space-y-1.5'>
                 <span className='text-xs font-bold text-foreground'>{t('settings.voting.authMode')}</span>
                 <select name='authMode' defaultValue={config.authMode} className={inputClassName}>
-                  <option value='OTP'>OTP</option>
-                  <option value='CAPTCHA'>CAPTCHA</option>
-                  <option value='HYBRID'>HYBRID</option>
+                  {(['OTP', 'CAPTCHA', 'HYBRID'] as const).map((mode) => (
+                    <option key={mode} value={mode}>
+                      {t(`settings.voting.authModes.${mode}`)}
+                    </option>
+                  ))}
                 </select>
               </label>
               <NumberField
@@ -280,7 +294,7 @@ function EditConfigButton({ onClick, label }: { onClick: () => void; label: stri
     <button
       type='button'
       onClick={onClick}
-      className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground'
+      className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground'
     >
       <Pencil className='size-4' />
       {label}
@@ -306,8 +320,8 @@ function ConfigCard({
           <Icon className='size-5' />
         </div>
         <div>
-          <h2 className='text-lg font-bold text-foreground'>{title}</h2>
-          <p className='mt-1 text-sm leading-6 text-muted-foreground'>{description}</p>
+          <h2 className='text-base font-bold text-foreground'>{title}</h2>
+          <p className='mt-1 text-xs leading-6 text-muted-foreground'>{description}</p>
         </div>
       </div>
       <div className='mt-5'>{children}</div>
@@ -372,9 +386,9 @@ function FormFooter({
     const data = fetcher.data
     if (!data || lastData.current === data) return
     lastData.current = data
-    const message = data.ok
-      ? t(`settings.messages.${data.messageKey}`)
-      : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`)
+    const message =
+      data.message ||
+      (data.ok ? t(`settings.messages.${data.messageKey}`) : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`))
     if (data.ok) {
       toast.success(message, { id: `admin-settings-${data.intent}-success` })
       closeDialog?.()
@@ -395,7 +409,7 @@ function FormFooter({
       <button
         type='submit'
         disabled={busy}
-        className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60'
+        className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
       >
         {busy ? <Loader2 className='size-4 animate-spin' /> : <Save className='size-4' />}
         {busy ? t('settings.saving') : t('settings.save')}
@@ -405,7 +419,7 @@ function FormFooter({
 }
 
 const inputClassName =
-  'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
+  'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
 
 function bytesToMb(bytes: number) {
   return Math.round(bytes / 1024 / 1024)

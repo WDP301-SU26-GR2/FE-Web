@@ -11,7 +11,8 @@ import {
 import { seriesControllerGetSeries, seriesControllerPitch } from '~/api/operations/series/series'
 import type { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
 import { EditorBoardMeetingRoomPage, type EditorActionResult } from '~/features/editor'
-import { loadBoardSessionSeries, required } from './board-route-utils'
+import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
+import { hydrateBoardDecisions, loadBoardSessionSeries, required } from './board-route-utils'
 import type { Route } from './+types/board-session-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -25,13 +26,20 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   return {
     session: session.data,
     phase: readBoardSessionPhase(session.data),
-    decisions: decisions.data,
+    decisions: await hydrateBoardDecisions(decisions.data),
     messages: messages?.status === 200 ? messages.data.items : [],
     series
   }
 }
 
-export async function clientAction({ request, params }: Route.ClientActionArgs): Promise<EditorActionResult> {
+export function clientAction(args: Route.ClientActionArgs): Promise<EditorActionResult> {
+  return runBoardSessionAction(args, { allowPitch: true })
+}
+
+export async function runBoardSessionAction(
+  { request, params }: Route.ClientActionArgs,
+  { allowPitch }: { allowPitch: boolean }
+): Promise<EditorActionResult> {
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
@@ -55,7 +63,10 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       if (decisionType === 'SERIALIZATION') {
         if (!['READY_TO_PITCH', 'PITCHED'].includes(series.data.status))
           return { ok: false, intent, errorKey: 'invalidState' }
-        if (series.data.status === 'READY_TO_PITCH') await seriesControllerPitch({ id: seriesId })
+        if (series.data.status === 'READY_TO_PITCH') {
+          if (!allowPitch) return { ok: false, intent, errorKey: 'invalidState' }
+          await seriesControllerPitch({ id: seriesId })
+        }
         const startIssueNumber = Number(required(form, 'startIssueNumber'))
         if (!Number.isInteger(startIssueNumber) || startIssueNumber < 1)
           return { ok: false, intent, errorKey: 'invalidState' }
@@ -90,26 +101,58 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
         decisionType,
         details
       })
-      return { ok: true, intent, messageKey: 'addSessionDecision', decision: createdDecision.data }
+      return {
+        ok: true,
+        intent,
+        messageKey: 'addSessionDecision',
+        message: extractApiSuccessMessage(createdDecision, 'Đã thêm quyết định vào phiên họp.'),
+        decision: createdDecision.data
+      }
     }
     if (intent === 'startSession') {
       const response = await boardControllerStartSession({ id: params.id })
       if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
-      return { ok: true, intent, messageKey: intent }
+      return {
+        ok: true,
+        intent,
+        messageKey: intent,
+        message: extractApiSuccessMessage(response, 'Đã bắt đầu phiên họp Hội đồng.')
+      }
     }
     if (intent === 'concludeSession') {
       const response = await boardControllerConcludeSession({ id: params.id })
       if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
-      return { ok: true, intent, messageKey: intent }
+      return {
+        ok: true,
+        intent,
+        messageKey: intent,
+        message: extractApiSuccessMessage(response, 'Đã kết thúc phiên họp Hội đồng.')
+      }
     }
     if (intent !== 'advancePhase') return { ok: false, intent, errorKey: 'invalidAction' }
     const phase = String(form.get('phase') ?? '')
     if (phase !== 'QA' && phase !== 'VOTING') return { ok: false, intent, errorKey: 'invalidAction' }
     const response = await boardControllerAdvancePhase({ id: params.id }, { phase })
     if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
-    return { ok: true, intent, messageKey: 'advancePhase', phase: response.data.phase }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+    return {
+      ok: true,
+      intent,
+      messageKey: 'advancePhase',
+      message: extractApiSuccessMessage(
+        response,
+        phase === 'QA'
+          ? 'Đã chuyển phiên họp sang giai đoạn thảo luận.'
+          : 'Đã chuyển phiên họp sang giai đoạn bỏ phiếu.'
+      ),
+      phase: response.data.phase
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      errorKey: 'actionFailed',
+      message: extractApiErrorMessage(error, 'Không thể thực hiện thao tác trong phiên họp.')
+    }
   }
 }
 

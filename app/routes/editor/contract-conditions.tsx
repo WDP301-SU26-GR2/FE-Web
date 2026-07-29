@@ -1,9 +1,9 @@
 import {
-  contractControllerCreatePaymentCondition,
-  contractControllerDisablePaymentCondition,
   contractControllerGetContractById,
-  contractControllerGetPaymentConditions,
-  contractControllerUpdatePaymentCondition
+  paymentConditionControllerCreatePaymentCondition,
+  paymentConditionControllerDisablePaymentCondition,
+  paymentConditionControllerGetPaymentConditions,
+  paymentConditionControllerUpdatePaymentCondition
 } from '~/api/operations/contracts/contracts'
 import { EditorContractConditionsPage, type EditorActionResult } from '~/features/editor'
 import { contractErrorKey, loadContractBase, paymentPayout, paymentThreshold, required } from './contract-route-utils'
@@ -12,7 +12,7 @@ import type { Route } from './+types/contract-conditions'
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, response] = await Promise.all([
     loadContractBase(params.id),
-    contractControllerGetPaymentConditions({ contractId: params.id }).catch(() => null)
+    paymentConditionControllerGetPaymentConditions({ contractId: params.id }).catch(() => null)
   ])
   return { ...base, conditions: response?.status === 200 ? response.data.data : [] }
 }
@@ -25,7 +25,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
     if (contract.status !== 200) throw new Error('CONTRACT_NOT_FOUND')
     if (!['DRAFT', 'NEGOTIATION'].includes(contract.data.status)) throw new Error('PAYMENT_CONDITION_LOCKED')
     if (intent === 'createCondition')
-      await contractControllerCreatePaymentCondition(
+      await paymentConditionControllerCreatePaymentCondition(
         { contractId: params.id },
         {
           conditionType: required(form, 'conditionType') as
@@ -39,12 +39,12 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
         }
       )
     else if (intent === 'disableCondition')
-      await contractControllerDisablePaymentCondition({
+      await paymentConditionControllerDisablePaymentCondition({
         contractId: params.id,
         conditionId: required(form, 'conditionId')
       })
     else if (intent === 'updateCondition')
-      await contractControllerUpdatePaymentCondition(
+      await paymentConditionControllerUpdatePaymentCondition(
         { contractId: params.id, conditionId: required(form, 'conditionId') },
         {
           thresholdConfig: paymentThreshold(form),

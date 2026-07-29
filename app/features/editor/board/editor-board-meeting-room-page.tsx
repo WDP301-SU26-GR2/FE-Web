@@ -20,6 +20,7 @@ export function EditorBoardMeetingRoomPage({
   decisions: initialDecisions,
   series,
   manageAll = false,
+  allowChat = true,
   backPath = '/dashboard/editor/board/sessions',
   decisionBasePath
 }: {
@@ -29,6 +30,7 @@ export function EditorBoardMeetingRoomPage({
   decisions: BoardDecisionResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
   manageAll?: boolean
+  allowChat?: boolean
   backPath?: string
   decisionBasePath?: string
 }) {
@@ -47,7 +49,7 @@ export function EditorBoardMeetingRoomPage({
   })
   const { updatePhase } = meeting
   const isCreator = manageAll || session.creatorId === authSession?.user.id
-  const canChat = session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
+  const canChat = allowChat && session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
   const allDecisionsFinal =
     meeting.decisions.length > 0 &&
     meeting.decisions.every((decision) => ['APPROVED', 'REJECTED', 'EXPIRED'].includes(decision.result ?? ''))
@@ -78,17 +80,17 @@ export function EditorBoardMeetingRoomPage({
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('board.back')}
       </Link>
       <header className='rounded-2xl border border-border bg-card p-6 shadow-sm'>
         <div className='flex flex-wrap items-start justify-between gap-4'>
           <div>
-            <h1 className='text-3xl font-bold text-foreground'>{session.title}</h1>
-            <p className='mt-2 text-sm text-muted-foreground'>{session.description}</p>
+            <h1 className='text-2xl font-bold text-foreground'>{session.title}</h1>
+            <p className='mt-2 text-xs text-muted-foreground'>{session.description}</p>
           </div>
-          <div className='flex gap-2'>
+          <div className='flex flex-wrap justify-end gap-2'>
             <BoardStatus value={session.status} />
             <BoardStatus value={meeting.phase} />
           </div>
@@ -98,7 +100,7 @@ export function EditorBoardMeetingRoomPage({
           {t(`board.realtime.${meeting.connectionState}`)}
         </div>
         <div className='mt-4 border-t border-border pt-4'>
-          <p className='flex items-center gap-2 text-sm font-bold text-foreground'>
+          <p className='flex items-center gap-2 text-xs font-bold text-foreground'>
             <Users className='size-4 text-primary' />
             {t('board.meeting.participants')}
           </p>
@@ -125,7 +127,7 @@ export function EditorBoardMeetingRoomPage({
                   name='intent'
                   value='startSession'
                   disabled={fetcher.state !== 'idle' || meeting.decisions.length === 0}
-                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
                 >
                   <Play className='size-4' />
                   {t('actions.startSession')}
@@ -139,7 +141,7 @@ export function EditorBoardMeetingRoomPage({
                   name='phase'
                   value='QA'
                   disabled={fetcher.state !== 'idle'}
-                  className='rounded-md border border-border px-4 py-2 text-sm font-bold disabled:opacity-50'
+                  className='rounded-md border border-border px-4 py-2 text-xs font-bold disabled:opacity-50'
                 >
                   {t('board.meeting.openQa')}
                 </button>
@@ -152,7 +154,7 @@ export function EditorBoardMeetingRoomPage({
                   name='phase'
                   value='VOTING'
                   disabled={fetcher.state !== 'idle'}
-                  className='rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                  className='rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
                 >
                   {t('board.meeting.openVoting')}
                 </button>
@@ -164,7 +166,7 @@ export function EditorBoardMeetingRoomPage({
                   name='intent'
                   value='concludeSession'
                   disabled={fetcher.state !== 'idle'}
-                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
                 >
                   <Square className='size-4' />
                   {t('actions.concludeSession')}
@@ -179,9 +181,9 @@ export function EditorBoardMeetingRoomPage({
         </section>
       )}
 
-      <div className='grid gap-6 xl:grid-cols-[1.2fr_0.8fr]'>
+      <div className='space-y-6'>
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <h2 className='flex items-center gap-2 text-lg font-bold'>
+          <h2 className='flex items-center gap-2 text-base font-bold'>
             <MessageSquareText className='size-5 text-primary' />
             {t('board.meeting.chat')}
           </h2>
@@ -189,16 +191,18 @@ export function EditorBoardMeetingRoomPage({
             {meeting.messages.map((message) => (
               <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
                 <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-                  <strong className='text-foreground'>{message.sender.displayName || message.sender.id}</strong>
+                  <strong className='text-foreground'>
+                    {message.sender.displayName || t('board.meeting.unknownMember')}
+                  </strong>
                   <span>
                     {new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(new Date(message.createdAt))}
                   </span>
                 </div>
-                <p className='mt-2 whitespace-pre-wrap text-sm'>{message.content}</p>
+                <p className='mt-2 whitespace-pre-wrap text-xs'>{message.content}</p>
               </article>
             ))}
             {!meeting.messages.length && (
-              <p className='text-sm text-muted-foreground'>{t('board.meeting.emptyChat')}</p>
+              <p className='text-xs text-muted-foreground'>{t('board.meeting.emptyChat')}</p>
             )}
           </div>
           <form onSubmit={submitMessage} className='mt-3 flex gap-2'>
@@ -207,7 +211,7 @@ export function EditorBoardMeetingRoomPage({
               onChange={(event) => setMessageText(event.target.value)}
               maxLength={1000}
               disabled={!canChat || meeting.connectionState !== 'connected' || sendingMessage}
-              className='h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm'
+              className='h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-xs'
               placeholder={canChat ? t('board.meeting.chatPlaceholder') : t('board.meeting.chatLocked')}
             />
             <button
@@ -223,7 +227,7 @@ export function EditorBoardMeetingRoomPage({
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <div className='flex flex-wrap items-center justify-between gap-3'>
             <div>
-              <h2 className='text-lg font-bold'>{t('board.votingProgress')}</h2>
+              <h2 className='text-base font-bold'>{t('board.votingProgress')}</h2>
               <p className='mt-1 text-xs text-muted-foreground'>{t('board.meeting.decisionAgendaHint')}</p>
             </div>
             {canPrepareSession && (
@@ -231,7 +235,7 @@ export function EditorBoardMeetingRoomPage({
                 type='button'
                 onClick={() => setAddDecisionOpen(true)}
                 disabled={!series.length}
-                className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
               >
                 <Plus className='size-4' />
                 {t('actions.addDecisionToSession')}
@@ -241,16 +245,16 @@ export function EditorBoardMeetingRoomPage({
           <div className='mt-4 space-y-3'>
             {orderBoardDecisions(meeting.decisions).map((decision) => (
               <article key={decision.id} className='rounded-lg border border-border p-3'>
-                <div className='flex justify-between gap-2'>
+                <div className='flex items-start justify-between gap-3'>
                   {decisionBasePath ? (
                     <Link
-                      className='font-bold hover:text-primary hover:underline'
+                      className='min-w-0 text-pretty font-bold leading-6 hover:text-primary hover:underline'
                       to={`${decisionBasePath}/${decision.id}`}
                     >
                       {getDecisionTitle(decision, t)}
                     </Link>
                   ) : (
-                    <strong>{getDecisionTitle(decision, t)}</strong>
+                    <strong className='min-w-0 text-pretty leading-6'>{getDecisionTitle(decision, t)}</strong>
                   )}
                   <BoardStatus value={decision.result || 'PENDING'} />
                 </div>
@@ -263,7 +267,7 @@ export function EditorBoardMeetingRoomPage({
                 </p>
               </article>
             ))}
-            {!meeting.decisions.length && <p className='text-sm text-muted-foreground'>{t('board.emptyDecisions')}</p>}
+            {!meeting.decisions.length && <p className='text-xs text-muted-foreground'>{t('board.emptyDecisions')}</p>}
             {canPrepareSession && !series.length && (
               <p className='text-xs text-muted-foreground'>{t('board.meeting.noEligibleSeries')}</p>
             )}
@@ -318,6 +322,7 @@ function AddSessionDecisionDialog({
 
   return (
     <Dialog
+      compact
       open
       onClose={onClose}
       titleId='add-decision-to-board-session'
@@ -327,7 +332,7 @@ function AddSessionDecisionDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='addSessionDecision' />
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.decisionType')}
           <select
             className={boardInput}
@@ -345,7 +350,7 @@ function AddSessionDecisionDialog({
             <option value='COMPLETION'>{t('board.decisionTypeLabels.COMPLETION')}</option>
           </select>
         </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.selectSeries')}
           <select
             className={boardInput}
@@ -359,7 +364,7 @@ function AddSessionDecisionDialog({
             </option>
             {eligibleSeries.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.title} · {t(`seriesStatuses.${item.status}`, { defaultValue: item.status })}
+                {item.title} · {t(`filters.seriesStatuses.${item.status}`)}
               </option>
             ))}
           </select>
@@ -372,18 +377,18 @@ function AddSessionDecisionDialog({
           </div>
         )}
         {!eligibleSeries.length && (
-          <p className='rounded-lg border border-border bg-muted/50 p-3 text-sm text-muted-foreground'>
+          <p className='rounded-lg border border-border bg-muted/50 p-3 text-xs text-muted-foreground'>
             {t('board.meeting.noSeriesForDecisionType')}
           </p>
         )}
         {decisionType === 'SERIALIZATION' && (
           <>
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('board.magazine')}
               <input className={boardInput} name='magazine' required disabled={!selectedSeries} />
             </label>
             <div className='grid gap-3 sm:grid-cols-2'>
-              <label className='grid gap-1.5 text-sm font-semibold'>
+              <label className='grid gap-1.5 text-xs font-semibold'>
                 {t('board.startIssue')}
                 <input
                   className={boardInput}
@@ -399,7 +404,7 @@ function AddSessionDecisionDialog({
           </>
         )}
         {decisionType === 'CANCELLATION' && (
-          <label className='grid gap-1.5 text-sm font-semibold'>
+          <label className='grid gap-1.5 text-xs font-semibold'>
             {t('board.endingChapterAllowance')}
             <input
               className={boardInput}
@@ -412,7 +417,7 @@ function AddSessionDecisionDialog({
           </label>
         )}
         {decisionType === 'FORMAT_CHANGE' && (
-          <label className='grid gap-1.5 text-sm font-semibold'>
+          <label className='grid gap-1.5 text-xs font-semibold'>
             {t('board.newPublicationType')}
             <select
               className={boardInput}
@@ -428,7 +433,7 @@ function AddSessionDecisionDialog({
           </label>
         )}
         {decisionType !== 'SERIALIZATION' && (
-          <label className='grid gap-1.5 text-sm font-semibold'>
+          <label className='grid gap-1.5 text-xs font-semibold'>
             {t('board.decisionNote')}
             <textarea className={`${boardInput} min-h-24 py-2`} name='decisionNote' maxLength={1000} />
           </label>
@@ -437,13 +442,13 @@ function AddSessionDecisionDialog({
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
           >
             {t('actions.cancel')}
           </button>
           <button
             disabled={!selectedSeries || fetcher.state !== 'idle'}
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <Gavel className='size-4' />}
             {t('actions.addDecisionToSession')}
@@ -458,7 +463,7 @@ function AddSessionDecisionDialog({
 function PublicationTypeField({ selectedSeries }: { selectedSeries?: SeriesListResDtoOutputItemsItem }) {
   const { t } = useTranslation('editor')
   return (
-    <label className='grid gap-1.5 text-sm font-semibold'>
+    <label className='grid gap-1.5 text-xs font-semibold'>
       {t('proposalDetail.publicationType')}
       <select
         key={selectedSeries?.id ?? 'empty'}

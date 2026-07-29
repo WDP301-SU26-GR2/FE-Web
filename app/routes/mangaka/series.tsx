@@ -1,11 +1,8 @@
-import { MySeriesPage } from '~/features/mangaka'
+import { MySeriesPage, mangakaRouteMeta } from '~/features/mangaka'
 import type { Route } from './+types/series'
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: 'My Series - MangakaStudio Pro' },
-    { name: 'description', content: 'Quản lý series truyện của bạn' }
-  ]
+  return mangakaRouteMeta('routeMeta.series.title', 'routeMeta.series.description')
 }
 
 export default function DashboardSeriesRoute() {

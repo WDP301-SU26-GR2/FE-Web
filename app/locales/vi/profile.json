@@ -22,6 +22,7 @@
     "edit": "Sửa tài khoản",
     "email": "Email",
     "phoneNumber": "Số điện thoại",
+    "phoneNumberHint": "Dùng định dạng quốc tế E.164, ví dụ +84912345678.",
     "name": "Tên",
     "displayName": "Tên hiển thị",
     "displayNamePlaceholder": "Để trống = dùng tên thật",

@@ -7,6 +7,7 @@ import { Button } from '~/shared/ui'
 import { SignedImage } from '~/shared/components/signed-image'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 import { SignUploadBodyDtoAssetType } from '~/api/model/uploads/signUploadBodyDtoAssetType'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export type UploadPageDialogProps = {
   open: boolean
@@ -111,7 +112,7 @@ export function UploadPageDialog({
         setFile(null)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('publication.error.generic'))
+      setError(extractApiErrorMessage(err, t('publication.error.generic')))
     }
   }
 
@@ -120,7 +121,7 @@ export function UploadPageDialog({
       role='dialog'
       aria-modal='true'
       aria-labelledby='upload-page-dialog-title'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
       }}
@@ -141,7 +142,10 @@ export function UploadPageDialog({
           </div>
 
           <div>
-            <label htmlFor='upload-page-number' className='mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+            <label
+              htmlFor='upload-page-number'
+              className='mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground'
+            >
               {t('publication.pagesSection.upload.pageNumberLabel')}
             </label>
             <input
@@ -158,7 +162,10 @@ export function UploadPageDialog({
           </div>
 
           <div>
-            <label htmlFor='upload-page-file' className='mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+            <label
+              htmlFor='upload-page-file'
+              className='mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground'
+            >
               {t('publication.pagesSection.upload.fileLabel')}
             </label>
             <input
@@ -182,7 +189,10 @@ export function UploadPageDialog({
           )}
 
           {error && (
-            <div role='alert' className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive'>
+            <div
+              role='alert'
+              className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive'
+            >
               {error}
             </div>
           )}

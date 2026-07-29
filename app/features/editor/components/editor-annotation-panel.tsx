@@ -33,7 +33,7 @@ export function EditorAnnotationPanel({
   return (
     <section className={embedded ? '' : 'rounded-xl border border-border bg-card p-5 shadow-sm'}>
       {!embedded && (
-        <h2 className='flex items-center gap-2 text-lg font-bold text-foreground'>
+        <h2 className='flex items-center gap-2 text-base font-bold text-foreground'>
           <MessageSquareText className='size-5 text-primary' />
           {title}
         </h2>
@@ -47,7 +47,7 @@ export function EditorAnnotationPanel({
           required
           maxLength={5000}
           rows={2}
-          className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground'
+          className='w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
           placeholder={t('chapterReview.annotationPlaceholder')}
         />
         <details className='rounded-md border border-border p-3'>
@@ -65,7 +65,7 @@ export function EditorAnnotationPanel({
           name='intent'
           value={createIntent}
           disabled={fetcher.state !== 'idle'}
-          className='justify-self-start rounded-md bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          className='justify-self-start rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
           {t('actions.add')}
         </button>
@@ -73,7 +73,7 @@ export function EditorAnnotationPanel({
       <div className='mt-4 space-y-2'>
         {annotations.map((item) => (
           <article key={item.id} className='rounded-lg border border-border p-3'>
-            <p className={`text-sm ${item.isResolved ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+            <p className={`text-xs ${item.isResolved ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
               {item.content}
             </p>
             {item.coordinates && (
@@ -95,7 +95,7 @@ export function EditorAnnotationPanel({
             </fetcher.Form>
           </article>
         ))}
-        {!annotations.length && <p className='text-sm text-muted-foreground'>{t('chapterReview.emptyAnnotations')}</p>}
+        {!annotations.length && <p className='text-xs text-muted-foreground'>{t('chapterReview.emptyAnnotations')}</p>}
       </div>
     </section>
   )

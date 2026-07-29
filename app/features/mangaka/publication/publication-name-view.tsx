@@ -44,7 +44,7 @@ export function PublicationNameView() {
 
   // Reuse the legacy action hooks (already wire to the BE).
   const { createName, isCreating } = useCreateName()
-  const { updatePages, isUpdating } = useUpdateNamePages()
+  const { updatePages, addPage, isUpdating } = useUpdateNamePages()
   const { resubmit, isResubmitting } = useResubmitName()
   const { submit, remove, activeAction } = useNameActions()
 
@@ -75,7 +75,18 @@ export function PublicationNameView() {
 
   const onEditConfirm = async (pages: { pageNumber: number; fileUrl: string }[]) => {
     if (!chapterId || !nameId) return false
-    const updated = await updatePages({ chapterId, nameId, pages })
+    const existingPages = name?.pages ?? []
+    const appendedPages = pages.filter(
+      (page) =>
+        !existingPages.some((existing) => existing.pageNumber === page.pageNumber && existing.fileUrl === page.fileUrl)
+    )
+    const preservesExisting = existingPages.every((existing) =>
+      pages.some((page) => page.pageNumber === existing.pageNumber && page.fileUrl === existing.fileUrl)
+    )
+    const updated =
+      appendedPages.length === 1 && preservesExisting && pages.length === existingPages.length + 1
+        ? await addPage({ chapterId, nameId, page: appendedPages[0] })
+        : await updatePages({ chapterId, nameId, pages })
     if (!updated) return false
     refreshAll()
     setEditOpen(false)
@@ -158,7 +169,21 @@ export function PublicationNameView() {
         titleId='remove-name-title'
         title={t('publication.nameSection.removeButton')}
         description={t('publication.nameSection.remove.confirm')}
-        footer={<div className='flex justify-end gap-2'><Button variant='ghost' size='sm' onClick={() => setRemoveConfirmOpen(false)}>{t('studio.popup.close')}</Button><Button variant='destructive' size='sm' onClick={() => void onRemove()} disabled={activeAction === 'remove'}>{t('publication.nameSection.removeButton')}</Button></div>}
+        footer={
+          <div className='flex justify-end gap-2'>
+            <Button variant='ghost' size='sm' onClick={() => setRemoveConfirmOpen(false)}>
+              {t('studio.popup.close')}
+            </Button>
+            <Button
+              variant='destructive'
+              size='sm'
+              onClick={() => void onRemove()}
+              disabled={activeAction === 'remove'}
+            >
+              {t('publication.nameSection.removeButton')}
+            </Button>
+          </div>
+        }
       >
         <p className='text-sm text-muted-foreground'>{t('publication.nameSection.remove.confirm')}</p>
       </Dialog>
@@ -299,28 +324,14 @@ function DocumentHeader({
           value={name ? name.status : t('publication.name.notStarted')}
           tone={name ? name.status : 'DRAFT'}
         />
-        <MetaItem
-          label={t('publication.name.deadline')}
-          value={formatDate(deadline)}
-        />
-        <MetaItem
-          label={t('publication.name.submittedAt')}
-          value={formatDate(submittedAt)}
-        />
+        <MetaItem label={t('publication.name.deadline')} value={formatDate(deadline)} />
+        <MetaItem label={t('publication.name.submittedAt')} value={formatDate(submittedAt)} />
       </dl>
     </div>
   )
 }
 
-function MetaItem({
-  label,
-  value,
-  tone
-}: {
-  label: string
-  value: string
-  tone?: string
-}) {
+function MetaItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className='min-w-0 border-l-2 border-primary/30 bg-card px-4 py-3'>
       <div className='min-w-0'>

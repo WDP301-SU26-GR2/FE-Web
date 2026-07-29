@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ClipboardList, Filter, RefreshCw } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { cn } from '~/shared/lib/cn'
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { useAssistantTasksQuery } from './use-assistant-tasks-query'
-import { useAssistantTaskActions } from './use-assistant-task-actions'
 import { TaskCard } from './components/task-card'
-import { TaskImageDialog } from './components/task-image-dialog'
+import { TaskWorkspaceDialog } from './components/task-workspace-dialog'
 
 const STATUS_FILTERS: ReadonlyArray<TaskControllerListTasksStatus> = [
   'ASSIGNED',
@@ -26,9 +24,7 @@ export function AssistantTasksPage() {
   const { t } = useTranslation('assistant')
   const [status, setStatus] = useState<TaskControllerListTasksStatus | undefined>(undefined)
   const tasks = useAssistantTasksQuery({ status })
-  const actions = useAssistantTaskActions()
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
-  const openTask = tasks.items.find((task) => task.id === openTaskId) ?? null
 
   const totalPages = Math.max(1, Math.ceil(tasks.total / tasks.perPage))
   const from = tasks.total === 0 ? 0 : (tasks.page - 1) * tasks.perPage + 1
@@ -118,27 +114,7 @@ export function AssistantTasksPage() {
           <>
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
               {tasks.items.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onStart={(id) => {
-                    void actions.start(id).then((ok) => {
-                      if (ok) {
-                        toast.success(
-                          t(task.status === 'REVISION_REQUESTED' ? 'tasks.success.revisionStarted' : 'tasks.success.started')
-                        )
-                        tasks.refresh()
-                      }
-                    })
-                  }}
-                  onSubmit={async (id, file) => {
-                    const ok = await actions.submit(id, file)
-                    if (ok) tasks.refresh()
-                    return ok
-                  }}
-                  onOpen={() => setOpenTaskId(task.id)}
-                  isMutating={actions.isMutating}
-                />
+                <TaskCard key={task.id} task={task} onOpen={setOpenTaskId} />
               ))}
             </div>
 
@@ -171,13 +147,7 @@ export function AssistantTasksPage() {
         )}
       </div>
 
-      <TaskImageDialog
-        open={openTaskId !== null}
-        task={openTask}
-        onOpenChange={(next) => {
-          if (!next) setOpenTaskId(null)
-        }}
-      />
+      <TaskWorkspaceDialog taskId={openTaskId} onClose={() => setOpenTaskId(null)} onTaskChanged={tasks.refresh} />
     </div>
   )
 }

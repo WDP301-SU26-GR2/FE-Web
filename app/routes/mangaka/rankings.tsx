@@ -1,7 +1,7 @@
-import { MangakaRankingsPage } from '~/features/mangaka'
+import { MangakaRankingsPage, mangakaRouteMeta } from '~/features/mangaka'
 
 export function meta() {
-  return [{ title: 'Rankings - MangakaStudio Pro' }]
+  return mangakaRouteMeta('routeMeta.rankings.title', 'routeMeta.rankings.description')
 }
 
 export default function MangakaRankingsRoute() {

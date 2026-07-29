@@ -83,7 +83,7 @@ export function BoardDecisionDetailPage({
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
-        <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
           <ArrowLeft className='size-4' />
           {t('common.back')}
         </Link>
@@ -93,7 +93,7 @@ export function BoardDecisionDetailPage({
         description={`${typeLabel} · ${t('decisions.sessionLabel')}: ${sessionTitle}`}
       />
       <BoardPanel title={t('decisions.relationshipContext')}>
-        <dl className='grid gap-4 text-sm sm:grid-cols-3'>
+        <dl className='grid gap-4 text-xs sm:grid-cols-3'>
           <DecisionFact label={t('decisions.series')} value={seriesTitle} />
           <DecisionFact label={t('decisions.sessionLabel')} value={sessionTitle} />
           <DecisionFact label={t('decisions.sessionTime')} value={formatDate(sessionStartTime)} />
@@ -123,7 +123,7 @@ export function BoardDecisionDetailPage({
         <button
           type='button'
           onClick={() => setVoteOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
         >
           <Vote className='h-4 w-4' />
           {t('decisions.castVote')}
@@ -131,22 +131,22 @@ export function BoardDecisionDetailPage({
       )}
       {voteOpen && <VoteDialog onClose={() => setVoteOpen(false)} />}
       {!canVote && voteUnavailableReason && (
-        <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground'>
+        <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
           {voteUnavailableReason}
         </p>
       )}
       {!decisionOpen && sessionStatus === 'ACTIVE' && (
-        <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground'>
+        <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground'>
           {t('decisions.finalizedSessionHint', { phase: t(`filters.sessionPhases.${livePhase}`) })}
         </p>
       )}
-      <div className='grid gap-5 xl:grid-cols-2'>
+      <div className='space-y-5'>
         <BoardPanel title={t('decisions.votes')}>
           <div className='space-y-2'>
             {votes.map((vote, index) => (
               <div
                 key={`${vote.voterId ?? 'vote'}-${index}`}
-                className='flex justify-between rounded-lg border border-border p-3 text-sm'
+                className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-xs'
               >
                 <span>{vote.voterId}</span>
                 <StatusBadge value={vote.voteValue ?? 'ABSTAIN'} />
@@ -158,8 +158,14 @@ export function BoardDecisionDetailPage({
           <div className='space-y-3'>
             {reports.map((report) => (
               <article key={report.id} className='rounded-lg border border-border p-3'>
-                <strong>{report.reportType ?? t('reports.title')}</strong>
-                <p className='mt-2 whitespace-pre-wrap text-sm text-muted-foreground'>{report.content}</p>
+                <strong>
+                  {report.reportType
+                    ? t(`reports.types.${report.reportType}`, {
+                        defaultValue: report.reportType.toLowerCase().replaceAll('_', ' ')
+                      })
+                    : t('reports.title')}
+                </strong>
+                <p className='mt-2 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>
               </article>
             ))}
           </div>
@@ -193,6 +199,7 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog
+      compact
       open
       onClose={onClose}
       titleId='board-vote-dialog-title'
@@ -212,13 +219,13 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
           >
             {t('common.cancel')}
           </button>
           <button
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60'
+            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
           >
             {t('decisions.submitVote')}
           </button>

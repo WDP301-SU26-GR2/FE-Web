@@ -33,7 +33,7 @@ export function EditorMangakaReviewsPage({
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <SeriesSelect series={series} value={seriesId} onChange={setSeriesId} />
           <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
-          <div className={`${operationInput} flex items-center text-sm text-muted-foreground`}>
+          <div className={`${operationInput} flex items-center text-xs text-muted-foreground`}>
             {selectedSeries ? t('operations.reviewSeriesOwner') : t('operations.selectSeriesFirst')}
           </div>
           <input

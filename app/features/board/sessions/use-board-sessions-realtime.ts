@@ -27,10 +27,7 @@ function getBoardNamespaceUrl() {
   }
 }
 
-export function useBoardSessionsRealtime(
-  sessions: BoardSessionResDtoOutput[],
-  decisions: BoardDecisionResDtoOutput[]
-) {
+export function useBoardSessionsRealtime(sessions: BoardSessionResDtoOutput[], decisions: BoardDecisionResDtoOutput[]) {
   const [updates, setUpdates] = useState<Record<string, VoteProgress>>({})
   const [phaseUpdates, setPhaseUpdates] = useState<Record<string, BoardSessionPhase>>({})
   const [connectionState, setConnectionState] = useState<BoardRealtimeConnectionState>(() =>

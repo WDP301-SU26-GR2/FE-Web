@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import type { ContractResDtoOutput, ContractStatusProgressResDtoOutput } from '~/api/model/contracts'
-import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
+import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
 import { ContractPageLayout, contractInput } from './components/contract-shared'
 
 export function EditorContractPaymentsPage({
@@ -14,7 +14,7 @@ export function EditorContractPaymentsPage({
 }: {
   contract: ContractResDtoOutput
   progress: ContractStatusProgressResDtoOutput | null
-  payments: PaymentRecordListResDtoOutputDataItem[]
+  payments: PaymentRecordResDtoOutput[]
   hasError: boolean
 }) {
   const { t, i18n } = useTranslation('editor')
@@ -49,7 +49,7 @@ export function EditorContractPaymentsPage({
       </section>
 
       {hasError && (
-        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('contractDetail.payments.loadError')}
         </p>
       )}
@@ -78,7 +78,7 @@ export function EditorContractPaymentsPage({
                 <p className='mt-2 font-bold text-foreground'>{formatAmount(payment.amount, i18n.language)}</p>
               </div>
             </div>
-            {payment.description && <p className='mt-3 text-sm text-muted-foreground'>{payment.description}</p>}
+            {payment.description && <p className='mt-3 text-xs text-muted-foreground'>{payment.description}</p>}
             <dl className='mt-4 grid gap-3 border-t border-border pt-4 text-xs sm:grid-cols-2 lg:grid-cols-3'>
               <PaymentFact
                 label={t('contractDetail.payments.contract')}
@@ -101,16 +101,12 @@ export function EditorContractPaymentsPage({
                 }
               />
               <PaymentFact
-                label={t('contractDetail.payments.condition')}
-                value={payment.conditionId ? shortId(payment.conditionId) : null}
-              />
-              <PaymentFact
                 label={t('contractDetail.payments.createdAt')}
                 value={formatDate(payment.createdAt, i18n.language)}
               />
               <PaymentFact
                 label={t('contractDetail.payments.receiver')}
-                value={payment.receiver?.displayName ?? payment.receiverId}
+                value={payment.receiver?.displayName ?? t('common.notAvailable')}
               />
               <PaymentFact
                 label={t('contractDetail.payments.approver')}
@@ -139,7 +135,7 @@ export function EditorContractPaymentsPage({
           </article>
         ))}
         {!filtered.length && !hasError && (
-          <p className='rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground'>
+          <p className='rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
             {t('contractDetail.payments.empty')}
           </p>
         )}
@@ -148,15 +144,7 @@ export function EditorContractPaymentsPage({
   )
 }
 
-function PaymentFact({
-  label,
-  value,
-  emptyValue
-}: {
-  label: string
-  value?: ReactNode
-  emptyValue?: string
-}) {
+function PaymentFact({ label, value, emptyValue }: { label: string; value?: ReactNode; emptyValue?: string }) {
   const { t } = useTranslation('editor')
   return (
     <div>
@@ -166,10 +154,6 @@ function PaymentFact({
       </dd>
     </div>
   )
-}
-
-function shortId(value: string) {
-  return value.length > 12 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value
 }
 
 function formatDate(value: string | null, locale: string) {

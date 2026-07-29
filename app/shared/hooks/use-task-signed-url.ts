@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { taskControllerGetTaskFileDownloadUrl } from '~/api/operations/task/task'
 import type { TaskFileDownloadResDtoOutput } from '~/api/model/task'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 /**
  * Result for a single signed-URL lookup for task files.
@@ -47,11 +48,7 @@ function makeCacheKey(taskId: string, key: string): string {
   return `${taskId}:${key}`
 }
 
-async function signTaskFile(
-  taskId: string,
-  key: string,
-  callerSignal?: AbortSignal
-): Promise<string> {
+async function signTaskFile(taskId: string, key: string, callerSignal?: AbortSignal): Promise<string> {
   const cacheKey = makeCacheKey(taskId, key)
   const now = Date.now()
   const cached = cache.get(cacheKey)
@@ -129,13 +126,10 @@ function waitForInFlight(promise: Promise<string>, signal?: AbortSignal): Promis
  *   - On success, also auto-refreshes shortly before the URL expires
  *   - The component-local AbortController is honoured for this caller's state updates
  */
-export function useTaskSignedUrl(
-  taskId: string | undefined,
-  key: string | null | undefined
-): TaskSignedUrlState {
+export function useTaskSignedUrl(taskId: string | undefined, key: string | null | undefined): TaskSignedUrlState {
   const { t } = useTranslation('common')
-  const [state, setState] = useState<TaskSignedUrlState>(
-    () => (taskId && key ? { status: 'loading' } : { status: 'idle' })
+  const [state, setState] = useState<TaskSignedUrlState>(() =>
+    taskId && key ? { status: 'loading' } : { status: 'idle' }
   )
 
   useEffect(() => {
@@ -158,9 +152,7 @@ export function useTaskSignedUrl(
 
         const cacheKey = makeCacheKey(taskId, key)
         const entry = cache.get(cacheKey)
-        const expiresAt = entry
-          ? new Date(entry.expiresAtMs + 60_000).toISOString()
-          : ''
+        const expiresAt = entry ? new Date(entry.expiresAtMs + 60_000).toISOString() : ''
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setState({ status: 'ready', url, expiresAt })
 
@@ -178,7 +170,7 @@ export function useTaskSignedUrl(
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setState({
           status: 'error',
-          message: err instanceof Error ? err.message : t('errors.unknown')
+          message: extractApiErrorMessage(err, t('errors.unknown'))
         })
       }
     }

@@ -84,9 +84,9 @@ export function useAssistantNotifications(): UseAssistantNotificationsResult {
       const res = await notificationControllerList(params, { signal })
       if (signal.aborted) return
 
-      setItems(res.data.items ?? [])
-      setTotal(res.data.total)
-      setUnreadCount(res.data.unreadCount)
+      setItems(res.data?.items ?? [])
+      setTotal(res.data?.total ?? 0)
+      setUnreadCount(res.data?.unreadCount ?? 0)
     },
     []
   )

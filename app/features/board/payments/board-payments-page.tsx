@@ -1,8 +1,23 @@
 import { Link, useFetcher, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
-import { ArrowLeft } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Banknote,
+  CalendarClock,
+  Check,
+  Circle,
+  Eye,
+  FileText,
+  ReceiptText,
+  ShieldCheck,
+  UserRound,
+  XCircle,
+  type LucideIcon
+} from 'lucide-react'
+import { useId, useState, type ReactNode } from 'react'
+import { Dialog } from '~/shared/ui/dialog'
 import {
   BoardActionDialog,
   boardInput,
@@ -23,7 +38,7 @@ export function BoardPaymentsPage({
   contractBasePath,
   seriesBasePath
 }: {
-  payments: PaymentRecordListResDtoOutputDataItem[]
+  payments: PaymentRecordResDtoOutput[]
   hasError: boolean
   canApprove?: boolean
   focusPaymentId?: string
@@ -57,13 +72,29 @@ export function BoardPaymentsPage({
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
-        <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
           <ArrowLeft className='size-4' />
           {t('common.back')}
         </Link>
       )}
-      <BoardHeader title={t('payments.title')} description={t('payments.description')} />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      <BoardHeader
+        title={t(canApprove ? 'payments.title' : 'payments.adminTitle')}
+        description={t(canApprove ? 'payments.description' : 'payments.adminDescription')}
+      />
+      <div className='flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4'>
+        <div className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+          <ShieldCheck className='size-4' aria-hidden='true' />
+        </div>
+        <div>
+          <p className='text-xs font-bold text-foreground'>
+            {t(canApprove ? 'payments.boardPermissionTitle' : 'payments.adminPermissionTitle')}
+          </p>
+          <p className='mt-1 text-xs leading-5 text-muted-foreground'>
+            {t(canApprove ? 'payments.boardPermissionHint' : 'payments.adminPermissionHint')}
+          </p>
+        </div>
+      </div>
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       {enableFilters && (
         <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-4'>
           <input
@@ -141,13 +172,13 @@ function PaymentCard({
   contractBasePath,
   seriesBasePath
 }: {
-  payment: PaymentRecordListResDtoOutputDataItem
+  payment: PaymentRecordResDtoOutput
   canApprove: boolean
   focused: boolean
   contractBasePath?: string
   seriesBasePath?: string
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   return (
     <article
@@ -156,103 +187,32 @@ function PaymentCard({
     >
       <div className='flex flex-wrap justify-between gap-3'>
         <div>
-          <strong>{payment.series?.title ?? payment.paymentType}</strong>
+          <strong>
+            {payment.series?.title ??
+              t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })}
+          </strong>
           <p className='mt-1 text-xs text-muted-foreground'>
             {t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })} ·{' '}
-            {payment.receiver?.displayName ?? payment.receiverId}
+            {payment.receiver?.displayName ?? t('payments.unknownReceiver')}
           </p>
           {payment.description ? <p className='mt-1 text-xs text-muted-foreground'>{payment.description}</p> : null}
         </div>
         <div className='text-right'>
           <StatusBadge value={payment.status} />
-          <p className='mt-2 font-bold'>{new Intl.NumberFormat().format(payment.amount)}</p>
+          <p className='mt-2 font-bold'>{new Intl.NumberFormat(i18n.language).format(payment.amount)}</p>
         </div>
       </div>
       <div className='mt-4 flex flex-wrap gap-2'>
-        <BoardActionDialog title={t('payments.details')}>
-          <div className='grid gap-4 text-xs'>
-            <section className='rounded-lg border border-border p-4'>
-              <h4 className='mb-3 text-sm font-bold text-foreground'>{t('payments.originDetails')}</h4>
-              <dl className='grid gap-3 sm:grid-cols-2'>
-                <PaymentFact
-                  label={t('payments.series')}
-                  value={
-                    payment.seriesId && seriesBasePath ? (
-                      <Link className='text-primary underline' to={`${seriesBasePath}/${payment.seriesId}`}>
-                        {payment.series?.title ?? t('payments.openSeries')}
-                      </Link>
-                    ) : (
-                      payment.series?.title
-                    )
-                  }
-                />
-                <PaymentFact
-                  label={t('payments.contract')}
-                  value={
-                    contractBasePath ? (
-                      <Link className='text-primary underline' to={`${contractBasePath}/${payment.contractId}`}>
-                        {t('payments.openContract')}
-                      </Link>
-                    ) : (
-                      shortId(payment.contractId)
-                    )
-                  }
-                />
-                <PaymentFact
-                  label={t('payments.type')}
-                  value={t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })}
-                />
-                <PaymentFact
-                  label={t('payments.source')}
-                  value={t(`filters.paymentSources.${payment.paymentSource}`, { defaultValue: payment.paymentSource })}
-                />
-                <PaymentFact label={t('payments.amount')} value={new Intl.NumberFormat().format(payment.amount)} />
-                <PaymentFact label={t('payments.period')} value={payment.period} />
-                <PaymentFact
-                  label={t('payments.receiver')}
-                  value={payment.receiver?.displayName ?? payment.receiverId}
-                />
-                <PaymentFact label={t('payments.condition')} value={payment.conditionId && shortId(payment.conditionId)} />
-                <PaymentFact label={t('payments.createdAt')} value={formatDate(payment.createdAt)} />
-                <PaymentFact label={t('payments.descriptionLabel')} value={payment.description} />
-              </dl>
-            </section>
-            <section className='rounded-lg border border-border p-4'>
-              <h4 className='mb-3 text-sm font-bold text-foreground'>{t('payments.processingDetails')}</h4>
-              <dl className='grid gap-3 sm:grid-cols-2'>
-                <PaymentFact label={t('payments.status')} value={<StatusBadge value={payment.status} />} />
-                <PaymentFact
-                  label={t('payments.approver')}
-                  value={payment.approver?.displayName}
-                  emptyValue={payment.status === 'TRIGGERED' ? t('payments.awaitingApproval') : undefined}
-                />
-                <PaymentFact
-                  label={t('payments.approvedAt')}
-                  value={formatDate(payment.approvedAt)}
-                  emptyValue={payment.status === 'TRIGGERED' ? t('payments.awaitingApproval') : undefined}
-                />
-                <PaymentFact
-                  label={t('payments.paidAt')}
-                  value={formatDate(payment.paidAt)}
-                  emptyValue={payment.status === 'APPROVED' ? t('payments.awaitingPayment') : undefined}
-                />
-                <PaymentFact label={t('payments.method')} value={payment.paymentMethod} />
-                <PaymentFact label={t('payments.reference')} value={payment.transactionReference} />
-                <PaymentFact label={t('payments.cancelledAt')} value={formatDate(payment.cancelledAt)} />
-                <PaymentFact label={t('payments.cancelReason')} value={payment.cancelReason} />
-                <PaymentFact label={t('payments.note')} value={payment.note} />
-              </dl>
-            </section>
-          </div>
-        </BoardActionDialog>
+        <PaymentDetailsDialog payment={payment} contractBasePath={contractBasePath} seriesBasePath={seriesBasePath} />
         {canApprove && payment.status === 'TRIGGERED' && (
           <fetcher.Form method='post'>
             <input type='hidden' name='paymentId' value={payment.id} />
             <button
               name='intent'
               value='approve'
-              className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+              className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
             >
+              <BadgeCheck className='mr-1.5 inline size-4' aria-hidden='true' />
               {t('payments.approve')}
             </button>
           </fetcher.Form>
@@ -272,15 +232,16 @@ function PaymentCard({
               <button
                 name='intent'
                 value='pay'
-                className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+                className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90'
               >
+                <Banknote className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.pay')}
               </button>
             </fetcher.Form>
             <BoardFeedback data={fetcher.data} />
           </BoardActionDialog>
         )}{' '}
-        {!['PAID', 'CANCELLED'].includes(payment.status) && (
+        {['TRIGGERED', 'APPROVED'].includes(payment.status) && (
           <BoardActionDialog title={t('payments.cancel')}>
             <fetcher.Form method='post' className='grid gap-3'>
               <input type='hidden' name='paymentId' value={payment.id} />
@@ -288,8 +249,9 @@ function PaymentCard({
               <button
                 name='intent'
                 value='cancel'
-                className='h-10 rounded-md border border-destructive px-3 text-sm font-bold text-destructive'
+                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
               >
+                <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.cancel')}
               </button>
             </fetcher.Form>
@@ -302,15 +264,293 @@ function PaymentCard({
   )
 }
 
-function PaymentFact({
+function PaymentDetailsDialog({
+  payment,
+  contractBasePath,
+  seriesBasePath
+}: {
+  payment: PaymentRecordResDtoOutput
+  contractBasePath?: string
+  seriesBasePath?: string
+}) {
+  const { t, i18n } = useTranslation('board')
+  const [open, setOpen] = useState(false)
+  const titleId = `payment-detail-${useId().replaceAll(':', '')}`
+  const descriptionId = `${titleId}-description`
+  const amount = new Intl.NumberFormat(i18n.language).format(payment.amount)
+  const hasEvidence = Boolean(
+    payment.paymentMethod ||
+    payment.transactionReference ||
+    payment.paidAt ||
+    payment.cancelledAt ||
+    payment.cancelReason ||
+    payment.note
+  )
+
+  return (
+    <>
+      <button
+        type='button'
+        onClick={() => setOpen(true)}
+        className='inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold text-foreground transition-colors hover:border-primary/40 hover:text-primary'
+      >
+        <Eye className='size-4' />
+        {t('payments.details')}
+      </button>
+
+      {open && (
+        <Dialog
+          compact
+          open
+          onClose={() => setOpen(false)}
+          titleId={titleId}
+          title={t('payments.details')}
+          descriptionId={descriptionId}
+          description={t('payments.detailSubtitle')}
+          size='xl'
+          className='max-w-3xl'
+        >
+          <div className='space-y-5'>
+            <section className='relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-5'>
+              <div className='absolute -right-12 -top-16 size-40 rounded-full bg-primary/10 blur-3xl' />
+              <div className='relative flex flex-col justify-between gap-5 sm:flex-row sm:items-start'>
+                <div className='flex min-w-0 items-start gap-4'>
+                  <div className='flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground'>
+                    <Banknote className='size-5' />
+                  </div>
+                  <div className='min-w-0'>
+                    <p className='text-[10px] font-extrabold uppercase tracking-[0.15em] text-primary'>
+                      {t('payments.paymentSummary')}
+                    </p>
+                    <p className='mt-1 text-2xl font-black tabular-nums text-foreground'>{amount}</p>
+                    <p className='mt-1 truncate text-xs font-bold text-foreground'>
+                      {payment.series?.title ?? t('payments.unknownSeries')}
+                    </p>
+                    <p className='mt-1 text-[11px] text-muted-foreground'>
+                      {t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })}
+                    </p>
+                  </div>
+                </div>
+                <div className='flex shrink-0 flex-col items-start gap-2 sm:items-end'>
+                  <StatusBadge value={payment.status} />
+                  <code className='text-[10px] text-muted-foreground' title={payment.id}>
+                    {t('payments.paymentCode', { code: shortId(payment.id) })}
+                  </code>
+                </div>
+              </div>
+              {payment.description && (
+                <p className='relative mt-4 border-t border-primary/15 pt-4 text-xs leading-5 text-muted-foreground'>
+                  {payment.description}
+                </p>
+              )}
+            </section>
+
+            <div className='grid gap-4 lg:grid-cols-2'>
+              <PaymentDetailSection icon={ReceiptText} title={t('payments.originDetails')}>
+                <dl className='grid gap-3 sm:grid-cols-2'>
+                  <PaymentFact
+                    label={t('payments.series')}
+                    value={
+                      payment.seriesId && seriesBasePath ? (
+                        <Link
+                          className='font-bold text-primary hover:underline'
+                          to={`${seriesBasePath}/${payment.seriesId}`}
+                        >
+                          {payment.series?.title ?? t('payments.openSeries')}
+                        </Link>
+                      ) : (
+                        payment.series?.title
+                      )
+                    }
+                  />
+                  <PaymentFact
+                    label={t('payments.contract')}
+                    value={
+                      contractBasePath ? (
+                        <Link
+                          className='font-bold text-primary hover:underline'
+                          to={`${contractBasePath}/${payment.contractId}`}
+                        >
+                          {t('payments.openContract')}
+                        </Link>
+                      ) : (
+                        t('payments.contractReference', { code: shortId(payment.contractId) })
+                      )
+                    }
+                  />
+                  <PaymentFact
+                    label={t('payments.source')}
+                    value={t(`filters.paymentSources.${payment.paymentSource}`, {
+                      defaultValue: payment.paymentSource
+                    })}
+                  />
+                  <PaymentFact label={t('payments.period')} value={payment.period} />
+                  <PaymentFact label={t('payments.createdAt')} value={formatDate(payment.createdAt, i18n.language)} />
+                </dl>
+              </PaymentDetailSection>
+
+              <PaymentDetailSection icon={UserRound} title={t('payments.recipientDetails')}>
+                <div className='rounded-xl border border-border bg-background/70 p-4'>
+                  <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                    {t('payments.receiver')}
+                  </p>
+                  <p className='mt-2 text-base font-bold text-foreground'>
+                    {payment.receiver?.displayName ?? t('payments.unknownReceiver')}
+                  </p>
+                  <p className='mt-1 text-[11px] text-muted-foreground'>
+                    {t('payments.receiverCode', { code: shortId(payment.receiverId) })}
+                  </p>
+                </div>
+                {payment.approver?.displayName && (
+                  <div className='mt-3 flex items-center gap-3 rounded-xl border border-border p-3'>
+                    <BadgeCheck className='size-4 shrink-0 text-primary' />
+                    <div>
+                      <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                        {t('payments.approver')}
+                      </p>
+                      <p className='mt-0.5 text-xs font-bold text-foreground'>{payment.approver.displayName}</p>
+                    </div>
+                  </div>
+                )}
+              </PaymentDetailSection>
+            </div>
+
+            <PaymentDetailSection icon={CalendarClock} title={t('payments.processingTimeline')}>
+              <div className='grid gap-3 md:grid-cols-3'>
+                <PaymentTimelineStep
+                  label={t('payments.triggeredStep')}
+                  detail={formatDate(payment.createdAt, i18n.language)}
+                  state='complete'
+                />
+                <PaymentTimelineStep
+                  label={t('payments.approvedStep')}
+                  detail={
+                    formatDate(payment.approvedAt, i18n.language) ||
+                    (payment.status === 'TRIGGERED' ? t('payments.awaitingApprovalShort') : undefined)
+                  }
+                  state={payment.approvedAt ? 'complete' : payment.status === 'TRIGGERED' ? 'current' : 'pending'}
+                />
+                <PaymentTimelineStep
+                  label={
+                    payment.status === 'CANCELLED'
+                      ? t('payments.cancelledStep')
+                      : payment.status === 'FAILED'
+                        ? t('payments.failedStep')
+                        : payment.status === 'MISSED'
+                          ? t('payments.missedStep')
+                          : t('payments.paidStep')
+                  }
+                  detail={
+                    formatDate(payment.paidAt || payment.cancelledAt, i18n.language) ||
+                    (payment.status === 'APPROVED' ? t('payments.awaitingPaymentShort') : undefined)
+                  }
+                  state={
+                    payment.paidAt
+                      ? 'complete'
+                      : ['CANCELLED', 'FAILED', 'MISSED'].includes(payment.status)
+                        ? 'stopped'
+                        : payment.status === 'APPROVED'
+                          ? 'current'
+                          : 'pending'
+                  }
+                />
+              </div>
+            </PaymentDetailSection>
+
+            {hasEvidence && (
+              <PaymentDetailSection icon={FileText} title={t('payments.paymentEvidence')}>
+                <dl className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                  {payment.paymentMethod && <PaymentFact label={t('payments.method')} value={payment.paymentMethod} />}
+                  {payment.transactionReference && (
+                    <PaymentFact label={t('payments.reference')} value={payment.transactionReference} />
+                  )}
+                  {payment.paidAt && (
+                    <PaymentFact label={t('payments.paidAt')} value={formatDate(payment.paidAt, i18n.language)} />
+                  )}
+                  {payment.cancelledAt && (
+                    <PaymentFact
+                      label={t('payments.cancelledAt')}
+                      value={formatDate(payment.cancelledAt, i18n.language)}
+                    />
+                  )}
+                  {payment.cancelReason && (
+                    <PaymentFact label={t('payments.cancelReason')} value={payment.cancelReason} />
+                  )}
+                  {payment.note && <PaymentFact label={t('payments.note')} value={payment.note} />}
+                </dl>
+              </PaymentDetailSection>
+            )}
+          </div>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+function PaymentDetailSection({
+  icon: Icon,
+  title,
+  children
+}: {
+  icon: LucideIcon
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <section className='rounded-2xl border border-border bg-card p-4'>
+      <div className='mb-4 flex items-center gap-3 border-b border-border pb-3'>
+        <div className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+          <Icon className='size-4' />
+        </div>
+        <h3 className='text-xs font-bold text-foreground'>{title}</h3>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function PaymentTimelineStep({
   label,
-  value,
-  emptyValue
+  detail,
+  state
 }: {
   label: string
-  value?: ReactNode
-  emptyValue?: string
+  detail?: ReactNode
+  state: 'complete' | 'current' | 'pending' | 'stopped'
 }) {
+  const Icon = state === 'complete' ? Check : state === 'stopped' ? XCircle : Circle
+  return (
+    <div
+      className={`rounded-xl border p-3 ${
+        state === 'complete' || state === 'current'
+          ? 'border-primary/25 bg-primary/5'
+          : state === 'stopped'
+            ? 'border-destructive/25 bg-destructive/5'
+            : 'border-border bg-muted/30'
+      }`}
+    >
+      <div className='flex items-center gap-2'>
+        <span
+          className={`flex size-6 shrink-0 items-center justify-center rounded-full ${
+            state === 'complete'
+              ? 'bg-primary text-primary-foreground'
+              : state === 'current'
+                ? 'border border-primary bg-background text-primary'
+                : state === 'stopped'
+                  ? 'bg-destructive text-destructive-foreground'
+                  : 'border border-border bg-background text-muted-foreground'
+          }`}
+        >
+          <Icon className='size-3.5' />
+        </span>
+        <p className='text-xs font-bold text-foreground'>{label}</p>
+      </div>
+      <p className='mt-2 pl-8 text-[11px] leading-5 text-muted-foreground'>{detail || '—'}</p>
+    </div>
+  )
+}
+
+function PaymentFact({ label, value, emptyValue }: { label: string; value?: ReactNode; emptyValue?: string }) {
   const { t } = useTranslation('board')
   return (
     <div>
@@ -322,12 +562,14 @@ function PaymentFact({
   )
 }
 
-function shortId(value: string) {
-  return value.length > 12 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value
-}
-
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale?: string) {
   if (!value) return null
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+}
+
+function shortId(value: string) {
+  return value.length > 12 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { chapterControllerProgress } from '~/api/operations/chapters/chapters'
 import type { ChapterProgressResDtoOutput } from '~/api/model/chapters'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseChapterProgressResult = {
   progress: ChapterProgressResDtoOutput | null
@@ -53,7 +54,7 @@ export function useChapterProgress(chapterId: string | null | undefined): UseCha
           // Mangaka not the series owner — progress not accessible
           setProgress(null)
         } else {
-          setError(err instanceof Error ? err.message : t('publication.error.generic'))
+          setError(extractApiErrorMessage(err, t('publication.error.generic')))
           setProgress(null)
         }
       } finally {
@@ -67,10 +68,9 @@ export function useChapterProgress(chapterId: string | null | undefined): UseCha
 
   useEffect(() => {
     if (!chapterId) {
-      setProgress(null)
-      setError(null)
       return
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize progress with the active chapter id
     void fetch(chapterId)
     return () => abortRef.current?.abort()
   }, [chapterId, reloadToken, fetch])
@@ -79,5 +79,10 @@ export function useChapterProgress(chapterId: string | null | undefined): UseCha
     setReloadToken((n) => n + 1)
   }, [])
 
-  return { progress, isLoading, error, refresh }
+  return {
+    progress: chapterId ? progress : null,
+    isLoading: chapterId ? isLoading : false,
+    error: chapterId ? error : null,
+    refresh
+  }
 }

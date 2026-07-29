@@ -6,12 +6,14 @@ import {
   ImageIcon,
   Loader2,
   Pencil,
+  PenLine,
   Send,
   Trash2,
   Undo2,
   RefreshCw,
   RotateCcw,
   MessageSquareWarning,
+  Flag
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
@@ -24,25 +26,33 @@ import {
 } from '~/api/model/series'
 import type { SeriesResDtoOutput } from '~/api/model/series'
 import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
+import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 
 import { useSeriesDetail } from './use-series-detail'
 import { useSubmitSeries } from './use-submit-series'
 import { useProposalActions } from './use-proposal-actions'
 import { useProposalRevisions } from './use-proposal-revisions'
+import { useSeriesLifecycle } from './use-series-lifecycle'
+import { useFranchiseConsentEligibility } from './use-franchise-consent-eligibility'
 import { RevisionRequestsDrawer } from './components/revision-requests-drawer'
 import { useChapterList } from '~/features/mangaka/chapters/use-chapter-list'
 import { useCreateChapter } from '~/features/mangaka/chapters/use-create-chapter'
+import { useChapterManagement } from '~/features/mangaka/chapters/use-chapter-management'
 import { SignedImage } from '~/shared/components/signed-image'
 import { ImageOverflowStrip, type ImageStripItem } from './components/image-overflow-strip'
-import {
-  ImageCarouselViewer,
-  type ImageCarouselItem
-} from './components/image-carousel-viewer'
+import { ImageCarouselViewer, type ImageCarouselItem } from './components/image-carousel-viewer'
 import { SubmitSeriesDialog } from './components/submit-series-dialog'
 import { ProposalActionDialog, type ProposalActionDialogMode } from './components/proposal-action-dialog'
 import { SynopsisBlock } from './components/synopsis-block'
 import { CreateChapterDialog } from '~/features/mangaka/chapters/create-chapter-dialog'
 import { PublicationSection } from '~/features/mangaka/chapters/publication-section'
+import { EditChapterDialog } from '~/features/mangaka/chapters/edit-chapter-dialog'
+import { DeleteChapterDialog } from '~/features/mangaka/chapters/delete-chapter-dialog'
+import { CompletionProposalDialog } from './components/completion-proposal-dialog'
+import { FranchiseConsentDialog } from './components/franchise-consent-dialog'
+import { SeriesMetadataDialog } from './components/series-metadata-dialog'
+import { PublicationVersionsPanel } from './components/publication-versions-panel'
+import { usePublicationVersions } from './use-publication-versions'
 
 /** Status values that mark the series as being in the publication phase.
  *  Per FE-API-Guide-v3.md §1.2, SERIALIZED begins serialization and the
@@ -60,6 +70,20 @@ const PUBLICATION_PHASE_STATUSES: ReadonlyArray<SeriesResDtoOutput['status']> = 
   'CANCELLED'
 ] as const
 
+const CHAPTER_CREATABLE_SERIES_STATUSES: ReadonlyArray<SeriesResDtoOutput['status']> = [
+  SeriesStatusEnum.SERIALIZED,
+  'CANCELLING',
+  'COMPLETING'
+] as const
+
+const SERIES_METADATA_TERMINAL_STATUSES = new Set<SeriesResDtoOutput['status']>([
+  SeriesStatusEnum.COMPLETED,
+  SeriesStatusEnum.CANCELLED,
+  SeriesStatusEnum.REJECTED,
+  SeriesStatusEnum.ABANDONED,
+  SeriesStatusEnum.WITHDRAWN
+])
+
 type MySeriesDetailPageProps = {
   seriesId: string
 }
@@ -67,12 +91,12 @@ type MySeriesDetailPageProps = {
 // ─── Reusable bits ─────────────────────────────────────────────────────────
 
 const COVER_GRADIENTS = [
-  'from-blue-600 to-indigo-700',
-  'from-purple-600 to-pink-700',
-  'from-neutral-700 to-slate-900',
-  'from-amber-600 to-orange-800',
-  'from-emerald-600 to-teal-800',
-  'from-sky-600 to-cyan-800'
+  'from-info to-info/70 text-info-foreground',
+  'from-primary to-primary/70 text-primary-foreground',
+  'from-muted-foreground to-foreground text-background',
+  'from-warning to-warning/70 text-warning-foreground',
+  'from-success to-success/70 text-success-foreground',
+  'from-accent to-accent/70 text-accent-foreground'
 ] as const
 
 function pickGradient(seed: string): string {
@@ -104,37 +128,37 @@ function formatDateTime(iso: string | null, locale: string): string {
 
 const SERIES_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
-  IN_REVIEW: { className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-  READY_TO_PITCH: { className: 'bg-sky-500/10 text-sky-600 border-sky-500/20' },
-  PITCHED: { className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20' },
-  SERIALIZED: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-  HIATUS: { className: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
-  COMPLETING: { className: 'bg-teal-500/10 text-teal-600 border-teal-500/20' },
-  CANCELLING: { className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
-  COMPLETED: { className: 'bg-green-500/10 text-green-600 border-green-500/20' },
-  CANCELLED: { className: 'bg-rose-500/10 text-rose-500 border-rose-500/20' },
-  REJECTED: { className: 'bg-rose-600/10 text-rose-600 border-rose-600/20' },
-  ABANDONED: { className: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20' },
-  WITHDRAWN: { className: 'bg-stone-500/10 text-stone-500 border-stone-500/20' }
+  IN_REVIEW: { className: 'bg-warning/10 text-warning border-warning/20' },
+  READY_TO_PITCH: { className: 'bg-info/10 text-info border-info/20' },
+  PITCHED: { className: 'bg-primary/10 text-primary border-primary/20' },
+  SERIALIZED: { className: 'bg-success/10 text-success border-success/20' },
+  HIATUS: { className: 'bg-muted text-muted-foreground border-border' },
+  COMPLETING: { className: 'bg-info/10 text-info border-info/20' },
+  CANCELLING: { className: 'bg-warning/10 text-warning border-warning/20' },
+  COMPLETED: { className: 'bg-success/10 text-success border-success/20' },
+  CANCELLED: { className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  REJECTED: { className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  ABANDONED: { className: 'bg-muted text-muted-foreground border-border' },
+  WITHDRAWN: { className: 'bg-muted text-muted-foreground border-border' }
 }
 
 const PROPOSAL_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
-  PROPOSAL_REVIEW: { className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-  PROPOSAL_REVISION: { className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
-  PROPOSAL_APPROVED: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-  PITCHED: { className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20' },
-  APPROVED: { className: 'bg-emerald-600/10 text-emerald-700 border-emerald-600/20' },
-  REJECTED: { className: 'bg-rose-600/10 text-rose-600 border-rose-600/20' },
-  WITHDRAWN: { className: 'bg-stone-500/10 text-stone-500 border-stone-500/20' }
+  PROPOSAL_REVIEW: { className: 'bg-warning/10 text-warning border-warning/20' },
+  PROPOSAL_REVISION: { className: 'bg-warning/10 text-warning border-warning/20' },
+  PROPOSAL_APPROVED: { className: 'bg-success/10 text-success border-success/20' },
+  PITCHED: { className: 'bg-primary/10 text-primary border-primary/20' },
+  APPROVED: { className: 'bg-success/10 text-success border-success/20' },
+  REJECTED: { className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  WITHDRAWN: { className: 'bg-muted text-muted-foreground border-border' }
 }
 
 const NAME_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
-  SUBMITTED: { className: 'bg-sky-500/10 text-sky-600 border-sky-500/20' },
-  IN_REVIEW: { className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-  REVISION: { className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
-  APPROVED: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' }
+  SUBMITTED: { className: 'bg-info/10 text-info border-info/20' },
+  IN_REVIEW: { className: 'bg-warning/10 text-warning border-warning/20' },
+  REVISION: { className: 'bg-warning/10 text-warning border-warning/20' },
+  APPROVED: { className: 'bg-success/10 text-success border-success/20' }
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────
@@ -147,17 +171,30 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const { submit, isSubmitting } = useSubmitSeries()
   const { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen } = useProposalActions()
   const {
+    activeAction: activeLifecycleAction,
+    updateMetadata,
+    giveFranchiseConsent,
+    proposeCompletion
+  } = useSeriesLifecycle()
+  const {
     chapters,
     isLoading: isChaptersLoading,
     error: chaptersError,
     refresh: refreshChapters
   } = useChapterList(seriesId)
   const { createChapter, isCreating } = useCreateChapter()
+  const { activeAction: chapterManagementAction, updateChapter, removeChapter } = useChapterManagement()
+  const publicationVersions = usePublicationVersions(series?.id)
   const [lightbox, setLightbox] = useState<{ items: ImageCarouselItem[]; startIndex: number } | null>(null)
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
   const [createChapterOpen, setCreateChapterOpen] = useState(false)
+  const [chapterToEdit, setChapterToEdit] = useState<ChapterListResDtoOutputItemsItem | null>(null)
+  const [chapterToDelete, setChapterToDelete] = useState<ChapterListResDtoOutputItemsItem | null>(null)
   const [actionDialog, setActionDialog] = useState<ProposalActionDialogMode | null>(null)
   const [revisionDrawerOpen, setRevisionDrawerOpen] = useState(false)
+  const [metadataDialogOpen, setMetadataDialogOpen] = useState(false)
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false)
+  const [franchiseDecision, setFranchiseDecision] = useState<boolean | null>(null)
 
   const seriesStatus = series?.status
   const proposal = series?.proposal ?? null
@@ -180,10 +217,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     () => names.find((name) => name.id === proposal?.nameId) ?? names.find((name) => name.kind === 'PROPOSAL') ?? null,
     [names, proposal?.nameId]
   )
-  const { revisions, refreshRevisions } = useProposalRevisions(
-    seriesId,
-    proposalName?.id
-  )
+  const { revisions, refreshRevisions } = useProposalRevisions(seriesId, proposalName?.id)
   const canSubmit = canPrepareSubmit && !!proposalName && proposalName.pages.length > 0
 
   const canEdit =
@@ -194,11 +228,25 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       proposalName?.status === 'REVISION')
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
+  const { isOriginalMangaka, isLoading: isFranchiseEligibilityLoading } = useFranchiseConsentEligibility(
+    series?.parentSeriesId,
+    session?.user?.id
+  )
+  const canEditMetadata = isOwner && !!seriesStatus && !SERIES_METADATA_TERMINAL_STATUSES.has(seriesStatus)
+  const canProposeCompletion =
+    isOwner &&
+    (seriesStatus === SeriesStatusEnum.SERIALIZED || seriesStatus === SeriesStatusEnum.HIATUS) &&
+    !series?.completionProposal
+  // Consent is decided by the documented `parentSeries.mangakaId`, never by
+  // the derivative series owner. Detail exposes only parentSeriesId, so the
+  // eligibility hook resolves the parent record before showing this action.
+  const canGiveFranchiseConsent =
+    series?.franchiseConsentStatus === 'PENDING' && !isFranchiseEligibilityLoading && isOriginalMangaka
   const canDeleteDraft = isOwner && series?.status === SeriesStatusEnum.DRAFT
-  // Per FE-API-Guide-v3.md §3 unhappy cases: Mangaka can withdraw from IN_REVIEW, READY_TO_PITCH,
-  // PITCHED (stuck in editorial flow), AND REJECTED (Board said no — Mangaka can abandon or withdraw).
+  // The series state machine rejects withdrawal from PITCHED onward. A Board
+  // rejection is the only post-pitch state that can still be withdrawn.
   // Spec 22 (2026-07-18): ABANDONED/WITHDRAWN have their own reopen action instead.
-  const canWithdraw = isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'PITCHED', 'REJECTED'].includes(series?.status ?? '')
+  const canWithdraw = isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'REJECTED'].includes(series?.status ?? '')
   // Per Spec 22: at ABANDONED/WITHDRAWN Mangaka can "Nộp lại" (reopen → DRAFT, back to queue).
   const canReopen = isOwner && ['ABANDONED', 'WITHDRAWN'].includes(series?.status ?? '')
   const canResubmitProposal = isOwner && proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION
@@ -278,7 +326,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             ) : (
               <div
                 className={cn(
-                  'flex h-44 w-44 items-center justify-center rounded-md bg-gradient-to-br font-extrabold text-3xl text-white shadow-md',
+                  'flex h-44 w-44 items-center justify-center rounded-md bg-gradient-to-br font-extrabold text-3xl shadow-md',
                   pickGradient(series.id)
                 )}
                 aria-label={series.title}
@@ -327,6 +375,28 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                   >
                     <Pencil className='h-3.5 w-3.5' />
                     <span>{t('seriesDetail.editProposal.button')}</span>
+                  </button>
+                )}
+                {canEditMetadata && (
+                  <button
+                    type='button'
+                    disabled={activeLifecycleAction !== null}
+                    onClick={() => setMetadataDialogOpen(true)}
+                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
+                  >
+                    <PenLine className='h-3.5 w-3.5' />
+                    <span>{t('seriesDetail.lifecycle.metadata.button')}</span>
+                  </button>
+                )}
+                {canProposeCompletion && (
+                  <button
+                    type='button'
+                    disabled={activeLifecycleAction !== null}
+                    onClick={() => setCompletionDialogOpen(true)}
+                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
+                  >
+                    <Flag className='h-3.5 w-3.5' />
+                    <span>{t('seriesDetail.lifecycle.completion.button')}</span>
                   </button>
                 )}
                 {canResubmitProposal && (
@@ -418,7 +488,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             </div>
 
             {/* Genre chips */}
-            {series.genres.length > 0 && (
+            {series.genres?.length > 0 && (
               <div className='flex flex-wrap gap-1.5'>
                 {series.genres.map((g) => (
                   <span
@@ -459,10 +529,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                       : t('seriesDetail.inReviewQueue')
                 }
               />
-              <MetaItem
-                label={t('seriesDetail.createdAt')}
-                value={formatDateTime(series.createdAt, currentLocale)}
-              />
+              <MetaItem label={t('seriesDetail.createdAt')} value={formatDateTime(series.createdAt, currentLocale)} />
               {series.reviewStartedAt && (
                 <MetaItem
                   label={t('seriesDetail.reviewStartedAt')}
@@ -470,10 +537,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 />
               )}
               {series.statusReason && series.status === 'REJECTED' && (
-                <MetaItem
-                  label={t('seriesDetail.statusReason')}
-                  value={series.statusReason}
-                />
+                <MetaItem label={t('seriesDetail.statusReason')} value={series.statusReason} />
               )}
               {series.relationshipType && (
                 <MetaItem
@@ -488,6 +552,54 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {(canGiveFranchiseConsent || series.completionProposal) && (
+        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+          {canGiveFranchiseConsent && (
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+              <div>
+                <h2 className='text-sm font-bold'>{t('seriesDetail.lifecycle.franchise.title')}</h2>
+                <p className='mt-1 text-sm text-muted-foreground'>
+                  {t('seriesDetail.lifecycle.franchise.description')}
+                </p>
+              </div>
+              <div className='flex shrink-0 flex-wrap gap-2'>
+                <button
+                  type='button'
+                  disabled={activeLifecycleAction !== null}
+                  onClick={() => setFranchiseDecision(false)}
+                  className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-60'
+                >
+                  {t('seriesDetail.lifecycle.franchise.reject')}
+                </button>
+                <button
+                  type='button'
+                  disabled={activeLifecycleAction !== null}
+                  onClick={() => setFranchiseDecision(true)}
+                  className='rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+                >
+                  {t('seriesDetail.lifecycle.franchise.approve')}
+                </button>
+              </div>
+            </div>
+          )}
+          {series.completionProposal && (
+            <div className={cn(canGiveFranchiseConsent && 'mt-5 border-t border-border pt-5')}>
+              <h2 className='text-sm font-bold'>{t('seriesDetail.lifecycle.completion.proposedTitle')}</h2>
+              <p className='mt-1 text-sm text-muted-foreground'>{series.completionProposal.reason}</p>
+              <p className='mt-2 text-xs text-muted-foreground'>
+                {series.completionProposal.proposedEndingChapters === null
+                  ? t('seriesDetail.lifecycle.completion.noEndingChapter')
+                  : t('seriesDetail.lifecycle.completion.endingChaptersValue', {
+                      count: series.completionProposal.proposedEndingChapters
+                    })}
+                {' · '}
+                {formatDateTime(series.completionProposal.proposedAt, currentLocale)}
+              </p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* PROPOSAL section */}
       <CollapsibleCard
@@ -536,6 +648,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       {isPublicationPhase && (
         <PublicationSection
           isOwner={isOwner}
+          canCreateChapter={isOwner && !!seriesStatus && CHAPTER_CREATABLE_SERIES_STATUSES.includes(seriesStatus)}
           isLoading={isChaptersLoading}
           error={chaptersError}
           chapters={chapters}
@@ -543,8 +656,23 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
           onRefresh={refreshChapters}
           nextChapterNumber={nextChapterNumber}
           onCreateClick={() => setCreateChapterOpen(true)}
+          onEditClick={setChapterToEdit}
+          onDeleteClick={setChapterToDelete}
         />
       )}
+
+      <PublicationVersionsPanel
+        versions={publicationVersions.versions}
+        selectedVersionId={publicationVersions.selectedVersionId}
+        selectedVersion={publicationVersions.selectedVersion}
+        isLoading={publicationVersions.isLoading}
+        isDetailLoading={publicationVersions.isDetailLoading}
+        listError={publicationVersions.listError}
+        detailError={publicationVersions.detailError}
+        onRefresh={publicationVersions.refresh}
+        onSelect={publicationVersions.selectVersion}
+        onCloseDetail={publicationVersions.clearSelection}
+      />
 
       {/* Image carousel viewer — shared by proposal character designs + name pages */}
       {lightbox && (
@@ -575,6 +703,56 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         }}
       />
 
+      <SeriesMetadataDialog
+        open={metadataDialogOpen}
+        series={series}
+        isSubmitting={activeLifecycleAction === 'metadata'}
+        onClose={() => {
+          if (!activeLifecycleAction) setMetadataDialogOpen(false)
+        }}
+        onSubmit={async (input) => {
+          const updated = await updateMetadata(series.id, input)
+          if (!updated) return false
+          refresh()
+          return true
+        }}
+      />
+
+      <CompletionProposalDialog
+        open={completionDialogOpen}
+        seriesTitle={series.title}
+        isSubmitting={activeLifecycleAction === 'completion'}
+        onClose={() => {
+          if (!activeLifecycleAction) setCompletionDialogOpen(false)
+        }}
+        onSubmit={async (input) => {
+          const updated = await proposeCompletion(series.id, input)
+          if (updated) {
+            setCompletionDialogOpen(false)
+            refresh()
+          }
+        }}
+      />
+
+      {franchiseDecision !== null && (
+        <FranchiseConsentDialog
+          open
+          seriesTitle={series.title}
+          approve={franchiseDecision}
+          isSubmitting={activeLifecycleAction === 'franchiseConsent'}
+          onClose={() => {
+            if (!activeLifecycleAction) setFranchiseDecision(null)
+          }}
+          onConfirm={async () => {
+            const updated = await giveFranchiseConsent(series.id, franchiseDecision)
+            if (updated) {
+              setFranchiseDecision(null)
+              refresh()
+            }
+          }}
+        />
+      )}
+
       {actionDialog && (
         <ProposalActionDialog
           mode={actionDialog}
@@ -585,8 +763,9 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             if (!activeAction) setActionDialog(null)
           }}
           onConfirm={async (reason) => {
+            if (actionDialog === 'withdraw' && !reason) return
             const succeeded =
-              actionDialog === 'delete' ? await deleteDraft(series.id) : await withdraw(series.id, reason)
+              actionDialog === 'delete' ? await deleteDraft(series.id) : await withdraw(series.id, reason!)
             if (!succeeded) return
             setActionDialog(null)
             if (actionDialog === 'delete') {
@@ -630,6 +809,40 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       {/* Revision requests drawer — surfaces every Editor round for the
           current series (PROPOSAL + proposal-Name), paginated 4/page. The
           owner can resolve any round where they are the recipient. */}
+      <EditChapterDialog
+        chapter={chapterToEdit}
+        open={chapterToEdit !== null}
+        isSubmitting={chapterManagementAction === 'update'}
+        onClose={() => {
+          if (!chapterManagementAction) setChapterToEdit(null)
+        }}
+        onConfirm={async (chapterId, update) => {
+          const succeeded = await updateChapter(chapterId, update)
+          if (succeeded) {
+            refreshChapters()
+            refresh()
+          }
+          return succeeded
+        }}
+      />
+
+      <DeleteChapterDialog
+        chapter={chapterToDelete}
+        open={chapterToDelete !== null}
+        isSubmitting={chapterManagementAction === 'remove'}
+        onClose={() => {
+          if (!chapterManagementAction) setChapterToDelete(null)
+        }}
+        onConfirm={async (chapterId) => {
+          const succeeded = await removeChapter(chapterId)
+          if (succeeded) {
+            refreshChapters()
+            refresh()
+          }
+          return succeeded
+        }}
+      />
+
       <RevisionRequestsDrawer
         open={revisionDrawerOpen}
         onClose={() => setRevisionDrawerOpen(false)}
@@ -745,10 +958,7 @@ function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
               : '—'
           }
         />
-        <MetaItem
-          label={t('seriesDetail.proposal.createdAt')}
-          value={formatDateTime(proposal.createdAt, locale)}
-        />
+        <MetaItem label={t('seriesDetail.proposal.createdAt')} value={formatDateTime(proposal.createdAt, locale)} />
       </div>
 
       {/* Character designs — image strip rendered LAST so all visuals (this
@@ -759,10 +969,7 @@ function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
           <h3 className='mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
             {t('seriesDetail.proposal.characterDesigns')} · {characterItems.length}
           </h3>
-          <ImageOverflowStrip
-            items={stripItems}
-            onOpen={(idx) => onOpenStrip(characterItems, idx)}
-          />
+          <ImageOverflowStrip items={stripItems} onOpen={(idx) => onOpenStrip(characterItems, idx)} />
         </div>
       )}
     </div>
@@ -796,13 +1003,7 @@ function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
   return (
     <div className='flex flex-col gap-6 p-5'>
       {/* Sample / proposal name — full-width horizontal strip */}
-      {sampleName && (
-        <SampleNameRow
-          name={sampleName}
-          locale={locale}
-          onOpen={(items, idx) => onOpen(items, idx)}
-        />
-      )}
+      {sampleName && <SampleNameRow name={sampleName} locale={locale} onOpen={(items, idx) => onOpen(items, idx)} />}
 
       {/* Chapter names — grid cards */}
       {chapterNames.length > 0 && (
@@ -849,9 +1050,7 @@ function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
 
                 {/* Footer timestamp */}
                 {name.submittedAt && (
-                  <p className='text-[10px] text-muted-foreground'>
-                    {formatDateTime(name.submittedAt, locale)}
-                  </p>
+                  <p className='text-[10px] text-muted-foreground'>{formatDateTime(name.submittedAt, locale)}</p>
                 )}
               </article>
             )
@@ -915,12 +1114,7 @@ function SampleNameRow({
       </div>
 
       {/* Horizontal strip — single row, "+N" chip on overflow */}
-      {stripItems.length > 0 && (
-        <ImageOverflowStrip
-          items={stripItems}
-          onOpen={(idx) => onOpen(carouselItems, idx)}
-        />
-      )}
+      {stripItems.length > 0 && <ImageOverflowStrip items={stripItems} onOpen={(idx) => onOpen(carouselItems, idx)} />}
 
       {/* Footer timestamp */}
       {name.submittedAt && (
@@ -938,13 +1132,7 @@ function SampleNameRow({
  * feel consistent across both pages.
  */
 
-function NamePagesGrid({
-  items,
-  onOpen
-}: {
-  items: ImageCarouselItem[]
-  onOpen: (index: number) => void
-}) {
+function NamePagesGrid({ items, onOpen }: { items: ImageCarouselItem[]; onOpen: (index: number) => void }) {
   const { t } = useTranslation('mangaka')
   return (
     <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>

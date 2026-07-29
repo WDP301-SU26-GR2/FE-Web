@@ -44,9 +44,7 @@ export function SynopsisBlock({ text }: SynopsisBlockProps) {
         {t('seriesDetail.proposal.synopsis')}
       </h3>
 
-      <p className='whitespace-pre-wrap text-sm leading-relaxed text-foreground'>
-        {display}
-      </p>
+      <p className='whitespace-pre-wrap text-sm leading-relaxed text-foreground'>{display}</p>
 
       {isLong && (
         <div className='mt-2 flex flex-wrap items-center gap-3'>
@@ -55,9 +53,7 @@ export function SynopsisBlock({ text }: SynopsisBlockProps) {
             onClick={() => setExpanded((v) => !v)}
             className='inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted cursor-pointer'
           >
-            <ChevronDown
-              className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')}
-            />
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} />
             {expanded ? t('seriesDetail.proposal.synopsisLess') : t('seriesDetail.proposal.synopsisMore')}
           </button>
 

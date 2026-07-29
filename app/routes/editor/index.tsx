@@ -1,5 +1,5 @@
 import { EditorDashboardPage } from '~/features/editor'
-import { dashboardControllerEditor } from '~/api/operations/dashboard/dashboard'
+import { editorDashboardControllerEditor } from '~/api/operations/dashboard/dashboard'
 import type { Route } from './+types/index'
 
 export function meta() {
@@ -8,7 +8,7 @@ export function meta() {
 
 export async function clientLoader() {
   try {
-    const response = await dashboardControllerEditor()
+    const response = await editorDashboardControllerEditor()
     return { dashboard: response.data, hasError: false }
   } catch {
     return { dashboard: null, hasError: true }

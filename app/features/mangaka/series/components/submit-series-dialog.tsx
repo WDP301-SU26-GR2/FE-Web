@@ -53,7 +53,7 @@ export function SubmitSeriesDialog({ seriesTitle, isSubmitting, open, onCancel, 
       aria-modal='true'
       aria-labelledby='submit-series-dialog-title'
       aria-describedby='submit-series-dialog-desc'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
       }}

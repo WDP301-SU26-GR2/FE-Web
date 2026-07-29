@@ -8,7 +8,7 @@ import type { EditorActionResult } from '../../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 export const contractInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 
 export function ContractPageLayout({
   contract,
@@ -26,13 +26,13 @@ export function ContractPageLayout({
     <div className='space-y-7 pb-12'>
       <Link
         to={`/dashboard/editor/contracts/${contract.id}`}
-        className='inline-flex items-center gap-2 text-sm font-bold text-primary'
+        className='inline-flex items-center gap-2 text-xs font-bold text-primary'
       >
         <ArrowLeft className='size-4' />
         {t('contractDetail.backOverview')}
       </Link>
       <ContractHeader contract={contract} progress={progress} />
-      <h2 className='text-2xl font-bold text-foreground'>{title}</h2>
+      <h2 className='text-xl font-bold text-foreground'>{title}</h2>
       {children}
     </div>
   )
@@ -52,8 +52,8 @@ export function ContractHeader({
       <div className='flex flex-wrap items-start justify-between gap-4'>
         <div>
           <p className='text-xs font-bold uppercase tracking-[0.18em] text-primary'>{t('contractDetail.eyebrow')}</p>
-          <h1 className='mt-2 text-2xl font-bold text-foreground'>{seriesTitle}</h1>
-          <p className='mt-2 text-sm text-muted-foreground'>
+          <h1 className='mt-2 text-xl font-bold text-foreground'>{seriesTitle}</h1>
+          <p className='mt-2 text-xs text-muted-foreground'>
             {t('contracts.contractLabel')} · {t(`filters.contractTypes.${contract.contractType}`)}
           </p>
         </div>
@@ -118,20 +118,28 @@ export function ContractDialogPanel({
       <section className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-sm'>
         <div>
           <h3 className='font-bold text-foreground'>{title}</h3>
-          {description && <p className='mt-1 text-sm text-muted-foreground'>{description}</p>}
+          {description && <p className='mt-1 text-xs text-muted-foreground'>{description}</p>}
         </div>
         <button
           type='button'
           disabled={disabled}
           onClick={() => setOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
         >
           <Plus className='size-4' />
           {title}
         </button>
       </section>
       {open && (
-        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} description={description} size='lg'>
+        <Dialog
+          compact
+          open
+          onClose={() => setOpen(false)}
+          titleId={titleId}
+          title={title}
+          description={description}
+          size='lg'
+        >
           {children}
         </Dialog>
       )}
@@ -143,7 +151,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className='text-xs text-muted-foreground'>{label}</p>
-      <p className='mt-1 text-sm font-bold text-foreground'>{value}</p>
+      <p className='mt-1 text-xs font-bold text-foreground'>{value}</p>
     </div>
   )
 }

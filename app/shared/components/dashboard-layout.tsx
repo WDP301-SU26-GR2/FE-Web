@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Search, Settings, LogOut, Menu, X, ChevronRight, Loader2 } from 'lucide-react'
@@ -12,7 +12,6 @@ import { useAuth } from '~/features/auth/context/auth-context'
 import { useUnreadNotifications } from '~/shared/hooks/use-unread-notifications'
 import { useSidebarProfile } from '~/shared/hooks/use-sidebar-profile'
 import { BrandLogo } from './brand-logo'
-import { notificationControllerList } from '~/api/operations/notifications/notifications'
 
 export interface NavItem {
   label: string
@@ -70,7 +69,6 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
   const navigate = useNavigate()
   const { logout: handleLogout, isLoggingOut } = useLogout()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const { session } = useAuth()
   const { profile: realProfile, isLoading: isProfileLoading } = useSidebarProfile()
 
@@ -89,27 +87,6 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
     : profileFallback.role
   const statusBadge = realProfile?.status === 'ACTIVE' ? null : realProfile?.status
 
-  useEffect(() => {
-    let active = true
-    const refreshUnreadNotifications = () => {
-      notificationControllerList({ limit: 1, offset: 0 })
-        .then((response) => {
-          if (active) setUnreadNotifications(response.data.unreadCount)
-        })
-        .catch(() => {
-          if (active) setUnreadNotifications(0)
-        })
-    }
-    refreshUnreadNotifications()
-    const interval = window.setInterval(refreshUnreadNotifications, 30_000)
-    window.addEventListener('notifications:changed', refreshUnreadNotifications)
-    return () => {
-      active = false
-      window.clearInterval(interval)
-      window.removeEventListener('notifications:changed', refreshUnreadNotifications)
-    }
-  }, [location.pathname])
-
   // The authenticated user's role comes from the persisted session (BE enum,
   // e.g. "MANGAKA"/"ASSISTANT").
   //
@@ -121,7 +98,7 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
     if (r === 'ASSISTANT') return '/dashboard/assistant/profile'
     if (r === 'EDITOR') return '/dashboard/editor/profile'
     if (r === 'BOARD_MEMBER') return '/dashboard/board/profile'
-    if (r === 'SUPER_ADMIN') return '/dashboard/admin/settings'
+    if (r === 'SUPER_ADMIN') return '/dashboard/admin/profile'
     return null
   })()
 

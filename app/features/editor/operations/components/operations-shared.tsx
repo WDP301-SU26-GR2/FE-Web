@@ -1,14 +1,27 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
-import { ArrowLeft, Plus, Wrench } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Ban,
+  CheckCircle2,
+  Play,
+  Plus,
+  RotateCcw,
+  Save,
+  Trash2,
+  Upload,
+  Wrench,
+  type LucideIcon
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../../types'
-import { Dialog, useDialogClose } from '~/shared/ui/dialog'
+import { Dialog, useDialogClose, type DialogProps } from '~/shared/ui/dialog'
 
-export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground'
+export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
 
 export function OperationsLayout({
   titleKey,
@@ -26,7 +39,7 @@ export function OperationsLayout({
   const { t } = useTranslation('editor')
   return (
     <div className='space-y-7 pb-12'>
-      <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('operations.back')}
       </Link>
@@ -35,11 +48,11 @@ export function OperationsLayout({
           <Wrench className='size-4' />
           {t('operations.eyebrow')}
         </p>
-        <h1 className='mt-2 text-3xl font-bold text-foreground'>{t(titleKey)}</h1>
-        <p className='mt-2 text-sm text-muted-foreground'>{t(descriptionKey)}</p>
+        <h1 className='mt-2 text-2xl font-bold text-foreground'>{t(titleKey)}</h1>
+        <p className='mt-2 text-xs text-muted-foreground'>{t(descriptionKey)}</p>
       </header>
       {hasError && (
-        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('errors.loadDescription')}
         </p>
       )}
@@ -59,7 +72,7 @@ export function OperationPanel({
 }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='mb-4 flex items-center gap-2 text-lg font-bold text-foreground'>
+      <h2 className='mb-4 flex items-center gap-2 text-base font-bold text-foreground'>
         <Icon className='size-5 text-primary' />
         {title}
       </h2>
@@ -72,12 +85,16 @@ export function OperationDialogPanel({
   icon: Icon,
   title,
   children,
-  compact = false
+  compact = false,
+  size = 'lg',
+  className
 }: {
   icon: typeof Wrench
   title: string
   children: React.ReactNode
   compact?: boolean
+  size?: DialogProps['size']
+  className?: string
 }) {
   const [open, setOpen] = useState(false)
   const titleId = `operation-dialog-${useId().replaceAll(':', '')}`
@@ -102,7 +119,7 @@ export function OperationDialogPanel({
         <button
           type='button'
           onClick={() => setOpen(true)}
-          className={`inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-bold ${
+          className={`inline-flex h-10 items-center gap-2 rounded-md px-4 text-xs font-bold ${
             compact
               ? 'border border-border bg-background text-foreground hover:border-primary hover:text-primary'
               : 'bg-primary text-primary-foreground'
@@ -113,7 +130,15 @@ export function OperationDialogPanel({
         </button>
       </section>
       {open && (
-        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} size='lg'>
+        <Dialog
+          compact
+          open
+          onClose={() => setOpen(false)}
+          titleId={titleId}
+          title={title}
+          size={size}
+          className={className}
+        >
           {children}
         </Dialog>
       )}
@@ -136,6 +161,7 @@ export function SeriesSelect({
   name?: string
   required?: boolean
 }) {
+  const { t } = useTranslation('editor')
   return (
     <select
       name={name}
@@ -145,10 +171,11 @@ export function SeriesSelect({
       required={required}
       className={operationInput}
     >
-      <option value=''>Series</option>
+      <option value=''>{t('operations.selectSeries')}</option>
       {series.map((item) => (
         <option key={item.id} value={item.id}>
-          {item.title} · {item.status}
+          {item.title} ·{' '}
+          {t(`filters.seriesStatuses.${item.status}`, { defaultValue: item.status.replaceAll('_', ' ') })}
         </option>
       ))}
     </select>
@@ -164,17 +191,57 @@ export function OperationAction({
   label: string
   destructive?: boolean
 }) {
+  const visual = getActionVisual(intent, destructive)
+  const Icon = visual.icon
   return (
     <button
       name='intent'
       value={intent}
-      className={`min-h-9 rounded-md px-3 text-xs font-bold ${
-        destructive ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-primary-foreground'
-      }`}
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors ${visual.className}`}
     >
+      <Icon className='size-3.5' aria-hidden='true' />
       {label}
     </button>
   )
+}
+
+function getActionVisual(intent: string, destructive?: boolean): { icon: LucideIcon; className: string } {
+  const value = intent.toLowerCase()
+  if (destructive) {
+    return {
+      icon: value.includes('remove') || value.includes('delete') ? Trash2 : Ban,
+      className: 'border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90'
+    }
+  }
+  if (/(approve|finalize|complete|pay)/.test(value)) {
+    return {
+      icon: CheckCircle2,
+      className:
+        'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-500 dark:text-emerald-950'
+    }
+  }
+  if (/(start|open|resume)/.test(value)) {
+    return {
+      icon: Play,
+      className: 'border-sky-600 bg-sky-600 text-white hover:bg-sky-700 dark:border-sky-500 dark:bg-sky-500'
+    }
+  }
+  if (/(revision|reopen|return)/.test(value)) {
+    return {
+      icon: RotateCcw,
+      className: 'border-amber-500/40 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:text-amber-300'
+    }
+  }
+  if (/(import|upload)/.test(value)) {
+    return { icon: Upload, className: 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700' }
+  }
+  if (/(create|add)/.test(value)) {
+    return { icon: Plus, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
+  }
+  if (/(update|save|status)/.test(value)) {
+    return { icon: Save, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
+  }
+  return { icon: ArrowRight, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
 }
 
 export function OperationFeedback({ data }: { data?: EditorActionResult }) {

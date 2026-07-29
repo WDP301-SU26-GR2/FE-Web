@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2, X, SlidersHorizontal, ChevronDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
@@ -13,9 +13,9 @@ import {
 import { useMangakaTasks } from '~/features/mangaka/assistants/use-mangaka-tasks'
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { TaskBoard } from '~/features/mangaka/assistants/components/task-board'
-import type { PageResDtoOutput } from '~/api/model/chapters/pageResDtoOutput'
-import { chapterControllerListPages } from '~/api/operations/chapters/chapters'
-import { isFetchError } from '~/api/mutator/custom-fetch'
+import { TaskEditDialog } from '~/features/mangaka/assistants/components/task-edit-dialog'
+import { TaskReassignDialog } from '~/features/mangaka/assistants/components/task-reassign-dialog'
+import type { TaskListResDtoOutputItemsItem } from '~/api/model/task/taskListResDtoOutputItemsItem'
 
 const STATUS_OPTIONS: TaskControllerListTasksStatus[] = [
   'ASSIGNED',
@@ -50,26 +50,14 @@ export function StudioTasksTab() {
   const [currentPage, setCurrentPage] = useState(1)
   const [taskAction, setTaskAction] = useState<{ taskId: string; type: 'revision' | 'cancel' } | null>(null)
   const [actionNote, setActionNote] = useState('')
-
-  // Cache pages from all chapters we've fetched
-  const [pagesCache, setPagesCache] = useState<Record<string, PageResDtoOutput[]>>({})
-  const [isLoadingPagesCache, setIsLoadingPagesCache] = useState(false)
+  const [editingTask, setEditingTask] = useState<TaskListResDtoOutputItemsItem | null>(null)
+  const [reassigningTask, setReassigningTask] = useState<TaskListResDtoOutputItemsItem | null>(null)
+  const [isTaskMutationPending, setIsTaskMutationPending] = useState(false)
+  const [approvingGroupIds, setApprovingGroupIds] = useState<ReadonlySet<string>>(() => new Set())
+  const approvingGroupIdsRef = useRef<Set<string>>(new Set())
 
   const chapterQuery = useMangakaChapterList(seriesId ?? null)
   const pageQuery = useMangakaChapterPages(chapterId ?? null)
-
-  // Add fetched pages to cache when pageQuery completes
-  useEffect(() => {
-    if (chapterId && pageQuery.items.length > 0) {
-      setPagesCache((prev) => ({ ...prev, [chapterId]: pageQuery.items }))
-    }
-  }, [chapterId, pageQuery.items])
-
-  // Get all cached pages as a flat array
-  const allCachedPages = useMemo(
-    () => Object.values(pagesCache).flat(),
-    [pagesCache]
-  )
 
   const taskQuery = useMangakaTasks({
     seriesId,
@@ -81,11 +69,6 @@ export function StudioTasksTab() {
 
   const hasActiveFilters = seriesId || chapterId || pageId || status
   const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [seriesId, chapterId, pageId, status])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -106,12 +89,13 @@ export function StudioTasksTab() {
     setSeriesId(next)
     setChapterId(undefined)
     setPageId(undefined)
-    setPagesCache({}) // Clear cache when changing series
+    setCurrentPage(1)
   }
 
   const handleChapterChange = (next: string | undefined) => {
     setChapterId(next)
     setPageId(undefined)
+    setCurrentPage(1)
   }
 
   const clearAllFilters = () => {
@@ -120,7 +104,6 @@ export function StudioTasksTab() {
     setPageId(undefined)
     setStatus(undefined)
     setCurrentPage(1)
-    setPagesCache({})
   }
 
   const getStatusLabel = (s: TaskControllerListTasksStatus | undefined) => {
@@ -143,230 +126,335 @@ export function StudioTasksTab() {
 
     const action = taskAction
     closeTaskAction()
-    const request = action.type === 'revision'
-      ? taskQuery.requestRevision(action.taskId, note)
-      : taskQuery.cancelTask(action.taskId, note || undefined)
+    const request =
+      action.type === 'revision'
+        ? taskQuery.requestRevision(action.taskId, note)
+        : taskQuery.cancelTask(action.taskId, note || undefined)
 
     void request.then((result) => {
       if (result.success) {
-        toast.success(t(action.type === 'revision' ? 'studio.tasksTab.toast.revisionRequested' : 'studio.tasksTab.toast.cancelled'))
+        toast.success(
+          t(action.type === 'revision' ? 'studio.tasksTab.toast.revisionRequested' : 'studio.tasksTab.toast.cancelled')
+        )
       } else {
-        toast.error(result.error ?? t(action.type === 'revision' ? 'studio.tasksTab.toast.revisionFailed' : 'studio.tasksTab.toast.cancelFailed'))
+        toast.error(
+          result.error ??
+            t(
+              action.type === 'revision' ? 'studio.tasksTab.toast.revisionFailed' : 'studio.tasksTab.toast.cancelFailed'
+            )
+        )
       }
     })
   }
 
+  const updateTask = async (taskId: string, update: Parameters<typeof taskQuery.updateTask>[1]) => {
+    setIsTaskMutationPending(true)
+    try {
+      const result = await taskQuery.updateTask(taskId, update)
+      if (result.success) toast.success(t('studio.tasksTab.toast.updated'))
+      else toast.error(result.error)
+      return result
+    } finally {
+      setIsTaskMutationPending(false)
+    }
+  }
+
+  const reassignTask = async (taskId: string, assistantId: string) => {
+    setIsTaskMutationPending(true)
+    try {
+      const result = await taskQuery.reassignTask(taskId, assistantId)
+      if (result.success) toast.success(t('studio.tasksTab.toast.reassigned'))
+      else toast.error(result.error)
+      return result
+    } finally {
+      setIsTaskMutationPending(false)
+    }
+  }
+
+  const approveTaskGroup = useCallback(
+    (groupId: string) => {
+      if (approvingGroupIdsRef.current.has(groupId)) return
+      approvingGroupIdsRef.current.add(groupId)
+      setApprovingGroupIds(new Set(approvingGroupIdsRef.current))
+
+      void taskQuery
+        .approveTaskGroup(groupId)
+        .then((result) => {
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
+          toast.success(t('studio.tasksTab.toast.groupApproved', { count: result.data.approved }))
+          if (result.data.skipped.length > 0) {
+            toast.warning(t('studio.tasksTab.toast.groupSkipped', { count: result.data.skipped.length }))
+          }
+        })
+        .finally(() => {
+          approvingGroupIdsRef.current.delete(groupId)
+          setApprovingGroupIds(new Set(approvingGroupIdsRef.current))
+        })
+    },
+    [t, taskQuery]
+  )
+
   return (
     <>
-    <div className='space-y-4'>
-      {/* Single horizontal filter bar */}
-      <div className='rounded-xl border border-border bg-card p-3'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <SlidersHorizontal className='h-4 w-4 text-muted-foreground shrink-0' />
+      <div className='space-y-4'>
+        {/* Single horizontal filter bar */}
+        <div className='rounded-xl border border-border bg-card p-3'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <SlidersHorizontal className='h-4 w-4 text-muted-foreground shrink-0' />
 
-          {/* Series dropdown */}
-          <select
-            value={seriesId ?? ''}
-            onChange={(e) => handleSeriesChange(e.target.value || undefined)}
-            disabled={seriesQuery.isLoading}
-            className={cn(
-              'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer appearance-none',
-              seriesId
-                ? 'border-primary text-foreground'
-                : 'border-border text-muted-foreground'
-            )}
-          >
-            <option value=''>{t('studio.tasksTab.allSeries')}</option>
-            {seriesQuery.items.map((s) => (
-              <option key={s.id} value={s.id}>{s.title}</option>
-            ))}
-          </select>
-
-          {/* Chapter dropdown */}
-          <select
-            value={chapterId ?? ''}
-            onChange={(e) => handleChapterChange(e.target.value || undefined)}
-            disabled={chapterQuery.isLoading || !seriesId}
-            className={cn(
-              'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer appearance-none',
-              chapterId
-                ? 'border-primary text-foreground'
-                : 'border-border text-muted-foreground',
-              !seriesId && 'opacity-50'
-            )}
-          >
-            <option value=''>{t('studio.tasksTab.allChapters')}</option>
-            {chapterQuery.items.map((c) => (
-              <option key={c.id} value={c.id}>
-                {t('studio.tasksTab.chapterLabel', { n: c.chapterNumber })}
-                {c.title ? ` — ${c.title}` : ''}
-              </option>
-            ))}
-          </select>
-
-          {/* Page dropdown */}
-          <select
-            value={pageId ?? ''}
-            onChange={(e) => setPageId(e.target.value || undefined)}
-            disabled={pageQuery.isLoading || !chapterId}
-            className={cn(
-              'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer appearance-none',
-              pageId
-                ? 'border-primary text-foreground'
-                : 'border-border text-muted-foreground',
-              !chapterId && 'opacity-50'
-            )}
-          >
-            <option value=''>{t('studio.tasksTab.allPages')}</option>
-            {pageQuery.items.map((p) => (
-              <option key={p.id} value={p.id}>
-                {t('studio.tasksTab.pageLabel', { n: p.pageNumber })}
-              </option>
-            ))}
-          </select>
-
-          {/* Spacer */}
-          <div className='flex-1' />
-
-          {/* Status dropdown */}
-          <div ref={dropdownRef} className='relative'>
-            <button
-              type='button'
-              onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+            {/* Series dropdown */}
+            <select
+              value={seriesId ?? ''}
+              onChange={(e) => handleSeriesChange(e.target.value || undefined)}
+              disabled={seriesQuery.isLoading}
               className={cn(
-                'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer flex items-center gap-2 transition-colors',
-                status
-                  ? 'border-primary text-foreground bg-primary/5'
-                  : 'border-border text-muted-foreground hover:bg-muted'
+                'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer appearance-none',
+                seriesId ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
               )}
             >
-              <span>{getStatusLabel(status)}</span>
-              <ChevronDown className={cn(
-                'h-4 w-4 shrink-0 transition-transform',
-                statusDropdownOpen && 'rotate-180'
-              )} />
-            </button>
+              <option value=''>{t('studio.tasksTab.allSeries')}</option>
+              {seriesQuery.items.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
 
-            {/* Dropdown menu */}
-            {statusDropdownOpen && (
-              <div className='absolute right-0 top-full mt-1 z-50 min-w-40 rounded-lg border border-border bg-card shadow-lg py-1'>
-                <button
-                  type='button'
-                  onClick={() => {
-                    setStatus(undefined)
-                    setStatusDropdownOpen(false)
-                  }}
-                  className={cn(
-                    'w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer',
-                    !status && 'bg-primary/10 text-primary'
-                  )}
-                >
-                  <span>{t('studio.tasksTab.allStatuses')}</span>
-                  {!status && <Check className='h-4 w-4' />}
-                </button>
-                <div className='h-px bg-border my-1' />
-                {STATUS_OPTIONS.map((s) => (
+            {/* Chapter dropdown */}
+            <select
+              value={chapterId ?? ''}
+              onChange={(e) => handleChapterChange(e.target.value || undefined)}
+              disabled={chapterQuery.isLoading || !seriesId}
+              className={cn(
+                'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer appearance-none',
+                chapterId ? 'border-primary text-foreground' : 'border-border text-muted-foreground',
+                !seriesId && 'opacity-50'
+              )}
+            >
+              <option value=''>{t('studio.tasksTab.allChapters')}</option>
+              {chapterQuery.items.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {t('studio.tasksTab.chapterLabel', { n: c.chapterNumber })}
+                  {c.title ? ` — ${c.title}` : ''}
+                </option>
+              ))}
+            </select>
+
+            {/* Page dropdown */}
+            <select
+              value={pageId ?? ''}
+              onChange={(e) => {
+                setPageId(e.target.value || undefined)
+                setCurrentPage(1)
+              }}
+              disabled={pageQuery.isLoading || !chapterId}
+              className={cn(
+                'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer appearance-none',
+                pageId ? 'border-primary text-foreground' : 'border-border text-muted-foreground',
+                !chapterId && 'opacity-50'
+              )}
+            >
+              <option value=''>{t('studio.tasksTab.allPages')}</option>
+              {pageQuery.items.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {t('studio.tasksTab.pageLabel', { n: p.pageNumber })}
+                </option>
+              ))}
+            </select>
+
+            {/* Spacer */}
+            <div className='flex-1' />
+
+            {/* Status dropdown */}
+            <div ref={dropdownRef} className='relative'>
+              <button
+                type='button'
+                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                className={cn(
+                  'h-8 rounded-md border bg-background pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer flex items-center gap-2 transition-colors',
+                  status
+                    ? 'border-primary text-foreground bg-primary/5'
+                    : 'border-border text-muted-foreground hover:bg-muted'
+                )}
+              >
+                <span>{getStatusLabel(status)}</span>
+                <ChevronDown
+                  className={cn('h-4 w-4 shrink-0 transition-transform', statusDropdownOpen && 'rotate-180')}
+                />
+              </button>
+
+              {/* Dropdown menu */}
+              {statusDropdownOpen && (
+                <div className='absolute right-0 top-full mt-1 z-50 min-w-40 rounded-lg border border-border bg-card shadow-lg py-1'>
                   <button
-                    key={s}
                     type='button'
                     onClick={() => {
-                      setStatus(s)
+                      setStatus(undefined)
+                      setCurrentPage(1)
                       setStatusDropdownOpen(false)
                     }}
                     className={cn(
                       'w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer',
-                      status === s && 'bg-primary/10 text-primary'
+                      !status && 'bg-primary/10 text-primary'
                     )}
                   >
-                    <span>{t(`tasks.status.${s}`)}</span>
-                    {status === s && <Check className='h-4 w-4' />}
+                    <span>{t('studio.tasksTab.allStatuses')}</span>
+                    {!status && <Check className='h-4 w-4' />}
                   </button>
-                ))}
-              </div>
+                  <div className='h-px bg-border my-1' />
+                  {STATUS_OPTIONS.map((s) => (
+                    <button
+                      key={s}
+                      type='button'
+                      onClick={() => {
+                        setStatus(s)
+                        setCurrentPage(1)
+                        setStatusDropdownOpen(false)
+                      }}
+                      className={cn(
+                        'w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer',
+                        status === s && 'bg-primary/10 text-primary'
+                      )}
+                    >
+                      <span>{t(`tasks.status.${s}`)}</span>
+                      {status === s && <Check className='h-4 w-4' />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
+              <button
+                type='button'
+                onClick={clearAllFilters}
+                className='flex h-8 items-center gap-1 rounded-md border border-border bg-muted/50 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer'
+              >
+                <X className='h-3 w-3' />
+                {t('studio.tasksTab.clearFilters')}
+              </button>
             )}
           </div>
+        </div>
 
-          {/* Clear filters */}
-          {hasActiveFilters && (
-            <button
-              type='button'
-              onClick={clearAllFilters}
-              className='flex h-8 items-center gap-1 rounded-md border border-border bg-muted/50 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer'
-            >
-              <X className='h-3 w-3' />
-              {t('studio.tasksTab.clearFilters')}
-            </button>
+        {/* Task list area */}
+        <div className='rounded-xl border border-border bg-card shadow-sm'>
+          {taskQuery.isLoading && (
+            <div className='flex items-center justify-center gap-2 px-4 py-10 text-sm text-muted-foreground'>
+              <Loader2 className='h-4 w-4 animate-spin' />
+              {t('studio.tasksTab.loading')}
+            </div>
+          )}
+          {!taskQuery.isLoading && taskQuery.error && (
+            <div className='px-4 py-6 text-sm text-destructive'>{taskQuery.error}</div>
+          )}
+          {!taskQuery.isLoading && !taskQuery.error && (
+            <TaskBoard
+              tasks={taskQuery.tasks}
+              isLoading={taskQuery.isLoading}
+              error={taskQuery.error}
+              onRefresh={taskQuery.refresh}
+              onApprove={(id) => {
+                void taskQuery.approveTask(id).then((r) => {
+                  if (r.success) toast.success(t('studio.tasksTab.toast.approved'))
+                  else toast.error(r.error ?? t('studio.tasksTab.toast.approveFailed'))
+                })
+              }}
+              onApproveGroup={approveTaskGroup}
+              approvingGroupIds={approvingGroupIds}
+              onRequestRevision={(id) => {
+                setActionNote('')
+                setTaskAction({ taskId: id, type: 'revision' })
+              }}
+              onCancel={(id) => {
+                setActionNote('')
+                setTaskAction({ taskId: id, type: 'cancel' })
+              }}
+              onEdit={setEditingTask}
+              onReassign={setReassigningTask}
+              page={currentPage}
+              totalPages={taskQuery.totalPages}
+              total={taskQuery.total}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
           )}
         </div>
       </div>
-
-      {/* Task list area */}
-      <div className='rounded-xl border border-border bg-card shadow-sm'>
-        {taskQuery.isLoading && (
-          <div className='flex items-center justify-center gap-2 px-4 py-10 text-sm text-muted-foreground'>
-            <Loader2 className='h-4 w-4 animate-spin' />
-            {t('studio.tasksTab.loading')}
+      <Dialog
+        open={taskAction !== null}
+        onClose={closeTaskAction}
+        titleId='studio-task-action-title'
+        title={t(
+          taskAction?.type === 'revision'
+            ? 'studio.tasksTab.revisionDialog.title'
+            : 'studio.tasksTab.cancelDialog.title'
+        )}
+        description={t(
+          taskAction?.type === 'revision'
+            ? 'studio.tasksTab.revisionDialog.description'
+            : 'studio.tasksTab.cancelDialog.description'
+        )}
+        footer={
+          <div className='flex justify-end gap-2'>
+            <button
+              type='button'
+              onClick={closeTaskAction}
+              className='rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted'
+            >
+              {t('studio.tasksTab.dialog.cancel')}
+            </button>
+            <button
+              type='button'
+              onClick={submitTaskAction}
+              className={cn(
+                'rounded-md px-3 py-2 text-sm font-semibold text-primary-foreground',
+                taskAction?.type === 'revision' ? 'bg-warning' : 'bg-destructive'
+              )}
+            >
+              {t(
+                taskAction?.type === 'revision'
+                  ? 'studio.tasksTab.revisionDialog.submit'
+                  : 'studio.tasksTab.cancelDialog.submit'
+              )}
+            </button>
           </div>
-        )}
-        {!taskQuery.isLoading && taskQuery.error && (
-          <div className='px-4 py-6 text-sm text-destructive'>{taskQuery.error}</div>
-        )}
-        {!taskQuery.isLoading && !taskQuery.error && (
-          <TaskBoard
-            tasks={taskQuery.tasks}
-            isLoading={taskQuery.isLoading}
-            error={taskQuery.error}
-            onRefresh={taskQuery.refresh}
-            onApprove={(id) => {
-              void taskQuery.approveTask(id).then((r) => {
-                if (r.success) toast.success(t('studio.tasksTab.toast.approved'))
-                else toast.error(r.error ?? t('studio.tasksTab.toast.approveFailed'))
-              })
-            }}
-            onRequestRevision={(id) => {
-              setActionNote('')
-              setTaskAction({ taskId: id, type: 'revision' })
-            }}
-            onCancel={(id) => {
-              setActionNote('')
-              setTaskAction({ taskId: id, type: 'cancel' })
-            }}
-            page={currentPage}
-            totalPages={taskQuery.totalPages}
-            total={taskQuery.total}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
-        )}
-      </div>
-    </div>
-    <Dialog
-      open={taskAction !== null}
-      onClose={closeTaskAction}
-      titleId='studio-task-action-title'
-      title={t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.title' : 'studio.tasksTab.cancelDialog.title')}
-      description={t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.description' : 'studio.tasksTab.cancelDialog.description')}
-      footer={
-        <div className='flex justify-end gap-2'>
-          <button type='button' onClick={closeTaskAction} className='rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted'>
-            {t('studio.tasksTab.dialog.cancel')}
-          </button>
-          <button type='button' onClick={submitTaskAction} className={cn('rounded-md px-3 py-2 text-sm font-semibold text-primary-foreground', taskAction?.type === 'revision' ? 'bg-warning' : 'bg-destructive')}>
-            {t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.submit' : 'studio.tasksTab.cancelDialog.submit')}
-          </button>
-        </div>
-      }
-    >
-      <label className='block text-sm font-medium text-foreground' htmlFor='studio-task-action-note'>
-        {t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionDialog.label' : 'studio.tasksTab.cancelDialog.label')}
-      </label>
-      <textarea
-        id='studio-task-action-note'
-        value={actionNote}
-        onChange={(event) => setActionNote(event.target.value)}
-        placeholder={t(taskAction?.type === 'revision' ? 'studio.tasksTab.revisionPrompt' : 'studio.tasksTab.cancelPrompt')}
-        className='mt-2 min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring'
+        }
+      >
+        <label className='block text-sm font-medium text-foreground' htmlFor='studio-task-action-note'>
+          {t(
+            taskAction?.type === 'revision'
+              ? 'studio.tasksTab.revisionDialog.label'
+              : 'studio.tasksTab.cancelDialog.label'
+          )}
+        </label>
+        <textarea
+          id='studio-task-action-note'
+          value={actionNote}
+          onChange={(event) => setActionNote(event.target.value)}
+          placeholder={t(
+            taskAction?.type === 'revision' ? 'studio.tasksTab.revisionPrompt' : 'studio.tasksTab.cancelPrompt'
+          )}
+          className='mt-2 min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring'
+        />
+      </Dialog>
+      <TaskEditDialog
+        open={editingTask !== null}
+        task={editingTask}
+        isSubmitting={isTaskMutationPending}
+        onClose={() => setEditingTask(null)}
+        onSubmit={updateTask}
       />
-    </Dialog>
+      <TaskReassignDialog
+        open={reassigningTask !== null}
+        task={reassigningTask}
+        isSubmitting={isTaskMutationPending}
+        onClose={() => setReassigningTask(null)}
+        onSubmit={reassignTask}
+      />
     </>
   )
 }

@@ -32,9 +32,13 @@ export function BoardSessionDetailPage({
   })
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={session.title} description={session.description || t('common.noDescription')} />
+      <BoardHeader
+        title={session.title}
+        description={session.description || t('common.noDescription')}
+        backHref='/dashboard/board/sessions'
+      />
       <BoardPanel title={t('sessions.details')}>
-        <div className='grid gap-3 text-sm sm:grid-cols-4'>
+        <div className='grid gap-3 text-xs sm:grid-cols-4'>
           <div>
             <span className='text-muted-foreground'>{t('common.status')}</span>
             <div className='mt-1'>
@@ -65,14 +69,14 @@ export function BoardSessionDetailPage({
               className='inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold'
             >
               <Users className='size-3.5 text-primary' />
-              {member.displayName || member.id}
+              {member.displayName || t('sessions.unknownMember')}
             </span>
           ))}
         </div>
       </BoardPanel>
       {seriesBriefs.length > 0 && (
         <BoardPanel title={t('sessions.seriesBrief.title')}>
-          <p className='mb-4 text-sm text-muted-foreground'>{t('sessions.seriesBrief.description')}</p>
+          <p className='mb-4 text-xs text-muted-foreground'>{t('sessions.seriesBrief.description')}</p>
           <div className='grid gap-4'>
             {seriesBriefs.map((brief) => (
               <SeriesMeetingBrief key={brief.series.id} brief={brief} />
@@ -106,11 +110,13 @@ export function BoardSessionDetailPage({
               to={`/dashboard/board/decisions/${decision.id}`}
               className='rounded-lg border border-border p-4 hover:border-primary'
             >
-              <div className='flex justify-between gap-3'>
-                <strong>{decision.decisionType ?? 'DECISION'}</strong>
+              <div className='flex flex-wrap items-start justify-between gap-3'>
+                <strong className='min-w-0 text-pretty leading-6'>
+                  {decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
+                </strong>
                 <StatusBadge value={decision.result ?? 'PENDING'} />
               </div>
-              <p className='mt-2 text-sm text-muted-foreground'>
+              <p className='mt-2 text-xs text-muted-foreground'>
                 {t('decisions.voteCount', { count: decision.totalVotes })}
               </p>
             </Link>
@@ -159,9 +165,9 @@ function MeetingChat({
     <BoardPanel title={t('sessions.chat')}>
       <div className='max-h-80 space-y-3 overflow-y-auto rounded-lg border border-border p-3'>
         {messages.map((message) => (
-          <article key={message.id} className='rounded-md bg-muted p-3 text-sm'>
+          <article key={message.id} className='rounded-md bg-muted p-3 text-xs'>
             <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-              <strong className='text-foreground'>{message.sender.displayName ?? message.sender.id}</strong>
+              <strong className='text-foreground'>{message.sender.displayName ?? t('sessions.unknownMember')}</strong>
               <time>{new Date(message.createdAt).toLocaleTimeString()}</time>
             </div>
             <p className='mt-1 whitespace-pre-wrap'>{message.content}</p>
@@ -175,7 +181,7 @@ function MeetingChat({
           onChange={(event) => setContent(event.target.value)}
           disabled={chatDisabled || sending}
           maxLength={1000}
-          className='h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm disabled:opacity-50'
+          className='h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-xs disabled:opacity-50'
           placeholder={chatDisabled ? t('sessions.chatLocked') : t('sessions.chatPlaceholder')}
         />
         <button
@@ -201,8 +207,10 @@ function DecisionProgress({ decision, memberCount }: { decision: BoardDecisionRe
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <strong>{decision.decisionType ?? t('decisions.title')}</strong>
-          <p className='mt-1 text-sm text-muted-foreground'>
+          <strong>
+            {decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
+          </strong>
+          <p className='mt-1 text-xs text-muted-foreground'>
             {t('sessions.votedMembers', { voted: totalVotes, total: memberCount })}
           </p>
         </div>

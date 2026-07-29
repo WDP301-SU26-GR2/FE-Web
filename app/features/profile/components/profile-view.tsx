@@ -1,10 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Pencil, Star, Award } from 'lucide-react'
 
-import type {
-  AssistantProfileResDtoOutput,
-  MangakaProfileResDtoOutput
-} from '~/api/model/users'
+import type { AssistantProfileResDtoOutput, MangakaProfileResDtoOutput } from '~/api/model/users'
 import { SignedImage } from '~/shared/components/signed-image'
 import { Button } from '~/shared/ui/button'
 import { cn } from '~/shared/lib/cn'
@@ -36,7 +33,7 @@ export function ProfileView({ mode, data, onEdit }: ProfileViewProps) {
           <div className='flex items-center gap-3'>
             <h1 className='text-2xl font-bold text-foreground'>
               {mode === 'mangaka'
-                ? (data as MangakaProfileResDtoOutput).penName ?? t('emptyPenName')
+                ? ((data as MangakaProfileResDtoOutput).penName ?? t('emptyPenName'))
                 : t('role.assistant')}
             </h1>
             {data.isRecommended && (
@@ -46,12 +43,14 @@ export function ProfileView({ mode, data, onEdit }: ProfileViewProps) {
               </span>
             )}
           </div>
-          <p className='mt-1 text-sm text-muted-foreground'>
-            {t(`role.${mode}`)}
-          </p>
+          <p className='mt-1 text-sm text-muted-foreground'>{t(`role.${mode}`)}</p>
         </div>
 
-        <ReputationSummary reputation={data.reputationScore} ratingAvg={data.ratingAvg} ratingCount={data.ratingCount} />
+        <ReputationSummary
+          reputation={data.reputationScore}
+          ratingAvg={data.ratingAvg}
+          ratingCount={data.ratingCount}
+        />
 
         <Button type='button' variant='outline' size='sm' onClick={onEdit}>
           <Pencil className='h-4 w-4' />
@@ -87,12 +86,8 @@ function ReputationSummary({
   return (
     <div className='flex items-center gap-6'>
       <div className='text-center'>
-        <div className='text-2xl font-bold text-foreground tabular-nums'>
-          {reputation.toFixed(1)}
-        </div>
-        <div className='text-xs uppercase tracking-wide text-muted-foreground'>
-          {t('reputation')}
-        </div>
+        <div className='text-2xl font-bold text-foreground tabular-nums'>{reputation.toFixed(1)}</div>
+        <div className='text-xs uppercase tracking-wide text-muted-foreground'>{t('reputation')}</div>
       </div>
       <div className='text-center'>
         <div className='flex items-center justify-center gap-1 text-2xl font-bold text-foreground tabular-nums'>
@@ -129,11 +124,19 @@ function MangakaDetail({ data }: { data: MangakaProfileResDtoOutput }) {
       </Section>
 
       <Section title={t('sections.experienceLevel')}>
-        {data.experienceLevel ? <span className='text-sm'>{data.experienceLevel}</span> : <EmptyValue label={t('empty')} />}
+        {data.experienceLevel ? (
+          <span className='text-sm'>{data.experienceLevel}</span>
+        ) : (
+          <EmptyValue label={t('empty')} />
+        )}
       </Section>
 
       <Section title={t('sections.bio')}>
-        {data.bio ? <p className='whitespace-pre-line text-sm leading-relaxed'>{data.bio}</p> : <EmptyValue label={t('empty')} />}
+        {data.bio ? (
+          <p className='whitespace-pre-line text-sm leading-relaxed'>{data.bio}</p>
+        ) : (
+          <EmptyValue label={t('empty')} />
+        )}
       </Section>
 
       <Section title={t('sections.portfolio')}>
@@ -142,12 +145,7 @@ function MangakaDetail({ data }: { data: MangakaProfileResDtoOutput }) {
         ) : (
           <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
             {data.portfolioFiles.map((key) => (
-              <SignedImage
-                key={key}
-                r2Key={key}
-                alt={t('portfolioAlt', { key })}
-                aspectClassName='aspect-square'
-              />
+              <SignedImage key={key} r2Key={key} alt={t('portfolioAlt', { key })} aspectClassName='aspect-square' />
             ))}
           </div>
         )}
@@ -192,15 +190,17 @@ function AssistantDetail({ data }: { data: AssistantProfileResDtoOutput }) {
             )}
           </div>
           {(data.availabilityFrom || data.availabilityTo) && (
-            <div className='text-muted-foreground'>
-              {formatRange(data.availabilityFrom, data.availabilityTo)}
-            </div>
+            <div className='text-muted-foreground'>{formatRange(data.availabilityFrom, data.availabilityTo)}</div>
           )}
         </div>
       </Section>
 
       <Section title={t('sections.experienceLevel')}>
-        {data.experienceLevel ? <span className='text-sm'>{data.experienceLevel}</span> : <EmptyValue label={t('empty')} />}
+        {data.experienceLevel ? (
+          <span className='text-sm'>{data.experienceLevel}</span>
+        ) : (
+          <EmptyValue label={t('empty')} />
+        )}
       </Section>
 
       <Section title={t('sections.portfolio')}>
@@ -209,12 +209,7 @@ function AssistantDetail({ data }: { data: AssistantProfileResDtoOutput }) {
         ) : (
           <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
             {data.portfolioFiles.map((key) => (
-              <SignedImage
-                key={key}
-                r2Key={key}
-                alt={t('portfolioAlt', { key })}
-                aspectClassName='aspect-square'
-              />
+              <SignedImage key={key} r2Key={key} alt={t('portfolioAlt', { key })} aspectClassName='aspect-square' />
             ))}
           </div>
         )}

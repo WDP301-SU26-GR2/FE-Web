@@ -14,7 +14,7 @@ import { AvatarUploader } from './avatar-uploader'
 type AccountEditSectionProps = {
   data: AccountInfo
   onCancel: () => void
-  onSaved: () => void
+  onSaved: (updated?: AccountInfo) => void
 }
 
 export function AccountEditSection({ data, onCancel, onSaved }: AccountEditSectionProps) {
@@ -60,7 +60,7 @@ export function AccountEditSection({ data, onCancel, onSaved }: AccountEditSecti
 
     setIsSubmitting(true)
     try {
-      await saveAccountInfo({
+      const updated = await saveAccountInfo({
         ...(fields.name.trim() !== data.name && { name: fields.name.trim() }),
         ...(fields.displayName !== (data.displayName ?? '') && {
           displayName: fields.displayName.trim() === '' ? '' : fields.displayName.trim()
@@ -74,7 +74,7 @@ export function AccountEditSection({ data, onCancel, onSaved }: AccountEditSecti
         })
       })
       toast.success(t('accountInfo.saveSuccess'))
-      onSaved()
+      onSaved(updated)
     } catch (err) {
       toast.error(extractApiErrorMessage(err, t('accountInfo.errors.saveGeneric')))
     } finally {
@@ -92,13 +92,8 @@ export function AccountEditSection({ data, onCancel, onSaved }: AccountEditSecti
 
       {/* Avatar uploader */}
       <div className='flex flex-col items-center gap-2'>
-        <label className='block text-sm font-medium text-foreground'>
-          {t('accountInfo.avatar')}
-        </label>
-        <AvatarUploader
-          value={fields.avatar}
-          onChange={(key) => setFields((prev) => ({ ...prev, avatar: key }))}
-        />
+        <label className='block text-sm font-medium text-foreground'>{t('accountInfo.avatar')}</label>
+        <AvatarUploader value={fields.avatar} onChange={(key) => setFields((prev) => ({ ...prev, avatar: key }))} />
       </div>
 
       {/* Name field */}
@@ -147,9 +142,7 @@ export function AccountEditSection({ data, onCancel, onSaved }: AccountEditSecti
 
       {/* Phone number field */}
       <div className='space-y-1'>
-        <label className='block text-sm font-medium text-foreground'>
-          {t('accountInfo.phoneNumber')}
-        </label>
+        <label className='block text-sm font-medium text-foreground'>{t('accountInfo.phoneNumber')}</label>
         <input
           type='tel'
           value={fields.phoneNumber}
@@ -169,18 +162,12 @@ export function AccountEditSection({ data, onCancel, onSaved }: AccountEditSecti
       {/* Read-only fields */}
       <div className='grid gap-4 sm:grid-cols-2'>
         <div className='space-y-1'>
-          <label className='block text-sm font-medium text-muted-foreground'>
-            {t('accountInfo.email')}
-          </label>
-          <p className='rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-foreground'>
-            {data.email}
-          </p>
+          <label className='block text-sm font-medium text-muted-foreground'>{t('accountInfo.email')}</label>
+          <p className='rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-foreground'>{data.email}</p>
         </div>
 
         <div className='space-y-1'>
-          <label className='block text-sm font-medium text-muted-foreground'>
-            {t('accountInfo.role')}
-          </label>
+          <label className='block text-sm font-medium text-muted-foreground'>{t('accountInfo.role')}</label>
           <p className='rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-foreground'>
             {t(`accountInfo.roleEnum.${data.role}`, { defaultValue: data.role })}
           </p>

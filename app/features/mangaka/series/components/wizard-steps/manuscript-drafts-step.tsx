@@ -187,14 +187,14 @@ export function ManuscriptDraftsStep({
               <div className='relative aspect-[3/4] w-full overflow-hidden bg-muted'>
                 <img src={entry.preview} alt={entry.title} className='h-full w-full object-cover' />
                 {/* Page number badge (matches API `pageNumber`) */}
-                <div className='absolute left-2 top-2 flex h-7 min-w-[2rem] items-center justify-center rounded-md bg-black/60 px-2 text-xs font-bold text-white'>
+                <div className='absolute left-2 top-2 flex h-7 min-w-[2rem] items-center justify-center rounded-md bg-background/70 px-2 text-xs font-bold text-foreground'>
                   {String(entry.pageNumber).padStart(2, '0')}
                 </div>
                 {/* Delete button */}
                 <button
                   type='button'
                   onClick={() => handleRemove(entry.id)}
-                  className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow transition-all hover:bg-black/80 cursor-pointer'
+                  className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-background/70 text-foreground shadow transition-all hover:bg-background/90 cursor-pointer'
                   aria-label={t('wizard.removeImage')}
                 >
                   <X className='h-3.5 w-3.5' />

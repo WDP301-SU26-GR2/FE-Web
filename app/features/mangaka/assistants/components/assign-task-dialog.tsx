@@ -10,6 +10,7 @@ import { TaskFields } from './task-fields'
 import { TaskAttachmentUploader } from './task-attachment-uploader'
 import type { UseTaskComposerDataOptions } from '../use-task-composer-data'
 import { useTaskComposerData } from '../use-task-composer-data'
+import type { CreateTaskBodyDtoTaskType } from '~/api/model/task'
 
 export interface AssignTaskDialogProps {
   open: boolean
@@ -19,7 +20,10 @@ export interface AssignTaskDialogProps {
   contextLocks?: {
     assistant?: boolean
     series?: boolean
+    page?: boolean
   }
+  stageTaskTypes?: CreateTaskBodyDtoTaskType[]
+  requireStage?: boolean
   onClose: () => void
   onSuccess?: () => void
   className?: string
@@ -35,7 +39,16 @@ const STEP_ORDER = ['context', 'work', 'confirm'] as const
  *  - Mounts the 3 step components in the right order
  *  - Renders footer (Back / Next / Submit) based on form state
  */
-export function AssignTaskDialog({ open, openFrom, preset, contextLocks, onClose, onSuccess }: AssignTaskDialogProps) {
+export function AssignTaskDialog({
+  open,
+  openFrom,
+  preset,
+  contextLocks,
+  stageTaskTypes,
+  requireStage,
+  onClose,
+  onSuccess
+}: AssignTaskDialogProps) {
   if (!open) return null
 
   // ── Inner component: remounts on each open via `key={open}` so local state
@@ -47,6 +60,8 @@ export function AssignTaskDialog({ open, openFrom, preset, contextLocks, onClose
       openFrom={openFrom}
       preset={preset}
       contextLocks={contextLocks}
+      stageTaskTypes={stageTaskTypes}
+      requireStage={requireStage}
       onClose={onClose}
       onSuccess={onSuccess}
     />
@@ -57,11 +72,21 @@ interface AssignTaskDialogBodyProps {
   openFrom: 'studio' | 'workbench'
   preset?: UseTaskComposerDataOptions
   contextLocks?: AssignTaskDialogProps['contextLocks']
+  stageTaskTypes?: CreateTaskBodyDtoTaskType[]
+  requireStage?: boolean
   onClose: () => void
   onSuccess?: () => void
 }
 
-function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSuccess }: AssignTaskDialogBodyProps) {
+function AssignTaskDialogBody({
+  openFrom,
+  preset,
+  contextLocks,
+  stageTaskTypes,
+  requireStage,
+  onClose,
+  onSuccess
+}: AssignTaskDialogBodyProps) {
   const { t } = useTranslation('mangaka')
 
   // We need the assignments list to resolve assignmentId → assistantId.
@@ -76,13 +101,18 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
 
   const form = useAssignTaskForm({
     preset,
-    assignments: composer.data.assignments
+    assignments: composer.data.assignments,
+    stageTaskTypes,
+    stages: composer.data.stages,
+    requireStage
   })
 
   const [error, setError] = useState<string | null>(null)
 
   const currentStepIndex = STEP_ORDER.indexOf(form.state.step)
-  const canGoNext = form.state.step === 'context' ? form.canGoNextFromContext : form.canGoNextFromWork
+  const canGoNext =
+    (form.state.step === 'context' ? form.canGoNextFromContext : form.canGoNextFromWork) &&
+    !(form.state.step === 'context' && composer.data.loading.stages)
 
   const handleContextChange = (ctx: Parameters<typeof form.setContext>[0]) => {
     setError(null)
@@ -106,7 +136,7 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
       onClose()
       form.reset()
     } else {
-      setError(result.error ?? 'Không thể giao task.')
+      setError(result.error ?? t('studio.tasks.composer.errors.assignFailed'))
     }
   }
 
@@ -134,13 +164,14 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
   const selectedRegionLabels = form.state.regionIds
     .map((id) => composer.data.regions.find((region) => region.id === id)?.label)
     .filter((label): label is string => Boolean(label))
+  const selectedStage = composer.data.stages.find((stage) => stage.id === form.state.stageId)
 
   return (
     <div
       role='dialog'
       aria-modal='true'
       aria-labelledby='assign-task-title'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -178,6 +209,7 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
               openFrom={openFrom}
               preset={preset}
               contextLocks={contextLocks}
+              stageId={form.state.stageId}
               composer={composer}
               selected={{
                 assignmentId: form.state.assignmentId,
@@ -185,7 +217,8 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
                 chapterId: form.state.chapterId,
                 pageId: form.state.pageId,
                 pageIds: form.state.pageIds,
-                regionIds: form.state.regionIds
+                regionIds: form.state.regionIds,
+                stageId: form.state.stageId
               }}
               onChange={handleContextChange}
             />
@@ -193,7 +226,7 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
 
           {form.state.step === 'work' && (
             <div className='space-y-6'>
-              {form.allowedTaskTypes.length > 0 && (
+              {form.requiresStage && form.allowedTaskTypes.length > 0 && (
                 <p className='text-xs text-muted-foreground'>
                   {t('studio.tasks.composer.allowedTaskTypesHint', {
                     types: form.allowedTaskTypes.map((tt) => t(`studio.tasks.composer.taskTypeEnum.${tt}`)).join(', ')
@@ -207,8 +240,53 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
                 onTaskTypeChange={(v) => handleWorkChange({ taskType: v })}
                 onDeadlineChange={(v) => handleWorkChange({ deadline: v })}
                 onPriorityChange={(v) => handleWorkChange({ priority: v })}
-                allowedTaskTypes={form.allowedTaskTypes.length > 0 ? form.allowedTaskTypes : undefined}
+                allowedTaskTypes={form.allowedTaskTypes}
               />
+              {form.state.regionIds.length > 1 && form.state.pageIds.length === 1 && (
+                <label className='flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4'>
+                  <input
+                    type='checkbox'
+                    checked={Boolean(form.state.splitRegionsIntoTasks)}
+                    onChange={(event) => handleWorkChange({ splitRegionsIntoTasks: event.target.checked })}
+                    className='mt-0.5 size-4 rounded border-input'
+                  />
+                  <span>
+                    <span className='block text-sm font-bold text-foreground'>
+                      {t('studio.tasks.composer.batch.title', { count: form.state.regionIds.length })}
+                    </span>
+                    <span className='mt-1 block text-xs leading-5 text-muted-foreground'>
+                      {t('studio.tasks.composer.batch.description')}
+                    </span>
+                  </span>
+                </label>
+              )}
+              <div className='space-y-1.5'>
+                <label htmlFor='task-description' className='block text-sm font-medium text-foreground'>
+                  {t('studio.tasks.composer.description')}
+                </label>
+                <textarea
+                  id='task-description'
+                  value={form.state.description ?? ''}
+                  onChange={(event) => handleWorkChange({ description: event.target.value })}
+                  maxLength={2000}
+                  rows={4}
+                  className='w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring'
+                />
+              </div>
+              {form.state.pageIds.length > 1 && (
+                <div className='space-y-1.5'>
+                  <label htmlFor='task-group-title' className='block text-sm font-medium text-foreground'>
+                    {t('studio.tasks.composer.groupTitle')}
+                  </label>
+                  <input
+                    id='task-group-title'
+                    value={form.state.groupTitle ?? ''}
+                    onChange={(event) => handleWorkChange({ groupTitle: event.target.value })}
+                    maxLength={200}
+                    className='w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring'
+                  />
+                </div>
+              )}
               <div className='space-y-2'>
                 <p className='text-sm font-medium text-foreground'>{t('studio.tasks.composer.attachments.label')}</p>
                 <TaskAttachmentUploader assetType='REFERENCE' onAssetsChange={handleAssetsChange} />
@@ -225,6 +303,19 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
                   <dd className='text-foreground'>
                     {confirmedSummary?.assistantDisplayName ?? t('myStudio.card.unnamedAssistant')}
                   </dd>
+                  {form.requiresStage && (
+                    <>
+                      <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.stage')}</dt>
+                      <dd className='text-foreground'>
+                        {selectedStage
+                          ? t('studio.tasks.composer.stageOption', {
+                              order: selectedStage.order,
+                              name: selectedStage.name
+                            })
+                          : '—'}
+                      </dd>
+                    </>
+                  )}
                   <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.taskType')}</dt>
                   <dd className='text-foreground'>
                     {form.state.taskType ? t(`studio.tasks.composer.taskTypeEnum.${form.state.taskType}`) : '—'}
@@ -244,6 +335,14 @@ function AssignTaskDialogBody({ openFrom, preset, contextLocks, onClose, onSucce
                       <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.region')}</dt>
                       <dd className='text-foreground'>
                         {selectedRegionLabels.join(', ') || t('studio.tasks.composer.regionSelected')}
+                      </dd>
+                    </>
+                  )}
+                  {form.state.splitRegionsIntoTasks && form.state.regionIds.length > 1 && (
+                    <>
+                      <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.creationMode')}</dt>
+                      <dd className='text-foreground'>
+                        {t('studio.tasks.composer.confirm.batchMode', { count: form.state.regionIds.length })}
                       </dd>
                     </>
                   )}

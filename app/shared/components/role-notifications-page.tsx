@@ -273,6 +273,8 @@ function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: N
   const id = encodeURIComponent(item.referenceId)
 
   if (role === 'EDITOR') {
+    if (item.referenceType === 'BOARD_DECISION_CREATED') return `/dashboard/editor/board/decisions/${id}`
+    if (item.referenceType === 'REVISION_RESOLVED') return `/dashboard/editor/operations/insights?revisionId=${id}`
     if (['PROPOSAL', 'SERIES', 'FRANCHISE'].includes(prefix)) return `/dashboard/editor/proposals/${id}`
     if (prefix === 'NAME' || prefix === 'REVISION') return `/dashboard/editor/proposals?referenceId=${id}`
     if (prefix === 'CONTRACT') return `/dashboard/editor/contracts/${id}`
@@ -290,6 +292,10 @@ function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: N
   }
 
   if (role === 'BOARD_MEMBER') {
+    if (item.referenceType === 'BOARD_DECISION_CREATED') return `/dashboard/board/decisions/${id}`
+    if (item.referenceType === 'TRANSFER_CONTRACT_AWAITING_SIGNATURE')
+      return `/dashboard/board/transfers?contractId=${id}`
+    if (item.referenceType === 'COOWNER_APPROVAL_ESCALATED') return `/dashboard/board/reference?chapterId=${id}`
     if (prefix === 'DECISION') return `/dashboard/board/decisions/${id}`
     if (prefix === 'BOARD') return `/dashboard/board/sessions/${id}`
     if (prefix === 'CONTRACT') return `/dashboard/board/contracts/${id}`
@@ -311,7 +317,6 @@ function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: N
 
   if (['PROPOSAL', 'SERIES', 'FRANCHISE'].includes(prefix)) return `/dashboard/mangaka/series/${id}`
   if (prefix === 'CONTRACT') return `/dashboard/mangaka/contracts/${id}`
-  if (prefix === 'REPRINT') return `/dashboard/mangaka/reprints?requestId=${id}`
   if (prefix === 'TRANSFER') return `/dashboard/mangaka/transfers?requestId=${id}`
   if (prefix === 'TASK') return `/dashboard/mangaka/studio?taskId=${id}`
   return null

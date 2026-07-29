@@ -7,6 +7,7 @@ import { Button } from '~/shared/ui'
 import { SignedImage } from '~/shared/components/signed-image'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 import { SignUploadBodyDtoAssetType } from '~/api/model/uploads/signUploadBodyDtoAssetType'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export type EditableExistingPage = {
   /** pageNumber currently saved on BE. */
@@ -48,13 +49,7 @@ const MAX_BYTES = 15 * 1024 * 1024
  * replaces the whole array. This matches the API contract and avoids the
  * "DELETE then re-create" anti-pattern called out in the doc §10.5.
  */
-export function EditNameDialog({
-  open,
-  isSubmitting,
-  existingPages,
-  onConfirm,
-  onCancel
-}: EditNameDialogProps) {
+export function EditNameDialog({ open, isSubmitting, existingPages, onConfirm, onCancel }: EditNameDialogProps) {
   const { t } = useTranslation('mangaka')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -194,7 +189,7 @@ export function EditNameDialog({
         setPending([])
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('publication.error.generic'))
+      setError(extractApiErrorMessage(err, t('publication.error.generic')))
     }
   }
 
@@ -203,7 +198,7 @@ export function EditNameDialog({
       role='dialog'
       aria-modal='true'
       aria-labelledby='edit-name-dialog-title'
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
       }}
@@ -211,7 +206,9 @@ export function EditNameDialog({
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className={cn('relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl')}
+        className={cn(
+          'relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl'
+        )}
       >
         <div className='space-y-4 overflow-y-auto p-5'>
           <div className='flex items-start justify-between gap-3'>
@@ -305,12 +302,12 @@ export function EditNameDialog({
                         type='button'
                         disabled={isSubmitting}
                         onClick={() => removePendingAt(row.index - kept.length)}
-                        className='absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-destructive disabled:cursor-not-allowed disabled:opacity-50'
+                        className='absolute right-1 top-1 rounded-full bg-background/70 p-1 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50'
                         aria-label={t('publication.nameSection.create.removeFile')}
                       >
                         <Trash2 className='h-3 w-3' />
                       </button>
-                      <span className='absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white'>
+                      <span className='absolute bottom-1 left-1 rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-bold text-foreground'>
                         #{row.pageNumber}
                       </span>
                     </div>
@@ -321,7 +318,10 @@ export function EditNameDialog({
           )}
 
           {error && (
-            <div role='alert' className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive'>
+            <div
+              role='alert'
+              className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive'
+            >
               {error}
             </div>
           )}

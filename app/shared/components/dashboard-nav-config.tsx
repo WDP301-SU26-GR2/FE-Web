@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
 import {
   Home,
   BookOpen,
@@ -18,7 +19,9 @@ import {
   Settings2,
   ScrollText,
   Wrench,
-  ArrowRightLeft
+  CalendarClock,
+  ArrowRightLeft,
+  BookCopy
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -79,8 +82,13 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
       { label: t('nav.mySeries'), href: '/dashboard/mangaka/series', icon: BookOpen },
       { label: t('nav.studio'), href: '/dashboard/mangaka/studio', icon: Pencil },
       { label: t('nav.assistantDirectory'), href: '/dashboard/mangaka/assistants', icon: Users },
+      { label: t('nav.mangakaDirectory'), href: '/dashboard/mangaka/mangakas', icon: Users },
       { label: t('nav.ranking'), href: '/dashboard/mangaka/rankings', icon: TrendingUp },
       { label: t('nav.contracts'), href: '/dashboard/mangaka/contracts', icon: FileText },
+      { label: t('nav.payments'), href: '/dashboard/mangaka/payments', icon: Briefcase },
+      { label: t('nav.deadlines'), href: '/dashboard/mangaka/deadlines', icon: CalendarClock },
+      { label: t('nav.transfers'), href: '/dashboard/mangaka/transfers', icon: ArrowRightLeft },
+      { label: t('nav.reprints'), href: '/dashboard/mangaka/reprints', icon: BookCopy },
       { label: t('nav.notifications'), href: '/dashboard/mangaka/notifications', icon: Bell, badge: true }
     ]),
     profileFallback: {
@@ -89,10 +97,14 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
       badge: t('profile.mangakaBadge')
     },
     headerActions: (
-      <button className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-95 transition-opacity shadow cursor-pointer'>
+      <Link
+        to='/dashboard/mangaka/series'
+        title={t('dashboard.newChapterHint')}
+        className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-opacity hover:opacity-95'
+      >
         <Plus className='h-4 w-4' />
         <span>{t('dashboard.newChapter')}</span>
-      </button>
+      </Link>
     )
   }
 }
@@ -102,6 +114,7 @@ function buildAssistantConfig(t: ReturnType<typeof useTranslation>['t']): Dashbo
     navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/assistant', icon: Home },
       { label: t('nav.myTasks'), href: '/dashboard/assistant/tasks', icon: ClipboardList },
+      { label: t('nav.chapterPages'), href: '/dashboard/assistant/chapter-pages', icon: BookOpen },
       { label: t('nav.studio'), href: '/dashboard/assistant/studio', icon: Briefcase },
       { label: t('nav.invites'), href: '/dashboard/assistant/invites', icon: Mail },
       { label: t('nav.notifications'), href: '/dashboard/assistant/notifications', icon: Bell, badge: true }
@@ -142,7 +155,7 @@ function buildBoardConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
       { label: t('nav.boardWorkflow'), href: '/dashboard/board/sessions', icon: Gavel },
       { label: t('nav.contracts'), href: '/dashboard/board/contracts', icon: FileText },
       { label: t('nav.payments'), href: '/dashboard/board/payments', icon: Briefcase },
-      { label: t('nav.operations'), href: '/dashboard/board/deadlines', icon: ClipboardList },
+      { label: t('nav.operations'), href: '/dashboard/board/operations', icon: ClipboardList },
       { label: t('nav.notifications'), href: '/dashboard/board/notifications', icon: Bell, badge: true }
     ]),
     profileFallback: {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CalendarRange } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
+import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import {
@@ -22,7 +22,7 @@ export function EditorDeadlinesPage({
   focusRequestId,
   hasError
 }: {
-  items: DeadlineRequestListResDtoOutputItemsItem[]
+  items: DeadlineRequestResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
   chapters: ChapterListResDtoOutputItemsItem[]
   focusSeriesId: string
@@ -46,21 +46,27 @@ export function EditorDeadlinesPage({
         <form method='get' className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
           <select name='seriesId' defaultValue={focusSeriesId} className={operationInput}>
             <option value=''>{t('operations.selectSeries')}</option>
-            {series.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+            {series.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
           </select>
           <select name='chapterId' defaultValue={focusChapterId} className={operationInput} disabled={!focusSeriesId}>
             <option value=''>{t('operations.selectChapter')}</option>
             {chapters.map((item) => (
-              <option key={item.id} value={item.id}>{t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}</option>
+              <option key={item.id} value={item.id}>
+                {t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
+              </option>
             ))}
           </select>
-          <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('actions.load')}
           </button>
         </form>
         <div className='mt-4 space-y-2'>
           {items.map((item) => (
-            <article key={item.id} className='rounded-lg border border-border p-3 text-sm'>
+            <article key={item.id} className='rounded-lg border border-border p-3 text-xs'>
               <div className='flex justify-between'>
                 <strong>{t(`operations.deadlineStatuses.${item.status}`)}</strong>
                 <span>{item.requestedBy ?? '—'}</span>
@@ -69,7 +75,6 @@ export function EditorDeadlinesPage({
                 {item.requestedDeadline ? new Date(item.requestedDeadline).toLocaleString() : '—'} ·{' '}
                 {item.reason ?? '—'}
               </p>
-              <p className='mt-1 break-all text-xs text-muted-foreground'>{item.id}</p>
             </article>
           ))}
         </div>
@@ -79,7 +84,9 @@ export function EditorDeadlinesPage({
           <select name='chapterId' defaultValue={focusChapterId} className={operationInput} required>
             <option value=''>{t('operations.selectChapter')}</option>
             {chapters.map((item) => (
-              <option key={item.id} value={item.id}>{t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}</option>
+              <option key={item.id} value={item.id}>
+                {t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
+              </option>
             ))}
           </select>
           <select
@@ -95,9 +102,6 @@ export function EditorDeadlinesPage({
                 {item.requestedDeadline ? new Date(item.requestedDeadline).toLocaleString() : '—'}
               </option>
             ))}
-            {focusRequestId && !items.some((item) => item.id === focusRequestId) && (
-              <option value={focusRequestId}>{focusRequestId}</option>
-            )}
           </select>
           <input name='deadline' type='datetime-local' className={operationInput} />
           <input name='reason' className={operationInput} placeholder={t('operations.reason')} />

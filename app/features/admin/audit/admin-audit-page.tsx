@@ -1,5 +1,5 @@
 import { Form, Link, useSearchParams } from 'react-router'
-import { Activity, ArrowLeft, ArrowRight, Filter, Search, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Bot, ExternalLink, Filter, Search, ShieldCheck, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { AuditLogListResDtoOutput } from '~/api/model/audit'
@@ -20,10 +20,30 @@ const ENTITY_TYPES = [
   'TRANSFER_REQUEST',
   'PAYMENT_RECORD',
   'SURVEY_PERIOD',
-  'PUBLICATION_VERSION'
+  'PUBLICATION_VERSION',
+  'BOARD_SESSION'
 ] as const
 
-export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOutput | null; hasError: boolean }) {
+export type AuditReference = {
+  title: string
+  subtitle?: string
+  href?: string
+}
+
+type AuditReferences = {
+  actors: Record<string, AuditReference>
+  entities: Record<string, AuditReference>
+}
+
+export function AdminAuditPage({
+  data,
+  references,
+  hasError
+}: {
+  data: AuditLogListResDtoOutput | null
+  references: AuditReferences
+  hasError: boolean
+}) {
   const { t, i18n } = useTranslation('admin')
   const [searchParams] = useSearchParams()
   const limit = data?.limit ?? 20
@@ -33,7 +53,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('navigation.backDashboard')}
       </Link>
@@ -42,13 +62,13 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
           <ShieldCheck className='size-4' />
           {t('audit.eyebrow')}
         </div>
-        <h1 className='mt-2 text-2xl font-bold text-foreground md:text-3xl'>{t('audit.title')}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('audit.subtitle')}</p>
+        <h1 className='mt-2 text-xl font-bold text-foreground md:text-2xl'>{t('audit.title')}</h1>
+        <p className='mt-2 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('audit.subtitle')}</p>
       </header>
 
       {hasError && (
         <div
-          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'
+          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'
           role='alert'
         >
           <p className='font-bold'>{t('audit.loadError.title')}</p>
@@ -56,37 +76,52 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
         </div>
       )}
 
-      <Form method='get' className='rounded-xl border border-border bg-card p-4 shadow-sm'>
-        <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-[200px_1fr_1fr_1fr_auto]'>
+      <Form method='get' className='rounded-2xl border border-border bg-card p-4 shadow-sm'>
+        <div className='mb-4 flex items-start gap-3 border-b border-border pb-4'>
+          <div className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+            <Search className='size-4' />
+          </div>
+          <div>
+            <p className='text-sm font-bold text-foreground'>{t('audit.filters.title')}</p>
+            <p className='mt-1 text-xs leading-relaxed text-muted-foreground'>{t('audit.filters.description')}</p>
+          </div>
+        </div>
+        <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'>
           <select name='entityType' defaultValue={searchParams.get('entityType') ?? ''} className={inputClassName}>
             <option value=''>{t('audit.filters.allEntities')}</option>
             {ENTITY_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type.replaceAll('_', ' ')}
+                {t(`audit.entityTypes.${type}`, { defaultValue: type.replaceAll('_', ' ') })}
               </option>
             ))}
           </select>
-          <FilterInput
-            icon={Activity}
+          <input
             name='action'
-            value={searchParams.get('action') ?? ''}
+            defaultValue={searchParams.get('action') ?? ''}
+            className={inputClassName}
             placeholder={t('audit.filters.action')}
+            list='audit-action-suggestions'
           />
-          <FilterInput
-            icon={Search}
+          <datalist id='audit-action-suggestions'>
+            {AUDIT_ACTIONS.map((action) => (
+              <option key={action} value={action} />
+            ))}
+          </datalist>
+          <input
             name='entityId'
-            value={searchParams.get('entityId') ?? ''}
+            defaultValue={searchParams.get('entityId') ?? ''}
+            className={inputClassName}
             placeholder={t('audit.filters.entityId')}
           />
-          <FilterInput
-            icon={Search}
+          <input
             name='actorId'
-            value={searchParams.get('actorId') ?? ''}
+            defaultValue={searchParams.get('actorId') ?? ''}
+            className={inputClassName}
             placeholder={t('audit.filters.actorId')}
           />
           <button
             type='submit'
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-bold text-background'
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-xs font-bold text-background'
           >
             <Filter className='size-4' />
             {t('audit.filters.apply')}
@@ -94,54 +129,93 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
         </div>
       </Form>
 
-      <div className='flex items-center justify-between gap-4'>
-        <p className='text-sm font-bold text-foreground'>{t('audit.total', { count: data?.total ?? 0 })}</p>
+      <div className='flex flex-wrap items-center justify-between gap-4'>
+        <p className='text-xs font-bold text-foreground'>{t('audit.total', { count: data?.total ?? 0 })}</p>
       </div>
 
       {(data?.items.length ?? 0) === 0 ? (
-        <div className='rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground'>
+        <div className='rounded-xl border border-dashed border-border bg-card p-10 text-center text-xs text-muted-foreground'>
           {t('audit.empty')}
         </div>
       ) : (
         <div className='space-y-3'>
           {data?.items.map((item) => (
-            <article key={item.id} className='rounded-xl border border-border bg-card p-4 shadow-sm'>
-              <div className='flex flex-col justify-between gap-3 md:flex-row md:items-start'>
-                <div className='min-w-0'>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary'>
-                      {item.action.replaceAll('_', ' ')}
+            <article
+              key={item.id}
+              className='overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md'
+            >
+              <div className='h-1 bg-primary/70' />
+              <div className='p-4 md:p-5'>
+                <div className='flex flex-col justify-between gap-3 md:flex-row md:items-start'>
+                  <div className='min-w-0'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary'>
+                        {t(`audit.actions.${item.action}`, { defaultValue: item.action.replaceAll('_', ' ') })}
+                      </span>
+                      <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
+                        {t(`audit.entityTypes.${item.entityType}`, {
+                          defaultValue: item.entityType.replaceAll('_', ' ')
+                        })}
+                      </span>
+                    </div>
+                    <div className='mt-4 grid gap-3 lg:grid-cols-2'>
+                      <ReferenceCard
+                        icon={ShieldCheck}
+                        label={t('audit.record')}
+                        reference={references.entities[`${item.entityType}:${item.entityId}`]}
+                        id={item.entityId}
+                        fallback={t(`audit.entityTypes.${item.entityType}`, {
+                          defaultValue: item.entityType.replaceAll('_', ' ')
+                        })}
+                        openLabel={t('audit.openRecord')}
+                      />
+                      <ReferenceCard
+                        icon={item.actorId ? UserRound : Bot}
+                        label={t('audit.userActor')}
+                        reference={item.actorId ? references.actors[item.actorId] : undefined}
+                        id={item.actorId}
+                        fallback={t('audit.systemActor')}
+                        openLabel={t('audit.openActor')}
+                      />
+                    </div>
+                  </div>
+                  <time className='shrink-0 text-xs font-semibold text-muted-foreground'>
+                    {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+                      new Date(item.createdAt)
+                    )}
+                  </time>
+                </div>
+                {(item.fromState || item.toState) && (
+                  <div className='mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-bold text-foreground'>
+                    <span>
+                      {item.fromState
+                        ? t(`audit.states.${item.fromState}`, { defaultValue: item.fromState.replaceAll('_', ' ') })
+                        : '—'}
                     </span>
-                    <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
-                      {item.entityType.replaceAll('_', ' ')}
+                    <ArrowRight className='size-3.5 text-primary' />
+                    <span>
+                      {item.toState
+                        ? t(`audit.states.${item.toState}`, { defaultValue: item.toState.replaceAll('_', ' ') })
+                        : '—'}
                     </span>
                   </div>
-                  <p className='mt-3 break-all text-sm font-bold text-foreground'>{item.entityId}</p>
-                  <p className='mt-1 text-xs text-muted-foreground'>
-                    {item.actorId ? t('audit.actor', { id: item.actorId }) : t('audit.systemActor')}
-                  </p>
-                </div>
-                <time className='shrink-0 text-xs font-semibold text-muted-foreground'>
-                  {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
-                    new Date(item.createdAt)
-                  )}
-                </time>
+                )}
+                {item.reason && (
+                  <div className='mt-3 rounded-xl border border-border bg-background/70 px-3 py-2.5'>
+                    <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                      {t('audit.reason')}
+                    </p>
+                    <p className='mt-1 text-xs leading-6 text-foreground'>{item.reason}</p>
+                  </div>
+                )}
               </div>
-              {(item.fromState || item.toState) && (
-                <div className='mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-bold text-foreground'>
-                  <span>{item.fromState ?? '—'}</span>
-                  <ArrowRight className='size-3.5 text-primary' />
-                  <span>{item.toState ?? '—'}</span>
-                </div>
-              )}
-              {item.reason && <p className='mt-3 text-sm leading-6 text-muted-foreground'>{item.reason}</p>}
             </article>
           ))}
         </div>
       )}
 
       {totalPages > 1 && (
-        <nav className='flex items-center justify-between gap-4' aria-label={t('audit.pagination.label')}>
+        <nav className='flex flex-wrap items-center justify-between gap-4' aria-label={t('audit.pagination.label')}>
           <PageLink page={page - 1} disabled={page <= 1} params={searchParams} label={t('audit.pagination.previous')} />
           <span className='text-xs font-bold text-muted-foreground'>
             {t('audit.pagination.page', { page, totalPages })}
@@ -158,24 +232,60 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
   )
 }
 
-function FilterInput({
+function ReferenceCard({
   icon: Icon,
-  name,
-  value,
-  placeholder
+  label,
+  reference,
+  id,
+  fallback,
+  openLabel
 }: {
-  icon: typeof Search
-  name: string
-  value: string
-  placeholder: string
+  icon: typeof ShieldCheck
+  label: string
+  reference?: AuditReference
+  id: string | null
+  fallback: string
+  openLabel: string
 }) {
-  return (
-    <label className='relative'>
-      <span className='sr-only'>{placeholder}</span>
-      <Icon className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
-      <input name={name} defaultValue={value} placeholder={placeholder} className={`${inputClassName} pl-9`} />
-    </label>
+  const { t } = useTranslation('admin')
+  const content = (
+    <>
+      <div className='flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground'>
+        <Icon className='size-4' />
+      </div>
+      <div className='min-w-0 flex-1'>
+        <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>{label}</p>
+        <p className='mt-0.5 truncate text-xs font-bold text-foreground'>{reference?.title || fallback}</p>
+        {reference?.subtitle && (
+          <p className='mt-0.5 truncate text-[11px] text-muted-foreground'>
+            {t(`audit.states.${reference.subtitle}`, {
+              defaultValue: reference.subtitle.replaceAll('_', ' ')
+            })}
+          </p>
+        )}
+        {id && (
+          <code className='mt-1 block text-[10px] text-muted-foreground' title={id}>
+            {shortId(id)}
+          </code>
+        )}
+      </div>
+      {reference?.href && <ExternalLink className='size-3.5 shrink-0 text-primary' aria-label={openLabel} />}
+    </>
   )
+
+  const className =
+    'flex min-w-0 items-center gap-3 rounded-xl border border-border bg-background/70 p-3 text-left transition-colors'
+  return reference?.href ? (
+    <Link to={reference.href} className={`${className} hover:border-primary/40 hover:bg-primary/5`} title={openLabel}>
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
+  )
+}
+
+function shortId(id: string) {
+  return id.length > 12 ? `${id.slice(0, 6)}…${id.slice(-4)}` : id
 }
 
 function PageLink({
@@ -202,4 +312,28 @@ function PageLink({
 }
 
 const inputClassName =
-  'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
+  'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
+
+const AUDIT_ACTIONS = [
+  'TRANSITION',
+  'CREATE',
+  'UPDATE',
+  'DELETE',
+  'SOFT_DELETE',
+  'RESTORE',
+  'RESET_PASSWORD',
+  'BAN',
+  'BLOCK',
+  'REACTIVATE',
+  'CONFIG_UPDATE',
+  'HOLD',
+  'RESUME',
+  'CLAIM',
+  'RELEASE',
+  'SESSION_TRANSITION',
+  'PHASE_ADVANCED',
+  'DECISION_FINALIZED',
+  'RANKING_FINALIZED',
+  'PRODUCTION_STAGE_COMPLETE',
+  'PRODUCTION_STAGE_REOPEN'
+]

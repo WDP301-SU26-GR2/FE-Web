@@ -1,6 +1,7 @@
 import { auditControllerList } from '~/api/operations/audit/audit'
 import type { AuditControllerListEntityType, AuditControllerListParams } from '~/api/model/audit'
 import { AdminAuditPage } from '~/features/admin'
+import { resolveAuditReferences } from './audit-reference-resolver'
 
 import type { Route } from './+types/audit'
 
@@ -20,7 +21,8 @@ const ENTITY_TYPES = [
   'TRANSFER_REQUEST',
   'PAYMENT_RECORD',
   'SURVEY_PERIOD',
-  'PUBLICATION_VERSION'
+  'PUBLICATION_VERSION',
+  'BOARD_SESSION'
 ] as const
 
 export function meta() {
@@ -42,15 +44,18 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   }
   try {
     const response = await auditControllerList(params)
-    if (response.status !== 200) return { data: null, hasError: true }
-    return { data: response.data, hasError: false }
+    if (response.status !== 200) {
+      return { data: null, references: { actors: {}, entities: {} }, hasError: true }
+    }
+    const references = await resolveAuditReferences(response.data.items)
+    return { data: response.data, references, hasError: false }
   } catch {
-    return { data: null, hasError: true }
+    return { data: null, references: { actors: {}, entities: {} }, hasError: true }
   }
 }
 
 export default function AdminAuditRoute({ loaderData }: Route.ComponentProps) {
-  return <AdminAuditPage data={loaderData.data} hasError={loaderData.hasError} />
+  return <AdminAuditPage data={loaderData.data} references={loaderData.references} hasError={loaderData.hasError} />
 }
 
 function clean(value: string | null) {

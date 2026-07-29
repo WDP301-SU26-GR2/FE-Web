@@ -1,10 +1,17 @@
 import {
   seriesControllerApproveProposal,
   seriesControllerGetSeries,
+  seriesControllerReopenReview,
   seriesControllerReject,
-  seriesControllerRequestProposalRevision
+  seriesControllerRequestProposalRevision,
+  seriesControllerUpdateSeriesMetadata
 } from '~/api/operations/series/series'
-import { nameControllerApprove, nameControllerList, nameControllerRequestRevision } from '~/api/operations/names/names'
+import {
+  nameControllerApprove,
+  nameControllerGetOne,
+  nameControllerList,
+  nameControllerRequestRevision
+} from '~/api/operations/names/names'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
 import {
   annotationControllerCreate,
@@ -13,8 +20,6 @@ import {
   annotationControllerResolve
 } from '~/api/operations/annotations/annotations'
 import { EditorProposalDetailPage, type EditorActionResult, type EditorProposalDetailData } from '~/features/editor'
-import { customFetch } from '~/api/mutator/custom-fetch'
-import type { SeriesResDtoOutput } from '~/api/model/series'
 
 import type { Route } from './+types/proposal-detail'
 
@@ -33,7 +38,11 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       return { data: null, hasError: true }
     }
     const series = seriesResponse.data
-    const name = namesResponse.data.items[0] ?? null
+    const nameListItem = namesResponse.data.items[0] ?? null
+    const nameResponse = nameListItem
+      ? await nameControllerGetOne({ id: params.id, nameId: nameListItem.id }).catch(() => null)
+      : null
+    const name = nameResponse?.status === 200 ? nameResponse.data : nameListItem
     const annotationsResponse = name
       ? await annotationControllerList({ targetType: 'NAME', targetId: name.id }).catch(() => null)
       : null
@@ -41,9 +50,9 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       series,
       name,
       coverUrl: await signKey(series.coverImage),
-      characterDesignUrls: (
-        await Promise.all((series.proposal?.characterDesigns ?? []).map((key) => signKey(key)))
-      ).filter((url): url is string => Boolean(url)),
+      characterDesigns: await Promise.all(
+        (series.proposal?.characterDesigns ?? []).map(async (key) => ({ key, url: await signKey(key) }))
+      ),
       namePageUrls: await Promise.all(
         (name?.pages ?? []).map(async (page) => ({ pageNumber: page.pageNumber, url: await signKey(page.fileUrl) }))
       ),
@@ -63,10 +72,14 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const reason = String(formData.get('reason') ?? '').trim() || undefined
   try {
     if (intent === 'approveProposal') await seriesControllerApproveProposal({ id: seriesId })
-    else if (intent === 'reviseProposal') await seriesControllerRequestProposalRevision({ id: seriesId }, { reason })
-    else if (intent === 'approveName') await nameControllerApprove({ id: seriesId, nameId })
-    else if (intent === 'reviseName') await nameControllerRequestRevision({ id: seriesId, nameId }, { reason })
-    else if (intent === 'createNameAnnotation')
+    else if (intent === 'reviseProposal') {
+      if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
+      await seriesControllerRequestProposalRevision({ id: seriesId }, { reason })
+    } else if (intent === 'approveName') await nameControllerApprove({ id: seriesId, nameId })
+    else if (intent === 'reviseName') {
+      if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
+      await nameControllerRequestRevision({ id: seriesId, nameId }, { reason })
+    } else if (intent === 'createNameAnnotation')
       await annotationControllerCreate({
         targetType: 'NAME',
         targetId: nameId,
@@ -82,24 +95,36 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'rejectSeries')
       await seriesControllerReject({ id: seriesId }, { reason: reason ?? 'Rejected by Editor' })
     else if (intent === 'reopenReview')
-      await customFetch<{ data: SeriesResDtoOutput; status: number }>(
-        `/series/${encodeURIComponent(seriesId)}/reopen-review`,
+      await seriesControllerReopenReview({ id: seriesId }, { reason: required(formData, 'reason') })
+    else if (intent === 'updateMetadata') {
+      const currentSeries = await seriesControllerGetSeries({ id: seriesId })
+      if (currentSeries.status !== 200 || currentSeries.data.status !== 'IN_REVIEW') {
+        return { ok: false, intent, errorKey: 'metadataLocked' }
+      }
+      await seriesControllerUpdateSeriesMetadata(
+        { id: seriesId },
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: required(formData, 'reason') })
+          title: required(formData, 'title'),
+          synopsis: String(formData.get('synopsis') ?? '').trim(),
+          coverImage: String(formData.get('coverImage') ?? '').trim(),
+          characterDesigns: String(formData.get('characterDesigns') ?? '')
+            .split(/[\n,]/)
+            .map((key) => key.trim())
+            .filter(Boolean)
         }
       )
-    else return { ok: false, intent, errorKey: 'invalidAction' }
+    } else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
       : intent === 'rejectSeries'
         ? 'rejected'
         : intent === 'reopenReview'
           ? 'reviewReopened'
-        : intent.includes('Annotation')
-          ? 'annotationUpdated'
-          : 'revisionRequested'
+          : intent === 'updateMetadata'
+            ? 'updated'
+            : intent.includes('Annotation')
+              ? 'annotationUpdated'
+              : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
     const code =
@@ -109,7 +134,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     const errorKey =
       code === 'Error.NotAssignedEditor'
         ? 'notAssigned'
-        : code === 'Error.InvalidProposalState' || code === 'Error.InvalidNameState' || code === 'Error.InvalidSeriesTransition'
+        : code === 'Error.InvalidProposalState' ||
+            code === 'Error.InvalidNameState' ||
+            code === 'Error.InvalidSeriesTransition'
           ? 'invalidState'
           : 'actionFailed'
     return { ok: false, intent, errorKey }

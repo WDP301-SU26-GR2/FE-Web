@@ -9,21 +9,11 @@ import type {
   ContractVersionResDtoOutput,
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
-import {
-  boardInput,
-  BoardActionDialog,
-  BoardFeedback,
-  BoardHeader,
-  BoardPanel,
-  StatusBadge
-} from '../components/board-ui'
+import { boardInput, BoardFeedback, BoardHeader, BoardPanel, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
-import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
-import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
-import { PaymentConditionsSummary } from '~/features/contracts/components/payment-conditions-summary'
+import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export function BoardContractDetailPage({
   contract,
@@ -57,32 +47,25 @@ export function BoardContractDetailPage({
     (editor) => editor.id === authSession?.user.id
   )
   const hasCurrentMemberSigned = Boolean(currentBoardSignature)
-  const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
+  const canSignContract = contract.status === 'BOARD_APPROVED' || contract.status === 'MANGAKA_SIGNED'
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
         title={`${t('contracts.detail')} — ${contract.series?.title ?? t('contracts.unknownSeries')}`}
         description={t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
+        backHref='/dashboard/board/contracts'
       />
       <div className='flex justify-end'>
-        <ContractPdfButton
-          contract={contract}
-          conditionsCount={
-            conditions.filter(
-              (condition) =>
-                condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
-            ).length
-          }
-        />
+        <ContractPdfButton contract={contract} />
       </div>
       <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
       {hasSupplementaryDataError && (
-        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('contracts.partialLoadError')}
         </p>
       )}
       <BoardPanel title={t('contracts.terms')}>
-        <div className='grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3'>
+        <div className='grid gap-4 text-xs sm:grid-cols-2 lg:grid-cols-3'>
           <div>
             <span className='text-muted-foreground'>{t('common.status')}</span>
             <div className='mt-1'>
@@ -94,7 +77,7 @@ export function BoardContractDetailPage({
             <p className='mt-1 font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
           </div>
           <div>
-            <span className='text-muted-foreground'>Loại hợp đồng</span>
+            <span className='text-muted-foreground'>{t('contracts.contractType')}</span>
             <p className='mt-1 font-bold'>{t(`filters.contractTypes.${contract.contractType}`)}</p>
           </div>
           <div>
@@ -104,99 +87,62 @@ export function BoardContractDetailPage({
             </p>
           </div>
           <div>
-            <span className='text-muted-foreground'>Ngày bắt đầu</span>
+            <span className='text-muted-foreground'>{t('contracts.startDate')}</span>
             <p className='mt-1 font-bold'>{formatDate(contract.contractStart)}</p>
           </div>
           <div>
-            <span className='text-muted-foreground'>Ngày kết thúc</span>
+            <span className='text-muted-foreground'>{t('contracts.endDate')}</span>
             <p className='mt-1 font-bold'>{formatDate(contract.contractEnd)}</p>
           </div>
         </div>
-        <p className='mt-4 text-sm text-muted-foreground'>{contract.terminationClause}</p>
+        <p className='mt-4 text-xs text-muted-foreground'>{contract.terminationClause}</p>
         <p className='mt-3 text-xs text-muted-foreground'>
-          {contract.mangaka?.displayName ?? contract.mangakaId}
+          {contract.mangaka?.displayName ?? t('contracts.unknownMangaka')}
           {contract.editor ? ` · ${contract.editor.displayName}` : ''}
         </p>
       </BoardPanel>
-      <div className='grid gap-4 lg:grid-cols-2'>
+      <div className='space-y-4'>
         <BoardPanel title={t('contracts.conditions')}>
           <PaymentConditionsSummary conditions={conditions} loadFailed={conditionsLoadFailed} />
         </BoardPanel>
         <BoardPanel title={t('contracts.versions')}>
           <div className='space-y-2'>
             {versions.map((version) => (
-              <div key={version.id} className='rounded-lg border border-border p-3 text-sm'>
+              <div key={version.id} className='rounded-lg border border-border p-3 text-xs'>
                 <strong>v{version.versionNumber}</strong>
                 <p className='mt-1 text-xs text-muted-foreground'>
                   {new Date(version.createdAt).toLocaleString()} · {version.note || '—'}
                 </p>
               </div>
             ))}
-            {!versions.length && <p className='text-sm text-muted-foreground'>{t('contracts.emptyVersions')}</p>}
+            {!versions.length && <p className='text-xs text-muted-foreground'>{t('contracts.emptyVersions')}</p>}
           </div>
         </BoardPanel>
       </div>
       <BoardPanel title={t('contracts.paymentWorkflow')}>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div>
-            <p className='text-sm text-muted-foreground'>{t('contracts.paymentWorkflowDescription')}</p>
+            <p className='text-xs text-muted-foreground'>{t('contracts.paymentWorkflowDescription')}</p>
             <Link
               to={`/dashboard/board/payments?contractId=${encodeURIComponent(contract.id)}`}
-              className='mt-2 inline-flex text-sm font-bold text-primary'
+              className='mt-2 inline-flex text-xs font-bold text-primary'
             >
               {t('contracts.openPayments')}
             </Link>
           </div>
-          {contract.contractType === 'REVENUE_SHARE' && contract.status === 'FULLY_EXECUTED' && (
-            <BoardActionDialog title={t('contracts.reportRevenue')}>
-              <fetcher.Form method='post' className='grid gap-3'>
-                <input name='period' required className={boardInput} placeholder={t('contracts.revenuePeriod')} />
-                <input
-                  name='revenue'
-                  required
-                  type='number'
-                  min={0.01}
-                  step='any'
-                  className={boardInput}
-                  placeholder={t('contracts.revenueAmount')}
-                />
-                <button
-                  name='intent'
-                  value='reportRevenue'
-                  disabled={fetcher.state !== 'idle'}
-                  className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
-                >
-                  {t('contracts.reportRevenue')}
-                </button>
-              </fetcher.Form>
-              <BoardFeedback data={fetcher.data?.intent === 'reportRevenue' ? fetcher.data : undefined} />
-            </BoardActionDialog>
-          )}
         </div>
       </BoardPanel>
       <BoardPanel title={t('contracts.actions')}>
-        {!conditionsReady && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
-            <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>Không thể duyệt hoặc ký cho tới khi tải được ít nhất một điều kiện thanh toán hợp lệ.</p>
-          </div>
-        )}
         {!canAttemptBoardAction && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
+          <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>
-              Bạn có thể xem hợp đồng, nhưng chỉ thành viên thuộc phiên Hội đồng đã phê duyệt serial hóa mới được duyệt
-              hoặc ký.
-            </p>
+            <p>{t('contracts.notInDecisionRoster')}</p>
           </div>
         )}
         {canAttemptBoardAction && !isRosterMember && contract.boardDecisionId && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
+          <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>
-              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend sẽ
-              kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
-            </p>
+            <p>{t('contracts.rosterUnavailable')}</p>
           </div>
         )}
         <fetcher.Form method='post' className='grid gap-3'>
@@ -206,15 +152,15 @@ export function BoardContractDetailPage({
                 <button
                   name='intent'
                   value='approve'
-                  disabled={fetcher.state !== 'idle' || !conditionsReady}
-                  className='h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                  disabled={fetcher.state !== 'idle'}
+                  className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
                 >
                   {t('contracts.approve')}
                 </button>
                 <button
                   type='button'
                   onClick={() => setChangesOpen(true)}
-                  className='h-9 rounded-md border border-border px-3 text-sm font-bold'
+                  className='h-9 rounded-md border border-border px-3 text-xs font-bold'
                 >
                   {t('contracts.changes')}
                 </button>
@@ -222,23 +168,22 @@ export function BoardContractDetailPage({
             )}
             <div className='flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4'>
               <div>
-                <h3 className='text-sm font-bold text-foreground'>{t('contracts.boardSignature')}</h3>
+                <h3 className='text-xs font-bold text-foreground'>{t('contracts.boardSignature')}</h3>
                 <p className='mt-1 text-xs text-muted-foreground'>
                   {hasCurrentMemberSigned
                     ? `${t('contracts.signed')}: ${new Date(currentBoardSignature!.actionAt).toLocaleString()}`
-                    : contract.status === 'MANGAKA_SIGNED'
+                    : canSignContract
                       ? t('contracts.readyToSign')
                       : contract.boardSignedAt
                         ? `${t('contracts.signed')}: ${new Date(contract.boardSignedAt).toLocaleString()}`
                         : t('contracts.waitingMangakaSignature')}
                 </p>
               </div>
-              {canAttemptBoardAction && !hasCurrentMemberSigned && contract.status === 'MANGAKA_SIGNED' && (
+              {canAttemptBoardAction && !hasCurrentMemberSigned && canSignContract && (
                 <button
                   type='button'
-                  disabled={!conditionsReady}
                   onClick={() => setSignOpen(true)}
-                  className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                  className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
                 >
                   <PenLine className='h-4 w-4' />
                   {t('contracts.sign')}
@@ -258,6 +203,7 @@ export function BoardContractDetailPage({
         )}
       </BoardPanel>
       <Dialog
+        compact
         open={canAttemptBoardAction && changesOpen && contract.status === 'MANGAKA_APPROVED'}
         onClose={() => {
           if (fetcher.state === 'idle') setChangesOpen(false)
@@ -268,7 +214,7 @@ export function BoardContractDetailPage({
         size='md'
       >
         <fetcher.Form method='post' className='grid gap-3'>
-          <label htmlFor='board-contract-change-reason' className='text-sm font-semibold text-foreground'>
+          <label htmlFor='board-contract-change-reason' className='text-xs font-semibold text-foreground'>
             {t('contracts.changeReason')} <span className='text-destructive'>*</span>
           </label>
           <textarea
@@ -280,7 +226,7 @@ export function BoardContractDetailPage({
             rows={6}
             autoFocus
             placeholder={t('contracts.changeReasonPlaceholder')}
-            className='w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary'
+            className='w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-primary'
           />
           <p className='text-xs text-muted-foreground'>{t('contracts.changeReasonLimit')}</p>
           <div className='flex justify-end gap-2'>
@@ -288,7 +234,7 @@ export function BoardContractDetailPage({
               type='button'
               disabled={fetcher.state !== 'idle'}
               onClick={() => setChangesOpen(false)}
-              className='h-10 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
+              className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-50'
             >
               {t('common.cancel')}
             </button>
@@ -296,7 +242,7 @@ export function BoardContractDetailPage({
               name='intent'
               value='changes'
               disabled={fetcher.state !== 'idle'}
-              className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+              className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
             >
               {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
               {t('contracts.sendChangeRequest')}
@@ -305,13 +251,13 @@ export function BoardContractDetailPage({
         </fetcher.Form>
         <BoardFeedback data={fetcher.data?.intent === 'changes' ? fetcher.data : undefined} />
       </Dialog>
-      {signOpen && conditionsReady && <ContractSignDialog onClose={() => setSignOpen(false)} />}
+      {signOpen && <ContractSignDialog onClose={() => setSignOpen(false)} />}
       <BoardPanel title={t('contracts.amendments')}>
         <div className='space-y-3'>
           {amendments.map((item) => (
             <AmendmentRow key={item.id} contractId={contract.id} amendment={item} canSign={isRosterMember} />
           ))}
-          {!amendments.length && <p className='text-sm text-muted-foreground'>{t('contracts.emptyAmendments')}</p>}
+          {!amendments.length && <p className='text-xs text-muted-foreground'>{t('contracts.emptyAmendments')}</p>}
         </div>
       </BoardPanel>
     </div>
@@ -331,15 +277,15 @@ function AmendmentRow({
   const [signOpen, setSignOpen] = useState(false)
   return (
     <article className='rounded-lg border border-border p-4'>
-      <div className='flex justify-between gap-3'>
-        <strong>{amendment.reason ?? t('contracts.amendment')}</strong>
+      <div className='flex flex-wrap items-start justify-between gap-3'>
+        <strong className='min-w-0 text-pretty leading-6'>{amendment.reason ?? t('contracts.amendment')}</strong>
         <StatusBadge value={amendment.status} />
       </div>
       {canSign && amendment.status === 'PENDING_SIGNATURES' && (
         <button
           type='button'
           onClick={() => setSignOpen(true)}
-          className='mt-3 inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+          className='mt-3 inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
         >
           <PenLine className='h-4 w-4' />
           {t('contracts.signAmendment')}
@@ -361,19 +307,16 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
   }, [fetcher.data, fetcher.state, onClose])
 
   return (
-    <Dialog open onClose={onClose} titleId='board-contract-sign-title' title={t('contracts.boardSignature')} size='sm'>
+    <Dialog
+      compact
+      open
+      onClose={onClose}
+      titleId='board-contract-sign-title'
+      title={t('contracts.boardSignature')}
+      size='sm'
+    >
       <fetcher.Form method='post' className='grid gap-3'>
-        <p className='text-sm text-muted-foreground'>{t('contracts.otpInstruction')}</p>
-        <button
-          type='submit'
-          name='intent'
-          value='sendOtp'
-          formNoValidate
-          disabled={fetcher.state !== 'idle'}
-          className='h-10 rounded-md border border-border px-3 text-sm font-bold disabled:opacity-60'
-        >
-          {t('contracts.sendOtp')}
-        </button>
+        <p className='text-xs text-muted-foreground'>{t('contracts.otpInstruction')}</p>
         <input
           className={boardInput}
           name='otpCode'
@@ -384,9 +327,18 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
         />
         <div className='flex justify-end gap-2'>
           <button
+            name='intent'
+            value='sendOtp'
+            formNoValidate
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-60'
+          >
+            {t('contracts.sendOtp')}
+          </button>
+          <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
           >
             {t('common.cancel')}
           </button>
@@ -394,19 +346,20 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
             name='intent'
             value='sign'
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60'
+            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
           >
             {t('contracts.sign')}
           </button>
         </div>
       </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
+      <OtpRequestFeedback data={fetcher.data?.intent === 'sendOtp' ? fetcher.data : undefined} />
+      <BoardFeedback data={fetcher.data?.intent === 'sign' ? fetcher.data : undefined} />
     </Dialog>
   )
 }
 
 function formatDate(value: string | null) {
-  if (!value) return 'Chưa xác định'
+  if (!value) return '—'
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN')
 }
@@ -429,6 +382,7 @@ function AmendmentSignDialog({
 
   return (
     <Dialog
+      compact
       open
       onClose={onClose}
       titleId={`board-amendment-sign-${amendmentId}`}
@@ -438,17 +392,7 @@ function AmendmentSignDialog({
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='contractId' value={contractId} />
         <input type='hidden' name='amendmentId' value={amendmentId} />
-        <p className='text-sm text-muted-foreground'>{t('contracts.otpInstruction')}</p>
-        <button
-          type='submit'
-          name='intent'
-          value='sendOtp'
-          formNoValidate
-          disabled={fetcher.state !== 'idle'}
-          className='h-10 rounded-md border border-border px-3 text-sm font-bold disabled:opacity-60'
-        >
-          {t('contracts.sendOtp')}
-        </button>
+        <p className='text-xs text-muted-foreground'>{t('contracts.otpInstruction')}</p>
         <input
           className={boardInput}
           name='otpCode'
@@ -459,9 +403,18 @@ function AmendmentSignDialog({
         />
         <div className='flex justify-end gap-2'>
           <button
+            name='intent'
+            value='sendOtp'
+            formNoValidate
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-60'
+          >
+            {t('contracts.sendOtp')}
+          </button>
+          <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
           >
             {t('common.cancel')}
           </button>
@@ -469,13 +422,24 @@ function AmendmentSignDialog({
             name='intent'
             value='signAmendment'
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60'
+            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
           >
             {t('contracts.signAmendment')}
           </button>
         </div>
       </fetcher.Form>
-      <BoardFeedback data={fetcher.data} />
+      <OtpRequestFeedback data={fetcher.data?.intent === 'sendOtp' ? fetcher.data : undefined} />
+      <BoardFeedback data={fetcher.data?.intent === 'signAmendment' ? fetcher.data : undefined} />
     </Dialog>
+  )
+}
+
+function OtpRequestFeedback({ data }: { data?: BoardActionResult }) {
+  const { t } = useTranslation('board')
+  if (!data) return null
+  return (
+    <p className={`mt-3 text-xs ${data.ok ? 'text-primary' : 'text-destructive'}`}>
+      {data.ok ? t('messages.otpSent') : data.message || t('common.failure')}
+    </p>
   )
 }

@@ -20,6 +20,8 @@ export type DialogProps = {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   /** Custom max-width override (e.g. `max-w-2xl`). Wins over `size`. */
   className?: string
+  /** Use the denser typography scale for operational dashboards. */
+  compact?: boolean
 }
 
 const SIZE_CLASS: Record<NonNullable<DialogProps['size']>, string> = {
@@ -54,7 +56,8 @@ export function Dialog({
   children,
   footer,
   size = 'md',
-  className
+  className,
+  compact = false
 }: DialogProps) {
   // Lock body scroll + ESC handler while open.
   useEffect(() => {
@@ -88,12 +91,13 @@ export function Dialog({
           'relative z-10 flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl',
           SIZE_CLASS[size],
           'max-h-[calc(100vh-3rem)]',
+          compact && 'text-xs',
           className
         )}
       >
         <header className='flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4'>
           <div className='min-w-0 flex-1'>
-            <h2 id={titleId} className='text-base font-bold tracking-tight'>
+            <h2 id={titleId} className={cn('font-bold tracking-tight', compact ? 'text-sm' : 'text-base')}>
               {title}
             </h2>
             {description && (

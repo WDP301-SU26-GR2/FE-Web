@@ -1,24 +1,42 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Gavel, Loader2, PencilLine } from 'lucide-react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { ArrowLeft, Gavel, Loader2, PencilLine } from 'lucide-react'
+import { Link, useFetcher, useRevalidator } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { BoardActionResult } from '../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
+import { SemanticStatusBadge } from '~/shared/components/status-badge'
 
 export const boardInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 
-export function BoardHeader({ title, description }: { title: string; description: string }) {
+export function BoardHeader({
+  title,
+  description,
+  backHref
+}: {
+  title: string
+  description: string
+  backHref?: string
+}) {
   const { t } = useTranslation('board')
   return (
     <header>
+      {backHref && (
+        <Link
+          to={backHref}
+          className='mb-4 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline'
+        >
+          <ArrowLeft className='size-4' aria-hidden='true' />
+          {t('common.back')}
+        </Link>
+      )}
       <p className='flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary'>
         <Gavel className='size-4' />
         {t('common.eyebrow')}
       </p>
-      <h1 className='mt-2 text-3xl font-bold text-foreground'>{title}</h1>
-      <p className='mt-2 text-sm text-muted-foreground'>{description}</p>
+      <h1 className='mt-2 text-2xl font-bold text-foreground'>{title}</h1>
+      <p className='mt-2 text-xs text-muted-foreground'>{description}</p>
     </header>
   )
 }
@@ -26,7 +44,7 @@ export function BoardHeader({ title, description }: { title: string; description
 export function BoardPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='mb-4 text-lg font-bold text-foreground'>{title}</h2>
+      <h2 className='mb-4 text-base font-bold text-foreground'>{title}</h2>
       {children}
     </section>
   )
@@ -41,13 +59,13 @@ export function BoardActionDialog({ title, children }: { title: string; children
       <button
         type='button'
         onClick={() => setOpen(true)}
-        className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+        className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
       >
         <PencilLine className='size-4' />
         {title}
       </button>
       {open && (
-        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} size='sm'>
+        <Dialog compact open onClose={() => setOpen(false)} titleId={titleId} title={title} size='sm'>
           {children}
         </Dialog>
       )}
@@ -61,22 +79,24 @@ export function StatusBadge({ value }: { value: string }) {
     [
       `filters.sessionStatuses.${value}`,
       `filters.sessionPhases.${value}`,
+      `filters.decisionTypes.${value}`,
       `filters.decisionResults.${value}`,
       `filters.contractStatuses.${value}`,
       `filters.paymentStatuses.${value}`,
       `filters.reprintStatuses.${value}`,
       `filters.transferStatuses.${value}`,
+      `filters.amendmentStatuses.${value}`,
+      `decisions.voteValues.${value}`,
       `sessions.seriesBrief.seriesStatuses.${value}`,
       `deadlines.statuses.${value}`,
-      `rankings.riskLevels.${value}`
+      `rankings.riskLevels.${value}`,
+      `audit.entityTypes.${value}`,
+      `audit.actions.${value}`,
+      `common:businessData.values.${value}`
     ],
     { defaultValue: value.replaceAll('_', ' ') }
   )
-  return (
-    <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-secondary-foreground'>
-      {label}
-    </span>
-  )
+  return <SemanticStatusBadge value={value} label={label} />
 }
 
 export function Feedback({ data }: { data?: BoardActionResult }) {
@@ -109,7 +129,7 @@ export function ActionButton({ label, intent, disabled }: { label: string; inten
       name={intent ? 'intent' : undefined}
       value={intent}
       disabled={disabled || fetcher.state !== 'idle'}
-      className='inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
+      className='inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
     >
       {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
       {label}
@@ -119,7 +139,7 @@ export function ActionButton({ label, intent, disabled }: { label: string; inten
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <p className='rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground'>
+    <p className='rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
       {text}
     </p>
   )

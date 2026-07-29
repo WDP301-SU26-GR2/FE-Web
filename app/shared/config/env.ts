@@ -11,6 +11,7 @@
 declare global {
   interface ImportMetaEnv {
     readonly VITE_API_URL?: string
+    readonly VITE_GOOGLE_CLIENT_ID?: string
     readonly VITE_APP_ENV?: 'development' | 'staging' | 'production'
     /** "true" để bật MSW mock. Chỉ dùng trong môi trường dev. */
     readonly VITE_ENABLE_MOCK?: string
@@ -28,6 +29,7 @@ declare global {
 
 export const env = {
   API_URL: import.meta.env.VITE_API_URL ?? '',
+  GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
   APP_ENV: import.meta.env.VITE_APP_ENV ?? 'development',
   /** true khi VITE_ENABLE_MOCK=true. MSW chỉ khởi động khi flag này bật. */
   ENABLE_MOCK: import.meta.env.VITE_ENABLE_MOCK === 'true',

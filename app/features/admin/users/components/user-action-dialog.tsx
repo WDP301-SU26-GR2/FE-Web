@@ -44,7 +44,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
               <Icon className='size-5' aria-hidden='true' />
             </div>
             <div>
-              <h2 id='user-action-title' className='font-bold text-foreground'>
+              <h2 id='user-action-title' className='text-sm font-bold text-foreground'>
                 {t(`users.dialogs.${action}.title`)}
               </h2>
               <p className='mt-1 text-xs text-muted-foreground'>{user.displayName ?? user.name}</p>
@@ -65,7 +65,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
           <input type='hidden' name='userId' value={user.id} />
           <input type='hidden' name='userEmail' value={user.email} />
 
-          <p className='text-sm leading-relaxed text-muted-foreground'>{t(`users.dialogs.${action}.description`)}</p>
+          <p className='text-xs leading-relaxed text-muted-foreground'>{t(`users.dialogs.${action}.description`)}</p>
 
           {action === 'status' && (
             <>
@@ -75,7 +75,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
                   name='status'
                   required
                   defaultValue={user.status === 'INACTIVE' ? 'ACTIVE' : user.status}
-                  className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+                  className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
                 >
                   <option value='ACTIVE'>{t('dashboard.userStatuses.ACTIVE')}</option>
                   <option value='BLOCKED'>{t('dashboard.userStatuses.BLOCKED')}</option>
@@ -88,7 +88,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
                   name='reason'
                   rows={3}
                   placeholder={t('users.fields.reasonPlaceholder')}
-                  className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+                  className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
                 />
               </label>
             </>
@@ -98,14 +98,14 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
             <button
               type='button'
               onClick={onClose}
-              className='rounded-lg border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-muted'
+              className='rounded-lg border border-border px-4 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted'
             >
               {t('users.actions.cancel')}
             </button>
             <button
               type='submit'
               disabled={isSubmitting}
-              className='rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+              className='rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
             >
               {isSubmitting ? t('users.actions.processing') : t(`users.dialogs.${action}.submit`)}
             </button>

@@ -1,6 +1,6 @@
 # AGENTS.md — mangaka-web
 
-> Hợp đồng giữa codebase và mọi AI agent (Cursor, Codex, Cline, Claude Code, ...) khi sinh code, refactor hay review. **Đọc file này trước khi chạm vào code.** Tài liệu đi kèm: [`ARCHITECTURE.md`](./ARCHITECTURE.md) (giải thích cho dev mới), `FE-API-Guide-v3.md` (luồng nghiệp vụ + chi tiết endpoint), `swagger.json` (OpenAPI 3.0 — nguồn sự thật về types).
+> Hợp đồng giữa codebase và mọi AI agent (Cursor, Codex, Cline, Claude Code, ...) khi sinh code, refactor hay review. **Đọc file này trước khi chạm vào code.** Tài liệu đi kèm: [`ARCHITECTURE.md`](./ARCHITECTURE.md) (giải thích cho dev mới), `FE-Web-Guide` (luồng nghiệp vụ + chi tiết endpoint), `swagger.json` (OpenAPI 3.0 — nguồn sự thật về types).
 
 ---
 
@@ -9,7 +9,8 @@
 1. **Mọi màu → token** trong `app/styles/theme.css`. KHÔNG hard-code `bg-orange-500` / hex.
 2. **`shared/` không bao giờ import `features/`**. Feature cross-nhau → kéo lên `shared/`.
 3. **API call từ `~/api/operations/<tag>/<tag>`** (do Orval sinh từ swagger). Route loader/action gọi, **không gọi trong component render**.
-4. **Response luôn đọc `res.data`** (envelope `{success, message, data}`). Error message có dạng `Error.PascalCase` — KHÔNG hiển thị raw code cho user.
+4. **Response luôn đọc `res.data`** (envelope `{success, message, data}`). Error `code`
+   có dạng `Error.PascalCase`; dùng code để phân nhánh/i18n, không hiển thị raw code.
 5. **i18n namespace = 1 feature = 1 file JSON** ở `app/locales/{en,vi}/<namespace>.json`. Thêm key → thêm CẢ EN và VI.
 
 ---
@@ -21,25 +22,28 @@
 - **Người dùng cuối:** Mangaka (tác giả), Assistant (trợ lý vẽ), Editor, Board Member, Super Admin. UI cần **đa ngôn ngữ** (mặc định **tiếng Việt**, hỗ trợ EN) và **dark/light mode**.
 - **Nguyên tắc cốt lõi:** _dễ bảo trì, dễ mở rộng, đa ngôn ngữ, đa theme._
 - **Backend Swagger:** xem `swagger.json` (24 tags — `auth`, `series`, `chapters`, `task`, `studio`, `notifications`, `uploads`, ...).
-- **Business flows:** xem `FE-API-Guide-v3.md` (§0–§10). **Enum từ điển** ở §1 — nguồn sự thật duy nhất cho state machine.
+- **Business flows:** xem `../Docs/Figma UI-UX/FE-Web-Guide/00-INDEX.md`, sau đó đọc
+  `01-conventions-and-auth.md` và file theo role. Bộ `FE-Web-Guide` thay thế hoàn toàn
+  `FE-API-Guide-v3.md`; enum hiện hành nằm ở `01-conventions-and-auth.md` §7.
 
 ---
 
 ## 2. Stack & phiên bản
 
-| Lớp | Công nghệ | Phiên bản |
-| --- | --- | --- |
-| Framework | React Router 7 (SSR mặc định) | `7.14.0` |
-| UI Runtime | React + React DOM | `^19.2.4` |
-| Ngôn ngữ | TypeScript (strict + `verbatimModuleSyntax`) | `^5.9.3` |
-| Build / Dev | Vite | `^8.0.3` |
-| CSS | Tailwind CSS v4 (CSS-first, KHÔNG có `tailwind.config.js`) | `^4.2.2` |
-| i18n | i18next + react-i18next | mới nhất |
-| Class merge | clsx + tailwind-merge (`cn()`) | mới nhất |
-| Mock API | MSW + @faker-js/faker | mới nhất |
-| API codegen | Orval từ `swagger.json` → `app/api/{model,operations}` | mới nhất |
+| Lớp         | Công nghệ                                                  | Phiên bản |
+| ----------- | ---------------------------------------------------------- | --------- |
+| Framework   | React Router 7 (SSR mặc định)                              | `7.14.0`  |
+| UI Runtime  | React + React DOM                                          | `^19.2.4` |
+| Ngôn ngữ    | TypeScript (strict + `verbatimModuleSyntax`)               | `^5.9.3`  |
+| Build / Dev | Vite                                                       | `^8.0.3`  |
+| CSS         | Tailwind CSS v4 (CSS-first, KHÔNG có `tailwind.config.js`) | `^4.2.2`  |
+| i18n        | i18next + react-i18next                                    | mới nhất  |
+| Class merge | clsx + tailwind-merge (`cn()`)                             | mới nhất  |
+| Mock API    | MSW + @faker-js/faker                                      | mới nhất  |
+| API codegen | Orval từ `swagger.json` → `app/api/{model,operations}`     | mới nhất  |
 
 **Lưu ý:**
+
 - Tailwind v4 dùng `@theme inline` đăng ký token từ CSS variables (`app/styles/theme.css`). **Không tạo `tailwind.config.{js,ts}`**.
 - Dùng `react-router` v7. **Không** cài `react-router-dom` (cũ).
 - Path alias `~/*` → `./app/*`. Ưu tiên `~/...` hơn relative.
@@ -160,13 +164,13 @@ routes ─┬─► features ─┬─► shared ─► (libs, không bao giờ 
         └─► providers ┘
 ```
 
-| Lớp | Được import | KHÔNG được import |
-| --- | --- | --- |
-| `routes/*` | `features/*`, `shared/*`, `providers/*` | `mocks/*` |
-| `features/<role>/<slice>/*` | `shared/*`, `~/api/*`, `~/features/<same-role>/<other-slice>` | `routes/*`, `mocks/*`, `features/<other-role>/*` |
-| `features/auth`, `features/profile`, `features/welcome` | `shared/*`, `~/api/*` | `features/mangaka/*`, `features/assistant/*` |
-| `shared/*` | (chỉ React/Tailwind/lib ngoài) | `features/*`, `routes/*`, `mocks/*` |
-| `providers/*` | `shared/*` | `features/*`, `routes/*` |
+| Lớp                                                     | Được import                                                   | KHÔNG được import                                |
+| ------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------ |
+| `routes/*`                                              | `features/*`, `shared/*`, `providers/*`                       | `mocks/*`                                        |
+| `features/<role>/<slice>/*`                             | `shared/*`, `~/api/*`, `~/features/<same-role>/<other-slice>` | `routes/*`, `mocks/*`, `features/<other-role>/*` |
+| `features/auth`, `features/profile`, `features/welcome` | `shared/*`, `~/api/*`                                         | `features/mangaka/*`, `features/assistant/*`     |
+| `shared/*`                                              | (chỉ React/Tailwind/lib ngoài)                                | `features/*`, `routes/*`, `mocks/*`              |
+| `providers/*`                                           | `shared/*`                                                    | `features/*`, `routes/*`                         |
 
 ### 3.2 Quy tắc sub-folder trong role (mới — áp dụng `features/mangaka` & `features/assistant`)
 
@@ -181,30 +185,30 @@ routes ─┬─► features ─┬─► shared ─► (libs, không bao giờ 
 
 ### 3.3 Bảng ánh xạ Swagger tag → FE slice
 
-| Swagger tag | Slice (theo role) | Ghi chú |
-| --- | --- | --- |
-| `auth` | `features/auth` | register, login, refresh, OTP, change-password |
-| `users` | `features/auth`, `features/profile` | `/users/me` + hồ sơ công khai |
-| `uploads` | `~/shared/lib/upload` | presigned PUT R2 (cross-role) |
-| `series`, `names`, `chapters` | `features/mangaka/{series,chapters,studio}` | proposal → series → chapter → name |
-| `task` | `features/assistant/tasks`, `features/mangaka/assistants` | assistant nhận task, mangaka giao task |
-| `studio` | `features/mangaka/assistants`, `features/mangaka/studio` | invite + assignment + signed image |
-| `notifications` | `features/assistant/notifications`, `features/mangaka/dashboard` | badge unread + deep-link |
-| `reviews`, `annotations` | (sẽ vào `features/editor` & `features/mangaka/series`) | chưa implement |
-| `board`, `contracts`, `payments`, `transfer`, `reprint-requests`, `survey`, `tankobon`, `publication-versions` | `features/{editor,board,admin}` (tương lai) | chưa có route, stub để trống |
-| `audit`, `app-config`, `deadline-requests`, `ai` | cross-feature | chưa có FE; khi cần tạo `features/<role>/<slice>/` mới |
+| Swagger tag                                                                                                    | Slice (theo role)                                                | Ghi chú                                                |
+| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| `auth`                                                                                                         | `features/auth`                                                  | register, login, refresh, OTP, change-password         |
+| `users`                                                                                                        | `features/auth`, `features/profile`                              | `/users/me` + hồ sơ công khai                          |
+| `uploads`                                                                                                      | `~/shared/lib/upload`                                            | presigned PUT R2 (cross-role)                          |
+| `series`, `names`, `chapters`                                                                                  | `features/mangaka/{series,chapters,studio}`                      | proposal → series → chapter → name                     |
+| `task`                                                                                                         | `features/assistant/tasks`, `features/mangaka/assistants`        | assistant nhận task, mangaka giao task                 |
+| `studio`                                                                                                       | `features/mangaka/assistants`, `features/mangaka/studio`         | invite + assignment + signed image                     |
+| `notifications`                                                                                                | `features/assistant/notifications`, `features/mangaka/dashboard` | badge unread + deep-link                               |
+| `reviews`, `annotations`                                                                                       | (sẽ vào `features/editor` & `features/mangaka/series`)           | chưa implement                                         |
+| `board`, `contracts`, `payments`, `transfer`, `reprint-requests`, `survey`, `tankobon`, `publication-versions` | `features/{editor,board,admin}` (tương lai)                      | chưa có route, stub để trống                           |
+| `audit`, `app-config`, `deadline-requests`, `ai`                                                               | cross-feature                                                    | chưa có FE; khi cần tạo `features/<role>/<slice>/` mới |
 
 ### 3.4 Path alias
 
-| Alias | Trỏ đến |
-| --- | --- |
-| `~/features/<x>` | feature module (qua `index.ts`) |
-| `~/features/<role>/<slice>` | slice bên trong role (bypass barrel khi cần) |
-| `~/shared/ui`, `~/shared/components`, `~/shared/lib/<topic>`, `~/shared/config/<topic>` | shared layers |
-| `~/providers/<x>-provider` | provider context |
-| `~/api/operations/<tag>/<tag>` | orval-generated fetch fns |
-| `~/api/model/<tag>` | orval-generated TS types theo tag |
-| `~/mocks/handlers`, `~/mocks/factories` | MSW (dev only) |
+| Alias                                                                                   | Trỏ đến                                      |
+| --------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `~/features/<x>`                                                                        | feature module (qua `index.ts`)              |
+| `~/features/<role>/<slice>`                                                             | slice bên trong role (bypass barrel khi cần) |
+| `~/shared/ui`, `~/shared/components`, `~/shared/lib/<topic>`, `~/shared/config/<topic>` | shared layers                                |
+| `~/providers/<x>-provider`                                                              | provider context                             |
+| `~/api/operations/<tag>/<tag>`                                                          | orval-generated fetch fns                    |
+| `~/api/model/<tag>`                                                                     | orval-generated TS types theo tag            |
+| `~/mocks/handlers`, `~/mocks/factories`                                                 | MSW (dev only)                               |
 
 Ưu tiên `~/...` hơn relative dài. Nội bộ slice (cùng cấp) dùng `./` được.
 
@@ -221,17 +225,17 @@ routes ─┬─► features ─┬─► shared ─► (libs, không bao giờ 
 
 ### 4.2 Token hiện tại (rút gọn — xem `theme.css` đầy đủ)
 
-| Token | Light | Dark |
-| --- | --- | --- |
-| `--color-background` | `#ffffff` | `#0b1220` |
-| `--color-foreground` | `#1a1a1a` | `#e2e8f0` |
-| `--color-primary` | `#f97316` orange-500 | `#38bdf8` sky-400 |
-| `--color-card` | white | `#111a2e` |
+| Token                            | Light                 | Dark                  |
+| -------------------------------- | --------------------- | --------------------- |
+| `--color-background`             | `#ffffff`             | `#0b1220`             |
+| `--color-foreground`             | `#1a1a1a`             | `#e2e8f0`             |
+| `--color-primary`                | `#f97316` orange-500  | `#38bdf8` sky-400     |
+| `--color-card`                   | white                 | `#111a2e`             |
 | `--color-muted` / `…-foreground` | `#f5f5f4` / `#57534e` | `#1e293b` / `#94a3b8` |
-| `--color-secondary` | `#fff7ed` / `#9a3412` | `#1e293b` / `#e2e8f0` |
-| `--color-border` | `#e7e5e4` | `#1e293b` |
-| `--color-ring` | `#f97316` | `#38bdf8` |
-| `--color-destructive` | `#dc2626` / `#fff` | `#ef4444` / `#fff` |
+| `--color-secondary`              | `#fff7ed` / `#9a3412` | `#1e293b` / `#e2e8f0` |
+| `--color-border`                 | `#e7e5e4`             | `#1e293b`             |
+| `--color-ring`                   | `#f97316`             | `#38bdf8`             |
+| `--color-destructive`            | `#dc2626` / `#fff`    | `#ef4444` / `#fff`    |
 
 Radius: `--radius-sm/md/lg/xl`.
 
@@ -327,9 +331,9 @@ export default [
   route('login', 'routes/auth/login.tsx'),
   layout('routes/mangaka/_layout.tsx', [
     route('dashboard/mangaka', 'routes/mangaka/index.tsx'),
-    route('dashboard/series', 'routes/mangaka/series.tsx'),
+    route('dashboard/series', 'routes/mangaka/series.tsx')
     // ...
-  ]),
+  ])
 ] satisfies RouteConfig
 ```
 
@@ -358,16 +362,16 @@ export default [
 
 ### 7.3 Tổ chức code (ranh giới)
 
-| Quy tắc | Vị trí |
-| --- | --- |
-| Component chỉ 1 slice dùng | `features/<role>/<slice>/components/` |
-| Hook chỉ 1 slice dùng | `features/<role>/<slice>/use-xxx.ts` (co-located, không có folder `hooks/`) |
+| Quy tắc                                    | Vị trí                                                                                          |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Component chỉ 1 slice dùng                 | `features/<role>/<slice>/components/`                                                           |
+| Hook chỉ 1 slice dùng                      | `features/<role>/<slice>/use-xxx.ts` (co-located, không có folder `hooks/`)                     |
 | Component/hook cross-slice trong cùng role | `features/<role>/<slice>/...` — các slice khác import qua `~/features/<role>/<other-slice>/...` |
-| Component/hook cross-role (vd upload R2) | `shared/lib/` hoặc `shared/components/` |
-| Helper thuần | `shared/lib/<topic>.ts` |
-| Hằng số / config | `shared/config/` |
-| Provider cấp app | `providers/`, compose vào `app-providers.tsx` |
-| UI primitive generic (Button, Input) | `shared/ui/` |
+| Component/hook cross-role (vd upload R2)   | `shared/lib/` hoặc `shared/components/`                                                         |
+| Helper thuần                               | `shared/lib/<topic>.ts`                                                                         |
+| Hằng số / config                           | `shared/config/`                                                                                |
+| Provider cấp app                           | `providers/`, compose vào `app-providers.tsx`                                                   |
+| UI primitive generic (Button, Input)       | `shared/ui/`                                                                                    |
 
 ### 7.4 Styling
 
@@ -414,7 +418,13 @@ npm run prettier:fix
 Mọi response **thành công**:
 
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* payload */ } }
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    /* payload */
+  }
+}
 ```
 
 → Đọc `res.data` (custom fetch đã unwrap sẵn — payload nằm trực tiếp ở `data` của return value).
@@ -434,21 +444,23 @@ Mọi response **lỗi**:
   "code": "AUTH_OTP_RATE_LIMITED", "retryAfter": 60 }
 ```
 
-→ `message` là string. Mã `Error.PascalCase` là **code** để FE map sang text hiển thị (qua i18n). **KHÔNG** hiển thị raw code cho user. Dùng `extractApiErrorMessage(err, fallback)` ở `~/features/auth/lib/extract-api-error.ts` để extract message an toàn.
+→ `message` là chuỗi hiển thị/fallback; field `code` dạng `Error.PascalCase` là mã ổn
+định để FE phân nhánh và map i18n. Không hiển thị raw code cho user. Dùng helper ở
+`~/shared/lib/api/extract-api-error.ts`.
 
-### 8.3 Status code semantics (từ `FE-API-Guide-v3.md` §0.2)
+### 8.3 Status code semantics (từ `FE-Web-Guide/01-conventions-and-auth.md` §1)
 
-| Status | Ý nghĩa |
-| --- | --- |
-| 200/201 | OK (POST tạo = 201) |
-| 401 | Thiếu/sai/hết hạn Bearer token |
-| 403 | Đúng token, sai role hoặc sai scope (không phải chủ sở hữu) |
-| 404 | Không tìm thấy (gồm id không phải ObjectId hợp lệ) |
-| 409 | State machine sai hoặc trùng unique |
-| 410 | OTP hết hạn |
-| **422** | **Validation fail** (không phải 400!) |
-| 429 | Rate-limit (kèm `code` + `retryAfter`) |
-| 503 | Service phụ thuộc tắt (vd AI segmentation khi `AI_SERVICE_URL` trống) |
+| Status  | Ý nghĩa                                                               |
+| ------- | --------------------------------------------------------------------- |
+| 200/201 | OK (POST tạo = 201)                                                   |
+| 401     | Thiếu/sai/hết hạn Bearer token                                        |
+| 403     | Đúng token, sai role hoặc sai scope (không phải chủ sở hữu)           |
+| 404     | Không tìm thấy (gồm id không phải ObjectId hợp lệ)                    |
+| 409     | State machine sai hoặc trùng unique                                   |
+| 410     | OTP hết hạn                                                           |
+| **422** | **Validation fail** (không phải 400!)                                 |
+| 429     | Rate-limit (kèm `code` + `retryAfter`)                                |
+| 503     | Service phụ thuộc tắt (vd AI segmentation khi `AI_SERVICE_URL` trống) |
 
 ### 8.4 Partial-update convention
 
@@ -473,38 +485,39 @@ Mọi response **lỗi**:
 
 `Notification.referenceType` có dạng `<ENTITY>_<ACTION>` (vd `TASK_ASSIGNED`, `PROPOSAL_RESUBMITTED`). Deep-link theo **prefix**:
 
-| Prefix | Điều hướng tới |
-| --- | --- |
-| `TASK_*` | Chi tiết task (`referenceId` = taskId) |
+| Prefix                                            | Điều hướng tới                                    |
+| ------------------------------------------------- | ------------------------------------------------- |
+| `TASK_*`                                          | Chi tiết task (`referenceId` = taskId)            |
 | `PROPOSAL_*`, `SERIES_*`, `NAME_*`, `FRANCHISE_*` | Chi tiết series (`referenceId` = seriesId/nameId) |
-| `CHAPTER_*`, `MANUSCRIPT_*`, `PAGE_*` | Chi tiết chapter |
-| `CONTRACT_*`, `AMENDMENT_*`, `PAYMENT_*` | Chi tiết hợp đồng / thanh toán |
-| `DEADLINE_*` | Chi tiết deadline request |
-| `BOARD_*`, `DECISION_*` | Phiên họp / quyết định Board |
-| `SURVEY_*`, `RANKING_*` | Kỳ khảo sát / bảng xếp hạng |
-| `REVIEW_*`, `INVITE_*`, `ASSIGNMENT_*` | Hồ sơ / lời mời cộng tác |
+| `CHAPTER_*`, `MANUSCRIPT_*`, `PAGE_*`             | Chi tiết chapter                                  |
+| `CONTRACT_*`, `AMENDMENT_*`, `PAYMENT_*`          | Chi tiết hợp đồng / thanh toán                    |
+| `DEADLINE_*`                                      | Chi tiết deadline request                         |
+| `BOARD_*`, `DECISION_*`                           | Phiên họp / quyết định Board                      |
+| `SURVEY_*`, `RANKING_*`                           | Kỳ khảo sát / bảng xếp hạng                       |
+| `REVIEW_*`, `INVITE_*`, `ASSIGNMENT_*`            | Hồ sơ / lời mời cộng tác                          |
 
 ### 8.8 Realtime
 
 - **Mặc định polling** (10–30s) cho dashboard tiến độ + notification badge (dùng `unreadCount` của `GET /notifications`).
-- WebSocket **chỉ** cho phiên họp Board (`/board` namespace, Socket.IO) — xem `FE-API-Guide-v3.md` §15. Kết nối **bắt buộc JWT**.
+- WebSocket **chỉ** cho phiên họp Board (`/board` namespace, Socket.IO) — xem
+  `FE-Web-Guide/06-board-member.md`. Kết nối **bắt buộc JWT**.
 
 ---
 
 ## 9. Scripts có sẵn
 
-| Lệnh | Mục đích |
-| --- | --- |
-| `npm run dev` | Dev server (HMR) tại `http://localhost:5173` |
-| `npm run build` | Build production (SSR client + server bundle) |
-| `npm start` | Chạy server bundle production |
-| `npm run start:csr` | Preview build SPA (vite preview) |
-| `npm run typecheck` | `react-router typegen && tsc` |
-| `npm run lint` | ESLint flat config |
-| `npm run lint:fix` | ESLint với auto-fix |
-| `npm run prettier` | Kiểm tra format |
-| `npm run orval` | Codegen từ swagger → types + services + MSW handlers |
-| `npm run orval:watch` | Codegen tự động khi `swagger.json` thay đổi |
+| Lệnh                  | Mục đích                                             |
+| --------------------- | ---------------------------------------------------- |
+| `npm run dev`         | Dev server (HMR) tại `http://localhost:5173`         |
+| `npm run build`       | Build production (SSR client + server bundle)        |
+| `npm start`           | Chạy server bundle production                        |
+| `npm run start:csr`   | Preview build SPA (vite preview)                     |
+| `npm run typecheck`   | `react-router typegen && tsc`                        |
+| `npm run lint`        | ESLint flat config                                   |
+| `npm run lint:fix`    | ESLint với auto-fix                                  |
+| `npm run prettier`    | Kiểm tra format                                      |
+| `npm run orval`       | Codegen từ swagger → types + services + MSW handlers |
+| `npm run orval:watch` | Codegen tự động khi `swagger.json` thay đổi          |
 
 ---
 
@@ -521,7 +534,8 @@ Theo thứ tự ưu tiên:
 7. **SSR & hydration** — vì sao `localStorage`/`window` không truy cập được trong render đầu, `suppressHydrationWarning`, mount-then-render.
 8. **Vite** — config plugins, env vars (`import.meta.env`).
 9. **OpenAPI / Orval** — đọc swagger để biết tag, response shape, status code. Không gọi `fetch` thẳng.
-10. **State machines** — hiểu `SeriesStatus`, `ManuscriptStatus`, `TaskStatus`, ... (xem `FE-API-Guide-v3.md` §1).
+10. **State machines** — hiểu `SeriesStatus`, `ManuscriptStatus`, `TaskStatus`, ... (xem
+    `FE-Web-Guide/01-conventions-and-auth.md` §7 và file role tương ứng).
 11. **Accessibility** — landmark, `aria-label` cho icon-only button, focus-visible ring, contrast.
 12. **(Sau)** Forms (`react-hook-form` + `zod`), data fetching (`@tanstack/react-query` hoặc loader của RR7), state mgmt nếu cần — chưa setup, đề xuất khi cần.
 
@@ -581,7 +595,9 @@ Theo thứ tự ưu tiên:
    ```tsx
    import { DeadlinePage } from '~/features/mangaka'
    import type { Route } from './+types/deadlines'
-   export default function Route() { return <DeadlinePage /> }
+   export default function Route() {
+     return <DeadlinePage />
+   }
    ```
 5. Đăng ký trong `app/routes.ts`:
    ```ts
@@ -602,7 +618,7 @@ Theo thứ tự ưu tiên:
 6. Đăng ký vào `app/routes.ts`:
    ```ts
    layout('routes/editor/_layout.tsx', [
-     route('dashboard/editor/series-review', 'routes/editor/series-review.tsx'),
+     route('dashboard/editor/series-review', 'routes/editor/series-review.tsx')
      // ...
    ])
    ```
@@ -700,7 +716,13 @@ Khi tắt, code MSW bị **tree-shake** khỏi production bundle (dynamic import
    import { faker } from '@faker-js/faker'
    import type { Chapter } from '~/api/model/chapters'
    export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
-     return { id: faker.string.uuid(), mangaId: faker.string.uuid(), title: faker.lorem.words(4), pageCount: faker.number.int({ min: 10, max: 60 }), ...overrides }
+     return {
+       id: faker.string.uuid(),
+       mangaId: faker.string.uuid(),
+       title: faker.lorem.words(4),
+       pageCount: faker.number.int({ min: 10, max: 60 }),
+       ...overrides
+     }
    }
    ```
 2. Thêm handler `app/mocks/handlers/<tag>.handler.ts`:
@@ -730,7 +752,7 @@ Khi tắt, code MSW bị **tree-shake** khỏi production bundle (dynamic import
    ```ts
    import { deadlineControllerList } from '~/api/operations/deadline-requests/deadline-requests'
    const res = await deadlineControllerList({ limit: 20, offset: 0 })
-   const items = res.data?.items ?? []  // ← unwrap envelope tại đây
+   const items = res.data?.items ?? [] // ← unwrap envelope tại đây
    ```
 
 ### 13.5 Quy tắc với `app/api/`

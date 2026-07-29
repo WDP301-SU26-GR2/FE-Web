@@ -77,7 +77,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
   const { session } = useAuth()
   const { series, names, isLoading, error, notFound, refresh } = useSeriesDetail(seriesId)
   const { update, isUpdating } = useUpdateProposal()
-  const { updatePages, isUpdatingName } = useUpdateProposalName()
+  const { updatePages, addPage, isUpdatingName } = useUpdateProposalName()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null)
 
@@ -282,7 +282,9 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
           pageNumber: index + 1,
           fileUrl: page.fileUrl
         }))
-        nameSaved = !!(await updatePages(series.id, initial.nameId, pages))
+        nameSaved = !!(newNamePageKeys.length === 1 && removedNamePageKeys.length === 0
+          ? await addPage(series.id, initial.nameId, pages.at(-1)!)
+          : await updatePages(series.id, initial.nameId, pages))
       }
 
       if (proposalSaved && nameSaved) {
@@ -525,7 +527,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
 
       {/* Unsaved changes confirmation */}
       {pendingLeave && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'>
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'>
           <div className='w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-5 shadow-2xl'>
             <h3 className='text-base font-bold'>{t('seriesDetail.editProposal.unsavedChangesTitle')}</h3>
             <p className='text-sm text-muted-foreground'>{t('seriesDetail.editProposal.unsavedChangesDescription')}</p>

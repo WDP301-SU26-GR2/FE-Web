@@ -16,7 +16,7 @@ type ProposalAction = 'delete' | 'withdraw' | 'resubmitProposal' | 'resubmitName
 type UseProposalActionsResult = {
   activeAction: ProposalAction | null
   deleteDraft: (seriesId: string) => Promise<boolean>
-  withdraw: (seriesId: string, reason?: string) => Promise<boolean>
+  withdraw: (seriesId: string, reason: string) => Promise<boolean>
   resubmitProposal: (seriesId: string) => Promise<boolean>
   resubmitName: (seriesId: string, nameId: string) => Promise<boolean>
   reopen: (seriesId: string) => Promise<boolean>
@@ -55,9 +55,15 @@ export function useProposalActions(): UseProposalActionsResult {
   )
 
   const withdraw = useCallback(
-    (seriesId: string, reason?: string) =>
-      run('withdraw', () => seriesControllerWithdraw({ id: seriesId }, { reason: reason?.trim() || undefined })),
-    [run]
+    (seriesId: string, reason: string) => {
+      const normalizedReason = reason.trim()
+      if (!normalizedReason) {
+        toast.error(t('seriesDetail.actions.withdraw.reasonRequired'))
+        return Promise.resolve(false)
+      }
+      return run('withdraw', () => seriesControllerWithdraw({ id: seriesId }, { reason: normalizedReason }))
+    },
+    [run, t]
   )
 
   const resubmitProposal = useCallback(
@@ -70,10 +76,7 @@ export function useProposalActions(): UseProposalActionsResult {
     [run]
   )
 
-  const reopen = useCallback(
-    (seriesId: string) => run('reopen', () => seriesControllerReopen({ id: seriesId })),
-    [run]
-  )
+  const reopen = useCallback((seriesId: string) => run('reopen', () => seriesControllerReopen({ id: seriesId })), [run])
 
   return { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen }
 }

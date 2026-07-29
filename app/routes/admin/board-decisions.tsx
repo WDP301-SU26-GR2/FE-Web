@@ -14,6 +14,7 @@ export default function RouteComponent({ loaderData }: Route.ComponentProps) {
       {...loaderData}
       backPath='/dashboard/admin/board'
       detailBasePath='/dashboard/admin/board/decisions'
+      allowVoting={false}
     />
   )
 }

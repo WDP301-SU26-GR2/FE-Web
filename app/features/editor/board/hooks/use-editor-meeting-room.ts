@@ -6,6 +6,7 @@ import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
 import { joinBoardSession, sendBoardMessage } from '~/api/manual/board-meeting-socket'
 import {
+  boardControllerGetDecisionDetails,
   boardControllerGetDecisions,
   boardControllerGetSessionById,
   boardControllerGetSessionMessages
@@ -65,7 +66,15 @@ export function useEditorMeetingRoom({
       ])
       if (session?.status === 200) setPhase(readBoardSessionPhase(session.data))
       if (messageResponse?.status === 200) setMessages(messageResponse.data.items)
-      if (decisionResponse?.status === 200) setBaseDecisions(decisionResponse.data)
+      if (decisionResponse?.status === 200) {
+        const details = await Promise.all(
+          decisionResponse.data.map(async (item) => {
+            const response = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
+            return response?.status === 200 ? response.data : null
+          })
+        )
+        setBaseDecisions(details.filter((item): item is BoardDecisionResDtoOutput => item != null))
+      }
     }
     socket.on('connect', () => {
       setConnectionState('connected')
@@ -118,7 +127,15 @@ export function useEditorMeetingRoom({
   }, [])
   const refreshDecisions = useCallback(async () => {
     const response = await boardControllerGetDecisions({ boardSessionId: sessionId }).catch(() => null)
-    if (response?.status === 200) setBaseDecisions(response.data)
+    if (response?.status === 200) {
+      const details = await Promise.all(
+        response.data.map(async (item) => {
+          const detail = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
+          return detail?.status === 200 ? detail.data : null
+        })
+      )
+      setBaseDecisions(details.filter((item): item is BoardDecisionResDtoOutput => item != null))
+    }
   }, [sessionId])
 
   const decisions = useMemo(

@@ -1,9 +1,14 @@
 import { boardControllerGetDecisions, boardControllerGetSessions } from '~/api/operations/board/board'
-import { contractControllerCreateDraft, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
+import {
+  contractControllerCreateDraft,
+  contractControllerGetContractById,
+  contractControllerGetContracts
+} from '~/api/operations/contracts/contracts'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { EditorContractsPage, type EditorActionResult, type EditorContractsData } from '~/features/editor'
 import { contractErrorKey, datesAreValid, ownershipIsValid, required } from './contract-route-utils'
+import { hydrateBoardDecisions, hydrateBoardSessions } from './board-route-utils'
 
 import type { Route } from './+types/contracts'
 
@@ -19,11 +24,19 @@ export async function clientLoader(): Promise<EditorContractsData & { hasError: 
       boardControllerGetDecisions(),
       boardControllerGetSessions()
     ])
+    const contractDetails = await Promise.all(
+      contracts.data.map(async (contract) => {
+        const response = await contractControllerGetContractById({ id: contract.id }).catch(() => null)
+        return response?.status === 200 ? response.data : null
+      })
+    )
     return {
-      contracts: contracts.data,
+      contracts: contractDetails.filter((contract) => contract != null),
       series,
-      decisions: decisions.data.filter((item) => item.decisionType === 'SERIALIZATION' && item.result === 'APPROVED'),
-      sessions: sessions.data,
+      decisions: (await hydrateBoardDecisions(decisions.data)).filter(
+        (item) => item.decisionType === 'SERIALIZATION' && item.result === 'APPROVED'
+      ),
+      sessions: await hydrateBoardSessions(sessions.data),
       hasError: false
     }
   } catch {

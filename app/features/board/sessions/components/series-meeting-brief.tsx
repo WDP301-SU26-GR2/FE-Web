@@ -41,7 +41,7 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
         </div>
         <StatusBadge value={series.status} />
       </div>
-      <dl className='mt-5 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4'>
+      <dl className='mt-5 grid gap-4 text-xs sm:grid-cols-2 xl:grid-cols-4'>
         <BriefField
           icon={<UserRound className='size-4' />}
           label={t('sessions.seriesBrief.mangaka')}
@@ -94,8 +94,8 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
         />
       </div>
       <div className='mt-5 border-t border-border pt-5'>
-        <h4 className='text-sm font-bold text-foreground'>{t('sessions.seriesBrief.synopsis')}</h4>
-        <p className='mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground'>
+        <h4 className='text-xs font-bold text-foreground'>{t('sessions.seriesBrief.synopsis')}</h4>
+        <p className='mt-2 whitespace-pre-wrap text-xs leading-6 text-muted-foreground'>
           {proposal?.synopsis || t('sessions.seriesBrief.noSynopsis')}
         </p>
       </div>
@@ -120,7 +120,7 @@ function ImageGallery({ images, title, type }: { images: SignedImage[]; title: s
 
   return (
     <section className='mt-5 border-t border-border pt-5'>
-      <h4 className='flex items-center gap-2 text-sm font-bold text-foreground'>
+      <h4 className='flex items-center gap-2 text-xs font-bold text-foreground'>
         <Images className='size-4 text-primary' />
         {title}
       </h4>
@@ -153,7 +153,7 @@ function NameStory({ name }: { name: BoardMeetingSeriesBrief['proposalName'] }) 
   return (
     <section className='mt-5 border-t border-border pt-5'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
-        <h4 className='flex items-center gap-2 text-sm font-bold text-foreground'>
+        <h4 className='flex items-center gap-2 text-xs font-bold text-foreground'>
           <PanelsTopLeft className='size-4 text-primary' />
           {t('sessions.seriesBrief.storyTitle')}
         </h4>

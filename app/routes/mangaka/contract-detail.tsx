@@ -1,12 +1,14 @@
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   contractControllerGetContractById,
-  contractControllerGetPaymentConditions,
+  contractControllerGetContractVersions,
+  paymentConditionControllerGetPaymentConditions,
   contractControllerCheckStatus,
-  contractControllerListAmendments,
-  contractControllerRejectAmendment,
+  contractAmendmentControllerListAmendments,
+  contractAmendmentControllerGetAmendment,
+  contractAmendmentControllerRejectAmendment,
   contractControllerRequestChanges,
-  contractControllerSignAmendmentMangaka,
+  contractAmendmentControllerSignAmendmentMangaka,
   contractControllerSignMangaka,
   contractControllerUpdateStatus
 } from '~/api/operations/contracts/contracts'
@@ -14,26 +16,42 @@ import { usersControllerGetMe } from '~/api/operations/users/users'
 import { MangakaContractDetailPage, type MangakaContractActionResult } from '~/features/mangaka'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
+import i18n from '~/shared/lib/i18n'
+
+const tMangaka = i18n.getFixedT(null, 'mangaka')
 
 export function meta() {
-  return [{ title: 'Chi tiết hợp đồng - MangakaStudio Pro' }]
+  return [{ title: tMangaka('contracts.meta.detailTitle') }]
 }
 
 export async function clientLoader({ params }: { params: { id: string } }) {
-  const [contract, progress, conditions, amendments] = await Promise.all([
+  const [contract, progress, conditions, amendments, versions] = await Promise.all([
     contractControllerGetContractById({ id: params.id }),
     contractControllerCheckStatus({ id: params.id }).catch(() => null),
-    contractControllerGetPaymentConditions({ contractId: params.id }).catch(() => null),
-    contractControllerListAmendments({ contractId: params.id }).catch(() => null)
+    paymentConditionControllerGetPaymentConditions({ contractId: params.id }).catch(() => null),
+    contractAmendmentControllerListAmendments({ contractId: params.id }).catch(() => null),
+    contractControllerGetContractVersions({ id: params.id }).catch(() => null)
   ])
-  if (contract.status !== 200) throw new Response('Không tìm thấy hợp đồng', { status: contract.status })
+  if (contract.status !== 200) throw new Response(tMangaka('contracts.errors.notFound'), { status: contract.status })
+  const amendmentDetails =
+    amendments?.status === 200
+      ? await Promise.all(
+          amendments.data.map(async (amendment) => {
+            const detail = await contractAmendmentControllerGetAmendment({ contractId: params.id, id: amendment.id })
+            return detail.data
+          })
+        )
+      : []
+
   return {
     contract: contract.data,
     progress: progress?.status === 200 ? progress.data : null,
     progressLoadFailed: progress == null,
     conditions: conditions?.status === 200 ? conditions.data.data : [],
-    amendments: amendments?.status === 200 ? amendments.data : [],
-    conditionsLoadFailed: conditions == null
+    amendments: amendmentDetails,
+    conditionsLoadFailed: conditions == null,
+    versions: versions?.status === 200 ? versions.data : [],
+    versionsLoadFailed: versions == null
   }
 }
 
@@ -47,8 +65,7 @@ export async function clientAction({
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (['approve', 'sendOtp', 'signContract'].includes(intent))
-      await assertValidPaymentConditions(params.id)
+    if (['approve', 'sendOtp', 'signContract'].includes(intent)) await assertValidPaymentConditions(params.id)
     if (intent === 'approve')
       await contractControllerUpdateStatus(
         { id: params.id },
@@ -58,46 +75,43 @@ export async function clientAction({
         }
       )
     else if (intent === 'requestChanges')
-      await contractControllerRequestChanges(
-        { id: params.id },
-        { reason: required(form, 'reason') }
-      )
+      await contractControllerRequestChanges({ id: params.id }, { reason: required(form, 'reason') })
     else if (intent === 'sendOtp') {
       const me = await usersControllerGetMe()
-      if (me.status !== 200) throw new Error('Không thể đọc tài khoản')
+      if (me.status !== 200) throw new Error(tMangaka('contracts.errors.accountUnavailable'))
       await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
     } else if (intent === 'signContract') {
       await contractControllerSignMangaka({ id: params.id }, { otpCode: required(form, 'otpCode') })
     } else if (intent === 'signAmendment') {
-      await contractControllerSignAmendmentMangaka(
+      await contractAmendmentControllerSignAmendmentMangaka(
         { contractId: params.id, id: required(form, 'amendmentId') },
         { otpCode: required(form, 'otpCode') }
       )
     } else if (intent === 'rejectAmendment') {
-      await contractControllerRejectAmendment(
+      await contractAmendmentControllerRejectAmendment(
         { contractId: params.id, id: required(form, 'amendmentId') },
         { reason: required(form, 'reason') }
       )
-    } else return { ok: false, intent, message: 'Thao tác không hợp lệ.' }
+    } else return { ok: false, intent, message: tMangaka('contracts.errors.invalidAction') }
     return { ok: true, intent }
   } catch (error) {
     return {
       ok: false,
       intent,
-      message: extractApiErrorMessage(error, 'Không thể thực hiện thao tác. Vui lòng kiểm tra trạng thái và thử lại.')
+      message: extractApiErrorMessage(error, tMangaka('contracts.errors.actionFailed'))
     }
   }
 }
 
 async function assertValidPaymentConditions(contractId: string) {
-  const response = await contractControllerGetPaymentConditions({ contractId })
+  const response = await paymentConditionControllerGetPaymentConditions({ contractId })
   if (response.status !== 200 || !hasValidPaymentCondition(response.data.data))
-    throw new Error('Không thể duyệt hoặc ký vì hợp đồng chưa có điều kiện thanh toán hợp lệ.')
+    throw new Error(tMangaka('contracts.errors.paymentConditionsRequired'))
 }
 
 function required(form: FormData, key: string) {
   const value = String(form.get(key) ?? '').trim()
-  if (!value) throw new Error(`Missing ${key}`)
+  if (!value) throw new Error(tMangaka('contracts.errors.requiredField'))
   return value
 }
 

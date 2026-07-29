@@ -9,6 +9,7 @@ import {
   RefreshCcw,
   Star,
   TrendingUp,
+  UsersRound,
   Wrench
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -23,7 +24,8 @@ export function EditorOperationsPage() {
     ['surveys', BarChart3],
     ['reprints', BookCopy],
     ['transfers', GitPullRequestArrow],
-    ['versions', Library]
+    ['versions', Library],
+    ['insights', UsersRound]
   ] as const
 
   return (
@@ -33,8 +35,8 @@ export function EditorOperationsPage() {
           <Wrench className='size-4' />
           {t('operations.eyebrow')}
         </p>
-        <h1 className='mt-2 text-3xl font-bold text-foreground'>{t('operations.title')}</h1>
-        <p className='mt-2 text-sm text-muted-foreground'>{t('operations.subtitle')}</p>
+        <h1 className='mt-2 text-2xl font-bold text-foreground'>{t('operations.title')}</h1>
+        <p className='mt-2 text-xs text-muted-foreground'>{t('operations.subtitle')}</p>
       </header>
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {items.map(([key, Icon]) => (
@@ -45,8 +47,8 @@ export function EditorOperationsPage() {
           >
             <Icon className='size-6 text-primary' />
             <h2 className='mt-4 font-bold text-foreground'>{t(`operations.${key}`)}</h2>
-            <p className='mt-2 min-h-10 text-sm text-muted-foreground'>{t(`operations.descriptions.${key}`)}</p>
-            <span className='mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary'>
+            <p className='mt-2 min-h-10 text-xs text-muted-foreground'>{t(`operations.descriptions.${key}`)}</p>
+            <span className='mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary'>
               {t('operations.open')}
               <ChevronRight className='size-4 transition-transform group-hover:translate-x-1' />
             </span>

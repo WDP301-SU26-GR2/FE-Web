@@ -20,7 +20,11 @@ export function BoardRankingsPage({
   const { t } = useTranslation('board')
   return (
     <div className='space-y-6 pb-12'>
-      <BoardHeader title={t('rankings.title')} description={t('rankings.description')} />
+      <BoardHeader
+        title={t('rankings.title')}
+        description={t('rankings.description')}
+        backHref='/dashboard/board/operations'
+      />
       <Form method='get' className='flex gap-2'>
         <select className={boardInput} name='surveyPeriodId' defaultValue={surveyPeriodId} required>
           <option value='' disabled>
@@ -32,11 +36,11 @@ export function BoardRankingsPage({
             </option>
           ))}
         </select>
-        <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+        <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
           {t('common.load')}
         </button>
       </Form>
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='overflow-x-auto rounded-xl border border-border bg-card'>
         <div className='grid min-w-[760px] grid-cols-[70px_1fr_90px_100px_120px_130px] gap-3 border-b border-border p-3 text-xs font-bold uppercase text-muted-foreground'>
           <span>#</span>
@@ -49,7 +53,7 @@ export function BoardRankingsPage({
         {rankings.map((item) => (
           <div
             key={item.seriesId}
-            className='grid min-w-[760px] grid-cols-[70px_1fr_90px_100px_120px_130px] items-center gap-3 border-b border-border p-3 text-sm last:border-0'
+            className='grid min-w-[760px] grid-cols-[70px_1fr_90px_100px_120px_130px] items-center gap-3 border-b border-border p-3 text-xs last:border-0'
           >
             <strong>{item.rankPosition ?? '—'}</strong>
             <span className='truncate'>{seriesTitles[item.seriesId] ?? t('rankings.unknownSeries')}</span>

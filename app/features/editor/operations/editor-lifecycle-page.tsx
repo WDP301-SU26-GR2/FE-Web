@@ -36,7 +36,7 @@ export function EditorLifecyclePage({
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <form method='get' className='grid gap-3 sm:grid-cols-[1fr_auto]'>
           <SeriesSelect series={series} defaultValue={focusSeriesId} required={false} />
-          <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('actions.load')}
           </button>
         </form>
@@ -45,7 +45,10 @@ export function EditorLifecyclePage({
             <Metric label={t('operations.publishedChapters')} value={defense.serialization.chaptersPublished} />
             <Metric label={t('operations.totalUnitsSold')} value={defense.tankobon.totalUnitsSold} />
             <Metric label={t('operations.latestRank')} value={latest?.rankPosition ?? '—'} />
-            <Metric label={t('operations.riskLevel')} value={latest?.riskLevel ?? '—'} />
+            <Metric
+              label={t('operations.riskLevel')}
+              value={latest?.riskLevel ? t(`operations.riskLevels.${latest.riskLevel}`) : '—'}
+            />
           </div>
         )}
       </section>

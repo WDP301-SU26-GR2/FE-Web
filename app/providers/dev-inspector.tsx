@@ -12,9 +12,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
  *   2. It is dev-only — production bundles strip the import via the
  *      `import.meta.env.DEV` check below.
  */
-const Inspector = lazy(() =>
-  import('react-dev-inspector').then((m) => ({ default: m.Inspector }))
-)
+const Inspector = lazy(() => import('react-dev-inspector').then((m) => ({ default: m.Inspector })))
 
 export function DevInspector() {
   const [shouldRender, setShouldRender] = useState(false)

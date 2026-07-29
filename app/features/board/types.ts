@@ -4,4 +4,6 @@ export type BoardActionResult = {
   messageKey?: string
   message?: string
   requestId?: string
+  downloadUrl?: string
+  expiresAt?: string
 }

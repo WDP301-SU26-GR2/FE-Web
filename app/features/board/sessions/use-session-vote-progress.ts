@@ -6,6 +6,7 @@ import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting
 import { joinBoardSession, sendBoardMessage } from '~/api/manual/board-meeting-socket'
 import {
   boardControllerGetDecisions,
+  boardControllerGetDecisionDetails,
   boardControllerGetSessionById,
   boardControllerGetSessionMessages
 } from '~/api/operations/board/board'
@@ -64,7 +65,16 @@ export function useSessionVoteProgress({
       ])
       if (session?.status === 200) setPhase(readBoardSessionPhase(session.data))
       if (messageResponse?.status === 200) setMessages(messageResponse.data.items)
-      if (decisionResponse?.status === 200) setBaseDecisions(decisionResponse.data)
+      if (decisionResponse?.status === 200) {
+        const details = await Promise.all(
+          decisionResponse.data.map((decision) =>
+            boardControllerGetDecisionDetails({ id: decision.id })
+              .then((response) => response.data)
+              .catch(() => null)
+          )
+        )
+        setBaseDecisions(details.filter((decision) => decision !== null))
+      }
     }
     socket.on('connect', () => {
       setConnectionState('connected')

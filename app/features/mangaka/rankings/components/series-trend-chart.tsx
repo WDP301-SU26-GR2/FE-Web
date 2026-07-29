@@ -15,9 +15,9 @@ const PADDING_Y = 28
 
 const RISK_TONE: Record<BoardRankingListResDtoOutputItemsItemRiskLevel, string> = {
   NONE: 'border-border bg-muted/40 text-muted-foreground',
-  LOW: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
-  MEDIUM: 'border-orange-500/30 bg-orange-500/10 text-orange-700',
-  SEVERE: 'border-rose-500/30 bg-rose-500/10 text-rose-700'
+  LOW: 'border-warning/30 bg-warning/10 text-warning stroke-warning',
+  MEDIUM: 'border-warning/50 bg-warning/20 text-warning stroke-warning',
+  SEVERE: 'border-destructive/30 bg-destructive/10 text-destructive stroke-destructive'
 }
 
 /**
@@ -111,7 +111,13 @@ export function SeriesTrendChart({ items }: SeriesTrendChartProps) {
                   className='stroke-border'
                   strokeDasharray='3 3'
                 />
-                <text x={PADDING_X - 6} y={y} dy='0.32em' textAnchor='end' className='fill-muted-foreground text-[10px]'>
+                <text
+                  x={PADDING_X - 6}
+                  y={y}
+                  dy='0.32em'
+                  textAnchor='end'
+                  className='fill-muted-foreground text-[10px]'
+                >
                   #{tick}
                 </text>
               </g>
@@ -119,7 +125,13 @@ export function SeriesTrendChart({ items }: SeriesTrendChartProps) {
           })}
 
           {/* Line */}
-          <path d={path} className='fill-none stroke-primary' strokeWidth={2.5} strokeLinejoin='round' strokeLinecap='round' />
+          <path
+            d={path}
+            className='fill-none stroke-primary'
+            strokeWidth={2.5}
+            strokeLinejoin='round'
+            strokeLinecap='round'
+          />
 
           {/* Points */}
           {points.map((p, idx) => {
@@ -190,9 +202,7 @@ export function SeriesTrendChart({ items }: SeriesTrendChartProps) {
             className='grid grid-cols-[60px_1fr_80px_100px] items-center gap-3 px-4 py-2.5 text-xs'
           >
             <span className='font-mono font-bold text-foreground'>#{item.rankPosition ?? '—'}</span>
-            <span className='truncate text-muted-foreground'>
-              {formatTooltipDate(item.recordedAt, i18n.language)}
-            </span>
+            <span className='truncate text-muted-foreground'>{formatTooltipDate(item.recordedAt, i18n.language)}</span>
             <span className='font-mono text-right text-foreground tabular-nums'>{item.voteCount}</span>
             <span className='flex justify-end'>
               <RiskChip level={item.riskLevel} />
@@ -208,10 +218,7 @@ function RiskChip({ level }: { level: BoardRankingListResDtoOutputItemsItemRiskL
   const { t } = useTranslation('mangaka')
   return (
     <span
-      className={cn(
-        'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold',
-        RISK_TONE[level]
-      )}
+      className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold', RISK_TONE[level])}
     >
       {t(`rankings.riskLevel.${level}`)}
     </span>

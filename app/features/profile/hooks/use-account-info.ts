@@ -3,10 +3,7 @@ import { useEffect, useState } from 'react'
 import { fetchAccountInfo, type AccountInfo } from '../api/profile-api'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
-type State =
-  | { status: 'loading' }
-  | { status: 'ready'; data: AccountInfo }
-  | { status: 'error'; message: string }
+type State = { status: 'loading' } | { status: 'ready'; data: AccountInfo } | { status: 'error'; message: string }
 
 /**
  * Client-side fetch hook for the signed-in user's account info.

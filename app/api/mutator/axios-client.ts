@@ -32,6 +32,13 @@ export function isFetchError(err: unknown): err is FetchError {
 }
 
 const REFRESH_FLAG = '__mangaka_isRefreshing'
+let refreshInFlight: Promise<boolean> | null = null
+
+function clearPersistedSession(): void {
+  removeStorage(STORAGE_KEYS.accessToken)
+  removeStorage(STORAGE_KEYS.refreshToken)
+  removeStorage(STORAGE_KEYS.user)
+}
 
 /**
  * Resolve the API base URL.
@@ -61,8 +68,7 @@ async function doRefreshToken(): Promise<boolean> {
     })
 
     if (!res.ok) {
-      removeStorage(STORAGE_KEYS.accessToken)
-      removeStorage(STORAGE_KEYS.refreshToken)
+      clearPersistedSession()
       return false
     }
 
@@ -70,7 +76,10 @@ async function doRefreshToken(): Promise<boolean> {
       data?: { accessToken?: string; refreshToken?: string }
     }
     const payload = json?.data
-    if (!payload?.accessToken || !payload?.refreshToken) return false
+    if (!payload?.accessToken || !payload?.refreshToken) {
+      clearPersistedSession()
+      return false
+    }
 
     writeStorage(STORAGE_KEYS.accessToken, payload.accessToken)
     writeStorage(STORAGE_KEYS.refreshToken, payload.refreshToken)
@@ -78,6 +87,23 @@ async function doRefreshToken(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * Coalesce concurrent 401s into one refresh request.
+ *
+ * Refresh tokens are rotated by the API, so parallel refresh calls using the
+ * same token make every call after the first fail with RefreshTokenAlreadyUsed.
+ * All requests that receive 401 while a refresh is in progress must wait for
+ * the same result, then retry with the new access token.
+ */
+function refreshAccessToken(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefreshToken().finally(() => {
+      refreshInFlight = null
+    })
+  }
+  return refreshInFlight
 }
 
 /**
@@ -114,15 +140,25 @@ httpClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 httpClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const original = error.config as
-      | (InternalAxiosRequestConfig & { [REFRESH_FLAG]?: boolean })
-      | undefined
+    const original = error.config as (InternalAxiosRequestConfig & { [REFRESH_FLAG]?: boolean }) | undefined
 
     // ── 401 → silent refresh + retry once ───────────────────────────────
     if (error.response?.status === 401 && original && !original[REFRESH_FLAG]) {
-      const refreshed = await doRefreshToken()
+      original[REFRESH_FLAG] = true
+
+      const currentToken = readStorage(STORAGE_KEYS.accessToken)
+      const requestToken = original.headers.get('Authorization')
+
+      // A request sent before another request completed refresh can receive
+      // its stale 401 afterwards. It only needs a retry with the token already
+      // in storage; rotating refresh again would be unnecessary and unsafe.
+      if (currentToken && requestToken !== `Bearer ${currentToken}`) {
+        original.headers.set('Authorization', `Bearer ${currentToken}`)
+        return httpClient.request(original)
+      }
+
+      const refreshed = await refreshAccessToken()
       if (refreshed) {
-        original[REFRESH_FLAG] = true
         const newToken = readStorage(STORAGE_KEYS.accessToken)
         if (newToken) {
           original.headers.set('Authorization', `Bearer ${newToken}`)

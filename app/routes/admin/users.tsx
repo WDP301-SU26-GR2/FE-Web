@@ -14,7 +14,11 @@ import type {
   UsersControllerListUsersStatus
 } from '~/api/model/users'
 import { AdminUsersPage, type AdminUserActionIntent, type AdminUserActionResult } from '~/features/admin'
-import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
+import {
+  extractApiErrorCode,
+  extractApiErrorMessage,
+  extractApiSuccessMessage
+} from '~/shared/lib/api/extract-api-error'
 
 import type { Route } from './+types/users'
 
@@ -33,11 +37,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const roleCode = readEnum(searchParams.get('roleCode'), ROLE_CODES)
   const status = readEnum(searchParams.get('status'), USER_STATUSES)
   const search = searchParams.get('search')?.trim() || undefined
+  const includeDeleted = searchParams.get('includeDeleted') === 'true'
+  const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
 
   const params: UsersControllerListUsersParams = {
     limit,
     offset: (page - 1) * limit,
-    includeDeleted: searchParams.get('includeDeleted') === 'true' ? 'true' : 'false',
+    includeDeleted: includeDeleted ? 'true' : 'false',
+    onlyDeleted: onlyDeleted ? 'true' : 'false',
     roleCode: roleCode as UsersControllerListUsersRoleCode | undefined,
     status: status as UsersControllerListUsersStatus | undefined,
     search
@@ -45,9 +52,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 
   try {
     const response = await usersControllerListUsers(params)
-    return { data: response.data, hasError: false }
+    const deletedUserIds = onlyDeleted
+      ? response.data.items.map((user) => user.id)
+      : includeDeleted
+        ? await listDeletedUserIds({ roleCode, status, search })
+        : []
+    return { data: response.data, deletedUserIds, hasError: false }
   } catch {
-    return { data: null, hasError: true }
+    return { data: null, deletedUserIds: [], hasError: true }
   }
 }
 
@@ -72,6 +84,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ok: true,
         intent,
         messageKey: 'created',
+        message: extractApiSuccessMessage(response, 'Đã tạo tài khoản nội bộ thành công.'),
         temporaryPassword: response.data.temporaryPassword,
         email: response.data.email
       }
@@ -83,21 +96,32 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const status = readEnum(String(formData.get('status') ?? ''), MUTABLE_STATUSES)
       if (!status) return failure(intent, 'validation')
       const reason = String(formData.get('reason') ?? '').trim() || undefined
-      await usersControllerUpdateUserStatus(
+      const response = await usersControllerUpdateUserStatus(
         { id: userId },
         { status: status as AdminUpdateUserStatusBodyDtoStatus, reason }
       )
-      return success(intent, 'statusUpdated')
+      return success(
+        intent,
+        'statusUpdated',
+        extractApiSuccessMessage(
+          response,
+          status === 'ACTIVE'
+            ? 'Đã kích hoạt lại tài khoản.'
+            : status === 'BANNED'
+              ? 'Đã cấm tài khoản.'
+              : 'Đã khóa tài khoản.'
+        )
+      )
     }
 
     if (intent === 'delete') {
-      await usersControllerDeleteUser({ id: userId })
-      return success(intent, 'deleted')
+      const response = await usersControllerDeleteUser({ id: userId })
+      return success(intent, 'deleted', extractApiSuccessMessage(response, 'Đã xóa mềm tài khoản.'))
     }
 
     if (intent === 'restore') {
-      await usersControllerRestoreUser({ id: userId })
-      return success(intent, 'restored')
+      const response = await usersControllerRestoreUser({ id: userId })
+      return success(intent, 'restored', extractApiSuccessMessage(response, 'Đã khôi phục tài khoản.'))
     }
 
     if (intent === 'resetPassword') {
@@ -107,6 +131,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ok: true,
         intent,
         messageKey: 'passwordReset',
+        message: extractApiSuccessMessage(response, 'Đã cấp lại mật khẩu tạm thời.'),
         temporaryPassword: response.data.temporaryPassword,
         email: String(formData.get('userEmail') ?? '') || undefined
       }
@@ -114,12 +139,47 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
 
     return failure('unknown', 'invalidAction')
   } catch (error) {
-    return failure(intent, mapErrorKey(error))
+    const errorKey = mapErrorKey(error)
+    return failure(
+      intent,
+      errorKey,
+      errorKey === 'actionFailed'
+        ? extractApiErrorMessage(error, 'Không thể hoàn tất thao tác với tài khoản. Vui lòng thử lại.')
+        : undefined
+    )
   }
 }
 
 export default function DashboardAdminUsersRoute({ loaderData }: Route.ComponentProps) {
-  return <AdminUsersPage data={loaderData.data} hasError={loaderData.hasError} />
+  return (
+    <AdminUsersPage data={loaderData.data} deletedUserIds={loaderData.deletedUserIds} hasError={loaderData.hasError} />
+  )
+}
+
+async function listDeletedUserIds({
+  roleCode,
+  status,
+  search
+}: Pick<UsersControllerListUsersParams, 'roleCode' | 'status' | 'search'>): Promise<string[]> {
+  const limit = 100
+  const ids: string[] = []
+  let offset = 0
+
+  while (true) {
+    const response = await usersControllerListUsers({
+      roleCode,
+      status,
+      search,
+      limit,
+      offset,
+      includeDeleted: 'false',
+      onlyDeleted: 'true'
+    })
+    ids.push(...response.data.items.map((user) => user.id))
+    offset += response.data.items.length
+
+    if (offset >= response.data.total || response.data.items.length === 0) return ids
+  }
 }
 
 function requiredValue(formData: FormData, key: string): string {
@@ -136,12 +196,12 @@ function isActionIntent(value: string): value is AdminUserActionIntent {
   return ['create', 'status', 'delete', 'restore', 'resetPassword'].includes(value)
 }
 
-function success(intent: AdminUserActionIntent, messageKey: string): AdminUserActionResult {
-  return { ok: true, intent, messageKey }
+function success(intent: AdminUserActionIntent, messageKey: string, message: string): AdminUserActionResult {
+  return { ok: true, intent, messageKey, message }
 }
 
-function failure(intent: AdminUserActionIntent | 'unknown', errorKey: string): AdminUserActionResult {
-  return { ok: false, intent, errorKey }
+function failure(intent: AdminUserActionIntent | 'unknown', errorKey: string, message?: string): AdminUserActionResult {
+  return { ok: false, intent, errorKey, message }
 }
 
 function mapErrorKey(error: unknown): string {
@@ -151,5 +211,6 @@ function mapErrorKey(error: unknown): string {
   if (code === 'Error.UserAlreadyDeleted') return 'alreadyDeleted'
   if (code === 'Error.UserNotDeleted') return 'notDeleted'
   if (code === 'Error.UserNotFound') return 'notFound'
+  if (code === 'Error.UserHasActiveCommitments') return 'activeCommitments'
   return 'actionFailed'
 }

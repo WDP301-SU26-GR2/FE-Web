@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookPlus, ChevronDown, ChevronRight, ImageIcon, Loader2 } from 'lucide-react'
+import { BookPlus, ChevronDown, ChevronRight, ImageIcon, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
 import { cn } from '~/shared/lib/cn'
@@ -8,6 +8,7 @@ import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 
 export type PublicationSectionProps = {
   isOwner: boolean
+  canCreateChapter: boolean
   isLoading: boolean
   error: string | null
   chapters: ChapterListResDtoOutputItemsItem[]
@@ -17,6 +18,8 @@ export type PublicationSectionProps = {
   /** Total chapters count label (number of approved names etc). */
   nextChapterNumber: number
   onCreateClick: () => void
+  onEditClick: (chapter: ChapterListResDtoOutputItemsItem) => void
+  onDeleteClick: (chapter: ChapterListResDtoOutputItemsItem) => void
 }
 
 const CHAPTER_STATUS_META: Record<string, { className: string; labelKey: string }> = {
@@ -67,12 +70,15 @@ function formatDate(iso: string | null, locale: string): string {
  */
 export function PublicationSection({
   isOwner,
+  canCreateChapter,
   isLoading,
   error,
   chapters,
   seriesId,
   onRefresh,
-  onCreateClick
+  onCreateClick,
+  onEditClick,
+  onDeleteClick
 }: PublicationSectionProps) {
   const { t, i18n } = useTranslation('mangaka')
   const locale = i18n.language
@@ -100,7 +106,7 @@ export function PublicationSection({
             className={cn('ml-1 h-3.5 w-3.5 text-muted-foreground transition-transform', !collapsed && 'rotate-180')}
           />
         </button>
-        {isOwner && (
+        {isOwner && canCreateChapter && (
           <button
             type='button'
             onClick={onCreateClick}
@@ -139,7 +145,16 @@ export function PublicationSection({
           ) : (
             <ul className='divide-y divide-border overflow-hidden rounded-lg border border-border'>
               {chapters.map((chapter) => (
-                <ChapterRow key={chapter.id} chapter={chapter} seriesId={seriesId} locale={locale} />
+                <ChapterRow
+                  key={chapter.id}
+                  chapter={chapter}
+                  seriesId={seriesId}
+                  locale={locale}
+                  canEdit={isOwner && chapter.status !== 'PUBLISHED'}
+                  canDelete={isOwner && chapter.status === 'DRAFT'}
+                  onEditClick={onEditClick}
+                  onDeleteClick={onDeleteClick}
+                />
               ))}
             </ul>
           )}
@@ -153,9 +168,13 @@ type ChapterRowProps = {
   chapter: ChapterListResDtoOutputItemsItem
   seriesId: string
   locale: string
+  canEdit: boolean
+  canDelete: boolean
+  onEditClick: (chapter: ChapterListResDtoOutputItemsItem) => void
+  onDeleteClick: (chapter: ChapterListResDtoOutputItemsItem) => void
 }
 
-function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
+function ChapterRow({ chapter, seriesId, locale, canEdit, canDelete, onEditClick, onDeleteClick }: ChapterRowProps) {
   const { t } = useTranslation('mangaka')
   const navigate = useNavigate()
   const workbenchHref = `/publish/${seriesId}/${chapter.id}`
@@ -180,12 +199,12 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
   const isOnHold = chapter.hold !== null && chapter.hold !== undefined
 
   return (
-    <li>
+    <li className='flex items-stretch'>
       <button
         type='button'
         onClick={() => navigate(workbenchHref)}
         className={cn(
-          'flex w-full flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer sm:flex-row sm:items-center sm:justify-between'
+          'flex min-w-0 flex-1 flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer sm:flex-row sm:items-center sm:justify-between'
         )}
       >
         <div className='min-w-0 flex-1 space-y-1'>
@@ -201,9 +220,7 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
             )}
           </div>
           <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground'>
-            {deadline && (
-              <span>{t('seriesDetail.publication.deadline', { date: formatDate(deadline, locale) })}</span>
-            )}
+            {deadline && <span>{t('seriesDetail.publication.deadline', { date: formatDate(deadline, locale) })}</span>}
             {chapter.publishedAt && (
               <span className='inline-flex items-center gap-1'>
                 {t('seriesDetail.publication.publishedAt', { date: formatDate(chapter.publishedAt, locale) })}
@@ -238,6 +255,32 @@ function ChapterRow({ chapter, seriesId, locale }: ChapterRowProps) {
           <ChevronRight className='h-3.5 w-3.5 text-muted-foreground' />
         </div>
       </button>
+      {(canEdit || canDelete) && (
+        <div className='flex shrink-0 items-center gap-1 px-3'>
+          {canEdit && (
+            <button
+              type='button'
+              onClick={() => onEditClick(chapter)}
+              className='rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring'
+              aria-label={t('seriesDetail.publication.manage.edit.trigger', { number: chapter.chapterNumber })}
+              title={t('seriesDetail.publication.manage.edit.trigger', { number: chapter.chapterNumber })}
+            >
+              <Pencil className='h-4 w-4' aria-hidden='true' />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type='button'
+              onClick={() => onDeleteClick(chapter)}
+              className='rounded-md p-2 text-destructive transition-colors hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring'
+              aria-label={t('seriesDetail.publication.manage.delete.trigger', { number: chapter.chapterNumber })}
+              title={t('seriesDetail.publication.manage.delete.trigger', { number: chapter.chapterNumber })}
+            >
+              <Trash2 className='h-4 w-4' aria-hidden='true' />
+            </button>
+          )}
+        </div>
+      )}
     </li>
   )
 }

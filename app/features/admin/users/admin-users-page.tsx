@@ -12,10 +12,11 @@ import type { AdminUserActionResult, SelectedUserAction } from './types'
 
 export interface AdminUsersPageProps {
   data: AdminUserListResDtoOutput | null
+  deletedUserIds: string[]
   hasError: boolean
 }
 
-export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
+export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPageProps) {
   const { t } = useTranslation('admin')
   const [searchParams] = useSearchParams()
   const fetcher = useFetcher<AdminUserActionResult>()
@@ -23,15 +24,18 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
   const [selectedAction, setSelectedAction] = useState<SelectedUserAction | null>(null)
 
   const includeDeleted = searchParams.get('includeDeleted') === 'true'
+  const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+  const userMode = onlyDeleted ? 'deleted' : includeDeleted ? 'mixed' : 'active'
   const limit = data?.limit ?? 20
   const offset = data?.offset ?? 0
   const total = data?.total ?? 0
   const currentPage = Math.floor(offset / limit) + 1
   const totalPages = Math.max(Math.ceil(total / limit), 1)
+  const deletedUserIdSet = new Set(deletedUserIds)
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('navigation.backDashboard')}
       </Link>
@@ -41,13 +45,13 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
             <Users className='size-4' aria-hidden='true' />
             <span>{t('users.eyebrow')}</span>
           </div>
-          <h1 className='text-2xl font-bold tracking-tight text-foreground md:text-3xl'>{t('users.title')}</h1>
-          <p className='mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground'>{t('users.subtitle')}</p>
+          <h1 className='text-xl font-bold tracking-tight text-foreground md:text-2xl'>{t('users.title')}</h1>
+          <p className='mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground'>{t('users.subtitle')}</p>
         </div>
         <button
           type='button'
           onClick={() => setIsCreateOpen(true)}
-          className='inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90'
+          className='inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90'
         >
           <UserPlus className='size-4' aria-hidden='true' />
           {t('users.create.button')}
@@ -58,7 +62,7 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
 
       {hasError && (
         <div
-          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'
+          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'
           role='alert'
         >
           <p className='font-bold'>{t('users.loadError.title')}</p>
@@ -75,7 +79,7 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
               name='search'
               defaultValue={searchParams.get('search') ?? ''}
               placeholder={t('users.filters.searchPlaceholder')}
-              className='w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+              className='w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
             />
           </label>
           <FilterSelect
@@ -102,37 +106,49 @@ export function AdminUsersPage({ data, hasError }: AdminUsersPageProps) {
           />
           <button
             type='submit'
-            className='inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-foreground px-4 py-2.5 text-sm font-bold text-background transition-opacity hover:opacity-90'
+            className='inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-foreground px-4 py-2.5 text-xs font-bold text-background transition-opacity hover:opacity-90'
           >
             <Filter className='size-4' aria-hidden='true' />
             {t('users.filters.apply')}
           </button>
         </div>
-        <label className='mt-3 inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground'>
-          <input
-            type='checkbox'
-            name='includeDeleted'
-            value='true'
-            defaultChecked={includeDeleted}
-            className='size-4 rounded border-input accent-[var(--color-primary)]'
-          />
-          {t('users.filters.includeDeleted')}
-        </label>
+        <div className='mt-3 flex flex-wrap gap-4'>
+          <label className='inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground'>
+            <input
+              type='checkbox'
+              name='includeDeleted'
+              value='true'
+              defaultChecked={includeDeleted}
+              className='size-4 rounded border-input accent-[var(--color-primary)]'
+            />
+            {t('users.filters.includeDeleted')}
+          </label>
+          <label className='inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground'>
+            <input
+              type='checkbox'
+              name='onlyDeleted'
+              value='true'
+              defaultChecked={onlyDeleted}
+              className='size-4 rounded border-input accent-[var(--color-primary)]'
+            />
+            {t('users.filters.onlyDeleted')}
+          </label>
+        </div>
       </Form>
 
-      <div className='flex items-center justify-between gap-4'>
-        <p className='text-sm font-semibold text-foreground'>{t('users.total', { count: total })}</p>
-        {includeDeleted && (
+      <div className='flex flex-wrap items-center justify-between gap-4'>
+        <p className='text-xs font-semibold text-foreground'>{t('users.total', { count: total })}</p>
+        {userMode !== 'active' && (
           <span className='rounded-full border border-border bg-muted px-3 py-1 text-[11px] font-bold text-muted-foreground'>
             {t('users.restoreMode')}
           </span>
         )}
       </div>
 
-      <UserTable users={data?.items ?? []} includeDeleted={includeDeleted} onAction={setSelectedAction} />
+      <UserTable users={data?.items ?? []} deletedUserIds={deletedUserIdSet} onAction={setSelectedAction} />
 
       {totalPages > 1 && (
-        <nav className='flex items-center justify-between gap-4' aria-label={t('users.pagination.label')}>
+        <nav className='flex flex-wrap items-center justify-between gap-4' aria-label={t('users.pagination.label')}>
           <PaginationLink
             page={currentPage - 1}
             disabled={currentPage <= 1}
@@ -173,7 +189,7 @@ function FilterSelect({ name, label, defaultValue, options }: FilterSelectProps)
       <select
         name={name}
         defaultValue={defaultValue}
-        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
       >
         <option value=''>{label}</option>
         {options.map(([value, optionLabel]) => (
@@ -193,7 +209,8 @@ function ActionFeedback({ result }: { result: AdminUserActionResult }) {
   useEffect(() => {
     if (lastResult.current === result) return
     lastResult.current = result
-    const message = result.ok ? t(`users.messages.${result.messageKey}`) : t(`users.errors.${result.errorKey}`)
+    const message =
+      result.message || (result.ok ? t(`users.messages.${result.messageKey}`) : t(`users.errors.${result.errorKey}`))
     const id = `admin-user-${result.intent}-${result.ok ? 'success' : 'error'}-${result.ok ? result.messageKey : result.errorKey}`
     if (result.ok) toast.success(message, { id })
     else toast.error(message, { id })
@@ -203,7 +220,7 @@ function ActionFeedback({ result }: { result: AdminUserActionResult }) {
 
   return (
     <div className='rounded-xl border border-primary/25 bg-primary/10 p-4 text-primary' role='status'>
-      <p className='text-sm font-bold'>{t(`users.messages.${result.messageKey}`)}</p>
+      <p className='text-xs font-bold'>{result.message || t(`users.messages.${result.messageKey}`)}</p>
       <div className='mt-3 rounded-lg border border-border bg-card p-3 text-foreground'>
         <p className='text-xs text-muted-foreground'>{t('users.temporaryPassword.label', { email: result.email })}</p>
         <code className='mt-1 block break-all text-base font-extrabold tracking-wider'>{result.temporaryPassword}</code>

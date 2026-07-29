@@ -1,16 +1,17 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { Briefcase, BookOpen, Calendar, Filter, ListChecks, RefreshCw, Sparkles, XCircle } from 'lucide-react'
+import { Briefcase, BookOpen, Calendar, ChevronDown, Filter, Loader2, RefreshCw } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { SignedImage } from '~/shared/components/signed-image'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
-import type { AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem } from '~/api/model/studio/assignmentListResDtoOutputItemsItemAssignedTaskTypesItem'
 import type { AssignmentListResDtoOutputItemsItemStatus } from '~/api/model/studio/assignmentListResDtoOutputItemsItemStatus'
 import type { StudioControllerListAssignmentsStatus } from '~/api/model/studio/studioControllerListAssignmentsStatus'
 import { useAssistantStudio } from './use-assistant-studio'
+import { useAssignmentDetail } from './use-assignment-detail'
 
 const STATUS_FILTERS: ReadonlyArray<StudioControllerListAssignmentsStatus> = ['ACTIVE', 'COMPLETED', 'TERMINATED']
 
@@ -112,24 +113,9 @@ export function AssistantStudioPage() {
 }
 
 const STATUS_META: Record<AssignmentListResDtoOutputItemsItemStatus, { className: string }> = {
-  ACTIVE: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-  COMPLETED: { className: 'bg-sky-500/10 text-sky-600 border-sky-500/20' },
-  TERMINATED: { className: 'bg-rose-500/10 text-rose-600 border-rose-500/20' }
-}
-
-const AVATAR_GRADIENTS = [
-  'from-blue-600 to-indigo-700',
-  'from-purple-600 to-pink-700',
-  'from-amber-600 to-orange-700',
-  'from-emerald-600 to-teal-700',
-  'from-rose-600 to-pink-700',
-  'from-sky-600 to-cyan-700'
-] as const
-
-function pickGradient(seed: string): string {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
-  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length]
+  ACTIVE: { className: 'bg-primary/10 text-primary border-primary/20' },
+  COMPLETED: { className: 'bg-muted text-muted-foreground border-border' },
+  TERMINATED: { className: 'bg-destructive/10 text-destructive border-destructive/30' }
 }
 
 function formatDate(iso: string | null, locale: string): string {
@@ -139,34 +125,18 @@ function formatDate(iso: string | null, locale: string): string {
   return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-function isKnownTaskType(value: string): value is AssignmentListResDtoOutputItemsItemAssignedTaskTypesItem {
-  return (
-    value === 'BACKGROUND' ||
-    value === 'SCREENTONE' ||
-    value === 'EFFECT_LINES' ||
-    value === 'INKING' ||
-    value === 'COLORING' ||
-    value === 'LETTERING'
-  )
-}
-
-/**
- * Card representing one StudioAssignment from the Assistant's POV — the
- * `mangakaId` is the other party (the hiring Mangaka). The full BE response
- * carries only the UUID, so we render a `Mangaka #xxxxxxxx` placeholder.
- * A future enhancement can fetch `GET /mangakas/{id}` per-card to hydrate the
- * real displayName/avatar.
- */
+/** List rows intentionally only use fields returned by GET /studio-assignments. */
 function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListResDtoOutputItemsItem }) {
   const { t, i18n } = useTranslation('assistant')
   const locale = i18n.language
+  const [showDetails, setShowDetails] = useState(false)
+  const detail = useAssignmentDetail(assignment.id, showDetails)
 
   const statusMeta = STATUS_META[assignment.status] ?? STATUS_META.ACTIVE
   const mangaka = assignment.mangaka
   const displayName = mangaka?.displayName ?? t('studio.card.unknownMangaka')
   const hireFrom = formatDate(assignment.hireStart, locale)
   const hireTo = formatDate(assignment.hireEnd, locale)
-  const taskTypes = assignment.assignedTaskTypes.filter(isKnownTaskType)
 
   return (
     <article className='flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md'>
@@ -181,8 +151,7 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
         ) : (
           <div
             className={cn(
-              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
-              pickGradient(assignment.mangakaId)
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground shadow-sm'
             )}
             aria-hidden='true'
           >
@@ -203,9 +172,8 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
             {assignment.activeNow && (
               <span
                 title={t('studio.card.activeNowBadge')}
-                className='inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600'
+                className='inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary'
               >
-                <Sparkles className='h-3 w-3' />
                 {t('studio.card.activeNowBadge')}
               </span>
             )}
@@ -230,39 +198,62 @@ function AssistantAssignmentCard({ assignment }: { assignment: AssignmentListRes
         </div>
       </div>
 
-      {taskTypes.length > 0 && (
-        <div className='space-y-1.5'>
-          <div className='flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-            <ListChecks className='h-3 w-3' />
-            <span>{t('studio.card.taskTypesTitle')}</span>
-          </div>
-          <div className='flex flex-wrap gap-1.5'>
-            {taskTypes.map((tt) => (
-              <span
-                key={tt}
-                className='inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground'
-              >
-                {t(`studio.taskType.${tt}`)}
-              </span>
-            ))}
-          </div>
-        </div>
+      {assignment.status === 'ACTIVE' && !assignment.activeNow && (
+        <p className='rounded-md border border-border bg-muted px-3 py-2 text-[11px] text-muted-foreground'>
+          {t('studio.card.notActiveNow')}
+        </p>
       )}
 
-      {assignment.status === 'TERMINATED' && (
-        <div className='flex items-start gap-1.5 rounded-md border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-[11px] text-rose-600'>
-          <XCircle className='mt-0.5 h-3 w-3 shrink-0' />
-          <span>
-            {assignment.terminatedReason
-              ? t('studio.card.terminatedReason', { reason: assignment.terminatedReason })
-              : t('studio.card.noReason')}
-          </span>
-        </div>
+      {showDetails && (
+        <section className='space-y-2 rounded-lg border border-border bg-muted/30 p-3'>
+          {detail.isLoading ? (
+            <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+              <Loader2 className='h-3.5 w-3.5 animate-spin' />
+              {t('studio.card.loadingDetails')}
+            </div>
+          ) : detail.error ? (
+            <p className='text-xs text-destructive'>{detail.error}</p>
+          ) : detail.assignment ? (
+            <>
+              <div>
+                <p className='text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+                  {t('studio.card.taskTypesTitle')}
+                </p>
+                <div className='mt-1.5 flex flex-wrap gap-1.5'>
+                  {detail.assignment.assignedTaskTypes.map((type) => (
+                    <span
+                      key={type}
+                      className='rounded-full border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-foreground'
+                    >
+                      {t(`studio.taskType.${type}`)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {detail.assignment.terminatedReason && (
+                <p className='text-xs text-muted-foreground'>
+                  {t('studio.card.terminatedReason', { reason: detail.assignment.terminatedReason })}
+                </p>
+              )}
+            </>
+          ) : null}
+        </section>
       )}
 
-      <footer className='hidden'>
+      <footer className='mt-auto flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground'>
         <span>{t('studio.card.ended', { date: formatDate(assignment.createdAt, locale) || '—' })}</span>
-        <span>{t(assignment.activeNow ? 'studio.card.activeNowBadge' : 'studio.card.endedBadge')}</span>
+        <div className='flex items-center gap-2'>
+          <span>{t(assignment.activeNow ? 'studio.card.activeNowBadge' : 'studio.card.endedBadge')}</span>
+          <button
+            type='button'
+            onClick={() => setShowDetails((value) => !value)}
+            className='inline-flex items-center gap-1 font-semibold text-primary hover:underline cursor-pointer'
+            aria-expanded={showDetails}
+          >
+            {t(showDetails ? 'studio.actions.hideDetails' : 'studio.actions.viewDetails')}
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showDetails && 'rotate-180')} />
+          </button>
+        </div>
       </footer>
     </article>
   )

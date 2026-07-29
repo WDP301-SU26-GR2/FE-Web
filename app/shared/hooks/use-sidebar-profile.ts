@@ -21,15 +21,12 @@ export function useSidebarProfile() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!session) {
-      setIsLoading(false)
-      return
-    }
+    if (!session) return
 
     let cancelled = false
-    setIsLoading(true)
 
     void (async () => {
+      setIsLoading(true)
       try {
         const data = await fetchAccountInfo()
         if (cancelled) return
@@ -61,5 +58,5 @@ export function useSidebarProfile() {
     }
   }, [session])
 
-  return { profile, isLoading }
+  return { profile: session ? profile : null, isLoading: Boolean(session) && isLoading }
 }

@@ -30,8 +30,8 @@ export function AdminStatCard({ icon: Icon, label, value, description, tone = 'p
           KPI
         </span>
       </div>
-      <p className='mt-5 text-3xl font-extrabold tracking-tight text-foreground tabular-nums'>{value}</p>
-      <h2 className='mt-2 text-sm font-bold text-foreground'>{label}</h2>
+      <p className='mt-5 text-2xl font-extrabold tracking-tight text-foreground tabular-nums'>{value}</p>
+      <h2 className='mt-2 text-xs font-bold text-foreground'>{label}</h2>
       <p className='mt-1 text-xs leading-relaxed text-muted-foreground'>{description}</p>
     </article>
   )

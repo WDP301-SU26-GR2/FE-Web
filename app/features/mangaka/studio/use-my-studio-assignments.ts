@@ -6,6 +6,7 @@ import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { StudioControllerListAssignmentsStatus } from '~/api/model/studio/studioControllerListAssignmentsStatus'
 import { StudioControllerListAssignmentsActiveNow } from '~/api/model/studio/studioControllerListAssignmentsActiveNow'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export const STUDIO_PAGE_SIZE = 8
 
@@ -47,12 +48,16 @@ type UseMyStudioAssignmentsResult = {
  *  - 403/404 is treated as "no data" — fresh Mangakas still get a usable
  *    empty state.
  */
-export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
+export function useMyStudioAssignments(options?: {
+  pageSize?: number
+  initialStatus?: StudioFilterStatus
+}): UseMyStudioAssignmentsResult {
   const { t } = useTranslation('common')
+  const pageSize = options?.pageSize ?? STUDIO_PAGE_SIZE
   const [items, setItems] = useState<EnrichedAssignment[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPageState] = useState(1)
-  const [status, setStatus] = useState<StudioFilterStatus>(undefined)
+  const [status, setStatus] = useState<StudioFilterStatus>(options?.initialStatus)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -61,14 +66,14 @@ export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
 
   const fetchPage = useCallback(
     async (signal: AbortSignal, targetPage: number, currentStatus: StudioFilterStatus): Promise<void> => {
-      const offset = (targetPage - 1) * STUDIO_PAGE_SIZE
+      const offset = (targetPage - 1) * pageSize
       const params: {
         limit: number
         offset: number
         status?: StudioControllerListAssignmentsStatus
         activeNow?: typeof StudioControllerListAssignmentsActiveNow.true
       } = {
-        limit: STUDIO_PAGE_SIZE,
+        limit: pageSize,
         offset
       }
       if (currentStatus) params.status = currentStatus
@@ -84,7 +89,7 @@ export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
       setItems(assignments.map((assignment) => ({ assignment })))
       setTotal(res.data.total)
     },
-    []
+    [pageSize]
   )
 
   useEffect(() => {
@@ -106,7 +111,7 @@ export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
           setItems([])
           setTotal(0)
         } else {
-          setError(err instanceof Error ? err.message : t('errors.unknown'))
+          setError(extractApiErrorMessage(err, t('errors.unknown')))
         }
       }
       if (!signal.aborted) {
@@ -129,7 +134,7 @@ export function useMyStudioAssignments(): UseMyStudioAssignmentsResult {
     items,
     total,
     page,
-    perPage: STUDIO_PAGE_SIZE,
+    perPage: pageSize,
     isLoading,
     error,
     status,

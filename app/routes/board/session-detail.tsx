@@ -1,6 +1,7 @@
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import {
   boardControllerGetDecisions,
+  boardControllerGetDecisionDetails,
   boardControllerGetSessionById,
   boardControllerGetSessionMessages
 } from '~/api/operations/board/board'
@@ -20,6 +21,13 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const seriesIds = [
     ...new Set(decisions.data.flatMap((decision) => (decision.targetSeriesId ? [decision.targetSeriesId] : [])))
   ]
+  const decisionDetails = await Promise.all(
+    decisions.data.map((decision) =>
+      boardControllerGetDecisionDetails({ id: decision.id })
+        .then((response) => response.data)
+        .catch(() => null)
+    )
+  )
   const seriesResponses = await Promise.all(seriesIds.map((id) => seriesControllerGetSeries({ id }).catch(() => null)))
   const seriesDetails = seriesResponses.flatMap((response) => (response?.status === 200 ? [response.data] : []))
   const seriesBriefs = await Promise.all(seriesDetails.map(createSeriesBrief))
@@ -27,7 +35,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     session: session.data,
     phase: readBoardSessionPhase(session.data),
     messages: messages?.status === 200 ? messages.data.items : [],
-    decisions: decisions.data,
+    decisions: decisionDetails.filter((decision) => decision !== null),
     seriesBriefs
   }
 }

@@ -1,10 +1,9 @@
 import {
-  contractControllerGetPaymentConditions,
   contractControllerUpdateContract,
-  contractControllerUpdateStatus
+  contractControllerUpdateStatus,
+  paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
 import { EditorContractTermsPage, type EditorActionResult } from '~/features/editor'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 import {
   contractErrorKey,
   datesAreValid,
@@ -18,7 +17,7 @@ import type { Route } from './+types/contract-terms'
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, conditions] = await Promise.all([
     loadContractBase(params.id),
-    contractControllerGetPaymentConditions({ contractId: params.id }).catch(() => null)
+    paymentConditionControllerGetPaymentConditions({ contractId: params.id }).catch(() => null)
   ])
   return { ...base, conditions: conditions?.status === 200 ? conditions.data.data : [] }
 }
@@ -28,7 +27,6 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const intent = required(form, 'intent')
   try {
     if (intent === 'advanceContract') {
-      if (!(await contractHasValidPaymentCondition(params.id))) throw new Error('PAYMENT_CONDITION_REQUIRED')
       await contractControllerUpdateStatus(
         { id: params.id },
         {
@@ -45,8 +43,6 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       if (!ownershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct))
         return { ok: false, intent, errorKey: 'ownershipMismatch' }
       if (!datesAreValid(contractStart, contractEnd)) return { ok: false, intent, errorKey: 'invalidContractDates' }
-      if (intent === 'saveAndAdvanceContract' && !(await contractHasValidPaymentCondition(params.id)))
-        throw new Error('PAYMENT_CONDITION_REQUIRED')
       await contractControllerUpdateContract(
         { id: params.id },
         {
@@ -74,11 +70,6 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   } catch (error) {
     return { ok: false, intent, errorKey: contractErrorKey(error) }
   }
-}
-
-async function contractHasValidPaymentCondition(contractId: string) {
-  const response = await contractControllerGetPaymentConditions({ contractId })
-  return response.status === 200 && hasValidPaymentCondition(response.data.data)
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

@@ -48,13 +48,16 @@
     "mySeries": "Series của tôi",
     "studio": "Studio",
     "assistantDirectory": "Danh bạ trợ lý",
+    "mangakaDirectory": "Danh bạ Mangaka",
     "ranking": "Xếp hạng",
     "contracts": "Hợp đồng",
-    "reprints": "Tái bản",
+    "deadlines": "Thời hạn",
     "transfers": "Chuyển nhượng",
+    "reprints": "Tái bản",
     "payments": "Thanh toán",
     "notifications": "Thông báo",
     "myTasks": "Nhiệm vụ của tôi",
+    "chapterPages": "Trang chapter",
     "proposals": "Hồ sơ",
     "boardWorkflow": "Quy trình Hội đồng",
     "operations": "Vận hành",
@@ -63,11 +66,11 @@
     "boardSessions": "Phiên Hội đồng",
     "boardDecisions": "Quyết định Hội đồng",
     "boardLifecycle": "Quyết định vòng đời",
-    "boardOversight": "Quản trị Hội đồng",
-    "systemOperations": "Vận hành hệ thống",
+    "boardOversight": "Giám sát Hội đồng",
+    "systemOperations": "Vận hành nghiệp vụ",
     "payments": "Thanh toán",
     "reports": "Báo cáo",
-    "audit": "Nhật ký hệ thống",
+    "audit": "Lịch sử hoạt động",
     "systemSettings": "Cấu hình hệ thống",
     "uploadBatch": "Tải lên hàng loạt",
     "editorSupport": "Hỗ trợ biên tập",
@@ -106,7 +109,8 @@
     "comingSoonEditor": "Bảng điều khiển cho vai trò EDITOR — sắp ra mắt.",
     "comingSoonBoard": "Bảng điều khiển cho vai trò BOARD_MEMBER — sắp ra mắt.",
     "comingSoonAdmin": "Bảng điều khiển cho vai trò SUPER_ADMIN — sắp ra mắt.",
-    "newChapter": "Chương mới"
+    "newChapter": "Chương mới",
+    "newChapterHint": "Chọn series để tạo chương mới"
   },
   "notificationsPage": {
     "title": "Thông báo",
@@ -155,5 +159,115 @@
       "updateFailed": "Không thể cập nhật thông báo. Vui lòng thử lại."
     }
   },
-  "refresh": "Làm mới"
+  "contractShared": {
+    "decision": {
+      "title": "Căn cứ quyết định Hội đồng",
+      "serializationSummary": "Phê duyệt xuất bản định kỳ bộ truyện “{{series}}”",
+      "genericSummary": "{{type}} — bộ truyện “{{series}}”",
+      "session": "Phiên họp",
+      "decidedAt": "Ngày phê duyệt",
+      "notFinalized": "Chưa chốt quyết định",
+      "openDecision": "Xem quyết định Hội đồng",
+      "unknownSeries": "Chưa xác định",
+      "unknownDecision": "Quyết định Hội đồng",
+      "types": {
+        "SERIALIZATION": "Duyệt đăng dài kỳ",
+        "CANCELLATION": "Hủy bộ truyện",
+        "FORMAT_CHANGE": "Thay đổi hình thức phát hành",
+        "COMPLETION": "Duyệt kết thúc",
+        "CONTINUE": "Tiếp tục phát hành",
+        "CANCEL": "Hủy bộ truyện",
+        "HIATUS": "Tạm ngưng phát hành",
+        "ENDING_ALLOWANCE": "Duyệt số chương kết thúc",
+        "SERIES_CONTRACT_APPROVAL": "Duyệt hợp đồng bộ truyện",
+        "CONTRACT": "Quyết định hợp đồng",
+        "REPRINT": "Duyệt tái bản",
+        "TRANSFER": "Duyệt chuyển nhượng"
+      },
+      "results": {
+        "APPROVED": "Đã phê duyệt",
+        "REJECTED": "Đã từ chối",
+        "PENDING": "Đang biểu quyết",
+        "PENDING_QUORUM": "Chưa đủ phiếu",
+        "EXPIRED": "Đã hết hiệu lực"
+      }
+    },
+    "notApplicable": "Không áp dụng",
+    "pdf": {
+      "error": "Không thể tạo bản PDF hợp đồng. Vui lòng thử lại.",
+      "missingConditionsTitle": "Hợp đồng chưa có điều kiện thanh toán hợp lệ.",
+      "preparing": "Đang chuẩn bị PDF…",
+      "download": "Tải hợp đồng PDF",
+      "missingConditions": "Chưa có điều kiện thanh toán hợp lệ nên chưa thể tạo PDF đầy đủ."
+    },
+    "paymentConditions": {
+      "loadFailed": "Không thể tải điều kiện thanh toán. Các thao tác duyệt và ký đã được khóa để bảo đảm an toàn.",
+      "empty": "Hợp đồng chưa có điều kiện thanh toán.",
+      "invalidPayout": "Điều kiện này chưa có giá trị chi trả hợp lệ.",
+      "types": {
+        "CHAPTER_MILESTONE": "Mốc số chương",
+        "RECURRING_CHAPTER": "Chi trả định kỳ theo chương",
+        "RANKING_MILESTONE": "Mốc xếp hạng",
+        "TIME_BOUND": "Mốc thời hạn"
+      },
+      "statuses": {
+        "PENDING": "Đang theo dõi",
+        "ACHIEVED": "Đã đạt",
+        "PAID": "Đã chi trả",
+        "CANCELLED": "Đã hủy",
+        "MISSED": "Không đạt",
+        "DISABLED": "Đang tạm dừng"
+      },
+      "facts": {
+        "threshold": "Điều kiện đạt",
+        "amount": "Số tiền chi trả",
+        "percent": "Phần trăm chi trả",
+        "recurring": "Cơ chế lặp",
+        "lastTriggered": "Giá trị đã kích hoạt gần nhất",
+        "achievedAt": "Thời điểm đạt"
+      },
+      "recurring": {
+        "yes": "Có lặp lại",
+        "no": "Chỉ áp dụng một lần"
+      },
+      "thresholds": {
+        "chapter": "Đạt {{value}} chương đã xuất bản",
+        "recurringChapter": "Sau mỗi {{value}} chương đã xuất bản",
+        "ranking": "Đạt top {{value}} bảng xếp hạng",
+        "deadline": "Hoàn thành trước {{value}}",
+        "configured": "Theo cấu hình hợp đồng"
+      }
+    }
+  },
+  "refresh": "Làm mới",
+  "authGuard": {
+    "title": "Đang xác thực phiên làm việc",
+    "description": "Hệ thống đang kiểm tra tài khoản và quyền truy cập của bạn. Quá trình này chỉ mất vài giây."
+  },
+  "taskAnnotations": {
+    "title": "Ghi chú chỉnh sửa",
+    "authorGuide": "Đánh dấu rõ nội dung Assistant cần sửa. Tọa độ X/Y là phần trăm tính từ góc trên bên trái của bản nộp.",
+    "readerGuide": "Đọc toàn bộ ghi chú trước khi sửa và nộp phiên bản mới. Chỉ Mangaka tạo ghi chú mới được đóng hoặc xóa ghi chú đó.",
+    "add": "Thêm ghi chú",
+    "content": "Nội dung cần chỉnh sửa",
+    "placeholder": "Mô tả cụ thể vấn đề và kết quả mong muốn…",
+    "x": "Vị trí ngang X (%)",
+    "y": "Vị trí dọc Y (%)",
+    "coordinateGuide": "Có thể để trống tọa độ nếu ghi chú áp dụng cho toàn bộ task.",
+    "cancel": "Hủy",
+    "save": "Lưu ghi chú",
+    "loading": "Đang tải ghi chú…",
+    "loadError": "Không thể tải annotation của task.",
+    "mutationError": "Không thể cập nhật annotation. Vui lòng thử lại.",
+    "retry": "Thử lại",
+    "created": "Đã thêm ghi chú chỉnh sửa.",
+    "resolved": "Đã đánh dấu ghi chú hoàn tất.",
+    "removed": "Đã xóa ghi chú.",
+    "resolve": "Đóng ghi chú",
+    "remove": "Xóa",
+    "resolvedBadge": "Đã đóng",
+    "unknownAuthor": "Người review",
+    "noContent": "Không có nội dung văn bản.",
+    "empty": "Task chưa có ghi chú chỉnh sửa."
+  }
 }

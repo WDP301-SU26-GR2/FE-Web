@@ -75,6 +75,8 @@ export function ProposalActionDialog({
               </label>
               <textarea
                 id='withdraw-reason'
+                required
+                minLength={1}
                 maxLength={1000}
                 rows={4}
                 value={reason}
@@ -82,6 +84,9 @@ export function ProposalActionDialog({
                 placeholder={t('seriesDetail.actions.withdraw.reasonPlaceholder')}
                 className='w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring'
               />
+              <p className='mt-1 text-xs text-muted-foreground'>
+                {t('seriesDetail.actions.withdraw.reasonHint', { count: reason.trim().length })}
+              </p>
             </div>
           )}
         </div>
@@ -94,7 +99,7 @@ export function ProposalActionDialog({
             type='button'
             variant='destructive'
             size='sm'
-            disabled={isSubmitting}
+            disabled={isSubmitting || (mode === 'withdraw' && reason.trim().length === 0)}
             onClick={() => onConfirm(reason)}
           >
             {isSubmitting && <Loader2 className='h-3.5 w-3.5 animate-spin' />}

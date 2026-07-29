@@ -1,7 +1,11 @@
 import {
   paymentControllerApprovePayment,
   paymentControllerCancelPayment,
+  paymentControllerGetPaymentById,
   paymentControllerGetPayments,
+  paymentControllerGetPaymentsByContract,
+  paymentControllerGetPaymentsBySeries,
+  paymentControllerGetPaymentsByUser,
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
@@ -11,10 +15,29 @@ import type { Route } from './+types/payments'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   try {
-    const response = await paymentControllerGetPayments(paymentQuery(request))
-    return { payments: response.data.data, hasError: false }
+    const query = paymentQuery(request)
+    const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
+    if (focusPaymentId) {
+      const focused = await paymentControllerGetPaymentById({ id: focusPaymentId })
+      return { payments: focused.status === 200 ? [focused.data] : [], focusPaymentId, hasError: false }
+    }
+    const response = query.contractId
+      ? await paymentControllerGetPaymentsByContract({ id: query.contractId })
+      : query.seriesId
+        ? await paymentControllerGetPaymentsBySeries({ id: query.seriesId })
+        : query.receiverId
+          ? await paymentControllerGetPaymentsByUser({ id: query.receiverId })
+          : await paymentControllerGetPayments(query)
+    const payments = await Promise.all(
+      response.data.data.map((payment) =>
+        paymentControllerGetPaymentById({ id: payment.id })
+          .then((detail) => detail.data)
+          .catch(() => null)
+      )
+    )
+    return { payments: payments.filter((payment) => payment !== null), focusPaymentId, hasError: false }
   } catch {
-    return { payments: [], hasError: true }
+    return { payments: [], focusPaymentId: '', hasError: true }
   }
 }
 
@@ -58,5 +81,12 @@ function required(form: FormData, key: string) {
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
-  return <BoardPaymentsPage {...loaderData} enableFilters contractBasePath='/dashboard/board/contracts' />
+  return (
+    <BoardPaymentsPage
+      {...loaderData}
+      enableFilters
+      backPath='/dashboard/board'
+      contractBasePath='/dashboard/board/contracts'
+    />
+  )
 }
