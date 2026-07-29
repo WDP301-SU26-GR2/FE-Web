@@ -11,6 +11,7 @@ import { TaskResourcesDialog } from './task-image-dialog'
 import { TaskSubmissionDialog } from './task-submission-dialog'
 import { useAssistantTaskActions } from '../use-assistant-task-actions'
 import { useAssistantTaskWorkspace } from '../use-assistant-task-workspace'
+import { TaskAnnotationPanel } from '~/shared/components'
 
 export interface TaskWorkspaceDialogProps {
   taskId: string | null
@@ -203,6 +204,8 @@ export function TaskWorkspaceDialog({ taskId, onClose, onTaskChanged }: TaskWork
                 </div>
               </section>
             )}
+
+            <TaskAnnotationPanel taskId={task.id} />
           </div>
         ) : null}
       </Dialog>

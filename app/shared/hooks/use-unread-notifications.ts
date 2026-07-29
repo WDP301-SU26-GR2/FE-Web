@@ -122,13 +122,13 @@ export function emitNotificationsRefresh(): void {
   window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT))
 }
 
-/** Map a BE role code to its dashboard notifications URL. Returns null for
- *  roles that don't have a notifications surface yet (e.g. SUPER_ADMIN). */
+/** Map a BE role code to its dashboard notifications URL. */
 export function notificationsPathForRole(role: LoginResDtoOutputUserRole | undefined): string | null {
   if (!role) return null
   if (role === 'MANGAKA') return '/dashboard/mangaka/notifications'
   if (role === 'ASSISTANT') return '/dashboard/assistant/notifications'
   if (role === 'EDITOR') return '/dashboard/editor/notifications'
   if (role === 'BOARD_MEMBER') return '/dashboard/board/notifications'
+  if (role === 'SUPER_ADMIN') return '/dashboard/admin/notifications'
   return null
 }

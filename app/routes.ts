@@ -6,6 +6,7 @@ export default [
   // Auth (login/register/change-password)
   route('login', 'routes/auth/login.tsx'),
   route('register', 'routes/auth/register.tsx'),
+  route('forgot-password', 'routes/auth/forgot-password.tsx'),
   route('change-password', 'routes/auth/change-password.tsx'),
 
   // ─── Dashboard route convention ───────────────────────────────────────────
@@ -38,6 +39,7 @@ export default [
       route('payments/:id', 'routes/mangaka/payment-detail.tsx'),
       route('deadlines', 'routes/mangaka/deadlines.tsx'),
       route('transfers', 'routes/mangaka/transfers.tsx'),
+      route('reprints', 'routes/mangaka/reprints.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
       route('studio/overview', 'routes/mangaka/studio-overview.tsx'),
       route('studio/tasks/:id', 'routes/mangaka/task-detail.tsx'),
@@ -54,6 +56,7 @@ export default [
     layout('routes/assistant/_layout.tsx', [
       index('routes/assistant/index.tsx'),
       route('tasks', 'routes/assistant/tasks.tsx'),
+      route('chapter-pages', 'routes/assistant/chapter-pages.tsx'),
       route('studio', 'routes/assistant/studio.tsx'),
       route('invites', 'routes/assistant/invites.tsx'),
       route('notifications', 'routes/assistant/notifications.tsx'),

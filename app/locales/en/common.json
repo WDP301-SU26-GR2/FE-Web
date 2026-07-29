@@ -53,9 +53,11 @@
     "contracts": "Contracts",
     "deadlines": "Deadlines",
     "transfers": "Transfers",
+    "reprints": "Reprints",
     "payments": "Payments",
     "notifications": "Notifications",
     "myTasks": "My Tasks",
+    "chapterPages": "Chapter pages",
     "proposals": "Proposals",
     "boardWorkflow": "Board workflow",
     "operations": "Operations",
@@ -107,7 +109,8 @@
     "comingSoonEditor": "Dashboard for EDITOR role — coming soon.",
     "comingSoonBoard": "Dashboard for BOARD_MEMBER role — coming soon.",
     "comingSoonAdmin": "Dashboard for SUPER_ADMIN role — coming soon.",
-    "newChapter": "New Chapter"
+    "newChapter": "New Chapter",
+    "newChapterHint": "Choose a series to create a new chapter"
   },
   "notificationsPage": {
     "title": "Notifications",
@@ -236,5 +239,35 @@
       }
     }
   },
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "authGuard": {
+    "title": "Verifying your session",
+    "description": "We are checking your account and access permissions. This should only take a moment."
+  },
+  "taskAnnotations": {
+    "title": "Revision annotations",
+    "authorGuide": "Mark exactly what the Assistant needs to revise. X/Y coordinates are percentages measured from the submission's top-left corner.",
+    "readerGuide": "Read every note before revising and submitting a new version. Only the Mangaka who created a note can close or delete it.",
+    "add": "Add annotation",
+    "content": "Required revision",
+    "placeholder": "Describe the issue and expected result clearly…",
+    "x": "Horizontal X (%)",
+    "y": "Vertical Y (%)",
+    "coordinateGuide": "Leave coordinates empty when the note applies to the entire task.",
+    "cancel": "Cancel",
+    "save": "Save annotation",
+    "loading": "Loading annotations…",
+    "loadError": "Task annotations could not be loaded.",
+    "mutationError": "The annotation could not be updated. Please try again.",
+    "retry": "Retry",
+    "created": "Revision annotation added.",
+    "resolved": "Annotation marked complete.",
+    "removed": "Annotation removed.",
+    "resolve": "Close annotation",
+    "remove": "Delete",
+    "resolvedBadge": "Closed",
+    "unknownAuthor": "Reviewer",
+    "noContent": "No text content was provided.",
+    "empty": "This task has no revision annotations."
+  }
 }

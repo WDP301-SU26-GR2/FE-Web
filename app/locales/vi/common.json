@@ -53,9 +53,11 @@
     "contracts": "Hợp đồng",
     "deadlines": "Thời hạn",
     "transfers": "Chuyển nhượng",
+    "reprints": "Tái bản",
     "payments": "Thanh toán",
     "notifications": "Thông báo",
     "myTasks": "Nhiệm vụ của tôi",
+    "chapterPages": "Trang chapter",
     "proposals": "Hồ sơ",
     "boardWorkflow": "Quy trình Hội đồng",
     "operations": "Vận hành",
@@ -107,7 +109,8 @@
     "comingSoonEditor": "Bảng điều khiển cho vai trò EDITOR — sắp ra mắt.",
     "comingSoonBoard": "Bảng điều khiển cho vai trò BOARD_MEMBER — sắp ra mắt.",
     "comingSoonAdmin": "Bảng điều khiển cho vai trò SUPER_ADMIN — sắp ra mắt.",
-    "newChapter": "Chương mới"
+    "newChapter": "Chương mới",
+    "newChapterHint": "Chọn series để tạo chương mới"
   },
   "notificationsPage": {
     "title": "Thông báo",
@@ -236,5 +239,35 @@
       }
     }
   },
-  "refresh": "Làm mới"
+  "refresh": "Làm mới",
+  "authGuard": {
+    "title": "Đang xác thực phiên làm việc",
+    "description": "Hệ thống đang kiểm tra tài khoản và quyền truy cập của bạn. Quá trình này chỉ mất vài giây."
+  },
+  "taskAnnotations": {
+    "title": "Ghi chú chỉnh sửa",
+    "authorGuide": "Đánh dấu rõ nội dung Assistant cần sửa. Tọa độ X/Y là phần trăm tính từ góc trên bên trái của bản nộp.",
+    "readerGuide": "Đọc toàn bộ ghi chú trước khi sửa và nộp phiên bản mới. Chỉ Mangaka tạo ghi chú mới được đóng hoặc xóa ghi chú đó.",
+    "add": "Thêm ghi chú",
+    "content": "Nội dung cần chỉnh sửa",
+    "placeholder": "Mô tả cụ thể vấn đề và kết quả mong muốn…",
+    "x": "Vị trí ngang X (%)",
+    "y": "Vị trí dọc Y (%)",
+    "coordinateGuide": "Có thể để trống tọa độ nếu ghi chú áp dụng cho toàn bộ task.",
+    "cancel": "Hủy",
+    "save": "Lưu ghi chú",
+    "loading": "Đang tải ghi chú…",
+    "loadError": "Không thể tải annotation của task.",
+    "mutationError": "Không thể cập nhật annotation. Vui lòng thử lại.",
+    "retry": "Thử lại",
+    "created": "Đã thêm ghi chú chỉnh sửa.",
+    "resolved": "Đã đánh dấu ghi chú hoàn tất.",
+    "removed": "Đã xóa ghi chú.",
+    "resolve": "Đóng ghi chú",
+    "remove": "Xóa",
+    "resolvedBadge": "Đã đóng",
+    "unknownAuthor": "Người review",
+    "noContent": "Không có nội dung văn bản.",
+    "empty": "Task chưa có ghi chú chỉnh sửa."
+  }
 }

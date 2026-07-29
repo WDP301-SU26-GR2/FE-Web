@@ -1713,9 +1713,13 @@
         "deadlineHint": "Leave empty if no specific deadline",
         "priority": "Priority",
         "priorityHint": "Lower number = higher priority",
-        "priorityInvalid": "Priority must be an integer greater than 0.",
+        "priorityInvalid": "Priority must be a non-negative integer.",
         "description": "Work description (optional)",
         "groupTitle": "Task group title (optional)",
+        "batch": {
+          "title": "Split into {{count}} independent tasks",
+          "description": "Each region becomes its own task in one atomic request. If any item is invalid, the entire batch is rejected."
+        },
         "attachments": {
           "label": "Reference Files (optional)",
           "dropzoneLabel": "Drag and drop or click to select files",
@@ -1738,6 +1742,7 @@
           "assignFailed": "Could not assign task. Please try again.",
           "stageSnapshotError": "Could not load the immutable input snapshot for this production stage.",
           "assignGroupFailed": "Could not assign the task group. Please try again.",
+          "assignBatchFailed": "Could not assign the region task batch. Check the details and try again.",
           "incomplete": "Complete the required task information.",
           "taskTypeNotAllowed": "This task type is not allowed in the active production stage.",
           "loadAssignments": "Could not load active assistant assignments.",
@@ -1762,6 +1767,8 @@
           "page": "Page",
           "pages": "Pages",
           "region": "Region",
+          "creationMode": "Creation mode",
+          "batchMode": "{{count}} independent region tasks",
           "deadline": "Deadline",
           "priority": "Priority",
           "attachments": "Reference files",
@@ -2379,6 +2386,69 @@
       "retry": "Retry"
     }
   },
+  "reprints": {
+    "eyebrow": "Flow 7 · Reprints",
+    "title": "Reprint requests",
+    "description": "Track publisher reprint requests, respond to author-rights decisions, and submit revised manuscripts chapter by chapter.",
+    "guideTitle": "What you need to do",
+    "guide": "For revenue-share contracts, review the reason and scope before accepting. For revised reprints, upload a new manuscript only to its assigned chapter; the Editor reviews each chapter before publication.",
+    "requestList": "Requests involving you",
+    "unknownSeries": "Unknown series",
+    "chapterRange": "Chapters {{from}} – {{to}}",
+    "empty": "No reprint requests yet.",
+    "selectHint": "Select a request to view its details.",
+    "mode": "Reprint mode",
+    "range": "Chapter range",
+    "chapterCount": "Chapters",
+    "reason": "Publisher reason and requirements",
+    "noReason": "No additional notes were provided.",
+    "reviewTitle": "Respond to reprint rights",
+    "reviewGuide": "Your decision is sent to the Board. If you reject it, provide a clear reason so the Editor can follow up.",
+    "reviewReason": "Response note",
+    "reviewReasonPlaceholder": "State your acceptance conditions or rejection reason…",
+    "accept": "Accept reprint",
+    "reject": "Reject",
+    "chaptersTitle": "Chapter manuscripts",
+    "chaptersGuide": "Each entry uses the original chapter ID. Do not upload a file to the wrong chapter.",
+    "noChapters": "No chapters are available for this request.",
+    "chapter": "Chapter {{number}}",
+    "download": "View current file",
+    "submitManuscript": "Submit revision",
+    "modes": {
+      "AS_IS": "Use original",
+      "WITH_REVISION": "With revisions",
+      "UNKNOWN": "Not specified"
+    },
+    "statuses": {
+      "PROPOSED": "Awaiting Mangaka",
+      "MANGAKA_REVIEW": "Awaiting Board",
+      "MANGAKA_APPROVED": "Accepted by Mangaka",
+      "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
+      "APPROVED": "Approved",
+      "IN_PRODUCTION": "In production",
+      "PUBLISHED": "Published",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "chapterStatuses": {
+      "PENDING": "Pending",
+      "IN_REVISION": "In revision",
+      "SUBMITTED": "Submitted for Editor review",
+      "APPROVED": "Approved",
+      "PUBLISHED": "Published"
+    },
+    "feedback": {
+      "accepted": "Reprint request accepted.",
+      "rejected": "Rejection submitted.",
+      "manuscriptSubmitted": "The revised manuscript was uploaded and submitted."
+    },
+    "errors": {
+      "load": "Reprint data could not be loaded. Please try again.",
+      "fileRequired": "Select a manuscript to submit.",
+      "invalidAction": "This reprint action is invalid.",
+      "generic": "The reprint action could not be completed. Check its status and try again."
+    }
+  },
   "transfers": {
     "eyebrow": "Transfer workflow",
     "title": "Series transfers",
@@ -2414,13 +2484,15 @@
       "cancel": "Cancel",
       "submit": "Submit request",
       "sendOtp": "Send signing OTP",
-      "confirmSign": "Confirm signature"
+      "confirmSign": "Confirm signature",
+      "reviewContract": "Review terms and sign"
     },
     "card": {
       "unknownSeries": "Unknown series",
       "unknownMangaka": "Unknown Mangaka",
       "requester": "Requester: {{name}}",
-      "percentage": "Proposed ownership: {{value}}%"
+      "percentage": "Proposed ownership: {{value}}%",
+      "contractReadyHint": "The transfer contract is ready. Review the amount, ownership split, and signature progress before confirming."
     },
     "create": {
       "title": "Create transfer request",
@@ -2434,15 +2506,45 @@
     },
     "sign": {
       "title": "Sign transfer contract",
-      "description": "Use the contract identifier supplied by the signing notification. The API determines your signer role and enforces signing order.",
+      "description": "Review every term before using an OTP to confirm your signature.",
+      "reviewDescription": "Verify the parties, transfer value, ownership split, and signing order before continuing.",
       "notificationTitle": "Transfer contract ready for signing",
       "signatureCount_one": "{{count}} signature recorded",
       "signatureCount_other": "{{count}} signatures recorded",
-      "signaturesUnavailable": "Signature progress could not be loaded. You can still retry the signing action.",
+      "signaturesUnavailable": "Signature progress could not be loaded. Reload before signing.",
+      "contractUnavailable": "The contract terms could not be loaded. Signing is locked for your protection.",
+      "reviewBeforeSigning": "The terms are ready for your review before signing.",
       "contractId": "Transfer contract ID",
       "contractIdPlaceholder": "Paste the ID from the signing notification",
       "otp": "Six-digit OTP",
-      "otpPlaceholder": "Enter signing OTP"
+      "otpPlaceholder": "Enter signing OTP",
+      "legalNoticeTitle": "The OTP signature confirms these terms",
+      "legalNotice": "Continue only if the parties, amount, and ownership split match your agreement. The contract cannot be edited directly after signing.",
+      "series": "Series",
+      "amount": "Transfer value",
+      "from": "Transferring Mangaka",
+      "to": "Receiving Mangaka",
+      "type": "Transfer type",
+      "status": "Contract status",
+      "ownershipTitle": "New ownership split",
+      "noSplit": "No ownership split was supplied for this contract.",
+      "progressTitle": "Three-party signature progress",
+      "pending": "Not signed",
+      "waitYourTurn": "It is not your signing turn yet. This action will unlock after the previous signer finishes.",
+      "notSigner": "The current account is not a signer on this contract.",
+      "roles": {
+        "MANGAKA_A": "Transferring Mangaka",
+        "MANGAKA_B": "Receiving Mangaka",
+        "BOARD": "Board"
+      }
+    },
+    "contractStatus": {
+      "DRAFT": "Awaiting transferring Mangaka",
+      "A_SIGNED": "Awaiting receiving Mangaka",
+      "B_SIGNED": "Awaiting Board",
+      "BOARD_SIGNED": "Signed by Board",
+      "FULLY_EXECUTED": "Fully executed",
+      "VOIDED": "Voided"
     },
     "success": {
       "created": "Transfer request submitted.",
@@ -2461,7 +2563,8 @@
       "contractNotFound": "The transfer contract is no longer available.",
       "requestNotFound": "The transfer request from this notification is unavailable or you cannot access it.",
       "noActiveContract": "This series has no active contract eligible for transfer.",
-      "generic": "Could not complete the transfer action. Please try again."
+      "generic": "Could not complete the transfer action. Please try again.",
+      "notYourTurn": "You are not the current signer or this contract is not ready for your signature."
     }
   },
   "contracts": {

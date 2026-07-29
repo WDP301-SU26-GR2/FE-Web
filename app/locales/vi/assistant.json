@@ -28,6 +28,42 @@
       }
     }
   },
+  "chapterPages": {
+    "title": "Xem tổng thể chapter",
+    "description": "Xem thứ tự, trạng thái và bản ghép của toàn bộ trang trong chapter mà bạn đang cộng tác — không chỉ riêng trang đã được giao task.",
+    "chapterIdLabel": "Mã chapter",
+    "chapterIdPlaceholder": "Nhập mã chapter từ brief hoặc liên kết công việc",
+    "open": "Mở chapter",
+    "accessHint": "Bạn chỉ truy cập được chapter thuộc Mangaka đang có quan hệ cộng tác hiệu lực. Ảnh chỉ hiển thị trên trang bạn có task để đảm bảo đúng quyền tải file.",
+    "loading": "Đang tải ngữ cảnh chapter...",
+    "gridTitle": "Các trang trong chapter",
+    "pageCount": "{{count}} trang",
+    "previewPolicy": "Trang chưa có task vẫn hiển thị metadata để bạn hiểu mạch chapter; hệ thống không tải file khi chưa có quyền qua task.",
+    "pageNumber": "Trang {{number}}",
+    "pageAlt": "Bản xem trước trang {{number}}",
+    "revision": "Bản ghép r{{revision}}",
+    "previewLoading": "Đang tải bản xem trước",
+    "previewUnavailable": "Không thể tải bản xem trước qua task này.",
+    "noTaskPreview": "Chưa có task của bạn trên trang này; chỉ hiển thị metadata.",
+    "noFile": "Trang chưa có file hiển thị.",
+    "taskAccess": "Có task được giao — bạn có quyền xem file qua workspace task.",
+    "metadataOnly": "Chưa có task trên trang này — chế độ xem metadata.",
+    "status": {
+      "DRAFT": "Đang sản xuất",
+      "COMPLETED": "Đã hoàn tất",
+      "REVISING": "Đang chỉnh sửa"
+    },
+    "errors": {
+      "title": "Không thể mở chapter",
+      "loadFailed": "Không thể tải các trang của chapter này. Hãy kiểm tra mã chapter và quyền cộng tác."
+    },
+    "empty": {
+      "initialTitle": "Nhập mã chapter để bắt đầu",
+      "initialDescription": "Bạn có thể lấy mã chapter từ brief, đường dẫn công việc hoặc trao đổi với Mangaka phụ trách.",
+      "noPagesTitle": "Chapter chưa có trang",
+      "noPagesDescription": "Chapter hợp lệ nhưng chưa có trang sản xuất nào để hiển thị."
+    }
+  },
   "tasks": {
     "title": "Nhiệm vụ của tôi",
     "subtitle": "Các nhiệm vụ sản xuất được Mangaka giao cho bạn.",

@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
-import { ArrowRightLeft, Loader2, Plus, ShieldCheck } from 'lucide-react'
+import { ArrowRightLeft, CheckCircle2, FileCheck2, Loader2, Plus, ShieldCheck, UsersRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useFetcher } from 'react-router'
+import { Link, useFetcher } from 'react-router'
 
 import type { PublicSeriesListResDtoOutputItemsItem } from '~/api/model/public'
-import type { TransferRequestResDtoOutput, TransferSignatureListResDtoOutputSignaturesItem } from '~/api/model/transfer'
+import type {
+  TransferContractResDtoOutput,
+  TransferRequestResDtoOutput,
+  TransferSignatureListResDtoOutputSignaturesItem
+} from '~/api/model/transfer'
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import { publicControllerListSeries } from '~/api/operations/public/public'
 import { loadPublicSeriesCatalog } from '~/features/mangaka'
@@ -13,6 +17,7 @@ import {
   transferControllerGetTransferRequestById,
   transferControllerGetTransferRequestsByMangaka,
   transferControllerGetSignatures,
+  transferControllerGetTransferContractById,
   transferControllerMangakaAcceptTransfer,
   transferControllerMangakaRejectTransfer,
   transferControllerSignTransferContract
@@ -62,14 +67,23 @@ export async function clientLoader({ request }: { request: Request }) {
     }
   }
 
+  const discoveredContractId =
+    focusContractId || requests.find((item) => item.id === focusRequestId)?.transferContractId || ''
+  let focusContract: TransferContractResDtoOutput | null = null
   let contractSignatures: TransferSignatureListResDtoOutputSignaturesItem[] = []
   let signaturesLoadFailed = false
-  if (focusContractId) {
+  let focusContractLoadFailed = false
+  if (discoveredContractId) {
     try {
-      const response = await transferControllerGetSignatures({ id: focusContractId })
-      contractSignatures = response.data.signatures
+      const [contractResponse, signatureResponse] = await Promise.all([
+        transferControllerGetTransferContractById({ id: discoveredContractId }),
+        transferControllerGetSignatures({ id: discoveredContractId })
+      ])
+      focusContract = contractResponse.data
+      contractSignatures = signatureResponse.data.signatures
     } catch {
       signaturesLoadFailed = true
+      focusContractLoadFailed = true
     }
   }
 
@@ -79,7 +93,9 @@ export async function clientLoader({ request }: { request: Request }) {
     currentUserId: meResponse.data.id,
     focusRequestId,
     focusRequestLoadFailed,
-    focusContractId,
+    focusContractId: discoveredContractId,
+    focusContract,
+    focusContractLoadFailed,
     contractSignatures,
     signaturesLoadFailed
   }
@@ -106,10 +122,22 @@ export async function clientAction({ request }: { request: Request }): Promise<A
       const me = await usersControllerGetMe()
       await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
     } else if (intent === 'sign') {
-      await transferControllerSignTransferContract(
-        { id: required(form, 'contractId') },
-        { otpCode: required(form, 'otpCode') }
-      )
+      const contractId = required(form, 'contractId')
+      const [contractResponse, meResponse] = await Promise.all([
+        transferControllerGetTransferContractById({ id: contractId }),
+        usersControllerGetMe()
+      ])
+      const contract = contractResponse.data
+      const isMangakaA = contract.fromMangakaId === meResponse.data.id
+      const isMangakaB = contract.toMangakaId === meResponse.data.id
+      if (
+        (!isMangakaA && !isMangakaB) ||
+        (isMangakaA && contract.status !== 'DRAFT') ||
+        (isMangakaB && contract.status !== 'A_SIGNED')
+      ) {
+        return { ok: false, intent, errorKey: 'transfers.errors.notYourTurn' }
+      }
+      await transferControllerSignTransferContract({ id: contractId }, { otpCode: required(form, 'otpCode') })
     } else {
       return { ok: false, intent, errorKey: 'transfers.errors.invalidAction' }
     }
@@ -186,15 +214,18 @@ export default function MangakaTransfersRoute({
             <div>
               <h2 className='font-bold text-foreground'>{t('transfers.sign.notificationTitle')}</h2>
               <p className='mt-1 text-sm text-muted-foreground'>
-                {loaderData.signaturesLoadFailed
-                  ? t('transfers.sign.signaturesUnavailable')
-                  : t('transfers.sign.signatureCount', { count: loaderData.contractSignatures.length })}
+                {loaderData.focusContractLoadFailed
+                  ? t('transfers.sign.contractUnavailable')
+                  : loaderData.signaturesLoadFailed
+                    ? t('transfers.sign.signaturesUnavailable')
+                    : t('transfers.sign.reviewBeforeSigning')}
               </p>
             </div>
             <button
               type='button'
               onClick={() => setStandaloneSignOpen(true)}
-              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+              disabled={!loaderData.focusContract}
+              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
             >
               <ShieldCheck className='size-4' aria-hidden='true' /> {t('transfers.actions.sign')}
             </button>
@@ -217,8 +248,13 @@ export default function MangakaTransfersRoute({
         focusRequestId={loaderData.focusRequestId}
       />
 
-      {standaloneSignOpen && (
-        <SignDialog defaultContractId={loaderData.focusContractId} onClose={() => setStandaloneSignOpen(false)} />
+      {standaloneSignOpen && loaderData.focusContract && (
+        <SignDialog
+          contract={loaderData.focusContract}
+          signatures={loaderData.contractSignatures}
+          currentUserId={loaderData.currentUserId}
+          onClose={() => setStandaloneSignOpen(false)}
+        />
       )}
     </div>
   )
@@ -300,6 +336,21 @@ function TransferRequestCard({
         <p className='mt-2 text-sm text-foreground'>
           {t('transfers.card.percentage', { value: item.proposedPercentage })}
         </p>
+      )}
+
+      {item.transferContractId && (
+        <div className='mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3'>
+          <p className='text-xs font-semibold leading-5 text-muted-foreground'>
+            {t('transfers.card.contractReadyHint')}
+          </p>
+          <Link
+            to={`?requestId=${encodeURIComponent(item.id)}&contractId=${encodeURIComponent(item.transferContractId)}`}
+            className='mt-3 inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+          >
+            <FileCheck2 className='size-4' aria-hidden='true' />
+            {t('transfers.actions.reviewContract')}
+          </Link>
+        </div>
       )}
 
       {canRespond && (
@@ -425,72 +476,166 @@ function CreateRequestDialog({
   )
 }
 
-function SignDialog({ defaultContractId, onClose }: { defaultContractId: string; onClose: () => void }) {
-  const { t } = useTranslation('mangaka')
+function SignDialog({
+  contract,
+  signatures,
+  currentUserId,
+  onClose
+}: {
+  contract: TransferContractResDtoOutput
+  signatures: TransferSignatureListResDtoOutputSignaturesItem[]
+  currentUserId: string
+  onClose: () => void
+}) {
+  const { t, i18n } = useTranslation('mangaka')
   const fetcher = useFetcher<ActionResult>()
+  const isMangakaA = contract.fromMangakaId === currentUserId
+  const isMangakaB = contract.toMangakaId === currentUserId
+  const isMyTurn = (isMangakaA && contract.status === 'DRAFT') || (isMangakaB && contract.status === 'A_SIGNED')
+  const ownershipEntries = Object.entries(contract.newOwnershipSplit ?? {})
   return (
     <Dialog
       open
       onClose={onClose}
       titleId='sign-transfer-contract'
       title={t('transfers.sign.title')}
-      description={t('transfers.sign.description')}
-      size='sm'
+      description={t('transfers.sign.reviewDescription')}
+      size='lg'
     >
-      <fetcher.Form method='post' className='grid gap-3'>
-        <label className='grid gap-1 text-sm font-semibold text-foreground'>
-          {t('transfers.sign.contractId')}
-          <input
-            name='contractId'
-            required
-            defaultValue={defaultContractId}
-            readOnly={Boolean(defaultContractId)}
-            className={cn(inputClass, defaultContractId && 'bg-muted')}
-            placeholder={t('transfers.sign.contractIdPlaceholder')}
+      <div className='space-y-5'>
+        <div className='rounded-xl border border-info/30 bg-info/5 p-4'>
+          <div className='flex items-start gap-3'>
+            <ShieldCheck className='mt-0.5 size-5 shrink-0 text-info' aria-hidden='true' />
+            <div>
+              <p className='text-sm font-bold text-foreground'>{t('transfers.sign.legalNoticeTitle')}</p>
+              <p className='mt-1 text-xs leading-5 text-muted-foreground'>{t('transfers.sign.legalNotice')}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className='grid gap-3 sm:grid-cols-2'>
+          <ContractFact label={t('transfers.sign.series')} value={contract.series?.title ?? '—'} />
+          <ContractFact
+            label={t('transfers.sign.amount')}
+            value={
+              contract.transferAmount == null
+                ? '—'
+                : new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'JPY' }).format(
+                    contract.transferAmount
+                  )
+            }
           />
-        </label>
-        <button
-          name='intent'
-          value='sendOtp'
-          formNoValidate
-          disabled={fetcher.state !== 'idle'}
-          className='h-10 rounded-md border border-border px-3 text-sm font-bold text-foreground disabled:opacity-50'
-        >
-          {t('transfers.actions.sendOtp')}
-        </button>
-        <label className='grid gap-1 text-sm font-semibold text-foreground'>
-          {t('transfers.sign.otp')}
-          <input
-            name='otpCode'
-            required
-            inputMode='numeric'
-            pattern='[0-9]{6}'
-            minLength={6}
-            maxLength={6}
-            className={inputClass}
-            placeholder={t('transfers.sign.otpPlaceholder')}
+          <ContractFact label={t('transfers.sign.from')} value={contract.fromMangaka?.displayName ?? '—'} />
+          <ContractFact label={t('transfers.sign.to')} value={contract.toMangaka?.displayName ?? '—'} />
+          <ContractFact label={t('transfers.sign.type')} value={contract.transferType ?? '—'} />
+          <ContractFact
+            label={t('transfers.sign.status')}
+            value={t(`transfers.contractStatus.${contract.status}`, { defaultValue: contract.status })}
           />
-        </label>
-        <div className='flex justify-end gap-2'>
-          <button
-            type='button'
-            onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
-          >
-            {t('transfers.actions.cancel')}
-          </button>
+        </div>
+
+        <section className='rounded-xl border border-border bg-muted/30 p-4'>
+          <h3 className='flex items-center gap-2 text-sm font-bold text-foreground'>
+            <UsersRound className='size-4 text-primary' aria-hidden='true' />
+            {t('transfers.sign.ownershipTitle')}
+          </h3>
+          <div className='mt-3 grid gap-2 sm:grid-cols-3'>
+            {ownershipEntries.map(([party, percentage]) => (
+              <div key={party} className='rounded-lg border border-border bg-card p-3'>
+                <p className='text-[10px] font-bold uppercase tracking-wide text-muted-foreground'>{party}</p>
+                <p className='mt-1 text-lg font-extrabold text-foreground'>{percentage}%</p>
+              </div>
+            ))}
+            {!ownershipEntries.length && <p className='text-xs text-muted-foreground'>{t('transfers.sign.noSplit')}</p>}
+          </div>
+        </section>
+
+        <section className='rounded-xl border border-border p-4'>
+          <h3 className='text-sm font-bold text-foreground'>{t('transfers.sign.progressTitle')}</h3>
+          <div className='mt-3 grid gap-2 sm:grid-cols-3'>
+            {(['MANGAKA_A', 'MANGAKA_B', 'BOARD'] as const).map((role) => {
+              const signature = signatures.find((item) => item.role === role)
+              return (
+                <div key={role} className='flex items-start gap-2 rounded-lg bg-muted/40 p-3'>
+                  <CheckCircle2
+                    className={cn('mt-0.5 size-4 shrink-0', signature ? 'text-success' : 'text-muted-foreground')}
+                  />
+                  <div>
+                    <p className='text-xs font-bold text-foreground'>{t(`transfers.sign.roles.${role}`)}</p>
+                    <p className='mt-1 text-[11px] text-muted-foreground'>
+                      {signature
+                        ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+                            new Date(signature.signedAt)
+                          )
+                        : t('transfers.sign.pending')}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {!isMyTurn && (
+          <p className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs font-semibold text-warning-foreground'>
+            {isMangakaA || isMangakaB ? t('transfers.sign.waitYourTurn') : t('transfers.sign.notSigner')}
+          </p>
+        )}
+
+        <fetcher.Form method='post' className='grid gap-3 rounded-xl border border-border p-4'>
+          <input type='hidden' name='contractId' value={contract.id} />
           <button
             name='intent'
-            value='sign'
-            disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            value='sendOtp'
+            formNoValidate
+            disabled={!isMyTurn || fetcher.state !== 'idle'}
+            className='h-10 rounded-md border border-border px-3 text-sm font-bold text-foreground disabled:opacity-50'
           >
-            {t('transfers.actions.confirmSign')}
+            {t('transfers.actions.sendOtp')}
           </button>
-        </div>
-      </fetcher.Form>
-      {fetcher.data && <ActionFeedback result={fetcher.data} successKey='transfers.success.signed' />}
+          <label className='grid gap-1 text-sm font-semibold text-foreground'>
+            {t('transfers.sign.otp')}
+            <input
+              name='otpCode'
+              required
+              inputMode='numeric'
+              pattern='[0-9]{6}'
+              minLength={6}
+              maxLength={6}
+              className={inputClass}
+              placeholder={t('transfers.sign.otpPlaceholder')}
+            />
+          </label>
+          <div className='flex justify-end gap-2'>
+            <button
+              type='button'
+              onClick={onClose}
+              className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            >
+              {t('transfers.actions.cancel')}
+            </button>
+            <button
+              name='intent'
+              value='sign'
+              disabled={!isMyTurn || fetcher.state !== 'idle'}
+              className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            >
+              {t('transfers.actions.confirmSign')}
+            </button>
+          </div>
+        </fetcher.Form>
+        {fetcher.data && <ActionFeedback result={fetcher.data} successKey='transfers.success.signed' />}
+      </div>
     </Dialog>
+  )
+}
+
+function ContractFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className='rounded-xl border border-border bg-card p-3'>
+      <p className='text-[10px] font-bold uppercase tracking-wide text-muted-foreground'>{label}</p>
+      <p className='mt-1 break-words text-sm font-semibold text-foreground'>{value}</p>
+    </div>
   )
 }
 

@@ -1,8 +1,17 @@
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { CreateTaskBodyDto, CreateTaskGroupBodyDto, TaskResDtoOutput } from '~/api/model/task'
-import { taskControllerCreateTask, taskControllerCreateTaskGroup } from '~/api/operations/task/task'
+import type {
+  BatchCreateTaskBodyDto,
+  CreateTaskBodyDto,
+  CreateTaskGroupBodyDto,
+  TaskResDtoOutput
+} from '~/api/model/task'
+import {
+  taskControllerCreateTask,
+  taskControllerCreateTaskBatch,
+  taskControllerCreateTaskGroup
+} from '~/api/operations/task/task'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export interface UseAssignTaskResult {
@@ -10,6 +19,8 @@ export interface UseAssignTaskResult {
   assignTask: (input: CreateTaskBodyDto) => Promise<{ success: boolean; data?: TaskResDtoOutput; error?: string }>
   /** Fire `POST /tasks/group` for one shared task across multiple whole pages. */
   assignTaskGroup: (input: CreateTaskGroupBodyDto) => Promise<{ success: boolean; error?: string }>
+  /** Fire `POST /tasks/batch` atomically, one task per selected region. */
+  assignTaskBatch: (input: BatchCreateTaskBodyDto) => Promise<{ success: boolean; error?: string }>
   isSubmitting: boolean
 }
 
@@ -57,5 +68,22 @@ export function useAssignTask(): UseAssignTaskResult {
     [isSubmitting, t]
   )
 
-  return { assignTask, assignTaskGroup, isSubmitting }
+  const assignTaskBatch = useCallback(
+    async (input: BatchCreateTaskBodyDto): Promise<{ success: boolean; error?: string }> => {
+      if (isSubmitting) return { success: false, error: t('studio.tasks.composer.errors.assigning') }
+
+      setIsSubmitting(true)
+      try {
+        await taskControllerCreateTaskBatch(input)
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: readableError(error, t('studio.tasks.composer.errors.assignBatchFailed')) }
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [isSubmitting, t]
+  )
+
+  return { assignTask, assignTaskGroup, assignTaskBatch, isSubmitting }
 }

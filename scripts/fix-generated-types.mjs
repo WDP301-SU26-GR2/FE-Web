@@ -16,13 +16,19 @@ const operationsDir = join(__dirname, '../app/api/operations')
 const REPLACE_PATTERN = /\/\/\s*@ts-ignore.*\n/g
 const REPLACEMENT = '// @ts-expect-error -- generated file — HeadersInit spread incompatibility with TS strict mode\n'
 const SUPPRESS_CHECK = '@ts-expect-error -- generated file'
+const INVALID_FAKER_OBJECT_SPREAD =
+  /thresholdConfig:\s*\{\.\.\.faker\.helpers\.arrayElement\([\s\S]*?\),\},\s*payoutAmount:/g
 
 function processFile(filePath) {
   if (!filePath.endsWith('.ts')) return
   const content = readFileSync(filePath, 'utf-8')
-  if (content.includes(SUPPRESS_CHECK)) return
-  if (!REPLACE_PATTERN.test(content)) return
-  const newContent = content.replace(REPLACE_PATTERN, REPLACEMENT)
+  let newContent = content
+  if (!content.includes(SUPPRESS_CHECK)) newContent = newContent.replace(REPLACE_PATTERN, REPLACEMENT)
+  // Orval can generate an object spread from a primitive union for
+  // `Record<string, unknown>` schemas. An empty object is a valid mock and
+  // keeps generated MSW handlers compatible with strict TypeScript.
+  newContent = newContent.replace(INVALID_FAKER_OBJECT_SPREAD, 'thresholdConfig: {}, payoutAmount:')
+  if (newContent === content) return
   writeFileSync(filePath, newContent, 'utf-8')
   console.log('Patched:', filePath)
 }

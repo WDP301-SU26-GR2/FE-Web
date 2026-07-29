@@ -164,7 +164,7 @@ export function LoginPage() {
                   <label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
                     {t('login.passwordLabel')}
                   </label>
-                  <Link to='#' className='text-xs font-medium text-primary hover:underline'>
+                  <Link to='/forgot-password' className='text-xs font-medium text-primary hover:underline'>
                     {t('login.forgotPassword')}
                   </Link>
                 </div>
@@ -270,12 +270,8 @@ export function LoginPage() {
         {/* Footer info */}
         <div className='mt-8 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-center text-xs text-muted-foreground sm:flex-row'>
           <div className='flex gap-4'>
-            <Link to='#' className='hover:underline'>
-              {t('login.footerTerms')}
-            </Link>
-            <Link to='#' className='hover:underline'>
-              {t('login.footerPrivacy')}
-            </Link>
+            <span>{t('login.footerTerms')}</span>
+            <span>{t('login.footerPrivacy')}</span>
           </div>
           <span>{t('login.version')}</span>
         </div>

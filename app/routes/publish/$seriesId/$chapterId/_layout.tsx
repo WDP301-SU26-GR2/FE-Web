@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 
 import { PublicationShell } from '~/features/mangaka/publication/publication-shell'
+import { RoleDashboardGuard } from '~/shared/components'
 
 /**
  * Layout for `/publish/:seriesId/:chapterId/*`. Lifts chapter/name/pages
@@ -13,11 +14,13 @@ import { PublicationShell } from '~/features/mangaka/publication/publication-she
 export default function PublishChapterLayout() {
   const params = useParams()
   return (
-    <PublicationShell
-      params={{
-        seriesId: params.seriesId ?? '',
-        chapterId: params.chapterId ?? ''
-      }}
-    />
+    <RoleDashboardGuard role='MANGAKA'>
+      <PublicationShell
+        params={{
+          seriesId: params.seriesId ?? '',
+          chapterId: params.chapterId ?? ''
+        }}
+      />
+    </RoleDashboardGuard>
   )
 }

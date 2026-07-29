@@ -7,6 +7,7 @@ import type { TaskResDtoOutput } from '~/api/model/task'
 import { StatusBadge } from '~/shared/ui'
 import { getTaskStatusTone } from './lib/task-status-meta'
 import { TaskSignedImage } from './components/task-signed-image'
+import { TaskAnnotationPanel } from '~/shared/components'
 
 export function MangakaTaskDetailPage({ task, errorKey }: { task: TaskResDtoOutput | null; errorKey: string | null }) {
   const { t, i18n } = useTranslation('mangaka')
@@ -91,6 +92,7 @@ export function MangakaTaskDetailPage({ task, errorKey }: { task: TaskResDtoOutp
           <p className='text-sm text-muted-foreground'>
             {t('tasks.detail.summary', { regions: task.regionIds.length, versions: task.versions.length })}
           </p>
+          <TaskAnnotationPanel taskId={task.id} canCreate />
         </section>
       )}
     </main>

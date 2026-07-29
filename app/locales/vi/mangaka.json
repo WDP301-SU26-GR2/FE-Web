@@ -1713,9 +1713,13 @@
         "deadlineHint": "Để trống nếu không có hạn cụ thể",
         "priority": "Độ ưu tiên",
         "priorityHint": "Số nhỏ hơn = ưu tiên cao hơn",
-        "priorityInvalid": "Độ ưu tiên phải là số nguyên lớn hơn 0.",
+        "priorityInvalid": "Độ ưu tiên phải là số nguyên không âm.",
         "description": "Mô tả công việc (tuỳ chọn)",
         "groupTitle": "Tên nhóm công việc (tuỳ chọn)",
+        "batch": {
+          "title": "Tách thành {{count}} nhiệm vụ độc lập",
+          "description": "Mỗi vùng sẽ trở thành một nhiệm vụ riêng trong cùng một giao dịch. Nếu một mục không hợp lệ, toàn bộ lô sẽ không được tạo."
+        },
         "attachments": {
           "label": "Tài liệu tham khảo (tuỳ chọn)",
           "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file",
@@ -1738,6 +1742,7 @@
           "assignFailed": "Không thể giao nhiệm vụ. Vui lòng thử lại.",
           "stageSnapshotError": "Không thể tải ảnh đầu vào bất biến của công đoạn sản xuất này.",
           "assignGroupFailed": "Không thể giao nhóm nhiệm vụ. Vui lòng thử lại.",
+          "assignBatchFailed": "Không thể giao lô nhiệm vụ theo vùng. Vui lòng kiểm tra lại và thử lại.",
           "incomplete": "Vui lòng điền đầy đủ thông tin bắt buộc.",
           "taskTypeNotAllowed": "Loại công việc này không được phép ở giai đoạn sản xuất đang hoạt động.",
           "loadAssignments": "Không thể tải các quan hệ cộng tác đang hoạt động.",
@@ -1762,6 +1767,8 @@
           "page": "Trang",
           "pages": "Các trang",
           "region": "Vùng",
+          "creationMode": "Cách tạo",
+          "batchMode": "{{count}} nhiệm vụ độc lập theo từng vùng",
           "deadline": "Deadline",
           "priority": "Độ ưu tiên",
           "attachments": "Tài liệu tham khảo",
@@ -2379,6 +2386,69 @@
       "retry": "Thử lại"
     }
   },
+  "reprints": {
+    "eyebrow": "Flow 7 · Tái bản",
+    "title": "Yêu cầu tái bản",
+    "description": "Theo dõi đề nghị tái bản từ Nhà xuất bản, phản hồi quyền lợi tác giả và nộp bản thảo sửa đổi theo từng chapter.",
+    "guideTitle": "Bạn cần làm gì?",
+    "guide": "Với hợp đồng chia sẻ doanh thu, hãy đọc lý do và phạm vi trước khi đồng ý. Nếu tái bản có chỉnh sửa, chỉ upload bản mới vào đúng chapter được giao; Editor sẽ duyệt từng chapter trước khi xuất bản.",
+    "requestList": "Các yêu cầu liên quan đến bạn",
+    "unknownSeries": "Series chưa xác định",
+    "chapterRange": "Chapter {{from}} – {{to}}",
+    "empty": "Chưa có yêu cầu tái bản nào.",
+    "selectHint": "Chọn một yêu cầu để xem chi tiết.",
+    "mode": "Chế độ tái bản",
+    "range": "Phạm vi chapter",
+    "chapterCount": "Số chapter",
+    "reason": "Lý do và yêu cầu từ Nhà xuất bản",
+    "noReason": "Không có ghi chú bổ sung.",
+    "reviewTitle": "Phản hồi quyền tái bản",
+    "reviewGuide": "Quyết định này được chuyển tiếp tới Hội đồng. Nếu từ chối, hãy ghi rõ lý do để Editor có thể xử lý.",
+    "reviewReason": "Ghi chú phản hồi",
+    "reviewReasonPlaceholder": "Nêu điều kiện đồng ý hoặc lý do từ chối…",
+    "accept": "Đồng ý tái bản",
+    "reject": "Từ chối",
+    "chaptersTitle": "Bản thảo theo chapter",
+    "chaptersGuide": "Mỗi bản ghi dùng ID của chapter gốc. Không upload nhầm file giữa các chapter.",
+    "noChapters": "Yêu cầu chưa có chapter khả dụng.",
+    "chapter": "Chapter {{number}}",
+    "download": "Xem bản hiện tại",
+    "submitManuscript": "Nộp bản sửa",
+    "modes": {
+      "AS_IS": "Giữ nguyên bản gốc",
+      "WITH_REVISION": "Có chỉnh sửa",
+      "UNKNOWN": "Chưa xác định"
+    },
+    "statuses": {
+      "PROPOSED": "Chờ Mangaka phản hồi",
+      "MANGAKA_REVIEW": "Chờ Hội đồng",
+      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+      "REJECTED_BY_MANGAKA": "Mangaka từ chối",
+      "APPROVED": "Đã duyệt",
+      "IN_PRODUCTION": "Đang sản xuất",
+      "PUBLISHED": "Đã xuất bản",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy"
+    },
+    "chapterStatuses": {
+      "PENDING": "Chờ xử lý",
+      "IN_REVISION": "Đang chỉnh sửa",
+      "SUBMITTED": "Đã nộp, chờ Editor duyệt",
+      "APPROVED": "Đã duyệt",
+      "PUBLISHED": "Đã xuất bản"
+    },
+    "feedback": {
+      "accepted": "Đã xác nhận đồng ý tái bản.",
+      "rejected": "Đã gửi quyết định từ chối.",
+      "manuscriptSubmitted": "Đã upload và nộp bản thảo sửa đổi."
+    },
+    "errors": {
+      "load": "Không thể tải dữ liệu tái bản. Vui lòng thử lại.",
+      "fileRequired": "Hãy chọn bản thảo cần nộp.",
+      "invalidAction": "Thao tác tái bản không hợp lệ.",
+      "generic": "Không thể hoàn tất thao tác tái bản. Vui lòng kiểm tra trạng thái và thử lại."
+    }
+  },
   "transfers": {
     "eyebrow": "Quy trình chuyển nhượng",
     "title": "Chuyển nhượng series",
@@ -2414,13 +2484,15 @@
       "cancel": "Hủy",
       "submit": "Gửi yêu cầu",
       "sendOtp": "Gửi OTP ký",
-      "confirmSign": "Xác nhận ký"
+      "confirmSign": "Xác nhận ký",
+      "reviewContract": "Xem điều khoản và ký"
     },
     "card": {
       "unknownSeries": "Series chưa xác định",
       "unknownMangaka": "Mangaka chưa xác định",
       "requester": "Người đề nghị: {{name}}",
-      "percentage": "Tỷ lệ sở hữu đề xuất: {{value}}%"
+      "percentage": "Tỷ lệ sở hữu đề xuất: {{value}}%",
+      "contractReadyHint": "Hợp đồng chuyển nhượng đã được soạn. Bạn cần đọc kỹ số tiền, tỷ lệ sở hữu và tiến độ chữ ký trước khi xác nhận."
     },
     "create": {
       "title": "Tạo yêu cầu chuyển nhượng",
@@ -2434,15 +2506,45 @@
     },
     "sign": {
       "title": "Ký hợp đồng chuyển nhượng",
-      "description": "Dùng mã hợp đồng trong thông báo ký. API tự xác định vai trò và kiểm soát thứ tự ký.",
+      "description": "Đọc kỹ toàn bộ điều khoản trước khi dùng OTP để xác nhận chữ ký.",
+      "reviewDescription": "Kiểm tra các bên, giá trị chuyển nhượng, tỷ lệ sở hữu và thứ tự ký trước khi tiếp tục.",
       "notificationTitle": "Hợp đồng chuyển nhượng đang chờ ký",
       "signatureCount_one": "Đã ghi nhận {{count}} chữ ký",
       "signatureCount_other": "Đã ghi nhận {{count}} chữ ký",
-      "signaturesUnavailable": "Không tải được tiến độ chữ ký. Bạn vẫn có thể thử lại thao tác ký.",
+      "signaturesUnavailable": "Không tải được tiến độ chữ ký. Vui lòng tải lại trước khi ký.",
+      "contractUnavailable": "Không tải được nội dung hợp đồng. Chức năng ký đã được khóa để bảo vệ bạn.",
+      "reviewBeforeSigning": "Điều khoản đã sẵn sàng để bạn kiểm tra trước khi ký.",
       "contractId": "Mã hợp đồng chuyển nhượng",
       "contractIdPlaceholder": "Dán mã từ thông báo ký",
       "otp": "OTP gồm 6 số",
-      "otpPlaceholder": "Nhập OTP ký"
+      "otpPlaceholder": "Nhập OTP ký",
+      "legalNoticeTitle": "Chữ ký OTP có giá trị xác nhận điều khoản",
+      "legalNotice": "Chỉ tiếp tục khi tên các bên, số tiền và tỷ lệ sở hữu bên dưới đúng với thỏa thuận. Sau khi ký, hệ thống không cho sửa trực tiếp hợp đồng này.",
+      "series": "Series",
+      "amount": "Giá trị chuyển nhượng",
+      "from": "Mangaka chuyển giao",
+      "to": "Mangaka tiếp nhận",
+      "type": "Hình thức chuyển nhượng",
+      "status": "Trạng thái hợp đồng",
+      "ownershipTitle": "Tỷ lệ sở hữu mới",
+      "noSplit": "Hợp đồng chưa cung cấp bảng phân chia sở hữu.",
+      "progressTitle": "Tiến độ chữ ký ba bên",
+      "pending": "Chưa ký",
+      "waitYourTurn": "Chưa đến lượt ký của bạn. Hệ thống sẽ mở thao tác khi bên ký trước đã hoàn tất.",
+      "notSigner": "Tài khoản hiện tại không phải bên ký của hợp đồng này.",
+      "roles": {
+        "MANGAKA_A": "Mangaka chuyển giao",
+        "MANGAKA_B": "Mangaka tiếp nhận",
+        "BOARD": "Hội đồng"
+      }
+    },
+    "contractStatus": {
+      "DRAFT": "Chờ Mangaka chuyển giao ký",
+      "A_SIGNED": "Chờ Mangaka tiếp nhận ký",
+      "B_SIGNED": "Chờ Hội đồng ký",
+      "BOARD_SIGNED": "Hội đồng đã ký",
+      "FULLY_EXECUTED": "Đã có hiệu lực",
+      "VOIDED": "Đã vô hiệu"
     },
     "success": {
       "created": "Đã gửi yêu cầu chuyển nhượng.",
@@ -2461,7 +2563,8 @@
       "contractNotFound": "Hợp đồng chuyển nhượng không còn khả dụng.",
       "requestNotFound": "Yêu cầu từ thông báo không còn khả dụng hoặc bạn không có quyền truy cập.",
       "noActiveContract": "Series chưa có hợp đồng hiệu lực để chuyển nhượng.",
-      "generic": "Không thể hoàn tất thao tác chuyển nhượng. Vui lòng thử lại."
+      "generic": "Không thể hoàn tất thao tác chuyển nhượng. Vui lòng thử lại.",
+      "notYourTurn": "Bạn không phải bên ký hiện tại hoặc hợp đồng chưa đến lượt ký của bạn."
     }
   },
   "contracts": {

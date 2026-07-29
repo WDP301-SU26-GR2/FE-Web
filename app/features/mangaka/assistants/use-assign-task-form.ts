@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { CreateTaskBodyDto, CreateTaskBodyDtoTaskType, CreateTaskGroupBodyDto } from '~/api/model/task'
+import type {
+  BatchCreateTaskBodyDto,
+  CreateTaskBodyDto,
+  CreateTaskBodyDtoTaskType,
+  CreateTaskGroupBodyDto
+} from '~/api/model/task'
 import type {
   ActiveAssignmentOption,
   ProductionStageOption,
@@ -52,6 +57,8 @@ export interface AssignTaskFormState {
   deadline?: string
   priority?: number
   assetIds?: string[]
+  /** Create one atomic task per selected region through POST /tasks/batch. */
+  splitRegionsIntoTasks?: boolean
 }
 
 export interface UseAssignTaskFormOptions {
@@ -88,11 +95,18 @@ export interface UseAssignTaskFormResult {
   ) => void
   setWork: (
     work: Partial<
-      Pick<AssignTaskFormState, 'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds'>
+      Pick<
+        AssignTaskFormState,
+        'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds' | 'splitRegionsIntoTasks'
+      >
     >
   ) => void
   /** Submit the form. Returns `{success:true, data}` on success. */
-  submit: () => Promise<{ success: boolean; data?: CreateTaskBodyDto | CreateTaskGroupBodyDto; error?: string }>
+  submit: () => Promise<{
+    success: boolean
+    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto | BatchCreateTaskBodyDto
+    error?: string
+  }>
   reset: () => void
   isSubmitting: UseAssignTaskResult['isSubmitting']
 }
@@ -111,7 +125,7 @@ const STEP_ORDER: ComposerStep[] = ['context', 'work', 'confirm']
  */
 export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAssignTaskFormResult {
   const { preset, assignments = [], stageTaskTypes, stages = [], requireStage = false } = options
-  const { assignTask, assignTaskGroup, isSubmitting } = useAssignTask()
+  const { assignTask, assignTaskGroup, assignTaskBatch, isSubmitting } = useAssignTask()
   const { t } = useTranslation('mangaka')
 
   const initial: AssignTaskFormState = useMemo(
@@ -202,7 +216,10 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
   const setWork = useCallback(
     (
       work: Partial<
-        Pick<AssignTaskFormState, 'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds'>
+        Pick<
+          AssignTaskFormState,
+          'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds' | 'splitRegionsIntoTasks'
+        >
       >
     ) => {
       setState((prev) => ({ ...prev, ...work }))
@@ -223,7 +240,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
 
   const submit = useCallback(async (): Promise<{
     success: boolean
-    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto
+    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto | BatchCreateTaskBodyDto
     error?: string
   }> => {
     if (!resolvedAssistantId || state.pageIds.length === 0 || !state.taskType || (requiresStage && !state.stageId)) {
@@ -232,7 +249,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     if (effectiveStageTaskTypes && !allowedTaskTypes.includes(state.taskType)) {
       return { success: false, error: t('studio.tasks.composer.errors.taskTypeNotAllowed') }
     }
-    if (state.priority !== undefined && (!Number.isInteger(state.priority) || state.priority <= 0)) {
+    if (state.priority !== undefined && (!Number.isInteger(state.priority) || state.priority < 0)) {
       return { success: false, error: t('studio.tasks.composer.priorityInvalid') }
     }
     if (state.pageIds.length > 1) {
@@ -251,6 +268,25 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       return result.success
         ? { success: true, data: payload }
         : { success: false, error: result.error ?? t('studio.tasks.composer.errors.assignGroupFailed') }
+    }
+    if (state.splitRegionsIntoTasks && state.regionIds.length > 1) {
+      const shared = {
+        pageId: state.pageIds[0],
+        assistantId: resolvedAssistantId,
+        taskType: state.taskType,
+        ...(state.stageId ? { stageId: state.stageId } : {}),
+        ...(state.description?.trim() ? { description: state.description.trim() } : {}),
+        ...(state.deadline ? { deadline: new Date(state.deadline).toISOString() } : {}),
+        ...(state.priority !== undefined ? { priority: state.priority } : {}),
+        ...(state.assetIds && state.assetIds.length > 0 ? { assetIds: state.assetIds } : {})
+      }
+      const payload: BatchCreateTaskBodyDto = {
+        items: state.regionIds.map((regionId) => ({ ...shared, regionId }))
+      }
+      const result = await assignTaskBatch(payload)
+      return result.success
+        ? { success: true, data: payload }
+        : { success: false, error: result.error ?? t('studio.tasks.composer.errors.assignBatchFailed') }
     }
     const payload: CreateTaskBodyDto = {
       assistantId: resolvedAssistantId,
@@ -276,6 +312,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     effectiveStageTaskTypes,
     assignTask,
     assignTaskGroup,
+    assignTaskBatch,
     t
   ])
 
