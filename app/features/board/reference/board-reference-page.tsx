@@ -51,7 +51,7 @@ export function BoardReferencePage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('common.load')}
           </button>
         </Form>
@@ -71,7 +71,7 @@ export function BoardReferencePage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('common.load')}
           </button>
         </Form>
@@ -118,7 +118,7 @@ export function BoardReferencePage({
             <button
               name='intent'
               value='recordTankobonSales'
-              className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground sm:col-span-2'
+              className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground sm:col-span-2'
             >
               {t('reference.recordSales')}
             </button>
@@ -143,7 +143,7 @@ function DatasetGrid({ data, emptyText }: { data: Record<string, unknown>; empty
     <div className='mt-4 grid gap-3 lg:grid-cols-2'>
       {entries.map(([key, value]) => (
         <section key={key} className='min-w-0 rounded-lg border border-border p-4'>
-          <h3 className='mb-3 text-sm font-bold text-foreground'>
+          <h3 className='mb-3 text-xs font-bold text-foreground'>
             {t(`reference.datasets.${key}`, { defaultValue: humanize(key) })}
           </h3>
           <BusinessDataView value={value} emptyText={emptyText} />

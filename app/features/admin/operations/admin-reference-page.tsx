@@ -6,7 +6,7 @@ import { BusinessDataView } from '~/shared/components/business-data-view'
 type SelectItem = { id: string; title?: string; issueNumber?: string | number | null; status?: string }
 
 const inputClass =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 
 export function AdminReferencePage({
   series,
@@ -28,8 +28,8 @@ export function AdminReferencePage({
     <div className='space-y-6 pb-12'>
       <header>
         <p className='text-xs font-bold uppercase tracking-[0.18em] text-primary'>{t('operations.eyebrow')}</p>
-        <h1 className='mt-2 text-3xl font-bold text-foreground'>{t('operations.reference.title')}</h1>
-        <p className='mt-2 text-sm text-muted-foreground'>{t('operations.reference.description')}</p>
+        <h1 className='mt-2 text-2xl font-bold text-foreground'>{t('operations.reference.title')}</h1>
+        <p className='mt-2 text-xs text-muted-foreground'>{t('operations.reference.description')}</p>
       </header>
 
       <Panel title={t('operations.reference.series')}>
@@ -78,14 +78,14 @@ export function AdminReferencePage({
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='mb-4 text-lg font-bold text-foreground'>{title}</h2>
+      <h2 className='mb-4 text-base font-bold text-foreground'>{title}</h2>
       {children}
     </section>
   )
 }
 
 function LoadButton({ label }: { label: string }) {
-  return <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>{label}</button>
+  return <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>{label}</button>
 }
 
 function DatasetGrid({ data }: { data: Record<string, unknown> }) {
@@ -96,7 +96,7 @@ function DatasetGrid({ data }: { data: Record<string, unknown> }) {
     <div className='mt-4 grid gap-3 lg:grid-cols-2'>
       {entries.map(([key, value]) => (
         <section key={key} className='min-w-0 rounded-lg border border-border p-4'>
-          <h3 className='mb-3 text-sm font-bold text-foreground'>
+          <h3 className='mb-3 text-xs font-bold text-foreground'>
             {t(`operations.reference.datasets.${key}`, { defaultValue: humanize(key) })}
           </h3>
           <BusinessDataView value={value} />

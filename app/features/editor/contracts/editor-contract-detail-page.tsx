@@ -33,7 +33,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
   ] as const
   return (
     <div className='space-y-7 pb-12'>
-      <Link to='/dashboard/editor/contracts' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/editor/contracts' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('actions.backContracts')}
       </Link>
@@ -54,9 +54,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
             {key === 'conditions' && (
               <span
                 className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                  validConditionCount
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-destructive/10 text-destructive'
+                  validConditionCount ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'
                 }`}
               >
                 {validConditionCount
@@ -64,10 +62,10 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
                   : t('contractDetail.noValidConditions')}
               </span>
             )}
-            <p className='mt-2 min-h-10 text-sm text-muted-foreground'>
+            <p className='mt-2 min-h-10 text-xs text-muted-foreground'>
               {t(`contractDetail.sectionDescriptions.${key}`)}
             </p>
-            <span className='mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary'>
+            <span className='mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary'>
               {t('contractDetail.openSection')}
               <ChevronRight className='size-4 transition-transform group-hover:translate-x-1' />
             </span>

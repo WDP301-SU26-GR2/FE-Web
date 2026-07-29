@@ -38,7 +38,7 @@ export function EditorProposalDetailPage({
     return (
       <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive'>
         <h1 className='font-bold'>{t('errors.loadTitle')}</h1>
-        <Link to='/dashboard/editor/proposals' className='mt-4 inline-flex text-sm font-bold underline'>
+        <Link to='/dashboard/editor/proposals' className='mt-4 inline-flex text-xs font-bold underline'>
           {t('actions.back')}
         </Link>
       </div>
@@ -55,7 +55,7 @@ export function EditorProposalDetailPage({
     <div className='space-y-6 pb-12'>
       <Link
         to='/dashboard/editor/proposals'
-        className='inline-flex items-center gap-2 text-sm font-bold text-muted-foreground'
+        className='inline-flex items-center gap-2 text-xs font-bold text-muted-foreground'
       >
         <ArrowLeft className='size-4' />
         {t('actions.back')}
@@ -73,8 +73,8 @@ export function EditorProposalDetailPage({
             <span className='rounded-full bg-secondary px-3 py-1 text-xs font-extrabold text-secondary-foreground'>
               {t(`filters.seriesStatuses.${series.status}`)}
             </span>
-            <h1 className='mt-4 text-3xl font-bold text-foreground'>{series.title}</h1>
-            <p className='mt-3 text-sm leading-6 text-muted-foreground'>
+            <h1 className='mt-4 text-2xl font-bold text-foreground'>{series.title}</h1>
+            <p className='mt-3 text-xs leading-6 text-muted-foreground'>
               {series.proposal?.synopsis || t('proposals.noSynopsis')}
             </p>
             <div className='mt-5 flex flex-wrap gap-2'>
@@ -176,19 +176,19 @@ export function EditorProposalDetailPage({
         <fetcher.Form method='post' className='rounded-xl border border-destructive/30 bg-destructive/10 p-5'>
           <input type='hidden' name='seriesId' value={series.id} />
           <h2 className='font-bold text-destructive'>{t('proposalDetail.rejectTitle')}</h2>
-          <p className='mt-1 text-sm text-muted-foreground'>{t('proposalDetail.rejectDescription')}</p>
+          <p className='mt-1 text-xs text-muted-foreground'>{t('proposalDetail.rejectDescription')}</p>
           <textarea
             name='reason'
             required
             maxLength={1000}
-            className='mt-4 min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm text-foreground'
+            className='mt-4 min-h-24 w-full rounded-md border border-input bg-background p-3 text-xs text-foreground'
             placeholder={t('proposalDetail.rejectPlaceholder')}
           />
           <button
             name='intent'
             value='rejectSeries'
             disabled={fetcher.state !== 'idle'}
-            className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-destructive px-4 text-sm font-bold text-destructive-foreground disabled:opacity-50'
+            className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-destructive px-4 text-xs font-bold text-destructive-foreground disabled:opacity-50'
           >
             <Ban className='size-4' />
             {t('actions.rejectSeries')}
@@ -199,19 +199,19 @@ export function EditorProposalDetailPage({
         <fetcher.Form method='post' className='rounded-xl border border-primary/30 bg-primary/10 p-5'>
           <input type='hidden' name='seriesId' value={series.id} />
           <h2 className='font-bold text-foreground'>{t('proposalDetail.reopenTitle')}</h2>
-          <p className='mt-1 text-sm text-muted-foreground'>{t('proposalDetail.reopenDescription')}</p>
+          <p className='mt-1 text-xs text-muted-foreground'>{t('proposalDetail.reopenDescription')}</p>
           <textarea
             name='reason'
             required
             maxLength={1000}
-            className='mt-4 min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm text-foreground'
+            className='mt-4 min-h-24 w-full rounded-md border border-input bg-background p-3 text-xs text-foreground'
             placeholder={t('proposalDetail.reopenPlaceholder')}
           />
           <button
             name='intent'
             value='reopenReview'
             disabled={fetcher.state !== 'idle'}
-            className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             <RotateCcw className='size-4' />
             {t('actions.reopenReview')}
@@ -325,7 +325,7 @@ function EditorMetadataForm({
       <div className='flex flex-wrap items-start justify-between gap-3 border-b border-border p-5'>
         <div>
           <h2 className='font-bold text-foreground'>{t('proposalDetail.metadataTitle')}</h2>
-          <p className='mt-1 text-sm text-muted-foreground'>{t('proposalDetail.metadataDescription')}</p>
+          <p className='mt-1 text-xs text-muted-foreground'>{t('proposalDetail.metadataDescription')}</p>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
@@ -338,7 +338,7 @@ function EditorMetadataForm({
       </div>
 
       {!editable && (
-        <div className='mx-5 mt-5 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-100'>
+        <div className='mx-5 mt-5 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-900 dark:text-amber-100'>
           <LockKeyhole className='mt-0.5 size-4 shrink-0' />
           <p>{t('proposalDetail.lockedDescription')}</p>
         </div>
@@ -346,7 +346,7 @@ function EditorMetadataForm({
 
       <fieldset disabled={!editable || busy} className='grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_360px]'>
         <div className='space-y-5'>
-          <label className='grid gap-2 text-sm font-semibold text-foreground'>
+          <label className='grid gap-2 text-xs font-semibold text-foreground'>
             {t('proposalDetail.seriesTitle')}
             <input
               required
@@ -358,7 +358,7 @@ function EditorMetadataForm({
             <span className='text-right text-xs font-normal text-muted-foreground'>{title.length}/200</span>
           </label>
 
-          <label className='grid gap-2 text-sm font-semibold text-foreground'>
+          <label className='grid gap-2 text-xs font-semibold text-foreground'>
             {t('proposalDetail.synopsis')}
             <textarea
               maxLength={5000}
@@ -374,7 +374,7 @@ function EditorMetadataForm({
         <div className='space-y-6'>
           <div>
             <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
-              <h3 className='min-w-0 text-pretty text-sm font-semibold text-foreground'>
+              <h3 className='min-w-0 text-pretty text-xs font-semibold text-foreground'>
                 {t('proposalDetail.coverImage')}
               </h3>
               {editable && cover && (
@@ -402,7 +402,7 @@ function EditorMetadataForm({
               )}
             </div>
             {editable && (
-              <label className='mt-3 inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-border px-3 text-sm font-bold text-foreground hover:bg-muted'>
+              <label className='mt-3 inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-border px-3 text-xs font-bold text-foreground hover:bg-muted'>
                 <ImagePlus className='size-4' />
                 {cover ? t('proposalDetail.replaceCover') : t('proposalDetail.addCover')}
                 <input
@@ -420,7 +420,7 @@ function EditorMetadataForm({
 
           <div>
             <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
-              <h3 className='min-w-0 text-pretty text-sm font-semibold text-foreground'>
+              <h3 className='min-w-0 text-pretty text-xs font-semibold text-foreground'>
                 {t('proposalDetail.characterDesigns')}
               </h3>
               <span className='text-xs text-muted-foreground'>
@@ -462,7 +462,7 @@ function EditorMetadataForm({
               </div>
             )}
             {editable && (
-              <label className='mt-3 inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-border px-3 text-sm font-bold text-foreground hover:bg-muted'>
+              <label className='mt-3 inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-border px-3 text-xs font-bold text-foreground hover:bg-muted'>
                 <ImagePlus className='size-4' />
                 {t('proposalDetail.addCharacterDesigns')}
                 <input
@@ -481,7 +481,7 @@ function EditorMetadataForm({
         </div>
       </fieldset>
 
-      {uploadError && <p className='mx-5 mb-4 text-sm text-destructive'>{uploadError}</p>}
+      {uploadError && <p className='mx-5 mb-4 text-xs text-destructive'>{uploadError}</p>}
 
       {editable && (
         <div className='flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/30 px-5 py-4'>
@@ -489,7 +489,7 @@ function EditorMetadataForm({
           <button
             type='submit'
             disabled={busy || !title.trim()}
-            className='inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+            className='inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
           >
             {busy ? <Loader2 className='size-4 animate-spin' /> : <Save className='size-4' />}
             {uploading ? t('proposalDetail.uploading') : t('actions.save')}
@@ -523,7 +523,7 @@ function ReviewPanel({
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
-        <h2 className='flex min-w-0 items-start gap-2 text-pretty text-lg font-bold leading-6 text-foreground'>
+        <h2 className='flex min-w-0 items-start gap-2 text-pretty text-base font-bold leading-6 text-foreground'>
           <FileText className='mt-0.5 size-5 shrink-0 text-primary' />
           <span>{title}</span>
         </h2>
@@ -533,7 +533,7 @@ function ReviewPanel({
         {facts.map(([label, value]) => (
           <div key={label}>
             <dt className='text-[11px] font-bold uppercase tracking-wide text-muted-foreground'>{label}</dt>
-            <dd className='mt-1 text-sm font-semibold text-foreground'>{value}</dd>
+            <dd className='mt-1 text-xs font-semibold text-foreground'>{value}</dd>
           </div>
         ))}
       </dl>
@@ -569,14 +569,14 @@ function ReviewForm({
         rows={2}
         aria-label={t('actions.revisionReason')}
         placeholder={t('actions.revisionPlaceholder')}
-        className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary'
+        className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-primary'
       />
       <div className='flex flex-wrap gap-2'>
         <button
           name='intent'
           value={approveIntent}
           disabled={disabled || busy}
-          className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
           {busy ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
           {t('actions.approve')}
@@ -585,7 +585,7 @@ function ReviewForm({
           name='intent'
           value={reviseIntent}
           disabled={disabled || busy}
-          className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-bold text-foreground disabled:opacity-50'
+          className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground disabled:opacity-50'
         >
           <RotateCcw className='size-4' />
           {t('actions.requestRevision')}

@@ -16,8 +16,8 @@ export function EditorBoardPage() {
           <Gavel className='size-4' />
           {t('board.eyebrow')}
         </p>
-        <h1 className='mt-2 text-3xl font-bold text-foreground'>{t('board.title')}</h1>
-        <p className='mt-2 text-sm text-muted-foreground'>{t('board.subtitle')}</p>
+        <h1 className='mt-2 text-2xl font-bold text-foreground'>{t('board.title')}</h1>
+        <p className='mt-2 text-xs text-muted-foreground'>{t('board.subtitle')}</p>
       </header>
       <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {sections.map(([key, Icon]) => (
@@ -28,8 +28,8 @@ export function EditorBoardPage() {
           >
             <Icon className='size-6 text-primary' />
             <h2 className='mt-4 font-bold text-foreground'>{t(`board.sections.${key}`)}</h2>
-            <p className='mt-2 min-h-10 text-sm text-muted-foreground'>{t(`board.sectionDescriptions.${key}`)}</p>
-            <span className='mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary'>
+            <p className='mt-2 min-h-10 text-xs text-muted-foreground'>{t(`board.sectionDescriptions.${key}`)}</p>
+            <span className='mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary'>
               {t('board.openSection')}
               <ChevronRight className='size-4 transition-transform group-hover:translate-x-1' />
             </span>

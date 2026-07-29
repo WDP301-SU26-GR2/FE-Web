@@ -60,13 +60,13 @@ export function EditorDeadlinesPage({
               </option>
             ))}
           </select>
-          <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('actions.load')}
           </button>
         </form>
         <div className='mt-4 space-y-2'>
           {items.map((item) => (
-            <article key={item.id} className='rounded-lg border border-border p-3 text-sm'>
+            <article key={item.id} className='rounded-lg border border-border p-3 text-xs'>
               <div className='flex justify-between'>
                 <strong>{t(`operations.deadlineStatuses.${item.status}`)}</strong>
                 <span>{item.requestedBy ?? '—'}</span>

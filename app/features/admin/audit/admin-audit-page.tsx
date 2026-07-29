@@ -33,7 +33,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('navigation.backDashboard')}
       </Link>
@@ -42,13 +42,13 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
           <ShieldCheck className='size-4' />
           {t('audit.eyebrow')}
         </div>
-        <h1 className='mt-2 text-2xl font-bold text-foreground md:text-3xl'>{t('audit.title')}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('audit.subtitle')}</p>
+        <h1 className='mt-2 text-xl font-bold text-foreground md:text-2xl'>{t('audit.title')}</h1>
+        <p className='mt-2 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('audit.subtitle')}</p>
       </header>
 
       {hasError && (
         <div
-          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'
+          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'
           role='alert'
         >
           <p className='font-bold'>{t('audit.loadError.title')}</p>
@@ -68,7 +68,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
           </select>
           <button
             type='submit'
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-bold text-background'
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-xs font-bold text-background'
           >
             <Filter className='size-4' />
             {t('audit.filters.apply')}
@@ -77,11 +77,11 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
       </Form>
 
       <div className='flex flex-wrap items-center justify-between gap-4'>
-        <p className='text-sm font-bold text-foreground'>{t('audit.total', { count: data?.total ?? 0 })}</p>
+        <p className='text-xs font-bold text-foreground'>{t('audit.total', { count: data?.total ?? 0 })}</p>
       </div>
 
       {(data?.items.length ?? 0) === 0 ? (
-        <div className='rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground'>
+        <div className='rounded-xl border border-dashed border-border bg-card p-10 text-center text-xs text-muted-foreground'>
           {t('audit.empty')}
         </div>
       ) : (
@@ -100,7 +100,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
                       })}
                     </span>
                   </div>
-                  <p className='mt-3 text-sm font-bold text-foreground'>
+                  <p className='mt-3 text-xs font-bold text-foreground'>
                     {t(`audit.entityTypes.${item.entityType}`, { defaultValue: t('audit.record') })}
                   </p>
                   <p className='mt-1 text-xs text-muted-foreground'>
@@ -128,7 +128,7 @@ export function AdminAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
                   </span>
                 </div>
               )}
-              {item.reason && <p className='mt-3 text-sm leading-6 text-muted-foreground'>{item.reason}</p>}
+              {item.reason && <p className='mt-3 text-xs leading-6 text-muted-foreground'>{item.reason}</p>}
             </article>
           ))}
         </div>
@@ -176,4 +176,4 @@ function PageLink({
 }
 
 const inputClassName =
-  'h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
+  'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'

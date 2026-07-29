@@ -54,7 +54,7 @@ export function EditorInsightsPage({
             </option>
           ))}
         </select>
-        <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+        <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
           {t('actions.load')}
         </button>
       </form>
@@ -143,12 +143,12 @@ function DataPanel({
       <h2 className='font-bold text-foreground'>{title}</h2>
       <div className='mt-3 grid gap-2'>
         {items.map((item) => (
-          <article key={item.id} className='rounded-md bg-muted p-3 text-sm'>
+          <article key={item.id} className='rounded-md bg-muted p-3 text-xs'>
             <strong className='text-foreground'>{item.title}</strong>
             <p className='mt-1 text-xs text-muted-foreground'>{item.detail}</p>
           </article>
         ))}
-        {!items.length && <p className='text-sm text-muted-foreground'>{empty}</p>}
+        {!items.length && <p className='text-xs text-muted-foreground'>{empty}</p>}
       </div>
     </section>
   )

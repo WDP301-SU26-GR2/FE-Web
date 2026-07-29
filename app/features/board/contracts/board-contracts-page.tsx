@@ -20,7 +20,7 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('contracts.title')} description={t('contracts.description')} backHref='/dashboard/board' />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
         <input
           className={boardInput}
@@ -59,7 +59,7 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
             <p className='mt-2 text-xs text-muted-foreground'>
               {t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
             </p>
-            <p className='mt-3 text-sm font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
+            <p className='mt-3 text-xs font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
           </Link>
         ))}
       </div>

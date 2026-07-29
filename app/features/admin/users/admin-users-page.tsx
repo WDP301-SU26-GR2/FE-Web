@@ -35,7 +35,7 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('navigation.backDashboard')}
       </Link>
@@ -45,13 +45,13 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
             <Users className='size-4' aria-hidden='true' />
             <span>{t('users.eyebrow')}</span>
           </div>
-          <h1 className='text-2xl font-bold tracking-tight text-foreground md:text-3xl'>{t('users.title')}</h1>
-          <p className='mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground'>{t('users.subtitle')}</p>
+          <h1 className='text-xl font-bold tracking-tight text-foreground md:text-2xl'>{t('users.title')}</h1>
+          <p className='mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground'>{t('users.subtitle')}</p>
         </div>
         <button
           type='button'
           onClick={() => setIsCreateOpen(true)}
-          className='inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90'
+          className='inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90'
         >
           <UserPlus className='size-4' aria-hidden='true' />
           {t('users.create.button')}
@@ -62,7 +62,7 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
 
       {hasError && (
         <div
-          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'
+          className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'
           role='alert'
         >
           <p className='font-bold'>{t('users.loadError.title')}</p>
@@ -79,7 +79,7 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
               name='search'
               defaultValue={searchParams.get('search') ?? ''}
               placeholder={t('users.filters.searchPlaceholder')}
-              className='w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+              className='w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
             />
           </label>
           <FilterSelect
@@ -106,7 +106,7 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
           />
           <button
             type='submit'
-            className='inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-foreground px-4 py-2.5 text-sm font-bold text-background transition-opacity hover:opacity-90'
+            className='inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-foreground px-4 py-2.5 text-xs font-bold text-background transition-opacity hover:opacity-90'
           >
             <Filter className='size-4' aria-hidden='true' />
             {t('users.filters.apply')}
@@ -137,7 +137,7 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
       </Form>
 
       <div className='flex flex-wrap items-center justify-between gap-4'>
-        <p className='text-sm font-semibold text-foreground'>{t('users.total', { count: total })}</p>
+        <p className='text-xs font-semibold text-foreground'>{t('users.total', { count: total })}</p>
         {userMode !== 'active' && (
           <span className='rounded-full border border-border bg-muted px-3 py-1 text-[11px] font-bold text-muted-foreground'>
             {t('users.restoreMode')}
@@ -189,7 +189,7 @@ function FilterSelect({ name, label, defaultValue, options }: FilterSelectProps)
       <select
         name={name}
         defaultValue={defaultValue}
-        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
       >
         <option value=''>{label}</option>
         {options.map(([value, optionLabel]) => (
@@ -220,7 +220,7 @@ function ActionFeedback({ result }: { result: AdminUserActionResult }) {
 
   return (
     <div className='rounded-xl border border-primary/25 bg-primary/10 p-4 text-primary' role='status'>
-      <p className='text-sm font-bold'>{result.message || t(`users.messages.${result.messageKey}`)}</p>
+      <p className='text-xs font-bold'>{result.message || t(`users.messages.${result.messageKey}`)}</p>
       <div className='mt-3 rounded-lg border border-border bg-card p-3 text-foreground'>
         <p className='text-xs text-muted-foreground'>{t('users.temporaryPassword.label', { email: result.email })}</p>
         <code className='mt-1 block break-all text-base font-extrabold tracking-wider'>{result.temporaryPassword}</code>

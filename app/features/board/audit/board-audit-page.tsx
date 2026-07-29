@@ -11,7 +11,7 @@ export function BoardAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
         description={t('audit.description')}
         backHref='/dashboard/board/operations'
       />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='space-y-3'>
         {data?.items.map((item) => (
           <article key={item.id} className='rounded-xl border border-border bg-card p-4'>
@@ -26,7 +26,7 @@ export function BoardAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
                 )}
               </time>
             </div>
-            <p className='mt-3 text-sm font-bold'>
+            <p className='mt-3 text-xs font-bold'>
               {t(`audit.entityTypes.${item.entityType}`, { defaultValue: t('audit.record') })}
             </p>
             <p className='mt-2 text-xs text-muted-foreground'>
@@ -39,7 +39,7 @@ export function BoardAuditPage({ data, hasError }: { data: AuditLogListResDtoOut
                 : '—'}{' '}
               · {item.actorId ? t('audit.userActor') : t('audit.system')}
             </p>
-            {item.reason && <p className='mt-2 text-sm text-muted-foreground'>{item.reason}</p>}
+            {item.reason && <p className='mt-2 text-xs text-muted-foreground'>{item.reason}</p>}
           </article>
         ))}
       </div>

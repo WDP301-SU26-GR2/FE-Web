@@ -40,7 +40,7 @@ export function DistributionPanel({ title, description, icon: Icon, items, empty
       </div>
 
       {items.length === 0 ? (
-        <p className='mt-6 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground'>
+        <p className='mt-6 rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground'>
           {emptyLabel}
         </p>
       ) : (

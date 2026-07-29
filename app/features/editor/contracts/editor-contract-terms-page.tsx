@@ -48,7 +48,7 @@ export function EditorContractTermsPage({
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.terms')}>
       <section
-        className={`rounded-xl border p-4 text-sm ${
+        className={`rounded-xl border p-4 text-xs ${
           hasValidCondition
             ? 'border-primary/25 bg-primary/5 text-foreground'
             : 'border-destructive/30 bg-destructive/10 text-destructive'
@@ -140,25 +140,25 @@ export function EditorContractTermsPage({
             defaultValue={contract.terminationClause ?? ''}
             disabled={!editable}
             required
-            className='min-h-28 rounded-md border border-input bg-background p-3 text-sm text-foreground disabled:opacity-70 md:col-span-2'
+            className='min-h-28 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70 md:col-span-2'
           />
           <textarea
             name='note'
             maxLength={500}
             disabled={!editable}
-            className='min-h-20 rounded-md border border-input bg-background p-3 text-sm text-foreground disabled:opacity-70 md:col-span-2'
+            className='min-h-20 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70 md:col-span-2'
             placeholder={t('contractDetail.editNote')}
           />
           {canSendDraft && (
             <div className='md:col-span-2'>
-              <p className='mb-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground'>
+              <p className='mb-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground'>
                 {t('contractDetail.sendDraftHint')}
               </p>
               <button
                 name='intent'
                 value='advanceContract'
                 disabled={fetcher.state !== 'idle' || !hasValidCondition}
-                className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
                 Gửi Mangaka xem xét
@@ -171,7 +171,7 @@ export function EditorContractTermsPage({
                 name='intent'
                 value='updateContract'
                 disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid}
-                className='h-10 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
+                className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-50'
               >
                 {t('actions.saveContract')}
               </button>
@@ -179,7 +179,7 @@ export function EditorContractTermsPage({
                 name='intent'
                 value='saveAndAdvanceContract'
                 disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid || !hasValidCondition}
-                className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
                 {t('actions.saveAndAdvanceContract')}

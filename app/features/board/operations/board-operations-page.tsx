@@ -46,10 +46,10 @@ export function BoardOperationsPage() {
             >
               <Icon className='size-6 text-primary' aria-hidden='true' />
               <h3 className='mt-4 text-pretty font-bold leading-6 text-foreground'>{t(`nav.${key}`)}</h3>
-              <p className='mt-2 text-pretty text-sm leading-6 text-muted-foreground'>
+              <p className='mt-2 text-pretty text-xs leading-6 text-muted-foreground'>
                 {t(`dashboard.sections.${key}`)}
               </p>
-              <span className='mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary'>
+              <span className='mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary'>
                 {t('operations.open')}
                 <ChevronRight className='size-4 transition-transform group-hover:translate-x-1' aria-hidden='true' />
               </span>
@@ -58,7 +58,7 @@ export function BoardOperationsPage() {
         </div>
       </section>
 
-      <p className='flex items-start gap-2 rounded-xl border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground'>
+      <p className='flex items-start gap-2 rounded-xl border border-border bg-muted/40 p-4 text-xs leading-6 text-muted-foreground'>
         <Wrench className='mt-0.5 size-4 shrink-0 text-primary' aria-hidden='true' />
         <span>{t('operations.hint')}</span>
       </p>

@@ -123,7 +123,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
 
   return (
     <div className='space-y-6 pb-12'>
-      <Link to='/dashboard/admin/operations' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/admin/operations' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('operations.back')}
       </Link>
@@ -132,16 +132,16 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           <Search className='size-4' aria-hidden='true' />
           <span>{t('operations.monitoring.eyebrow')}</span>
         </div>
-        <h1 className='text-2xl font-bold tracking-tight text-foreground md:text-3xl'>
+        <h1 className='text-xl font-bold tracking-tight text-foreground md:text-2xl'>
           {t('operations.monitoring.title')}
         </h1>
-        <p className='mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground'>
+        <p className='mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground'>
           {t('operations.monitoring.subtitle')}
         </p>
       </header>
 
       {hasError && (
-        <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
+        <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
           {t('operations.monitoring.loadError')}
         </p>
       )}
@@ -156,7 +156,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
               {localize('reprintStatuses', selectedReprint.status)}
             </span>
           </div>
-          <p className='mt-2 text-sm text-muted-foreground'>{selectedReprint.reason}</p>
+          <p className='mt-2 text-xs text-muted-foreground'>{selectedReprint.reason}</p>
           <div className='mt-3 flex flex-wrap gap-2'>
             {selectedReprint.chapters.map((chapter, index) => (
               <span key={chapter.originalChapterId} className='rounded-md border border-border px-2 py-1 text-xs'>
@@ -174,7 +174,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
           <select
             name='seriesId'
             defaultValue={seriesId}
-            className='h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-sm'
+            className='h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-xs'
           >
             <option value=''>{t('operations.monitoring.selectSeries')}</option>
             {series.map((item) => (
@@ -187,7 +187,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
             name='chapterId'
             defaultValue={chapterId}
             disabled={!seriesId}
-            className='h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-sm disabled:opacity-60'
+            className='h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-xs disabled:opacity-60'
           >
             <option value=''>{t('operations.monitoring.selectChapter')}</option>
             {chapters.map((item) => (
@@ -199,7 +199,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='h-10 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('operations.monitoring.search')}
           </button>
         </Form>
@@ -350,7 +350,7 @@ function FilterGrid({ children }: { children: ReactNode }) {
 const filterInput = 'h-9 min-w-0 rounded-md border border-input bg-background px-2 text-xs text-foreground'
 
 function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }) {
-  if (!items.length) return <p className='mt-3 text-sm text-muted-foreground'>{empty}</p>
+  if (!items.length) return <p className='mt-3 text-xs text-muted-foreground'>{empty}</p>
   return (
     <div className='mt-3 max-h-[32rem] space-y-2 overflow-y-auto'>
       {items.map((item) =>
@@ -360,12 +360,12 @@ function ReadOnlyList({ items, empty }: { items: ReadOnlyItem[]; empty: string }
             to={item.href}
             className='block rounded-lg border border-border bg-background/50 p-3 hover:border-primary'
           >
-            <p className='text-sm font-bold text-foreground'>{item.title}</p>
+            <p className='text-xs font-bold text-foreground'>{item.title}</p>
             <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
           </Link>
         ) : (
           <article key={item.id} className='rounded-lg border border-border bg-background/50 p-3'>
-            <p className='text-sm font-bold text-foreground'>{item.title}</p>
+            <p className='text-xs font-bold text-foreground'>{item.title}</p>
             <p className='mt-1 break-words text-xs text-muted-foreground'>{item.description}</p>
           </article>
         )

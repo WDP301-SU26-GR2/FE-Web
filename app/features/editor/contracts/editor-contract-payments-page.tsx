@@ -49,7 +49,7 @@ export function EditorContractPaymentsPage({
       </section>
 
       {hasError && (
-        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('contractDetail.payments.loadError')}
         </p>
       )}
@@ -78,7 +78,7 @@ export function EditorContractPaymentsPage({
                 <p className='mt-2 font-bold text-foreground'>{formatAmount(payment.amount, i18n.language)}</p>
               </div>
             </div>
-            {payment.description && <p className='mt-3 text-sm text-muted-foreground'>{payment.description}</p>}
+            {payment.description && <p className='mt-3 text-xs text-muted-foreground'>{payment.description}</p>}
             <dl className='mt-4 grid gap-3 border-t border-border pt-4 text-xs sm:grid-cols-2 lg:grid-cols-3'>
               <PaymentFact
                 label={t('contractDetail.payments.contract')}
@@ -135,7 +135,7 @@ export function EditorContractPaymentsPage({
           </article>
         ))}
         {!filtered.length && !hasError && (
-          <p className='rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground'>
+          <p className='rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
             {t('contractDetail.payments.empty')}
           </p>
         )}

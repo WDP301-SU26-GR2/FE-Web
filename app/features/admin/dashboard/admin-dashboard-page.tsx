@@ -44,14 +44,14 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
             <ShieldAlert className='size-4' aria-hidden='true' />
             <span>{t('dashboard.eyebrow')}</span>
           </div>
-          <h1 className='text-2xl font-bold tracking-tight text-foreground md:text-3xl'>{t('dashboard.title')}</h1>
-          <p className='mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground'>{t('dashboard.subtitle')}</p>
+          <h1 className='text-xl font-bold tracking-tight text-foreground md:text-2xl'>{t('dashboard.title')}</h1>
+          <p className='mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground'>{t('dashboard.subtitle')}</p>
         </div>
         <button
           type='button'
           onClick={() => revalidator.revalidate()}
           disabled={isRefreshing}
-          className='inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
+          className='inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold text-foreground shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
         >
           <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} aria-hidden='true' />
           {isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}
@@ -65,7 +65,7 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
         >
           <ShieldAlert className='mt-0.5 size-5 shrink-0' aria-hidden='true' />
           <div>
-            <p className='text-sm font-bold'>{t('dashboard.loadErrorTitle')}</p>
+            <p className='text-xs font-bold'>{t('dashboard.loadErrorTitle')}</p>
             <p className='mt-1 text-xs leading-relaxed'>{t('dashboard.loadErrorDescription')}</p>
           </div>
         </div>
@@ -111,7 +111,7 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
       {unreadNotifications > 0 && (
         <Link
           to='/dashboard/admin/notifications'
-          className='block rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm font-semibold text-foreground hover:border-primary/50'
+          className='block rounded-xl border border-primary/25 bg-primary/10 p-4 text-xs font-semibold text-foreground hover:border-primary/50'
         >
           {t('dashboard.unreadNotifications', { count: unreadNotifications })}
         </Link>

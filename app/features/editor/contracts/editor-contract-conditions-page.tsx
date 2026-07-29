@@ -8,7 +8,12 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { ContractActionMessage, ContractDialogPanel, ContractPageLayout, contractInput } from './components/contract-shared'
+import {
+  ContractActionMessage,
+  ContractDialogPanel,
+  ContractPageLayout,
+  contractInput
+} from './components/contract-shared'
 
 export function EditorContractConditionsPage({
   contract,
@@ -26,7 +31,7 @@ export function EditorContractConditionsPage({
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.conditions')}>
       {!canManageConditions && (
-        <p className='rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground'>
+        <p className='rounded-lg border border-border bg-muted/40 p-4 text-xs text-muted-foreground'>
           {t('contractDetail.paymentConditionsLocked')}
         </p>
       )}
@@ -64,7 +69,7 @@ export function EditorContractConditionsPage({
             placeholder={t('contractDetail.payoutPct')}
           />
           <p className='text-xs text-muted-foreground md:col-span-2'>{t('contractDetail.payoutRequirement')}</p>
-          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground md:col-span-2'>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground md:col-span-2'>
             {t('actions.addCondition')}
           </button>
         </fetcher.Form>
@@ -92,7 +97,7 @@ export function EditorContractConditionsPage({
                   <fetcher.Form method='post'>
                     <input type='hidden' name='intent' value='disableCondition' />
                     <input type='hidden' name='conditionId' value={condition.id} />
-                    <button className='inline-flex h-9 items-center gap-2 rounded-md border border-destructive/30 px-3 text-sm font-bold text-destructive'>
+                    <button className='inline-flex h-9 items-center gap-2 rounded-md border border-destructive/30 px-3 text-xs font-bold text-destructive'>
                       <Ban className='size-4' />
                       {t('actions.disable')}
                     </button>
@@ -122,7 +127,7 @@ export function EditorContractConditionsPage({
                     defaultValue={condition.payoutPct ?? ''}
                     className={contractInput}
                   />
-                  <button className='rounded-md border border-border px-3 text-sm font-bold'>
+                  <button className='rounded-md border border-border px-3 text-xs font-bold'>
                     {t('actions.update')}
                   </button>
                 </fetcher.Form>
@@ -130,7 +135,7 @@ export function EditorContractConditionsPage({
             </article>
           ))}
           {!conditions.length && (
-            <p className='rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground'>
+            <p className='rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground'>
               {t('contractDetail.emptyConditions')}
             </p>
           )}

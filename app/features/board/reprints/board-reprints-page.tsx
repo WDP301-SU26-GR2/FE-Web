@@ -52,7 +52,7 @@ export function BoardReprintsPage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('common.load')}
           </button>
         </Form>
@@ -65,7 +65,7 @@ export function BoardReprintsPage({
           </option>
         ))}
       </select>
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-4'>
         {filteredRequests.map((item) => (
           <ReprintCard key={item.id} item={item} contractType={contractTypes[item.seriesId]} mangakas={mangakas} />
@@ -109,7 +109,7 @@ function ReprintCard({
         </div>
         <StatusBadge value={item.status} />
       </div>
-      <p className='mt-3 text-sm text-muted-foreground'>{item.reason}</p>
+      <p className='mt-3 text-xs text-muted-foreground'>{item.reason}</p>
       {canReview && (
         <div className='mt-4'>
           <BoardActionDialog title={t('reprints.review')}>
@@ -119,7 +119,7 @@ function ReprintCard({
               <button
                 name='intent'
                 value='approve'
-                className='h-10 rounded-md bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700'
+                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700'
               >
                 <CheckCircle2 className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('reprints.approve')}
@@ -127,7 +127,7 @@ function ReprintCard({
               <button
                 name='intent'
                 value='reject'
-                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-bold text-destructive hover:bg-destructive/20'
+                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
               >
                 <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('reprints.reject')}
@@ -138,7 +138,7 @@ function ReprintCard({
         </div>
       )}
       {['PENDING', 'MANGAKA_REVIEW'].includes(item.status) && contractType === 'REVENUE_SHARE' && (
-        <p className='mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground'>{t('reprints.waitingMangaka')}</p>
+        <p className='mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground'>{t('reprints.waitingMangaka')}</p>
       )}
       {canAssignReviser && (
         <div className='mt-4'>
@@ -184,7 +184,7 @@ function AssignReviserDialog({
         </select>
         <button
           disabled={!mangakas.length}
-          className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
           {t('reprints.assignReviser')}
         </button>

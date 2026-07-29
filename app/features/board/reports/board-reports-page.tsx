@@ -33,23 +33,23 @@ export function BoardReportsPage({
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
-        <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
           <ArrowLeft className='size-4' />
           {t('common.back')}
         </Link>
       )}
       <BoardHeader title={t('reports.title')} description={t('reports.description')} />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       {enableFilters && (
         <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
           <input
-            className='h-10 rounded-md border border-input bg-background px-3 text-sm'
+            className='h-10 rounded-md border border-input bg-background px-3 text-xs'
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('filters.searchReports')}
           />
           <select
-            className='h-10 rounded-md border border-input bg-background px-3 text-sm'
+            className='h-10 rounded-md border border-input bg-background px-3 text-xs'
             value={reportType}
             onChange={(event) => setReportType(event.target.value)}
           >
@@ -80,7 +80,7 @@ export function BoardReportsPage({
             <p className='mt-1 text-xs text-muted-foreground'>
               {seriesTitles[report.seriesId ?? ''] ?? t('reports.unknownSeries')}
             </p>
-            <p className='mt-3 whitespace-pre-wrap text-sm text-muted-foreground'>{report.content}</p>
+            <p className='mt-3 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>
           </article>
         ))}
       </div>

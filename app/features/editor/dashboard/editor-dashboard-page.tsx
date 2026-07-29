@@ -21,11 +21,11 @@ export function EditorDashboardPage({
           <Sparkles className='size-4' />
           {t('dashboard.eyebrow')}
         </div>
-        <h1 className='mt-3 text-3xl font-bold tracking-tight text-foreground'>{t('dashboard.title')}</h1>
-        <p className='mt-3 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('dashboard.subtitle')}</p>
+        <h1 className='mt-3 text-2xl font-bold tracking-tight text-foreground'>{t('dashboard.title')}</h1>
+        <p className='mt-3 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('dashboard.subtitle')}</p>
       </header>
       {hasError ? (
-        <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
+        <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
           {t('dashboard.liveDataError')}
         </p>
       ) : null}
@@ -151,8 +151,8 @@ function SummaryCard({ label, value, href }: { label: string; value: number; hre
       to={href}
       className='rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary'
     >
-      <p className='text-sm text-muted-foreground'>{label}</p>
-      <p className='mt-2 text-3xl font-bold text-foreground'>{value}</p>
+      <p className='text-xs text-muted-foreground'>{label}</p>
+      <p className='mt-2 text-2xl font-bold text-foreground'>{value}</p>
     </Link>
   )
 }
@@ -198,10 +198,10 @@ function WorkflowCard({
         <Icon className='size-5' />
       </div>
       <h2 className='mt-5 text-xl font-bold text-foreground'>{title}</h2>
-      <p className='mt-2 min-h-12 text-sm leading-6 text-muted-foreground'>{description}</p>
+      <p className='mt-2 min-h-12 text-xs leading-6 text-muted-foreground'>{description}</p>
       <Link
         to={href}
-        className='mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90'
+        className='mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90'
       >
         {action}
         <Send className='size-4' />

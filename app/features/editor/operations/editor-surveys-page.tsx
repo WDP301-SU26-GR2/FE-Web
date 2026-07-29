@@ -91,7 +91,7 @@ export function EditorSurveysPage({
                 ))}
               </select>
             </label>
-            <button className='mt-auto h-10 shrink-0 rounded-md border border-border px-4 text-sm font-bold text-foreground hover:border-primary hover:text-primary'>
+            <button className='mt-auto h-10 shrink-0 rounded-md border border-border px-4 text-xs font-bold text-foreground hover:border-primary hover:text-primary'>
               {t('operations.loadSurvey')}
             </button>
           </Form>
@@ -100,7 +100,7 @@ export function EditorSurveysPage({
             {configPath && (
               <Link
                 to={configPath}
-                className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-bold text-foreground hover:border-primary hover:text-primary'
+                className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-xs font-bold text-foreground hover:border-primary hover:text-primary'
               >
                 <Settings2 className='size-4' />
                 {t('operations.votingConfiguration')}
@@ -241,32 +241,32 @@ export function EditorSurveysPage({
               <input type='hidden' name='surveyId' value={selectedSurveyId} />
               {selectedSurvey?.status === 'DRAFT' && (
                 <>
-                  <p className='text-sm text-muted-foreground'>{t('operations.openSurveyConfirmation')}</p>
+                  <p className='text-xs text-muted-foreground'>{t('operations.openSurveyConfirmation')}</p>
                   <input type='hidden' name='status' value='OPEN' />
                   <OperationAction intent='surveyStatus' label={t('actions.openSurvey')} />
                 </>
               )}
               {selectedSurvey?.status === 'OPEN' && (
                 <>
-                  <p className='text-sm text-muted-foreground'>{t('operations.closeSurveyConfirmation')}</p>
+                  <p className='text-xs text-muted-foreground'>{t('operations.closeSurveyConfirmation')}</p>
                   <input type='hidden' name='status' value='CLOSED' />
                   <OperationAction intent='surveyStatus' label={t('actions.closeSurvey')} />
                 </>
               )}
               {selectedSurvey?.status === 'CLOSED' && (
                 <>
-                  <p className='text-sm text-muted-foreground'>
+                  <p className='text-xs text-muted-foreground'>
                     {t('operations.finalizeSurveyConfirmation', { online: votes.length, offline: offlineVotes })}
                   </p>
                   <OperationAction intent='finalizeRanking' label={t('actions.finalizeRanking')} />
                 </>
               )}
               {selectedSurvey?.status === 'REFLECTED' && (
-                <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground'>
+                <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
                   {t('operations.surveyReflectedNotice')}
                 </p>
               )}
-              {!selectedSurvey && <p className='text-sm text-muted-foreground'>{t('operations.surveyEmpty')}</p>}
+              {!selectedSurvey && <p className='text-xs text-muted-foreground'>{t('operations.surveyEmpty')}</p>}
             </fetcher.Form>
             <OperationFeedback data={fetcher.data} />
           </OperationDialogPanel>
@@ -290,7 +290,7 @@ export function EditorSurveysPage({
                       type='button'
                       disabled={rows.length === 1}
                       onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
-                      className='h-10 rounded-md border border-border px-3 text-sm disabled:opacity-50'
+                      className='h-10 rounded-md border border-border px-3 text-xs disabled:opacity-50'
                     >
                       {t('actions.remove')}
                     </button>
@@ -299,7 +299,7 @@ export function EditorSurveysPage({
                 <button
                   type='button'
                   onClick={() => setRows((current) => [...current, Math.max(...current) + 1])}
-                  className='h-9 rounded-md border border-dashed border-border text-sm font-bold'
+                  className='h-9 rounded-md border border-dashed border-border text-xs font-bold'
                 >
                   {t('actions.addVoteRow')}
                 </button>
@@ -328,7 +328,7 @@ function OnlineVotes({
   const { t } = useTranslation('editor')
   return (
     <div className='mt-5 overflow-x-auto'>
-      <table className='w-full min-w-[700px] text-left text-sm'>
+      <table className='w-full min-w-[700px] text-left text-xs'>
         <thead className='border-b border-border text-xs uppercase text-muted-foreground'>
           <tr>
             <th className='p-3'>{t('operations.votedAt')}</th>
@@ -394,7 +394,7 @@ function OfflineVotes({
             {batch.entries.map((entry, index) => (
               <div
                 key={`${entry.seriesId ?? 'unknown'}-${index}`}
-                className='flex justify-between rounded-md bg-muted p-3 text-sm'
+                className='flex justify-between rounded-md bg-muted p-3 text-xs'
               >
                 <span>
                   {entry.seriesId
@@ -427,7 +427,7 @@ function RankingResults({
       {rankings.map((item) => (
         <article
           key={item.seriesId}
-          className='grid grid-cols-[4rem_1fr_auto] items-center gap-3 rounded-lg border border-border p-3 text-sm'
+          className='grid grid-cols-[4rem_1fr_auto] items-center gap-3 rounded-lg border border-border p-3 text-xs'
         >
           <strong>#{item.rankPosition ?? '—'}</strong>
           <div>
@@ -536,7 +536,7 @@ function SurveyWorkflow({ status }: { status: SurveyPeriodResDtoOutput['status']
                 <span className='block text-[10px] font-bold uppercase tracking-wide'>
                   {t('operations.surveyWorkflowStep', { step: index + 1 })}
                 </span>
-                <span className='block truncate text-sm font-bold'>{t(`operations.surveyStatuses.${step}`)}</span>
+                <span className='block truncate text-xs font-bold'>{t(`operations.surveyStatuses.${step}`)}</span>
               </span>
             </li>
           )
@@ -593,7 +593,7 @@ function DataTab({
       }`}
     >
       <Icon className='size-5' />
-      <span className='min-w-0 flex-1 text-sm font-bold'>{label}</span>
+      <span className='min-w-0 flex-1 text-xs font-bold'>{label}</span>
       <strong>{value}</strong>
     </button>
   )
@@ -601,7 +601,7 @@ function DataTab({
 
 function EmptySurveyData({ text }: { text: string }) {
   return (
-    <p className='rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground'>
+    <p className='rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground'>
       {text}
     </p>
   )

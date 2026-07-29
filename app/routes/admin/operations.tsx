@@ -41,7 +41,7 @@ export default function AdminOperationsRoute() {
 
   return (
     <div className='space-y-7 pb-12'>
-      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('navigation.backDashboard')}
       </Link>
@@ -50,15 +50,15 @@ export default function AdminOperationsRoute() {
           <Wrench className='size-4' aria-hidden='true' />
           <span>{t('operations.eyebrow')}</span>
         </div>
-        <h1 className='text-2xl font-bold tracking-tight text-foreground md:text-3xl'>{t('operations.title')}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground'>{t('operations.subtitle')}</p>
+        <h1 className='text-xl font-bold tracking-tight text-foreground md:text-2xl'>{t('operations.title')}</h1>
+        <p className='mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground'>{t('operations.subtitle')}</p>
       </header>
 
       <div className='flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
         <ShieldAlert className='mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-400' aria-hidden='true' />
         <div>
-          <p className='text-sm font-bold text-foreground'>{t('operations.notice.title')}</p>
-          <p className='mt-1 text-sm leading-relaxed text-muted-foreground'>{t('operations.notice.description')}</p>
+          <p className='text-xs font-bold text-foreground'>{t('operations.notice.title')}</p>
+          <p className='mt-1 text-xs leading-relaxed text-muted-foreground'>{t('operations.notice.description')}</p>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export default function AdminOperationsRoute() {
                 <Icon className='size-5' aria-hidden='true' />
               </div>
               <h2 className='font-bold text-foreground group-hover:text-primary'>{item.title}</h2>
-              <p className='mt-2 text-sm leading-relaxed text-muted-foreground'>{item.description}</p>
+              <p className='mt-2 text-xs leading-relaxed text-muted-foreground'>{item.description}</p>
             </Link>
           )
         })}

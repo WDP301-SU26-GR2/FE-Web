@@ -19,14 +19,14 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
       <div className='mx-auto max-w-2xl space-y-5 py-8'>
         <Link
           to='/dashboard/admin/users'
-          className='inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline'
+          className='inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline'
         >
           <ArrowLeft className='size-4' aria-hidden='true' />
           {t('users.detail.back')}
         </Link>
         <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-8 text-center text-destructive'>
-          <h1 className='text-lg font-bold'>{t('users.detail.errorTitle')}</h1>
-          <p className='mt-2 text-sm'>{t('users.detail.errorDescription')}</p>
+          <h1 className='text-base font-bold'>{t('users.detail.errorTitle')}</h1>
+          <p className='mt-2 text-xs'>{t('users.detail.errorDescription')}</p>
         </div>
       </div>
     )
@@ -42,7 +42,7 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
     <div className='mx-auto max-w-5xl space-y-6 pb-12'>
       <Link
         to='/dashboard/admin/users'
-        className='inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline'
+        className='inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline'
       >
         <ArrowLeft className='size-4' aria-hidden='true' />
         {t('users.detail.back')}
@@ -60,9 +60,9 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
                 <p className='text-xs font-bold uppercase tracking-[0.16em] text-primary'>
                   {t('users.detail.eyebrow')}
                 </p>
-                <h1 className='mt-1 text-2xl font-bold tracking-tight text-foreground'>{displayName}</h1>
+                <h1 className='mt-1 text-xl font-bold tracking-tight text-foreground'>{displayName}</h1>
                 {user.displayName && user.displayName !== user.name && (
-                  <p className='mt-1 text-sm text-muted-foreground'>{user.name}</p>
+                  <p className='mt-1 text-xs text-muted-foreground'>{user.name}</p>
                 )}
               </div>
             </div>
@@ -87,7 +87,7 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
               <UserRound className='size-5' aria-hidden='true' />
             </div>
             <div>
-              <h2 className='font-bold text-foreground'>{t('users.detail.accountInfo')}</h2>
+              <h2 className='text-sm font-bold text-foreground'>{t('users.detail.accountInfo')}</h2>
               <p className='text-xs text-muted-foreground'>{t('users.detail.accountInfoDescription')}</p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export function AdminUserDetailPage({ user, hasError }: AdminUserDetailPageProps
               <Shield className='size-5' aria-hidden='true' />
             </div>
             <div>
-              <h2 className='font-bold text-foreground'>{t('users.detail.security')}</h2>
+              <h2 className='text-sm font-bold text-foreground'>{t('users.detail.security')}</h2>
               <p className='text-xs text-muted-foreground'>{t('users.detail.securityDescription')}</p>
             </div>
           </div>
@@ -145,7 +145,7 @@ function DetailItem({ icon: Icon, label, value }: DetailItemProps) {
         <Icon className='size-4' aria-hidden='true' />
         {label}
       </dt>
-      <dd className='mt-2 break-words text-sm font-bold text-foreground'>{value}</dd>
+      <dd className='mt-2 break-words text-xs font-bold text-foreground'>{value}</dd>
     </div>
   )
 }
@@ -154,7 +154,7 @@ function SecurityItem({ label, value, emphasized }: { label: string; value: stri
   return (
     <div className='border-b border-border pb-4 last:border-0 last:pb-0'>
       <dt className='text-xs font-semibold text-muted-foreground'>{label}</dt>
-      <dd className={cn('mt-1 text-sm font-bold text-foreground', emphasized && 'text-primary')}>{value}</dd>
+      <dd className={cn('mt-1 text-xs font-bold text-foreground', emphasized && 'text-primary')}>{value}</dd>
     </div>
   )
 }

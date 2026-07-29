@@ -51,7 +51,7 @@ export function BoardDashboardPage({
     <div className='space-y-7 pb-12'>
       <BoardHeader title={t('dashboard.title')} description={t('dashboard.description')} />
       {hasError ? (
-        <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
+        <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
           {t('dashboard.liveDataError')}
         </p>
       ) : null}
@@ -105,7 +105,7 @@ export function BoardDashboardPage({
                   </Link>
                 ))}
                 {dashboard.pendingDecisions.length === 0 ? (
-                  <p className='text-sm text-muted-foreground'>{t('dashboard.emptyPending')}</p>
+                  <p className='text-xs text-muted-foreground'>{t('dashboard.emptyPending')}</p>
                 ) : null}
               </div>
             </section>
@@ -125,7 +125,7 @@ export function BoardDashboardPage({
                   </Link>
                 ))}
                 {dashboard.atRiskSevere.length === 0 ? (
-                  <p className='text-sm text-muted-foreground'>{t('dashboard.emptyRisk')}</p>
+                  <p className='text-xs text-muted-foreground'>{t('dashboard.emptyRisk')}</p>
                 ) : null}
               </div>
             </section>
@@ -143,7 +143,7 @@ export function BoardDashboardPage({
               <Icon className='size-6' />
             </span>
             <h2 className='mt-4 font-bold text-foreground'>{t(`nav.${key}`)}</h2>
-            <p className='mt-2 text-sm text-muted-foreground'>{t(`dashboard.sections.${key}`)}</p>
+            <p className='mt-2 text-xs text-muted-foreground'>{t(`dashboard.sections.${key}`)}</p>
           </Link>
         ))}
       </div>
@@ -163,8 +163,8 @@ function BoardConfigFact({ label, value }: { label: string; value: string | numb
 function BoardSummary({ label, value, href }: { label: string; value: number; href: string }) {
   return (
     <Link to={href} className='rounded-xl border border-border bg-card p-4 shadow-sm hover:border-primary'>
-      <p className='text-sm text-muted-foreground'>{label}</p>
-      <p className='mt-2 text-3xl font-bold text-foreground'>{value}</p>
+      <p className='text-xs text-muted-foreground'>{label}</p>
+      <p className='mt-2 text-2xl font-bold text-foreground'>{value}</p>
     </Link>
   )
 }

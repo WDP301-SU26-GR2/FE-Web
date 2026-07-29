@@ -34,7 +34,7 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
               <UserPlus className='size-5' aria-hidden='true' />
             </div>
             <div>
-              <h2 id='create-user-title' className='font-bold text-foreground'>
+              <h2 id='create-user-title' className='text-sm font-bold text-foreground'>
                 {t('users.create.title')}
               </h2>
               <p className='mt-1 text-xs leading-relaxed text-muted-foreground'>{t('users.create.description')}</p>
@@ -68,7 +68,7 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
               name='roleCode'
               required
               defaultValue='EDITOR'
-              className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+              className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
             >
               <option value='EDITOR'>{t('dashboard.roles.EDITOR')}</option>
               <option value='BOARD_MEMBER'>{t('dashboard.roles.BOARD_MEMBER')}</option>
@@ -83,14 +83,14 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
             <button
               type='button'
               onClick={onClose}
-              className='rounded-lg border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-muted'
+              className='rounded-lg border border-border px-4 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted'
             >
               {t('users.actions.cancel')}
             </button>
             <button
               type='submit'
               disabled={isSubmitting}
-              className='rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+              className='rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
             >
               {isSubmitting ? t('users.actions.processing') : t('users.create.submit')}
             </button>
@@ -120,7 +120,7 @@ function Field({ label, name, type = 'text', ...inputProps }: FieldProps) {
         name={name}
         type={type}
         {...inputProps}
-        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
       />
     </label>
   )

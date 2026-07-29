@@ -37,7 +37,7 @@ export function BoardDecisionsPage({
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('decisions.title')} description={t('decisions.description')} backHref='/dashboard/board' />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-4'>
         <input
           className={boardInput}
@@ -98,7 +98,7 @@ export function BoardDecisionsPage({
               <p className='mt-3 text-xs text-muted-foreground'>
                 {t('decisions.sessionLabel')}: {session?.title ?? '—'}
               </p>
-              <p className='mt-3 text-sm text-muted-foreground'>
+              <p className='mt-3 text-xs text-muted-foreground'>
                 {t('decisions.summary', {
                   approve: decision.approveCount,
                   reject: decision.rejectCount,

@@ -21,7 +21,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
-export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground'
+export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
 
 export function OperationsLayout({
   titleKey,
@@ -39,7 +39,7 @@ export function OperationsLayout({
   const { t } = useTranslation('editor')
   return (
     <div className='space-y-7 pb-12'>
-      <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+      <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
         <ArrowLeft className='size-4' />
         {t('operations.back')}
       </Link>
@@ -48,11 +48,11 @@ export function OperationsLayout({
           <Wrench className='size-4' />
           {t('operations.eyebrow')}
         </p>
-        <h1 className='mt-2 text-3xl font-bold text-foreground'>{t(titleKey)}</h1>
-        <p className='mt-2 text-sm text-muted-foreground'>{t(descriptionKey)}</p>
+        <h1 className='mt-2 text-2xl font-bold text-foreground'>{t(titleKey)}</h1>
+        <p className='mt-2 text-xs text-muted-foreground'>{t(descriptionKey)}</p>
       </header>
       {hasError && (
-        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('errors.loadDescription')}
         </p>
       )}
@@ -72,7 +72,7 @@ export function OperationPanel({
 }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='mb-4 flex items-center gap-2 text-lg font-bold text-foreground'>
+      <h2 className='mb-4 flex items-center gap-2 text-base font-bold text-foreground'>
         <Icon className='size-5 text-primary' />
         {title}
       </h2>
@@ -115,7 +115,7 @@ export function OperationDialogPanel({
         <button
           type='button'
           onClick={() => setOpen(true)}
-          className={`inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-bold ${
+          className={`inline-flex h-10 items-center gap-2 rounded-md px-4 text-xs font-bold ${
             compact
               ? 'border border-border bg-background text-foreground hover:border-primary hover:text-primary'
               : 'bg-primary text-primary-foreground'
@@ -126,7 +126,7 @@ export function OperationDialogPanel({
         </button>
       </section>
       {open && (
-        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} size='lg'>
+        <Dialog compact open onClose={() => setOpen(false)} titleId={titleId} title={title} size='lg'>
           {children}
         </Dialog>
       )}

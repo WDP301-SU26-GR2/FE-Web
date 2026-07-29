@@ -87,16 +87,16 @@ export function EditorPublicationPage({
           <Printer className='size-4' />
           {t('publication.eyebrow')}
         </div>
-        <h1 className='mt-2 text-2xl font-bold text-foreground md:text-3xl'>{t('publication.title')}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('publication.subtitle')}</p>
+        <h1 className='mt-2 text-xl font-bold text-foreground md:text-2xl'>{t('publication.title')}</h1>
+        <p className='mt-2 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('publication.subtitle')}</p>
       </header>
       {hasError && (
-        <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
+        <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
           {t('errors.loadDescription')}
         </div>
       )}
       <input
-        className='h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+        className='h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder={t('filters.searchPublication')}
@@ -215,13 +215,13 @@ function ChapterSection({
     <section className='space-y-3'>
       <div className='flex items-start justify-between gap-4'>
         <div>
-          <h2 className='text-lg font-bold text-foreground'>{title}</h2>
-          <p className='mt-1 text-sm text-muted-foreground'>{description}</p>
+          <h2 className='text-base font-bold text-foreground'>{title}</h2>
+          <p className='mt-1 text-xs text-muted-foreground'>{description}</p>
         </div>
         <span className='rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground'>{items.length}</span>
       </div>
       {items.length === 0 ? (
-        <div className='rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground'>
+        <div className='rounded-xl border border-dashed border-border bg-card p-8 text-center text-xs text-muted-foreground'>
           {empty}
         </div>
       ) : (
@@ -260,7 +260,7 @@ function ChapterSection({
               </div>
               <Link
                 to={`/dashboard/editor/publication/${series.id}/${chapter.id}`}
-                className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
               >
                 <Eye className='size-4' />
                 {t('actions.review')}
@@ -301,7 +301,7 @@ function SummaryCard({
     >
       <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/70'>{icon}</div>
       <div>
-        <p className='text-2xl font-black leading-none'>{value}</p>
+        <p className='text-xl font-black leading-none'>{value}</p>
         <p className='mt-1 text-xs font-bold uppercase tracking-wider'>{label}</p>
       </div>
     </button>

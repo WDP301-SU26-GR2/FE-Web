@@ -57,13 +57,13 @@ export function BoardPaymentsPage({
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
-        <Link to={backPath} className='inline-flex items-center gap-2 text-sm font-bold text-primary'>
+        <Link to={backPath} className='inline-flex items-center gap-2 text-xs font-bold text-primary'>
           <ArrowLeft className='size-4' />
           {t('common.back')}
         </Link>
       )}
       <BoardHeader title={t('payments.title')} description={t('payments.description')} />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       {enableFilters && (
         <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-4'>
           <input
@@ -172,7 +172,7 @@ function PaymentCard({
         <BoardActionDialog title={t('payments.details')}>
           <div className='grid gap-4 text-xs'>
             <section className='rounded-lg border border-border p-4'>
-              <h4 className='mb-3 text-sm font-bold text-foreground'>{t('payments.originDetails')}</h4>
+              <h4 className='mb-3 text-xs font-bold text-foreground'>{t('payments.originDetails')}</h4>
               <dl className='grid gap-3 sm:grid-cols-2'>
                 <PaymentFact
                   label={t('payments.series')}
@@ -217,7 +217,7 @@ function PaymentCard({
               </dl>
             </section>
             <section className='rounded-lg border border-border p-4'>
-              <h4 className='mb-3 text-sm font-bold text-foreground'>{t('payments.processingDetails')}</h4>
+              <h4 className='mb-3 text-xs font-bold text-foreground'>{t('payments.processingDetails')}</h4>
               <dl className='grid gap-3 sm:grid-cols-2'>
                 <PaymentFact label={t('payments.status')} value={<StatusBadge value={payment.status} />} />
                 <PaymentFact
@@ -250,7 +250,7 @@ function PaymentCard({
             <button
               name='intent'
               value='approve'
-              className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+              className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
             >
               <BadgeCheck className='mr-1.5 inline size-4' aria-hidden='true' />
               {t('payments.approve')}
@@ -272,7 +272,7 @@ function PaymentCard({
               <button
                 name='intent'
                 value='pay'
-                className='h-10 rounded-md bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700'
+                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700'
               >
                 <Banknote className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.pay')}
@@ -289,7 +289,7 @@ function PaymentCard({
               <button
                 name='intent'
                 value='cancel'
-                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-bold text-destructive hover:bg-destructive/20'
+                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
               >
                 <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.cancel')}

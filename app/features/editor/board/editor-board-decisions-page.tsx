@@ -131,7 +131,7 @@ export function EditorBoardDecisionsPage({
             />
           ))}
           {!visibleDecisions.length && (
-            <p className='text-sm text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
+            <p className='text-xs text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
           )}
         </div>
       </BoardPanel>
@@ -188,7 +188,7 @@ function DecisionCard({
         </div>
         <BoardStatus value={decision.result ?? 'PENDING'} />
       </div>
-      <p className='mt-3 text-sm text-muted-foreground'>
+      <p className='mt-3 text-xs text-muted-foreground'>
         {t('board.voteSummary', {
           approve: decision.approveCount,
           reject: decision.rejectCount,

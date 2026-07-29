@@ -18,7 +18,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('sessions.title')} description={t('sessions.description')} backHref='/dashboard/board' />
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
         <input
           className={boardInput}
@@ -57,7 +57,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
                 <StatusBadge value={session.phase} />
               </div>
             </div>
-            <p className='mt-2 text-sm text-muted-foreground'>{session.description || t('common.noDescription')}</p>
+            <p className='mt-2 text-xs text-muted-foreground'>{session.description || t('common.noDescription')}</p>
             <p className='mt-4 text-xs text-muted-foreground'>
               {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
                 new Date(session.startTime)

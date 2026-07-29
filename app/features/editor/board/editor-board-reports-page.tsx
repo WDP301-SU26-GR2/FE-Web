@@ -41,7 +41,7 @@ export function EditorBoardReportsPage({
         <button
           type='button'
           onClick={() => setCreateOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
         >
           <Plus className='size-4' />
           {t('actions.createReport')}
@@ -68,7 +68,7 @@ export function EditorBoardReportsPage({
           {filteredReports.map((report) => (
             <ReportCard key={report.id} report={report} series={series} />
           ))}
-          {!filteredReports.length && <p className='text-sm text-muted-foreground'>{t('board.emptyReports')}</p>}
+          {!filteredReports.length && <p className='text-xs text-muted-foreground'>{t('board.emptyReports')}</p>}
         </div>
       </BoardPanel>
       {createOpen && <CreateReportDialog series={series} decisions={decisions} onClose={() => setCreateOpen(false)} />}
@@ -103,10 +103,10 @@ function CreateReportDialog({
   }
 
   return (
-    <Dialog open onClose={onClose} titleId='create-board-report' title={t('board.reportTitle')} size='lg'>
+    <Dialog compact open onClose={onClose} titleId='create-board-report' title={t('board.reportTitle')} size='lg'>
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createReport' />
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.selectSeries')}
           <select
             className={boardInput}
@@ -125,7 +125,7 @@ function CreateReportDialog({
             ))}
           </select>
         </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.selectDecision')}
           <select
             className={boardInput}
@@ -147,15 +147,15 @@ function CreateReportDialog({
             ))}
           </select>
         </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.reportType')}
           <input className={boardInput} name='reportType' required />
         </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.reportContent')}
           <textarea className={`${boardInput} min-h-36 py-2`} name='content' required />
         </label>
-        <label className='grid gap-1.5 text-sm font-semibold'>
+        <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.attachments')}
           <textarea
             className={`${boardInput} min-h-20 py-2`}
@@ -167,13 +167,13 @@ function CreateReportDialog({
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
           >
             {t('actions.cancel')}
           </button>
           <button
             disabled={fetcher.state !== 'idle' || !selectedSeriesId || !selectedDecisionId}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <FilePlus2 className='size-4' />}
             {t('actions.createReport')}
@@ -206,7 +206,7 @@ function ReportCard({
           {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(report.createdAt))}
         </time>
       </div>
-      {report.content && <p className='mt-3 whitespace-pre-wrap text-sm text-muted-foreground'>{report.content}</p>}
+      {report.content && <p className='mt-3 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>}
     </article>
   )
 }

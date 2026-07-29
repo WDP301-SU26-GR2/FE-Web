@@ -8,7 +8,7 @@ import { Dialog } from '~/shared/ui/dialog'
 import { EditorActionToast } from '../components/editor-action-toast'
 
 const inputClass =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 const creationBlockingStatuses = new Set([
   'DRAFT',
   'MANGAKA_REVIEW',
@@ -85,25 +85,25 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           <FileSignature className='size-4' />
           {t('contracts.eyebrow')}
         </div>
-        <h1 className='mt-2 text-2xl font-bold text-foreground md:text-3xl'>{t('contracts.title')}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{t('contracts.subtitle')}</p>
+        <h1 className='mt-2 text-xl font-bold text-foreground md:text-2xl'>{t('contracts.title')}</h1>
+        <p className='mt-2 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('contracts.subtitle')}</p>
       </header>
       {hasError && (
-        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive'>
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('errors.loadDescription')}
         </p>
       )}
       <EditorActionToast data={fetcher.data} scope='editor-create-contract' />
       <section className='flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm'>
         <div>
-          <h2 className='text-lg font-bold text-foreground'>{t('contracts.createTitle')}</h2>
-          <p className='mt-1 text-sm text-muted-foreground'>{t('contracts.createDescription')}</p>
+          <h2 className='text-base font-bold text-foreground'>{t('contracts.createTitle')}</h2>
+          <p className='mt-1 text-xs text-muted-foreground'>{t('contracts.createDescription')}</p>
         </div>
         <button
           type='button'
           onClick={() => setCreateOpen(true)}
           disabled={!eligibleDecisions.length}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
         >
           <FilePlus2 className='size-4' />
           {t('actions.createContract')}
@@ -114,6 +114,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
       </section>
       {createOpen && (
         <Dialog
+          compact
           open
           onClose={() => setCreateOpen(false)}
           titleId='editor-create-contract-title'
@@ -131,7 +132,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             <input type='hidden' name='intent' value='createContract' />
             <input type='hidden' name='seriesId' value={selectedSeries?.id ?? ''} />
             <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
-            <label className='grid gap-1.5 text-sm font-semibold md:col-span-2'>
+            <label className='grid gap-1.5 text-xs font-semibold md:col-span-2'>
               {t('contracts.selectApprovedDecision')}
               <select
                 name='boardDecisionId'
@@ -154,7 +155,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               </select>
             </label>
             {selectedDecision && selectedSeries && (
-              <aside className='rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm md:col-span-2'>
+              <aside className='rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs md:col-span-2'>
                 <p className='font-bold text-foreground'>
                   {t('contractDecision.serializationSummary', { series: selectedSeries.title })}
                 </p>
@@ -171,7 +172,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 </p>
               </aside>
             )}
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('contracts.contractType')}
               <select
                 name='contractType'
@@ -183,11 +184,11 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
               </select>
             </label>
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('contracts.valuation')}
               <input name='valuationAmount' type='number' min={0} required className={inputClass} />
             </label>
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('contracts.publisherPct')}
               <input
                 name='publisherOwnershipPct'
@@ -201,7 +202,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('contracts.mangakaPct')}
               <input
                 name='mangakaOwnershipPct'
@@ -215,7 +216,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('contracts.contractStart')}
               <input
                 name='contractStart'
@@ -230,7 +231,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-sm font-semibold'>
+            <label className='grid gap-1.5 text-xs font-semibold'>
               {t('contracts.contractEnd')}
               <input
                 name='contractEnd'
@@ -245,14 +246,14 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             <textarea
               name='terminationClause'
               required
-              className='min-h-24 rounded-md border border-input bg-background p-3 text-sm text-foreground md:col-span-2'
+              className='min-h-24 rounded-md border border-input bg-background p-3 text-xs text-foreground md:col-span-2'
               placeholder={t('contracts.terminationClause')}
             />
             <button
               disabled={
                 fetcher.state !== 'idle' || !selectedDecision || !selectedSeries || !ownershipValid || !datesValid
               }
-              className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50 md:col-span-2'
+              className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50 md:col-span-2'
             >
               {fetcher.state !== 'idle' ? (
                 <Loader2 className='size-4 animate-spin' />
@@ -266,7 +267,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
       )}
       <section>
         <div className='mb-3 flex items-center justify-between'>
-          <h2 className='text-lg font-bold text-foreground'>{t('contracts.listTitle')}</h2>
+          <h2 className='text-base font-bold text-foreground'>{t('contracts.listTitle')}</h2>
           <span className='rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground'>
             {filteredContracts.length}
           </span>
@@ -317,7 +318,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                     {t(`filters.contractStatuses.${contract.status}`)}
                   </span>
                 </div>
-                <p className='mt-2 text-sm text-muted-foreground'>
+                <p className='mt-2 text-xs text-muted-foreground'>
                   {t(`filters.contractTypes.${contract.contractType}`)} · {formatMoney(contract.valuationAmount)}
                 </p>
                 <p className='mt-3 text-xs text-muted-foreground'>
@@ -327,7 +328,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             )
           })}
           {!filteredContracts.length && (
-            <div className='rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground'>
+            <div className='rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
               {t('contracts.empty')}
             </div>
           )}

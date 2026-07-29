@@ -58,19 +58,19 @@ export function BoardTransfersPage({
           <button
             type='button'
             onClick={() => setSignOpen(true)}
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'
+            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
           >
             <PenLine className='h-4 w-4' />
             {t('transfers.sign')}
           </button>
         ) : contractId ? (
-          <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground'>
+          <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
             {hasBoard
               ? 'Hội đồng đã ký hợp đồng này.'
               : 'Đang chờ đủ chữ ký của Mangaka chuyển giao và Mangaka tiếp nhận.'}
           </p>
         ) : (
-          <p className='rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground'>
+          <p className='rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground'>
             {t('transfers.openFromNotification')}
           </p>
         )}
@@ -82,7 +82,7 @@ export function BoardTransfersPage({
           {!!signatures.length && (
             <div className='mt-3 grid gap-2'>
               {signatures.map((signature) => (
-                <div key={signature.id} className='flex justify-between rounded-lg border border-border p-3 text-sm'>
+                <div key={signature.id} className='flex justify-between rounded-lg border border-border p-3 text-xs'>
                   <span>{signatureRoleLabel(signature.role)}</span>
                   <span>{new Date(signature.signedAt).toLocaleString()}</span>
                 </div>
@@ -91,7 +91,7 @@ export function BoardTransfersPage({
           )}
         </section>
       )}
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
         <input
           className={boardInput}
@@ -128,6 +128,7 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
 
   return (
     <Dialog
+      compact
       open
       onClose={onClose}
       titleId='board-transfer-sign-title'
@@ -151,14 +152,14 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
             value='sendOtp'
             formNoValidate
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-60'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-60'
           >
             {t('contracts.sendOtp')}
           </button>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
           >
             {t('common.cancel')}
           </button>
@@ -166,14 +167,14 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
             name='intent'
             value='sign'
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60'
+            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
           >
             {t('transfers.sign')}
           </button>
         </div>
       </fetcher.Form>
       {fetcher.data?.intent === 'sendOtp' && (
-        <p className={`text-sm ${fetcher.data.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+        <p className={`text-xs ${fetcher.data.ok ? 'text-emerald-600' : 'text-destructive'}`}>
           {fetcher.data.ok ? t('messages.otpSent') : fetcher.data.message || t('common.failure')}
         </p>
       )}
@@ -211,7 +212,7 @@ function TransferCard({
         </div>
         <StatusBadge value={item.status} />
       </div>
-      <p className='mt-3 text-sm text-muted-foreground'>{item.planDescription}</p>
+      <p className='mt-3 text-xs text-muted-foreground'>{item.planDescription}</p>
       {item.status === 'SUBMITTED' && (
         <div className='mt-4'>
           <BoardActionDialog title={t('transfers.review')}>
@@ -237,7 +238,7 @@ function TransferCard({
                 name='intent'
                 value='approve'
                 disabled={!sessions.length}
-                className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
+                className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {t('transfers.approve')}
               </button>
@@ -245,7 +246,7 @@ function TransferCard({
                 name='intent'
                 value='reject'
                 disabled={!sessions.length}
-                className='h-10 rounded-md border border-destructive px-3 text-sm font-bold text-destructive disabled:opacity-50'
+                className='h-10 rounded-md border border-destructive px-3 text-xs font-bold text-destructive disabled:opacity-50'
               >
                 {t('transfers.reject')}
               </button>
@@ -293,7 +294,7 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
         />
         <div className='space-y-3 rounded-lg border border-border p-3'>
           <div className='flex flex-wrap items-center justify-between gap-2'>
-            <strong className='min-w-0 text-pretty text-sm'>Điều kiện hợp đồng mới</strong>
+            <strong className='min-w-0 text-pretty text-xs'>Điều kiện hợp đồng mới</strong>
             <button
               type='button'
               onClick={() => setConditionCount((count) => count + 1)}
@@ -343,7 +344,7 @@ function FullBuyoutForm({ itemId, sessions }: { itemId: string; sessions: BoardS
           name='intent'
           value='fullBuyout'
           disabled={!sessions.length}
-          className='h-10 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
           {t('transfers.fullBuyout')}
         </button>

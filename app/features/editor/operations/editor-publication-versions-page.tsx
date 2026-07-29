@@ -37,7 +37,7 @@ export function EditorPublicationVersionsPage({
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <form method='get' className='grid gap-3 sm:grid-cols-[1fr_auto]'>
           <SeriesSelect series={series} defaultValue={focusSeriesId} required={false} />
-          <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('actions.load')}
           </button>
         </form>
@@ -52,7 +52,7 @@ export function EditorPublicationVersionsPage({
                     })
                   : '—'}
               </strong>
-              <p className='text-sm text-muted-foreground'>
+              <p className='text-xs text-muted-foreground'>
                 {t(`operations.readingDirections.${item.readingDirection}`, {
                   defaultValue: item.readingDirection
                 })}

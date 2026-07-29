@@ -133,7 +133,7 @@ export function EditorReprintsPage({
               </div>
             </article>
           ))}
-          {!reprints.length && <p className='text-sm text-muted-foreground'>{t('operations.noReprints')}</p>}
+          {!reprints.length && <p className='text-xs text-muted-foreground'>{t('operations.noReprints')}</p>}
         </div>
       </OperationPanel>
     </OperationsLayout>

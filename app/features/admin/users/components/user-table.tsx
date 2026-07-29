@@ -32,7 +32,7 @@ export function UserTable({ users, deletedUserIds, onAction }: UserTableProps) {
     return (
       <div className='rounded-xl border border-dashed border-border bg-card p-12 text-center'>
         <p className='font-bold text-foreground'>{t('users.empty.title')}</p>
-        <p className='mt-2 text-sm text-muted-foreground'>{t('users.empty.description')}</p>
+        <p className='mt-2 text-xs text-muted-foreground'>{t('users.empty.description')}</p>
       </div>
     )
   }
@@ -59,20 +59,20 @@ export function UserTable({ users, deletedUserIds, onAction }: UserTableProps) {
                 <tr key={user.id} className='transition-colors hover:bg-muted/30'>
                   <td className='px-5 py-4'>
                     <div className='flex items-center gap-3'>
-                      <div className='flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-extrabold uppercase text-primary'>
+                      <div className='flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-extrabold uppercase text-primary'>
                         {(user.displayName ?? user.name).charAt(0)}
                       </div>
                       <div className='min-w-0'>
-                        <p className='max-w-64 truncate text-sm font-bold text-foreground'>
+                        <p className='max-w-64 truncate text-xs font-bold text-foreground'>
                           {user.displayName ?? user.name}
                         </p>
-                        <p className='mt-0.5 max-w-64 truncate text-xs text-muted-foreground'>{user.email}</p>
-                        <p className='mt-0.5 text-[11px] text-muted-foreground'>{user.phoneNumber}</p>
+                        <p className='mt-0.5 max-w-64 truncate text-[11px] text-muted-foreground'>{user.email}</p>
+                        <p className='mt-0.5 text-[10px] text-muted-foreground'>{user.phoneNumber}</p>
                       </div>
                     </div>
                   </td>
                   <td className='px-4 py-4'>
-                    <span className='rounded-md border border-border bg-background px-2 py-1 text-[11px] font-bold text-foreground'>
+                    <span className='rounded-md border border-border bg-background px-2 py-1 text-[10px] font-bold text-foreground'>
                       {t(`dashboard.roles.${user.role}`)}
                     </span>
                   </td>
@@ -84,7 +84,7 @@ export function UserTable({ users, deletedUserIds, onAction }: UserTableProps) {
                     />
                   </td>
                   <td className='px-4 py-4'>
-                    <div className='space-y-1 text-xs'>
+                    <div className='space-y-1 text-[11px]'>
                       <p className={user.emailVerified ? 'text-foreground' : 'text-muted-foreground'}>
                         {user.emailVerified ? t('users.security.verified') : t('users.security.unverified')}
                       </p>
@@ -95,7 +95,7 @@ export function UserTable({ users, deletedUserIds, onAction }: UserTableProps) {
                       </p>
                     </div>
                   </td>
-                  <td className='px-4 py-4 text-xs text-muted-foreground'>
+                  <td className='px-4 py-4 text-[11px] text-muted-foreground'>
                     {dateFormatter.format(new Date(user.createdAt))}
                   </td>
                   <td className='px-5 py-4'>

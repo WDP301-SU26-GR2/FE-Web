@@ -8,7 +8,7 @@ import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
 
 export const boardInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 
 export function BoardHeader({
   title,
@@ -25,7 +25,7 @@ export function BoardHeader({
       {backHref && (
         <Link
           to={backHref}
-          className='mb-4 inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline'
+          className='mb-4 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline'
         >
           <ArrowLeft className='size-4' aria-hidden='true' />
           {t('common.back')}
@@ -35,8 +35,8 @@ export function BoardHeader({
         <Gavel className='size-4' />
         {t('common.eyebrow')}
       </p>
-      <h1 className='mt-2 text-3xl font-bold text-foreground'>{title}</h1>
-      <p className='mt-2 text-sm text-muted-foreground'>{description}</p>
+      <h1 className='mt-2 text-2xl font-bold text-foreground'>{title}</h1>
+      <p className='mt-2 text-xs text-muted-foreground'>{description}</p>
     </header>
   )
 }
@@ -44,7 +44,7 @@ export function BoardHeader({
 export function BoardPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='mb-4 text-lg font-bold text-foreground'>{title}</h2>
+      <h2 className='mb-4 text-base font-bold text-foreground'>{title}</h2>
       {children}
     </section>
   )
@@ -59,13 +59,13 @@ export function BoardActionDialog({ title, children }: { title: string; children
       <button
         type='button'
         onClick={() => setOpen(true)}
-        className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+        className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
       >
         <PencilLine className='size-4' />
         {title}
       </button>
       {open && (
-        <Dialog open onClose={() => setOpen(false)} titleId={titleId} title={title} size='sm'>
+        <Dialog compact open onClose={() => setOpen(false)} titleId={titleId} title={title} size='sm'>
           {children}
         </Dialog>
       )}
@@ -125,7 +125,7 @@ export function ActionButton({ label, intent, disabled }: { label: string; inten
       name={intent ? 'intent' : undefined}
       value={intent}
       disabled={disabled || fetcher.state !== 'idle'}
-      className='inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
+      className='inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
     >
       {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
       {label}
@@ -135,7 +135,7 @@ export function ActionButton({ label, intent, disabled }: { label: string; inten
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <p className='rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground'>
+    <p className='rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
       {text}
     </p>
   )

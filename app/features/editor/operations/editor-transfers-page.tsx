@@ -41,7 +41,7 @@ export function EditorTransfersPage({
     >
       {request && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <div className='rounded-lg border border-border p-4 text-sm'>
+          <div className='rounded-lg border border-border p-4 text-xs'>
             <div className='flex flex-wrap justify-between gap-2'>
               <strong>{displayRequest?.series?.title ?? t('operations.unknownSeries')}</strong>
               <span className='font-bold text-primary'>{t(`operations.transferStatuses.${request.status}`)}</span>
@@ -62,17 +62,17 @@ export function EditorTransfersPage({
                 <span>{new Date(signature.signedAt).toLocaleString()}</span>
               </div>
             ))}
-            {!signatures.length && <p className='text-sm text-muted-foreground'>{t('operations.noSignatures')}</p>}
+            {!signatures.length && <p className='text-xs text-muted-foreground'>{t('operations.noSignatures')}</p>}
           </div>
         </section>
       )}
       {!request && (
-        <p className='rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground'>
+        <p className='rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground'>
           Tải một yêu cầu chuyển nhượng để xem đúng bước nghiệp vụ có thể thực hiện.
         </p>
       )}
       {request?.status === 'NEGOTIATING' && (
-        <p className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground'>
+        <p className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
           Đang chờ Mangaka gốc đồng ý hoặc từ chối đề nghị. Editor chưa cần thực hiện thêm thao tác.
         </p>
       )}
@@ -80,7 +80,7 @@ export function EditorTransfersPage({
         <OperationDialogPanel icon={GitPullRequestArrow} title={t('operations.startTransferSection')}>
           <fetcher.Form method='post' className='grid gap-3'>
             <input type='hidden' name='transferRequestId' value={request!.id} />
-            <p className='rounded-lg bg-muted p-3 text-sm text-muted-foreground'>
+            <p className='rounded-lg bg-muted p-3 text-xs text-muted-foreground'>
               Chỉ bắt đầu bước này sau khi Hội đồng đã qua vòng sàng lọc. Hệ thống sẽ chuyển yêu cầu sang chờ Mangaka
               gốc phản hồi.
             </p>
@@ -92,11 +92,11 @@ export function EditorTransfersPage({
         <OperationDialogPanel icon={ShieldCheck} title={t('operations.createTransferSection')}>
           <fetcher.Form method='post' className='grid gap-3'>
             <input type='hidden' name='transferRequestId' value={request!.id} />
-            <div className='flex gap-2 rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/20 dark:text-amber-100'>
+            <div className='flex gap-2 rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-xs text-amber-950 dark:bg-amber-950/20 dark:text-amber-100'>
               <Info className='mt-0.5 size-4 shrink-0' />
               Chỉ tạo hợp đồng sau khi Mangaka gốc đã đồng ý thương lượng và yêu cầu quay lại trạng thái đang xử lý.
             </div>
-            <label className='flex items-start gap-2 text-sm text-foreground'>
+            <label className='flex items-start gap-2 text-xs text-foreground'>
               <input type='checkbox' required className='mt-1' />
               Tôi đã xác nhận Mangaka gốc đồng ý chuyển nhượng.
             </label>
@@ -141,7 +141,7 @@ export function EditorTransfersPage({
           </fetcher.Form>
           <OperationFeedback data={fetcher.data} />
           {fetcher.data?.ok && fetcher.data.transferContractId && (
-            <div className='mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm'>
+            <div className='mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs'>
               <strong>{t('operations.transferContractCreated')}</strong>
               <Link
                 className='mt-2 inline-flex font-bold text-primary underline'

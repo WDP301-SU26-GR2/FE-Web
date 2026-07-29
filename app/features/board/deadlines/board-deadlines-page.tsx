@@ -54,11 +54,11 @@ export function BoardDeadlinesPage({
             </option>
           ))}
         </select>
-        <button className='rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>
+        <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
           {t('common.load')}
         </button>
       </Form>
-      {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
+      {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-4'>
         {requests.map((item) => (
           <DeadlineCard key={item.id} item={item} />
@@ -79,7 +79,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
         <strong>{t('deadlines.request')}</strong>
         <StatusBadge value={item.status} />
       </div>
-      <p className='mt-3 text-sm text-muted-foreground'>{item.reason}</p>
+      <p className='mt-3 text-xs text-muted-foreground'>{item.reason}</p>
       <p className='mt-2 text-xs'>
         {item.currentDeadline ?? '—'} → {item.requestedDeadline ?? '—'}
       </p>
@@ -92,7 +92,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
               <button
                 name='intent'
                 value='approve'
-                className='h-10 rounded-md bg-emerald-600 px-3 text-sm font-bold text-white hover:bg-emerald-700'
+                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700'
               >
                 <CheckCircle2 className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('deadlines.approve')}
@@ -100,7 +100,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
               <button
                 name='intent'
                 value='reject'
-                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-sm font-bold text-destructive hover:bg-destructive/20'
+                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
               >
                 <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('deadlines.reject')}

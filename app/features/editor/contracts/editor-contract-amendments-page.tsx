@@ -6,7 +6,12 @@ import type {
   ContractStatusProgressResDtoOutput
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { ContractActionMessage, ContractDialogPanel, ContractPageLayout, contractInput } from './components/contract-shared'
+import {
+  ContractActionMessage,
+  ContractDialogPanel,
+  ContractPageLayout,
+  contractInput
+} from './components/contract-shared'
 
 export function EditorContractAmendmentsPage({
   contract,
@@ -38,7 +43,7 @@ export function EditorContractAmendmentsPage({
             <button
               name='intent'
               value='createAmendment'
-              className='rounded-md bg-primary px-3 py-2 text-sm font-bold text-primary-foreground sm:col-span-2'
+              className='rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground sm:col-span-2'
             >
               {t('actions.createAmendment')}
             </button>
@@ -47,7 +52,7 @@ export function EditorContractAmendmentsPage({
         </ContractDialogPanel>
       ) : (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <p className='rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground'>
+          <p className='rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground'>
             {t('contractDetail.amendmentCreateUnavailable')}
           </p>
         </section>
@@ -62,7 +67,7 @@ export function EditorContractAmendmentsPage({
                   {t(`filters.amendmentStatuses.${amendment.status}`)}
                 </span>
               </div>
-              <p className='mt-2 text-sm text-muted-foreground'>{amendment.reason}</p>
+              <p className='mt-2 text-xs text-muted-foreground'>{amendment.reason}</p>
               {amendment.status === 'DRAFT' && (
                 <div className='mt-3 space-y-2 border-t border-border pt-3'>
                   <fetcher.Form method='post' className='grid gap-2 sm:grid-cols-2'>
@@ -113,7 +118,7 @@ export function EditorContractAmendmentsPage({
               )}
             </article>
           ))}
-          {!amendments.length && <p className='text-sm text-muted-foreground'>{t('contractDetail.emptyAmendments')}</p>}
+          {!amendments.length && <p className='text-xs text-muted-foreground'>{t('contractDetail.emptyAmendments')}</p>}
         </div>
         <ContractActionMessage data={fetcher.data} />
       </section>
