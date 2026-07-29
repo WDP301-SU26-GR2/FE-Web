@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   AlertCircle,
@@ -18,6 +18,8 @@ import { SignedImage } from '~/shared/components/signed-image'
 import { StatusBadge } from '~/shared/ui'
 import { getTaskStatusTone } from '../lib/task-status-meta'
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task/taskListResDtoOutputItemsItem'
+import type { TaskResDtoOutput } from '~/api/model/task/taskResDtoOutput'
+import { taskControllerGetTask } from '~/api/operations/task/task'
 import { TaskSignedImage } from './task-signed-image'
 import { useTaskSignedUrl } from '../lib/use-task-signed-url'
 
@@ -27,8 +29,12 @@ export interface TaskBoardProps {
   error: string | null
   onRefresh: () => void
   onApprove: (taskId: string) => void
+  onApproveGroup: (groupId: string) => void
+  approvingGroupIds: ReadonlySet<string>
   onRequestRevision: (taskId: string) => void
   onCancel: (taskId: string) => void
+  onEdit: (task: TaskListResDtoOutputItemsItem) => void
+  onReassign: (task: TaskListResDtoOutputItemsItem) => void
   page: number
   totalPages: number
   total: number
@@ -52,8 +58,12 @@ export function TaskBoard({
   error,
   onRefresh,
   onApprove,
+  onApproveGroup,
+  approvingGroupIds,
   onRequestRevision,
   onCancel,
+  onEdit,
+  onReassign,
   page,
   totalPages,
   total,
@@ -104,8 +114,12 @@ export function TaskBoard({
                 key={task.id}
                 task={task}
                 onApprove={onApprove}
+                onApproveGroup={onApproveGroup}
+                approvingGroupIds={approvingGroupIds}
                 onRequestRevision={onRequestRevision}
                 onCancel={onCancel}
+                onEdit={onEdit}
+                onReassign={onReassign}
               />
             ))}
           </div>
@@ -148,12 +162,48 @@ export function TaskBoard({
 interface TaskCardProps {
   task: TaskListResDtoOutputItemsItem
   onApprove: (taskId: string) => void
+  onApproveGroup: (groupId: string) => void
+  approvingGroupIds: ReadonlySet<string>
   onRequestRevision: (taskId: string) => void
   onCancel: (taskId: string) => void
+  onEdit: (task: TaskListResDtoOutputItemsItem) => void
+  onReassign: (task: TaskListResDtoOutputItemsItem) => void
 }
 
-function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProps) {
+function TaskCard({
+  task,
+  onApprove,
+  onApproveGroup,
+  approvingGroupIds,
+  onRequestRevision,
+  onCancel,
+  onEdit,
+  onReassign
+}: TaskCardProps) {
   const { t, i18n } = useTranslation('mangaka')
+  const [detail, setDetail] = useState<TaskResDtoOutput | null>(null)
+
+  // GET /tasks deliberately returns a compact TaskListItem. Submission
+  // versions and the original page key only exist in GET /tasks/:id, so do
+  // not treat those detail-only fields as if they were always in the list.
+  useEffect(() => {
+    const controller = new AbortController()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale detail before the keyed request resolves
+    setDetail(null)
+
+    void taskControllerGetTask({ id: task.id }, { signal: controller.signal })
+      .then((response) => {
+        if (!controller.signal.aborted) setDetail(response.data)
+      })
+      .catch(() => {
+        // The summary card remains usable if its optional detail request
+        // fails (for example when a task was deleted concurrently).
+        if (!controller.signal.aborted) setDetail(null)
+      })
+
+    return () => controller.abort()
+  }, [task.id])
+
   const tone = getTaskStatusTone(task.status)
   const overdue = isOverdue(task.deadline)
   const statusLabel = t(`tasks.status.${task.status}`, { defaultValue: task.status })
@@ -164,16 +214,15 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
   // FE-API-Guide-v3.md §6 (2026-07-21):
   // ẢNH 1 — ẢNH GỐC (Mangaka giao): dùng `task.pageOriginalFile` (R2 key)
   // → Đọc qua POST /tasks/:id/download-url (useTaskSignedUrl)
-  const originalR2Key = task.pageOriginalFile ?? null
+  const originalR2Key = detail?.pageOriginalFile ?? null
+  const versions = detail?.versions ?? []
 
   const [selectedVersionNumber, setSelectedVersionNumber] = useState<number | null>(null)
 
   // Lấy version mới nhất (nếu có)
   const latestVersion =
-    task.versions.length > 0
-      ? task.versions.reduce((latest, v) => (v.versionNumber > latest.versionNumber ? v : latest))
-      : null
-  const selectedVersion = task.versions.find((version) => version.versionNumber === selectedVersionNumber) ?? latestVersion
+    versions.length > 0 ? versions.reduce((latest, v) => (v.versionNumber > latest.versionNumber ? v : latest)) : null
+  const selectedVersion = versions.find((version) => version.versionNumber === selectedVersionNumber) ?? latestVersion
 
   // FE-API-Guide-v3.md §6 (2026-07-21):
   // ẢNH 2 — BẢN ASSISTANT NỘP: dùng `versions[].file` (R2 key)
@@ -200,13 +249,15 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
   // Auto-switch to submitted image if available (useLayoutEffect to avoid visual flicker)
   useLayoutEffect(() => {
     if (submittedR2Key && carouselIndex === 0 && images.length > 1) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- select the newly available submitted version
       setCarouselIndex(1)
     }
-  }, [submittedR2Key])
+  }, [carouselIndex, images.length, submittedR2Key])
 
   // Reset carouselIndex if it goes out of bounds
   useLayoutEffect(() => {
     if (carouselIndex >= images.length && images.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clamp after a version disappears
       setCarouselIndex(images.length - 1)
     }
   }, [carouselIndex, images.length])
@@ -296,7 +347,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
               <button
                 type='button'
                 onClick={() => setLightboxOpen(true)}
-                className='absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100'
+                className='absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-background/70 text-foreground opacity-0 transition-opacity hover:bg-background/90 group-hover:opacity-100'
                 aria-label={t('studio.tasksTab.viewFullsize')}
               >
                 <ZoomIn className='h-4 w-4' />
@@ -313,7 +364,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                     onClick={() => setCarouselIndex(idx)}
                     className={cn(
                       'h-2 w-2 rounded-full transition-colors cursor-pointer',
-                      idx === carouselIndex ? 'bg-white' : 'bg-white/50'
+                      idx === carouselIndex ? 'bg-primary' : 'bg-primary/50'
                     )}
                     aria-label={img.label}
                   />
@@ -327,7 +378,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                 <button
                   type='button'
                   onClick={() => setCarouselIndex((i) => (i > 0 ? i - 1 : images.length - 1))}
-                  className='absolute left-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100'
+                  className='absolute left-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-background/70 text-foreground opacity-0 transition-opacity hover:bg-background/90 group-hover:opacity-100'
                   aria-label='Previous image'
                 >
                   <ChevronLeft className='h-4 w-4' />
@@ -335,7 +386,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                 <button
                   type='button'
                   onClick={() => setCarouselIndex((i) => (i < images.length - 1 ? i + 1 : 0))}
-                  className='absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100'
+                  className='absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-background/70 text-foreground opacity-0 transition-opacity hover:bg-background/90 group-hover:opacity-100'
                   aria-label='Next image'
                 >
                   <ChevronRight className='h-4 w-4' />
@@ -349,11 +400,11 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
                 type='button'
                 onClick={() => handleDownload(`task-${task.id.slice(0, 8)}-v${selectedVersion?.versionNumber}.png`)}
                 disabled={submittedSignedUrl.status !== 'ready' || isDownloading}
-                className='absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-black/50 px-2 py-1 text-xs text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100 cursor-pointer disabled:opacity-50'
+                className='absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-background/70 px-2 py-1 text-xs text-foreground opacity-0 transition-opacity hover:bg-background/90 group-hover:opacity-100 cursor-pointer disabled:opacity-50'
                 aria-label={t('studio.tasksTab.download')}
               >
                 {submittedSignedUrl.status === 'loading' || isDownloading ? (
-                  <span className='h-3 w-3 animate-spin rounded-full border border-white border-t-transparent' />
+                  <span className='h-3 w-3 animate-spin rounded-full border border-current border-t-transparent' />
                 ) : (
                   <Download className='h-3 w-3' />
                 )}
@@ -365,7 +416,7 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
           <div className='flex w-full md:w-80 shrink-0 items-center justify-center bg-muted/50 md:h-52'>
             <div className='flex flex-col items-center gap-1 text-xs text-muted-foreground'>
               <FileText className='h-6 w-6' />
-              <span>{t('studio.tasksTab.noImage')}</span>
+              <span>{t('studio.tasksTab.image.noImage')}</span>
             </div>
           </div>
         )}
@@ -441,14 +492,14 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
           )}
 
           {/* Version history toggle */}
-          {task.versions.length > 1 && (
+          {versions.length > 1 && (
             <details className='group'>
               <summary className='flex cursor-pointer items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground'>
                 <ChevronDown className='h-3 w-3 transition-transform group-open:rotate-180' />
-                {t('studio.tasksTab.versionHistory', { count: task.versions.length })}
+                {t('studio.tasksTab.versionHistory', { count: versions.length })}
               </summary>
               <div className='mt-2 space-y-2'>
-                {task.versions
+                {versions
                   .slice()
                   .reverse()
                   .map((v) => (
@@ -482,32 +533,64 @@ function TaskCard({ task, onApprove, onRequestRevision, onCancel }: TaskCardProp
 
           {/* Actions */}
           <div className='flex flex-wrap items-center gap-2 pt-2'>
-            {task.status === 'SUBMITTED' || task.status === 'UNDER_REVIEW' ? (
+            {task.status !== 'APPROVED' && task.status !== 'CANCELLED' && (
+              <button
+                type='button'
+                onClick={() => onEdit(task)}
+                className='rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors'
+              >
+                {t('studio.tasks.board.edit')}
+              </button>
+            )}
+            {(task.status === 'ASSIGNED' ||
+              task.status === 'IN_PROGRESS' ||
+              task.status === 'REVISION_REQUESTED' ||
+              task.status === 'ON_HOLD') && (
+              <button
+                type='button'
+                onClick={() => onReassign(task)}
+                className='rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors'
+              >
+                {t('studio.tasks.board.reassign')}
+              </button>
+            )}
+            {(task.status === 'SUBMITTED' || task.status === 'UNDER_REVIEW') && (
               <>
                 <button
                   type='button'
                   onClick={() => onApprove(task.id)}
-                  className='rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white hover:bg-success/90 cursor-pointer transition-colors'
+                  className='rounded-lg bg-success px-4 py-2 text-sm font-semibold text-success-foreground hover:bg-success/90 cursor-pointer transition-colors'
                 >
                   {t('tasks.board.approve')}
                 </button>
+                {task.groupId && (
+                  <button
+                    type='button'
+                    onClick={() => onApproveGroup(task.groupId!)}
+                    disabled={approvingGroupIds.has(task.groupId)}
+                    className='rounded-lg border border-success/40 bg-success/10 px-4 py-2 text-sm font-semibold text-success hover:bg-success/20 cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                  >
+                    {t('studio.tasks.board.approveGroup')}
+                  </button>
+                )}
                 <button
                   type='button'
                   onClick={() => onRequestRevision(task.id)}
-                  className='rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-white hover:bg-warning/90 cursor-pointer transition-colors'
+                  className='rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:bg-warning/90 cursor-pointer transition-colors'
                 >
                   {t('tasks.board.revision')}
                 </button>
               </>
-            ) : task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS' || task.status === 'REVISION_REQUESTED' ? (
+            )}
+            {task.status !== 'APPROVED' && task.status !== 'CANCELLED' && (
               <button
                 type='button'
                 onClick={() => onCancel(task.id)}
-                className='rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white hover:bg-destructive/90 cursor-pointer transition-colors'
+                className='rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 cursor-pointer transition-colors'
               >
                 {t('tasks.board.cancel')}
               </button>
-            ) : null}
+            )}
           </div>
         </div>
       </div>
@@ -547,22 +630,23 @@ function LightboxImage({
   alt: string
   regions?: ImageRegion[] | null
 }) {
+  const { t } = useTranslation('mangaka')
   const signed = useTaskSignedUrl(taskId, r2Key)
   const [imgErrored, setImgErrored] = useState(false)
 
   if (signed.status === 'loading' || signed.status === 'idle') {
     return (
       <div className='flex items-center justify-center'>
-        <Loader2 className='h-12 w-12 animate-spin text-white/60' />
+        <Loader2 className='h-12 w-12 animate-spin text-muted-foreground' />
       </div>
     )
   }
 
   if (signed.status === 'error' || imgErrored) {
     return (
-      <div className='flex flex-col items-center justify-center gap-2 text-white/60'>
+      <div className='flex flex-col items-center justify-center gap-2 text-muted-foreground'>
         <X className='h-12 w-12' />
-        <span className='text-sm'>Failed to load image</span>
+        <span className='text-sm'>{t('lightbox.failedToLoad')}</span>
       </div>
     )
   }
@@ -583,19 +667,19 @@ function Lightbox({ taskId, images, regions, currentIndex, onClose, onNavigate }
   if (!currentImage || !currentImage.r2Key) return null
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/90' onClick={onClose}>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-background/95' onClick={onClose}>
       {/* Close button */}
       <button
         type='button'
         onClick={onClose}
-        className='absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer z-10'
+        className='absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer z-10'
         aria-label='Close'
       >
         <X className='h-5 w-5' />
       </button>
 
       {/* Image counter */}
-      <div className='absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-black/50 px-3 py-1 text-sm text-white'>
+      <div className='absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-muted px-3 py-1 text-sm text-muted-foreground'>
         {currentIndex + 1} / {images.length} — {currentImage.label}
       </div>
 
@@ -608,7 +692,7 @@ function Lightbox({ taskId, images, regions, currentIndex, onClose, onNavigate }
               e.stopPropagation()
               onNavigate(currentIndex > 0 ? currentIndex - 1 : images.length - 1)
             }}
-            className='absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 cursor-pointer'
+            className='absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer'
             aria-label='Previous'
           >
             <ChevronLeft className='h-6 w-6' />
@@ -619,7 +703,7 @@ function Lightbox({ taskId, images, regions, currentIndex, onClose, onNavigate }
               e.stopPropagation()
               onNavigate(currentIndex < images.length - 1 ? currentIndex + 1 : 0)
             }}
-            className='absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 cursor-pointer'
+            className='absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer'
             aria-label='Next'
           >
             <ChevronRight className='h-6 w-6' />

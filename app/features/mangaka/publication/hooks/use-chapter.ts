@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { chapterControllerGetOne } from '~/api/operations/chapters/chapters'
 import type { ChapterResDtoOutput } from '~/api/model/chapters'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseChapterResult = {
   chapter: ChapterResDtoOutput | null
@@ -59,9 +60,7 @@ export function useChapter(id: string | null | undefined): UseChapterResult {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError(null)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotFound(false)
 
     void chapterControllerGetOne({ id }, { signal })
@@ -77,7 +76,7 @@ export function useChapter(id: string | null | undefined): UseChapterResult {
         if (isFetchError(err) && err.status === 404) {
           setNotFound(true)
         } else {
-          setError(err instanceof Error ? err.message : t('publication.error.generic'))
+          setError(extractApiErrorMessage(err, t('publication.error.generic')))
         }
       })
       .finally(() => {

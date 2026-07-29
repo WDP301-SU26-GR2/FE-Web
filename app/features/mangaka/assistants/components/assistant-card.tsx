@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Star, Sparkles, CheckCircle2, UserPlus } from 'lucide-react'
+import { Star, Sparkles, CheckCircle2, Eye, UserPlus } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { SignedImage } from '~/shared/components/signed-image'
@@ -13,13 +13,14 @@ export type AssistantCardProps = {
    *  BE 409 `Error.DuplicateActiveCollaboration`. */
   hasActiveAssignment: boolean
   onInvite: (assistant: AssistantDirectoryListResDtoOutputItemsItem) => void
+  onViewDetails: (assistant: AssistantDirectoryListResDtoOutputItemsItem) => void
 }
 
 const AVAILABILITY_META: Record<string, { className: string }> = {
-  AVAILABLE: { className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-  BUSY: { className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-  ON_LEAVE: { className: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
-  UNAVAILABLE: { className: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20' }
+  AVAILABLE: { className: 'bg-success/10 text-success border-success/20' },
+  BUSY: { className: 'bg-warning/10 text-warning border-warning/20' },
+  ON_LEAVE: { className: 'bg-muted text-muted-foreground border-border' },
+  UNAVAILABLE: { className: 'bg-muted text-muted-foreground border-border' }
 }
 
 function getInitials(name: string | null | undefined, fallback: string): string {
@@ -38,12 +39,12 @@ function formatDate(iso: string | null, locale: string): string {
 }
 
 const AVATAR_GRADIENTS = [
-  'from-blue-600 to-indigo-700',
-  'from-purple-600 to-pink-700',
-  'from-amber-600 to-orange-700',
-  'from-emerald-600 to-teal-700',
-  'from-rose-600 to-pink-700',
-  'from-sky-600 to-cyan-700'
+  'from-info to-info/70 text-info-foreground',
+  'from-primary to-primary/70 text-primary-foreground',
+  'from-warning to-warning/70 text-warning-foreground',
+  'from-success to-success/70 text-success-foreground',
+  'from-destructive to-destructive/70 text-destructive-foreground',
+  'from-accent to-accent/70 text-accent-foreground'
 ] as const
 
 function pickGradient(seed: string): string {
@@ -63,7 +64,7 @@ function pickGradient(seed: string): string {
  * - Specializations + experience level + availability window.
  * - "Mời cộng tác" CTA — disabled when an active assignment already exists.
  */
-export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: AssistantCardProps) {
+export function AssistantCard({ assistant, hasActiveAssignment, onInvite, onViewDetails }: AssistantCardProps) {
   const { t, i18n } = useTranslation('mangaka')
   const locale = i18n.language
 
@@ -85,7 +86,7 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
         ) : (
           <div
             className={cn(
-              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold shadow-sm',
               pickGradient(fallbackSeed)
             )}
             aria-hidden='true'
@@ -101,7 +102,7 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
             {assistant.isRecommended && (
               <span
                 title={t('assistantDirectory.card.recommended')}
-                className='inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600'
+                className='inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning'
               >
                 <Sparkles className='h-3 w-3' />
                 {t('assistantDirectory.card.recommended')}
@@ -119,14 +120,14 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
           className='inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-semibold text-secondary-foreground'
           title={t('assistantDirectory.card.reputationTitle')}
         >
-          <Star className='h-3 w-3 text-amber-500' />
+          <Star className='h-3 w-3 text-warning' />
           <span>{t('assistantDirectory.card.reputation', { score: assistant.reputationScore.toFixed(1) })}</span>
         </span>
         <span
           className='inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-semibold text-secondary-foreground'
           title={t('assistantDirectory.card.ratingTitle')}
         >
-          <Star className='h-3 w-3 text-amber-500' />
+          <Star className='h-3 w-3 text-warning' />
           <span>
             {t('assistantDirectory.card.rating', { avg: assistant.ratingAvg.toFixed(1), count: assistant.ratingCount })}
           </span>
@@ -141,7 +142,7 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
         </span>
       </div>
 
-      {assistant.specializations.length > 0 && (
+      {assistant.specializations?.length > 0 && (
         <div className='flex flex-wrap gap-1.5'>
           {assistant.specializations.map((spec) => (
             <span
@@ -165,32 +166,41 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite }: Assi
         </div>
       )}
 
-      <footer className='mt-auto flex items-center justify-between border-t border-border pt-3'>
-        <span className='text-[11px] text-muted-foreground'>
-          {t('assistantDirectory.card.portfolioCount', { count: portfolioCount })}
-        </span>
-        {hasActiveAssignment ? (
-          <span
-            className='inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600'
-            title={t('assistantDirectory.card.activeAssignmentTitle')}
-          >
-            <CheckCircle2 className='h-3.5 w-3.5' />
-            {t('assistantDirectory.card.activeAssignment')}
+      <footer className='mt-auto space-y-3 border-t border-border pt-3'>
+        <div className='flex items-center justify-between gap-2'>
+          <span className='text-[11px] text-muted-foreground'>
+            {t('assistantDirectory.card.portfolioCount', { count: portfolioCount })}
           </span>
-        ) : (
-          <Button
-            type='button'
-            variant='primary'
-            size='sm'
-            onClick={() => onInvite(assistant)}
-            aria-label={t('assistantDirectory.card.inviteAriaLabel', {
-              name: assistant.displayName ?? assistant.userId
-            })}
-          >
-            <UserPlus className='h-3.5 w-3.5' />
-            {t('assistantDirectory.card.invite')}
+          {hasActiveAssignment && (
+            <span
+              className='inline-flex items-center gap-1 text-[11px] font-semibold text-success'
+              title={t('assistantDirectory.card.activeAssignmentTitle')}
+            >
+              <CheckCircle2 className='h-3.5 w-3.5' />
+              {t('assistantDirectory.card.activeAssignment')}
+            </span>
+          )}
+        </div>
+        <div className='flex flex-wrap justify-end gap-2'>
+          <Button type='button' variant='outline' size='sm' onClick={() => onViewDetails(assistant)}>
+            <Eye className='h-3.5 w-3.5' />
+            {t('assistantDirectory.card.viewDetails')}
           </Button>
-        )}
+          {!hasActiveAssignment && (
+            <Button
+              type='button'
+              variant='primary'
+              size='sm'
+              onClick={() => onInvite(assistant)}
+              aria-label={t('assistantDirectory.card.inviteAriaLabel', {
+                name: assistant.displayName ?? assistant.userId
+              })}
+            >
+              <UserPlus className='h-3.5 w-3.5' />
+              {t('assistantDirectory.card.invite')}
+            </Button>
+          )}
+        </div>
       </footer>
     </article>
   )

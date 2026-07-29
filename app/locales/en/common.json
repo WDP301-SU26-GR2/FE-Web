@@ -48,9 +48,10 @@
     "mySeries": "My Series",
     "studio": "Studio",
     "assistantDirectory": "Assistant Directory",
+    "mangakaDirectory": "Mangaka Directory",
     "ranking": "Ranking",
     "contracts": "Contracts",
-    "reprints": "Reprints",
+    "deadlines": "Deadlines",
     "transfers": "Transfers",
     "payments": "Payments",
     "notifications": "Notifications",
@@ -153,6 +154,86 @@
     },
     "error": {
       "updateFailed": "Unable to update notifications. Please try again."
+    }
+  },
+  "contractShared": {
+    "decision": {
+      "title": "Board decision basis",
+      "serializationSummary": "Approved serialization of “{{series}}”",
+      "genericSummary": "{{type}} — “{{series}}”",
+      "session": "Board session",
+      "decidedAt": "Approval date",
+      "notFinalized": "Decision not finalized",
+      "openDecision": "View Board decision",
+      "unknownSeries": "Unknown series",
+      "unknownDecision": "Board decision",
+      "types": {
+        "SERIALIZATION": "Serialization approval",
+        "CANCELLATION": "Series cancellation",
+        "FORMAT_CHANGE": "Publication format change",
+        "COMPLETION": "Series completion",
+        "CONTINUE": "Continue publication",
+        "CANCEL": "Cancel series",
+        "HIATUS": "Place series on hiatus",
+        "ENDING_ALLOWANCE": "Ending chapter allowance",
+        "SERIES_CONTRACT_APPROVAL": "Series contract approval",
+        "CONTRACT": "Contract decision",
+        "REPRINT": "Reprint approval",
+        "TRANSFER": "Transfer approval"
+      },
+      "results": {
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "PENDING": "Voting in progress",
+        "PENDING_QUORUM": "Quorum pending",
+        "EXPIRED": "Expired"
+      }
+    },
+    "notApplicable": "Not applicable",
+    "pdf": {
+      "error": "Could not create the contract PDF. Please try again.",
+      "missingConditionsTitle": "This contract has no valid payment conditions.",
+      "preparing": "Preparing PDF…",
+      "download": "Download contract PDF",
+      "missingConditions": "A complete PDF cannot be created until a valid payment condition is available."
+    },
+    "paymentConditions": {
+      "loadFailed": "Payment conditions could not be loaded. Approval and signing actions are locked for safety.",
+      "empty": "This contract has no payment conditions.",
+      "invalidPayout": "This condition does not have a valid payout value.",
+      "types": {
+        "CHAPTER_MILESTONE": "Chapter milestone",
+        "RECURRING_CHAPTER": "Recurring chapter payout",
+        "RANKING_MILESTONE": "Ranking milestone",
+        "TIME_BOUND": "Time-bound milestone"
+      },
+      "statuses": {
+        "PENDING": "Tracking",
+        "ACHIEVED": "Achieved",
+        "PAID": "Paid",
+        "CANCELLED": "Cancelled",
+        "MISSED": "Missed",
+        "DISABLED": "Paused"
+      },
+      "facts": {
+        "threshold": "Achievement condition",
+        "amount": "Payout amount",
+        "percent": "Payout percentage",
+        "recurring": "Recurrence",
+        "lastTriggered": "Last triggered value",
+        "achievedAt": "Achieved at"
+      },
+      "recurring": {
+        "yes": "Recurring",
+        "no": "One-time only"
+      },
+      "thresholds": {
+        "chapter": "Reach {{value}} published chapters",
+        "recurringChapter": "After every {{value}} published chapters",
+        "ranking": "Reach the top {{value}} in the ranking",
+        "deadline": "Complete before {{value}}",
+        "configured": "According to the contract configuration"
+      }
     }
   },
   "refresh": "Refresh"

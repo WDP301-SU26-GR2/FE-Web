@@ -2,6 +2,68 @@
   "common": {
     "retry": "Thử lại"
   },
+  "routeMeta": {
+    "dashboard": {
+      "title": "Bảng điều khiển Mangaka",
+      "description": "Quản lý tiến độ sản xuất manga và các việc cần bạn xử lý."
+    },
+    "assistantDirectory": {
+      "title": "Danh bạ trợ lý",
+      "description": "Tìm và mời trợ lý cộng tác cho series của bạn."
+    },
+    "deadlines": {
+      "title": "Yêu cầu gia hạn",
+      "description": "Theo dõi và quản lý yêu cầu gia hạn chương truyện."
+    },
+    "contractVersion": {
+      "title": "Phiên bản hợp đồng",
+      "description": "Xem lại các điều khoản đã lưu của phiên bản hợp đồng này."
+    },
+    "notifications": {
+      "title": "Thông báo",
+      "description": "Xem cảnh báo sản xuất và mở đúng không gian làm việc liên quan."
+    },
+    "franchiseConsent": {
+      "title": "Đồng thuận nhượng quyền",
+      "description": "Xem và phản hồi yêu cầu đồng thuận cho series phái sinh."
+    },
+    "myStudio": {
+      "title": "Studio của tôi",
+      "description": "Quản lý phân công trợ lý và các lần cộng tác đã kết thúc."
+    },
+    "paymentDetail": {
+      "title": "Chi tiết thanh toán",
+      "description": "Xem trạng thái và chứng từ của khoản thanh toán này."
+    },
+    "payments": {
+      "title": "Tài chính",
+      "description": "Theo dõi thu nhập và thanh toán theo người dùng, series hoặc hợp đồng."
+    },
+    "proposeSeries": {
+      "title": "Đề xuất series mới",
+      "description": "Tạo và gửi đề xuất series mới."
+    },
+    "rankings": {
+      "title": "Bảng xếp hạng",
+      "description": "Xem xếp hạng độc giả công khai và xếp hạng hội đồng cho series của bạn."
+    },
+    "seriesDetail": {
+      "title": "Chi tiết series",
+      "description": "Quản lý series, chương truyện và vòng đời xuất bản."
+    },
+    "studioOverview": {
+      "title": "Tổng quan sản xuất",
+      "description": "Theo dõi trạng thái sản xuất và cảnh báo hạn của các chương đang hoạt động."
+    },
+    "seriesEdit": {
+      "title": "Chỉnh sửa đề xuất",
+      "description": "Cập nhật đề xuất series còn cho phép chỉnh sửa."
+    },
+    "series": {
+      "title": "Series của tôi",
+      "description": "Quản lý các đề xuất và series đã xuất bản của bạn."
+    }
+  },
   "dashboard": {
     "title": "Bảng điều khiển sản xuất",
     "subtitle": "Chào mừng trở lại. Bạn có {{count}} nhiệm vụ quan trọng cần xử lý ngay lập tức.",
@@ -16,9 +78,6 @@
     "viewAnalyticsReport": "Xem báo cáo chi tiết",
     "activeSeries": "Series đang hoạt động",
     "actionInbox": "Hộp thư hành động",
-    "uploadBatch": "Tải lên hàng loạt",
-    "editorSupport": "Hỗ trợ biên tập",
-    "engineStatus": "MangakaStudio Engine v4.8.2-Stable • Đồng bộ: {{time}} trước",
     "noCriticalDeadlines": "Không có deadline nguy cơ nào",
     "noActiveSeries": "Chưa có series đang sản xuất",
     "noRankings": "Chưa có dữ liệu xếp hạng",
@@ -51,8 +110,7 @@
     "subtitle": "Tìm và mời trợ lý cộng tác cho series của bạn.",
     "filters": {
       "specialization": "Chuyên môn",
-      "all": "Tất cả",
-      "levelPlaceholder": "Tìm theo cấp độ (VD: 3 năm)"
+      "all": "Tất cả"
     },
     "card": {
       "recommended": "Đề xuất",
@@ -63,6 +121,7 @@
       "unnamedAssistant": "Trợ lý chưa đặt tên",
       "activeAssignment": "Đang cộng tác",
       "activeAssignmentTitle": "Bạn đã có quan hệ thuê ACTIVE với trợ lý này",
+      "viewDetails": "Xem chi tiết",
       "invite": "Mời cộng tác",
       "inviteAriaLabel": "Mời cộng tác với {{name}}",
       "portfolioCount": "{{count}} portfolio",
@@ -118,6 +177,186 @@
       "errorHireOrder": "Ngày kết thúc phải sau ngày bắt đầu.",
       "errorHirePast": "Ngày kết thúc phải ở tương lai.",
       "errorNoTaskType": "Vui lòng chọn ít nhất 1 loại công việc."
+    },
+    "profile": {
+      "title": "Hồ sơ của {{name}}",
+      "description": "Xem hồ sơ công khai, portfolio, lịch làm việc, uy tín và phản hồi gần đây trước khi cộng tác.",
+      "close": "Đóng",
+      "retry": "Thử lại",
+      "loadFailed": "Không thể tải hồ sơ trợ lý này. Vui lòng thử lại.",
+      "notProvided": "Chưa cung cấp cấp độ kinh nghiệm",
+      "incomplete": "Trợ lý này chưa hoàn thiện hồ sơ công khai.",
+      "reputation": "điểm uy tín",
+      "rating": "đánh giá",
+      "ratingValue": "{{average}} · {{count}} đánh giá",
+      "specializations": "Chuyên môn",
+      "emptySpecializations": "Chưa có chuyên môn nào được thêm.",
+      "availableWindow": "Có thể làm việc {{from}} – {{to}}",
+      "portfolio": "Portfolio",
+      "portfolioCount_one": "{{count}} sản phẩm",
+      "portfolioCount_other": "{{count}} sản phẩm",
+      "portfolioAlt": "Sản phẩm portfolio {{index}}",
+      "emptyPortfolio": "Chưa có sản phẩm portfolio được công bố.",
+      "reviews": "Đánh giá gần đây",
+      "reviewsHint": "Hiển thị tối đa 10 đánh giá gần nhất.",
+      "emptyReviews": "Trợ lý này chưa nhận được đánh giá nào.",
+      "anonymousReviewer": "Mangaka ẩn danh",
+      "noComment": "Không có nhận xét bằng văn bản."
+    }
+  },
+  "mangakaDirectory": {
+    "meta": {
+      "title": "Danh bạ Mangaka",
+      "description": "Xem hồ sơ công khai, portfolio và uy tín của các Mangaka đồng nghiệp."
+    },
+    "title": "Danh bạ Mangaka",
+    "subtitle": "Khám phá các tác giả đồng nghiệp để hợp tác franchise và xem hồ sơ nghề nghiệp công khai của họ.",
+    "filters": {
+      "search": "Tên hoặc bút danh",
+      "searchPlaceholder": "Tìm Mangaka",
+      "level": "Cấp độ kinh nghiệm",
+      "levelPlaceholder": "Ví dụ: cao cấp",
+      "genre": "Thể loại",
+      "allGenres": "Tất cả thể loại"
+    },
+    "actions": {
+      "search": "Tìm kiếm",
+      "clear": "Xóa bộ lọc",
+      "viewProfile": "Xem hồ sơ",
+      "close": "Đóng",
+      "retry": "Thử lại"
+    },
+    "card": {
+      "unnamed": "Mangaka chưa đặt tên",
+      "recommended": "Được đề xuất",
+      "levelUnknown": "Chưa cung cấp cấp độ kinh nghiệm",
+      "rating": "{{average}} · {{count}} đánh giá",
+      "reputation": "{{score}} uy tín",
+      "bioEmpty": "Chưa công bố tiểu sử.",
+      "portfolioCount_one": "{{count}} tác phẩm portfolio",
+      "portfolioCount_other": "{{count}} tác phẩm portfolio"
+    },
+    "genres": {
+      "ACTION": "Hành động",
+      "ADVENTURE": "Phiêu lưu",
+      "COMEDY": "Hài hước",
+      "DRAMA": "Chính kịch",
+      "FANTASY": "Giả tưởng",
+      "HORROR": "Kinh dị",
+      "MYSTERY": "Bí ẩn",
+      "ROMANCE": "Lãng mạn",
+      "SCI_FI": "Khoa học viễn tưởng",
+      "SLICE_OF_LIFE": "Đời thường",
+      "SPORTS": "Thể thao",
+      "SUPERNATURAL": "Siêu nhiên",
+      "THRILLER": "Giật gân",
+      "HISTORICAL": "Lịch sử",
+      "ISEKAI": "Xuyên không",
+      "MECHA": "Người máy",
+      "PSYCHOLOGICAL": "Tâm lý"
+    },
+    "profile": {
+      "title": "Hồ sơ của {{name}}",
+      "description": "Hồ sơ nghề nghiệp công khai, portfolio, uy tín và đánh giá từ Biên tập viên.",
+      "incomplete": "Mangaka này chưa hoàn thiện hồ sơ nghề nghiệp công khai.",
+      "reputation": "uy tín",
+      "rating": "đánh giá",
+      "ratingValue": "{{average}} · {{count}} đánh giá",
+      "level": "kinh nghiệm",
+      "bio": "Tiểu sử",
+      "genres": "Thể loại",
+      "emptyGenres": "Chưa thêm thể loại nào.",
+      "portfolio": "Portfolio",
+      "portfolioCount_one": "{{count}} tác phẩm portfolio",
+      "portfolioCount_other": "{{count}} tác phẩm portfolio",
+      "portfolioAlt": "Tác phẩm portfolio {{index}}",
+      "emptyPortfolio": "Chưa công bố tác phẩm portfolio nào.",
+      "reviews": "Đánh giá gần đây từ Biên tập viên",
+      "reviewsHint": "Hiển thị tối đa 10 đánh giá gần đây đóng góp vào điểm uy tín công khai.",
+      "emptyReviews": "Mangaka này chưa nhận được đánh giá nào từ Biên tập viên.",
+      "anonymousReviewer": "Biên tập viên ẩn danh",
+      "noComment": "Không có nhận xét bằng văn bản."
+    },
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} trong {{total}} Mangaka"
+    },
+    "empty": {
+      "title": "Không có Mangaka phù hợp bộ lọc",
+      "description": "Hãy thử tên, cấp độ kinh nghiệm hoặc thể loại khác."
+    },
+    "errors": {
+      "loadFailed": "Không thể tải danh bạ Mangaka. Vui lòng thử lại.",
+      "profileLoadFailed": "Không thể tải hồ sơ Mangaka này. Hồ sơ có thể không còn khả dụng.",
+      "reviewsLoadFailed": "Đã tải hồ sơ nhưng không thể lấy các đánh giá gần đây."
+    }
+  },
+  "outgoingInvites": {
+    "title": "Lời mời cộng tác đã gửi",
+    "subtitle": "Theo dõi các lời mời đã gửi và huỷ những lời mời vẫn đang chờ phản hồi.",
+    "loading": "Đang tải lời mời đã gửi...",
+    "filters": {
+      "pending": "Đang chờ",
+      "all": "Tất cả"
+    },
+    "status": {
+      "PENDING": "Đang chờ",
+      "ACCEPTED": "Đã chấp nhận",
+      "DECLINED": "Đã từ chối",
+      "EXPIRED": "Đã hết hạn",
+      "CANCELLED": "Đã huỷ"
+    },
+    "card": {
+      "unknownAssistant": "Trợ lý không xác định",
+      "noSeries": "Không có ngữ cảnh series",
+      "hireWindow": "{{from}} – {{to}}"
+    },
+    "actions": {
+      "refresh": "Làm mới",
+      "retry": "Thử lại",
+      "showDetails": "Xem chi tiết",
+      "hideDetails": "Ẩn chi tiết",
+      "cancel": "Huỷ lời mời",
+      "keep": "Giữ lời mời",
+      "confirmCancel": "Huỷ lời mời",
+      "cancelling": "Đang huỷ..."
+    },
+    "detail": {
+      "loading": "Đang tải chi tiết lời mời...",
+      "loadFailed": "Không thể tải chi tiết lời mời này. Vui lòng thử lại.",
+      "unavailable": "Chi tiết lời mời này không còn khả dụng.",
+      "assistant": "Trợ lý",
+      "series": "Series",
+      "hireWindow": "Thời gian cộng tác",
+      "createdAt": "Thời điểm gửi",
+      "taskTypes": "Phạm vi công việc",
+      "noTaskTypes": "Lời mời này không có loại công việc nào được ghi nhận."
+    },
+    "confirm": {
+      "title": "Huỷ lời mời này?",
+      "description": "{{name}} sẽ không thể chấp nhận lời mời cộng tác này nữa.",
+      "notice": "Thao tác này không thể hoàn tác. Bạn vẫn có thể gửi lời mời mới sau này nếu cần."
+    },
+    "empty": {
+      "title": "Chưa có lời mời đã gửi",
+      "description": "Các lời mời bạn gửi cho trợ lý sẽ xuất hiện tại đây."
+    },
+    "limited": "Đang hiển thị {{count}} trong tổng số {{total}} lời mời gần nhất.",
+    "pagination": {
+      "previousPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "showingRange": "Hiển thị {{from}}–{{to}} / {{total}} lời mời"
+    },
+    "success": {
+      "cancelled": "Đã huỷ lời mời cộng tác."
+    },
+    "error": {
+      "loadFailed": "Không thể tải lời mời đã gửi. Vui lòng thử lại.",
+      "cancelFailed": "Không thể huỷ lời mời này. Vui lòng thử lại.",
+      "notPending": "Chỉ có thể huỷ lời mời đang chờ phản hồi.",
+      "notOwner": "Bạn chỉ có thể huỷ lời mời do mình gửi.",
+      "notFound": "Lời mời này không còn khả dụng."
     }
   },
   "myStudio": {
@@ -167,6 +406,33 @@
     "error": {
       "loadFailed": "Không thể tải danh sách thuê. Vui lòng thử lại.",
       "retry": "Thử lại"
+    },
+    "details": {
+      "show": "Xem loại task được giao",
+      "hide": "Ẩn loại task được giao",
+      "loadFailed": "Không thể tải chi tiết hợp tác."
+    },
+    "lifecycle": {
+      "terminate": "Kết thúc hợp tác",
+      "review": "Đánh giá trợ lý",
+      "reviewed": "Đã đánh giá",
+      "terminateTitle": "Kết thúc hợp tác này?",
+      "terminateDescription": "Thao tác sẽ kết thúc ngay quan hệ studio đang hoạt động. Hãy ghi rõ lý do cho Assistant.",
+      "reviewTitle": "Đánh giá hợp tác",
+      "reviewDescription": "Chỉ có thể đánh giá sau khi hợp tác đã kết thúc và mỗi Assistant chỉ nhận một đánh giá từ bạn.",
+      "forAssistant": "Trợ lý: {{name}}",
+      "reason": "Lý do",
+      "comment": "Nhận xét (không bắt buộc)",
+      "rating": "Điểm đánh giá",
+      "stars": "{{count}} sao",
+      "reasonRequired": "Vui lòng nhập lý do kết thúc hợp tác.",
+      "cancel": "Hủy",
+      "confirmTerminate": "Kết thúc hợp tác",
+      "confirmReview": "Gửi đánh giá",
+      "terminateSuccess": "Đã kết thúc hợp tác.",
+      "reviewSuccess": "Đã gửi đánh giá cho Assistant.",
+      "terminateFailed": "Không thể kết thúc hợp tác này.",
+      "reviewFailed": "Không thể gửi đánh giá cho Assistant."
     }
   },
   "mySeries": {
@@ -266,6 +532,82 @@
       "unsavedChangesStay": "Ở lại",
       "back": "Về trang series"
     },
+    "lifecycle": {
+      "metadata": {
+        "button": "Sửa thông tin series",
+        "dialogTitle": "Sửa thông tin series",
+        "dialogDescription": "Cập nhật tiêu đề, tóm tắt và hình ảnh công khai của series.",
+        "titleLabel": "Tiêu đề",
+        "titleRequired": "Vui lòng nhập tiêu đề series.",
+        "titleTooLong": "Tiêu đề tối đa 200 ký tự.",
+        "synopsisLabel": "Tóm tắt",
+        "synopsisPlaceholder": "Thêm hoặc cập nhật phần tóm tắt công khai của series.",
+        "synopsisTooLong": "Tóm tắt tối đa 5.000 ký tự.",
+        "coverLabel": "Ảnh bìa",
+        "chooseCover": "Chọn ảnh bìa",
+        "replaceCover": "Thay ảnh bìa",
+        "removeCover": "Xóa ảnh bìa",
+        "coverWillBeRemoved": "Ảnh bìa hiện tại sẽ bị xóa.",
+        "coverRequired": "Vui lòng chọn ảnh bìa thay thế.",
+        "characterDesignsLabel": "Thiết kế nhân vật",
+        "addDesigns": "Thêm thiết kế",
+        "remove": "Xóa",
+        "imageHint": "Chỉ nhận PNG, JPG hoặc WEBP. Mỗi tệp tối đa 15MB.",
+        "invalidImage": "Hãy chọn ảnh PNG, JPG hoặc WEBP không quá 15MB.",
+        "cancel": "Hủy",
+        "confirm": "Lưu thông tin",
+        "submitting": "Đang lưu...",
+        "success": "Đã cập nhật thông tin series.",
+        "errorPermission": "Bạn không có quyền sửa series này.",
+        "errorNotFound": "Series này không còn tồn tại.",
+        "errorNotEditable": "Series này không thể chỉnh sửa nữa.",
+        "errorConflict": "Thông tin series đã được thay đổi ở nơi khác. Hãy tải lại và thử lại.",
+        "errorGeneric": "Không thể cập nhật thông tin series. Vui lòng thử lại."
+      },
+      "franchise": {
+        "title": "Đang chờ đồng ý franchise",
+        "description": "Một series liên quan cần quyết định của bạn trước khi Mangaka có thể nộp duyệt.",
+        "approve": "Đồng ý",
+        "reject": "Từ chối",
+        "approveDialogTitle": "Đồng ý series franchise này?",
+        "approveDialogDescription": "Cho phép {{title}} được nộp duyệt khi Mangaka sẵn sàng.",
+        "rejectDialogTitle": "Từ chối series franchise này?",
+        "rejectDialogDescription": "{{title}} vẫn thuộc về Mangaka của họ, nhưng không thể được nộp duyệt.",
+        "decisionHint": "Quyết định áp dụng cho yêu cầu đồng ý hiện tại. Series không bị xóa trong cả hai trường hợp.",
+        "cancel": "Hủy",
+        "submitting": "Đang lưu...",
+        "approveSuccess": "Đã đồng ý franchise.",
+        "rejectSuccess": "Đã từ chối franchise.",
+        "errorPermission": "Chỉ Mangaka của series gốc mới có thể đưa ra quyết định này.",
+        "errorNotFound": "Series này không còn tồn tại.",
+        "errorNoLongerPending": "Yêu cầu đồng ý franchise này không còn chờ xử lý.",
+        "errorGeneric": "Không thể lưu quyết định franchise. Vui lòng thử lại."
+      },
+      "completion": {
+        "button": "Đề xuất kết thúc",
+        "dialogTitle": "Đề xuất kết thúc tự nhiên",
+        "dialogDescription": "Gửi đề xuất kết thúc {{title}} đến Editor phụ trách.",
+        "flowHint": "Thao tác này không kết thúc series ngay. Editor sẽ xem xét đề xuất và quyết định vòng đời tiếp theo.",
+        "reasonLabel": "Lý do kết thúc",
+        "reasonPlaceholder": "Giải thích vì sao series đã sẵn sàng khép lại.",
+        "reasonRequired": "Vui lòng nhập lý do kết thúc.",
+        "endingChaptersLabel": "Chương kết thúc dự kiến (không bắt buộc)",
+        "endingChaptersPlaceholder": "Ví dụ: 24",
+        "endingChaptersHint": "Đây chỉ là ước tính để lập kế hoạch; không tạo hoặc đóng chapter.",
+        "endingChaptersInvalid": "Vui lòng nhập số chương nguyên dương.",
+        "cancel": "Hủy",
+        "confirm": "Gửi đề xuất",
+        "submitting": "Đang gửi...",
+        "success": "Đã gửi đề xuất kết thúc đến Editor.",
+        "errorPermission": "Bạn không có quyền đề xuất kết thúc series này.",
+        "errorNotFound": "Series này không còn tồn tại.",
+        "errorNotAvailable": "Chỉ có thể đề xuất kết thúc khi series đang SERIALIZED hoặc HIATUS.",
+        "errorGeneric": "Không thể gửi đề xuất kết thúc. Vui lòng thử lại.",
+        "proposedTitle": "Đã gửi đề xuất kết thúc",
+        "noEndingChapter": "Chưa có ước tính chương cuối",
+        "endingChaptersValue": "Chương cuối dự kiến: {{count}}"
+      }
+    },
     "demographic": "Nhóm độc giả",
     "publicationType": "Tần suất",
     "editor": "Biên tập viên",
@@ -287,6 +629,10 @@
       },
       "resolve": "Đánh dấu đã chỉnh sửa",
       "resolving": "Đang cập nhật...",
+      "confirmTitle": "Đánh dấu đã chỉnh sửa?",
+      "confirmDescription": "Chỉ xác nhận khi bạn đã xử lý đầy đủ yêu cầu của Editor.",
+      "confirmNotice": "Thao tác này sẽ đánh dấu vòng revision là đã xử lý.",
+      "confirmCta": "Đánh dấu đã sửa",
       "resolveSuccess": "Đã đánh dấu hoàn tất yêu cầu chỉnh sửa.",
       "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại.",
       "drawer": {
@@ -410,8 +756,10 @@
         "button": "Rút hồ sơ",
         "title": "Rút proposal này?",
         "description": "\"{{title}}\" sẽ rời luồng biên tập và chuyển sang trạng thái Đã rút.",
-        "reasonLabel": "Lý do (không bắt buộc)",
+        "reasonLabel": "Lý do",
         "reasonPlaceholder": "Cho Editor biết lý do bạn rút hồ sơ...",
+        "reasonHint": "{{count}}/1000 ký tự · bắt buộc",
+        "reasonRequired": "Hãy nhập lý do trước khi rút hồ sơ.",
         "confirm": "Rút proposal",
         "success": "Đã rút proposal."
       },
@@ -509,6 +857,130 @@
         "success": "Đã tạo chapter mới.",
         "errorGeneric": "Không thể tạo chapter. Vui lòng thử lại.",
         "errorInvalidNumber": "Số chương phải là số nguyên ≥ 1."
+      },
+      "manage": {
+        "cancel": "Huỷ",
+        "edit": {
+          "trigger": "Chỉnh sửa chương {{number}}",
+          "title": "Chỉnh sửa chapter nháp",
+          "description": "Cập nhật số chương hoặc tiêu đề trước khi bắt đầu sản xuất.",
+          "draftOnly": "Chapter nháp chỉ có thể chỉnh sửa trước khi bước vào sản xuất.",
+          "draftHint": "Bạn có thể sửa số chương và tiêu đề khi chương vẫn còn là bản nháp.",
+          "numberLockedHint": "Số chương bị khóa sau khi bắt đầu sản xuất, nhưng vẫn có thể sửa tiêu đề cho đến khi xuất bản.",
+          "save": "Lưu thay đổi",
+          "saving": "Đang lưu...",
+          "success": "Đã cập nhật chapter.",
+          "error": "Không thể cập nhật chapter này. Vui lòng thử lại.",
+          "invalidNumber": "Số chương phải là số nguyên dương."
+        },
+        "delete": {
+          "trigger": "Xoá chương {{number}}",
+          "title": "Xoá chapter nháp",
+          "description": "Xoá vĩnh viễn Chương {{number}}?",
+          "warning": "Thao tác này sẽ xoá vĩnh viễn chapter nháp cùng Name, manuscript, schedule và các trang liên quan.",
+          "confirmationWord": "XOA",
+          "confirmationLabel": "Nhập {{word}} để bật thao tác xoá.",
+          "confirm": "Xoá chapter",
+          "deleting": "Đang xoá...",
+          "success": "Đã xoá chapter.",
+          "error": "Không thể xoá chapter này. Vui lòng thử lại."
+        }
+      }
+    },
+    "publicationVersions": {
+      "title": "Phiên bản phát hành",
+      "description": "Xem các định dạng phát hành đã được đăng ký cho series này.",
+      "loading": "Đang tải các phiên bản phát hành...",
+      "empty": "Series này chưa có phiên bản phát hành nào được đăng ký.",
+      "refresh": "Làm mới",
+      "retry": "Thử lại",
+      "viewDetails": "Xem chi tiết",
+      "close": "Đóng",
+      "notSpecified": "Chưa xác định",
+      "createdAt": "Tạo {{date}}",
+      "readingDirection": {
+        "RTL": "Phải sang trái",
+        "LTR": "Trái sang phải"
+      },
+      "versionType": {
+        "ORIGINAL": "Bản gốc",
+        "DIGITAL": "Bản số",
+        "FLIPPED": "Bản lật chiều"
+      },
+      "detail": {
+        "title": "Chi tiết phiên bản phát hành",
+        "description": "Thông tin phát hành do nhóm xuất bản đăng ký.",
+        "loading": "Đang tải chi tiết phiên bản...",
+        "language": "Ngôn ngữ",
+        "versionType": "Loại phiên bản",
+        "readingDirection": "Hướng đọc",
+        "createdAt": "Ngày tạo",
+        "notes": "Ghi chú"
+      },
+      "error": {
+        "loadFailed": "Không thể tải các phiên bản phát hành của series này.",
+        "detailFailed": "Không thể tải phiên bản phát hành này."
+      }
+    },
+    "production": {
+      "management": {
+        "error": "Không thể thay đổi giai đoạn sản xuất. Vui lòng thử lại.",
+        "created": "Đã tạo giai đoạn sản xuất.",
+        "updated": "Đã cập nhật giai đoạn sản xuất.",
+        "removed": "Đã xoá giai đoạn sản xuất.",
+        "name": "Tên giai đoạn",
+        "nameRequired": "Nhập tên giai đoạn.",
+        "deadline": "Hạn chót (không bắt buộc)",
+        "taskTypes": "Loại công việc",
+        "taskTypesHint": "Chọn ít nhất một loại công việc để có thể giao task cho giai đoạn này.",
+        "taskTypesRequired": "Chọn ít nhất một loại công việc.",
+        "create": {
+          "title": "Thêm giai đoạn sau {{name}}",
+          "description": "Giai đoạn mới sẽ được chèn trước bước kiểm tra cuối.",
+          "action": "Thêm giai đoạn"
+        },
+        "edit": {
+          "title": "Sửa {{name}}",
+          "description": "Không thể sửa giai đoạn đã hoàn tất.",
+          "action": "Sửa"
+        },
+        "remove": {
+          "title": "Xoá {{name}}",
+          "description": "Chỉ có thể xoá giai đoạn đang khoá và chưa có task.",
+          "action": "Xoá",
+          "notice": "Thao tác này sẽ xoá giai đoạn đang khoá đã chọn khỏi tiến trình sản xuất.",
+          "confirmTitle": "Xoá giai đoạn sản xuất này?",
+          "confirmDescription": "Xoá vĩnh viễn {{name}}? Thao tác này không thể hoàn tác.",
+          "confirm": "Xoá giai đoạn"
+        }
+      },
+      "label": "Các giai đoạn sản xuất",
+      "description": "Hoàn tất task, xác nhận output của từng trang rồi mới chuyển giai đoạn.",
+      "loading": "Đang tải các giai đoạn sản xuất…",
+      "error": "Không thể cập nhật giai đoạn sản xuất. Vui lòng thử lại.",
+      "active": "Đang mở: {{name}}",
+      "stageNumber": "Giai đoạn {{n}}",
+      "taskCount": "{{approved}} đã duyệt · {{open}} đang mở",
+      "finalCheck": "FINAL_CHECK đang mở. Khi mọi giai đoạn sản xuất đã hoàn tất, bạn có thể nộp bản thảo.",
+      "confirmOutputs": "Xác nhận output",
+      "complete": "Hoàn tất giai đoạn",
+      "completeSuccess": "Đã hoàn tất giai đoạn sản xuất.",
+      "reopen": "Mở lại để sửa",
+      "reopenSuccess": "Đã mở lại giai đoạn sản xuất để sửa.",
+      "outputsSuccess": "Đã xác nhận output của giai đoạn.",
+      "outputsLocked": "Output đã chốt",
+      "uploadFailed": "Không thể tải output của giai đoạn.",
+      "status": { "LOCKED": "Đang khoá", "ACTIVE": "Đang mở", "COMPLETED": "Hoàn tất" },
+      "outputDialog": {
+        "title": "Xác nhận output {{name}}",
+        "description": "Xác nhận một output cho mọi trang trước khi hoàn tất giai đoạn.",
+        "confirmTitle": "Xác nhận chốt output?",
+        "confirmDescription": "Output của tất cả trang trong giai đoạn này sẽ được chốt.",
+        "confirmNotice": "Sau khi xác nhận, bạn không thể chỉnh sửa output trong giai đoạn này. Hãy kiểm tra kỹ trước khi tiếp tục hoàn tất giai đoạn.",
+        "confirmCta": "Chốt output",
+        "page": "Trang …{{id}}",
+        "preserve": "Output hiện có sẽ được giữ lại trừ khi bạn tải file thay thế.",
+        "reuseInput": "Dùng lại input của giai đoạn"
       }
     }
   },
@@ -678,7 +1150,6 @@
       "done": "Hoàn tất",
       "replaceCompositeHint": "Chọn file composite mới. Bản cũ sẽ được thay thế.",
       "chooseFile": "Chọn file",
-      "advance": "Chuyển → {{to}}",
       "uploadError": "Không thể upload ảnh.",
       "accessDeniedTitle": "Không thể mở các trang bản thảo",
       "accessDenied": "Bạn không có quyền xem các trang của chương này hoặc quan hệ cộng tác đã kết thúc.",
@@ -738,6 +1209,10 @@
         "resolved": "Đã xử lý",
         "resolve": "Đánh dấu đã chỉnh sửa",
         "resolving": "Đang cập nhật...",
+        "confirmTitle": "Đánh dấu đã chỉnh sửa?",
+        "confirmDescription": "Chỉ xác nhận khi bạn đã xử lý đầy đủ phản hồi của Editor.",
+        "confirmNotice": "Thao tác này sẽ đánh dấu yêu cầu revision của manuscript là đã xử lý.",
+        "confirmCta": "Đánh dấu đã sửa",
         "resolveSuccess": "Đã đánh dấu yêu cầu chỉnh sửa là đã xử lý.",
         "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại."
       },
@@ -769,11 +1244,12 @@
       "updatePage": {
         "dialogTitle": "Chỉnh sửa trang",
         "imageLabel": "Ảnh chỉnh sửa",
+        "imageHint": "PNG, JPG hoặc WEBP. Tối đa 15MB.",
         "confirm": "Lưu"
       },
       "updatePageNumber": {
         "dialogTitle": "Đổi số trang",
-        "currentLabel": "Số hiện tại",
+        "currentLabel": "Trang hiện tại: {{number}}",
         "newLabel": "Số mới",
         "cancel": "Huỷ",
         "confirm": "Lưu",
@@ -790,8 +1266,55 @@
       "completePagesHint": "Hoàn tất tất cả trang trước khi nộp bản thảo cho Editor.",
       "noPagesHint": "Tải lên ít nhất 1 trang trước khi nộp bản thảo.",
       "tasksPendingHint": "Vui lòng hoàn thành tất cả task (được giao cho trợ lý) trước khi nộp bản thảo.",
+      "resolveRevisionsHint": "Hãy đánh dấu hoàn tất mọi vòng sửa bản thảo đang mở trong khung phản hồi trước khi nộp lại.",
       "readyForPrintHint": "Bản thảo đã sẵn sàng. Đang chờ Editor xuất bản.",
       "coOwnerPending": "Đang chờ đồng sở hữu duyệt trước khi xuất bản.",
+      "coOwner": {
+        "decisionHint": "Với vai trò đồng sở hữu, bạn hãy xem bản thảo và quyết định có cho phép xuất bản hay không.",
+        "actions": {
+          "approve": {
+            "button": "Duyệt xuất bản",
+            "success": "Đã duyệt bản thảo và xuất bản chapter."
+          },
+          "reject": {
+            "button": "Yêu cầu chỉnh sửa",
+            "success": "Đã chuyển bản thảo về vòng Editor chỉnh sửa."
+          }
+        },
+        "rejectDialog": {
+          "title": "Yêu cầu chỉnh sửa bản thảo?",
+          "description": "Thao tác này chuyển bản thảo về vòng Editor chỉnh sửa để Mangaka chính xử lý.",
+          "notice": "Chỉ xác nhận khi bản thảo cần thay đổi. Bạn có thể nêu lý do chỉnh sửa.",
+          "reasonLabel": "Lý do",
+          "reasonOptional": "(không bắt buộc)",
+          "characterCount": "{{count}} / 1000",
+          "submitting": "Đang gửi yêu cầu..."
+        },
+        "errors": {
+          "notCoOwner": "Chỉ đồng sở hữu được gán mới có thể đưa ra quyết định này.",
+          "notAvailable": "Yêu cầu duyệt của đồng sở hữu không còn khả dụng.",
+          "noLongerPending": "Bản thảo không còn chờ quyết định của bạn. Hãy làm mới để xem trạng thái mới nhất.",
+          "generic": "Không thể lưu quyết định của đồng sở hữu. Vui lòng thử lại."
+        },
+        "notification": {
+          "eyebrow": "Quy trình chapter",
+          "title": "Cập nhật chapter và bản thảo",
+          "description": "Xem trạng thái chapter và các trang bản thảo được tham chiếu trong thông báo này.",
+          "back": "Quay lại thông báo",
+          "loading": "Đang tải trạng thái chapter…",
+          "notFound": "Chapter này không còn khả dụng.",
+          "retry": "Thử lại",
+          "chapter": "Chapter",
+          "chapterValue": "Chapter {{number}}",
+          "status": "Trạng thái bản thảo",
+          "pagesTitle": "Các trang bản thảo",
+          "pagesLoading": "Đang tải các trang bản thảo…",
+          "pagesEmpty": "Chưa có trang bản thảo nào.",
+          "pageAlt": "Trang bản thảo {{number}}",
+          "pageLabel": "Trang {{number}}",
+          "resolved": "Bản thảo này không còn chờ quyết định của đồng sở hữu."
+        }
+      },
       "publishedHint": "Chương đã được xuất bản thành công.",
       "status": {
         "DRAFT": "Bản nháp",
@@ -853,6 +1376,35 @@
     "estimatedLengthPlaceholder": "VD: 50",
     "estimatedLengthHint": "Ước lượng tổng số chương dự kiến của toàn bộ series (tối thiểu 1).",
     "selectOption": "Chọn...",
+    "franchise": {
+      "title": "Quan hệ nhượng quyền",
+      "toggle": "Proposal này phát triển từ một series đã có",
+      "description": "Khai báo phần tiếp theo, ngoại truyện, truyện bên lề hoặc bản làm lại. Mangaka gốc có thể phải đồng ý trước khi nộp.",
+      "searchLabel": "Tìm series gốc",
+      "searchPlaceholder": "Tìm trong danh mục series đã phát hành",
+      "loading": "Đang tải series",
+      "parentLabel": "Series gốc",
+      "parentPlaceholder": "Chọn series gốc",
+      "parentHint": "Chỉ có thể chọn series hậu kỳ phát hành đang hiển thị trong danh mục công khai.",
+      "loadError": "Không thể tải danh mục series đã phát hành. Hãy thử tìm lại.",
+      "empty": "Không tìm thấy series đã phát hành phù hợp.",
+      "relationshipLabel": "Mối quan hệ",
+      "relationshipPlaceholder": "Chọn mối quan hệ",
+      "relationship": {
+        "SEQUEL": "Phần tiếp theo",
+        "SPINOFF": "Ngoại truyện",
+        "SIDE_STORY": "Truyện bên lề",
+        "REBOOT": "Bản làm lại"
+      },
+      "status": {
+        "SERIALIZED": "Đang phát hành",
+        "HIATUS": "Tạm ngưng",
+        "COMPLETING": "Đang hoàn tất",
+        "CANCELLING": "Đang kết thúc sớm",
+        "COMPLETED": "Đã hoàn thành",
+        "CANCELLED": "Đã hủy"
+      }
+    },
     "enums": {
       "genres": {
         "ACTION": "Hành động",
@@ -900,6 +1452,10 @@
     "errors": {
       "unauthenticated": "Bạn cần đăng nhập để tạo proposal.",
       "titleRequired": "Hãy nhập tiêu đề series trước khi tiếp tục.",
+      "parentSeriesRequired": "Hãy chọn series gốc cho proposal phái sinh này.",
+      "relationshipTypeRequired": "Hãy chọn mối quan hệ giữa proposal và series gốc.",
+      "franchisePairRequired": "Series gốc và mối quan hệ phải được khai báo cùng nhau.",
+      "parentSeriesNotFound": "Series gốc đã chọn không còn khả dụng. Hãy chọn series khác.",
       "submitFailed": "Không thể tạo proposal. Vui lòng thử lại."
     },
     "toolbar": {
@@ -928,6 +1484,9 @@
       "selectSeriesPlaceholder": "— Chọn series —",
       "selectChapter": "Chọn chương",
       "selectChapterPlaceholder": "— Chọn chương —",
+      "selectStage": "Giai đoạn sản xuất",
+      "selectStagePlaceholder": "— Chọn giai đoạn đang mở —",
+      "stageOption": "Giai đoạn {{order}}: {{name}}",
       "selectPage": "Chọn trang",
       "selectPagePlaceholder": "— Chọn trang —",
       "selectRegion": "Chọn vùng (tuỳ chọn)",
@@ -949,6 +1508,7 @@
       "deadlineHint": "Để trống nếu không có hạn cụ thể",
       "priority": "Độ ưu tiên",
       "priorityHint": "Số nhỏ hơn = ưu tiên cao hơn",
+      "priorityInvalid": "Độ ưu tiên phải là số nguyên từ 0 trở lên.",
       "attachments": {
         "label": "Tài liệu tham khảo (tuỳ chọn)",
         "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file"
@@ -962,6 +1522,7 @@
       "confirm": {
         "description": "Kiểm tra thông tin trước khi giao nhiệm vụ.",
         "taskType": "Loại công việc",
+        "stage": "Giai đoạn",
         "page": "Trang",
         "region": "Vùng",
         "deadline": "Deadline",
@@ -996,7 +1557,11 @@
       "loadFailed": "Không thể tải danh sách nhiệm vụ.",
       "approveFailed": "Không thể duyệt nhiệm vụ.",
       "revisionFailed": "Không thể yêu cầu sửa nhiệm vụ.",
-      "cancelFailed": "Không thể huỷ nhiệm vụ."
+      "cancelFailed": "Không thể huỷ nhiệm vụ.",
+      "loadDetailFailed": "Không tải được chi tiết nhiệm vụ. Vui lòng thử lại.",
+      "updateFailed": "Không thể cập nhật nhiệm vụ này. Vui lòng thử lại.",
+      "reassignFailed": "Không thể giao lại nhiệm vụ này. Vui lòng thử lại.",
+      "groupApproveFailed": "Không thể duyệt nhóm nhiệm vụ này. Vui lòng thử lại."
     },
     "filters": {
       "allStatuses": "Tất cả trạng thái"
@@ -1023,9 +1588,87 @@
       "showing": "Hiển thị {{from}}-{{to}} / {{total}}",
       "prev": "Trước",
       "next": "Tiếp"
+    },
+    "detail": {
+      "back": "Quay lại nhiệm vụ Studio",
+      "eyebrow": "Chi tiết nhiệm vụ",
+      "untitled": "Nhiệm vụ sản xuất",
+      "type": "Loại nhiệm vụ",
+      "priority": "Độ ưu tiên",
+      "assistant": "Trợ lý",
+      "deadline": "Hạn chót",
+      "unassigned": "Chưa giao",
+      "none": "Chưa đặt",
+      "statusReason": "Ghi chú trạng thái",
+      "source": "Nguồn được giao",
+      "sourceAlt": "Nguồn của nhiệm vụ được giao",
+      "latestSubmission": "Bản nộp mới nhất",
+      "submissionAlt": "Bản nộp nhiệm vụ mới nhất",
+      "summary": "{{regions}} vùng được giao · {{versions}} phiên bản đã nộp",
+      "errorTitle": "Không thể mở nhiệm vụ",
+      "errors": {
+        "notFound": "Nhiệm vụ không còn tồn tại hoặc không thuộc series của bạn.",
+        "generic": "Không thể tải chi tiết nhiệm vụ. Hãy quay lại Studio và thử lại."
+      }
     }
   },
   "studio": {
+    "overview": {
+      "open": "Tổng quan sản xuất",
+      "eyebrow": "Studio sản xuất",
+      "title": "Tổng quan sản xuất chương",
+      "description": "Theo dõi các chương đang sản xuất theo mức cảnh báo và hạn chót. Mở chương để tiếp tục phần việc cần ưu tiên.",
+      "listLabel": "Các chương đang sản xuất",
+      "count_one": "{{count}} chương đang hoạt động",
+      "count_other": "{{count}} chương đang hoạt động",
+      "chapter": "Chương {{number}} · {{title}}",
+      "untitled": "Chương chưa có tên",
+      "unknown": "Không xác định",
+      "noDeadline": "Chưa có hạn chót",
+      "dueNow": "Đến hạn ngay bây giờ",
+      "overdue": "Quá hạn {{hours}} giờ",
+      "remainingHours": "Còn {{hours}} giờ",
+      "remainingDays": "Còn {{days}} ngày",
+      "taskCount": "{{open}} task mở · {{ready}} trang sẵn sàng · {{pending}} trang đang chờ",
+      "progress": "{{value}}%",
+      "onHold": "Sản xuất đang tạm dừng.",
+      "loading": "Đang tải tổng quan sản xuất…",
+      "labels": {
+        "status": "Trạng thái bản thảo",
+        "deadline": "Hạn chót",
+        "timeRemaining": "Thời gian còn lại",
+        "tasks": "Tình trạng công việc",
+        "progress": "Tiến độ"
+      },
+      "warning": {
+        "NONE": "Đúng tiến độ",
+        "YELLOW": "Cần theo dõi",
+        "RED": "Có rủi ro",
+        "CRITICAL": "Khẩn cấp"
+      },
+      "status": {
+        "DRAFT": "Bản nháp",
+        "IN_PRODUCTION": "Đang sản xuất",
+        "EDITOR_REVIEW": "Editor đang duyệt",
+        "EDITOR_REVISION": "Editor yêu cầu sửa",
+        "READY_FOR_PRINT": "Sẵn sàng in",
+        "AWAITING_CO_OWNER_APPROVAL": "Chờ đồng sở hữu duyệt",
+        "PUBLISHED": "Đã xuất bản"
+      },
+      "actions": {
+        "refresh": "Làm mới",
+        "retry": "Thử lại",
+        "backToStudio": "Quay lại Studio",
+        "openChapter": "Mở chương"
+      },
+      "empty": {
+        "title": "Chưa có chương đang sản xuất",
+        "description": "Các chương có công việc cần theo dõi sẽ hiển thị tại đây."
+      },
+      "error": {
+        "loadFailed": "Không thể tải tổng quan sản xuất. Vui lòng thử lại."
+      }
+    },
     "tasks": {
       "title": "Nhiệm vụ",
       "composer": {
@@ -1043,6 +1686,9 @@
         "selectSeriesPlaceholder": "— Chọn series —",
         "selectChapter": "Chọn chương",
         "selectChapterPlaceholder": "— Chọn chương —",
+        "selectStage": "Giai đoạn sản xuất",
+        "selectStagePlaceholder": "— Chọn giai đoạn đang mở —",
+        "stageOption": "Giai đoạn {{order}}: {{name}}",
         "selectPage": "Chọn trang",
         "selectMultiplePages": "Chọn một hoặc nhiều trang",
         "multiplePagesHint": "Chọn nhiều trang sẽ tạo một nhóm task. Chỉ có thể chọn vùng khi giao cho một trang.",
@@ -1053,6 +1699,7 @@
         "selectRegionsHint": "Chọn một hoặc nhiều vùng trên trang, hoặc để trống để giao toàn bộ trang.",
         "regionSelected": "Đã chọn vùng",
         "regionClear": "Bỏ chọn",
+        "regionOption": "Vùng {{number}}",
         "taskType": "Loại công việc",
         "taskTypeEnum": {
           "BACKGROUND": "Vẽ nền",
@@ -1066,9 +1713,15 @@
         "deadlineHint": "Để trống nếu không có hạn cụ thể",
         "priority": "Độ ưu tiên",
         "priorityHint": "Số nhỏ hơn = ưu tiên cao hơn",
+        "priorityInvalid": "Độ ưu tiên phải là số nguyên lớn hơn 0.",
+        "description": "Mô tả công việc (tuỳ chọn)",
+        "groupTitle": "Tên nhóm công việc (tuỳ chọn)",
         "attachments": {
           "label": "Tài liệu tham khảo (tuỳ chọn)",
-          "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file"
+          "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file",
+          "formatHint": "PNG, JPG, WEBP hoặc PDF — tối đa 15 MB",
+          "uploaded": "Đã tải lên",
+          "removeFile": "Xoá {{name}}"
         },
         "steps": {
           "aria": "Các bước giao nhiệm vụ",
@@ -1079,11 +1732,33 @@
         "assignCta": "Giao việc",
         "assignFor": "Giao việc cho {{name}}",
         "assignDisabledReason": "Trợ lý này hiện không có quan hệ thuê đang hiệu lực.",
-        "allowedTaskTypesHint": "Trợ lý này được thuê cho: {{types}}. Các loại khác sẽ bị BE từ chối.",
+        "allowedTaskTypesHint": "Các loại công việc được phép ở giai đoạn hiện tại: {{types}}.",
+        "errors": {
+          "assigning": "Đang giao nhiệm vụ, vui lòng chờ.",
+          "assignFailed": "Không thể giao nhiệm vụ. Vui lòng thử lại.",
+          "stageSnapshotError": "Không thể tải ảnh đầu vào bất biến của công đoạn sản xuất này.",
+          "assignGroupFailed": "Không thể giao nhóm nhiệm vụ. Vui lòng thử lại.",
+          "incomplete": "Vui lòng điền đầy đủ thông tin bắt buộc.",
+          "taskTypeNotAllowed": "Loại công việc này không được phép ở giai đoạn sản xuất đang hoạt động.",
+          "loadAssignments": "Không thể tải các quan hệ cộng tác đang hoạt động.",
+          "loadSeries": "Không thể tải danh sách series.",
+          "loadChapters": "Không thể tải danh sách chương.",
+          "loadPages": "Không thể tải danh sách trang.",
+          "loadRegions": "Không thể tải danh sách vùng.",
+          "loadStages": "Không thể tải các giai đoạn sản xuất."
+        },
+        "validation": {
+          "assistantRequired": "Vui lòng chọn trợ lý.",
+          "pageRequired": "Vui lòng chọn trang.",
+          "taskTypeRequired": "Vui lòng chọn loại công việc.",
+          "deadlineFuture": "Hạn chót phải ở tương lai.",
+          "priorityNonNegative": "Độ ưu tiên không được âm."
+        },
         "confirm": {
           "description": "Kiểm tra thông tin trước khi giao nhiệm vụ.",
           "assistant": "Trợ lý",
           "taskType": "Loại công việc",
+          "stage": "Giai đoạn",
           "page": "Trang",
           "pages": "Các trang",
           "region": "Vùng",
@@ -1126,9 +1801,38 @@
         "deadline": "Hạn: {{date}}",
         "priority": "Ưu tiên: {{value}}",
         "regions": "Vùng: {{count}}",
+        "edit": "Chỉnh sửa",
+        "reassign": "Giao lại",
         "approve": "Duyệt",
+        "approveGroup": "Duyệt cả nhóm",
         "revision": "Yêu cầu sửa",
         "cancel": "Huỷ"
+      },
+      "edit": {
+        "title": "Chỉnh sửa nhiệm vụ",
+        "description": "Chỉ các trường thay đổi mới được gửi. Chỉ xoá tài liệu tham khảo khi bạn chủ động chọn xoá toàn bộ.",
+        "deadline": "Deadline",
+        "priority": "Độ ưu tiên",
+        "priorityInvalid": "Độ ưu tiên phải là số nguyên từ 0 trở lên.",
+        "descriptionLabel": "Mô tả công việc",
+        "descriptionLocked": "Chỉ có thể chỉnh sửa mô tả khi nhiệm vụ đang ở trạng thái đã giao.",
+        "clearAttachments": "Xoá toàn bộ {{count}} tài liệu tham khảo",
+        "cancel": "Quay lại",
+        "save": "Lưu thay đổi",
+        "saving": "Đang lưu..."
+      },
+      "reassign": {
+        "title": "Giao lại nhiệm vụ",
+        "description": "Chọn một trợ lý đang cộng tác và có đúng chuyên môn.",
+        "assistantLabel": "Trợ lý mới",
+        "assistantPlaceholder": "— Chọn trợ lý —",
+        "unnamedAssistant": "Trợ lý chưa đặt tên",
+        "noEligibleAssistant": "Không có trợ lý đang cộng tác nào khác phù hợp với loại công việc này.",
+        "notEligible": "Không thể giao lại nhiệm vụ ở trạng thái hiện tại.",
+        "confirmation": "Tôi hiểu rằng trợ lý hiện tại sẽ mất quyền truy cập nhiệm vụ này sau khi giao lại.",
+        "cancel": "Quay lại",
+        "submit": "Giao lại nhiệm vụ",
+        "submitting": "Đang giao lại..."
       },
       "pagination": {
         "prev": "Trước",
@@ -1182,6 +1886,10 @@
       "toast": {
         "approved": "Đã duyệt nhiệm vụ.",
         "approveFailed": "Không thể duyệt.",
+        "updated": "Đã cập nhật nhiệm vụ.",
+        "reassigned": "Đã giao lại nhiệm vụ.",
+        "groupApproved": "Đã duyệt {{count}} nhiệm vụ trong nhóm.",
+        "groupSkipped": "{{count}} nhiệm vụ được bỏ qua vì chưa sẵn sàng để duyệt.",
         "revisionRequested": "Đã gửi yêu cầu sửa.",
         "revisionFailed": "Không thể gửi yêu cầu sửa.",
         "cancelled": "Đã huỷ nhiệm vụ.",
@@ -1211,7 +1919,7 @@
       "regionType": {
         "PANEL": "Khung truyện",
         "BACKGROUND": "Nền",
-        "SPEENTONE": "Tone",
+        "SCREENTONE": "Tone",
         "EFFECT_LINES": "Hiệu ứng",
         "SFX": "Hiệu ứng chữ",
         "CHARACTER": "Nhân vật"
@@ -1240,6 +1948,19 @@
         "draw": "Vẽ vùng"
       },
       "ai": {
+        "history": {
+          "title": "Lịch sử job AI",
+          "loading": "Đang tải lịch sử...",
+          "empty": "Chưa có job AI segment nào.",
+          "apply": "Áp dụng kết quả này",
+          "applied": "Đã áp dụng",
+          "status": {
+            "QUEUED": "Đang chờ",
+            "RUNNING": "Đang chạy",
+            "SUCCEEDED": "Thành công",
+            "FAILED": "Thất bại"
+          }
+        },
         "start": "AI segment",
         "running": "Đang chạy...",
         "apply": "Áp dụng",
@@ -1259,7 +1980,6 @@
         "coords": "Toạ độ",
         "confidence": "Độ tin cậy: {{value}}%",
         "confirmAi": "Duyệt vùng AI",
-        "pickThis": "Dùng vùng này",
         "delete": "Xoá vùng",
         "deleteConfirm": "Xoá vùng này? Vùng có task sẽ trả về lỗi."
       },
@@ -1280,6 +2000,34 @@
         "aiApplyFailed": "Không áp dụng được đề xuất AI.",
         "aiTimeout": "AI segment chạy quá lâu, vui lòng thử lại."
       }
+    }
+  },
+  "franchiseConsent": {
+    "eyebrow": "Yêu cầu franchise",
+    "title": "Xem xét đồng ý franchise",
+    "description": "Một series liên quan cần quyết định của Mangaka gốc trước khi chủ sở hữu có thể nộp duyệt.",
+    "targetLabel": "Mã series cần quyết định",
+    "targetValue": "series {{id}}",
+    "targetMissing": "Không có mã đối tượng",
+    "limitedDetails": "Series đang chờ này thuộc về Mangaka khác. Tiêu đề và metadata không thể đọc qua màn hình series giới hạn theo chủ sở hữu của bạn, nên trang chỉ hiển thị mã đối tượng từ thông báo.",
+    "actions": {
+      "approve": "Đồng ý yêu cầu",
+      "reject": "Từ chối yêu cầu",
+      "backToNotifications": "Quay lại thông báo",
+      "backToSeries": "Quay lại series của tôi"
+    },
+    "success": {
+      "approvedTitle": "Đã đồng ý yêu cầu franchise",
+      "approvedDescription": "Chủ sở hữu có thể nộp series phái sinh này để duyệt khi sẵn sàng.",
+      "rejectedTitle": "Đã từ chối yêu cầu franchise",
+      "rejectedDescription": "Series phái sinh vẫn thuộc về chủ sở hữu, nhưng không thể nộp duyệt khi quyết định này còn hiệu lực."
+    },
+    "errors": {
+      "invalidRequest": "Liên kết yêu cầu franchise không hợp lệ.",
+      "permission": "Chỉ Mangaka gốc của series cha mới có thể đưa ra quyết định này.",
+      "notFound": "Series cần quyết định không còn tồn tại.",
+      "notPending": "Yêu cầu đồng ý franchise này không còn chờ quyết định.",
+      "generic": "Không thể lưu quyết định franchise. Vui lòng thử lại."
     }
   },
   "notifications": {
@@ -1303,9 +2051,13 @@
     "item": {
       "noContent": "(không có nội dung)",
       "openTarget": "Mở series",
+      "openFranchiseConsent": "Xem yêu cầu franchise",
       "openChapter": "Mở chapter",
       "openTask": "Mở nhiệm vụ",
       "openContract": "Mở hợp đồng",
+      "openPayment": "Mở thanh toán",
+      "openTransfer": "Mở chuyển nhượng",
+      "openRanking": "Mở bảng xếp hạng",
       "openDeadline": "Mở deadline",
       "openAssistant": "Mở trợ lý",
       "openRevision": "Mở vòng sửa",
@@ -1339,6 +2091,199 @@
       "markedAllRead": "Đã đánh dấu tất cả thông báo là đã đọc."
     }
   },
+  "deadlines": {
+    "eyebrow": "Lịch sản xuất",
+    "title": "Yêu cầu điều chỉnh thời hạn",
+    "subtitle": "Tạo và thương lượng thời hạn của chương với Biên tập viên. Quyết định chốt vẫn thuộc vai trò xét duyệt phù hợp.",
+    "selector": {
+      "series": "Series",
+      "seriesPlaceholder": "Chọn series",
+      "chapter": "Chương",
+      "chapterPlaceholder": "Chọn chương"
+    },
+    "chapterOption": "Chương {{number}} {{title}}",
+    "loading": {
+      "chapter": "Đang tải lịch chương…",
+      "requests": "Đang tải các yêu cầu thời hạn…",
+      "detail": "Đang tải chi tiết yêu cầu…"
+    },
+    "request": {
+      "title": "Đề xuất thời hạn mới",
+      "currentDeadline": "Hạn hiện tại của chương: {{date}}",
+      "noSchedule": "Chương chưa có lịch đang hiệu lực hoặc đã xuất bản, nên không thể tạo yêu cầu thời hạn.",
+      "openExists": "Chương này đã có một phiên thương lượng thời hạn đang mở. Hãy phản hồi hoặc rút yêu cầu đó trước."
+    },
+    "list": {
+      "title": "Lịch sử yêu cầu",
+      "empty": "Chọn một chương để xem các yêu cầu điều chỉnh thời hạn."
+    },
+    "detail": {
+      "title": "Chi tiết yêu cầu",
+      "empty": "Chọn một yêu cầu thời hạn để xem chi tiết và thao tác khả dụng.",
+      "status": "Trạng thái",
+      "current": "Hạn hiện tại",
+      "proposed": "Hạn đề xuất",
+      "reason": "Lý do",
+      "waitingTurn": "Yêu cầu này đang mở nhưng đang chờ phản hồi từ Biên tập viên."
+    },
+    "status": {
+      "PROPOSED": "Đã đề xuất",
+      "COUNTER_PROPOSED": "Đề xuất lại",
+      "AGREED_BY_PARTIES": "Hai bên đã đồng ý",
+      "BOARD_REVIEW": "Hội đồng xem xét",
+      "ESCALATED": "Đã chuyển cấp",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối"
+    },
+    "form": {
+      "requestedDeadline": "Thời hạn đề xuất",
+      "futureError": "Hãy chọn một thời hạn trong tương lai.",
+      "reason": "Lý do"
+    },
+    "actions": {
+      "refresh": "Làm mới",
+      "create": "Đề xuất đổi thời hạn",
+      "counter": "Đề xuất lại",
+      "agree": "Đồng ý",
+      "reject": "Từ chối",
+      "withdraw": "Rút yêu cầu",
+      "cancel": "Quay lại",
+      "submitting": "Đang lưu…"
+    },
+    "dialog": {
+      "create": {
+        "title": "Đề xuất thay đổi thời hạn",
+        "description": "Đề xuất hạn mới cho chương và nêu rõ lý do cần điều chỉnh."
+      },
+      "counter": {
+        "title": "Đề xuất thời hạn khác",
+        "description": "Đưa ra một thời hạn thay thế và giải thích cho đề xuất đó."
+      },
+      "reject": {
+        "title": "Từ chối đề xuất thời hạn",
+        "description": "Thao tác này sẽ chuyển phiên thương lượng lên cấp xử lý tiếp theo. Hãy nêu rõ lý do trước khi tiếp tục."
+      },
+      "withdraw": {
+        "title": "Rút yêu cầu thời hạn",
+        "description": "Rút yêu cầu đang mở của bạn trước khi Biên tập viên phản hồi.",
+        "confirmation": "Bạn có chắc muốn rút yêu cầu thời hạn này? Thao tác không thể hoàn tác."
+      }
+    },
+    "success": {
+      "create": "Đã tạo yêu cầu thời hạn.",
+      "counter": "Đã gửi đề xuất lại.",
+      "agree": "Đã đồng ý đề xuất thời hạn.",
+      "reject": "Đã từ chối đề xuất thời hạn.",
+      "withdraw": "Đã rút yêu cầu thời hạn."
+    },
+    "error": {
+      "loadSeriesFailed": "Không thể tải series của bạn.",
+      "loadChaptersFailed": "Không thể tải chương của series này.",
+      "loadFailed": "Không thể tải các yêu cầu thời hạn.",
+      "loadRequestFailed": "Không thể tải yêu cầu thời hạn này.",
+      "notParticipant": "Bạn không có quyền thao tác với yêu cầu thời hạn này.",
+      "notFound": "Yêu cầu thời hạn này không còn tồn tại.",
+      "notOpen": "Yêu cầu thời hạn này không còn mở để thương lượng. Hãy làm mới để xem trạng thái mới nhất.",
+      "createFailed": "Không thể tạo yêu cầu thời hạn.",
+      "counterFailed": "Không thể gửi đề xuất lại.",
+      "agreeFailed": "Không thể đồng ý đề xuất thời hạn.",
+      "rejectFailed": "Không thể từ chối đề xuất thời hạn.",
+      "withdrawFailed": "Không thể rút yêu cầu thời hạn."
+    }
+  },
+  "finance": {
+    "eyebrow": "Tài chính",
+    "title": "Thu nhập và thanh toán",
+    "description": "Theo dõi các khoản thanh toán phát sinh từ hoạt động xuất bản của bạn. Nhà xuất bản và Hội đồng chịu trách nhiệm duyệt, giải ngân.",
+    "unknown": "Không xác định",
+    "notAvailable": "Chưa có thông tin",
+    "summary": {
+      "label": "Tổng hợp thu nhập",
+      "paid": "Đã thanh toán",
+      "pending": "Đang chờ",
+      "missed": "Không đạt"
+    },
+    "breakdown": {
+      "byStatus": "Phân theo trạng thái",
+      "byType": "Phân theo loại khoản chi",
+      "empty": "Chưa có khoản tiền nào để hiển thị."
+    },
+    "records": {
+      "title": "Khoản thanh toán",
+      "description": "Chỉ hiển thị các khoản thanh toán dành cho tài khoản của bạn.",
+      "count": "{{count}} khoản",
+      "empty": "Chưa có khoản thanh toán nào."
+    },
+    "filters": {
+      "label": "Chế độ xem thanh toán",
+      "all": "Tất cả khoản thanh toán của tôi",
+      "byContract": "Theo hợp đồng",
+      "bySeries": "Theo series",
+      "unknownContract": "Hợp đồng chưa đặt tên",
+      "apply": "Áp dụng",
+      "loading": "Đang tải…",
+      "allDescription": "Hiển thị toàn bộ sổ cái thanh toán dành cho tài khoản của bạn.",
+      "contractDescription": "Hiển thị các khoản thanh toán trong hợp đồng đã chọn.",
+      "seriesDescription": "Hiển thị các khoản thanh toán qua các hợp đồng của series đã chọn."
+    },
+    "actions": {
+      "backToRecords": "Quay lại danh sách thanh toán"
+    },
+    "detail": {
+      "eyebrow": "Khoản thanh toán",
+      "created": "Tạo lúc {{date}}",
+      "origin": "Nguồn phát sinh",
+      "processing": "Xử lý thanh toán",
+      "type": "Loại khoản chi",
+      "source": "Nguồn",
+      "period": "Kỳ thanh toán",
+      "receiver": "Người nhận",
+      "series": "Series",
+      "contract": "Hợp đồng",
+      "description": "Mô tả",
+      "status": "Trạng thái",
+      "approver": "Người duyệt",
+      "approvedAt": "Duyệt lúc",
+      "paidAt": "Thanh toán lúc",
+      "method": "Phương thức thanh toán",
+      "reference": "Mã giao dịch",
+      "cancelledAt": "Huỷ lúc",
+      "cancelReason": "Lý do huỷ",
+      "note": "Ghi chú"
+    },
+    "errors": {
+      "earnings": "Không thể tải tổng hợp thu nhập. Vui lòng thử lại sau.",
+      "records": "Không thể tải các khoản thanh toán. Vui lòng thử lại sau.",
+      "detail": "Không thể tải khoản thanh toán này. Khoản này có thể không còn thuộc phạm vi tài khoản của bạn.",
+      "filters": "Không thể tải hợp đồng và series của bạn. Chế độ xem tất cả vẫn khả dụng."
+    },
+    "status": {
+      "TRIGGERED": "Đã kích hoạt",
+      "PENDING": "Đang chờ",
+      "APPROVED": "Đã duyệt",
+      "PAID": "Đã thanh toán",
+      "MISSED": "Không đạt",
+      "FAILED": "Thất bại",
+      "CANCELLED": "Đã huỷ"
+    },
+    "type": {
+      "CONDITION_PAYOUT": "Chi theo điều kiện",
+      "REVENUE_SHARE": "Chia doanh thu",
+      "COMPENSATION": "Bồi thường",
+      "CHAPTER_MILESTONE": "Mốc chương",
+      "RECURRING_CHAPTER": "Chương định kỳ",
+      "RANKING_MILESTONE": "Mốc xếp hạng",
+      "TIME_BOUND": "Khoản theo thời hạn",
+      "TRANSFER": "Chuyển nhượng"
+    },
+    "source": {
+      "CONTRACT": "Hợp đồng",
+      "REPRINT": "Tái bản",
+      "TRANSFER": "Chuyển nhượng",
+      "TERMINATION": "Chấm dứt",
+      "MANUAL": "Thủ công"
+    }
+  },
   "rankings": {
     "title": "Xếp hạng",
     "subtitle": "Theo dõi thứ hạng series của bạn trong các kỳ xếp hạng mới nhất và trước đó.",
@@ -1361,6 +2306,33 @@
       "empty": "Chưa có kết quả cho kỳ này.",
       "prompt": "Chọn một kỳ ở trên để xem bảng xếp hạng."
     },
+    "board": {
+      "title": "So sánh toàn tạp chí",
+      "description": "So sánh series của bạn với mọi series trong một kỳ tạp chí đã REFLECTED. Chế độ này chỉ để xem.",
+      "periodLabel": "Kỳ đã phản ánh",
+      "periodOption": "Kỳ {{issue}} · {{magazine}} · {{publicationType}}",
+      "unknownMagazine": "Chưa xác định tạp chí",
+      "loadingPeriods": "Đang tải các kỳ đã REFLECTED…",
+      "noPeriods": "Chưa có kỳ REFLECTED nào để so sánh.",
+      "loading": "Đang tải bảng xếp hạng toàn tạp chí…",
+      "empty": "Chưa có bảng xếp hạng được ghi nhận cho kỳ này.",
+      "otherSeries": "Series khác",
+      "yourSeries": "Series của bạn",
+      "unreliable": "Dữ liệu chưa đủ tin cậy",
+      "table": {
+        "rank": "Hạng",
+        "series": "Series",
+        "votes": "Phiếu",
+        "score": "Điểm",
+        "change": "Biến động",
+        "risk": "Nguy cơ"
+      },
+      "error": {
+        "loadFailed": "Không thể tải bảng xếp hạng toàn tạp chí. Vui lòng thử lại.",
+        "periodNotFound": "Kỳ xếp hạng này không còn khả dụng. Hãy chọn kỳ khác.",
+        "accessDenied": "Bạn không có quyền xem bảng xếp hạng này."
+      }
+    },
     "trend": {
       "title": "Xu hướng series của tôi",
       "description": "Hạng qua 12 kỳ gần nhất, tô màu theo mức nguy cơ. Chỉ series bạn sở hữu hiển thị (giới hạn ở BE).",
@@ -1380,6 +2352,10 @@
       "WEEKLY": "Tuần",
       "MONTHLY": "Tháng",
       "IRREGULAR": "Không định kỳ"
+    },
+    "magazine": {
+      "label": "Tạp chí",
+      "placeholder": "Nhập mã tạp chí"
     },
     "riskLevel": {
       "NONE": "An toàn",
@@ -1401,6 +2377,229 @@
     "error": {
       "loadFailed": "Không tải được bảng xếp hạng. Vui lòng thử lại.",
       "retry": "Thử lại"
+    }
+  },
+  "transfers": {
+    "eyebrow": "Quy trình chuyển nhượng",
+    "title": "Chuyển nhượng series",
+    "description": "Gửi yêu cầu chuyển nhượng, phản hồi với vai trò Mangaka gốc và ký thỏa thuận ba bên từ liên kết thông báo.",
+    "sections": {
+      "active": "Đang xử lý",
+      "history": "Lịch sử",
+      "empty": "Không có yêu cầu chuyển nhượng trong nhóm này."
+    },
+    "types": {
+      "FULL_TRANSFER": "Chuyển nhượng toàn bộ",
+      "PARTIAL_TRANSFER": "Chuyển nhượng một phần"
+    },
+    "status": {
+      "SUBMITTED": "Chờ Hội đồng sàng lọc",
+      "UNDER_REVIEW": "Hội đồng đang xem xét",
+      "REJECTED_BY_BOARD": "Hội đồng từ chối",
+      "NEGOTIATING": "Chờ Mangaka gốc phản hồi",
+      "REJECTED_BY_ORIGINAL_MANGAKA": "Mangaka gốc từ chối",
+      "PROPOSED": "Đã đề xuất chuyển nhượng",
+      "ACCEPTED": "Đã chấp nhận đề xuất",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy",
+      "AWAITING_REPLACEMENT_SIGNATURES": "Chờ chữ ký bên tiếp nhận",
+      "AWAITING_TRANSFER_SIGNATURES": "Chờ chữ ký chuyển nhượng",
+      "COMPLETED": "Đã hoàn tất"
+    },
+    "actions": {
+      "create": "Tạo yêu cầu",
+      "accept": "Đồng ý thương lượng",
+      "reject": "Từ chối",
+      "sign": "Ký hợp đồng chuyển nhượng",
+      "cancel": "Hủy",
+      "submit": "Gửi yêu cầu",
+      "sendOtp": "Gửi OTP ký",
+      "confirmSign": "Xác nhận ký"
+    },
+    "card": {
+      "unknownSeries": "Series chưa xác định",
+      "unknownMangaka": "Mangaka chưa xác định",
+      "requester": "Người đề nghị: {{name}}",
+      "percentage": "Tỷ lệ sở hữu đề xuất: {{value}}%"
+    },
+    "create": {
+      "title": "Tạo yêu cầu chuyển nhượng",
+      "description": "Chọn series và trình bày kế hoạch tiếp quản, phát triển tác phẩm.",
+      "series": "Series",
+      "seriesPlaceholder": "Chọn series",
+      "type": "Loại chuyển nhượng",
+      "percentage": "Tỷ lệ sở hữu (1–99%)",
+      "plan": "Kế hoạch tiếp quản",
+      "planPlaceholder": "Mô tả năng lực và kế hoạch phát triển"
+    },
+    "sign": {
+      "title": "Ký hợp đồng chuyển nhượng",
+      "description": "Dùng mã hợp đồng trong thông báo ký. API tự xác định vai trò và kiểm soát thứ tự ký.",
+      "notificationTitle": "Hợp đồng chuyển nhượng đang chờ ký",
+      "signatureCount_one": "Đã ghi nhận {{count}} chữ ký",
+      "signatureCount_other": "Đã ghi nhận {{count}} chữ ký",
+      "signaturesUnavailable": "Không tải được tiến độ chữ ký. Bạn vẫn có thể thử lại thao tác ký.",
+      "contractId": "Mã hợp đồng chuyển nhượng",
+      "contractIdPlaceholder": "Dán mã từ thông báo ký",
+      "otp": "OTP gồm 6 số",
+      "otpPlaceholder": "Nhập OTP ký"
+    },
+    "success": {
+      "created": "Đã gửi yêu cầu chuyển nhượng.",
+      "requestUpdated": "Đã cập nhật yêu cầu chuyển nhượng.",
+      "signed": "Đã ký hợp đồng chuyển nhượng."
+    },
+    "errors": {
+      "invalidAction": "Thao tác chuyển nhượng không hợp lệ.",
+      "alreadyOwner": "Bạn đang là chủ sở hữu series này.",
+      "inactive": "Tài khoản Mangaka phải hoạt động để gửi yêu cầu.",
+      "invalidProposal": "Loại chuyển nhượng và tỷ lệ đề xuất không khớp.",
+      "notNegotiating": "Yêu cầu không còn chờ Mangaka gốc phản hồi.",
+      "accessDenied": "Bạn không có quyền truy cập yêu cầu chuyển nhượng này.",
+      "alreadySigned": "Bạn đã ký hợp đồng chuyển nhượng này.",
+      "signerNotFound": "Không thể xác minh danh tính người ký.",
+      "contractNotFound": "Hợp đồng chuyển nhượng không còn khả dụng.",
+      "requestNotFound": "Yêu cầu từ thông báo không còn khả dụng hoặc bạn không có quyền truy cập.",
+      "noActiveContract": "Series chưa có hợp đồng hiệu lực để chuyển nhượng.",
+      "generic": "Không thể hoàn tất thao tác chuyển nhượng. Vui lòng thử lại."
+    }
+  },
+  "contracts": {
+    "meta": {
+      "listTitle": "Hợp đồng - MangakaStudio Pro",
+      "detailTitle": "Chi tiết hợp đồng - MangakaStudio Pro"
+    },
+    "unknownSeries": "Series chưa xác định",
+    "notAvailable": "Chưa có thông tin",
+    "list": {
+      "eyebrow": "Hợp đồng",
+      "title": "Hợp đồng của tôi",
+      "description": "Xem điều khoản, phản hồi và hoàn tất ký hợp đồng.",
+      "contractTitle": "Hợp đồng — {{series}}",
+      "series": "Series: {{series}}",
+      "empty": "Bạn chưa có hợp đồng nào."
+    },
+    "fields": {
+      "type": "Loại hợp đồng",
+      "value": "Giá trị",
+      "publisherOwnership": "NXB sở hữu",
+      "mangakaOwnership": "Mangaka sở hữu",
+      "start": "Bắt đầu",
+      "end": "Kết thúc",
+      "terminationClause": "Điều khoản chấm dứt",
+      "otpPlaceholder": "OTP 6 số"
+    },
+    "types": {
+      "FULL_BUYOUT": "Mua đứt toàn bộ",
+      "REVENUE_SHARE": "Chia sẻ doanh thu"
+    },
+    "statuses": {
+      "DRAFT": "Bản nháp",
+      "MANGAKA_REVIEW": "Mangaka xem xét",
+      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+      "BOARD_APPROVED": "Hội đồng đã phê duyệt",
+      "NEGOTIATION": "Đang thương lượng",
+      "MANGAKA_SIGNED": "Mangaka đã ký",
+      "ACTIVATION_PENDING": "Chờ kích hoạt",
+      "FULLY_EXECUTED": "Đã ký đầy đủ",
+      "FULFILLED": "Đã hoàn thành",
+      "TERMINATED": "Đã chấm dứt",
+      "TERMINATED_BY_BREACH": "Chấm dứt do vi phạm",
+      "EXPIRED": "Đã hết hạn",
+      "VOIDED": "Đã vô hiệu",
+      "PENDING_SIGNATURES": "Chờ chữ ký"
+    },
+    "detail": {
+      "back": "Quay lại danh sách hợp đồng",
+      "sections": {
+        "terms": "Điều khoản hợp đồng",
+        "actions": "Thao tác của Mangaka",
+        "paymentConditions": "Điều kiện thanh toán",
+        "amendments": "Phụ lục hợp đồng"
+      },
+      "paymentConditionsRequired": "Không thể đồng ý hoặc ký cho tới khi tải được ít nhất một điều kiện thanh toán hợp lệ.",
+      "mangakaSignature": "Chữ ký Mangaka",
+      "signed": "Đã ký",
+      "notSigned": "Chưa ký",
+      "boardSignatureProgress": "Tiến độ chữ ký Hội đồng",
+      "progressLoadFailed": "Không thể tải tiến độ chữ ký mới nhất. Hãy tải lại trang trước khi tiếp tục nếu cần đối chiếu chữ ký.",
+      "signatureReady": "Hội đồng đã phê duyệt. Hãy nhận OTP và ký hợp đồng.",
+      "signedAt": "Đã ký lúc {{date}}.",
+      "signatureLocked": "Chỉ mở sau khi Mangaka đồng ý điều khoản và Hội đồng phê duyệt.",
+      "amendmentsEmpty": "Chưa có phụ lục.",
+      "amendmentFallback": "Phụ lục hợp đồng",
+      "statusHints": {
+        "DRAFT": "Editor đang hoàn thiện điều khoản hợp đồng.",
+        "NEGOTIATION": "Editor đang hoàn thiện điều khoản hợp đồng.",
+        "MANGAKA_APPROVED": "Đã đồng ý điều khoản, đang chờ Hội đồng phê duyệt.",
+        "MANGAKA_SIGNED": "Bạn đã ký, đang chờ Hội đồng hoàn tất chữ ký.",
+        "FULLY_EXECUTED": "Hợp đồng đã được ký đầy đủ và có hiệu lực.",
+        "default": "Hợp đồng hiện không cần thao tác từ bạn."
+      }
+    },
+    "actions": {
+      "approveTerms": "Đồng ý điều khoản",
+      "requestChanges": "Yêu cầu chỉnh sửa",
+      "sendOtp": "Gửi mã OTP",
+      "sendOtpShort": "Gửi OTP",
+      "signContract": "Ký hợp đồng",
+      "signAmendment": "Ký phụ lục",
+      "reject": "Từ chối",
+      "cancel": "Hủy",
+      "submitRequest": "Gửi yêu cầu"
+    },
+    "requestChanges": {
+      "title": "Yêu cầu chỉnh sửa hợp đồng",
+      "description": "Nêu rõ điều khoản cần Editor xem xét và cập nhật.",
+      "reason": "Lý do chỉnh sửa",
+      "placeholder": "Ví dụ: Đề nghị điều chỉnh tỷ lệ sở hữu và làm rõ điều khoản chấm dứt hợp đồng.",
+      "hint": "Bắt buộc, tối đa 1000 ký tự."
+    },
+    "amendment": {
+      "rejectReason": "Lý do từ chối"
+    },
+    "feedback": {
+      "processing": "Đang xử lý…",
+      "otpSent": "Mã OTP đã được gửi tới email của bạn.",
+      "updated": "Thao tác đã được cập nhật."
+    },
+    "errors": {
+      "loadList": "Không thể tải hợp đồng.",
+      "notFound": "Không tìm thấy hợp đồng.",
+      "accountUnavailable": "Không thể đọc tài khoản.",
+      "invalidAction": "Thao tác hợp đồng không hợp lệ.",
+      "actionFailed": "Không thể thực hiện thao tác. Vui lòng kiểm tra trạng thái và thử lại.",
+      "paymentConditionsRequired": "Không thể duyệt hoặc ký vì hợp đồng chưa có điều kiện thanh toán hợp lệ.",
+      "requiredField": "Vui lòng điền đầy đủ các trường bắt buộc."
+    },
+    "versions": {
+      "title": "Lịch sử phiên bản",
+      "description": "Xem lại các phiên bản đã lưu của hợp đồng này.",
+      "count_one": "{{count}} phiên bản",
+      "count_other": "{{count}} phiên bản",
+      "version": "Phiên bản {{number}}",
+      "noNote": "Không có ghi chú thay đổi.",
+      "empty": "Chưa có phiên bản hợp đồng đã lưu.",
+      "loadFailed": "Không thể tải lịch sử phiên bản. Bạn vẫn có thể xem hợp đồng hiện tại."
+    },
+    "versionDetail": {
+      "back": "Quay lại hợp đồng",
+      "loadFailed": "Không thể tải phiên bản hợp đồng này.",
+      "eyebrow": "Phiên bản hợp đồng",
+      "createdAtValue": "Đã lưu lúc {{date}}",
+      "terms": "Điều khoản đã lưu",
+      "audit": "Thông tin phiên bản",
+      "versionNumber": "Số phiên bản",
+      "valuationAmount": "Giá trị định giá",
+      "publisherOwnershipPct": "Tỷ lệ sở hữu của NXB",
+      "mangakaOwnershipPct": "Tỷ lệ sở hữu của Mangaka",
+      "terminationClause": "Điều khoản chấm dứt",
+      "note": "Ghi chú thay đổi",
+      "versionId": "ID phiên bản",
+      "contractId": "ID hợp đồng",
+      "editedById": "ID người chỉnh sửa",
+      "createdAt": "Thời điểm tạo",
+      "notAvailable": "Không có dữ liệu"
     }
   }
 }

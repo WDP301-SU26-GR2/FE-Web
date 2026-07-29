@@ -63,7 +63,10 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const conditionTypes = form.getAll('conditionType').map(String)
       const conditionValues = form.getAll('conditionValue').map(Number)
       const conditionDescriptions = form.getAll('conditionDescription').map(String)
-      if (!conditionTypes.length || conditionTypes.some((_, index) => !conditionDescriptions[index] || !Number.isFinite(conditionValues[index]))) {
+      if (
+        !conditionTypes.length ||
+        conditionTypes.some((_, index) => !conditionDescriptions[index] || !Number.isFinite(conditionValues[index]))
+      ) {
         throw new Error('Điều kiện hợp đồng chưa đầy đủ.')
       }
       await transferControllerBoardAssignFullBuyout(

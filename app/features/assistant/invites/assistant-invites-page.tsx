@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookOpen, Calendar, Check, Filter, ListChecks, Mail, RefreshCw, X } from 'lucide-react'
+import { BookOpen, Calendar, Check, ChevronDown, Filter, Loader2, Mail, RefreshCw, X } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
@@ -7,9 +8,9 @@ import { SignedImage } from '~/shared/components/signed-image'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { InviteListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { InviteListResDtoOutputItemsItemStatus } from '~/api/model/studio/inviteListResDtoOutputItemsItemStatus'
-import type { InviteListResDtoOutputItemsItemTaskTypesItem } from '~/api/model/studio/inviteListResDtoOutputItemsItemTaskTypesItem'
 import type { StudioControllerListInvitesStatus } from '~/api/model/studio/studioControllerListInvitesStatus'
 import { useAssistantInvites } from './use-assistant-invites'
+import { useInviteDetail } from './use-invite-detail'
 
 const STATUS_FILTERS: ReadonlyArray<StudioControllerListInvitesStatus> = [
   'PENDING',
@@ -143,21 +144,6 @@ const STATUS_META: Record<InviteListResDtoOutputItemsItemStatus, { className: st
   CANCELLED: { className: 'bg-muted text-muted-foreground border-border' }
 }
 
-const AVATAR_GRADIENTS = [
-  'from-blue-600 to-indigo-700',
-  'from-purple-600 to-pink-700',
-  'from-amber-600 to-orange-700',
-  'from-emerald-600 to-teal-700',
-  'from-rose-600 to-pink-700',
-  'from-sky-600 to-cyan-700'
-] as const
-
-function pickGradient(seed: string): string {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
-  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length]
-}
-
 function formatDate(iso: string | null, locale: string): string {
   if (!iso) return ''
   const d = new Date(iso)
@@ -165,21 +151,10 @@ function formatDate(iso: string | null, locale: string): string {
   return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-function isKnownTaskType(value: string): value is InviteListResDtoOutputItemsItemTaskTypesItem {
-  return (
-    value === 'BACKGROUND' ||
-    value === 'SCREENTONE' ||
-    value === 'EFFECT_LINES' ||
-    value === 'INKING' ||
-    value === 'COLORING' ||
-    value === 'LETTERING'
-  )
-}
-
 /**
  * Compact list-style row representing one collaboration invite received by
- * the current Assistant. The response embeds Mangaka and Series display data,
- * so this card does not expose raw database IDs.
+ * the current Assistant. List responses intentionally do not contain
+ * `taskTypes`; that field exists only in GET /collaboration-invites/:id.
  */
 function InviteCard({
   invite,
@@ -194,110 +169,130 @@ function InviteCard({
 }) {
   const { t, i18n } = useTranslation('assistant')
   const locale = i18n.language
+  const [showDetails, setShowDetails] = useState(false)
+  const detail = useInviteDetail(invite.id, showDetails)
 
   const statusMeta = STATUS_META[invite.status] ?? STATUS_META.PENDING
   const mangaka = invite.mangaka
   const displayName = mangaka?.displayName ?? t('invites.card.unknownMangaka')
   const hireFrom = formatDate(invite.hireStart, locale)
   const hireTo = formatDate(invite.hireEnd, locale)
-  const taskTypes = invite.taskTypes.filter(isKnownTaskType)
   const isPending = invite.status === 'PENDING'
 
   return (
-    <article className='flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:flex-row sm:items-center'>
-      {mangaka?.avatar ? (
-        <SignedImage
-          r2Key={mangaka.avatar}
-          alt={displayName}
-          aspectClassName='aspect-square'
-          className='h-12 w-12 shrink-0 rounded-full shadow-sm'
-        />
-      ) : (
-        <div
-          className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-extrabold text-white shadow-sm',
-            pickGradient(invite.mangakaId)
+    <article className='flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+        {mangaka?.avatar ? (
+          <SignedImage
+            r2Key={mangaka.avatar}
+            alt={displayName}
+            aspectClassName='aspect-square'
+            className='h-12 w-12 shrink-0 rounded-full shadow-sm'
+          />
+        ) : (
+          <div
+            className='flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground shadow-sm'
+            aria-hidden='true'
+          >
+            {displayName.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div className='min-w-0 flex-1 space-y-2'>
+          <div className='flex flex-wrap items-center gap-1.5'>
+            <h3 className='truncate text-sm font-bold text-foreground'>{displayName}</h3>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                statusMeta.className
+              )}
+            >
+              {t(`invites.filters.statuses.${invite.status}`)}
+            </span>
+          </div>
+
+          <div className='grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground sm:grid-cols-2'>
+            <div className='flex items-start gap-1.5'>
+              <Calendar className='mt-0.5 h-3 w-3 shrink-0' />
+              <span>
+                {invite.hireEnd
+                  ? t('invites.card.hireWindow', { from: hireFrom, to: hireTo })
+                  : hireFrom
+                    ? t('invites.card.hireWindowNoEnd', { from: hireFrom })
+                    : '—'}
+              </span>
+            </div>
+            <div className='flex items-start gap-1.5'>
+              <BookOpen className='mt-0.5 h-3 w-3 shrink-0' />
+              <span>{invite.series?.title ?? t('invites.card.seriesNone')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className='flex shrink-0 items-center gap-2 sm:flex-col sm:items-end'>
+          <span className='text-[11px] text-muted-foreground'>
+            {t('invites.card.receivedAt', { date: formatDate(invite.createdAt, locale) || '—' })}
+          </span>
+          {isPending && (
+            <div className='flex gap-2'>
+              <button
+                type='button'
+                disabled={isMutating}
+                onClick={() => onAccept(invite.id)}
+                className='inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
+              >
+                <Check className='h-3.5 w-3.5' />
+                {t('invites.actions.accept')}
+              </button>
+              <button
+                type='button'
+                disabled={isMutating}
+                onClick={() => onDecline(invite.id)}
+                className='inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
+              >
+                <X className='h-3.5 w-3.5' />
+                {t('invites.actions.decline')}
+              </button>
+            </div>
           )}
-          aria-hidden='true'
-        >
-          {displayName.slice(0, 2).toUpperCase()}
+          <button
+            type='button'
+            onClick={() => setShowDetails((value) => !value)}
+            className='inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer'
+            aria-expanded={showDetails}
+          >
+            {t(showDetails ? 'invites.actions.hideDetails' : 'invites.actions.viewDetails')}
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showDetails && 'rotate-180')} />
+          </button>
+        </div>
+      </div>
+      {showDetails && (
+        <div className='w-full border-t border-border pt-3'>
+          {detail.isLoading ? (
+            <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+              <Loader2 className='h-3.5 w-3.5 animate-spin' />
+              {t('invites.card.loadingDetails')}
+            </div>
+          ) : detail.error ? (
+            <p className='text-xs text-destructive'>{detail.error}</p>
+          ) : detail.invite ? (
+            <div>
+              <p className='text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
+                {t('invites.card.taskTypesTitle')}
+              </p>
+              <div className='mt-2 flex flex-wrap gap-1.5'>
+                {detail.invite.taskTypes.map((type) => (
+                  <span
+                    key={type}
+                    className='rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground'
+                  >
+                    {t(`invites.taskType.${type}`)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
-      <div className='min-w-0 flex-1 space-y-2'>
-        <div className='flex flex-wrap items-center gap-1.5'>
-          <h3 className='truncate text-sm font-bold text-foreground'>{displayName}</h3>
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-              statusMeta.className
-            )}
-          >
-            {t(`invites.filters.statuses.${invite.status}`)}
-          </span>
-        </div>
-
-        <div className='grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground sm:grid-cols-2'>
-          <div className='flex items-start gap-1.5'>
-            <Calendar className='mt-0.5 h-3 w-3 shrink-0' />
-            <span>
-              {invite.hireEnd
-                ? t('invites.card.hireWindow', { from: hireFrom, to: hireTo })
-                : hireFrom
-                  ? t('invites.card.hireWindowNoEnd', { from: hireFrom })
-                  : '—'}
-            </span>
-          </div>
-          <div className='flex items-start gap-1.5'>
-            <BookOpen className='mt-0.5 h-3 w-3 shrink-0' />
-            <span>{invite.series?.title ?? t('invites.card.seriesNone')}</span>
-          </div>
-        </div>
-
-        {taskTypes.length > 0 && (
-          <div className='flex flex-wrap items-center gap-1.5'>
-            <span className='inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-              <ListChecks className='h-3 w-3' />
-              {t('invites.card.taskTypesTitle')}:
-            </span>
-            {taskTypes.map((tt) => (
-              <span
-                key={tt}
-                className='inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground'
-              >
-                {t(`invites.taskType.${tt}`)}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className='flex shrink-0 items-center gap-2 sm:flex-col sm:items-end'>
-        <span className='hidden'>
-          {t('invites.card.receivedAt', { date: formatDate(invite.createdAt, locale) || '—' })}
-        </span>
-        {isPending && (
-          <div className='flex gap-2'>
-            <button
-              type='button'
-              disabled={isMutating}
-              onClick={() => onAccept(invite.id)}
-              className='inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
-            >
-              <Check className='h-3.5 w-3.5' />
-              {t('invites.actions.accept')}
-            </button>
-            <button
-              type='button'
-              disabled={isMutating}
-              onClick={() => onDecline(invite.id)}
-              className='inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
-            >
-              <X className='h-3.5 w-3.5' />
-              {t('invites.actions.decline')}
-            </button>
-          </div>
-        )}
-      </div>
     </article>
   )
 }

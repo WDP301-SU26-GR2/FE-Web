@@ -37,7 +37,15 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: false
     }
   } catch {
-    return { items: [], series: [], chapters: [], focusSeriesId: requestedSeriesId, focusChapterId, focusRequestId, hasError: true }
+    return {
+      items: [],
+      series: [],
+      chapters: [],
+      focusSeriesId: requestedSeriesId,
+      focusChapterId,
+      focusRequestId,
+      hasError: true
+    }
   }
 }
 

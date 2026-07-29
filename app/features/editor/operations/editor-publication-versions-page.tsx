@@ -77,7 +77,9 @@ export function EditorPublicationVersionsPage({
       <OperationDialogPanel icon={Library} title={t('operations.updateVersionSection')}>
         <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-2'>
           <select name='versionId' required className={operationInput} defaultValue=''>
-            <option value='' disabled>{t('operations.selectPublicationVersion')}</option>
+            <option value='' disabled>
+              {t('operations.selectPublicationVersion')}
+            </option>
             {versions.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.language} · {item.versionType ?? item.readingDirection}

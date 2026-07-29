@@ -24,12 +24,7 @@ import { EditorActionToast } from '../components/editor-action-toast'
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
-const HOLDABLE_MANUSCRIPT_STATUSES = new Set([
-  'IN_PRODUCTION',
-  'EDITOR_REVIEW',
-  'EDITOR_REVISION',
-  'READY_FOR_PRINT'
-])
+const HOLDABLE_MANUSCRIPT_STATUSES = new Set(['IN_PRODUCTION', 'EDITOR_REVIEW', 'EDITOR_REVISION', 'READY_FOR_PRINT'])
 
 export function EditorChapterReviewPage({
   data,

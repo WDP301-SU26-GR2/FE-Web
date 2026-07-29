@@ -11,7 +11,9 @@ export interface TaskContextPickerProps {
   contextLocks?: {
     assistant?: boolean
     series?: boolean
+    page?: boolean
   }
+  stageId?: string
   /** Shared composer state (must be a SINGLE instance across the dialog). */
   composer: UseTaskComposerDataResult
   selected: {
@@ -21,6 +23,7 @@ export interface TaskContextPickerProps {
     pageId?: string
     pageIds: string[]
     regionIds: string[]
+    stageId?: string
   }
   onChange: (next: {
     assignmentId?: string
@@ -30,6 +33,7 @@ export interface TaskContextPickerProps {
     pageId?: string
     pageIds?: string[]
     regionIds?: string[]
+    stageId?: string
   }) => void
   className?: string
 }
@@ -53,7 +57,8 @@ export function TaskContextPicker({
   contextLocks,
   composer,
   selected,
-  onChange
+  onChange,
+  stageId
 }: TaskContextPickerProps) {
   const { t } = useTranslation('mangaka')
   const { data, setAssignment, setSeries, setChapter, selected: composerSelected, reload } = composer
@@ -77,12 +82,7 @@ export function TaskContextPicker({
       const resolved = val ? assistantByAssignmentId.get(val) : undefined
       onChange({
         assignmentId: val,
-        assistantId: resolved?.assistantId,
-        seriesId: undefined,
-        chapterId: undefined,
-        pageId: undefined,
-        pageIds: [],
-        regionIds: []
+        assistantId: resolved?.assistantId
       })
     },
     [onChange, setAssignment, assistantByAssignmentId]
@@ -98,7 +98,8 @@ export function TaskContextPicker({
         chapterId: undefined,
         pageId: undefined,
         pageIds: [],
-        regionIds: []
+        regionIds: [],
+        stageId: undefined
       })
     },
     [onChange, selected, setSeries]
@@ -108,7 +109,7 @@ export function TaskContextPicker({
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const val = e.target.value || undefined
       setChapter(val)
-      onChange({ ...selected, chapterId: val, pageId: undefined, pageIds: [], regionIds: [] })
+      onChange({ ...selected, chapterId: val, pageId: undefined, pageIds: [], regionIds: [], stageId: undefined })
     },
     [onChange, selected, setChapter]
   )
@@ -120,7 +121,7 @@ export function TaskContextPicker({
   return (
     <div className='space-y-4'>
       {/* Assistant / Assignment selector — shown in studio mode */}
-      {isStudio && (
+      <div className='space-y-1.5'>
         <div className='space-y-1.5'>
           <label htmlFor='assign-task-assignment' className='block text-sm font-medium text-foreground'>
             {t('studio.tasks.composer.selectAssistant')}
@@ -144,7 +145,7 @@ export function TaskContextPicker({
           </select>
           {data.errors.assignments && <p className='text-xs text-destructive'>{data.errors.assignments}</p>}
         </div>
-      )}
+      </div>
 
       {/* Series — shown in studio mode */}
       {isStudio && (
@@ -196,9 +197,35 @@ export function TaskContextPicker({
       )}
 
       {/* Page — shown in studio mode or preset in workbench */}
+      {(selected.chapterId || composerSelected.chapterId) &&
+        (data.loading.stages || data.stages.length > 0 || selected.stageId) && (
+          <div className='space-y-1.5'>
+            <label htmlFor='assign-task-stage' className='block text-sm font-medium text-foreground'>
+              {t('studio.tasks.composer.selectStage')}
+            </label>
+            <select
+              id='assign-task-stage'
+              value={selected.stageId ?? ''}
+              onChange={(event) => onChange({ ...selected, stageId: event.target.value || undefined })}
+              disabled={data.loading.stages}
+              className='w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50'
+            >
+              <option value=''>{t('studio.tasks.composer.selectStagePlaceholder')}</option>
+              {data.stages.map((stage) => (
+                <option key={stage.id} value={stage.id}>
+                  {t('studio.tasks.composer.stageOption', { order: stage.order, name: stage.name })}
+                </option>
+              ))}
+            </select>
+            {data.errors.stages && <p className='text-xs text-destructive'>{data.errors.stages}</p>}
+          </div>
+        )}
+
       <PagePickerWithPopup
         preset={preset}
         composer={composer}
+        stageId={stageId}
+        locked={Boolean(contextLocks?.page)}
         selected={{
           chapterId: selected.chapterId ?? composerSelected.chapterId,
           pageId: selected.pageId,

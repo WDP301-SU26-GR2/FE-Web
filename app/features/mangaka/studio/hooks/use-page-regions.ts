@@ -92,7 +92,7 @@ export function usePageRegions(pageId: string | null | undefined): UsePageRegion
           setRegions([])
           return
         }
-        setError(err instanceof Error ? err.message : t('studio.popup.errors.loadFailed'))
+        setError(extractApiErrorMessage(err, t('studio.popup.errors.loadFailed')))
       } finally {
         if (!signal.aborted) setIsLoading(false)
       }
@@ -120,7 +120,7 @@ export function usePageRegions(pageId: string | null | undefined): UsePageRegion
         const body: CreateRegionBodyDto = { coordinates, regionType }
         const res = await taskControllerCreateRegion({ id: pageId }, body)
         const created = res.data as RegionResDtoOutput
-        refresh()
+        setRegions((current) => [...current, created])
         return created
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('studio.popup.errors.createFailed')))
@@ -129,7 +129,7 @@ export function usePageRegions(pageId: string | null | undefined): UsePageRegion
         setIsMutating(false)
       }
     },
-    [pageId, refresh, t]
+    [pageId, t]
   )
 
   const updateRegion: UsePageRegionsResult['updateRegion'] = useCallback(
@@ -139,9 +139,7 @@ export function usePageRegions(pageId: string | null | undefined): UsePageRegion
         const body: UpdateRegionBodyDto = {
           ...(patch.coordinates ? { coordinates: patch.coordinates } : {}),
           ...(patch.regionType ? { regionType: patch.regionType } : {}),
-          ...(patch.confirmedByMangaka !== undefined
-            ? { confirmedByMangaka: patch.confirmedByMangaka }
-            : {})
+          ...(patch.confirmedByMangaka !== undefined ? { confirmedByMangaka: patch.confirmedByMangaka } : {})
         }
         const res = await taskControllerUpdateRegion({ id: regionId }, body)
         const updated = res.data as RegionResDtoOutput

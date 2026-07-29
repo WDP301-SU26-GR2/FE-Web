@@ -72,7 +72,10 @@
       "revisionRequestFallback": "Please update the submitted work and submit a new version.",
       "regionAssigned": "Region #{{id}}",
       "fullPage": "Full page (no region)",
-      "statusReason": "Note"
+      "statusReason": "Note",
+      "regionCount_one": "{{count}} assigned region",
+      "regionCount_other": "{{count}} assigned regions",
+      "groupTask": "Grouped task"
     },
     "dialog": {
       "title": "Task details",
@@ -84,6 +87,7 @@
       "imageAlt": "Page {{n}}",
       "image": {
         "original": "Original (from Mangaka)",
+        "stageInput": "Stage input (production source)",
         "submitted": "Submitted work",
         "noImage": "No image"
       },
@@ -113,6 +117,8 @@
       "start": "Start task",
       "continueRevision": "Continue revision",
       "submit": "Submit result",
+      "openWorkspace": "Open workspace",
+      "resolveRevision": "Mark revision resolved",
       "resultFile": "Result file",
       "selectedFile": "Selected: {{name}} ({{size}})"
     },
@@ -129,13 +135,64 @@
       "loadFailed": "Could not load your tasks. Please try again.",
       "startFailed": "Could not start the task.",
       "submitFailed": "Could not submit the task result.",
+      "resolveRevisionFailed": "Could not mark the revision as resolved.",
+      "fileTooLarge": "The result file must be 15 MB or smaller.",
       "retry": "Retry",
       "noFileToSubmit": "Please attach the result file key before submitting.",
       "submitSuccess": "Task submitted. Awaiting Mangaka review."
     },
     "success": {
       "started": "Task started.",
-      "revisionStarted": "Revision started. Upload the updated result when ready."
+      "revisionStarted": "Revision started. Upload the updated result when ready.",
+      "revisionResolved": "Revision marked as resolved."
+    },
+    "workspace": {
+      "title": "Task workspace",
+      "description": "Review the production brief, feedback, versions, and submit your work.",
+      "loadFailed": "Could not load this task workspace.",
+      "previewFiles": "Preview files",
+      "viewTaskFiles": "View task files",
+      "statusReason": "Latest note:",
+      "brief": "Production brief",
+      "taskDescription": "Task description from Mangaka",
+      "noDescription": "No additional brief was provided.",
+      "stageInputHint": "This task uses the immutable stage input. Use it as the production source; the page original is reference only.",
+      "legacyInputHint": "This is a legacy task. Use the original page file as its production source.",
+      "mangakaFeedback": "Mangaka feedback",
+      "versions": "Submission history",
+      "versionNumber": "Version {{number}}",
+      "noVersions": "You have not submitted a version yet.",
+      "reviewStatus": {
+        "PENDING": "Awaiting review",
+        "APPROVED": "Approved",
+        "REVISION_REQUESTED": "Revision requested"
+      },
+      "submitTitle": "Submit result",
+      "submitHint": "Upload the completed file to send it to the Mangaka for review.",
+      "revisionTracker": "Revision tracker",
+      "resolveHint": "The revised file has been submitted. You can now mark each completed revision request as resolved.",
+      "resolveAfterSubmit": "Submit the revised file first. Marking this request resolved does not submit your task.",
+      "revisionRound": "Revision round {{round}}"
+    },
+    "resources": {
+      "title": "Files from Mangaka",
+      "description": "Task input from the page and reference files attached by the Mangaka. Assistant submissions are shown separately in submission history.",
+      "stageInput": "Stage input (task source)",
+      "pageOriginal": "Original page file",
+      "pageOriginalReference": "Original page file (reference)",
+      "attachments": "Attached reference files",
+      "noInput": "The Mangaka did not provide a page input file for this task.",
+      "noAttachments": "No additional reference files were attached.",
+      "loadFailed": "Could not load this task file.",
+      "openFile": "Open file"
+    },
+    "submission": {
+      "title": "Submitted version {{number}}",
+      "description": "This is the file submitted by the Assistant for the selected version.",
+      "noFile": "No file was stored for this version.",
+      "imageAlt": "Submitted version {{number}}",
+      "openFile": "Open submitted file",
+      "viewVersion": "View version {{number}}"
     }
   },
   "studio": {
@@ -169,7 +226,9 @@
       "noReason": "No reason recorded",
       "ended": "Started {{date}}",
       "taskTypesTitle": "Assigned task types",
+      "loadingDetails": "Loading collaboration details...",
       "activeNowBadge": "Active now",
+      "notActiveNow": "This collaboration is still ACTIVE in the record, but it is outside its hire period. New tasks cannot be assigned until the Mangaka renews or reassigns it.",
       "endedBadge": "Ended"
     },
     "pagination": {
@@ -183,7 +242,12 @@
     },
     "error": {
       "loadFailed": "Could not load your studio assignments. Please try again.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "detailFailed": "Could not load collaboration details."
+    },
+    "actions": {
+      "viewDetails": "Details",
+      "hideDetails": "Hide details"
     }
   },
   "invites": {
@@ -215,11 +279,14 @@
       "hireWindowNoEnd": "From {{from}}",
       "seriesNone": "No series context",
       "taskTypesTitle": "Will work on",
+      "loadingDetails": "Loading invite details...",
       "receivedAt": "Received {{date}}"
     },
     "actions": {
       "accept": "Accept",
-      "decline": "Decline"
+      "decline": "Decline",
+      "viewDetails": "Details",
+      "hideDetails": "Hide details"
     },
     "pagination": {
       "previousPage": "Previous page",
@@ -234,7 +301,8 @@
       "loadFailed": "Could not load your invites. Please try again.",
       "acceptFailed": "Could not accept the invite.",
       "declineFailed": "Could not decline the invite.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "detailFailed": "Could not load invite details."
     },
     "success": {
       "accepted": "Invite accepted. A new studio assignment was created.",

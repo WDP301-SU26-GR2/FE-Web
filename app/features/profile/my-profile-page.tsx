@@ -16,22 +16,13 @@ import { ProfileEditForm } from './components/profile-edit-form'
 import { AccountInfoSection } from './components/account-info-section'
 import { AccountEditSection } from './components/account-edit-section'
 
-type ProfileResult =
-  | { kind: 'ready'; data: MyProfileData }
-  | { kind: 'empty' }
-  | { kind: 'error'; message: string }
+type ProfileResult = { kind: 'ready'; data: MyProfileData } | { kind: 'empty' } | { kind: 'error'; message: string }
 
-type ProfileLoadResult =
-  | { status: 'loading' }
-  | { status: 'ready'; outcome: ProfileResult }
+type ProfileLoadResult = { status: 'loading' } | { status: 'ready'; outcome: ProfileResult }
 
-type AccountResult =
-  | { kind: 'ready'; data: AccountInfo }
-  | { kind: 'error'; message: string }
+type AccountResult = { kind: 'ready'; data: AccountInfo } | { kind: 'error'; message: string }
 
-type AccountLoadResult =
-  | { status: 'loading' }
-  | { status: 'ready'; outcome: AccountResult }
+type AccountLoadResult = { status: 'loading' } | { status: 'ready'; outcome: AccountResult }
 
 const EMPTY_MANGAKA: MyProfileData = {
   mode: 'mangaka',
@@ -196,9 +187,7 @@ export function MyProfilePage({ mode }: { mode: ProfileMode }) {
         : EMPTY_ASSISTANT
 
   const accountData =
-    accountResult.status === 'ready' && accountResult.outcome.kind === 'ready'
-      ? accountResult.outcome.data
-      : null
+    accountResult.status === 'ready' && accountResult.outcome.kind === 'ready' ? accountResult.outcome.data : null
 
   function handleProfileSaved() {
     setReloadKey((k) => k + 1)
@@ -215,11 +204,7 @@ export function MyProfilePage({ mode }: { mode: ProfileMode }) {
       {/* Account Info Section */}
       {accountData ? (
         editMode === 'account' ? (
-          <AccountEditSection
-            data={accountData}
-            onCancel={() => setEditMode('none')}
-            onSaved={handleAccountSaved}
-          />
+          <AccountEditSection data={accountData} onCancel={() => setEditMode('none')} onSaved={handleAccountSaved} />
         ) : (
           <AccountInfoSection data={accountData} onEdit={() => setEditMode('account')} />
         )
@@ -240,11 +225,7 @@ export function MyProfilePage({ mode }: { mode: ProfileMode }) {
           onSaved={handleProfileSaved}
         />
       ) : (
-        <ProfileView
-          mode={mode}
-          data={profileData.data}
-          onEdit={() => setEditMode('profile')}
-        />
+        <ProfileView mode={mode} data={profileData.data} onEdit={() => setEditMode('profile')} />
       )}
     </div>
   )

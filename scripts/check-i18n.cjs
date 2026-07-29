@@ -24,7 +24,9 @@ function loadAll(dir, ns) {
 }
 
 // Parity
-for (const ns of ['common', 'welcome', 'auth', 'mangaka', 'assistant', 'admin', 'editor', 'board']) {
+const namespaces = ['common', 'welcome', 'auth', 'profile', 'mangaka', 'assistant', 'admin', 'editor', 'board']
+
+for (const ns of namespaces) {
   const map = loadAll('app/locales', ns)
   const missing = []
   for (const [k, langs] of map.entries()) {
@@ -40,15 +42,12 @@ for (const ns of ['common', 'welcome', 'auth', 'mangaka', 'assistant', 'admin', 
 }
 
 // Key coverage
-const enByNs = {
-  common: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/common.json', 'utf8')))),
-  welcome: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/welcome.json', 'utf8')))),
-  auth: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/auth.json', 'utf8')))),
-  mangaka: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/mangaka.json', 'utf8')))),
-  assistant: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/assistant.json', 'utf8')))),
-  admin: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/admin.json', 'utf8')))),
-  editor: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/editor.json', 'utf8')))),
-  board: new Set(flatten(JSON.parse(fs.readFileSync('app/locales/en/board.json', 'utf8'))))
+const enByNs = Object.fromEntries(
+  namespaces.map((ns) => [ns, new Set(flatten(JSON.parse(fs.readFileSync(`app/locales/en/${ns}.json`, 'utf8'))))])
+)
+
+function hasTranslationKey(keys, key) {
+  return keys?.has(key) || keys?.has(`${key}_one`) || keys?.has(`${key}_other`)
 }
 
 function scan(dir) {
@@ -63,19 +62,22 @@ function scan(dir) {
       const nsMatch = txt.match(
         /useTranslation\(\s*(?:\[['"](\w+)['"]\s*,\s*['"](\w+)['"]\]|\[['"](\w+)['"]\]|['"](\w+)['"])/
       )
+      const roleNamespace = ['mangaka', 'assistant', 'admin', 'editor', 'board'].find((role) =>
+        p.includes(`${path.sep}${role}${path.sep}`)
+      )
       const namespaces = nsMatch
         ? nsMatch[1]
           ? [nsMatch[1], nsMatch[2]]
           : nsMatch[3]
             ? [nsMatch[3]]
             : [nsMatch[4]]
-        : ['common']
+        : [roleNamespace ?? 'common']
 
       const re = /\bt\(\s*['"]([a-zA-Z][\w.]*)['"]/g
       let m
       while ((m = re.exec(txt)) !== null) {
         const key = m[1]
-        const found = namespaces.some((ns) => enByNs[ns]?.has(key))
+        const found = namespaces.some((ns) => hasTranslationKey(enByNs[ns], key))
         if (!found) missing.push(`${p} [${namespaces.join(',')}] -> ${key}`)
       }
     }

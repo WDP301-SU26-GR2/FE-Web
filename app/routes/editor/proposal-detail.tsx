@@ -97,9 +97,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ? 'rejected'
         : intent === 'reopenReview'
           ? 'reviewReopened'
-        : intent.includes('Annotation')
-          ? 'annotationUpdated'
-          : 'revisionRequested'
+          : intent.includes('Annotation')
+            ? 'annotationUpdated'
+            : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
     const code =
@@ -109,7 +109,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     const errorKey =
       code === 'Error.NotAssignedEditor'
         ? 'notAssigned'
-        : code === 'Error.InvalidProposalState' || code === 'Error.InvalidNameState' || code === 'Error.InvalidSeriesTransition'
+        : code === 'Error.InvalidProposalState' ||
+            code === 'Error.InvalidNameState' ||
+            code === 'Error.InvalidSeriesTransition'
           ? 'invalidState'
           : 'actionFailed'
     return { ok: false, intent, errorKey }

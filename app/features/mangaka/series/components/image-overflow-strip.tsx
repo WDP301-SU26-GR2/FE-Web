@@ -110,10 +110,7 @@ export function ImageOverflowStrip({
     }
 
     // 2) Width cap: how many slots fit at `preferred` width?
-    const fitsAtPreferred = Math.max(
-      1,
-      Math.floor((width + gap) / (preferred + gap))
-    )
+    const fitsAtPreferred = Math.max(1, Math.floor((width + gap) / (preferred + gap)))
 
     if (items.length <= fitsAtPreferred) {
       // Everything fits — slots are `flex-1` so they stretch to fill the row;
@@ -149,12 +146,7 @@ export function ImageOverflowStrip({
           aria-label={item.alt}
           className='group relative block aspect-square flex-1 min-w-0 cursor-pointer overflow-hidden rounded-md border border-border bg-muted transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         >
-          <SignedImage
-            r2Key={item.r2Key}
-            alt={item.alt}
-            aspectClassName='aspect-square'
-            className='h-full w-full'
-          />
+          <SignedImage r2Key={item.r2Key} alt={item.alt} aspectClassName='aspect-square' className='h-full w-full' />
         </button>
       ))}
 

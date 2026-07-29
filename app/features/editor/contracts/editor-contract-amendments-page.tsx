@@ -6,7 +6,12 @@ import type {
   ContractStatusProgressResDtoOutput
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { ContractActionMessage, ContractDialogPanel, ContractPageLayout, contractInput } from './components/contract-shared'
+import {
+  ContractActionMessage,
+  ContractDialogPanel,
+  ContractPageLayout,
+  contractInput
+} from './components/contract-shared'
 
 export function EditorContractAmendmentsPage({
   contract,

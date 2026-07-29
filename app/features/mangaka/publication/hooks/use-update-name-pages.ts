@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { chapterNameControllerUpdatePages } from '~/api/operations/names/names'
+import { chapterNameControllerAddPage, chapterNameControllerUpdatePages } from '~/api/operations/names/names'
 import type { NameResDtoOutput } from '~/api/model/names'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
@@ -12,7 +12,12 @@ export type NamePageInput = {
 }
 
 type UseUpdateNamePagesResult = {
-  updatePages: (input: { chapterId: string; nameId: string; pages: NamePageInput[] }) => Promise<NameResDtoOutput | null>
+  updatePages: (input: {
+    chapterId: string
+    nameId: string
+    pages: NamePageInput[]
+  }) => Promise<NameResDtoOutput | null>
+  addPage: (input: { chapterId: string; nameId: string; page: NamePageInput }) => Promise<NameResDtoOutput | null>
   isUpdating: boolean
 }
 
@@ -56,5 +61,22 @@ export function useUpdateNamePages(): UseUpdateNamePagesResult {
     [t]
   )
 
-  return { updatePages, isUpdating }
+  const addPage = useCallback(
+    async (input: { chapterId: string; nameId: string; page: NamePageInput }) => {
+      setIsUpdating(true)
+      try {
+        const res = await chapterNameControllerAddPage({ id: input.chapterId, nameId: input.nameId }, input.page)
+        toast.success(t('publication.nameSection.edit.success'))
+        return res.data as NameResDtoOutput
+      } catch (err) {
+        toast.error(extractApiErrorMessage(err, t('publication.error.generic')))
+        return null
+      } finally {
+        setIsUpdating(false)
+      }
+    },
+    [t]
+  )
+
+  return { updatePages, addPage, isUpdating }
 }

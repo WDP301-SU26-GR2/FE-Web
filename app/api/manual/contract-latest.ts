@@ -1,11 +1,4 @@
 import type { ContractResDtoOutput } from '~/api/model/contracts'
-import { customFetch } from '~/api/mutator/custom-fetch'
-
-export type ContractPdfResponse = {
-  downloadUrl: string
-  expiresAt: string
-  key: string
-}
 
 export type ContractBoardDecisionRelation = {
   id: string
@@ -22,12 +15,6 @@ export type ContractBoardDecisionRelation = {
 
 export type ContractWithLatestRelations = ContractResDtoOutput & {
   boardDecision?: ContractBoardDecisionRelation | null
-}
-
-export function getContractPdf(id: string) {
-  return customFetch<{ data: ContractPdfResponse; status: number }>(`/contracts/${encodeURIComponent(id)}/pdf`, {
-    method: 'GET'
-  })
 }
 
 export function getContractBoardRoster(contract: ContractResDtoOutput): string[] {

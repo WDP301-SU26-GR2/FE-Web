@@ -311,7 +311,6 @@ function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: N
 
   if (['PROPOSAL', 'SERIES', 'FRANCHISE'].includes(prefix)) return `/dashboard/mangaka/series/${id}`
   if (prefix === 'CONTRACT') return `/dashboard/mangaka/contracts/${id}`
-  if (prefix === 'REPRINT') return `/dashboard/mangaka/reprints?requestId=${id}`
   if (prefix === 'TRANSFER') return `/dashboard/mangaka/transfers?requestId=${id}`
   if (prefix === 'TASK') return `/dashboard/mangaka/studio?taskId=${id}`
   return null

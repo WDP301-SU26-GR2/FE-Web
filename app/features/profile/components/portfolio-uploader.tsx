@@ -59,11 +59,7 @@ export function PortfolioUploader({ keys, onChange, disabled }: PortfolioUploade
           setLocalError(t('errors.portfolioSize', { max: 15 }))
           break
         }
-        const { key, error } = await uploadToR2WithMessage(
-          file,
-          t('errors.uploadGeneric'),
-          'REFERENCE'
-        )
+        const { key, error } = await uploadToR2WithMessage(file, t('errors.uploadGeneric'), 'REFERENCE')
         if (!key) {
           setLocalError(error ?? t('errors.uploadGeneric'))
           break
@@ -88,15 +84,8 @@ export function PortfolioUploader({ keys, onChange, disabled }: PortfolioUploade
     <div className='space-y-2'>
       <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
         {keys.map((key) => (
-          <div
-            key={key}
-            className='group relative overflow-hidden rounded-md border border-border bg-muted/40'
-          >
-            <SignedImage
-              r2Key={key}
-              alt={t('portfolioAlt', { key })}
-              aspectClassName='aspect-square'
-            />
+          <div key={key} className='group relative overflow-hidden rounded-md border border-border bg-muted/40'>
+            <SignedImage r2Key={key} alt={t('portfolioAlt', { key })} aspectClassName='aspect-square' />
             {!disabled && (
               <button
                 type='button'
@@ -116,11 +105,7 @@ export function PortfolioUploader({ keys, onChange, disabled }: PortfolioUploade
             disabled={isUploading}
             className='flex aspect-square flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border bg-muted/20 text-muted-foreground transition-colors hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60'
           >
-            {isUploading ? (
-              <Loader2 className='h-5 w-5 animate-spin' />
-            ) : (
-              <ImagePlus className='h-5 w-5' />
-            )}
+            {isUploading ? <Loader2 className='h-5 w-5 animate-spin' /> : <ImagePlus className='h-5 w-5' />}
             <span className='text-xs font-medium'>{t('addPortfolio')}</span>
             <span className='text-[10px] text-muted-foreground/70'>
               {t('portfolioSlotsLeft', { count: slotsLeft })}
@@ -138,19 +123,12 @@ export function PortfolioUploader({ keys, onChange, disabled }: PortfolioUploade
         aria-label={t('addPortfolio')}
       />
       {localError && <p className='text-sm text-destructive'>{localError}</p>}
-      {!disabled && (
-        <p className='text-xs text-muted-foreground'>{t('portfolioHint')}</p>
-      )}
+      {!disabled && <p className='text-xs text-muted-foreground'>{t('portfolioHint')}</p>}
     </div>
   )
 }
 
-const ALLOWED_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'application/pdf'
-])
+const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf'])
 const MAX_BYTES = 15 * 1024 * 1024
 
 function isAllowedType(type: string): boolean {

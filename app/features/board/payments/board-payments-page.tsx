@@ -212,7 +212,10 @@ function PaymentCard({
                   label={t('payments.receiver')}
                   value={payment.receiver?.displayName ?? payment.receiverId}
                 />
-                <PaymentFact label={t('payments.condition')} value={payment.conditionId && shortId(payment.conditionId)} />
+                <PaymentFact
+                  label={t('payments.condition')}
+                  value={payment.conditionId && shortId(payment.conditionId)}
+                />
                 <PaymentFact label={t('payments.createdAt')} value={formatDate(payment.createdAt)} />
                 <PaymentFact label={t('payments.descriptionLabel')} value={payment.description} />
               </dl>
@@ -302,15 +305,7 @@ function PaymentCard({
   )
 }
 
-function PaymentFact({
-  label,
-  value,
-  emptyValue
-}: {
-  label: string
-  value?: ReactNode
-  emptyValue?: string
-}) {
+function PaymentFact({ label, value, emptyValue }: { label: string; value?: ReactNode; emptyValue?: string }) {
   const { t } = useTranslation('board')
   return (
     <div>

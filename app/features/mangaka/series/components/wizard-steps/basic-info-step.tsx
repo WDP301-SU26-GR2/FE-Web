@@ -127,7 +127,7 @@ export function BasicInfoStep({
               <button
                 type='button'
                 onClick={clearCover}
-                className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow transition-all hover:bg-black/80 cursor-pointer'
+                className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-background/70 text-foreground shadow transition-all hover:bg-background/90 cursor-pointer'
                 aria-label={t('wizard.removeImage')}
               >
                 <X className='h-3.5 w-3.5' />
@@ -146,7 +146,7 @@ export function BasicInfoStep({
               <button
                 type='button'
                 onClick={clearCover}
-                className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow transition-all hover:bg-black/80 cursor-pointer'
+                className='absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-background/70 text-foreground shadow transition-all hover:bg-background/90 cursor-pointer'
                 aria-label={t('wizard.removeImage')}
               >
                 <X className='h-3.5 w-3.5' />

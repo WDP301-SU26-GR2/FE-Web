@@ -34,7 +34,7 @@ export function TaskFields({
   className
 }: TaskFieldsProps) {
   const { t } = useTranslation('mangaka')
-  const types = allowedTaskTypes ?? TASK_TYPES
+  const types = TASK_TYPES
 
   const handleTaskTypeSelect = useCallback(
     (type: CreateTaskBodyDto['taskType']) => {
@@ -46,7 +46,12 @@ export function TaskFields({
   const handlePriorityInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value
-      onPriorityChange(val === '' ? undefined : parseInt(val, 10))
+      if (val === '') {
+        onPriorityChange(undefined)
+        return
+      }
+      const priority = Number(val)
+      onPriorityChange(Number.isInteger(priority) && priority > 0 ? priority : undefined)
     },
     [onPriorityChange]
   )
@@ -57,21 +62,25 @@ export function TaskFields({
       <fieldset className='space-y-2'>
         <legend className='text-sm font-medium text-foreground'>{t('studio.tasks.composer.taskType')}</legend>
         <div className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
-          {types.map((type) => (
-            <button
-              key={type}
-              type='button'
-              onClick={() => handleTaskTypeSelect(type)}
-              aria-pressed={taskType === type}
-              className={`rounded-lg border px-3 py-2 text-center text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                taskType === type
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-card text-foreground hover:border-primary/50'
-              }`}
-            >
-              {t(`studio.tasks.composer.taskTypeEnum.${type}`)}
-            </button>
-          ))}
+          {types.map((type) => {
+            const isAllowed = !allowedTaskTypes || allowedTaskTypes.includes(type)
+            return (
+              <button
+                key={type}
+                type='button'
+                onClick={() => handleTaskTypeSelect(type)}
+                aria-pressed={taskType === type}
+                disabled={!isAllowed}
+                className={`rounded-lg border px-3 py-2 text-center text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-45 ${
+                  taskType === type
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card text-foreground hover:border-primary/50'
+                }`}
+              >
+                {t(`studio.tasks.composer.taskTypeEnum.${type}`)}
+              </button>
+            )
+          })}
         </div>
       </fieldset>
 
@@ -98,11 +107,11 @@ export function TaskFields({
         <input
           id='task-priority'
           type='number'
-          min='0'
+          min='1'
           step='1'
           value={priority ?? ''}
           onChange={handlePriorityInput}
-          placeholder='0'
+          placeholder='1'
           className='w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring'
         />
         <p className='text-xs text-muted-foreground'>{t('studio.tasks.composer.priorityHint')}</p>

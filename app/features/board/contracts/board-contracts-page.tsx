@@ -10,24 +10,39 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
   const [status, setStatus] = useState('')
   const [contractType, setContractType] = useState('')
   const statuses = [...new Set(contracts.map((contract) => contract.status))]
-  const filteredContracts = contracts.filter((contract) =>
-    (!search || `${contract.series?.title ?? ''} ${contract.seriesId}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!status || contract.status === status) &&
-    (!contractType || contract.contractType === contractType)
+  const filteredContracts = contracts.filter(
+    (contract) =>
+      (!search ||
+        `${contract.series?.title ?? ''} ${contract.seriesId}`.toLowerCase().includes(search.toLowerCase())) &&
+      (!status || contract.status === status) &&
+      (!contractType || contract.contractType === contractType)
   )
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('contracts.title')} description={t('contracts.description')} />
       {hasError && <p className='text-sm text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-3'>
-        <input className={boardInput} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('filters.searchContracts')} />
+        <input
+          className={boardInput}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t('filters.searchContracts')}
+        />
         <select className={boardInput} value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value=''>{t('filters.allContractStatuses')}</option>
-          {statuses.map((value) => <option key={value} value={value}>{t(`filters.contractStatuses.${value}`, { defaultValue: value })}</option>)}
+          {statuses.map((value) => (
+            <option key={value} value={value}>
+              {t(`filters.contractStatuses.${value}`, { defaultValue: value })}
+            </option>
+          ))}
         </select>
         <select className={boardInput} value={contractType} onChange={(event) => setContractType(event.target.value)}>
           <option value=''>{t('filters.allContractTypes')}</option>
-          {['FULL_BUYOUT', 'REVENUE_SHARE'].map((value) => <option key={value} value={value}>{t(`filters.contractTypes.${value}`)}</option>)}
+          {['FULL_BUYOUT', 'REVENUE_SHARE'].map((value) => (
+            <option key={value} value={value}>
+              {t(`filters.contractTypes.${value}`)}
+            </option>
+          ))}
         </select>
       </div>
       <div className='grid gap-4 md:grid-cols-2'>

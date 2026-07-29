@@ -77,7 +77,11 @@ function EditorProfileDialog({ profile, onClose }: { profile: StaffProfileResDto
           />
         </label>
         <div className='flex justify-end gap-2 border-t border-border pt-4'>
-          <button type='button' onClick={onClose} className='h-10 rounded-md border border-border px-4 text-sm font-bold'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+          >
             {t('actions.cancel')}
           </button>
           <button className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground'>

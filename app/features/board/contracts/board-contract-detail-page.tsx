@@ -19,9 +19,7 @@ import {
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
-import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
-import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
-import { PaymentConditionsSummary } from '~/features/contracts/components/payment-conditions-summary'
+import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
@@ -194,8 +192,8 @@ export function BoardContractDetailPage({
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
             <p>
-              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend sẽ
-              kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
+              Chưa xác minh được danh sách thành viên phiên họp từ phía giao diện. Bạn vẫn có thể gửi thao tác; backend
+              sẽ kiểm tra quyền Hội đồng trước khi phê duyệt hoặc ký.
             </p>
           </div>
         )}

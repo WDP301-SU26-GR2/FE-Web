@@ -36,7 +36,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: Boolean(chapterId && (review?.status !== 200 || escalated?.status !== 200))
     }
   } catch {
-    return { requests: [], series: [], chapters: [], seriesId: requestedSeriesId, chapterId: requestedChapterId, hasError: true }
+    return {
+      requests: [],
+      series: [],
+      chapters: [],
+      seriesId: requestedSeriesId,
+      chapterId: requestedChapterId,
+      hasError: true
+    }
   }
 }
 

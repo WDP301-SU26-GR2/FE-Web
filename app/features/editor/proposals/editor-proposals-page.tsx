@@ -18,9 +18,10 @@ export function EditorProposalsPage({
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const statuses = [...new Set(items.map((item) => item.proposal?.status ?? item.status))]
-  const filteredItems = items.filter((item) =>
-    (!search || `${item.title} ${item.proposal?.synopsis ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!status || (item.proposal?.status ?? item.status) === status)
+  const filteredItems = items.filter(
+    (item) =>
+      (!search || `${item.title} ${item.proposal?.synopsis ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
+      (!status || (item.proposal?.status ?? item.status) === status)
   )
   return (
     <div className='space-y-6 pb-12'>
@@ -34,10 +35,19 @@ export function EditorProposalsPage({
       </header>
       {hasError && <ErrorBanner />}
       <div className='grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-2'>
-        <input className={filterInput} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('filters.searchProposals')} />
+        <input
+          className={filterInput}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t('filters.searchProposals')}
+        />
         <select className={filterInput} value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value=''>{t('filters.allProposalStatuses')}</option>
-          {statuses.map((value) => <option key={value} value={value}>{t(`filters.proposalStatuses.${value}`, { defaultValue: value })}</option>)}
+          {statuses.map((value) => (
+            <option key={value} value={value}>
+              {t(`filters.proposalStatuses.${value}`, { defaultValue: value })}
+            </option>
+          ))}
         </select>
       </div>
       <ProposalSection
@@ -54,7 +64,8 @@ export function EditorProposalsPage({
   )
 }
 
-const filterInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
+const filterInput =
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary'
 
 function ProposalSection({
   title,

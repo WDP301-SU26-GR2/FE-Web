@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { chapterNameControllerList } from '~/api/operations/names/names'
+import { chapterNameControllerGetOne, chapterNameControllerList } from '~/api/operations/names/names'
 import type { NameListResDtoOutput, NameListResDtoOutputItemsItem } from '~/api/model/names'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseChapterNameResult = {
   name: NameListResDtoOutputItemsItem | null
@@ -60,14 +61,22 @@ export function useChapterName(chapterId: string | null | undefined): UseChapter
           if (sa !== sb) return sb - sa
           return b.version - a.version
         })
-        setName(sorted[0] ?? null)
+        const selected = sorted[0]
+        if (!selected) {
+          setName(null)
+        } else {
+          const detail = await chapterNameControllerGetOne({ id: cid, nameId: selected.id }, { signal })
+          if (!signal.aborted) {
+            setName(detail.data as unknown as NameListResDtoOutputItemsItem)
+          }
+        }
       } catch (err: unknown) {
         if (signal.aborted) return
         if (err instanceof Error && err.name === 'AbortError') return
         if (isFetchError(err) && (err.status === 403 || err.status === 404)) {
           setName(null)
         } else {
-          setError(err instanceof Error ? err.message : t('publication.error.generic'))
+          setError(extractApiErrorMessage(err, t('publication.error.generic')))
         }
       }
       if (!signal.aborted) {
@@ -83,7 +92,6 @@ export function useChapterName(chapterId: string | null | undefined): UseChapter
       setName(null)
       return
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchName(chapterId)
     return () => abortRef.current?.abort()
   }, [chapterId, reloadToken, fetchName])

@@ -23,7 +23,8 @@ export function EditorActionToast({
     lastData.current = data
 
     const message = data.ok
-      ? data.message || t(`messages.${data.messageKey ?? data.intent}`, { defaultValue: t('messages.operationCompleted') })
+      ? data.message ||
+        t(`messages.${data.messageKey ?? data.intent}`, { defaultValue: t('messages.operationCompleted') })
       : data.message || t(`errors.${data.errorKey ?? 'actionFailed'}`)
     const id = `${scope}-${data.intent}-${data.ok ? 'success' : 'error'}-${data.messageKey ?? data.errorKey ?? ''}`
 

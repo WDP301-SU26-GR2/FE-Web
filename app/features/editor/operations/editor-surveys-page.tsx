@@ -426,9 +426,7 @@ function RankingResults({
         </p>
       )}
       {!rankings.length && (
-        <EmptySurveyData
-          text={reflected ? t('operations.emptyRanking') : t('operations.emptyProvisionalRanking')}
-        />
+        <EmptySurveyData text={reflected ? t('operations.emptyRanking') : t('operations.emptyProvisionalRanking')} />
       )}
     </div>
   )

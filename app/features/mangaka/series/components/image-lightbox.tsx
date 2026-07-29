@@ -45,7 +45,7 @@ export function ImageLightbox({ r2Key, alt, open, onClose }: ImageLightboxProps)
       role='dialog'
       aria-modal='true'
       aria-label={alt}
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-6'
       onClick={onClose}
     >
       <button
@@ -55,7 +55,7 @@ export function ImageLightbox({ r2Key, alt, open, onClose }: ImageLightboxProps)
           onClose()
         }}
         aria-label={t('lightbox.closePreview')}
-        className='absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60 cursor-pointer'
+        className='absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer'
       >
         <X className='h-5 w-5' />
       </button>

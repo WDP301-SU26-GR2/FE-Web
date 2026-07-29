@@ -80,15 +80,12 @@ export function PageRegionCanvas({
   const [draftRect, setDraftRect] = useState<PixelRect | null>(null)
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
 
-  const handleImgLoad = useCallback(
-    (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const img = e.currentTarget
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
-      }
-    },
-    []
-  )
+  const handleImgLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
+    }
+  }, [])
 
   const clearDraft = useCallback(() => {
     setDraftRect(null)
@@ -177,7 +174,11 @@ export function PageRegionCanvas({
   return (
     <div
       ref={containerRef}
-      className={cn('relative w-full select-none overflow-hidden rounded-md border border-border bg-muted/30', cursorClass, className)}
+      className={cn(
+        'relative w-full select-none overflow-hidden rounded-md border border-border bg-muted/30',
+        cursorClass,
+        className
+      )}
       style={{ aspectRatio: naturalSize ? `${naturalSize.width} / ${naturalSize.height}` : '3 / 4' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -271,9 +272,7 @@ export function PageRegionCanvas({
           {t('studio.popup.noImage')}
         </div>
       )}
-      {imageKey && !isImageReady && (
-        <div className='absolute inset-0 animate-pulse bg-muted/60' aria-busy='true' />
-      )}
+      {imageKey && !isImageReady && <div className='absolute inset-0 animate-pulse bg-muted/60' aria-busy='true' />}
     </div>
   )
 }

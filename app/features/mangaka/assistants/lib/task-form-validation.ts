@@ -20,35 +20,33 @@ export interface TaskFormErrors {
   assets?: string
 }
 
-export function validateTaskForm(values: Partial<TaskFormValues>): TaskFormErrors {
+export type TaskFormTranslator = (key: string) => string
+
+/**
+ * Keeps validation reusable outside React while requiring a translator for
+ * every user-visible validation result.
+ */
+export function validateTaskForm(values: Partial<TaskFormValues>, t: TaskFormTranslator): TaskFormErrors {
   const errors: TaskFormErrors = {}
 
-  if (!values.assistantId) {
-    errors.assistantId = 'Vui lòng chọn trợ lý.'
-  }
-
-  if (!values.pageId) {
-    errors.pageId = 'Vui lòng chọn trang.'
-  }
-
-  if (!values.taskType) {
-    errors.taskType = 'Vui lòng chọn loại công việc.'
-  }
+  if (!values.assistantId) errors.assistantId = t('studio.tasks.composer.validation.assistantRequired')
+  if (!values.pageId) errors.pageId = t('studio.tasks.composer.validation.pageRequired')
+  if (!values.taskType) errors.taskType = t('studio.tasks.composer.validation.taskTypeRequired')
 
   if (values.deadline) {
     const deadlineDate = new Date(values.deadline)
     if (Number.isNaN(deadlineDate.getTime()) || deadlineDate <= new Date()) {
-      errors.deadline = 'Deadline phải ở tương lai.'
+      errors.deadline = t('studio.tasks.composer.validation.deadlineFuture')
     }
   }
 
   if (values.priority !== undefined && values.priority < 0) {
-    errors.priority = 'Độ ưu tiên không được âm.'
+    errors.priority = t('studio.tasks.composer.validation.priorityNonNegative')
   }
 
   return errors
 }
 
 export function hasErrors(errors: TaskFormErrors): boolean {
-  return Object.values(errors).some((e) => !!e)
+  return Object.values(errors).some((error) => !!error)
 }

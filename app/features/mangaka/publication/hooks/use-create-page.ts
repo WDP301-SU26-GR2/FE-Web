@@ -7,7 +7,11 @@ import type { PageResDtoOutput } from '~/api/model/chapters'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseCreatePageResult = {
-  createPage: (input: { chapterId: string; pageNumber: number; originalFile: string }) => Promise<PageResDtoOutput | null>
+  createPage: (input: {
+    chapterId: string
+    pageNumber: number
+    originalFile: string
+  }) => Promise<PageResDtoOutput | null>
   isCreating: boolean
 }
 

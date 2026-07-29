@@ -446,6 +446,7 @@
       "REFLECTED": "Đã chốt xếp hạng"
     },
     "series": "Series",
+    "unknownSeries": "Chưa xác định series",
     "votes": "Phiếu",
     "change": "Đổi hạng",
     "reliability": "Độ tin cậy",

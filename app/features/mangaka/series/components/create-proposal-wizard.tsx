@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
@@ -6,13 +6,14 @@ import { toast } from 'sonner'
 
 import { cn } from '~/shared/lib/cn'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { seriesControllerCreateProposal } from '~/api/operations/series/series'
-import type { CreateProposalResDtoOutput } from '~/api/model/series'
+import type { CreateProposalBodyDto, CreateProposalResDtoOutput } from '~/api/model/series'
 import { BasicInfoStep } from './wizard-steps/basic-info-step'
 import { StorySummaryStep } from './wizard-steps/story-summary-step'
 import { CharacterDesignStep } from './wizard-steps/character-design-step'
 import { ManuscriptDraftsStep } from './wizard-steps/manuscript-drafts-step'
+import { FranchiseProposalFields, type FranchiseProposalValue } from './wizard-steps/franchise-proposal-fields'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -81,6 +82,13 @@ const DEFAULT_FORM: ProposalFormData = {
   namePages: []
 }
 
+const DEFAULT_FRANCHISE_FORM: FranchiseProposalValue = {
+  isDerivative: false,
+  parentSeriesId: '',
+  parentSeriesTitle: '',
+  relationshipType: ''
+}
+
 const STEPS = [
   { key: 'basicInfo', labelKey: 'wizard.step1' },
   { key: 'storySummary', labelKey: 'wizard.step2' },
@@ -144,8 +152,10 @@ export function CreateProposalWizard() {
   const { isAuthenticated } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<ProposalFormData>(DEFAULT_FORM)
+  const [franchiseData, setFranchiseData] = useState<FranchiseProposalValue>(DEFAULT_FRANCHISE_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const submittingRef = useRef(false)
 
   const updateForm = <K extends keyof ProposalFormData>(key: K, value: ProposalFormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }))
@@ -168,6 +178,14 @@ export function CreateProposalWizard() {
         setSubmitError(t('wizard.errors.titleRequired'))
         return
       }
+      if (currentStep === 0 && franchiseData.isDerivative && !franchiseData.parentSeriesId) {
+        setSubmitError(t('wizard.errors.parentSeriesRequired'))
+        return
+      }
+      if (currentStep === 0 && franchiseData.isDerivative && !franchiseData.relationshipType) {
+        setSubmitError(t('wizard.errors.relationshipTypeRequired'))
+        return
+      }
       setCurrentStep((s) => s + 1)
       return
     }
@@ -177,7 +195,14 @@ export function CreateProposalWizard() {
       setSubmitError(t('wizard.errors.unauthenticated'))
       return
     }
+    if (franchiseData.isDerivative && (!franchiseData.parentSeriesId || !franchiseData.relationshipType)) {
+      setSubmitError(t('wizard.errors.franchisePairRequired'))
+      setCurrentStep(0)
+      return
+    }
+    if (submittingRef.current) return
 
+    submittingRef.current = true
     setIsSubmitting(true)
     try {
       // 1) Upload cover (optional) — skip if user didn't set one
@@ -200,37 +225,51 @@ export function CreateProposalWizard() {
       )
 
       // 4) Build API body — matches `CreateProposalBodyDto` in swagger.json.
-      const body = {
+      const body: CreateProposalBodyDto = {
         title: formData.seriesTitle.trim(),
         coverImage: coverKey || undefined,
-        genres: formData.genres,
-        demographic: formData.demographic || undefined,
-        publicationType: formData.publicationType || undefined,
+        genres: formData.genres as CreateProposalBodyDto['genres'],
+        demographic: (formData.demographic || undefined) as CreateProposalBodyDto['demographic'],
+        publicationType: (formData.publicationType || undefined) as CreateProposalBodyDto['publicationType'],
         estimatedLength: formData.estimatedLength ? Number(formData.estimatedLength) : undefined,
         synopsis: formData.synopsis || undefined,
         characterDesigns: characterKeys.map((c) => c.key),
         namePages: namePageKeys.map((p, idx) => ({
           pageNumber: p.pageNumber || idx + 1,
           fileUrl: p.key
-        }))
+        })),
+        ...(franchiseData.isDerivative
+          ? {
+              parentSeriesId: franchiseData.parentSeriesId,
+              relationshipType: franchiseData.relationshipType || undefined
+            }
+          : {})
       }
 
-      const response = await seriesControllerCreateProposal(
-        body as unknown as Parameters<typeof seriesControllerCreateProposal>[0]
-      )
+      const response = await seriesControllerCreateProposal(body)
 
       // 5) Done — go back to My Series
       toast.success(t('wizard.createSuccess'))
       navigate(`/dashboard/mangaka/series/${(response.data as CreateProposalResDtoOutput).series.id}`)
     } catch (err) {
-      setSubmitError(extractApiErrorMessage(err, t('wizard.errors.submitFailed')))
+      if (extractApiErrorCode(err) === 'Error.ParentSeriesNotFound') {
+        setSubmitError(t('wizard.errors.parentSeriesNotFound'))
+      } else {
+        const fallback = t('wizard.errors.submitFailed')
+        const message = extractApiErrorMessage(err, fallback).trim()
+        setSubmitError(message.startsWith('Error.') ? fallback : message)
+      }
     } finally {
+      submittingRef.current = false
       setIsSubmitting(false)
     }
   }
 
   const stepComponents: ReactNode[] = [
-    <BasicInfoStep key='step1' form={formData} onChange={updateForm} />,
+    <div key='step1' className='space-y-6'>
+      <BasicInfoStep form={formData} onChange={updateForm} />
+      <FranchiseProposalFields value={franchiseData} onChange={setFranchiseData} />
+    </div>,
     <StorySummaryStep key='step2' form={formData} onChange={updateForm} />,
     <CharacterDesignStep key='step3' form={formData} onChange={updateForm} />,
     <ManuscriptDraftsStep key='step4' form={formData} onChange={updateForm} />

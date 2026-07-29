@@ -148,15 +148,7 @@ export function EditorContractPaymentsPage({
   )
 }
 
-function PaymentFact({
-  label,
-  value,
-  emptyValue
-}: {
-  label: string
-  value?: ReactNode
-  emptyValue?: string
-}) {
+function PaymentFact({ label, value, emptyValue }: { label: string; value?: ReactNode; emptyValue?: string }) {
   const { t } = useTranslation('editor')
   return (
     <div>

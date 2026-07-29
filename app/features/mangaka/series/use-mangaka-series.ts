@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseMangakaSeriesResult = {
   items: SeriesListResDtoOutputItemsItem[]
@@ -21,6 +23,7 @@ type UseMangakaSeriesResult = {
  * 403/404 = Mangaka has no series yet (empty list, not a hard error).
  */
 export function useMangakaSeries(): UseMangakaSeriesResult {
+  const { t } = useTranslation('common')
   const [items, setItems] = useState<SeriesListResDtoOutputItemsItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +50,7 @@ export function useMangakaSeries(): UseMangakaSeriesResult {
         if (isFetchError(err) && (err.status === 403 || err.status === 404)) {
           setItems([])
         } else {
-          setError(err instanceof Error ? err.message : 'errors.unknown')
+          setError(extractApiErrorMessage(err, t('errors.unknown')))
         }
       }
       if (!signal.aborted) {
@@ -56,7 +59,7 @@ export function useMangakaSeries(): UseMangakaSeriesResult {
     })()
 
     return () => abortRef.current?.abort()
-  }, [])
+  }, [t])
 
   return { items, isLoading, error }
 }

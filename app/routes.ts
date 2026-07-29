@@ -27,14 +27,22 @@ export default [
       index('routes/mangaka/index.tsx'),
       route('series', 'routes/mangaka/series.tsx'),
       route('series/propose', 'routes/mangaka/propose-series.tsx'),
+      route('series/franchise-consent/:id', 'routes/mangaka/franchise-consent.tsx'),
+      route('chapters/:id', 'routes/mangaka/chapter-notification.tsx'),
       route('series/:id/edit', 'routes/mangaka/series-edit.tsx'),
       route('series/:id', 'routes/mangaka/series-detail.tsx'),
       route('contracts', 'routes/mangaka/contracts.tsx'),
       route('contracts/:id', 'routes/mangaka/contract-detail.tsx'),
-      route('reprints', 'routes/mangaka/reprints.tsx'),
+      route('contracts/:id/versions/:versionId', 'routes/mangaka/contract-version-detail.tsx'),
+      route('payments', 'routes/mangaka/payments.tsx'),
+      route('payments/:id', 'routes/mangaka/payment-detail.tsx'),
+      route('deadlines', 'routes/mangaka/deadlines.tsx'),
       route('transfers', 'routes/mangaka/transfers.tsx'),
       route('studio', 'routes/mangaka/my-studio.tsx'),
+      route('studio/overview', 'routes/mangaka/studio-overview.tsx'),
+      route('studio/tasks/:id', 'routes/mangaka/task-detail.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
+      route('mangakas', 'routes/mangaka/mangaka-directory.tsx'),
       route('rankings', 'routes/mangaka/rankings.tsx'),
       route('notifications', 'routes/mangaka/notifications.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')
@@ -140,7 +148,7 @@ export default [
 
   // Publication workbench — focused work area, intentionally outside the
   // dashboard layout (no sidebar). Uses a nested route tree:
-  //   /publish/:seriesId/:chapterId           → redirect → `name`
+  //   /publish/:seriesId/:chapterId           → redirect → `name` or `pages`
   //   /publish/:seriesId/:chapterId/name     → storyboard Name editor
   //   /publish/:seriesId/:chapterId/pages    → composite page reader
   layout('routes/publish/$seriesId/$chapterId/_layout.tsx', [

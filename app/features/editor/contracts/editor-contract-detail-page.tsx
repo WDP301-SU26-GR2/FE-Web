@@ -13,8 +13,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { EditorContractDetailData } from '../types'
 import { ContractHeader } from './components/contract-shared'
-import { ContractDecisionBasis } from '~/features/contracts/components/contract-decision-basis'
-import { ContractPdfButton } from '~/features/contracts/components/contract-pdf-button'
+import { ContractDecisionBasis, ContractPdfButton } from '~/shared/components/contracts'
 
 export function EditorContractDetailPage({ data }: { data: EditorContractDetailData }) {
   const { t } = useTranslation('editor')
@@ -54,9 +53,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
             {key === 'conditions' && (
               <span
                 className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                  validConditionCount
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-destructive/10 text-destructive'
+                  validConditionCount ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'
                 }`}
               >
                 {validConditionCount

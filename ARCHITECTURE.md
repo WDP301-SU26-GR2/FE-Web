@@ -40,20 +40,20 @@ Sau 3 tháng:
 
 Hãy xem dự án như **một toà nhà**:
 
-| Thư mục | Vai trò trong toà nhà | Trong code |
-| --- | --- | --- |
-| `routes/` | **Cửa ra vào** — dẫn khách tới phòng nào | URL → page nào |
-| `features/<role>/<slice>/` | **Các phòng chức năng trong tầng** — phòng ngủ, bếp... | `mangaka/series`, `mangaka/chapters`, `assistant/tasks`... |
-| `features/<standalone>/` | **Phòng không thuộc tầng nào** — sảnh chính | `auth`, `profile`, `welcome` |
-| `shared/ui/` | **Đồ nội thất tiêu chuẩn** — ghế, bàn ai cũng dùng được | `Button`, `Input`, `Card` (generic, headless) |
-| `shared/components/` | **Đồ đã ráp** — bộ bàn ăn = bàn + ghế gắn liền | `ThemeToggle`, `LanguageSwitcher`, `DashboardLayout` |
-| `shared/lib/` | **Dụng cụ** — kéo, búa, thước | `cn()`, `storage`, `upload/upload-to-r2`, i18n init |
-| `shared/config/` | **Bảng địa chỉ, danh bạ** | `SITE.name`, `STORAGE_KEYS`, env vars |
-| `providers/` | **Hệ thống điện/nước cấp toàn nhà** | `Theme`, `i18n`, `Auth`, sau này: Toast, Query |
-| `styles/` | **Bảng màu sơn** của cả toà nhà | `theme.css` — đổi 1 chỗ áp cả nhà |
-| `locales/` | **Bảng song ngữ** dán mọi nơi | `en/`, `vi/` — 1 file mỗi role/feature |
-| `api/` | **Đường ống ra ngoài** (do Orval đúc sẵn từ swagger) | `model/<tag>/` types, `operations/<tag>/` fetch fns |
-| `mocks/` | **Bếp giả** — nấu data fake khi BE chưa sẵn sàng | MSW handlers + Faker factories (dev only) |
+| Thư mục                    | Vai trò trong toà nhà                                   | Trong code                                                 |
+| -------------------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
+| `routes/`                  | **Cửa ra vào** — dẫn khách tới phòng nào                | URL → page nào                                             |
+| `features/<role>/<slice>/` | **Các phòng chức năng trong tầng** — phòng ngủ, bếp...  | `mangaka/series`, `mangaka/chapters`, `assistant/tasks`... |
+| `features/<standalone>/`   | **Phòng không thuộc tầng nào** — sảnh chính             | `auth`, `profile`, `welcome`                               |
+| `shared/ui/`               | **Đồ nội thất tiêu chuẩn** — ghế, bàn ai cũng dùng được | `Button`, `Input`, `Card` (generic, headless)              |
+| `shared/components/`       | **Đồ đã ráp** — bộ bàn ăn = bàn + ghế gắn liền          | `ThemeToggle`, `LanguageSwitcher`, `DashboardLayout`       |
+| `shared/lib/`              | **Dụng cụ** — kéo, búa, thước                           | `cn()`, `storage`, `upload/upload-to-r2`, i18n init        |
+| `shared/config/`           | **Bảng địa chỉ, danh bạ**                               | `SITE.name`, `STORAGE_KEYS`, env vars                      |
+| `providers/`               | **Hệ thống điện/nước cấp toàn nhà**                     | `Theme`, `i18n`, `Auth`, sau này: Toast, Query             |
+| `styles/`                  | **Bảng màu sơn** của cả toà nhà                         | `theme.css` — đổi 1 chỗ áp cả nhà                          |
+| `locales/`                 | **Bảng song ngữ** dán mọi nơi                           | `en/`, `vi/` — 1 file mỗi role/feature                     |
+| `api/`                     | **Đường ống ra ngoài** (do Orval đúc sẵn từ swagger)    | `model/<tag>/` types, `operations/<tag>/` fetch fns        |
+| `mocks/`                   | **Bếp giả** — nấu data fake khi BE chưa sẵn sàng        | MSW handlers + Faker factories (dev only)                  |
 
 ### Quy tắc vàng — ai được dùng ai?
 
@@ -190,17 +190,17 @@ app/
 
 ### 3.1 Quy tắc tổ chức feature (rất quan trọng)
 
-| Quy tắc | Đặt ở đâu |
-| --- | --- |
-| 1 feature nghiệp vụ **độc lập, nhỏ** | `features/<name>/` (vd `features/auth`) |
-| 1 role có **nhiều chức năng nghiệp vụ** | `features/<role>/<slice>/` cho **mỗi** slice (vd `mangaka/series`, `mangaka/chapters`, `mangaka/studio`...) |
-| Component chỉ 1 slice dùng | `features/<role>/<slice>/components/` |
-| Hook chỉ 1 slice dùng | `features/<role>/<slice>/use-xxx.ts` (co-located, không bỏ folder `hooks/`) |
-| Component/hook **cross-slice cùng role** | `features/<role>/<slice-A>/...` — slice khác import qua `~/features/<role>/<slice-A>/...` |
-| Component/hook **cross-role** (vd upload R2) | `shared/lib/` hoặc `shared/components/` |
-| UI primitive generic | `shared/ui/` |
-| App-level component đã ráp (có business meaning) | `shared/components/` |
-| Helper function thuần | `shared/lib/<topic>.ts` |
+| Quy tắc                                          | Đặt ở đâu                                                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 1 feature nghiệp vụ **độc lập, nhỏ**             | `features/<name>/` (vd `features/auth`)                                                                     |
+| 1 role có **nhiều chức năng nghiệp vụ**          | `features/<role>/<slice>/` cho **mỗi** slice (vd `mangaka/series`, `mangaka/chapters`, `mangaka/studio`...) |
+| Component chỉ 1 slice dùng                       | `features/<role>/<slice>/components/`                                                                       |
+| Hook chỉ 1 slice dùng                            | `features/<role>/<slice>/use-xxx.ts` (co-located, không bỏ folder `hooks/`)                                 |
+| Component/hook **cross-slice cùng role**         | `features/<role>/<slice-A>/...` — slice khác import qua `~/features/<role>/<slice-A>/...`                   |
+| Component/hook **cross-role** (vd upload R2)     | `shared/lib/` hoặc `shared/components/`                                                                     |
+| UI primitive generic                             | `shared/ui/`                                                                                                |
+| App-level component đã ráp (có business meaning) | `shared/components/`                                                                                        |
+| Helper function thuần                            | `shared/lib/<topic>.ts`                                                                                     |
 
 ### 3.2 Tại sao phải chia theo slice thay vì gộp trong 1 folder role?
 
@@ -247,20 +247,20 @@ Mọi route dashboard tuân theo pattern thống nhất:
 
 Ví dụ mapping thực tế:
 
-| URL | Role | Trang |
-| --- | --- | --- |
-| `/dashboard/mangaka` | MANGAKA | Dashboard tổng quan |
-| `/dashboard/mangaka/series` | MANGAKA | Danh sách series |
-| `/dashboard/mangaka/series/:id` | MANGAKA | Chi tiết series |
-| `/dashboard/mangaka/series/:id/edit` | MANGAKA | Sửa proposal |
-| `/dashboard/mangaka/studio` | MANGAKA | Studio của Mangaka (assignments họ giao) |
-| `/dashboard/mangaka/profile` | MANGAKA | Hồ sơ Mangaka |
-| `/dashboard/assistant` | ASSISTANT | Dashboard tổng quan |
-| `/dashboard/assistant/tasks` | ASSISTANT | Task của Assistant |
-| `/dashboard/assistant/studio` | ASSISTANT | Studio của Assistant (assignment họ nhận) |
-| `/dashboard/editor` | EDITOR | Dashboard Editor |
-| `/dashboard/board` | BOARD | Dashboard Board |
-| `/dashboard/admin` | SUPER_ADMIN | Dashboard Admin |
+| URL                                  | Role        | Trang                                     |
+| ------------------------------------ | ----------- | ----------------------------------------- |
+| `/dashboard/mangaka`                 | MANGAKA     | Dashboard tổng quan                       |
+| `/dashboard/mangaka/series`          | MANGAKA     | Danh sách series                          |
+| `/dashboard/mangaka/series/:id`      | MANGAKA     | Chi tiết series                           |
+| `/dashboard/mangaka/series/:id/edit` | MANGAKA     | Sửa proposal                              |
+| `/dashboard/mangaka/studio`          | MANGAKA     | Studio của Mangaka (assignments họ giao)  |
+| `/dashboard/mangaka/profile`         | MANGAKA     | Hồ sơ Mangaka                             |
+| `/dashboard/assistant`               | ASSISTANT   | Dashboard tổng quan                       |
+| `/dashboard/assistant/tasks`         | ASSISTANT   | Task của Assistant                        |
+| `/dashboard/assistant/studio`        | ASSISTANT   | Studio của Assistant (assignment họ nhận) |
+| `/dashboard/editor`                  | EDITOR      | Dashboard Editor                          |
+| `/dashboard/board`                   | BOARD       | Dashboard Board                           |
+| `/dashboard/admin`                   | SUPER_ADMIN | Dashboard Admin                           |
 
 **Tại sao cần prefix `<role>`?**
 
@@ -270,15 +270,15 @@ Ví dụ mapping thực tế:
 
 ### 3.4 Path alias
 
-| Alias | Trỏ đến |
-| --- | --- |
-| `~/features/<x>` | feature module (qua barrel `index.ts`) |
-| `~/features/<role>/<slice>` | slice bên trong role (bypass barrel khi cần) |
-| `~/shared/ui`, `~/shared/components`, `~/shared/lib/<topic>`, `~/shared/config/<topic>` | shared layers |
-| `~/providers/<x>-provider` | provider context |
-| `~/api/operations/<tag>/<tag>` | orval-generated fetch fns |
-| `~/api/model/<tag>` | orval-generated TS types theo tag |
-| `~/mocks/handlers`, `~/mocks/factories` | MSW (dev only) |
+| Alias                                                                                   | Trỏ đến                                      |
+| --------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `~/features/<x>`                                                                        | feature module (qua barrel `index.ts`)       |
+| `~/features/<role>/<slice>`                                                             | slice bên trong role (bypass barrel khi cần) |
+| `~/shared/ui`, `~/shared/components`, `~/shared/lib/<topic>`, `~/shared/config/<topic>` | shared layers                                |
+| `~/providers/<x>-provider`                                                              | provider context                             |
+| `~/api/operations/<tag>/<tag>`                                                          | orval-generated fetch fns                    |
+| `~/api/model/<tag>`                                                                     | orval-generated TS types theo tag            |
+| `~/mocks/handlers`, `~/mocks/factories`                                                 | MSW (dev only)                               |
 
 ---
 
@@ -328,7 +328,9 @@ export function useDeadlines() {
     }
   }, [])
 
-  useEffect(() => { void reload() }, [reload])
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
   return { items, loading, error, reload }
 }
@@ -395,7 +397,9 @@ export function DeadlinePage() {
         </Button>
       </header>
       <div className='grid gap-4'>
-        {items.map((d) => <DeadlineCard key={d.id} deadline={d} />)}
+        {items.map((d) => (
+          <DeadlineCard key={d.id} deadline={d} />
+        ))}
       </div>
     </main>
   )
@@ -510,12 +514,12 @@ import { SignedImage } from '~/features/mangaka/studio/components/signed-image'
 
 ### Phân biệt `shared/ui/` vs `shared/components/`
 
-| `shared/ui/` | `shared/components/` |
-| --- | --- |
-| Generic, headless, không có business | Có business meaning, đã ráp |
-| `Button`, `Input`, `Card`, `Dialog` | `ThemeToggle`, `LanguageSwitcher`, `AppHeader`, `DashboardLayout` |
-| Có thể copy sang dự án khác | Chỉ làm việc trong dự án này |
-| Phụ thuộc: chỉ Tailwind + `cn()` | Phụ thuộc: provider, hook, config của app |
+| `shared/ui/`                         | `shared/components/`                                              |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| Generic, headless, không có business | Có business meaning, đã ráp                                       |
+| `Button`, `Input`, `Card`, `Dialog`  | `ThemeToggle`, `LanguageSwitcher`, `AppHeader`, `DashboardLayout` |
+| Có thể copy sang dự án khác          | Chỉ làm việc trong dự án này                                      |
+| Phụ thuộc: chỉ Tailwind + `cn()`     | Phụ thuộc: provider, hook, config của app                         |
 
 ---
 
@@ -529,8 +533,8 @@ function Card({ className, isActive }: { className?: string; isActive: boolean }
     <div
       className={cn(
         'rounded-lg border border-border p-4', // base
-        isActive && 'ring-2 ring-ring',        // conditional
-        className                              // override từ ngoài
+        isActive && 'ring-2 ring-ring', // conditional
+        className // override từ ngoài
       )}
     />
   )
@@ -548,7 +552,13 @@ function Card({ className, isActive }: { className?: string; isActive: boolean }
 **Mọi response thành công:**
 
 ```jsonc
-{ "success": true, "message": "Success", "data": { /* payload */ } }
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    /* payload */
+  }
+}
 ```
 
 → `customFetch` đã unwrap sẵn — payload nằm ở `res.data`.
@@ -682,23 +692,23 @@ Khi tắt, code MSW bị **tree-shake** khỏi production bundle (dynamic import
 
 ## 10. Cheatsheet — khi cần làm X, mở file nào?
 
-| Việc cần làm | Mở file |
-| --- | --- |
-| Đổi màu chủ đạo | `app/styles/theme.css` |
-| Thêm key dịch | `app/locales/{en,vi}/<namespace>.json` (namespace = role hoặc feature) |
-| Thêm namespace mới | `app/shared/lib/i18n/resources.ts` |
-| Thêm trang mới cho role đã có | tạo slice `features/<role>/<slice>/...` + route (xem mục 4) |
-| Thêm role mới | `features/<role>/<slice>/...` + `routes/<role>/_layout.tsx` + `routes.ts` |
-| Thêm UI primitive | `app/shared/ui/` |
-| Thêm provider mới | `app/providers/` + ráp vào `app-providers.tsx` |
-| Thêm env var | `.env.local` (+ `.env.example`) + `app/shared/config/env.ts` |
-| Thêm hằng số toàn app | `app/shared/config/site.ts` |
-| Thêm helper thuần | `app/shared/lib/<topic>.ts` |
-| Thêm mock endpoint | `app/mocks/factories/` + `app/mocks/handlers/` (xem mục 9) |
-| Bật / tắt mock | `.env.local` → `VITE_ENABLE_MOCK` |
-| Codegen từ swagger | đặt `swagger.json` + `npm run orval` |
-| Đọc state machine / enum | `FE-API-Guide-v3.md` §1 (60 enum) |
-| Đọc business flow | `FE-API-Guide-v3.md` §0–§10 |
+| Việc cần làm                  | Mở file                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------- |
+| Đổi màu chủ đạo               | `app/styles/theme.css`                                                    |
+| Thêm key dịch                 | `app/locales/{en,vi}/<namespace>.json` (namespace = role hoặc feature)    |
+| Thêm namespace mới            | `app/shared/lib/i18n/resources.ts`                                        |
+| Thêm trang mới cho role đã có | tạo slice `features/<role>/<slice>/...` + route (xem mục 4)               |
+| Thêm role mới                 | `features/<role>/<slice>/...` + `routes/<role>/_layout.tsx` + `routes.ts` |
+| Thêm UI primitive             | `app/shared/ui/`                                                          |
+| Thêm provider mới             | `app/providers/` + ráp vào `app-providers.tsx`                            |
+| Thêm env var                  | `.env.local` (+ `.env.example`) + `app/shared/config/env.ts`              |
+| Thêm hằng số toàn app         | `app/shared/config/site.ts`                                               |
+| Thêm helper thuần             | `app/shared/lib/<topic>.ts`                                               |
+| Thêm mock endpoint            | `app/mocks/factories/` + `app/mocks/handlers/` (xem mục 9)                |
+| Bật / tắt mock                | `.env.local` → `VITE_ENABLE_MOCK`                                         |
+| Codegen từ swagger            | đặt `swagger.json` + `npm run orval`                                      |
+| Đọc state machine / enum      | `FE-API-Guide-v3.md` §1 (60 enum)                                         |
+| Đọc business flow             | `FE-API-Guide-v3.md` §0–§10                                               |
 
 ---
 

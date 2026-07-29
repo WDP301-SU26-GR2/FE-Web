@@ -7,10 +7,7 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { FilterChip, Pagination } from '~/shared/components/pagination'
 import type { NotificationListResDtoOutputItemsItem } from '~/api/model/notifications'
 import type { NotificationListResDtoOutputItemsItemType } from '~/api/model/notifications/notificationListResDtoOutputItemsItemType'
-import {
-  useMangakaNotifications,
-  type NotificationReadFilter
-} from './use-mangaka-notifications'
+import { useMangakaNotifications, type NotificationReadFilter } from './use-mangaka-notifications'
 
 const READ_FILTERS: ReadonlyArray<NotificationReadFilter> = ['all', 'unread', 'read']
 
@@ -25,7 +22,7 @@ const READ_FILTERS: ReadonlyArray<NotificationReadFilter> = ['all', 'unread', 'r
  *   - `PAGE_*`                   → publication workbench (pages view)
  *   - `TASK_*`                   → studio (my studio shows assignments)
  *   - `CONTRACT_*` / `PAYMENT_*` / `AMENDMENT_*` → contracts detail
- *   - `DEADLINE_*`               → contracts (where deadline negotiation lives)
+ *   - `DEADLINE_*`               → deadline negotiation
  *   - `REVIEW_*` / `INVITE_*`    → assistant directory
  *   - `REVISION_*`               → studio (revision rounds live in workbench)
  *
@@ -38,29 +35,57 @@ function mangakaNotificationHref(
   const prefix = item.referenceType.split('_')[0] ?? ''
   const id = encodeURIComponent(item.referenceId)
 
-  if (['PROPOSAL', 'SERIES', 'NAME', 'FRANCHISE'].includes(prefix)) {
+  if (prefix === 'FRANCHISE') {
+    return {
+      href: `/dashboard/mangaka/series/franchise-consent/${id}`,
+      translationKey: 'notifications.item.openFranchiseConsent'
+    }
+  }
+  if (['PROPOSAL', 'SERIES', 'NAME'].includes(prefix)) {
     return { href: `/dashboard/mangaka/series/${id}`, translationKey: 'notifications.item.openTarget' }
   }
-  if (['CHAPTER', 'MANUSCRIPT', 'PAGE'].includes(prefix)) {
+  if (['CHAPTER', 'MANUSCRIPT'].includes(prefix)) {
+    const coOwnerQuery =
+      item.referenceType.includes('CO_OWNER') || item.referenceType.includes('COOWNER') ? '?coOwner=1' : ''
     return {
-      href: `/dashboard/mangaka/series?chapterId=${id}`,
+      href: `/dashboard/mangaka/chapters/${id}${coOwnerQuery}`,
       translationKey: 'notifications.item.openChapter'
     }
   }
-  if (prefix === 'TASK') {
-    return { href: `/dashboard/mangaka/studio?taskId=${id}`, translationKey: 'notifications.item.openTask' }
+  if (prefix === 'PAGE') {
+    return { href: '/dashboard/mangaka/studio/overview', translationKey: 'notifications.item.openChapter' }
   }
-  if (['CONTRACT', 'PAYMENT', 'AMENDMENT'].includes(prefix)) {
+  if (prefix === 'TASK') {
+    return { href: `/dashboard/mangaka/studio/tasks/${id}`, translationKey: 'notifications.item.openTask' }
+  }
+  if (prefix === 'PAYMENT') {
+    return { href: `/dashboard/mangaka/payments/${id}`, translationKey: 'notifications.item.openPayment' }
+  }
+  if (prefix === 'CONTRACT') {
     return { href: `/dashboard/mangaka/contracts/${id}`, translationKey: 'notifications.item.openContract' }
   }
+  if (prefix === 'AMENDMENT') {
+    return { href: '/dashboard/mangaka/contracts', translationKey: 'notifications.item.openContract' }
+  }
+  if (prefix === 'TRANSFER') {
+    const queryKey =
+      item.referenceType.includes('CONTRACT') || item.referenceType.includes('SIGN') ? 'contractId' : 'requestId'
+    return { href: `/dashboard/mangaka/transfers?${queryKey}=${id}`, translationKey: 'notifications.item.openTransfer' }
+  }
   if (prefix === 'DEADLINE') {
-    return { href: `/dashboard/mangaka/contracts?deadlineId=${id}`, translationKey: 'notifications.item.openDeadline' }
+    return { href: `/dashboard/mangaka/deadlines?requestId=${id}`, translationKey: 'notifications.item.openDeadline' }
   }
   if (['REVIEW', 'INVITE', 'ASSIGNMENT'].includes(prefix)) {
-    return { href: `/dashboard/mangaka/assistants?referenceId=${id}`, translationKey: 'notifications.item.openAssistant' }
+    return {
+      href: '/dashboard/mangaka/assistants',
+      translationKey: 'notifications.item.openAssistant'
+    }
   }
   if (prefix === 'REVISION') {
-    return { href: `/dashboard/mangaka/studio?revisionId=${id}`, translationKey: 'notifications.item.openRevision' }
+    return { href: '/dashboard/mangaka/studio', translationKey: 'notifications.item.openRevision' }
+  }
+  if (['SURVEY', 'RANKING'].includes(prefix)) {
+    return { href: '/dashboard/mangaka/rankings', translationKey: 'notifications.item.openRanking' }
   }
   return null
 }
@@ -203,12 +228,12 @@ export function MangakaNotificationsPage() {
 
 const TYPE_TONE: Record<NonNullable<NotificationListResDtoOutputItemsItemType>, string> = {
   SYSTEM: 'bg-muted text-muted-foreground border-border',
-  CONTRACT: 'bg-violet-500/10 text-violet-700 border-violet-500/20',
-  TASK: 'bg-sky-500/10 text-sky-700 border-sky-500/20',
-  DEADLINE: 'bg-rose-500/10 text-rose-700 border-rose-500/20',
-  SURVEY: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
-  BOARD: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20',
-  REVIEW: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
+  CONTRACT: 'bg-primary/10 text-primary border-primary/20',
+  TASK: 'bg-info/10 text-info border-info/20',
+  DEADLINE: 'bg-destructive/10 text-destructive border-destructive/20',
+  SURVEY: 'bg-warning/10 text-warning border-warning/20',
+  BOARD: 'bg-accent text-accent-foreground border-border',
+  REVIEW: 'bg-success/10 text-success border-success/20'
 }
 
 function NotifItem({

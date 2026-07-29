@@ -31,7 +31,9 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     const reprints = Array.from(
       new Map(responses.flatMap((response) => response.data).map((item) => [item.id, item])).values()
     )
-    const chapterResponses = await Promise.all(series.map((item) => chapterControllerListBySeries({ seriesId: item.id })))
+    const chapterResponses = await Promise.all(
+      series.map((item) => chapterControllerListBySeries({ seriesId: item.id }))
+    )
     return {
       series,
       chapters: chapterResponses.flatMap((response) => response.data.items),
@@ -57,7 +59,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     if (intent === 'createReprint') {
       const chapterRangeStart = Number(required(form, 'chapterStart'))
       const chapterRangeEnd = Number(required(form, 'chapterEnd'))
-      if (!Number.isInteger(chapterRangeStart) || !Number.isInteger(chapterRangeEnd) || chapterRangeStart < 0 || chapterRangeEnd < chapterRangeStart)
+      if (
+        !Number.isInteger(chapterRangeStart) ||
+        !Number.isInteger(chapterRangeEnd) ||
+        chapterRangeStart < 0 ||
+        chapterRangeEnd < chapterRangeStart
+      )
         return { ok: false, intent, errorKey: 'invalidChapterRange' }
       await reprintRequestControllerCreate({
         seriesId: required(form, 'seriesId'),

@@ -10,10 +10,7 @@ import type { FetchError } from '~/api/mutator/custom-fetch'
  *
  * Falls back to the bare Error.message, then to a localized default.
  */
-export function extractApiErrorMessage(
-  error: unknown,
-  fallback: string
-): string {
+export function extractApiErrorMessage(error: unknown, fallback: string): string {
   if (!error) return fallback
 
   // Error thrown by customFetch carries `data.message` as a plain string
@@ -34,9 +31,7 @@ export function extractApiErrorMessage(
  * Extract per-field validation errors from a `customFetch` error.
  * Returns a Map<fieldPath, errorMessage> for form field highlighting.
  */
-export function extractFieldErrors(
-  error: unknown
-): Map<string, string> {
+export function extractFieldErrors(error: unknown): Map<string, string> {
   const fieldErrors = new Map<string, string>()
 
   if (error instanceof Error) {

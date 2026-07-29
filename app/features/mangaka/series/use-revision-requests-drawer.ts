@@ -47,9 +47,7 @@ async function fetchAllForScope(
     )
   }
   const responses = await Promise.all(requests)
-  const items = responses.flatMap(
-    (res) => (res.data as RevisionRequestListResDtoOutput).items ?? []
-  )
+  const items = responses.flatMap((res) => (res.data as RevisionRequestListResDtoOutput).items ?? [])
   return items.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
 }
 
@@ -89,9 +87,7 @@ export function useRevisionRequestsDrawer(
       } catch (err) {
         if (controller.signal.aborted) return
         if (err instanceof Error && err.name === 'AbortError') return
-        setError(
-          extractApiErrorMessage(err, t('seriesDetail.revisions.drawer.error.loadFailed'))
-        )
+        setError(extractApiErrorMessage(err, t('seriesDetail.revisions.drawer.error.loadFailed')))
         setItems([])
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
@@ -104,10 +100,7 @@ export function useRevisionRequestsDrawer(
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE))
 
-  const paginatedItems = useMemo(
-    () => items.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
-    [items, page]
-  )
+  const paginatedItems = useMemo(() => items.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE), [items, page])
 
   const resolve = useCallback(
     async (item: RevisionRequestListResDtoOutputItemsItem) => {
@@ -116,17 +109,11 @@ export function useRevisionRequestsDrawer(
         await revisionControllerResolve({ id: item.id })
         // Optimistic local flip so the UI updates instantly without waiting
         // for the deferred re-fetch (which only re-syncs resolvedAt/By).
-        setItems((prev) =>
-          prev.map((it) => (it.id === item.id ? { ...it, isResolved: true } : it))
-        )
+        setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, isResolved: true } : it)))
         toast.success(t('seriesDetail.revisions.resolveSuccess'))
         setTimeout(() => setReloadToken((v) => v + 1), 50)
       } catch (err) {
-        toast.error(
-          err instanceof Error && err.message
-            ? err.message
-            : t('seriesDetail.revisions.resolveError')
-        )
+        toast.error(extractApiErrorMessage(err, t('seriesDetail.revisions.resolveError')))
       } finally {
         setResolvingId(null)
       }

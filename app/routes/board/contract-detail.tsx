@@ -55,10 +55,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
     } else if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
     else if (intent === 'changes')
-      await contractControllerBoardRequestChanges(
-        { id: params.id },
-        { reason: required(form, 'reason') }
-      )
+      await contractControllerBoardRequestChanges({ id: params.id }, { reason: required(form, 'reason') })
     else if (intent === 'sign')
       await contractControllerSignBoard({ id: params.id }, { otpCode: required(form, 'otpCode') })
     else if (intent === 'signAmendment')

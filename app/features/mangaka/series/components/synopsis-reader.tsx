@@ -25,6 +25,15 @@ function estimateReadingMinutes(words: number): number {
 }
 
 /**
+ * Content copied from rich-text sources can contain invisible separators.
+ * They make Vietnamese glyph clusters look split apart in the reader, so
+ * strip them and normalize the remaining Unicode before rendering.
+ */
+function normalizeSynopsis(text: string): string {
+  return text.normalize('NFC').replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '')
+}
+
+/**
  * Reader dialog for the proposal synopsis. Mirrors how a word-processor
  * renders a long document: serif-feel body, generous line-height, centered
  * column, and a meta strip showing word count + reading time so Mangakas
@@ -32,7 +41,8 @@ function estimateReadingMinutes(words: number): number {
  */
 export function SynopsisReader({ open, onClose, synopsis }: SynopsisReaderProps) {
   const { t } = useTranslation('mangaka')
-  const words = countWords(synopsis)
+  const normalizedSynopsis = normalizeSynopsis(synopsis)
+  const words = countWords(normalizedSynopsis)
   const minutes = estimateReadingMinutes(words)
 
   const titleId = 'synopsis-reader-title'
@@ -52,20 +62,15 @@ export function SynopsisReader({ open, onClose, synopsis }: SynopsisReaderProps)
       descriptionId={metaId}
       description={
         <span className='flex flex-wrap gap-x-3 gap-y-0.5'>
-          <span>{t('seriesDetail.proposal.synopsisReader.wordCount', { count: synopsis.length })}</span>
+          <span>{t('seriesDetail.proposal.synopsisReader.wordCount', { count: normalizedSynopsis.length })}</span>
           <span aria-hidden='true'>·</span>
           <span>{t('seriesDetail.proposal.synopsisReader.readingTime', { minutes })}</span>
         </span>
       }
       size='xl'
     >
-      <article
-        // Reader-style typography: serif feel via font-mono (a built-in sans
-        // is too clinical for prose; we approximate a "document" feel with
-        // larger size + line-height + comfortable width).
-        className='mx-auto max-w-prose font-serif text-base leading-7 text-foreground'
-      >
-        {synopsis.split(/\n{2,}/).map((para, idx) => (
+      <article className='mx-auto max-w-prose font-sans text-base leading-7 tracking-normal text-foreground antialiased'>
+        {normalizedSynopsis.split(/\n{2,}/).map((para, idx) => (
           <p key={idx} className={idx === 0 ? '' : 'mt-5'}>
             {para}
           </p>

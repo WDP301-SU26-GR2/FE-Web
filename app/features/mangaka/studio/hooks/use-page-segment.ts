@@ -5,9 +5,11 @@ import { toast } from 'sonner'
 import {
   aiControllerApplyJob,
   aiControllerGetJob,
+  aiControllerListJobs,
   aiControllerSegment
 } from '~/api/operations/ai/ai'
 import type {
+  AiJobListResDtoOutputItemsItem,
   AiJobResDtoOutput,
   AiJobResDtoOutputProposedRegionsItem,
   ApplyAiJobResDtoOutput
@@ -29,12 +31,15 @@ type UsePageSegmentResult = {
   jobId: string | null
   status: SegmentJobStatus
   proposedRegions: ProposedRegion[]
+  jobs: AiJobListResDtoOutputItemsItem[]
+  isLoadingJobs: boolean
   durationMs: number | null
   isStarting: boolean
   isApplying: boolean
   error: string | null
-  startSegment: (pageId: string, mode: SegmentMode) => void
-  apply: (pageId: string) => Promise<boolean>
+  startSegment: (pageId: string, mode: SegmentMode, stageId?: string) => void
+  apply: (pageId: string, aiJobId?: string) => Promise<boolean>
+  refreshJobs: () => Promise<void>
   reset: () => void
 }
 
@@ -54,11 +59,13 @@ const POLL_TIMEOUT_MS = 120_000
  *  3. While the job is in flight, regions already on the page (manual or
  *     confirmed-AI) are NOT touched.
  */
-export function usePageSegment(): UsePageSegmentResult {
+export function usePageSegment(pageId: string | null): UsePageSegmentResult {
   const { t } = useTranslation('mangaka')
   const [jobId, setJobId] = useState<string | null>(null)
   const [status, setStatus] = useState<SegmentJobStatus>('IDLE')
   const [proposedRegions, setProposedRegions] = useState<ProposedRegion[]>([])
+  const [jobs, setJobs] = useState<AiJobListResDtoOutputItemsItem[]>([])
+  const [isLoadingJobs, setIsLoadingJobs] = useState(false)
   const [durationMs, setDurationMs] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
@@ -77,6 +84,28 @@ export function usePageSegment(): UsePageSegmentResult {
 
   // Drain poll on unmount
   useEffect(() => () => clearPoll(), [clearPoll])
+
+  const refreshJobs = useCallback(async () => {
+    if (!pageId) {
+      setJobs([])
+      return
+    }
+    setIsLoadingJobs(true)
+    try {
+      const response = await aiControllerListJobs({ id: pageId }, { type: 'SEGMENT' })
+      setJobs(response.data.items ?? [])
+    } catch {
+      // The current segmentation controls are still usable if history fails.
+    } finally {
+      setIsLoadingJobs(false)
+    }
+  }, [pageId])
+
+  useEffect(() => {
+    // The request updates local loading/history state after it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshJobs()
+  }, [refreshJobs])
 
   const pollJob = useCallback(
     async (id: string) => {
@@ -97,6 +126,7 @@ export function usePageSegment(): UsePageSegmentResult {
 
         if (job.status === 'SUCCEEDED' || job.status === 'FAILED') {
           setError(job.error)
+          void refreshJobs()
           return
         }
         if (Date.now() - startedAtRef.current >= POLL_TIMEOUT_MS) {
@@ -110,7 +140,7 @@ export function usePageSegment(): UsePageSegmentResult {
         pollTimerRef.current = setTimeout(() => void pollJobRef.current?.(id), POLL_INTERVAL_MS)
       }
     },
-    [clearPoll, t]
+    [clearPoll, refreshJobs, t]
   )
 
   // Keep ref in sync so setTimeout callbacks always invoke the latest closure.
@@ -119,7 +149,7 @@ export function usePageSegment(): UsePageSegmentResult {
   }, [pollJob])
 
   const startSegment: UsePageSegmentResult['startSegment'] = useCallback(
-    (pid, mode) => {
+    (pid, mode, stageId) => {
       void (async () => {
         clearPoll()
         setIsStarting(true)
@@ -128,10 +158,11 @@ export function usePageSegment(): UsePageSegmentResult {
         setDurationMs(null)
         startedAtRef.current = Date.now()
         try {
-          const res = await aiControllerSegment({ id: pid }, { mode })
+          const res = await aiControllerSegment({ id: pid }, { mode, ...(stageId ? { stageId } : {}) })
           const started = res.data as { jobId: string }
           setJobId(started.jobId)
           setStatus('QUEUED')
+          void refreshJobs()
           setTimeout(() => void pollJobRef.current?.(started.jobId), POLL_INTERVAL_MS)
         } catch (err) {
           setError(extractApiErrorMessage(err, t('studio.popup.errors.aiStartFailed')))
@@ -141,7 +172,7 @@ export function usePageSegment(): UsePageSegmentResult {
         }
       })()
     },
-    [clearPoll, t]
+    [clearPoll, refreshJobs, t]
   )
 
   const reset = useCallback(() => {
@@ -154,18 +185,20 @@ export function usePageSegment(): UsePageSegmentResult {
   }, [clearPoll])
 
   const apply: UsePageSegmentResult['apply'] = useCallback(
-    async (pid: string) => {
-      if (!jobId) return false
+    async (pid: string, aiJobId?: string) => {
+      const targetJobId = aiJobId ?? jobId
+      if (!targetJobId) return false
       // `apply` operates on the AI job id (server-side), not the page id, but
       // we accept pageId for symmetry with the wider caller — validates the
       // caller had the correct page in scope.
       void pid
       setIsApplying(true)
       try {
-        const res = await aiControllerApplyJob({ id: jobId })
+        const res = await aiControllerApplyJob({ id: targetJobId })
         const out = res.data as ApplyAiJobResDtoOutput
         toast.success(t('studio.popup.toast.aiApplied', { count: out.created }))
-        reset()
+        await refreshJobs()
+        if (targetJobId === jobId) reset()
         return true
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('studio.popup.errors.aiApplyFailed')))
@@ -174,19 +207,22 @@ export function usePageSegment(): UsePageSegmentResult {
         setIsApplying(false)
       }
     },
-    [jobId, reset, t]
+    [jobId, refreshJobs, reset, t]
   )
 
   return {
     jobId,
     status,
     proposedRegions,
+    jobs,
+    isLoadingJobs,
     durationMs,
     isStarting,
     isApplying,
     error,
     startSegment,
     apply,
+    refreshJobs,
     reset
   }
 }

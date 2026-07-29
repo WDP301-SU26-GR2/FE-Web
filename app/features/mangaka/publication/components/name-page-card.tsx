@@ -24,9 +24,7 @@ export function NamePageCard({ pageNumber, fileUrl, alt, onClick }: NamePageCard
         <span className='truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
           {t('publication.nameSection.pageNumber', { n: pageNumber })}
         </span>
-        {onClick && (
-          <span className='text-[10px] text-muted-foreground'>{t('publication.preview')}</span>
-        )}
+        {onClick && <span className='text-[10px] text-muted-foreground'>{t('publication.preview')}</span>}
       </div>
     </div>
   )

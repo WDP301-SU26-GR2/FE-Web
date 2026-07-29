@@ -48,9 +48,10 @@
     "mySeries": "Series của tôi",
     "studio": "Studio",
     "assistantDirectory": "Danh bạ trợ lý",
+    "mangakaDirectory": "Danh bạ Mangaka",
     "ranking": "Xếp hạng",
     "contracts": "Hợp đồng",
-    "reprints": "Tái bản",
+    "deadlines": "Thời hạn",
     "transfers": "Chuyển nhượng",
     "payments": "Thanh toán",
     "notifications": "Thông báo",
@@ -153,6 +154,86 @@
     },
     "error": {
       "updateFailed": "Không thể cập nhật thông báo. Vui lòng thử lại."
+    }
+  },
+  "contractShared": {
+    "decision": {
+      "title": "Căn cứ quyết định Hội đồng",
+      "serializationSummary": "Phê duyệt xuất bản định kỳ bộ truyện “{{series}}”",
+      "genericSummary": "{{type}} — bộ truyện “{{series}}”",
+      "session": "Phiên họp",
+      "decidedAt": "Ngày phê duyệt",
+      "notFinalized": "Chưa chốt quyết định",
+      "openDecision": "Xem quyết định Hội đồng",
+      "unknownSeries": "Chưa xác định",
+      "unknownDecision": "Quyết định Hội đồng",
+      "types": {
+        "SERIALIZATION": "Duyệt đăng dài kỳ",
+        "CANCELLATION": "Hủy bộ truyện",
+        "FORMAT_CHANGE": "Thay đổi hình thức phát hành",
+        "COMPLETION": "Duyệt kết thúc",
+        "CONTINUE": "Tiếp tục phát hành",
+        "CANCEL": "Hủy bộ truyện",
+        "HIATUS": "Tạm ngưng phát hành",
+        "ENDING_ALLOWANCE": "Duyệt số chương kết thúc",
+        "SERIES_CONTRACT_APPROVAL": "Duyệt hợp đồng bộ truyện",
+        "CONTRACT": "Quyết định hợp đồng",
+        "REPRINT": "Duyệt tái bản",
+        "TRANSFER": "Duyệt chuyển nhượng"
+      },
+      "results": {
+        "APPROVED": "Đã phê duyệt",
+        "REJECTED": "Đã từ chối",
+        "PENDING": "Đang biểu quyết",
+        "PENDING_QUORUM": "Chưa đủ phiếu",
+        "EXPIRED": "Đã hết hiệu lực"
+      }
+    },
+    "notApplicable": "Không áp dụng",
+    "pdf": {
+      "error": "Không thể tạo bản PDF hợp đồng. Vui lòng thử lại.",
+      "missingConditionsTitle": "Hợp đồng chưa có điều kiện thanh toán hợp lệ.",
+      "preparing": "Đang chuẩn bị PDF…",
+      "download": "Tải hợp đồng PDF",
+      "missingConditions": "Chưa có điều kiện thanh toán hợp lệ nên chưa thể tạo PDF đầy đủ."
+    },
+    "paymentConditions": {
+      "loadFailed": "Không thể tải điều kiện thanh toán. Các thao tác duyệt và ký đã được khóa để bảo đảm an toàn.",
+      "empty": "Hợp đồng chưa có điều kiện thanh toán.",
+      "invalidPayout": "Điều kiện này chưa có giá trị chi trả hợp lệ.",
+      "types": {
+        "CHAPTER_MILESTONE": "Mốc số chương",
+        "RECURRING_CHAPTER": "Chi trả định kỳ theo chương",
+        "RANKING_MILESTONE": "Mốc xếp hạng",
+        "TIME_BOUND": "Mốc thời hạn"
+      },
+      "statuses": {
+        "PENDING": "Đang theo dõi",
+        "ACHIEVED": "Đã đạt",
+        "PAID": "Đã chi trả",
+        "CANCELLED": "Đã hủy",
+        "MISSED": "Không đạt",
+        "DISABLED": "Đang tạm dừng"
+      },
+      "facts": {
+        "threshold": "Điều kiện đạt",
+        "amount": "Số tiền chi trả",
+        "percent": "Phần trăm chi trả",
+        "recurring": "Cơ chế lặp",
+        "lastTriggered": "Giá trị đã kích hoạt gần nhất",
+        "achievedAt": "Thời điểm đạt"
+      },
+      "recurring": {
+        "yes": "Có lặp lại",
+        "no": "Chỉ áp dụng một lần"
+      },
+      "thresholds": {
+        "chapter": "Đạt {{value}} chương đã xuất bản",
+        "recurringChapter": "Sau mỗi {{value}} chương đã xuất bản",
+        "ranking": "Đạt top {{value}} bảng xếp hạng",
+        "deadline": "Hoàn thành trước {{value}}",
+        "configured": "Theo cấu hình hợp đồng"
+      }
     }
   },
   "refresh": "Làm mới"

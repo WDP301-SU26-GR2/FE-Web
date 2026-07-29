@@ -72,7 +72,10 @@
       "revisionRequestFallback": "Vui lòng chỉnh sửa bản đã nộp và gửi một phiên bản mới.",
       "regionAssigned": "Vùng #{{id}}",
       "fullPage": "Toàn trang (không gắn vùng)",
-      "statusReason": "Ghi chú"
+      "statusReason": "Ghi chú",
+      "regionCount_one": "{{count}} vùng được giao",
+      "regionCount_other": "{{count}} vùng được giao",
+      "groupTask": "Task theo nhóm"
     },
     "dialog": {
       "title": "Chi tiết nhiệm vụ",
@@ -84,6 +87,7 @@
       "imageAlt": "Trang {{n}}",
       "image": {
         "original": "Ảnh gốc (Mangaka giao)",
+        "stageInput": "Ảnh đầu vào của stage",
         "submitted": "Bản đã nộp",
         "noImage": "Chưa có ảnh"
       },
@@ -113,6 +117,8 @@
       "start": "Bắt đầu task",
       "continueRevision": "Tiếp tục chỉnh sửa",
       "submit": "Nộp kết quả",
+      "openWorkspace": "Mở workspace",
+      "resolveRevision": "Đánh dấu đã xử lý vòng sửa",
       "resultFile": "File kết quả",
       "selectedFile": "Đã chọn: {{name}} ({{size}})"
     },
@@ -129,13 +135,64 @@
       "loadFailed": "Không tải được danh sách task. Vui lòng thử lại.",
       "startFailed": "Không thể bắt đầu task.",
       "submitFailed": "Không thể nộp kết quả task.",
+      "resolveRevisionFailed": "Không thể đánh dấu đã xử lý vòng sửa.",
+      "fileTooLarge": "File kết quả phải có dung lượng tối đa 15 MB.",
       "retry": "Thử lại",
       "noFileToSubmit": "Vui lòng đính kèm key file kết quả trước khi nộp.",
       "submitSuccess": "Đã nộp task. Đang chờ Mangaka review."
     },
     "success": {
       "started": "Đã bắt đầu task.",
-      "revisionStarted": "Đã bắt đầu chỉnh sửa. Hãy tải lên kết quả mới khi hoàn tất."
+      "revisionStarted": "Đã bắt đầu chỉnh sửa. Hãy tải lên kết quả mới khi hoàn tất.",
+      "revisionResolved": "Đã đánh dấu vòng sửa là đã xử lý."
+    },
+    "workspace": {
+      "title": "Workspace task",
+      "description": "Xem yêu cầu sản xuất, feedback, các phiên bản và nộp kết quả.",
+      "loadFailed": "Không thể tải workspace của task này.",
+      "previewFiles": "Xem file",
+      "viewTaskFiles": "Xem file task",
+      "statusReason": "Ghi chú mới nhất:",
+      "brief": "Yêu cầu sản xuất",
+      "taskDescription": "Mô tả task từ Mangaka",
+      "noDescription": "Mangaka chưa cung cấp yêu cầu bổ sung.",
+      "stageInputHint": "Task này dùng ảnh snapshot đầu vào bất biến của stage. Hãy dùng ảnh này để xử lý; ảnh gốc trang chỉ để tham khảo.",
+      "legacyInputHint": "Đây là task cũ không theo stage. Hãy dùng file ảnh gốc của trang làm đầu vào xử lý.",
+      "mangakaFeedback": "Feedback từ Mangaka",
+      "versions": "Lịch sử nộp bài",
+      "versionNumber": "Phiên bản {{number}}",
+      "noVersions": "Bạn chưa nộp phiên bản nào.",
+      "reviewStatus": {
+        "PENDING": "Đang chờ duyệt",
+        "APPROVED": "Đã duyệt",
+        "REVISION_REQUESTED": "Yêu cầu chỉnh sửa"
+      },
+      "submitTitle": "Nộp kết quả",
+      "submitHint": "Tải file hoàn thành để gửi Mangaka duyệt.",
+      "revisionTracker": "Theo dõi vòng sửa",
+      "resolveHint": "Bạn đã nộp file đã sửa. Bây giờ có thể đánh dấu từng vòng sửa đã hoàn thành.",
+      "resolveAfterSubmit": "Hãy nộp file đã sửa trước. Đánh dấu vòng sửa hoàn thành không tự nộp task.",
+      "revisionRound": "Vòng sửa {{round}}"
+    },
+    "resources": {
+      "title": "File Mangaka giao",
+      "description": "Ảnh đầu vào từ page và tài liệu tham khảo Mangaka đính kèm. Bài nộp của Assistant được xem riêng trong lịch sử nộp bài.",
+      "stageInput": "Ảnh đầu vào của stage",
+      "pageOriginal": "Ảnh gốc của page",
+      "pageOriginalReference": "Ảnh gốc của page (tham khảo)",
+      "attachments": "Tài liệu tham khảo đính kèm",
+      "noInput": "Mangaka chưa cung cấp file ảnh đầu vào cho task này.",
+      "noAttachments": "Không có tài liệu tham khảo đính kèm.",
+      "loadFailed": "Không tải được file task này.",
+      "openFile": "Mở file"
+    },
+    "submission": {
+      "title": "Bản đã nộp phiên bản {{number}}",
+      "description": "Đây là file Assistant đã nộp ở phiên bản được chọn.",
+      "noFile": "Phiên bản này không có file được lưu.",
+      "imageAlt": "Bản nộp phiên bản {{number}}",
+      "openFile": "Mở file đã nộp",
+      "viewVersion": "Xem phiên bản {{number}}"
     }
   },
   "studio": {
@@ -169,7 +226,9 @@
       "noReason": "Không có lý do",
       "ended": "Bắt đầu {{date}}",
       "taskTypesTitle": "Loại task được giao",
+      "loadingDetails": "Đang tải chi tiết hợp tác...",
       "activeNowBadge": "Đang hợp tác",
+      "notActiveNow": "Hợp tác này vẫn có trạng thái ACTIVE nhưng hiện ngoài thời hạn thuê. Mangaka chưa thể giao task mới cho đến khi gia hạn hoặc giao lại.",
       "endedBadge": "Đã kết thúc"
     },
     "pagination": {
@@ -183,7 +242,12 @@
     },
     "error": {
       "loadFailed": "Không tải được quan hệ studio. Vui lòng thử lại.",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "detailFailed": "Không thể tải chi tiết hợp tác."
+    },
+    "actions": {
+      "viewDetails": "Chi tiết",
+      "hideDetails": "Ẩn chi tiết"
     }
   },
   "invites": {
@@ -215,11 +279,14 @@
       "hireWindowNoEnd": "Từ {{from}}",
       "seriesNone": "Không có series context",
       "taskTypesTitle": "Sẽ làm việc về",
+      "loadingDetails": "Đang tải chi tiết lời mời...",
       "receivedAt": "Nhận {{date}}"
     },
     "actions": {
       "accept": "Chấp nhận",
-      "decline": "Từ chối"
+      "decline": "Từ chối",
+      "viewDetails": "Chi tiết",
+      "hideDetails": "Ẩn chi tiết"
     },
     "pagination": {
       "previousPage": "Trang trước",
@@ -234,7 +301,8 @@
       "loadFailed": "Không tải được lời mời. Vui lòng thử lại.",
       "acceptFailed": "Không thể chấp nhận lời mời.",
       "declineFailed": "Không thể từ chối lời mời.",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "detailFailed": "Không thể tải chi tiết lời mời."
     },
     "success": {
       "accepted": "Đã chấp nhận lời mời. StudioAssignment ACTIVE đã được tạo.",

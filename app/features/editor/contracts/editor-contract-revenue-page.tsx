@@ -2,7 +2,12 @@ import { useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { ContractResDtoOutput, ContractStatusProgressResDtoOutput } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { ContractActionMessage, ContractDialogPanel, ContractPageLayout, contractInput } from './components/contract-shared'
+import {
+  ContractActionMessage,
+  ContractDialogPanel,
+  ContractPageLayout,
+  contractInput
+} from './components/contract-shared'
 
 export function EditorContractRevenuePage({
   contract,
@@ -37,9 +42,9 @@ export function EditorContractRevenuePage({
       ) : (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           {contract.contractType !== 'REVENUE_SHARE' ? (
-          <p className='text-sm text-muted-foreground'>{t('contractDetail.revenueShareOnly')}</p>
+            <p className='text-sm text-muted-foreground'>{t('contractDetail.revenueShareOnly')}</p>
           ) : (
-          <p className='text-sm text-muted-foreground'>{t('contractDetail.revenueExecutedOnly')}</p>
+            <p className='text-sm text-muted-foreground'>{t('contractDetail.revenueExecutedOnly')}</p>
           )}
         </section>
       )}

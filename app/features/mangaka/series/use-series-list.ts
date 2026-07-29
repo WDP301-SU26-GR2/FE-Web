@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export const SERIES_PAGE_SIZE = 4
 
@@ -25,7 +26,7 @@ type UseSeriesListResult = {
  * which calls `POST /uploads/sign-download` (per FE-API-Guide-v3 §14) to resolve
  * the key into a presigned GET URL on demand.
  */
-export function useSeriesList(): UseSeriesListResult {
+export function useSeriesList(pageSize = SERIES_PAGE_SIZE): UseSeriesListResult {
   const { t } = useTranslation('common')
   const [items, setItems] = useState<SeriesListResDtoOutputItemsItem[]>([])
   const [total, setTotal] = useState(0)
@@ -46,10 +47,10 @@ export function useSeriesList(): UseSeriesListResult {
       setIsLoading(true)
       setError(null)
 
-      const offset = (targetPage - 1) * SERIES_PAGE_SIZE
+      const offset = (targetPage - 1) * pageSize
 
       try {
-        const res = await seriesControllerListSeries({ limit: SERIES_PAGE_SIZE, offset }, { signal })
+        const res = await seriesControllerListSeries({ limit: pageSize, offset }, { signal })
         if (!signal.aborted) {
           setItems(res.data.items)
           setTotal(res.data.total)
@@ -57,13 +58,13 @@ export function useSeriesList(): UseSeriesListResult {
       } catch (err: unknown) {
         if (signal.aborted) return
         if (err instanceof Error && err.name === 'AbortError') return
-        setError(err instanceof Error ? err.message : t('errors.unknown'))
+        setError(extractApiErrorMessage(err, t('errors.unknown')))
       }
       if (!signal.aborted) {
         setIsLoading(false)
       }
     },
-    [t]
+    [pageSize, t]
   )
 
   useEffect(() => {
@@ -88,7 +89,7 @@ export function useSeriesList(): UseSeriesListResult {
     items,
     total,
     page,
-    perPage: SERIES_PAGE_SIZE,
+    perPage: pageSize,
     isLoading,
     error,
     setPage,

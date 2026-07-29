@@ -5,6 +5,7 @@ import { usersControllerListAssistants } from '~/api/operations/users/users'
 import type { UsersControllerListAssistantsParams } from '~/api/model/users/usersControllerListAssistantsParams'
 import type { AssistantDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export const ASSISTANT_PAGE_SIZE = 8
 
@@ -19,9 +20,7 @@ type UseAssistantDirectoryResult = {
   error: string | null
   setPage: (page: number) => void
   setSpecialization: (spec: Specialization | undefined) => void
-  setLevel: (level: string | undefined) => void
   specialization: Specialization | undefined
-  level: string | undefined
   refresh: () => void
 }
 
@@ -30,8 +29,8 @@ type UseAssistantDirectoryResult = {
  *
  * Mirrors the `useSeriesList` pattern: AbortController for stale requests,
  * a 1-based `page` for the UI, `total` from the BE for pagination sizing.
- * Optional `specialization` and `level` filters are sent as query params
- * (omit = "no filter" per FE-API-Guide-v2.md §4.3).
+ * An optional specialization filter is sent as a query param (omit = "no
+ * filter" per FE-API-Guide-v2.md §4.3).
  *
  * Per §4.3, 403/404 on the directory endpoint is treated as "empty" rather
  * than a hard error — the page can still render a graceful no-access state.
@@ -42,7 +41,6 @@ export function useAssistantDirectory(): UseAssistantDirectoryResult {
   const [total, setTotal] = useState(0)
   const [page, setPageState] = useState(1)
   const [specialization, setSpecialization] = useState<Specialization | undefined>(undefined)
-  const [level, setLevel] = useState<string | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -50,7 +48,7 @@ export function useAssistantDirectory(): UseAssistantDirectoryResult {
   const abortRef = useRef<AbortController | null>(null)
 
   const fetchPage = useCallback(
-    async (targetPage: number, spec: Specialization | undefined, lvl: string | undefined) => {
+    async (targetPage: number, spec: Specialization | undefined) => {
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller
@@ -67,7 +65,6 @@ export function useAssistantDirectory(): UseAssistantDirectoryResult {
           offset
         }
         if (spec) params.specialization = spec
-        if (lvl && lvl.trim().length > 0) params.level = lvl.trim()
 
         const res = await usersControllerListAssistants(params, { signal })
         if (!signal.aborted) {
@@ -82,7 +79,7 @@ export function useAssistantDirectory(): UseAssistantDirectoryResult {
           setItems([])
           setTotal(0)
         } else {
-          setError(err instanceof Error ? err.message : t('errors.unknown'))
+          setError(extractApiErrorMessage(err, t('errors.unknown')))
         }
       }
       if (!signal.aborted) {
@@ -94,12 +91,17 @@ export function useAssistantDirectory(): UseAssistantDirectoryResult {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchPage(page, specialization, level)
+    void fetchPage(page, specialization)
     return () => abortRef.current?.abort()
-  }, [page, specialization, level, reloadToken, fetchPage])
+  }, [page, specialization, reloadToken, fetchPage])
 
   const setPage = useCallback((next: number) => {
     setPageState(Math.max(1, next))
+  }, [])
+
+  const changeSpecialization = useCallback((next: Specialization | undefined) => {
+    setPageState(1)
+    setSpecialization(next)
   }, [])
 
   const refresh = useCallback(() => {
@@ -114,10 +116,8 @@ export function useAssistantDirectory(): UseAssistantDirectoryResult {
     isLoading,
     error,
     setPage,
-    setSpecialization,
-    setLevel,
+    setSpecialization: changeSpecialization,
     specialization,
-    level,
     refresh
   }
 }

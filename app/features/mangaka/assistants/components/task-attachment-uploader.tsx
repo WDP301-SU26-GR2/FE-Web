@@ -140,7 +140,7 @@ export function TaskAttachmentUploader({ assetType, onAssetsChange }: TaskAttach
       >
         <Upload className={cn('h-6 w-6', dragging ? 'text-primary' : 'text-muted-foreground')} />
         <p className='text-sm text-foreground'>{t('studio.tasks.composer.attachments.dropzoneLabel')}</p>
-        <p className='text-xs text-muted-foreground'>PNG, JPG, WEBP, PDF · tối đa 15MB</p>
+        <p className='text-xs text-muted-foreground'>{t('studio.tasks.composer.attachments.formatHint')}</p>
       </div>
       <input
         ref={inputRef}
@@ -164,7 +164,12 @@ export function TaskAttachmentUploader({ assetType, onAssetsChange }: TaskAttach
               {item.status === 'uploading' && (
                 <span className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent' />
               )}
-              {item.status === 'done' && <span className='h-4 w-4 rounded-full bg-success' aria-label='Uploaded' />}
+              {item.status === 'done' && (
+                <span
+                  className='h-4 w-4 rounded-full bg-success'
+                  aria-label={t('studio.tasks.composer.attachments.uploaded')}
+                />
+              )}
               {item.status === 'error' && <AlertCircle className='h-4 w-4 text-destructive' />}
               <span className='min-w-0 flex-1 truncate text-foreground'>{item.file.name}</span>
               <span className='shrink-0 text-xs text-muted-foreground'>{formatSize(item.file.size)}</span>
@@ -172,7 +177,7 @@ export function TaskAttachmentUploader({ assetType, onAssetsChange }: TaskAttach
                 <button
                   type='button'
                   onClick={() => handleRemove(item.id)}
-                  aria-label={`Remove ${item.file.name}`}
+                  aria-label={t('studio.tasks.composer.attachments.removeFile', { name: item.file.name })}
                   className='shrink-0 text-muted-foreground hover:text-destructive'
                 >
                   <X className='h-4 w-4' />

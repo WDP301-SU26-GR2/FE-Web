@@ -46,11 +46,7 @@ export function AvatarUploader({ value, onChange, disabled }: AvatarUploaderProp
 
     setIsUploading(true)
     try {
-      const { key, error } = await uploadToR2WithMessage(
-        file,
-        t('avatar.errors.uploadGeneric'),
-        'REFERENCE'
-      )
+      const { key, error } = await uploadToR2WithMessage(file, t('avatar.errors.uploadGeneric'), 'REFERENCE')
       if (key) {
         onChange(key)
       } else {

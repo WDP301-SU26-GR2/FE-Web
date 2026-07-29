@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import { isFetchError } from '~/api/mutator/custom-fetch'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseChapterListResult = {
   chapters: ChapterListResDtoOutputItemsItem[]
@@ -55,7 +56,7 @@ export function useChapterList(seriesId: string | null | undefined): UseChapterL
         if (isFetchError(err) && (err.status === 403 || err.status === 404)) {
           setChapters([])
         } else {
-          setError(err instanceof Error ? err.message : t('seriesDetail.publication.error.loadFailed'))
+          setError(extractApiErrorMessage(err, t('seriesDetail.publication.error.loadFailed')))
         }
       }
       if (!signal.aborted) {
@@ -69,11 +70,9 @@ export function useChapterList(seriesId: string | null | undefined): UseChapterL
     if (!seriesId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setChapters([])
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false)
       return
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchList(seriesId)
     return () => abortRef.current?.abort()
   }, [seriesId, reloadToken, fetchList])

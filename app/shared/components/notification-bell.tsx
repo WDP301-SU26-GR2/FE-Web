@@ -26,13 +26,27 @@ function notificationHref(item: NotificationListResDtoOutputItemsItem, role: str
   const prefix = item.referenceType.split('_')[0] ?? ''
 
   if (role === 'MANGAKA') {
-    if (['PROPOSAL', 'SERIES', 'NAME', 'FRANCHISE'].includes(prefix)) return `/dashboard/mangaka/series/${id}`
-    if (['CHAPTER', 'MANUSCRIPT', 'PAGE'].includes(prefix)) return `/dashboard/mangaka/series?chapterId=${id}`
-    if (prefix === 'TASK') return `/dashboard/mangaka/studio?taskId=${id}`
-    if (['CONTRACT', 'PAYMENT', 'AMENDMENT'].includes(prefix)) return `/dashboard/mangaka/contracts/${id}`
-    if (prefix === 'DEADLINE') return `/dashboard/mangaka/contracts?deadlineId=${id}`
-    if (['REVIEW', 'INVITE', 'ASSIGNMENT'].includes(prefix)) return `/dashboard/mangaka/assistants?referenceId=${id}`
-    if (prefix === 'REVISION') return `/dashboard/mangaka/studio?revisionId=${id}`
+    if (prefix === 'FRANCHISE') return `/dashboard/mangaka/series/franchise-consent/${id}`
+    if (['PROPOSAL', 'SERIES', 'NAME'].includes(prefix)) return `/dashboard/mangaka/series/${id}`
+    if (['CHAPTER', 'MANUSCRIPT'].includes(prefix)) {
+      const coOwnerQuery =
+        item.referenceType.includes('CO_OWNER') || item.referenceType.includes('COOWNER') ? '?coOwner=1' : ''
+      return `/dashboard/mangaka/chapters/${id}${coOwnerQuery}`
+    }
+    if (prefix === 'PAGE') return '/dashboard/mangaka/studio/overview'
+    if (prefix === 'TASK') return `/dashboard/mangaka/studio/tasks/${id}`
+    if (prefix === 'PAYMENT') return `/dashboard/mangaka/payments/${id}`
+    if (prefix === 'CONTRACT') return `/dashboard/mangaka/contracts/${id}`
+    if (prefix === 'AMENDMENT') return '/dashboard/mangaka/contracts'
+    if (prefix === 'TRANSFER') {
+      const queryKey =
+        item.referenceType.includes('CONTRACT') || item.referenceType.includes('SIGN') ? 'contractId' : 'requestId'
+      return `/dashboard/mangaka/transfers?${queryKey}=${id}`
+    }
+    if (prefix === 'DEADLINE') return `/dashboard/mangaka/deadlines?requestId=${id}`
+    if (['REVIEW', 'INVITE', 'ASSIGNMENT'].includes(prefix)) return '/dashboard/mangaka/assistants'
+    if (prefix === 'REVISION') return '/dashboard/mangaka/studio'
+    if (['SURVEY', 'RANKING'].includes(prefix)) return '/dashboard/mangaka/rankings'
   }
 
   if (role === 'ASSISTANT' && prefix === 'TASK') return `/dashboard/assistant/tasks?taskId=${id}`
@@ -77,6 +91,7 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!isOpen) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- opening the popover starts its request lifecycle
     void loadUnread()
   }, [isOpen, loadUnread])
 

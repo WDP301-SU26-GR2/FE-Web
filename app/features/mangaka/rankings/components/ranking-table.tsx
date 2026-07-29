@@ -49,9 +49,7 @@ export function RankingTable({ items, emptyLabel }: RankingTableProps) {
             key={item.seriesId}
             className='grid grid-cols-[64px_minmax(0,1fr)_92px_88px_110px] items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-muted/40'
           >
-            <span className='font-mono text-base font-bold text-foreground'>
-              {item.rankPosition ?? '—'}
-            </span>
+            <span className='font-mono text-base font-bold text-foreground'>{item.rankPosition ?? '—'}</span>
             <span
               className={cn(
                 'truncate font-semibold',
@@ -87,11 +85,7 @@ const PUBLICATION_TYPE_LABEL: Record<NonNullable<VoteResultsResDtoOutputResultsI
   IRREGULAR: 'Irregular'
 }
 
-function PublicationTypeBadge({
-  value
-}: {
-  value: VoteResultsResDtoOutputResultsItemPublicationType
-}) {
+function PublicationTypeBadge({ value }: { value: VoteResultsResDtoOutputResultsItemPublicationType }) {
   const { t } = useTranslation('mangaka')
   if (!value) return <span className='text-muted-foreground'>—</span>
   return (
@@ -117,8 +111,8 @@ function RankChangeBadge({ change }: { change: number | null }) {
       className={cn(
         'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold',
         isUp
-          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
-          : 'border-rose-500/20 bg-rose-500/10 text-rose-600'
+          ? 'border-success/20 bg-success/10 text-success'
+          : 'border-destructive/20 bg-destructive/10 text-destructive'
       )}
     >
       {isUp ? <ArrowUp className='h-3 w-3' /> : <ArrowDown className='h-3 w-3' />}

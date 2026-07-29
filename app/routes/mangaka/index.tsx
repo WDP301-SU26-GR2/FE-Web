@@ -1,12 +1,8 @@
-import { MangakaDashboard } from '~/features/mangaka'
-import { SITE } from '~/shared/config/site'
+import { MangakaDashboard, mangakaRouteMeta } from '~/features/mangaka'
 import type { Route } from './+types/index'
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: `Mangaka Dashboard - ${SITE.name}` },
-    { name: 'description', content: 'Bảng điều khiển sản xuất manga' }
-  ]
+  return mangakaRouteMeta('routeMeta.dashboard.title', 'routeMeta.dashboard.description')
 }
 
 export default function DashboardMangakaRoute() {

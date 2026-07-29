@@ -1,17 +1,22 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { ChevronLeft, ChevronRight, Filter, Users, Briefcase, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, Users, Briefcase, Plus, Workflow } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { StudioControllerListAssignmentsStatus } from '~/api/model/studio/studioControllerListAssignmentsStatus'
-import { AssignmentCard } from '~/features/mangaka/assistants/components/assignment-card'
+import { StudioAssignmentCard } from '~/features/mangaka/studio/components/studio-assignment-card'
 import { AssignTaskDialog } from '~/features/mangaka/assistants/components/assign-task-dialog'
 import { StudioTasksTab } from '~/features/mangaka/studio/components/studio-tasks-tab'
 import { useMyStudioAssignments } from './use-my-studio-assignments'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import type { UseTaskComposerDataOptions } from '~/features/mangaka/assistants/use-task-composer-data'
+import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
+import { Dialog } from '~/shared/ui/dialog'
+import { useAssignmentLifecycle } from './use-assignment-lifecycle'
+import { useReviewedAssistantIds } from './use-reviewed-assistant-ids'
+import { useAuth } from '~/features/auth/context/auth-context'
 
 const STATUS_FILTERS: ReadonlyArray<StudioControllerListAssignmentsStatus> = ['ACTIVE', 'COMPLETED', 'TERMINATED']
 
@@ -36,6 +41,14 @@ export function MyStudioPage() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false)
   const [taskPreset, setTaskPreset] = useState<UseTaskComposerDataOptions>({})
   const [taskContextLocks, setTaskContextLocks] = useState<{ assistant?: boolean; series?: boolean }>({})
+  const [lifecycleAction, setLifecycleAction] = useState<{
+    assignment: AssignmentListResDtoOutputItemsItem
+    type: 'terminate' | 'review'
+  } | null>(null)
+  const [lifecycleNote, setLifecycleNote] = useState('')
+  const [rating, setRating] = useState(5)
+  const lifecycle = useAssignmentLifecycle()
+  const { session } = useAuth()
 
   const openTaskComposer = (
     preset: UseTaskComposerDataOptions,
@@ -48,6 +61,10 @@ export function MyStudioPage() {
 
   const { items, total, page, perPage, isLoading, error, status, setStatus, setPage, refresh } =
     useMyStudioAssignments()
+  const endedAssistantIds = items
+    .filter(({ assignment }) => assignment.status !== 'ACTIVE')
+    .map(({ assignment }) => assignment.assistantId)
+  const reviews = useReviewedAssistantIds(endedAssistantIds, session?.user?.id)
 
   const totalPages = Math.max(1, Math.ceil(total / perPage))
   const from = total === 0 ? 0 : (page - 1) * perPage + 1
@@ -65,6 +82,14 @@ export function MyStudioPage() {
           <p className='mt-1 text-sm text-muted-foreground'>{t('myStudio.subtitle')}</p>
         </div>
         <div className='flex items-center gap-2'>
+          <button
+            type='button'
+            onClick={() => navigate('/dashboard/mangaka/studio/overview')}
+            className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted cursor-pointer'
+          >
+            <Workflow className='h-3.5 w-3.5' />
+            <span>{t('studio.overview.open')}</span>
+          </button>
           <button
             type='button'
             onClick={() => {
@@ -156,9 +181,11 @@ export function MyStudioPage() {
           <>
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
               {items.map(({ assignment }) => (
-                <AssignmentCard
+                <StudioAssignmentCard
                   key={assignment.id}
                   assignment={assignment}
+                  reviewed={reviews.reviewedAssistantIds.has(assignment.assistantId)}
+                  reviewEligibilityKnown={!reviews.isLoading && reviews.isReliable}
                   onAssignClick={(a) => {
                     // The same composer is used by the header CTA. This entry
                     // point only fixes the hire context that the card represents.
@@ -169,6 +196,15 @@ export function MyStudioPage() {
                       },
                       { assistant: true, series: Boolean(a.seriesId) }
                     )
+                  }}
+                  onTerminateClick={(assignment) => {
+                    setLifecycleNote('')
+                    setLifecycleAction({ assignment, type: 'terminate' })
+                  }}
+                  onReviewClick={(assignment) => {
+                    setLifecycleNote('')
+                    setRating(5)
+                    setLifecycleAction({ assignment, type: 'review' })
                   }}
                 />
               ))}
@@ -243,7 +279,146 @@ export function MyStudioPage() {
           toast.success(t('tasks.toast.created'))
         }}
       />
+      <StudioLifecycleDialog
+        action={lifecycleAction}
+        note={lifecycleNote}
+        rating={rating}
+        isSubmitting={lifecycle.isMutating}
+        onClose={() => setLifecycleAction(null)}
+        onNoteChange={setLifecycleNote}
+        onRatingChange={setRating}
+        onSubmit={() => {
+          if (!lifecycleAction) return
+          if (lifecycleAction.type === 'terminate' && !lifecycleNote.trim()) {
+            toast.error(t('myStudio.lifecycle.reasonRequired'))
+            return
+          }
+          const action = lifecycleAction
+          const request =
+            action.type === 'terminate'
+              ? lifecycle.terminate(action.assignment.id, lifecycleNote.trim())
+              : lifecycle.review({
+                  assignmentId: action.assignment.id,
+                  assistantId: action.assignment.assistantId,
+                  seriesId: action.assignment.seriesId,
+                  rating,
+                  comment: lifecycleNote
+                })
+          void request.then((result) => {
+            if (result.success) {
+              if (action.type === 'review') reviews.markReviewed(action.assignment.assistantId)
+              toast.success(
+                t(
+                  action.type === 'terminate'
+                    ? 'myStudio.lifecycle.terminateSuccess'
+                    : 'myStudio.lifecycle.reviewSuccess'
+                )
+              )
+              setLifecycleAction(null)
+              refresh()
+            } else {
+              toast.error(
+                result.error ??
+                  t(
+                    action.type === 'terminate'
+                      ? 'myStudio.lifecycle.terminateFailed'
+                      : 'myStudio.lifecycle.reviewFailed'
+                  )
+              )
+            }
+          })
+        }}
+      />
     </div>
+  )
+}
+
+interface StudioLifecycleDialogProps {
+  action: { assignment: AssignmentListResDtoOutputItemsItem; type: 'terminate' | 'review' } | null
+  note: string
+  rating: number
+  isSubmitting: boolean
+  onClose: () => void
+  onNoteChange: (value: string) => void
+  onRatingChange: (value: number) => void
+  onSubmit: () => void
+}
+
+function StudioLifecycleDialog({
+  action,
+  note,
+  rating,
+  isSubmitting,
+  onClose,
+  onNoteChange,
+  onRatingChange,
+  onSubmit
+}: StudioLifecycleDialogProps) {
+  const { t } = useTranslation('mangaka')
+  const isTerminate = action?.type === 'terminate'
+  return (
+    <Dialog
+      open={action !== null}
+      onClose={onClose}
+      titleId='studio-lifecycle-title'
+      title={t(isTerminate ? 'myStudio.lifecycle.terminateTitle' : 'myStudio.lifecycle.reviewTitle')}
+      description={t(isTerminate ? 'myStudio.lifecycle.terminateDescription' : 'myStudio.lifecycle.reviewDescription')}
+      footer={
+        <div className='flex justify-end gap-2'>
+          <button
+            type='button'
+            onClick={onClose}
+            disabled={isSubmitting}
+            className='rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer'
+          >
+            {t('myStudio.lifecycle.cancel')}
+          </button>
+          <button
+            type='button'
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className='rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 cursor-pointer'
+          >
+            {t(isTerminate ? 'myStudio.lifecycle.confirmTerminate' : 'myStudio.lifecycle.confirmReview')}
+          </button>
+        </div>
+      }
+    >
+      {action && (
+        <div className='space-y-4'>
+          <p className='text-sm text-muted-foreground'>
+            {t('myStudio.lifecycle.forAssistant', {
+              name: action.assignment.assistant?.displayName ?? t('myStudio.card.unnamedAssistant')
+            })}
+          </p>
+          {!isTerminate && (
+            <label className='block text-sm font-medium text-foreground'>
+              {t('myStudio.lifecycle.rating')}
+              <select
+                value={rating}
+                onChange={(event) => onRatingChange(Number(event.target.value))}
+                className='mt-1.5 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground'
+              >
+                {[5, 4, 3, 2, 1].map((value) => (
+                  <option key={value} value={value}>
+                    {t('myStudio.lifecycle.stars', { count: value })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <label className='block text-sm font-medium text-foreground'>
+            {t(isTerminate ? 'myStudio.lifecycle.reason' : 'myStudio.lifecycle.comment')}
+            <textarea
+              value={note}
+              onChange={(event) => onNoteChange(event.target.value)}
+              maxLength={isTerminate ? 500 : 1000}
+              className='mt-1.5 min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm text-foreground'
+            />
+          </label>
+        </div>
+      )}
+    </Dialog>
   )
 }
 

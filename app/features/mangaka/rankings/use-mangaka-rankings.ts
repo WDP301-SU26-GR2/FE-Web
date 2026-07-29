@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  surveyControllerGetLatestVoteResults,
+  publicRankingControllerGetLatestVoteResults,
+  surveyControllerGetBoardRanking,
   surveyControllerGetSeriesTrend,
-  surveyControllerGetVotePeriods,
-  surveyControllerGetVoteResults
+  publicRankingControllerGetVotePeriods,
+  publicRankingControllerGetVoteResults
 } from '~/api/operations/survey/survey'
 import type {
   LatestVoteResultsResDtoOutput,
@@ -13,24 +14,16 @@ import type {
   VoteResultsResDtoOutput
 } from '~/api/model/survey'
 import type { BoardRankingListResDtoOutput } from '~/api/model/survey/boardRankingListResDtoOutput'
-import type { SurveyControllerGetLatestVoteResultsPublicationType } from '~/api/model/survey/surveyControllerGetLatestVoteResultsPublicationType'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import type { PublicRankingControllerGetLatestVoteResultsPublicationType } from '~/api/model/survey/publicRankingControllerGetLatestVoteResultsPublicationType'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 /**
- * Filter for the latest-results board. Mirrors §9 of FE-API-Guide-v3:
- *  - omit       → overall (no publication-type filter)
- *  - WEEKLY     → only series with that publication type
- *  - MONTHLY    → same
- *  - IRREGULAR  → same
+ * The public ranking endpoints are scoped by both magazine and publication
+ * type in the current OpenAPI contract.
  */
-export type RankingPublicationType = SurveyControllerGetLatestVoteResultsPublicationType | 'ALL'
+export type RankingPublicationType = PublicRankingControllerGetLatestVoteResultsPublicationType
 
-export const PUBLICATION_TYPE_OPTIONS: ReadonlyArray<RankingPublicationType> = [
-  'ALL',
-  'WEEKLY',
-  'MONTHLY',
-  'IRREGULAR'
-]
+export const PUBLICATION_TYPE_OPTIONS: ReadonlyArray<RankingPublicationType> = ['WEEKLY', 'MONTHLY', 'IRREGULAR']
 
 type UseMangakaRankingsResult = {
   latest: LatestVoteResultsResDtoOutput | null
@@ -40,12 +33,21 @@ type UseMangakaRankingsResult = {
   error: string | null
   publicationType: RankingPublicationType
   setPublicationType: (value: RankingPublicationType) => void
+  magazine: string
+  setMagazine: (value: string) => void
   selectedPeriodId: string | null
   setSelectedPeriodId: (id: string | null) => void
   periodResults: VoteResultsResDtoOutput | null
   isLoadingPeriod: boolean
   selectedSeriesId: string | null
   setSelectedSeriesId: (id: string | null) => void
+  boardPeriods: VotePeriodsResDtoOutput['items']
+  selectedBoardPeriodId: string | null
+  setSelectedBoardPeriodId: (id: string | null) => void
+  boardRankings: BoardRankingListResDtoOutput['items']
+  isLoadingBoardPeriods: boolean
+  isLoadingBoardRankings: boolean
+  boardError: string | null
   refresh: () => void
 }
 
@@ -70,7 +72,8 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
 
   const [latest, setLatest] = useState<LatestVoteResultsResDtoOutput | null>(null)
   const [periods, setPeriods] = useState<VotePeriodsResDtoOutput['items']>([])
-  const [publicationType, setPublicationType] = useState<RankingPublicationType>('ALL')
+  const [publicationType, setPublicationType] = useState<RankingPublicationType>('WEEKLY')
+  const [magazine, setMagazine] = useState('')
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null)
   const [periodResults, setPeriodResults] = useState<VoteResultsResDtoOutput | null>(null)
@@ -78,6 +81,13 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
 
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null)
   const [trend, setTrend] = useState<BoardRankingListResDtoOutput['items']>([])
+
+  const [boardPeriods, setBoardPeriods] = useState<VotePeriodsResDtoOutput['items']>([])
+  const [selectedBoardPeriodId, setSelectedBoardPeriodId] = useState<string | null>(null)
+  const [boardRankings, setBoardRankings] = useState<BoardRankingListResDtoOutput['items']>([])
+  const [isLoadingBoardPeriods, setIsLoadingBoardPeriods] = useState(true)
+  const [isLoadingBoardRankings, setIsLoadingBoardRankings] = useState(false)
+  const [boardError, setBoardError] = useState<string | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -93,21 +103,38 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
     abortRef.current = controller
     const signal = controller.signal
 
+    if (!magazine.trim()) {
+      void Promise.resolve().then(() => {
+        if (signal.aborted) return
+        setLatest(null)
+        setPeriods([])
+        setBoardPeriods([])
+        setSelectedBoardPeriodId(null)
+        setIsLoading(false)
+        setIsLoadingBoardPeriods(false)
+      })
+      return () => controller.abort()
+    }
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true)
+    setIsLoadingBoardPeriods(true)
     setError(null)
     ;(async () => {
       try {
         const [latestRes, periodsRes] = await Promise.all([
-          surveyControllerGetLatestVoteResults(
-            publicationType === 'ALL' ? undefined : { publicationType },
-            { signal }
-          ),
-          surveyControllerGetVotePeriods({ limit: 24 }, { signal })
+          publicRankingControllerGetLatestVoteResults({ magazine: magazine.trim(), publicationType }, { signal }),
+          publicRankingControllerGetVotePeriods({ magazine: magazine.trim(), publicationType, limit: 24 }, { signal })
         ])
         if (signal.aborted) return
         setLatest(latestRes.data)
         setPeriods(periodsRes.data.items)
+        setBoardPeriods(periodsRes.data.items)
+        setSelectedBoardPeriodId((current) =>
+          current && periodsRes.data.items.some((period) => period.id === current)
+            ? current
+            : (periodsRes.data.items[0]?.id ?? null)
+        )
       } catch (err: unknown) {
         if (signal.aborted) return
         if (err instanceof Error && err.name === 'AbortError') return
@@ -115,12 +142,13 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
       } finally {
         if (!signal.aborted) {
           setIsLoading(false)
+          setIsLoadingBoardPeriods(false)
         }
       }
     })()
 
     return () => abortRef.current?.abort()
-  }, [publicationType, reloadToken, t])
+  }, [magazine, publicationType, reloadToken, t])
 
   // 3: results for a specific period (independent fetch, fired only when a
   // period is selected).
@@ -135,7 +163,7 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
     setIsLoadingPeriod(true)
     ;(async () => {
       try {
-        const res = await surveyControllerGetVoteResults({ surveyPeriodId: selectedPeriodId }, { signal })
+        const res = await publicRankingControllerGetVoteResults({ surveyPeriodId: selectedPeriodId }, { signal })
         if (signal.aborted) return
         setPeriodResults(res.data)
       } catch (err: unknown) {
@@ -163,10 +191,7 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
     const signal = controller.signal
     ;(async () => {
       try {
-        const res = await surveyControllerGetSeriesTrend(
-          { seriesId: selectedSeriesId, periods: 12 },
-          { signal }
-        )
+        const res = await surveyControllerGetSeriesTrend({ seriesId: selectedSeriesId, periods: 12 }, { signal })
         if (signal.aborted) return
         setTrend(res.data.items)
       } catch (err: unknown) {
@@ -178,6 +203,36 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
 
     return () => controller.abort()
   }, [selectedSeriesId])
+
+  // Exact `GET /rankings/board` coverage. It remains read-only and is called
+  // only after the user has a reflected survey period to inspect.
+  useEffect(() => {
+    if (!selectedBoardPeriodId) {
+      return
+    }
+
+    const controller = new AbortController()
+    const signal = controller.signal
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoadingBoardRankings(true)
+    setBoardError(null)
+    ;(async () => {
+      try {
+        const response = await surveyControllerGetBoardRanking({ surveyPeriodId: selectedBoardPeriodId }, { signal })
+        if (signal.aborted) return
+        setBoardRankings(response.data.items)
+      } catch (err: unknown) {
+        if (signal.aborted) return
+        if (err instanceof Error && err.name === 'AbortError') return
+        setBoardRankings([])
+        setBoardError(getBoardRankingErrorMessage(err, t))
+      } finally {
+        if (!signal.aborted) setIsLoadingBoardRankings(false)
+      }
+    })()
+
+    return () => controller.abort()
+  }, [selectedBoardPeriodId, reloadToken, t])
 
   const refresh = useCallback(() => {
     setReloadToken((n) => n + 1)
@@ -191,12 +246,32 @@ export function useMangakaRankings(): UseMangakaRankingsResult {
     error,
     publicationType,
     setPublicationType,
+    magazine,
+    setMagazine,
     selectedPeriodId,
     setSelectedPeriodId,
     periodResults,
     isLoadingPeriod,
     selectedSeriesId,
     setSelectedSeriesId,
+    boardPeriods,
+    selectedBoardPeriodId,
+    setSelectedBoardPeriodId,
+    boardRankings,
+    isLoadingBoardPeriods,
+    isLoadingBoardRankings,
+    boardError,
     refresh
+  }
+}
+
+function getBoardRankingErrorMessage(error: unknown, t: ReturnType<typeof useTranslation>['t']): string {
+  switch (extractApiErrorCode(error)) {
+    case 'Error.SurveyPeriodNotFound':
+      return t('rankings.board.error.periodNotFound')
+    case 'Error.RankingAccessDenied':
+      return t('rankings.board.error.accessDenied')
+    default:
+      return t('rankings.board.error.loadFailed')
   }
 }

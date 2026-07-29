@@ -1,12 +1,26 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { CreateTaskBodyDto, CreateTaskBodyDtoTaskType, CreateTaskGroupBodyDto } from '~/api/model/task'
-import type { UseTaskComposerDataOptions } from './use-task-composer-data'
+import type {
+  ActiveAssignmentOption,
+  ProductionStageOption,
+  UseTaskComposerDataOptions
+} from './use-task-composer-data'
 import { useAssignTask } from './use-assign-task'
 import type { UseAssignTaskResult } from './use-assign-task'
 
 export type ComposerStep = 'context' | 'work' | 'confirm'
+
+/** `Specialization` / `CreateTaskBodyDto.taskType` enum from the task API. */
+const TASK_TYPES: CreateTaskBodyDtoTaskType[] = [
+  'BACKGROUND',
+  'SCREENTONE',
+  'EFFECT_LINES',
+  'INKING',
+  'COLORING',
+  'LETTERING'
+]
 
 /**
  * State for the 3-step "Assign task" composer.
@@ -30,7 +44,10 @@ export interface AssignTaskFormState {
   /** Selected whole pages. More than one uses `POST /tasks/group`. */
   pageIds: string[]
   regionIds: string[]
+  stageId?: string
   taskType?: CreateTaskBodyDtoTaskType
+  description?: string
+  groupTitle?: string
   /** Local datetime string (YYYY-MM-DDTHH:mm) before ISO conversion. */
   deadline?: string
   priority?: number
@@ -40,15 +57,19 @@ export interface AssignTaskFormState {
 export interface UseAssignTaskFormOptions {
   preset?: UseTaskComposerDataOptions
   /** All known active assignments (so we can resolve `assignmentId → assistantId`). */
-  assignments?: AssignmentListResDtoOutputItemsItem[]
+  assignments?: ActiveAssignmentOption[]
+  stageTaskTypes?: CreateTaskBodyDtoTaskType[]
+  stages?: ProductionStageOption[]
+  requireStage?: boolean
 }
 
 export interface UseAssignTaskFormResult {
   state: AssignTaskFormState
   /** Resolved `StudioAssignment` for the currently selected assignmentId. */
-  selectedAssignment: AssignmentListResDtoOutputItemsItem | undefined
+  selectedAssignment: ActiveAssignmentOption | undefined
   /** Whitelist of task types allowed for the selected assignment. */
   allowedTaskTypes: CreateTaskBodyDtoTaskType[]
+  requiresStage: boolean
   /** True when context (assistantId + at least one page) is set so user can advance to "work". */
   canGoNextFromContext: boolean
   /** True when work (taskType) is set so user can advance to "confirm". */
@@ -65,7 +86,11 @@ export interface UseAssignTaskFormResult {
       >
     >
   ) => void
-  setWork: (work: Partial<Pick<AssignTaskFormState, 'taskType' | 'deadline' | 'priority' | 'assetIds'>>) => void
+  setWork: (
+    work: Partial<
+      Pick<AssignTaskFormState, 'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds'>
+    >
+  ) => void
   /** Submit the form. Returns `{success:true, data}` on success. */
   submit: () => Promise<{ success: boolean; data?: CreateTaskBodyDto | CreateTaskGroupBodyDto; error?: string }>
   reset: () => void
@@ -85,8 +110,9 @@ const STEP_ORDER: ComposerStep[] = ['context', 'work', 'confirm']
  *  - Decouples cascading UI state from the submit call.
  */
 export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAssignTaskFormResult {
-  const { preset, assignments = [] } = options
+  const { preset, assignments = [], stageTaskTypes, stages = [], requireStage = false } = options
   const { assignTask, assignTaskGroup, isSubmitting } = useAssignTask()
+  const { t } = useTranslation('mangaka')
 
   const initial: AssignTaskFormState = useMemo(
     () => ({
@@ -100,15 +126,10 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       chapterId: preset?.presetChapterId,
       pageId: preset?.presetPageId,
       pageIds: preset?.presetPageId ? [preset.presetPageId] : [],
-      regionIds: preset?.presetRegionId ? [preset.presetRegionId] : []
+      regionIds: preset?.presetRegionId ? [preset.presetRegionId] : [],
+      stageId: preset?.presetStageId
     }),
-    [
-      preset?.presetAssignmentId,
-      preset?.presetChapterId,
-      preset?.presetPageId,
-      preset?.presetRegionId,
-      preset?.presetSeriesId
-    ]
+    [preset]
   )
 
   const [state, setState] = useState<AssignTaskFormState>(initial)
@@ -118,15 +139,22 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     [assignments, state.assignmentId]
   )
 
+  const selectedStage = useMemo(() => stages.find((stage) => stage.id === state.stageId), [stages, state.stageId])
+  const effectiveStageTaskTypes = stageTaskTypes ?? selectedStage?.taskTypes
+  const requiresStage = requireStage || stages.length > 0
+
+  // `taskType` is always the full Specialization enum. In stage-mode, the
+  // active stage is the flow-level whitelist; assistant specializations do
+  // not replace the enum shown in the task form.
   const allowedTaskTypes = useMemo<CreateTaskBodyDtoTaskType[]>(
-    () => (selectedAssignment ? (selectedAssignment.assignedTaskTypes as CreateTaskBodyDtoTaskType[]) : []),
-    [selectedAssignment]
+    () => effectiveStageTaskTypes ?? TASK_TYPES,
+    [effectiveStageTaskTypes]
   )
 
   const resolvedAssistantId = state.assistantId ?? selectedAssignment?.assistantId
 
-  const canGoNextFromContext = !!resolvedAssistantId && state.pageIds.length > 0
-  const canGoNextFromWork = !!state.taskType
+  const canGoNextFromContext = !!resolvedAssistantId && state.pageIds.length > 0 && (!requiresStage || !!state.stageId)
+  const canGoNextFromWork = !!state.taskType && (!effectiveStageTaskTypes || allowedTaskTypes.includes(state.taskType))
 
   const setStep = useCallback((step: ComposerStep) => {
     setState((prev) => ({ ...prev, step }))
@@ -153,7 +181,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       ctx: Partial<
         Pick<
           AssignTaskFormState,
-          'assignmentId' | 'assistantId' | 'seriesId' | 'chapterId' | 'pageId' | 'pageIds' | 'regionIds'
+          'assignmentId' | 'assistantId' | 'seriesId' | 'chapterId' | 'pageId' | 'pageIds' | 'regionIds' | 'stageId'
         >
       >
     ) => {
@@ -172,7 +200,11 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
   )
 
   const setWork = useCallback(
-    (work: Partial<Pick<AssignTaskFormState, 'taskType' | 'deadline' | 'priority' | 'assetIds'>>) => {
+    (
+      work: Partial<
+        Pick<AssignTaskFormState, 'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds'>
+      >
+    ) => {
       setState((prev) => ({ ...prev, ...work }))
     },
     []
@@ -194,17 +226,23 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     data?: CreateTaskBodyDto | CreateTaskGroupBodyDto
     error?: string
   }> => {
-    if (!resolvedAssistantId || state.pageIds.length === 0 || !state.taskType) {
-      return { success: false, error: 'Vui lòng điền đầy đủ thông tin.' }
+    if (!resolvedAssistantId || state.pageIds.length === 0 || !state.taskType || (requiresStage && !state.stageId)) {
+      return { success: false, error: t('studio.tasks.composer.errors.incomplete') }
     }
-    if (allowedTaskTypes.length > 0 && !allowedTaskTypes.includes(state.taskType)) {
-      return { success: false, error: 'Loại công việc không nằm trong thoả thuận thuê của trợ lý.' }
+    if (effectiveStageTaskTypes && !allowedTaskTypes.includes(state.taskType)) {
+      return { success: false, error: t('studio.tasks.composer.errors.taskTypeNotAllowed') }
+    }
+    if (state.priority !== undefined && (!Number.isInteger(state.priority) || state.priority <= 0)) {
+      return { success: false, error: t('studio.tasks.composer.priorityInvalid') }
     }
     if (state.pageIds.length > 1) {
       const payload: CreateTaskGroupBodyDto = {
         assistantId: resolvedAssistantId,
         pageIds: state.pageIds,
         taskType: state.taskType,
+        ...(state.stageId ? { stageId: state.stageId } : {}),
+        ...(state.description?.trim() ? { description: state.description.trim() } : {}),
+        ...(state.groupTitle?.trim() ? { groupTitle: state.groupTitle.trim() } : {}),
         ...(state.deadline ? { deadline: new Date(state.deadline).toISOString() } : {}),
         ...(state.priority !== undefined ? { priority: state.priority } : {}),
         ...(state.assetIds && state.assetIds.length > 0 ? { assetIds: state.assetIds } : {})
@@ -212,13 +250,15 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       const result = await assignTaskGroup(payload)
       return result.success
         ? { success: true, data: payload }
-        : { success: false, error: result.error ?? 'Không thể giao nhóm task.' }
+        : { success: false, error: result.error ?? t('studio.tasks.composer.errors.assignGroupFailed') }
     }
     const payload: CreateTaskBodyDto = {
       assistantId: resolvedAssistantId,
       pageId: state.pageIds[0],
       ...(state.regionIds.length > 0 ? { regionIds: state.regionIds } : {}),
       taskType: state.taskType,
+      ...(state.stageId ? { stageId: state.stageId } : {}),
+      ...(state.description?.trim() ? { description: state.description.trim() } : {}),
       ...(state.deadline ? { deadline: new Date(state.deadline).toISOString() } : {}),
       ...(state.priority !== undefined ? { priority: state.priority } : {}),
       ...(state.assetIds && state.assetIds.length > 0 ? { assetIds: state.assetIds } : {})
@@ -227,13 +267,23 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     if (result.success) {
       return { success: true, data: payload }
     }
-    return { success: false, error: result.error ?? 'Không thể giao task.' }
-  }, [state, resolvedAssistantId, allowedTaskTypes, assignTask, assignTaskGroup])
+    return { success: false, error: result.error ?? t('studio.tasks.composer.errors.assignFailed') }
+  }, [
+    state,
+    resolvedAssistantId,
+    allowedTaskTypes,
+    requiresStage,
+    effectiveStageTaskTypes,
+    assignTask,
+    assignTaskGroup,
+    t
+  ])
 
   return {
     state,
     selectedAssignment,
     allowedTaskTypes,
+    requiresStage,
     canGoNextFromContext,
     canGoNextFromWork,
     setStep,

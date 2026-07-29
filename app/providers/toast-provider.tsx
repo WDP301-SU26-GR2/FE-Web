@@ -38,8 +38,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             // Map Sonner's default class to our Tailwind token so toast
             // respects the dark/light theme tokens we already ship.
             classNames: {
-              toast:
-                'group toast bg-card text-card-foreground border border-border shadow-lg',
+              toast: 'group toast bg-card text-card-foreground border border-border shadow-lg',
               description: 'text-muted-foreground',
               actionButton: 'bg-primary text-primary-foreground',
               cancelButton: 'bg-muted text-muted-foreground'

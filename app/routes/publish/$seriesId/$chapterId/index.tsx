@@ -1,18 +1,17 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { Navigate } from 'react-router'
+
+import { usePublicationContext } from '~/features/mangaka/publication/publication-shell-context'
 
 /**
- * `/publish/:seriesId/:chapterId` deep-redirects into the Name view. Name is
- * the natural starting point in the chapter-first model — the user can't
- * create pages until the Editor approves the storyboard, so the Names tab is
- * always the first action the user takes.
+ * Sends a new chapter to Name, but opens an approved chapter directly in the
+ * Pages workbench. This makes the production-stage workflow the default
+ * workspace once the storyboard is ready for production.
  */
 export default function ChapterIndex() {
-  const navigate = useNavigate()
-  useEffect(() => {
-    // Resolved at runtime — using window.location keeps the URL stable as a
-    // fallback in case the router has not yet mounted when the effect fires.
-    navigate(`${window.location.pathname.replace(/\/$/, '')}/name`, { replace: true })
-  }, [navigate])
-  return null
+  const { seriesId, chapterId, name, nameLoading } = usePublicationContext()
+
+  if (nameLoading) return null
+
+  const tab = name?.status === 'APPROVED' ? 'pages' : 'name'
+  return <Navigate replace to={`/publish/${seriesId}/${chapterId}/${tab}`} />
 }

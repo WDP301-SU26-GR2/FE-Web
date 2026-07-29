@@ -4,12 +4,10 @@ import { ArrowLeft, RefreshCw, TrendingUp, AlertTriangle } from 'lucide-react'
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { FilterChip } from '~/shared/components/pagination'
-import {
-  PUBLICATION_TYPE_OPTIONS,
-  useMangakaRankings
-} from './use-mangaka-rankings'
+import { PUBLICATION_TYPE_OPTIONS, useMangakaRankings } from './use-mangaka-rankings'
 import { useSeriesList } from '../series/use-series-list'
 import { RankingTable } from './components/ranking-table'
+import { BoardRankingTable } from './components/board-ranking-table'
 import { SeriesTrendChart } from './components/series-trend-chart'
 import type { VotePeriodsResDtoOutputItemsItem } from '~/api/model/survey/votePeriodsResDtoOutputItemsItem'
 
@@ -29,9 +27,9 @@ import type { VotePeriodsResDtoOutputItemsItem } from '~/api/model/survey/votePe
  *
  *  3. **My series trend** — `GET /rankings?seriesId=…&periods=12` (PB-04).
  *     Server-scoped: Mangaka can only chart series they own (403 otherwise).
- *     The series picker is fed by the same `useSeriesList` hook the dashboard
- *     already uses; for v1 we accept the limited page-1 visibility (4 series)
- *     and revisit with a searchable dropdown if user feedback warrants it.
+ *     The series picker loads up to the API maximum so every owned series is
+ *     selectable instead of inheriting the four-card pagination used by the
+ *     series overview page.
  */
 export function MangakaRankingsPage() {
   const { t } = useTranslation('mangaka')
@@ -44,16 +42,25 @@ export function MangakaRankingsPage() {
     error,
     publicationType,
     setPublicationType,
+    magazine,
+    setMagazine,
     selectedPeriodId,
     setSelectedPeriodId,
     periodResults,
     isLoadingPeriod,
     selectedSeriesId,
     setSelectedSeriesId,
+    boardPeriods,
+    selectedBoardPeriodId,
+    setSelectedBoardPeriodId,
+    boardRankings,
+    isLoadingBoardPeriods,
+    isLoadingBoardRankings,
+    boardError,
     refresh
   } = useMangakaRankings()
 
-  const { items: mySeries } = useSeriesList()
+  const { items: mySeries } = useSeriesList(100)
 
   return (
     <div className='space-y-6'>
@@ -77,10 +84,15 @@ export function MangakaRankingsPage() {
           <button
             type='button'
             onClick={refresh}
-            disabled={isLoading}
+            disabled={isLoading || isLoadingBoardPeriods || isLoadingBoardRankings}
             className='inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
           >
-            <RefreshCw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
+            <RefreshCw
+              className={cn(
+                'h-3.5 w-3.5',
+                (isLoading || isLoadingBoardPeriods || isLoadingBoardRankings) && 'animate-spin'
+              )}
+            />
             {t('rankings.refresh')}
           </button>
         </div>
@@ -105,11 +117,17 @@ export function MangakaRankingsPage() {
       )}
 
       {/* 1. Latest reflected period */}
-      <Section
-        title={t('rankings.latest.title')}
-        description={t('rankings.latest.description')}
-      >
+      <Section title={t('rankings.latest.title')} description={t('rankings.latest.description')}>
         <div className='flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-sm'>
+          <label className='flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+            {t('rankings.magazine.label')}
+            <input
+              value={magazine}
+              onChange={(event) => setMagazine(event.target.value)}
+              placeholder={t('rankings.magazine.placeholder')}
+              className='min-w-40 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium normal-case tracking-normal text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring'
+            />
+          </label>
           <span className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
             {t('rankings.publicationType.label')}
           </span>
@@ -137,15 +155,8 @@ export function MangakaRankingsPage() {
       </Section>
 
       {/* 2. Historical period picker */}
-      <Section
-        title={t('rankings.history.title')}
-        description={t('rankings.history.description')}
-      >
-        <PeriodPicker
-          periods={periods}
-          selectedId={selectedPeriodId}
-          onSelect={setSelectedPeriodId}
-        />
+      <Section title={t('rankings.history.title')} description={t('rankings.history.description')}>
+        <PeriodPicker periods={periods} selectedId={selectedPeriodId} onSelect={setSelectedPeriodId} />
         {selectedPeriodId ? (
           <RankingTable
             items={periodResults?.results ?? []}
@@ -158,11 +169,49 @@ export function MangakaRankingsPage() {
         )}
       </Section>
 
-      {/* 3. My series trend */}
-      <Section
-        title={t('rankings.trend.title')}
-        description={t('rankings.trend.description')}
-      >
+      <Section title={t('rankings.board.title')} description={t('rankings.board.description')}>
+        {boardError && (
+          <div
+            role='alert'
+            className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm font-medium text-destructive'
+          >
+            <span>{boardError}</span>
+            <button
+              type='button'
+              onClick={refresh}
+              className='inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2.5 py-1 text-xs font-bold hover:bg-destructive/10'
+            >
+              <RefreshCw className='h-3 w-3' />
+              {t('rankings.error.retry')}
+            </button>
+          </div>
+        )}
+        {isLoadingBoardPeriods ? (
+          <div className='rounded-xl border border-dashed border-border bg-card/40 px-6 py-12 text-center'>
+            <p className='text-sm font-semibold text-foreground'>{t('rankings.board.loadingPeriods')}</p>
+          </div>
+        ) : boardPeriods.length === 0 ? (
+          <div className='rounded-xl border border-dashed border-border bg-card/40 px-6 py-12 text-center'>
+            <p className='text-sm font-semibold text-foreground'>{t('rankings.board.noPeriods')}</p>
+          </div>
+        ) : (
+          <>
+            <BoardPeriodPicker
+              periods={boardPeriods}
+              selectedId={selectedBoardPeriodId}
+              onSelect={setSelectedBoardPeriodId}
+            />
+            <BoardRankingTable
+              items={boardRankings}
+              ownSeriesTitles={Object.fromEntries(mySeries.map((series) => [series.id, series.title]))}
+              emptyLabel={isLoadingBoardRankings ? t('rankings.board.loading') : t('rankings.board.empty')}
+            />
+          </>
+        )}
+      </Section>
+
+      {/* 4. My series trend */}
+      <Section title={t('rankings.trend.title')} description={t('rankings.trend.description')}>
         <SeriesPicker
           series={mySeries.map((s) => ({ id: s.id, title: s.title }))}
           selectedId={selectedSeriesId}
@@ -190,15 +239,40 @@ export function MangakaRankingsPage() {
   )
 }
 
-function Section({
-  title,
-  description,
-  children
+function BoardPeriodPicker({
+  periods,
+  selectedId,
+  onSelect
 }: {
-  title: string
-  description: string
-  children: React.ReactNode
+  periods: VotePeriodsResDtoOutputItemsItem[]
+  selectedId: string | null
+  onSelect: (id: string | null) => void
 }) {
+  const { t, i18n } = useTranslation('mangaka')
+  const selectId = 'board-ranking-period'
+
+  return (
+    <div className='flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-sm'>
+      <label htmlFor={selectId} className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+        {t('rankings.board.periodLabel')}
+      </label>
+      <select
+        id={selectId}
+        value={selectedId ?? ''}
+        onChange={(event) => onSelect(event.target.value || null)}
+        className='min-w-[220px] rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring'
+      >
+        {periods.map((period) => (
+          <option key={period.id} value={period.id}>
+            {formatPeriodLabel(period, i18n.language)}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
     <section className='space-y-4'>
       <div>
