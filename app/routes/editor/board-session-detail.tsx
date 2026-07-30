@@ -56,8 +56,31 @@ export async function runBoardSessionAction(
       if (series.status !== 200) return { ok: false, intent, errorKey: 'invalidState' }
 
       const decisionType = required(form, 'decisionType') as CreateBoardDecisionBodyDtoDecisionType
-      const supportedDecisionTypes = ['SERIALIZATION', 'CONTINUE', 'CANCELLATION', 'FORMAT_CHANGE', 'COMPLETION']
+      const supportedDecisionTypes = [
+        'SERIALIZATION',
+        'CONTINUE',
+        'CANCEL',
+        'HIATUS',
+        'ENDING_ALLOWANCE',
+        'SERIES_CONTRACT_APPROVAL',
+        'CANCELLATION',
+        'FORMAT_CHANGE',
+        'COMPLETION',
+        'REPRINT',
+        'TRANSFER',
+        'CONTRACT'
+      ]
       if (!supportedDecisionTypes.includes(decisionType)) return { ok: false, intent, errorKey: 'invalidState' }
+
+      const existingDecisions = await boardControllerGetDecisions({ boardSessionId: params.id })
+      const endingTypes = new Set(['COMPLETION', 'CANCELLATION', 'CANCEL'])
+      const conflicts = existingDecisions.data.some(
+        (decision) =>
+          decision.targetSeriesId === seriesId &&
+          (decision.decisionType === decisionType ||
+            (endingTypes.has(decision.decisionType ?? '') && endingTypes.has(decisionType)))
+      )
+      if (conflicts) return { ok: false, intent, errorKey: 'invalidState' }
 
       const details: Record<string, unknown> = {}
       if (decisionType === 'SERIALIZATION') {
@@ -79,13 +102,17 @@ export async function runBoardSessionAction(
           publicationType
         })
       } else {
-        if (series.data.status !== 'SERIALIZED') return { ok: false, intent, errorKey: 'invalidState' }
+        if (!['SERIALIZED', 'HIATUS'].includes(series.data.status))
+          return { ok: false, intent, errorKey: 'invalidState' }
         details.note = String(form.get('decisionNote') ?? '').trim() || null
-        if (decisionType === 'CANCELLATION') {
-          const endingChapterAllowance = Number(required(form, 'endingChapterAllowance'))
-          if (!Number.isInteger(endingChapterAllowance) || endingChapterAllowance < 1)
-            return { ok: false, intent, errorKey: 'invalidState' }
-          details.endingChapterAllowance = endingChapterAllowance
+        if (decisionType === 'CANCELLATION' || decisionType === 'ENDING_ALLOWANCE') {
+          const allowanceValue = String(form.get('endingChapterAllowance') ?? '').trim()
+          if (allowanceValue) {
+            const endingChapterAllowance = Number(allowanceValue)
+            if (!Number.isInteger(endingChapterAllowance) || endingChapterAllowance < 1 || endingChapterAllowance > 10)
+              return { ok: false, intent, errorKey: 'invalidState' }
+            details.endingChapterAllowance = endingChapterAllowance
+          }
         }
         if (decisionType === 'FORMAT_CHANGE') {
           const publicationType = required(form, 'publicationType')

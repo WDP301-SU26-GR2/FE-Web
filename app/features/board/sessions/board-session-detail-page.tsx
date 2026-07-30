@@ -6,21 +6,18 @@ import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting
 import type { BoardMeetingSession } from '~/api/manual/board-meeting'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import { BoardHeader, BoardPanel, EmptyState, StatusBadge, useBoardPolling } from '../components/board-ui'
-import { SeriesMeetingBrief, type BoardMeetingSeriesBrief } from './components/series-meeting-brief'
 import { useSessionVoteProgress } from './use-session-vote-progress'
 
 export function BoardSessionDetailPage({
   session,
   decisions,
   phase,
-  messages,
-  seriesBriefs
+  messages
 }: {
   session: BoardMeetingSession
   decisions: BoardDecisionResDtoOutput[]
   phase: BoardSessionPhase
   messages: BoardMessage[]
-  seriesBriefs: BoardMeetingSeriesBrief[]
 }) {
   const { t } = useTranslation('board')
   useBoardPolling()
@@ -38,19 +35,21 @@ export function BoardSessionDetailPage({
         backHref='/dashboard/board/sessions'
       />
       <BoardPanel title={t('sessions.details')}>
-        <div className='grid gap-3 text-xs sm:grid-cols-4'>
+        <div className={`grid gap-3 text-xs ${session.status === 'CONCLUDED' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
           <div>
             <span className='text-muted-foreground'>{t('common.status')}</span>
             <div className='mt-1'>
               <StatusBadge value={session.status} />
             </div>
           </div>
-          <div>
-            <span className='text-muted-foreground'>{t('sessions.phase')}</span>
-            <div className='mt-1'>
-              <StatusBadge value={meeting.phase} />
+          {session.status !== 'CONCLUDED' && (
+            <div>
+              <span className='text-muted-foreground'>{t('sessions.phase')}</span>
+              <div className='mt-1'>
+                <StatusBadge value={meeting.phase} />
+              </div>
             </div>
-          </div>
+          )}
           <div>
             <span className='text-muted-foreground'>{t('sessions.members')}</span>
             <p className='mt-1 font-bold'>{session.allowedEditorIds.length}</p>
@@ -74,52 +73,20 @@ export function BoardSessionDetailPage({
           ))}
         </div>
       </BoardPanel>
-      {seriesBriefs.length > 0 && (
-        <BoardPanel title={t('sessions.seriesBrief.title')}>
-          <p className='mb-4 text-xs text-muted-foreground'>{t('sessions.seriesBrief.description')}</p>
-          <div className='grid gap-4'>
-            {seriesBriefs.map((brief) => (
-              <SeriesMeetingBrief key={brief.series.id} brief={brief} />
-            ))}
-          </div>
-        </BoardPanel>
-      )}
       <MeetingChat
         messages={meeting.messages}
         disabled={session.status !== 'ACTIVE' || meeting.phase === 'VOTING'}
         connectionState={meeting.connectionState}
         sendMessage={meeting.sendMessage}
       />
-      <BoardPanel title={t('sessions.votingProgress')}>
+      <BoardPanel title={t('decisions.title')}>
         <div className='mb-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
           <Radio className={`size-4 ${meeting.connectionState === 'connected' ? 'text-primary' : ''}`} />
           {t(`sessions.realtime.${meeting.connectionState}`)}
         </div>
-        <div className='grid gap-4'>
-          {meeting.decisions.map((decision) => (
-            <DecisionProgress key={decision.id} decision={decision} memberCount={session.allowedEditorIds.length} />
-          ))}
-          {!meeting.decisions.length && <EmptyState text={t('decisions.empty')} />}
-        </div>
-      </BoardPanel>
-      <BoardPanel title={t('decisions.title')}>
         <div className='grid gap-3'>
           {meeting.decisions.map((decision) => (
-            <Link
-              key={decision.id}
-              to={`/dashboard/board/decisions/${decision.id}`}
-              className='rounded-lg border border-border p-4 hover:border-primary'
-            >
-              <div className='flex flex-wrap items-start justify-between gap-3'>
-                <strong className='min-w-0 text-pretty leading-6'>
-                  {decision.decisionType ? t(`filters.decisionTypes.${decision.decisionType}`) : t('decisions.title')}
-                </strong>
-                <StatusBadge value={decision.result ?? 'PENDING'} />
-              </div>
-              <p className='mt-2 text-xs text-muted-foreground'>
-                {t('decisions.voteCount', { count: decision.totalVotes })}
-              </p>
-            </Link>
+            <DecisionCard key={decision.id} decision={decision} memberCount={session.allowedEditorIds.length} />
           ))}
           {!meeting.decisions.length && <EmptyState text={t('decisions.empty')} />}
         </div>
@@ -197,14 +164,17 @@ function MeetingChat({
   )
 }
 
-function DecisionProgress({ decision, memberCount }: { decision: BoardDecisionResDtoOutput; memberCount: number }) {
+function DecisionCard({ decision, memberCount }: { decision: BoardDecisionResDtoOutput; memberCount: number }) {
   const { t } = useTranslation('board')
   const totalVotes = Math.min(decision.totalVotes, memberCount)
   const abstainCount = Math.max(totalVotes - decision.approveCount - decision.rejectCount, 0)
   const percentage = memberCount > 0 ? Math.min((totalVotes / memberCount) * 100, 100) : 0
 
   return (
-    <article className='rounded-lg border border-border p-4'>
+    <Link
+      to={`/dashboard/board/decisions/${decision.id}`}
+      className='block rounded-lg border border-border p-4 transition-colors hover:border-primary'
+    >
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
           <strong>
@@ -231,7 +201,7 @@ function DecisionProgress({ decision, memberCount }: { decision: BoardDecisionRe
           value={decision.quorumMet ? t('sessions.quorumMet') : t('sessions.quorumPending')}
         />
       </div>
-    </article>
+    </Link>
   )
 }
 

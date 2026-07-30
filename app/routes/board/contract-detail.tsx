@@ -16,6 +16,7 @@ import {
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 import type { Route } from './+types/contract-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -62,6 +63,15 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
+    if (intent === 'approve' || intent === 'sign') {
+      const conditions = await paymentConditionControllerGetPaymentConditions({ contractId: params.id })
+      if (conditions.status !== 200 || !hasValidPaymentCondition(conditions.data.data))
+        return {
+          ok: false,
+          intent,
+          message: 'Hợp đồng phải có ít nhất một điều kiện thanh toán hợp lệ trước khi duyệt hoặc ký.'
+        }
+    }
     if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
     else if (intent === 'changes')
       await contractControllerBoardRequestChanges({ id: params.id }, { reason: required(form, 'reason') })

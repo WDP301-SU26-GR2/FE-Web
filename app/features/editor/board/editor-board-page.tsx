@@ -1,13 +1,12 @@
 import { Link } from 'react-router'
-import { CalendarClock, ChevronRight, FileText, Gavel } from 'lucide-react'
+import { CalendarClock, ChevronRight, Gavel } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 export function EditorBoardPage() {
   const { t } = useTranslation('editor')
   const sections = [
     ['sessions', CalendarClock],
-    ['decisions', Gavel],
-    ['reports', FileText]
+    ['decisions', Gavel]
   ] as const
   return (
     <div className='space-y-7 pb-12'>

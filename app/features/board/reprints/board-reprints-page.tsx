@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import {
   BoardActionDialog,
   boardInput,
@@ -43,7 +43,7 @@ export function BoardReprintsPage({
         backHref='/dashboard/board/operations'
       />
       <BoardPanel title={t('reprints.lookup')}>
-        <Form method='get' className='flex flex-col gap-3 sm:flex-row'>
+        <Form method='get' replace preventScrollReset className='flex flex-col gap-3 sm:flex-row'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId} required>
             <option value=''>{t('reprints.selectSeries')}</option>
             {series.map((item) => (
@@ -87,14 +87,19 @@ function ReprintCard({
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
-  const canReview = item.status === 'MANGAKA_APPROVED' || (item.status === 'PENDING' && contractType === 'FULL_BUYOUT')
+  const isFullBuyoutReview = contractType === 'FULL_BUYOUT' && (item.status === 'PENDING' || item.status === 'PROPOSED')
+  const isRevenueShareReview =
+    contractType === 'REVENUE_SHARE' && (item.status === 'MANGAKA_APPROVED' || item.status === 'MANGAKA_REVIEW')
+  const canReview = isFullBuyoutReview || isRevenueShareReview
+  const canReject = isFullBuyoutReview
+  const isSubmitting = fetcher.state !== 'idle'
   const revisableChapters = item.chapters.filter(
     (chapter) => chapter.originalChapterId && ['PENDING', 'IN_REVISION'].includes(chapter.status)
   )
   const canAssignReviser =
     contractType === 'FULL_BUYOUT' &&
     item.revisionMode === 'WITH_REVISION' &&
-    ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) &&
+    ['BOARD_APPROVED', 'APPROVED'].includes(item.status) &&
     revisableChapters.length > 0
   return (
     <article className='rounded-xl border border-border bg-card p-5'>
@@ -119,20 +124,37 @@ function ReprintCard({
               <button
                 name='intent'
                 value='approve'
-                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700'
+                disabled={isSubmitting}
+                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50'
               >
-                <CheckCircle2 className='mr-1.5 inline size-4' aria-hidden='true' />
+                {isSubmitting ? (
+                  <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />
+                ) : (
+                  <CheckCircle2 className='mr-1.5 inline size-4' aria-hidden='true' />
+                )}
                 {t('reprints.approve')}
               </button>
-              <button
-                name='intent'
-                value='reject'
-                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
-              >
-                <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
-                {t('reprints.reject')}
-              </button>
+              {canReject && (
+                <button
+                  name='intent'
+                  value='reject'
+                  disabled={isSubmitting}
+                  className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50'
+                >
+                  {isSubmitting ? (
+                    <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />
+                  ) : (
+                    <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
+                  )}
+                  {t('reprints.reject')}
+                </button>
+              )}
             </fetcher.Form>
+            {!canReject && (
+              <p className='mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300'>
+                {t('reprints.revenueShareRejectUnavailable')}
+              </p>
+            )}
             <BoardFeedback data={fetcher.data} />
           </BoardActionDialog>
         </div>
@@ -169,7 +191,8 @@ function AssignReviserDialog({
           <option value=''>{t('reprints.selectChapter')}</option>
           {chapters.map((chapter, index) => (
             <option key={chapter.originalChapterId} value={chapter.originalChapterId ?? ''}>
-              {t('reprints.chapter', { number: index + 1 })} · {t(`reprints.chapterStatuses.${chapter.status}`)}
+              {t('reprints.chapter', { number: (item.chapterRangeStart ?? 1) + index })} ·{' '}
+              {t(`reprints.chapterStatuses.${chapter.status}`)}
             </option>
           ))}
         </select>
@@ -183,9 +206,10 @@ function AssignReviserDialog({
           ))}
         </select>
         <button
-          disabled={!mangakas.length}
+          disabled={!mangakas.length || fetcher.state !== 'idle'}
           className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
+          {fetcher.state !== 'idle' && <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />}
           {t('reprints.assignReviser')}
         </button>
       </fetcher.Form>

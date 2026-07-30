@@ -8,5 +8,11 @@ export default function AdminBoardDecisionDetailRoute({
 }: {
   loaderData: Awaited<ReturnType<typeof clientLoader>>
 }) {
-  return <BoardDecisionDetailPage {...loaderData} readOnly backPath='/dashboard/admin/board/decisions' />
+  return (
+    <BoardDecisionDetailPage
+      {...loaderData}
+      readOnly
+      backPath={`/dashboard/admin/board/sessions/${loaderData.decision.boardSessionId}`}
+    />
+  )
 }

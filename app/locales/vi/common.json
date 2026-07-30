@@ -10,6 +10,12 @@
   "splashLoading": "Đang khởi động...",
   "login": "Đăng nhập",
   "register": "Đăng ký",
+  "contractPdf": {
+    "download": "Tải hợp đồng PDF",
+    "preparing": "Đang chuẩn bị PDF…",
+    "conditionsRequired": "Cần ít nhất một điều kiện thanh toán hợp lệ trước khi tải PDF.",
+    "conditionsUnavailable": "Không thể kiểm tra điều kiện thanh toán nên PDF đang bị khóa."
+  },
   "errors": {
     "unknown": "Đã xảy ra lỗi không xác định.",
     "notFound": "Không tìm thấy trang yêu cầu."
@@ -53,7 +59,6 @@
     "contracts": "Hợp đồng",
     "deadlines": "Thời hạn",
     "transfers": "Chuyển nhượng",
-    "reprints": "Tái bản",
     "payments": "Thanh toán",
     "notifications": "Thông báo",
     "myTasks": "Nhiệm vụ của tôi",

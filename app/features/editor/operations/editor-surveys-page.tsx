@@ -136,7 +136,12 @@ export function EditorSurveysPage({
           </div>
         </div>
         <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
-          <Form method='get' className='grid min-w-0 flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'>
+          <Form
+            method='get'
+            replace
+            preventScrollReset
+            className='grid min-w-0 flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'
+          >
             <label className='grid gap-1 text-xs font-bold text-foreground'>
               {t('operations.selectSurvey')}
               <select name='surveyId' defaultValue={selectedSurveyId} className={operationInput}>

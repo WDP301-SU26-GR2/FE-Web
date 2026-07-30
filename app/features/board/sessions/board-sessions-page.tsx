@@ -54,7 +54,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
               <h2 className='font-bold text-foreground'>{session.title}</h2>
               <div className='flex gap-2'>
                 <StatusBadge value={session.status} />
-                <StatusBadge value={session.phase} />
+                {session.status !== 'CONCLUDED' && <StatusBadge value={session.phase} />}
               </div>
             </div>
             <p className='mt-2 text-xs text-muted-foreground'>{session.description || t('common.noDescription')}</p>

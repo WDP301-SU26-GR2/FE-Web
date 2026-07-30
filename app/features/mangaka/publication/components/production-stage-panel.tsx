@@ -178,7 +178,7 @@ export function ProductionStagePanel({
                   {t('seriesDetail.production.management.edit.action')}
                 </button>
               )}
-              {stage.status === 'LOCKED' && !stage.isFinalCheck && (
+              {(stage.status === 'ACTIVE' || stage.status === 'LOCKED') && !stage.isFinalCheck && (
                 <button
                   type='button'
                   disabled={management.isMutating}

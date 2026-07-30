@@ -47,7 +47,13 @@ export function BoardContractDetailPage({
     (editor) => editor.id === authSession?.user.id
   )
   const hasCurrentMemberSigned = Boolean(currentBoardSignature)
-  const canSignContract = contract.status === 'BOARD_APPROVED' || contract.status === 'MANGAKA_SIGNED'
+  const validConditionCount = conditions.filter(
+    (condition) =>
+      condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
+  ).length
+  const conditionsReady = !conditionsLoadFailed && validConditionCount > 0
+  const canSignContract =
+    conditionsReady && (contract.status === 'BOARD_APPROVED' || contract.status === 'MANGAKA_SIGNED')
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -56,7 +62,11 @@ export function BoardContractDetailPage({
         backHref='/dashboard/board/contracts'
       />
       <div className='flex justify-end'>
-        <ContractPdfButton contract={contract} />
+        <ContractPdfButton
+          contract={contract}
+          conditionsCount={validConditionCount}
+          conditionsLoadFailed={conditionsLoadFailed}
+        />
       </div>
       <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
       {hasSupplementaryDataError && (
@@ -133,6 +143,16 @@ export function BoardContractDetailPage({
         </div>
       </BoardPanel>
       <BoardPanel title={t('contracts.actions')}>
+        {!conditionsReady && (
+          <div className='mb-4 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
+            <ShieldAlert className='mt-0.5 size-4 shrink-0' />
+            <p>
+              {conditionsLoadFailed
+                ? t('contracts.paymentConditionsUnavailable')
+                : t('contracts.paymentConditionsRequired')}
+            </p>
+          </div>
+        )}
         {!canAttemptBoardAction && (
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
@@ -152,7 +172,7 @@ export function BoardContractDetailPage({
                 <button
                   name='intent'
                   value='approve'
-                  disabled={fetcher.state !== 'idle'}
+                  disabled={fetcher.state !== 'idle' || !conditionsReady}
                   className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
                 >
                   {t('contracts.approve')}

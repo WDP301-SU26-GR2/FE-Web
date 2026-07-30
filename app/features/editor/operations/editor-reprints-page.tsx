@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { BookCopy } from 'lucide-react'
+import { BookCopy, Download, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
+import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import {
   OperationAction,
   OperationFeedback,
@@ -61,7 +64,7 @@ export function EditorReprintsPage({
             <input
               name='chapterStart'
               type='number'
-              min={0}
+              min={1}
               required
               className={operationInput}
               placeholder={t('operations.fromChapter')}
@@ -69,7 +72,7 @@ export function EditorReprintsPage({
             <input
               name='chapterEnd'
               type='number'
-              min={0}
+              min={1}
               required
               className={operationInput}
               placeholder={t('operations.toChapter')}
@@ -160,24 +163,40 @@ function ReprintChapterForm({
   const { t } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const [reprintId, setReprintId] = useState('')
+  const [chapterId, setChapterId] = useState('')
+  const [isDownloading, setIsDownloading] = useState(false)
   const eligibleItems = items.filter((item) =>
     intent === 'approveReprintChapter'
-      ? ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) &&
-        item.chapters.some((chapter) => chapter.status === 'READY')
+      ? ['BOARD_APPROVED', 'APPROVED'].includes(item.status) &&
+        item.chapters.some((chapter) => isReviewableReprintChapter(item, chapter.status))
       : item.revisionMode === 'WITH_REVISION' &&
         contractTypes[item.seriesId] === 'FULL_BUYOUT' &&
-        ['BOARD_APPROVED', 'APPROVED', 'IN_PRODUCTION'].includes(item.status) &&
+        ['BOARD_APPROVED', 'APPROVED'].includes(item.status) &&
         item.chapters.some((chapter) => ['PENDING', 'IN_REVISION'].includes(chapter.status))
   )
   const selected = eligibleItems.find((item) => item.id === reprintId)
   const chapterIds = (selected?.chapters ?? [])
     .filter((chapter) =>
       intent === 'approveReprintChapter'
-        ? chapter.status === 'READY'
+        ? isReviewableReprintChapter(selected, chapter.status)
         : ['PENDING', 'IN_REVISION'].includes(chapter.status)
     )
     .map((chapter) => chapter.originalChapterId)
     .filter((id): id is string => Boolean(id))
+  const selectedChapter = selected?.chapters.find((chapter) => chapter.originalChapterId === chapterId)
+
+  const downloadManuscript = async () => {
+    if (!selectedChapter?.manuscriptFile) return
+    setIsDownloading(true)
+    try {
+      const response = await storageControllerSignDownload({ key: selectedChapter.manuscriptFile })
+      window.open(response.data.downloadUrl, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      toast.error(extractApiErrorMessage(error, t('errors.reprintDownloadFailed')))
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <fetcher.Form method='post' className='grid gap-3'>
@@ -186,7 +205,10 @@ function ReprintChapterForm({
         required
         className={operationInput}
         value={reprintId}
-        onChange={(event) => setReprintId(event.target.value)}
+        onChange={(event) => {
+          setReprintId(event.target.value)
+          setChapterId('')
+        }}
       >
         <option value=''>{t('operations.selectReprint')}</option>
         {eligibleItems.map((item) => (
@@ -195,7 +217,14 @@ function ReprintChapterForm({
           </option>
         ))}
       </select>
-      <select name='reprintChapterId' required className={operationInput} disabled={!reprintId}>
+      <select
+        name='reprintChapterId'
+        required
+        className={operationInput}
+        disabled={!reprintId}
+        value={chapterId}
+        onChange={(event) => setChapterId(event.target.value)}
+      >
         <option value=''>{t('operations.selectReprintChapter')}</option>
         {chapterIds.map((id) => {
           const chapter = chapters.find((item) => item.id === id)
@@ -221,15 +250,49 @@ function ReprintChapterForm({
           </select>
         </>
       )}
+      {intent === 'approveReprintChapter' && selectedChapter && (
+        <div className='rounded-lg border border-border bg-muted/30 p-3 text-xs'>
+          <p className='font-bold text-foreground'>
+            {selected?.revisionMode === 'AS_IS'
+              ? t('operations.reprintAsIsReviewHint')
+              : t('operations.reprintRevisionReviewHint')}
+          </p>
+          {selectedChapter.manuscriptFile ? (
+            <button
+              type='button'
+              onClick={() => void downloadManuscript()}
+              disabled={isDownloading}
+              className='mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 font-bold text-foreground disabled:opacity-50'
+            >
+              {isDownloading ? (
+                <Loader2 className='size-4 animate-spin' aria-hidden='true' />
+              ) : (
+                <Download className='size-4' aria-hidden='true' />
+              )}
+              {t('actions.downloadReprintManuscript')}
+            </button>
+          ) : (
+            <p className='mt-2 text-muted-foreground'>{t('operations.reprintUsesOriginalChapter')}</p>
+          )}
+        </div>
+      )}
       <div className='flex flex-wrap gap-2'>
         <OperationAction intent={intent} label={label} />
-        {allowRevision && (
+        {allowRevision && selectedChapter?.status === 'READY' && (
           <OperationAction intent='requestReprintRevision' label={t('actions.requestReprintRevision')} destructive />
         )}
       </div>
       <OperationFeedback data={fetcher.data} />
     </fetcher.Form>
   )
+}
+
+function isReviewableReprintChapter(
+  request: ReprintRequestResDtoOutput | undefined,
+  chapterStatus: ReprintRequestResDtoOutput['chapters'][number]['status']
+) {
+  if (!request) return false
+  return request.revisionMode === 'AS_IS' ? chapterStatus === 'PENDING' : chapterStatus === 'READY'
 }
 
 function chapterLabel(

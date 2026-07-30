@@ -12,29 +12,7 @@ import {
 } from 'lucide-react'
 import { useMangakaDashboard } from './use-mangaka-dashboard'
 import { cn } from '~/shared/lib/cn'
-
-/** Map manuscriptStatus → human-readable subtitle for studio card */
-function getManuscriptSubtitle(status: string | null | undefined, t: (key: string) => string): string {
-  if (!status) return ''
-  switch (status) {
-    case 'DRAFT':
-      return t('dashboard.studio.subtitleDraft')
-    case 'IN_PRODUCTION':
-      return t('dashboard.studio.subtitleInProduction')
-    case 'EDITOR_REVIEW':
-      return t('dashboard.studio.subtitleEditorReview')
-    case 'EDITOR_REVISION':
-      return t('dashboard.studio.subtitleEditorRevision')
-    case 'READY_FOR_PRINT':
-      return t('dashboard.studio.subtitleReadyForPrint')
-    case 'AWAITING_CO_OWNER_APPROVAL':
-      return t('dashboard.studio.subtitleAwaitingCoOwner')
-    case 'PUBLISHED':
-      return t('dashboard.studio.subtitlePublished')
-    default:
-      return status
-  }
-}
+import { translateManuscriptStatus } from './lib/translate-manuscript-status'
 
 /** Map warningLevel → color class */
 function getWarningColor(warningLevel: string): { text: string } {
@@ -176,7 +154,7 @@ export function MangakaDashboard() {
                 {criticalDeadlines.slice(0, 4).map((item) => {
                   const warning = getWarningColor(item.warningLevel)
                   const chapterTitle: string = item.title ?? ''
-                  const subtitle = chapterTitle ? chapterTitle : getManuscriptSubtitle(item.manuscriptStatus, t)
+                  const subtitle = chapterTitle ? chapterTitle : translateManuscriptStatus(item.manuscriptStatus, t)
                   return (
                     <div
                       key={item.chapterId}
@@ -234,7 +212,7 @@ export function MangakaDashboard() {
               <div className='mt-4 divide-y divide-border'>
                 {data.studio.slice(0, 5).map((item) => {
                   const chapterTitle: string = item.title ?? ''
-                  const subtitle = chapterTitle ? chapterTitle : getManuscriptSubtitle(item.manuscriptStatus, t)
+                  const subtitle = chapterTitle ? chapterTitle : translateManuscriptStatus(item.manuscriptStatus, t)
                   return (
                     <div key={item.chapterId} className='flex items-center justify-between py-4 first:pt-0 last:pb-0'>
                       <div className='flex items-center gap-4'>
@@ -264,7 +242,7 @@ export function MangakaDashboard() {
                           getSeriesStatusColor(item.manuscriptStatus)
                         )}
                       >
-                        {item.manuscriptStatus}
+                        {translateManuscriptStatus(item.manuscriptStatus, t)}
                       </span>
                     </div>
                   )

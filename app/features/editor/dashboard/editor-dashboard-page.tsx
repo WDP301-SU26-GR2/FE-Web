@@ -14,6 +14,17 @@ export function EditorDashboardPage({
   hasError: boolean
 }) {
   const { t } = useTranslation('editor')
+  const mySeriesTotal = dashboard?.mySeries?.total ?? 0
+  const pendingContracts = dashboard?.pendingContracts ?? []
+  const productionAlerts = dashboard?.productionAlerts ?? []
+  const atRisk = dashboard?.atRisk ?? []
+  const hasIncompleteData =
+    dashboard != null &&
+    (!dashboard.mySeries ||
+      !Array.isArray(dashboard.pendingContracts) ||
+      !Array.isArray(dashboard.productionAlerts) ||
+      !Array.isArray(dashboard.atRisk))
+
   return (
     <div className='space-y-6 pb-12'>
       <header className='rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8'>
@@ -24,7 +35,7 @@ export function EditorDashboardPage({
         <h1 className='mt-3 text-2xl font-bold tracking-tight text-foreground'>{t('dashboard.title')}</h1>
         <p className='mt-3 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('dashboard.subtitle')}</p>
       </header>
-      {hasError ? (
+      {hasError || hasIncompleteData ? (
         <p className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
           {t('dashboard.liveDataError')}
         </p>
@@ -34,29 +45,29 @@ export function EditorDashboardPage({
           <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
             <SummaryCard
               label={t('dashboard.summary.reviewQueue')}
-              value={dashboard.reviewQueue}
+              value={dashboard.reviewQueue ?? 0}
               href='/dashboard/editor/proposals'
             />
             <SummaryCard
               label={t('dashboard.summary.mySeries')}
-              value={dashboard.mySeries.total}
+              value={mySeriesTotal}
               href='/dashboard/editor/proposals'
             />
             <SummaryCard
               label={t('dashboard.summary.pendingContracts')}
-              value={dashboard.pendingContracts.length}
+              value={pendingContracts.length}
               href='/dashboard/editor/contracts'
             />
             <SummaryCard
               label={t('dashboard.summary.unread')}
-              value={dashboard.unreadNotifications}
+              value={dashboard.unreadNotifications ?? 0}
               href='/dashboard/editor/notifications'
             />
           </div>
-          {(dashboard.productionAlerts.length > 0 || dashboard.atRisk.length > 0) && (
+          {(productionAlerts.length > 0 || atRisk.length > 0) && (
             <section className='space-y-4'>
               <DashboardList title={t('dashboard.alerts.production')} icon={AlertTriangle}>
-                {dashboard.productionAlerts.slice(0, 5).map((alert) => (
+                {productionAlerts.slice(0, 5).map((alert) => (
                   <Link
                     key={alert.chapterId}
                     to={`/dashboard/editor/publication/${alert.seriesId}/${alert.chapterId}`}
@@ -79,7 +90,7 @@ export function EditorDashboardPage({
                 ))}
               </DashboardList>
               <DashboardList title={t('dashboard.alerts.atRisk')} icon={Bell}>
-                {dashboard.atRisk.slice(0, 5).map((series) => (
+                {atRisk.slice(0, 5).map((series) => (
                   <Link
                     key={series.seriesId}
                     to={`/dashboard/editor/proposals/${series.seriesId}`}

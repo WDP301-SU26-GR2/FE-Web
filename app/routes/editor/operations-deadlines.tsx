@@ -10,6 +10,7 @@ import {
 } from '~/api/operations/deadline-requests/deadline-requests'
 import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
 import { EditorDeadlinesPage, type EditorActionResult } from '~/features/editor'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 import { date, loadOperationalSeries, required } from './operations-route-utils'
 import type { Route } from './+types/operations-deadlines'
 
@@ -78,9 +79,22 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'finalizeDeadline') await deadlineControllerFinalize({ id: required(form, 'requestId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+  } catch (error) {
+    return { ok: false, intent, errorKey: deadlineErrorKey(extractApiErrorCode(error)) }
   }
+}
+
+function deadlineErrorKey(code?: string) {
+  const keys: Record<string, string> = {
+    'Error.DeadlineRequestAccessDenied': 'deadlineAccessDenied',
+    'Error.OpenDeadlineRequestExists': 'deadlineOpenExists',
+    'Error.DeadlineRequestNotAllowed': 'deadlineNotAllowed',
+    'Error.DeadlineRequestNotFound': 'deadlineNotFound',
+    'Error.InvalidDeadlineRequestTransition': 'deadlineInvalidTransition',
+    'Error.NotCounterparty': 'deadlineNotCounterparty',
+    'Error.DeadlineNotOpen': 'deadlineInvalidTransition'
+  }
+  return (code && keys[code]) || 'actionFailed'
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

@@ -12394,20 +12394,20 @@
             }
           },
           "403": {
-            "description": "Error.EditorNotInvited (userId) - caller is not in session.allowedEditorIds for report submission",
+            "description": "Error.EditorNotAssignedToSeries (userId) - only the Editor currently assigned to the report series may submit it",
             "content": {
               "application/json": {
                 "example": {
                   "success": false,
                   "statusCode": 403,
-                  "code": "Error.EditorNotInvited",
-                  "message": "Editor không có trong danh sách được mời"
+                  "code": "Error.EditorNotAssignedToSeries",
+                  "message": "Chỉ Editor phụ trách series mới được nộp báo cáo"
                 }
               }
             }
           },
           "404": {
-            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId) | Error.SeriesNotFound (seriesId) - series does not exist",
             "content": {
               "application/json": {
                 "example": {
@@ -12415,6 +12415,19 @@
                   "statusCode": 404,
                   "code": "Error.BoardDecisionNotFound",
                   "message": "Không tìm thấy quyết định Hội đồng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.ReportDecisionSeriesMismatch (seriesId) - report seriesId must match the BoardDecision targetSeriesId",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.ReportDecisionSeriesMismatch",
+                  "message": "Báo cáo phải thuộc đúng series của quyết định Hội đồng"
                 }
               }
             }

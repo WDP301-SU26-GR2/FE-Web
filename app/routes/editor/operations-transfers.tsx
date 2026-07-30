@@ -11,18 +11,21 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { Route } from './+types/operations-transfers'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
-  const requestId = new URL(request.url).searchParams.get('requestId')?.trim() ?? ''
-  const contractId = new URL(request.url).searchParams.get('contractId')?.trim() ?? ''
-  if (!requestId && !contractId)
+  const url = new URL(request.url)
+  const requestId = url.searchParams.get('requestId')?.trim() ?? ''
+  const requestedContractId = url.searchParams.get('contractId')?.trim() ?? ''
+  if (!requestId && !requestedContractId)
     return { request: null, contract: null, requestId: '', contractId: '', signatures: [], hasError: false }
   try {
-    const [response, contract, signatures] = await Promise.all([
-      requestId ? transferControllerGetTransferRequestById({ id: requestId }) : null,
+    const response = requestId ? await transferControllerGetTransferRequestById({ id: requestId }) : null
+    const transferRequest = response?.status === 200 ? response.data : null
+    const contractId = requestedContractId || transferRequest?.transferContractId || ''
+    const [contract, signatures] = await Promise.all([
       contractId ? transferControllerGetTransferContractById({ id: contractId }).catch(() => null) : null,
       contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
     ])
     return {
-      request: response?.status === 200 ? response.data : null,
+      request: transferRequest,
       contract: contract?.status === 200 ? contract.data : null,
       requestId,
       contractId,
@@ -30,7 +33,14 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: Boolean(requestId && response?.status !== 200)
     }
   } catch {
-    return { request: null, contract: null, requestId, contractId, signatures: [], hasError: true }
+    return {
+      request: null,
+      contract: null,
+      requestId,
+      contractId: requestedContractId,
+      signatures: [],
+      hasError: true
+    }
   }
 }
 

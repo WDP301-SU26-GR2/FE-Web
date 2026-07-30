@@ -6,6 +6,7 @@ import {
 import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { BoardDeadlinesPage, type BoardActionResult } from '~/features/board'
+import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { Route } from './+types/deadlines'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
@@ -63,8 +64,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       { decision: intent === 'approve' ? 'APPROVE' : 'REJECT', note: String(form.get('note') ?? '') || null }
     )
     return { ok: true, intent, messageKey: intent === 'approve' ? 'deadlineApproved' : 'deadlineRejected' }
-  } catch {
-    return { ok: false, intent }
+  } catch (error) {
+    return {
+      ok: false,
+      intent,
+      message: extractApiErrorMessage(error, 'Không thể phân xử yêu cầu deadline. Vui lòng tải lại và thử lần nữa.')
+    }
   }
 }
 

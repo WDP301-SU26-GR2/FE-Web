@@ -36,12 +36,14 @@ export function EditorTransfersPage({
   const fetcher = useOperationFetcher()
   const displayRequest = request as TransferRequestWithRelations | null
   const [transferType, setTransferType] = useState<'FULL_TRANSFER' | 'PARTIAL_TRANSFER'>('FULL_TRANSFER')
+  const [reviewStage, setReviewStage] = useState<'' | 'SCREENED' | 'CONSENTED'>('')
   const isRevenueShare = request?.originalContractType === 'REVENUE_SHARE'
   const isUnderReview = request?.status === 'UNDER_REVIEW'
-  const canStartNegotiation = Boolean(request && isRevenueShare && isUnderReview)
-  const canCreateContract = Boolean(
-    request && isRevenueShare && request.status === 'ACCEPTED' && !request.transferContractId
+  const needsTemporaryStageChoice = Boolean(
+    request && isRevenueShare && isUnderReview && !request.transferContractId && !contract
   )
+  const canStartNegotiation = needsTemporaryStageChoice && reviewStage === 'SCREENED'
+  const canCreateContract = Boolean(needsTemporaryStageChoice && reviewStage === 'CONSENTED')
   return (
     <OperationsLayout
       titleKey='operations.transfers'
@@ -109,6 +111,23 @@ export function EditorTransfersPage({
         <p className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
           {t('operations.transferNegotiatingHint')}
         </p>
+      )}
+      {needsTemporaryStageChoice && (
+        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+          <label className='grid gap-2 text-xs font-bold text-foreground'>
+            {t('operations.transferStagePrompt')}
+            <select
+              className={operationInput}
+              value={reviewStage}
+              onChange={(event) => setReviewStage(event.target.value as typeof reviewStage)}
+            >
+              <option value=''>{t('operations.transferStagePlaceholder')}</option>
+              <option value='SCREENED'>{t('operations.transferStageScreened')}</option>
+              <option value='CONSENTED'>{t('operations.transferStageConsented')}</option>
+            </select>
+          </label>
+          <p className='mt-2 text-xs leading-5 text-muted-foreground'>{t('operations.transferStageTemporaryHint')}</p>
+        </section>
       )}
       {canStartNegotiation && (
         <OperationDialogPanel icon={GitPullRequestArrow} title={t('operations.startTransferSection')}>

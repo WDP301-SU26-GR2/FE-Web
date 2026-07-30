@@ -51,8 +51,8 @@ import { DeleteChapterDialog } from '~/features/mangaka/chapters/delete-chapter-
 import { CompletionProposalDialog } from './components/completion-proposal-dialog'
 import { FranchiseConsentDialog } from './components/franchise-consent-dialog'
 import { SeriesMetadataDialog } from './components/series-metadata-dialog'
-import { PublicationVersionsPanel } from './components/publication-versions-panel'
-import { usePublicationVersions } from './use-publication-versions'
+import { translateNameStatus, translateProposalStatus, translateSeriesStatus } from './lib/translate-series-state'
+import { translateDemographic, translateGenre, translatePublicationType } from './lib/translate-series-metadata'
 
 /** Status values that mark the series as being in the publication phase.
  *  Per FE-API-Guide-v3.md §1.2, SERIALIZED begins serialization and the
@@ -184,7 +184,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   } = useChapterList(seriesId)
   const { createChapter, isCreating } = useCreateChapter()
   const { activeAction: chapterManagementAction, updateChapter, removeChapter } = useChapterManagement()
-  const publicationVersions = usePublicationVersions(series?.id)
   const [lightbox, setLightbox] = useState<{ items: ImageCarouselItem[]; startIndex: number } | null>(null)
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
   const [createChapterOpen, setCreateChapterOpen] = useState(false)
@@ -350,7 +349,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     seriesMeta.className
                   )}
                 >
-                  {translate(`mySeries.statuses.${seriesStatus ?? 'DRAFT'}`, seriesStatus ?? 'DRAFT')}
+                  {translateSeriesStatus(seriesStatus, t)}
                 </span>
                 {/* Submit for review — only the owner of a DRAFT series can see this.
                     BE rejects non-owners / wrong status with 403 / 409. */}
@@ -495,7 +494,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     key={g}
                     className='inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-secondary-foreground'
                   >
-                    {translate(`seriesDetail.enums.genres.${g}`, g)}
+                    {translateGenre(g, t)}
                   </span>
                 ))}
               </div>
@@ -507,7 +506,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 label={t('seriesDetail.demographic')}
                 value={
                   series.demographic
-                    ? translate(`seriesDetail.enums.demographic.${series.demographic}`, series.demographic)
+                    ? translateDemographic(series.demographic, t)
                     : '—'
                 }
               />
@@ -515,7 +514,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 label={t('seriesDetail.publicationType')}
                 value={
                   series.publicationType
-                    ? translate(`seriesDetail.enums.publicationType.${series.publicationType}`, series.publicationType)
+                    ? translatePublicationType(series.publicationType, t)
                     : '—'
                 }
               />
@@ -612,7 +611,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 proposalMetaClassName
               )}
             >
-              {translate(`seriesDetail.proposalStatus.${proposal.status}`, proposal.status)}
+              {translateProposalStatus(proposal.status, t)}
             </span>
           ) : null
         }
@@ -660,19 +659,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
           onDeleteClick={setChapterToDelete}
         />
       )}
-
-      <PublicationVersionsPanel
-        versions={publicationVersions.versions}
-        selectedVersionId={publicationVersions.selectedVersionId}
-        selectedVersion={publicationVersions.selectedVersion}
-        isLoading={publicationVersions.isLoading}
-        isDetailLoading={publicationVersions.isDetailLoading}
-        listError={publicationVersions.listError}
-        detailError={publicationVersions.detailError}
-        onRefresh={publicationVersions.refresh}
-        onSelect={publicationVersions.selectVersion}
-        onCloseDetail={publicationVersions.clearSelection}
-      />
 
       {/* Image carousel viewer — shared by proposal character designs + name pages */}
       {lightbox && (
@@ -1039,7 +1025,7 @@ function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
                       meta.className
                     )}
                   >
-                    {t(`seriesDetail.nameStatus.${name.status}`, name.status)}
+                    {translateNameStatus(name.status, t)}
                   </span>
                 </div>
 
@@ -1109,7 +1095,7 @@ function SampleNameRow({
             meta.className
           )}
         >
-          {t(`seriesDetail.nameStatus.${name.status}`, name.status)}
+          {translateNameStatus(name.status, t)}
         </span>
       </div>
 

@@ -10,6 +10,8 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { useSeriesList } from './use-series-list'
 import { useProposalActions } from './use-proposal-actions'
 import { ProposalActionDialog } from './components/proposal-action-dialog'
+import { translateSeriesStatus } from './lib/translate-series-state'
+import { formatGenres } from './lib/translate-series-metadata'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 
 // ─── Status metadata ──────────────────────────────────────────────────────────
@@ -108,12 +110,6 @@ export function MySeriesPage() {
   const handleView = (id: string) => {
     setActiveMenu(null)
     navigate(`/dashboard/mangaka/series/${id}`)
-  }
-
-  const statusLabel = (status: SeriesStatus): string => {
-    const key = `mySeries.statuses.${status}`
-    const translated = i18n.exists(key) ? t(key) : null
-    return translated ?? status
   }
 
   return (
@@ -250,7 +246,7 @@ export function MySeriesPage() {
                     <div className='min-w-0'>
                       <p className='truncate text-sm font-semibold'>{series.title}</p>
                       {series.genres?.length > 0 && (
-                        <p className='truncate text-xs text-muted-foreground'>{series.genres.join(' · ')}</p>
+                        <p className='truncate text-xs text-muted-foreground'>{formatGenres(series.genres, t)}</p>
                       )}
                     </div>
                   </div>
@@ -263,7 +259,7 @@ export function MySeriesPage() {
                         meta.className
                       )}
                     >
-                      {statusLabel(series.status)}
+                      {translateSeriesStatus(series.status, t)}
                     </span>
                   </div>
 

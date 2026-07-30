@@ -32,7 +32,7 @@ export async function loadBoardLifecycleSeries() {
 }
 
 export async function loadBoardSessionSeries() {
-  const statuses = ['READY_TO_PITCH', 'PITCHED', 'SERIALIZED'] as const
+  const statuses = ['READY_TO_PITCH', 'PITCHED', 'SERIALIZED', 'HIATUS'] as const
   const responses = await Promise.all(
     statuses.map((status) =>
       loadAllOffsetItems((pagination) =>

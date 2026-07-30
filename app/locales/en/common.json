@@ -10,6 +10,12 @@
   "splashLoading": "Starting up...",
   "login": "Login",
   "register": "Register",
+  "contractPdf": {
+    "download": "Download contract PDF",
+    "preparing": "Preparing PDF…",
+    "conditionsRequired": "At least one valid payment condition is required before downloading the PDF.",
+    "conditionsUnavailable": "Payment conditions could not be verified, so the PDF is locked."
+  },
   "errors": {
     "unknown": "An unexpected error occurred.",
     "notFound": "The requested page could not be found."
@@ -53,7 +59,6 @@
     "contracts": "Contracts",
     "deadlines": "Deadlines",
     "transfers": "Transfers",
-    "reprints": "Reprints",
     "payments": "Payments",
     "notifications": "Notifications",
     "myTasks": "My Tasks",
