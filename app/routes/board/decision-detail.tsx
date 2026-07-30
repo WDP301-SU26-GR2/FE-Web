@@ -36,10 +36,26 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
+  const resourceHref = contractResourceHref(loaderData.decision.details, loaderData.contractResourceParentId)
   return (
     <BoardDecisionDetailPage
       {...loaderData}
+      resourceHref={resourceHref}
       backPath={`/dashboard/board/sessions/${loaderData.decision.boardSessionId}`}
     />
   )
+}
+
+function contractResourceHref(
+  details: Record<string, unknown> | null | undefined,
+  contractResourceParentId: string | null
+) {
+  if (!details || typeof details.resourceId !== 'string') return undefined
+  if (details.resourceType === 'PUBLICATION_CONTRACT' || details.resourceType === 'REPLACEMENT_CONTRACT')
+    return `/dashboard/board/contracts/${encodeURIComponent(details.resourceId)}`
+  if (details.resourceType === 'TRANSFER_CONTRACT')
+    return `/dashboard/board/transfers?contractId=${encodeURIComponent(details.resourceId)}`
+  if (details.resourceType === 'CONTRACT_AMENDMENT' && contractResourceParentId)
+    return `/dashboard/board/contracts/${encodeURIComponent(contractResourceParentId)}?amendmentId=${encodeURIComponent(details.resourceId)}`
+  return undefined
 }

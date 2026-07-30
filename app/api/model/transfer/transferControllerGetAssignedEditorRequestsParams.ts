@@ -22,18 +22,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
-import type { CreateBoardDecisionBodyDtoDecisionType } from './createBoardDecisionBodyDtoDecisionType';
-import type { CreateBoardDecisionBodyDtoDetails } from './createBoardDecisionBodyDtoDetails';
+import type { TransferControllerGetAssignedEditorRequestsStatus } from './transferControllerGetAssignedEditorRequestsStatus';
 
-export interface CreateBoardDecisionBodyDto {
-  /** @minLength 1 */
-  boardSessionId: string;
-  /** @nullable */
-  targetSeriesId: string | null;
-  /** @nullable */
-  transferRequestId?: string | null;
-  /** Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT */
-  decisionType: CreateBoardDecisionBodyDtoDecisionType;
-  /** @nullable */
-  details: CreateBoardDecisionBodyDtoDetails;
-}
+export type TransferControllerGetAssignedEditorRequestsParams = {
+/**
+ * Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD | REJECTED_BY_ORIGINAL_MANGAKA | REJECTED | CANCELLED. Values: SUBMITTED, UNDER_REVIEW, REJECTED_BY_BOARD, NEGOTIATING, REJECTED_BY_ORIGINAL_MANGAKA, PROPOSED, ACCEPTED, REJECTED, CANCELLED, AWAITING_REPLACEMENT_SIGNATURES, AWAITING_TRANSFER_SIGNATURES, COMPLETED
+ */
+status?: TransferControllerGetAssignedEditorRequestsStatus;
+};

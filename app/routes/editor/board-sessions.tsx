@@ -4,7 +4,6 @@ import {
   boardControllerGetConfig,
   boardControllerGetDecisions,
   boardControllerGetSessions,
-  boardControllerSuggestMembers,
   boardControllerStartSession
 } from '~/api/operations/board/board'
 import { EditorBoardSessionsPage, type EditorActionResult } from '~/features/editor'
@@ -19,30 +18,28 @@ import {
 import type { Route } from './+types/board-sessions'
 
 export async function clientLoader() {
-  try {
-    const [series, sessions, decisions, configResponse] = await Promise.all([
-      loadBoardSessionSeries(),
-      boardControllerGetSessions(),
-      boardControllerGetDecisions(),
-      boardControllerGetConfig()
-    ])
-    const configuredMemberCount = Math.max(3, Math.trunc(configResponse.data.quorumMin))
-    const suggestedMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount + 1 : configuredMemberCount
-    return {
-      series,
-      sessions: await hydrateBoardSessions(sessions.data),
-      decisions: await hydrateBoardDecisions(decisions.data),
-      suggestedMemberCount,
-      hasError: false
-    }
-  } catch {
-    return {
-      series: [],
-      sessions: [],
-      decisions: [],
-      suggestedMemberCount: 3,
-      hasError: true
-    }
+  const [seriesResult, sessionsResult, decisionsResult, configResult] = await Promise.allSettled([
+    loadBoardSessionSeries(),
+    boardControllerGetSessions(),
+    boardControllerGetDecisions(),
+    boardControllerGetConfig()
+  ])
+  const configuredMemberCount =
+    configResult.status === 'fulfilled' ? Math.max(3, Math.trunc(configResult.value.data.quorumMin)) : 3
+  const suggestedMemberCount = configuredMemberCount % 2 === 0 ? configuredMemberCount + 1 : configuredMemberCount
+  const [sessions, decisions] = await Promise.all([
+    sessionsResult.status === 'fulfilled' ? hydrateBoardSessions(sessionsResult.value.data) : [],
+    decisionsResult.status === 'fulfilled' ? hydrateBoardDecisions(decisionsResult.value.data) : []
+  ])
+
+  return {
+    series: seriesResult.status === 'fulfilled' ? seriesResult.value : [],
+    sessions,
+    decisions,
+    suggestedMemberCount,
+    hasError: [seriesResult, sessionsResult, decisionsResult, configResult].some(
+      (result) => result.status === 'rejected'
+    )
   }
 }
 
@@ -53,15 +50,35 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     let message = ''
     if (intent === 'createSession') {
       const endTime = optionalDate(form, 'endTime')
-      const seriesId = required(form, 'rosterSourceSeriesId')
-      const suggested = await boardControllerSuggestMembers({ seriesId })
+      const rosterMode = String(form.get('rosterMode') ?? 'automatic')
+      const seriesId = String(form.get('rosterSourceSeriesId') ?? '').trim()
+      const manualMemberIds = [
+        ...new Set(
+          String(form.get('manualRosterIds') ?? '')
+            .split(/[\s,;]+/)
+            .map((value) => value.trim())
+            .filter(Boolean)
+        )
+      ]
+      if (rosterMode === 'automatic' && !seriesId) {
+        throw new Error('Hãy chọn bộ truyện dùng làm ngữ cảnh gợi ý thành viên.')
+      }
+      if (
+        rosterMode === 'manual' &&
+        (manualMemberIds.length < 3 ||
+          manualMemberIds.length % 2 === 0 ||
+          manualMemberIds.some((id) => !/^[0-9a-fA-F]{24}$/.test(id)))
+      ) {
+        throw new Error('Roster thủ công phải có ít nhất 3 mã thành viên hợp lệ và tổng số phải là số lẻ.')
+      }
       const response = await boardControllerCreateSession({
         title: required(form, 'title'),
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(required(form, 'startTime')).toISOString(),
         ...(endTime ? { endTime } : {}),
-        seriesId,
-        allowedEditorIds: suggested.data.items.map((member) => member.userId)
+        ...(rosterMode === 'manual'
+          ? { allowedEditorIds: manualMemberIds }
+          : { seriesId, rosterSize: Number(form.get('rosterSize') ?? 3) })
       })
       message = extractApiSuccessMessage(response, 'Đã tạo phiên họp Hội đồng.')
     } else if (intent === 'startSession') {

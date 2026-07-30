@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { Link, useFetcher, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { PenLine } from 'lucide-react'
-import type { BoardDecisionListItemDtoOutput } from '~/api/model/board'
+import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import type {
   TransferContractResDtoOutput,
   TransferRequestResDtoOutput,
@@ -19,31 +19,39 @@ import {
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
+import { useAuth } from '~/features/auth/context/auth-context'
 
 export function BoardTransfersPage({
   requests,
   decisions,
   contract,
+  approvedContractDecision,
   contractId,
   signatures,
   hasError
 }: {
   requests: TransferRequestResDtoOutput[]
-  decisions: BoardDecisionListItemDtoOutput[]
+  decisions: BoardDecisionResDtoOutput[]
   contract: TransferContractResDtoOutput | null
+  approvedContractDecision: BoardDecisionResDtoOutput | null
   contractId: string
   requestId: string
   signatures: TransferSignatureListResDtoOutputSignaturesItem[]
   hasError: boolean
 }) {
   const { t, i18n } = useTranslation('board')
+  const { session: authSession } = useAuth()
   const [signOpen, setSignOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const hasMangakaA = signatures.some((signature) => signature.role === 'MANGAKA_A')
   const hasMangakaB = signatures.some((signature) => signature.role === 'MANGAKA_B')
   const hasBoard = signatures.some((signature) => signature.role === 'BOARD')
-  const canBoardSign = Boolean(contract && hasMangakaA && hasMangakaB && !hasBoard)
+  const isApprovalRosterMember =
+    approvedContractDecision?.allowedEditorIds?.includes(authSession?.user.id ?? '') ?? false
+  const canBoardSign = Boolean(
+    contract && approvedContractDecision && isApprovalRosterMember && hasMangakaA && hasMangakaB && !hasBoard
+  )
   const statuses = [...new Set(requests.map((item) => item.status))]
   const filteredRequests = requests.filter(
     (item) =>
@@ -93,6 +101,14 @@ export function BoardTransfersPage({
             <PenLine className='h-4 w-4' />
             {t('transfers.sign')}
           </button>
+        ) : contractId && !approvedContractDecision ? (
+          <p className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning-foreground'>
+            {t('contracts.decisionRequired')}
+          </p>
+        ) : contractId && approvedContractDecision && !isApprovalRosterMember ? (
+          <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground'>
+            {t('contracts.notInDecisionRoster')}
+          </p>
         ) : contractId ? (
           <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
             {hasBoard ? t('transfers.boardAlreadySigned') : t('transfers.awaitingMangakaSignatures')}
@@ -216,15 +232,36 @@ function TransferCard({
   decisions
 }: {
   item: TransferRequestResDtoOutput
-  decisions: BoardDecisionListItemDtoOutput[]
+  decisions: BoardDecisionResDtoOutput[]
 }) {
   const { t } = useTranslation('board')
+  const navigate = useNavigate()
   const fetcher = useFetcher<BoardActionResult>()
   const fullBuyoutFetcher = useFetcher<BoardActionResult>()
   const currentItem = fullBuyoutFetcher.data?.request ?? fetcher.data?.request ?? item
-  const eligibleDecisions = decisions.filter((decision) => decision.targetSeriesId === currentItem.seriesId)
+  const eligibleDecisions = decisions.filter((decision) => {
+    return (
+      (decision.targetSeriesId ?? decision.targetSeries?.id) === currentItem.seriesId &&
+      decision.details?.transferRequestId === currentItem.id
+    )
+  })
   const [decisionId, setDecisionId] = useState('')
-  const selectedDecision = eligibleDecisions.find((decision) => decision.id === decisionId)
+  const selectedDecisionId = decisionId || (eligibleDecisions.length === 1 ? eligibleDecisions[0].id : '')
+  const selectedDecision = eligibleDecisions.find((decision) => decision.id === selectedDecisionId)
+
+  useEffect(() => {
+    if (
+      fetcher.state === 'idle' &&
+      fetcher.data?.ok &&
+      fetcher.data.request &&
+      ['approve', 'reject'].includes(fetcher.data.intent)
+    ) {
+      navigate(`/dashboard/board/transfers?requestId=${encodeURIComponent(fetcher.data.request.id)}`, {
+        replace: true,
+        preventScrollReset: true
+      })
+    }
+  }, [fetcher.data, fetcher.state, navigate])
 
   return (
     <article className='rounded-xl border border-border bg-card p-5'>
@@ -253,7 +290,7 @@ function TransferCard({
                 className={`${boardInput} sm:col-span-2`}
                 name='boardDecisionId'
                 required
-                value={decisionId}
+                value={selectedDecisionId}
                 onChange={(event) => setDecisionId(event.target.value)}
               >
                 <option value='' disabled>
@@ -267,7 +304,12 @@ function TransferCard({
                 ))}
               </select>
               {!eligibleDecisions.length && (
-                <p className='text-xs text-destructive sm:col-span-2'>{t('transfers.noTerminalDecision')}</p>
+                <div className='space-y-2 rounded-lg border border-warning/30 bg-warning/10 p-3 sm:col-span-2'>
+                  <p className='text-xs text-warning-foreground'>{t('transfers.noTerminalDecision')}</p>
+                  <Link className='inline-flex text-xs font-bold text-primary underline' to='/dashboard/board/sessions'>
+                    {t('transfers.openBoardSessions')}
+                  </Link>
+                </div>
               )}
               <input className={boardInput} name='details' placeholder={t('transfers.details')} />
               <button
@@ -305,7 +347,16 @@ function TransferCard({
       {currentItem.status === 'AWAITING_REPLACEMENT_SIGNATURES' && (
         <div className='mt-4 rounded-lg border border-primary/25 bg-primary/5 p-3 text-xs leading-5'>
           <p className='text-foreground'>{t('transfers.replacementContractNextStep')}</p>
-          <Link className='mt-2 inline-flex font-bold text-primary underline' to='/dashboard/board/contracts'>
+          <Link
+            className='mt-2 inline-flex font-bold text-primary underline'
+            to={
+              currentItem.replacementContractId || fullBuyoutFetcher.data?.replacementContractId
+                ? `/dashboard/board/contracts/${
+                    currentItem.replacementContractId ?? fullBuyoutFetcher.data?.replacementContractId
+                  }`
+                : '/dashboard/board/contracts'
+            }
+          >
             {t('transfers.openReplacementContracts')}
           </Link>
         </div>

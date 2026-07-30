@@ -7,6 +7,7 @@ export type BoardActionResult = {
   message?: string
   requestId?: string
   request?: TransferRequestResDtoOutput
+  replacementContractId?: string
   downloadUrl?: string
   expiresAt?: string
 }

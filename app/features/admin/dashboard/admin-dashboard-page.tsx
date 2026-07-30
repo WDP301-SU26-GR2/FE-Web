@@ -76,7 +76,7 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
               <ShieldAlert className='size-4' aria-hidden='true' />
               <span>{t('dashboard.eyebrow')}</span>
             </div>
-            <h1 className='max-w-3xl text-2xl font-black tracking-tight text-foreground md:text-3xl'>
+            <h1 className='max-w-3xl text-xl font-black tracking-tight text-foreground md:text-2xl'>
               {t('dashboard.title')}
             </h1>
             <p className='mt-3 max-w-2xl text-sm leading-6 text-muted-foreground'>{t('dashboard.subtitle')}</p>

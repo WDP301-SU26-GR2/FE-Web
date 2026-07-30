@@ -32,15 +32,7 @@ export async function loadBoardLifecycleSeries() {
 }
 
 export async function loadBoardSessionSeries() {
-  const statuses = ['READY_TO_PITCH', 'PITCHED', 'SERIALIZED', 'HIATUS'] as const
-  const responses = await Promise.all(
-    statuses.map((status) =>
-      loadAllOffsetItems((pagination) =>
-        seriesControllerListSeries({ status, ...pagination }).then((response) => response.data)
-      )
-    )
-  )
-  return [...new Map(responses.flat().map((series) => [series.id, series])).values()]
+  return loadAllOffsetItems((pagination) => seriesControllerListSeries(pagination).then((response) => response.data))
 }
 
 export async function hydrateBoardSessions(items: BoardSessionListItemDtoOutput[]) {

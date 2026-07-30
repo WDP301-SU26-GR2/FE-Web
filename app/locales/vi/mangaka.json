@@ -2336,7 +2336,7 @@
     },
     "status": {
       "SUBMITTED": "Chờ Hội đồng sàng lọc",
-      "UNDER_REVIEW": "Hội đồng đang xem xét",
+      "UNDER_REVIEW": "Hội đồng đã thông qua · chưa chuyển quyền",
       "REJECTED_BY_BOARD": "Hội đồng từ chối",
       "NEGOTIATING": "Chờ Mangaka gốc phản hồi",
       "REJECTED_BY_ORIGINAL_MANGAKA": "Mangaka gốc từ chối",
@@ -2350,21 +2350,34 @@
     },
     "actions": {
       "create": "Tạo yêu cầu",
-      "accept": "Đồng ý thương lượng",
+      "accept": "Đồng ý đề nghị chuyển nhượng",
       "reject": "Từ chối",
       "sign": "Ký hợp đồng chuyển nhượng",
       "cancel": "Hủy",
       "submit": "Gửi yêu cầu",
       "sendOtp": "Gửi OTP ký",
       "confirmSign": "Xác nhận ký",
-      "reviewContract": "Xem điều khoản và ký"
+      "reviewContract": "Xem điều khoản và ký",
+      "openContracts": "Mở danh sách hợp đồng"
     },
     "card": {
       "unknownSeries": "Series chưa xác định",
       "unknownMangaka": "Mangaka chưa xác định",
       "requester": "Người đề nghị: {{name}}",
       "percentage": "Tỷ lệ sở hữu đề xuất: {{value}}%",
-      "contractReadyHint": "Hợp đồng chuyển nhượng đã được soạn. Bạn cần đọc kỹ số tiền, tỷ lệ sở hữu và tiến độ chữ ký trước khi xác nhận."
+      "contractReadyHint": "Hợp đồng chuyển nhượng đã được soạn. Bạn cần đọc kỹ số tiền, tỷ lệ sở hữu và tiến độ chữ ký trước khi xác nhận.",
+      "replacementContractHint": "Hợp đồng thay thế của nhánh mua đứt đang chờ ký. Quyền sở hữu chỉ được cập nhật sau khi hợp đồng có hiệu lực.",
+      "ownershipPending": "Yêu cầu đang được xử lý. Series vẫn thuộc Mangaka hiện tại cho tới khi toàn bộ hợp đồng và chữ ký hoàn tất.",
+      "ownershipUnchanged": "Yêu cầu đã kết thúc mà không hoàn tất chuyển nhượng. Quyền sở hữu series không thay đổi.",
+      "ownershipCompleted": "Chuyển nhượng đã hoàn tất. Hệ thống đã chuyển quyền sở hữu theo hợp đồng có hiệu lực."
+    },
+    "confirm": {
+      "acceptTitle": "Xác nhận đồng ý chuyển nhượng",
+      "acceptDescription": "Sau khi đồng ý, Editor có thể tiếp tục soạn hợp đồng chuyển nhượng. Hãy chắc chắn bạn đã xem xét đề nghị.",
+      "acceptAction": "Xác nhận đồng ý",
+      "rejectTitle": "Xác nhận từ chối chuyển nhượng",
+      "rejectDescription": "Từ chối sẽ kết thúc yêu cầu ở nhánh thương lượng và không thể hoàn tác trên giao diện.",
+      "rejectAction": "Xác nhận từ chối"
     },
     "create": {
       "title": "Tạo yêu cầu chuyển nhượng",
@@ -2435,6 +2448,8 @@
       "contractNotFound": "Hợp đồng chuyển nhượng không còn khả dụng.",
       "requestNotFound": "Yêu cầu từ thông báo không còn khả dụng hoặc bạn không có quyền truy cập.",
       "noActiveContract": "Series chưa có hợp đồng hiệu lực để chuyển nhượng.",
+      "activeRequestExists": "Series này đã có một yêu cầu chuyển nhượng đang được xử lý.",
+      "awaitingContractDecision": "Hợp đồng chuyển nhượng đang chờ Hội đồng biểu quyết và chưa thể ký.",
       "generic": "Không thể hoàn tất thao tác chuyển nhượng. Vui lòng thử lại.",
       "notYourTurn": "Bạn không phải bên ký hiện tại hoặc hợp đồng chưa đến lượt ký của bạn."
     }

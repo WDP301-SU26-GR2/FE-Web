@@ -136,7 +136,23 @@ function CreateSessionDialog({
   const fetcher = useBoardFetcher()
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+  const [rosterMode, setRosterMode] = useState<'automatic' | 'manual'>(series.length ? 'automatic' : 'manual')
+  const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState(series[0]?.id ?? '')
+  const [manualRosterIds, setManualRosterIds] = useState('')
   const timeRangeIsValid = Boolean(startTime) && (!endTime || endTime > startTime)
+  const parsedManualRosterIds = [
+    ...new Set(
+      manualRosterIds
+        .split(/[\s,;]+/)
+        .map((value) => value.trim())
+        .filter(Boolean)
+    )
+  ]
+  const manualRosterIsValid =
+    parsedManualRosterIds.length >= 3 &&
+    parsedManualRosterIds.length % 2 === 1 &&
+    parsedManualRosterIds.every((id) => /^[0-9a-fA-F]{24}$/.test(id))
+  const rosterIsValid = rosterMode === 'automatic' ? Boolean(rosterSourceSeriesId) : manualRosterIsValid
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
@@ -155,12 +171,7 @@ function CreateSessionDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='createSession' />
-        <input type='hidden' name='rosterSourceSeriesId' value={series[0]?.id ?? ''} />
-        {!series.length && (
-          <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
-            {t('board.noEligibleSeriesForSession')}
-          </p>
-        )}
+        <input type='hidden' name='rosterSize' value={suggestedMemberCount} />
         <aside className='rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100'>
           <div className='flex items-center gap-2 text-xs font-bold'>
             <CircleAlert className='size-4 shrink-0' />
@@ -170,6 +181,82 @@ function CreateSessionDialog({
             {t('board.sessionSystemRosterNotice', { count: suggestedMemberCount })}
           </p>
         </aside>
+        <fieldset className='grid gap-2'>
+          <legend className='text-xs font-semibold'>{t('board.rosterMode')}</legend>
+          <div className='grid gap-2 sm:grid-cols-2'>
+            <label className='flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-xs'>
+              <input
+                className='mt-0.5'
+                type='radio'
+                name='rosterMode'
+                value='automatic'
+                checked={rosterMode === 'automatic'}
+                disabled={!series.length}
+                onChange={() => setRosterMode('automatic')}
+              />
+              <span>
+                <strong className='block text-foreground'>{t('board.automaticRoster')}</strong>
+                <span className='mt-1 block text-muted-foreground'>{t('board.automaticRosterHint')}</span>
+              </span>
+            </label>
+            <label className='flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-xs'>
+              <input
+                className='mt-0.5'
+                type='radio'
+                name='rosterMode'
+                value='manual'
+                checked={rosterMode === 'manual'}
+                onChange={() => setRosterMode('manual')}
+              />
+              <span>
+                <strong className='block text-foreground'>{t('board.manualRosterMode')}</strong>
+                <span className='mt-1 block text-muted-foreground'>{t('board.manualRosterHint')}</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+        {rosterMode === 'automatic' ? (
+          <label className='grid gap-1.5 text-xs font-semibold'>
+            {t('board.rosterSourceSeries')}
+            <select
+              className={boardInput}
+              name='rosterSourceSeriesId'
+              required
+              value={rosterSourceSeriesId}
+              onChange={(event) => setRosterSourceSeriesId(event.target.value)}
+            >
+              <option value=''>{t('board.selectRosterSourceSeries')}</option>
+              {series.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title} · {t(`filters.seriesStatuses.${item.status}`, { defaultValue: item.status })}
+                </option>
+              ))}
+            </select>
+            <span className='font-normal text-muted-foreground'>{t('board.rosterSourceSeriesHint')}</span>
+          </label>
+        ) : (
+          <label className='grid gap-1.5 text-xs font-semibold'>
+            {t('board.manualRosterIds')}
+            <textarea
+              className={`${boardInput} min-h-24 py-2`}
+              name='manualRosterIds'
+              required
+              value={manualRosterIds}
+              onChange={(event) => setManualRosterIds(event.target.value)}
+              placeholder={t('board.manualRosterPlaceholder')}
+            />
+            <span
+              className={`font-normal ${manualRosterIds && !manualRosterIsValid ? 'text-destructive' : 'text-muted-foreground'}`}
+            >
+              {t('board.manualRosterValidation')}
+            </span>
+          </label>
+        )}
+        {!series.length && (
+          <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
+            {t('board.noSeriesForAutomaticRoster')}
+          </p>
+        )}
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.sessionName')}
           <input className={boardInput} name='title' minLength={5} required />
@@ -216,7 +303,7 @@ function CreateSessionDialog({
             {t('actions.cancel')}
           </button>
           <button
-            disabled={fetcher.state !== 'idle' || !series.length || !timeRangeIsValid}
+            disabled={fetcher.state !== 'idle' || !rosterIsValid || !timeRangeIsValid}
             className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? (

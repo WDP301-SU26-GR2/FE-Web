@@ -45,6 +45,7 @@ export function BoardDecisionDetailPage({
   allowedEditorIds,
   canCreateReport = false,
   lifecycleHref,
+  resourceHref,
   readOnly = false,
   backPath
 }: {
@@ -59,6 +60,7 @@ export function BoardDecisionDetailPage({
   allowedEditorIds: string[]
   canCreateReport?: boolean
   lifecycleHref?: string
+  resourceHref?: string
   readOnly?: boolean
   backPath?: string
 }) {
@@ -160,6 +162,26 @@ export function BoardDecisionDetailPage({
               className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
             >
               {t('decisions.lifecycleFollowUp.action')}
+              <ArrowRight className='size-4' />
+            </Link>
+          </div>
+        </BoardPanel>
+      )}
+      {resourceHref && liveDecision.decisionType === 'CONTRACT' && (
+        <BoardPanel title={t('decisions.contractFollowUp.title')}>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <p className='text-xs leading-5 text-muted-foreground'>
+              {t(`decisions.contractFollowUp.${liveDecision.result ?? 'PENDING'}`)}
+            </p>
+            <Link
+              to={resourceHref}
+              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+            >
+              {t(
+                ['APPROVED', 'REJECTED'].includes(liveDecision.result ?? '')
+                  ? 'decisions.contractFollowUp.apply'
+                  : 'decisions.contractFollowUp.open'
+              )}
               <ArrowRight className='size-4' />
             </Link>
           </div>

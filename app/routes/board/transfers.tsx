@@ -1,4 +1,4 @@
-import { boardControllerGetDecisions, boardControllerGetSessions } from '~/api/operations/board/board'
+import { boardControllerGetDecisionDetails, boardControllerGetDecisions } from '~/api/operations/board/board'
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   transferControllerBoardApproveScreening,
@@ -22,9 +22,9 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const requestedContractId = url.searchParams.get('contractId')?.trim() ?? ''
   const requestId = url.searchParams.get('requestId')?.trim() ?? ''
   try {
-    const [requests, sessions, focusedRequest] = await Promise.all([
+    const [requests, decisionResponse, focusedRequest] = await Promise.all([
       transferControllerGetPendingBoardRequests(),
-      boardControllerGetSessions({ mine: 'true' }),
+      boardControllerGetDecisions({ mine: 'true' }),
       requestId ? transferControllerGetTransferRequestById({ id: requestId }).catch(() => null) : null
     ])
     const contractId =
@@ -44,24 +44,46 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     if (focusedRequest?.status === 200 && !availableRequests.some((item) => item.id === focusedRequest.data.id)) {
       availableRequests.unshift(focusedRequest.data)
     }
-    const decisionResponses = await Promise.all(
-      sessions.data.map((session) => boardControllerGetDecisions({ boardSessionId: session.id }).catch(() => null))
+    const decisionDetails = await Promise.all(
+      decisionResponse.data
+        .filter(
+          (decision) =>
+            (decision.decisionType === 'TRANSFER' && ['APPROVED', 'REJECTED'].includes(decision.result ?? '')) ||
+            (decision.decisionType === 'CONTRACT' && decision.result === 'APPROVED')
+        )
+        .map((decision) =>
+          boardControllerGetDecisionDetails({ id: decision.id })
+            .then((response) => response.data)
+            .catch(() => null)
+        )
     )
     const transferDecisions = [
       ...new Map(
-        decisionResponses
-          .flatMap((response) => response?.data ?? [])
+        decisionDetails
           .filter(
             (decision) =>
-              decision.decisionType === 'TRANSFER' && ['APPROVED', 'REJECTED'].includes(decision.result ?? '')
+              decision !== null &&
+              decision.decisionType === 'TRANSFER' &&
+              ['APPROVED', 'REJECTED'].includes(decision.result ?? '')
           )
-          .map((decision) => [decision.id, decision])
+          .map((decision) => [decision!.id, decision!])
       ).values()
     ]
+    const approvedContractDecision =
+      decisionDetails.find(
+        (decision) =>
+          decision !== null &&
+          decision.decisionType === 'CONTRACT' &&
+          decision.result === 'APPROVED' &&
+          decision.targetSeriesId === contract?.data.seriesId &&
+          decision.details?.resourceType === 'TRANSFER_CONTRACT' &&
+          decision.details?.resourceId === contractId
+      ) ?? null
     return {
       requests: availableRequests,
       decisions: transferDecisions,
       contract: contract?.status === 200 ? contract.data : null,
+      approvedContractDecision,
       contractId,
       requestId,
       signatures: signatures?.status === 200 ? signatures.data.signatures : [],
@@ -72,6 +94,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       requests: [],
       decisions: [],
       contract: null,
+      approvedContractDecision: null,
       contractId: requestedContractId,
       requestId,
       signatures: [],
@@ -102,7 +125,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       ) {
         throw new Error('Điều kiện hợp đồng chưa đầy đủ.')
       }
-      await transferControllerBoardAssignFullBuyout(
+      const response = await transferControllerBoardAssignFullBuyout(
         { id: required(form, 'requestId') },
         {
           valuationAmount: Number(required(form, 'valuationAmount')),
@@ -113,12 +136,24 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           }))
         }
       )
+      const updatedRequest = await transferControllerGetTransferRequestById({
+        id: required(form, 'requestId')
+      })
+      return {
+        ok: true,
+        intent,
+        messageKey: 'fullBuyoutAssigned',
+        request: updatedRequest.data,
+        replacementContractId: response.data.replacementContractId
+      }
     } else if (intent === 'sendOtp') {
+      await requireApprovedTransferContractDecision(required(form, 'contractId'))
       const me = await usersControllerGetMe()
       if (me.status !== 200) throw new Error('Không thể đọc thông tin tài khoản.')
       await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
     } else if (intent === 'sign') {
       const contractId = required(form, 'contractId')
+      await requireApprovedTransferContractDecision(contractId)
       const [contract, signatures] = await Promise.all([
         transferControllerGetTransferContractById({ id: contractId }),
         transferControllerGetSignatures({ id: contractId })
@@ -133,7 +168,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     } else return { ok: false, intent }
     const requestId = String(form.get('requestId') ?? '') || undefined
     const updatedRequest =
-      requestId && ['approve', 'reject', 'fullBuyout'].includes(intent)
+      requestId && ['approve', 'reject'].includes(intent)
         ? await transferControllerGetTransferRequestById({ id: requestId })
             .then((response) => response.data)
             .catch(() => undefined)
@@ -146,11 +181,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           ? 'transferScreeningApproved'
           : intent === 'reject'
             ? 'transferScreeningRejected'
-            : intent === 'fullBuyout'
-              ? 'fullBuyoutAssigned'
-              : intent === 'sendOtp'
-                ? 'otpSent'
-                : 'transferContractSigned',
+            : intent === 'sendOtp'
+              ? 'otpSent'
+              : 'transferContractSigned',
       requestId,
       request: updatedRequest
     }
@@ -168,6 +201,31 @@ function required(form: FormData, key: string) {
   const value = String(form.get(key) ?? '')
   if (!value) throw new Error(`Missing ${key}`)
   return value
+}
+
+async function requireApprovedTransferContractDecision(contractId: string) {
+  const contract = await transferControllerGetTransferContractById({ id: contractId })
+  if (contract.status !== 200 || !contract.data.seriesId)
+    throw new Error('Không thể xác định series của hợp đồng chuyển nhượng.')
+
+  const decisions = await boardControllerGetDecisions({
+    mine: 'true',
+    targetSeriesId: contract.data.seriesId
+  })
+  const details = await Promise.all(
+    decisions.data
+      .filter((decision) => decision.decisionType === 'CONTRACT' && decision.result === 'APPROVED')
+      .map((decision) =>
+        boardControllerGetDecisionDetails({ id: decision.id })
+          .then((response) => response.data)
+          .catch(() => null)
+      )
+  )
+  const approved = details.some(
+    (decision) =>
+      decision?.details?.resourceType === 'TRANSFER_CONTRACT' && decision.details.resourceId === contractId
+  )
+  if (!approved) throw new Error('Hợp đồng chuyển nhượng chưa có quyết định CONTRACT được Hội đồng phê duyệt.')
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

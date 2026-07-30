@@ -3,11 +3,22 @@ import {
   boardControllerAdvancePhase,
   boardControllerConcludeSession,
   boardControllerCreateDecision,
+  boardControllerGetDecisionDetails,
   boardControllerGetDecisions,
   boardControllerGetSessionById,
   boardControllerGetSessionMessages,
   boardControllerStartSession
 } from '~/api/operations/board/board'
+import {
+  contractAmendmentControllerListAmendments,
+  contractControllerGetContractById,
+  contractControllerGetContracts,
+  contractControllerGetContractVersions
+} from '~/api/operations/contracts/contracts'
+import {
+  transferControllerGetAssignedEditorRequests,
+  transferControllerGetTransferContractById
+} from '~/api/operations/transfer/transfer'
 import { seriesControllerGetSeries, seriesControllerPitch } from '~/api/operations/series/series'
 import type { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
 import { EditorBoardMeetingRoomPage, type EditorActionResult } from '~/features/editor'
@@ -16,19 +27,25 @@ import { hydrateBoardDecisions, loadBoardSessionSeries, required } from './board
 import type { Route } from './+types/board-session-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [session, decisions, messages, series] = await Promise.all([
+  const [session, decisions, messages, series, contracts, transferRequests] = await Promise.all([
     boardControllerGetSessionById({ id: params.id }),
     boardControllerGetDecisions({ boardSessionId: params.id }),
     boardControllerGetSessionMessages({ id: params.id }, { limit: 200, offset: 0 }).catch(() => null),
-    loadBoardSessionSeries()
+    loadBoardSessionSeries(),
+    contractControllerGetContracts().catch(() => null),
+    transferControllerGetAssignedEditorRequests().catch(() => null)
   ])
   if (session.status !== 200) throw new Response('Not found', { status: 404 })
+  const assignedTransferRequests = transferRequests?.data.data ?? []
+  const contractResources = await loadContractDecisionResources(contracts?.data ?? [], assignedTransferRequests)
   return {
     session: session.data,
     phase: readBoardSessionPhase(session.data),
     decisions: await hydrateBoardDecisions(decisions.data),
     messages: messages?.status === 200 ? messages.data.items : [],
-    series
+    series,
+    contractResources,
+    transferRequests: assignedTransferRequests
   }
 }
 
@@ -73,12 +90,32 @@ export async function runBoardSessionAction(
       if (!supportedDecisionTypes.includes(decisionType)) return { ok: false, intent, errorKey: 'invalidState' }
 
       const existingDecisions = await boardControllerGetDecisions({ boardSessionId: params.id })
+      const existingDecisionDetails = await Promise.all(
+        existingDecisions.data.map((decision) =>
+          boardControllerGetDecisionDetails({ id: decision.id })
+            .then((response) => response.data)
+            .catch(() => null)
+        )
+      )
       const endingTypes = new Set(['COMPLETION', 'CANCELLATION', 'CANCEL'])
-      const conflicts = existingDecisions.data.some(
+      const resourceId = String(form.get('resourceId') ?? '').trim()
+      const versionId = String(form.get('versionId') ?? '').trim()
+      const transferRequestId = String(form.get('transferRequestId') ?? '').trim()
+      const conflicts = existingDecisionDetails.some(
         (decision) =>
+          decision !== null &&
           decision.targetSeriesId === seriesId &&
-          (decision.decisionType === decisionType ||
-            (endingTypes.has(decision.decisionType ?? '') && endingTypes.has(decisionType)))
+          ((decisionType === 'CONTRACT' &&
+            decision.decisionType === 'CONTRACT' &&
+            decision.details?.resourceId === resourceId &&
+            (decision.details?.versionId ?? '') === versionId) ||
+            (decisionType === 'TRANSFER' &&
+              decision.decisionType === 'TRANSFER' &&
+              decision.details?.transferRequestId === transferRequestId) ||
+            (decisionType !== 'CONTRACT' &&
+              decisionType !== 'TRANSFER' &&
+              (decision.decisionType === decisionType ||
+                (endingTypes.has(decision.decisionType ?? '') && endingTypes.has(decisionType)))))
       )
       if (conflicts) return { ok: false, intent, errorKey: 'invalidState' }
 
@@ -102,7 +139,7 @@ export async function runBoardSessionAction(
           publicationType
         })
       } else {
-        if (!['SERIALIZED', 'HIATUS'].includes(series.data.status))
+        if (decisionType !== 'CONTRACT' && !['SERIALIZED', 'HIATUS'].includes(series.data.status))
           return { ok: false, intent, errorKey: 'invalidState' }
         details.note = String(form.get('decisionNote') ?? '').trim() || null
         if (decisionType === 'CANCELLATION' || decisionType === 'ENDING_ALLOWANCE') {
@@ -120,11 +157,27 @@ export async function runBoardSessionAction(
             return { ok: false, intent, errorKey: 'invalidState' }
           details.publicationType = publicationType
         }
+        if (decisionType === 'TRANSFER') details.transferRequestId = required(form, 'transferRequestId')
+        if (decisionType === 'CONTRACT') {
+          const resourceType = required(form, 'resourceType')
+          if (
+            !['PUBLICATION_CONTRACT', 'REPLACEMENT_CONTRACT', 'TRANSFER_CONTRACT', 'CONTRACT_AMENDMENT'].includes(
+              resourceType
+            )
+          )
+            return { ok: false, intent, errorKey: 'invalidState' }
+          Object.assign(details, {
+            resourceType,
+            resourceId: required(form, 'resourceId'),
+            ...(versionId ? { versionId } : {})
+          })
+        }
       }
 
       const createdDecision = await boardControllerCreateDecision({
         boardSessionId: params.id,
         targetSeriesId: seriesId,
+        transferRequestId: decisionType === 'TRANSFER' ? required(form, 'transferRequestId') : null,
         decisionType,
         details
       })
@@ -185,4 +238,71 @@ export async function runBoardSessionAction(
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
   return <EditorBoardMeetingRoomPage {...loaderData} />
+}
+
+async function loadContractDecisionResources(
+  contracts: Array<{ id: string; seriesId: string; series?: { title?: string } }>,
+  transferRequests: Array<{
+    seriesId: string
+    status: string
+    transferContractId?: string | null
+    series?: { title?: string } | null
+  }>
+) {
+  const resources = await Promise.all(
+    contracts.map(async (contract) => {
+      const [detail, versions, amendments] = await Promise.all([
+        contractControllerGetContractById({ id: contract.id }).catch(() => null),
+        contractControllerGetContractVersions({ id: contract.id }).catch(() => null),
+        contractAmendmentControllerListAmendments({ contractId: contract.id }).catch(() => null)
+      ])
+      const currentVersion = versions?.status === 200 ? versions.data.at(-1) : null
+      const contractDetail = detail?.status === 200 ? detail.data : null
+      const title = contractDetail?.series?.title ?? contract.series?.title ?? contract.id
+      const contractResource =
+        contractDetail?.status === 'MANGAKA_APPROVED' && currentVersion
+          ? {
+              resourceType: contractDetail.sourceTransferRequestId
+                ? ('REPLACEMENT_CONTRACT' as const)
+                : ('PUBLICATION_CONTRACT' as const),
+              resourceId: contract.id,
+              versionId: currentVersion.id,
+              seriesId: contract.seriesId,
+              label: `${title} · ${
+                contractDetail.sourceTransferRequestId ? 'Replacement Contract' : 'Publication Contract'
+              } · v${currentVersion.versionNumber}`
+            }
+          : null
+      const amendmentResources =
+        amendments?.status === 200
+          ? amendments.data
+              .filter((amendment) => amendment.status === 'PENDING_SIGNATURES')
+              .map((amendment) => ({
+                resourceType: 'CONTRACT_AMENDMENT' as const,
+                resourceId: amendment.id,
+                versionId: '',
+                seriesId: contract.seriesId,
+                label: `${title} · Amendment · ${amendment.id}`
+              }))
+          : []
+      return [...(contractResource ? [contractResource] : []), ...amendmentResources]
+    })
+  )
+  const transferResources = await Promise.all(
+    transferRequests.map(async (request) => {
+      if (!request.transferContractId || request.status !== 'AWAITING_TRANSFER_SIGNATURES') return null
+      const contract = await transferControllerGetTransferContractById({ id: request.transferContractId }).catch(
+        () => null
+      )
+      if (contract?.status !== 200 || contract.data.status !== 'DRAFT') return null
+      return {
+        resourceType: 'TRANSFER_CONTRACT' as const,
+        resourceId: request.transferContractId,
+        versionId: '',
+        seriesId: request.seriesId,
+        label: `${request.series?.title ?? request.seriesId} · Transfer Contract`
+      }
+    })
+  )
+  return [...resources.flat(), ...transferResources.filter((resource) => resource !== null)]
 }

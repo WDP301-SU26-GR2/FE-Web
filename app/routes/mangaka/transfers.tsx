@@ -50,12 +50,17 @@ export async function clientLoader({ request }: { request: Request }) {
     usersControllerGetMe()
   ])
 
-  const requests = await Promise.all(
+  const requestDetails = await Promise.all(
     (requestsResponse.data?.data ?? []).map(async (requestItem) => {
-      const detail = await transferControllerGetTransferRequestById({ id: requestItem.id })
-      return detail.data
+      try {
+        const detail = await transferControllerGetTransferRequestById({ id: requestItem.id })
+        return detail.data
+      } catch {
+        return null
+      }
     })
   )
+  const requests = requestDetails.filter((item): item is TransferRequestResDtoOutput => item !== null)
 
   let focusRequestLoadFailed = false
   if (focusRequestId && !requests.some((item) => item.id === focusRequestId)) {
@@ -74,16 +79,19 @@ export async function clientLoader({ request }: { request: Request }) {
   let signaturesLoadFailed = false
   let focusContractLoadFailed = false
   if (discoveredContractId) {
-    try {
-      const [contractResponse, signatureResponse] = await Promise.all([
-        transferControllerGetTransferContractById({ id: discoveredContractId }),
-        transferControllerGetSignatures({ id: discoveredContractId })
-      ])
+    const [contractResponse, signatureResponse] = await Promise.all([
+      transferControllerGetTransferContractById({ id: discoveredContractId }).catch(() => null),
+      transferControllerGetSignatures({ id: discoveredContractId }).catch(() => null)
+    ])
+    if (contractResponse?.status === 200) {
       focusContract = contractResponse.data
-      contractSignatures = signatureResponse.data.signatures
-    } catch {
-      signaturesLoadFailed = true
+    } else {
       focusContractLoadFailed = true
+    }
+    if (signatureResponse?.status === 200) {
+      contractSignatures = signatureResponse.data.signatures
+    } else {
+      signaturesLoadFailed = true
     }
   }
 
@@ -164,7 +172,9 @@ function transferErrorKey(code: string | null | undefined): string {
     'Error.TransferSignerNotFound': 'transfers.errors.signerNotFound',
     'Error.TransferContractNotFound': 'transfers.errors.contractNotFound',
     'Error.TransferRequestNotFound': 'transfers.errors.requestNotFound',
-    'Error.NoActiveContractForSeries': 'transfers.errors.noActiveContract'
+    'Error.NoActiveContractForSeries': 'transfers.errors.noActiveContract',
+    'Error.ActiveTransferRequestAlreadyExists': 'transfers.errors.activeRequestExists',
+    'Error.TransferContractApprovalDecisionRequired': 'transfers.errors.awaitingContractDecision'
   }
   return (code && byCode[code]) || 'transfers.errors.generic'
 }
@@ -176,9 +186,12 @@ export default function MangakaTransfersRoute({
 }) {
   const { t } = useTranslation('mangaka')
   const [createOpen, setCreateOpen] = useState(false)
-  const [standaloneSignOpen, setStandaloneSignOpen] = useState(Boolean(loaderData.focusContractId))
+  const [dismissedContractId, setDismissedContractId] = useState('')
   const active = loaderData.requests.filter((item) => !TERMINAL_STATUSES.has(item.status))
   const history = loaderData.requests.filter((item) => TERMINAL_STATUSES.has(item.status))
+  const standaloneSignOpen = Boolean(
+    loaderData.focusContractId && loaderData.focusContract && loaderData.focusContractId !== dismissedContractId
+  )
 
   return (
     <div className='space-y-6 pb-12'>
@@ -223,8 +236,8 @@ export default function MangakaTransfersRoute({
             </div>
             <button
               type='button'
-              onClick={() => setStandaloneSignOpen(true)}
-              disabled={!loaderData.focusContract}
+              onClick={() => setDismissedContractId('')}
+              disabled={!loaderData.focusContract || loaderData.signaturesLoadFailed}
               className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
             >
               <ShieldCheck className='size-4' aria-hidden='true' /> {t('transfers.actions.sign')}
@@ -253,7 +266,7 @@ export default function MangakaTransfersRoute({
           contract={loaderData.focusContract}
           signatures={loaderData.contractSignatures}
           currentUserId={loaderData.currentUserId}
-          onClose={() => setStandaloneSignOpen(false)}
+          onClose={() => setDismissedContractId(loaderData.focusContractId)}
         />
       )}
     </div>
@@ -308,7 +321,9 @@ function TransferRequestCard({
   const { t } = useTranslation('mangaka')
   const fetcher = useFetcher<ActionResult>()
   const isOriginalMangaka = item.originalMangakaId === currentUserId
+  const isRequestingMangaka = item.requestingMangakaId === currentUserId
   const canRespond = isOriginalMangaka && item.status === 'NEGOTIATING'
+  const [responseIntent, setResponseIntent] = useState<'accept' | 'reject' | null>(null)
 
   return (
     <article
@@ -332,6 +347,15 @@ function TransferRequestCard({
         </span>
       </div>
       <p className='mt-3 text-sm text-muted-foreground'>{item.planDescription}</p>
+      <p className='mt-3 rounded-lg border border-border bg-muted/40 p-3 text-xs leading-5 text-muted-foreground'>
+        {t(
+          item.status === 'COMPLETED'
+            ? 'transfers.card.ownershipCompleted'
+            : TERMINAL_STATUSES.has(item.status)
+              ? 'transfers.card.ownershipUnchanged'
+              : 'transfers.card.ownershipPending'
+        )}
+      </p>
       {item.proposedPercentage != null && (
         <p className='mt-2 text-sm text-foreground'>
           {t('transfers.card.percentage', { value: item.proposedPercentage })}
@@ -352,31 +376,81 @@ function TransferRequestCard({
           </Link>
         </div>
       )}
+      {isRequestingMangaka && item.status === 'AWAITING_REPLACEMENT_SIGNATURES' && (
+        <div className='mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3'>
+          <p className='text-xs font-semibold leading-5 text-muted-foreground'>
+            {t('transfers.card.replacementContractHint')}
+          </p>
+          <Link
+            to={
+              item.replacementContractId
+                ? `/dashboard/mangaka/contracts/${encodeURIComponent(item.replacementContractId)}`
+                : '/dashboard/mangaka/contracts'
+            }
+            className='mt-3 inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground'
+          >
+            <FileCheck2 className='size-4' aria-hidden='true' />
+            {t('transfers.actions.openContracts')}
+          </Link>
+        </div>
+      )}
 
       {canRespond && (
         <div className='mt-4 flex flex-wrap gap-2 border-t border-border pt-4'>
-          {canRespond && (
-            <fetcher.Form method='post' className='flex flex-wrap gap-2'>
-              <input type='hidden' name='requestId' value={item.id} />
-              <button
-                name='intent'
-                value='accept'
-                disabled={fetcher.state !== 'idle'}
-                className='h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
-              >
-                {t('transfers.actions.accept')}
-              </button>
-              <button
-                name='intent'
-                value='reject'
-                disabled={fetcher.state !== 'idle'}
-                className='h-9 rounded-md border border-destructive px-3 text-sm font-bold text-destructive disabled:opacity-50'
-              >
-                {t('transfers.actions.reject')}
-              </button>
-            </fetcher.Form>
-          )}
+          <button
+            type='button'
+            onClick={() => setResponseIntent('accept')}
+            disabled={fetcher.state !== 'idle'}
+            className='h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50'
+          >
+            {t('transfers.actions.accept')}
+          </button>
+          <button
+            type='button'
+            onClick={() => setResponseIntent('reject')}
+            disabled={fetcher.state !== 'idle'}
+            className='h-9 rounded-md border border-destructive px-3 text-sm font-bold text-destructive disabled:opacity-50'
+          >
+            {t('transfers.actions.reject')}
+          </button>
         </div>
+      )}
+      {responseIntent && (
+        <Dialog
+          open
+          onClose={() => setResponseIntent(null)}
+          titleId={`confirm-transfer-${responseIntent}-${item.id}`}
+          title={t(`transfers.confirm.${responseIntent}Title`)}
+          description={t(`transfers.confirm.${responseIntent}Description`)}
+          size='sm'
+          compact
+        >
+          <fetcher.Form method='post' className='grid gap-3' onSubmit={() => setResponseIntent(null)}>
+            <input type='hidden' name='requestId' value={item.id} />
+            <div className='flex justify-end gap-2'>
+              <button
+                type='button'
+                onClick={() => setResponseIntent(null)}
+                className='h-10 rounded-md border border-border px-4 text-sm font-bold'
+              >
+                {t('transfers.actions.cancel')}
+              </button>
+              <button
+                name='intent'
+                value={responseIntent}
+                disabled={fetcher.state !== 'idle'}
+                className={cn(
+                  'h-10 rounded-md px-4 text-sm font-bold disabled:opacity-50',
+                  responseIntent === 'accept'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-destructive text-destructive-foreground'
+                )}
+              >
+                {t(`transfers.confirm.${responseIntent}Action`)}
+              </button>
+            </div>
+          </fetcher.Form>
+        </Dialog>
       )}
       {fetcher.data && <ActionFeedback result={fetcher.data} successKey='transfers.success.requestUpdated' />}
     </article>

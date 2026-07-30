@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import type { BoardMeetingSession, BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import type { TransferRequestListResDtoOutputDataItem } from '~/api/model/transfer'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
 import type { EditorActionResult } from '../types'
@@ -19,6 +20,8 @@ export function EditorBoardMeetingRoomPage({
   messages: initialMessages,
   decisions: initialDecisions,
   series,
+  contractResources = [],
+  transferRequests = [],
   manageAll = false,
   allowChat = true,
   backPath = '/dashboard/editor/board/sessions',
@@ -29,6 +32,8 @@ export function EditorBoardMeetingRoomPage({
   messages: BoardMessage[]
   decisions: BoardDecisionResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
+  contractResources?: BoardDecisionResourceOption[]
+  transferRequests?: TransferRequestListResDtoOutputDataItem[]
   manageAll?: boolean
   allowChat?: boolean
   backPath?: string
@@ -278,6 +283,8 @@ export function EditorBoardMeetingRoomPage({
         <AddSessionDecisionDialog
           series={series}
           decisions={meeting.decisions}
+          contractResources={contractResources}
+          transferRequests={transferRequests}
           onDecisionCreated={meeting.addDecision}
           onAdded={meeting.refreshDecisions}
           onClose={() => setAddDecisionOpen(false)}
@@ -290,12 +297,16 @@ export function EditorBoardMeetingRoomPage({
 function AddSessionDecisionDialog({
   series,
   decisions,
+  contractResources,
+  transferRequests,
   onDecisionCreated,
   onAdded,
   onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   decisions: BoardDecisionResDtoOutput[]
+  contractResources: BoardDecisionResourceOption[]
+  transferRequests: TransferRequestListResDtoOutputDataItem[]
   onDecisionCreated: (decision: BoardDecisionResDtoOutput) => void
   onAdded: () => Promise<void>
   onClose: () => void
@@ -304,6 +315,8 @@ function AddSessionDecisionDialog({
   const fetcher = useBoardFetcher()
   const [decisionType, setDecisionType] = useState('SERIALIZATION')
   const [seriesId, setSeriesId] = useState('')
+  const [resourceId, setResourceId] = useState('')
+  const [transferRequestId, setTransferRequestId] = useState('')
   const eligibleStatuses = decisionType === 'SERIALIZATION' ? ['READY_TO_PITCH', 'PITCHED'] : ['SERIALIZED', 'HIATUS']
   const eligibleSeries = series.filter(
     (item) => eligibleStatuses.includes(item.status) && !hasDecisionConflict(decisions, item.id, decisionType)
@@ -339,6 +352,8 @@ function AddSessionDecisionDialog({
             onChange={(event) => {
               setDecisionType(event.target.value)
               setSeriesId('')
+              setResourceId('')
+              setTransferRequestId('')
             }}
           >
             <option value='SERIALIZATION'>{t('board.decisionTypeLabels.SERIALIZATION')}</option>
@@ -355,6 +370,72 @@ function AddSessionDecisionDialog({
             <option value='TRANSFER'>{t('board.decisionTypeLabels.TRANSFER')}</option>
           </select>
         </label>
+        {decisionType === 'CONTRACT' && (
+          <label className='grid gap-1.5 text-xs font-semibold'>
+            {t('board.contractResource')}
+            <select
+              className={boardInput}
+              name='resourceId'
+              required
+              value={resourceId}
+              onChange={(event) => {
+                const resource = contractResources.find((item) => item.resourceId === event.target.value)
+                setResourceId(event.target.value)
+                setSeriesId(resource?.seriesId ?? '')
+              }}
+            >
+              <option value='' disabled>
+                {t('board.selectContractResource')}
+              </option>
+              {contractResources.map((resource) => (
+                <option key={`${resource.resourceType}-${resource.resourceId}`} value={resource.resourceId}>
+                  {resource.label}
+                </option>
+              ))}
+            </select>
+            {resourceId && (
+              <>
+                <input
+                  type='hidden'
+                  name='resourceType'
+                  value={contractResources.find((item) => item.resourceId === resourceId)?.resourceType ?? ''}
+                />
+                <input
+                  type='hidden'
+                  name='versionId'
+                  value={contractResources.find((item) => item.resourceId === resourceId)?.versionId ?? ''}
+                />
+              </>
+            )}
+          </label>
+        )}
+        {decisionType === 'TRANSFER' && (
+          <label className='grid gap-1.5 text-xs font-semibold'>
+            {t('board.transferRequest')}
+            <select
+              className={boardInput}
+              name='transferRequestId'
+              required
+              value={transferRequestId}
+              onChange={(event) => {
+                const transferRequest = transferRequests.find((item) => item.id === event.target.value)
+                setTransferRequestId(event.target.value)
+                setSeriesId(transferRequest?.seriesId ?? '')
+              }}
+            >
+              <option value='' disabled>
+                {t('board.selectTransferRequest')}
+              </option>
+              {transferRequests
+                .filter((item) => item.status === 'SUBMITTED')
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.series?.title ?? item.seriesId} · {item.id}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.selectSeries')}
           <select
@@ -363,6 +444,7 @@ function AddSessionDecisionDialog({
             required
             value={seriesId}
             onChange={(event) => setSeriesId(event.target.value)}
+            disabled={decisionType === 'CONTRACT' || decisionType === 'TRANSFER'}
           >
             <option value='' disabled>
               {t('board.selectSeries')}
@@ -463,6 +545,14 @@ function AddSessionDecisionDialog({
       <BoardFeedback data={fetcher.data} />
     </Dialog>
   )
+}
+
+interface BoardDecisionResourceOption {
+  resourceType: 'PUBLICATION_CONTRACT' | 'REPLACEMENT_CONTRACT' | 'TRANSFER_CONTRACT' | 'CONTRACT_AMENDMENT'
+  resourceId: string
+  versionId: string
+  seriesId: string
+  label: string
 }
 
 function hasDecisionConflict(decisions: BoardDecisionResDtoOutput[], seriesId: string, decisionType: string) {

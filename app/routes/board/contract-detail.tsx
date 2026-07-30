@@ -1,4 +1,7 @@
-import { boardControllerGetSessionById } from '~/api/operations/board/board'
+import {
+  boardControllerGetDecisionDetails,
+  boardControllerGetDecisions
+} from '~/api/operations/board/board'
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   contractAmendmentControllerGetAmendment,
@@ -14,6 +17,7 @@ import {
   paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
 import { usersControllerGetMe } from '~/api/operations/users/users'
+import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
@@ -42,14 +46,42 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     )
   )
   if (contract.status !== 200) throw new Response('Not found', { status: 404 })
-  const boardSessionId = contract.data.boardDecision?.boardSession?.id
-  const boardSession = boardSessionId
-    ? await boardControllerGetSessionById({ id: boardSessionId }).catch(() => null)
-    : null
+  const currentVersion = detailedVersions.filter((version) => version !== null).at(-1) ?? null
+  const decisionList = await boardControllerGetDecisions({
+    mine: 'true',
+    targetSeriesId: contract.data.seriesId
+  }).catch(() => null)
+  const decisionDetails = await Promise.all(
+    (decisionList?.data ?? [])
+      .filter((decision) => decision.decisionType === 'CONTRACT')
+      .map((decision) =>
+        boardControllerGetDecisionDetails({ id: decision.id })
+          .then((response) => response.data)
+          .catch(() => null)
+      )
+  )
+  const expectedResourceType = contract.data.sourceTransferRequestId ? 'REPLACEMENT_CONTRACT' : 'PUBLICATION_CONTRACT'
+  const contractDecisions = decisionDetails.filter(
+    (decision): decision is BoardDecisionResDtoOutput =>
+      decision !== null &&
+      decision.targetSeriesId === contract.data.seriesId &&
+      decision.details?.resourceType === expectedResourceType &&
+      decision.details?.resourceId === contract.data.id &&
+      decision.details?.versionId === currentVersion?.id
+  )
+  const approvedAmendmentDecisions = decisionDetails.filter(
+    (decision): decision is BoardDecisionResDtoOutput =>
+      decision !== null &&
+      decision.decisionType === 'CONTRACT' &&
+      decision.result === 'APPROVED' &&
+      decision.targetSeriesId === contract.data.seriesId &&
+      decision.details?.resourceType === 'CONTRACT_AMENDMENT' &&
+      typeof decision.details.resourceId === 'string'
+  )
   return {
     contract: contract.data,
-    boardRoster: boardSession?.status === 200 ? boardSession.data.allowedEditorIds : [],
-    boardRosterLoadFailed: Boolean(boardSessionId && boardSession == null),
+    contractDecisions,
+    approvedAmendmentDecisions,
     progress: progress?.status === 200 ? progress.data : null,
     amendments: detailedAmendments.filter((amendment) => amendment !== null),
     conditions: conditions?.status === 200 ? conditions.data.data : [],
@@ -72,9 +104,16 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
           message: 'Hợp đồng phải có ít nhất một điều kiện thanh toán hợp lệ trước khi duyệt hoặc ký.'
         }
     }
-    if (intent === 'approve') await contractControllerBoardApprove({ id: params.id })
+    if (intent === 'approve')
+      await contractControllerBoardApprove({ id: params.id }, { boardDecisionId: required(form, 'boardDecisionId') })
     else if (intent === 'changes')
-      await contractControllerBoardRequestChanges({ id: params.id }, { reason: required(form, 'reason') })
+      await contractControllerBoardRequestChanges(
+        { id: params.id },
+        {
+          boardDecisionId: required(form, 'boardDecisionId'),
+          reason: required(form, 'reason')
+        }
+      )
     else if (intent === 'sendOtp') {
       const me = await usersControllerGetMe()
       if (me.status !== 200) throw new Error('Không thể đọc thông tin tài khoản.')

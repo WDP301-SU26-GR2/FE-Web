@@ -1,9 +1,10 @@
 import { GitPullRequestArrow, Info, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
 import type {
   TransferContractResDtoOutput,
+  TransferRequestListResDtoOutputDataItem,
   TransferRequestResDtoOutput,
   TransferSignatureListResDtoOutputSignaturesItem
 } from '~/api/model/transfer'
@@ -18,17 +19,21 @@ import {
 } from './components/operations-shared'
 
 export function EditorTransfersPage({
+  requests,
   request,
   contract,
   requestId,
   contractId,
+  status,
   signatures,
   hasError
 }: {
+  requests: TransferRequestListResDtoOutputDataItem[]
   request: TransferRequestResDtoOutput | null
   contract: TransferContractResDtoOutput | null
   requestId: string
   contractId: string
+  status: string
   signatures: TransferSignatureListResDtoOutputSignaturesItem[]
   hasError: boolean
 }) {
@@ -36,20 +41,71 @@ export function EditorTransfersPage({
   const fetcher = useOperationFetcher()
   const displayRequest = request as TransferRequestWithRelations | null
   const [transferType, setTransferType] = useState<'FULL_TRANSFER' | 'PARTIAL_TRANSFER'>('FULL_TRANSFER')
-  const [reviewStage, setReviewStage] = useState<'' | 'SCREENED' | 'CONSENTED'>('')
   const isRevenueShare = request?.originalContractType === 'REVENUE_SHARE'
-  const isUnderReview = request?.status === 'UNDER_REVIEW'
-  const needsTemporaryStageChoice = Boolean(
-    request && isRevenueShare && isUnderReview && !request.transferContractId && !contract
+  const canStartNegotiation = Boolean(request && isRevenueShare && request.status === 'UNDER_REVIEW')
+  const canCreateContract = Boolean(
+    request && isRevenueShare && request.status === 'ACCEPTED' && !request.transferContractId && !contract
   )
-  const canStartNegotiation = needsTemporaryStageChoice && reviewStage === 'SCREENED'
-  const canCreateContract = Boolean(needsTemporaryStageChoice && reviewStage === 'CONSENTED')
   return (
     <OperationsLayout
       titleKey='operations.transfers'
       descriptionKey='operations.descriptions.transfers'
       hasError={hasError}
     >
+      <Form
+        method='get'
+        replace
+        preventScrollReset
+        className='grid gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[1fr_auto]'
+      >
+        <select name='status' defaultValue={status} className={operationInput}>
+          <option value=''>{t('operations.allTransferStatuses')}</option>
+          {[
+            'SUBMITTED',
+            'UNDER_REVIEW',
+            'NEGOTIATING',
+            'ACCEPTED',
+            'AWAITING_REPLACEMENT_SIGNATURES',
+            'AWAITING_TRANSFER_SIGNATURES',
+            'COMPLETED',
+            'REJECTED_BY_BOARD',
+            'REJECTED_BY_ORIGINAL_MANGAKA',
+            'REJECTED',
+            'CANCELLED'
+          ].map((value) => (
+            <option key={value} value={value}>
+              {t(`operations.transferStatuses.${value}`)}
+            </option>
+          ))}
+        </select>
+        <input
+          name='requestId'
+          defaultValue={requestId}
+          className={operationInput}
+          placeholder={t('operations.transferRequestIdPlaceholder')}
+        />
+        <button type='submit' className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          {t('actions.openTransferRequest')}
+        </button>
+        <p className='text-xs leading-5 text-muted-foreground sm:col-span-2'>{t('operations.transferRequestIdHint')}</p>
+      </Form>
+      <section className='rounded-xl border border-border bg-card p-4 shadow-sm'>
+        <h2 className='text-sm font-bold text-foreground'>{t('operations.assignedTransferRequests')}</h2>
+        <div className='mt-3 grid gap-2'>
+          {requests.map((item) => (
+            <Link
+              key={item.id}
+              to={`?requestId=${encodeURIComponent(item.id)}${status ? `&status=${encodeURIComponent(status)}` : ''}`}
+              preventScrollReset
+              className='flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-xs hover:border-primary'
+            >
+              <span className='font-bold'>{item.series?.title ?? item.seriesId}</span>
+              <span className='text-primary'>{t(`operations.transferStatuses.${item.status}`)}</span>
+            </Link>
+          ))}
+          {!requests.length && <p className='text-xs text-muted-foreground'>{t('operations.noAssignedTransfers')}</p>}
+        </div>
+      </section>
       {request && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <div className='rounded-lg border border-border p-4 text-xs'>
@@ -59,6 +115,14 @@ export function EditorTransfersPage({
             </div>
             <p className='mt-2 text-muted-foreground'>{request.planDescription}</p>
           </div>
+        </section>
+      )}
+      {request?.status === 'SUBMITTED' && (
+        <section className='rounded-xl border border-warning/30 bg-warning/10 p-4 text-xs leading-5'>
+          <p className='text-warning-foreground'>{t('operations.transferAwaitingBoardDecision')}</p>
+          <Link className='mt-2 inline-flex font-bold text-primary underline' to='/dashboard/editor/board/sessions'>
+            {t('actions.openBoardWorkflow')}
+          </Link>
         </section>
       )}
       {contract && (
@@ -111,23 +175,6 @@ export function EditorTransfersPage({
         <p className='rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
           {t('operations.transferNegotiatingHint')}
         </p>
-      )}
-      {needsTemporaryStageChoice && (
-        <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          <label className='grid gap-2 text-xs font-bold text-foreground'>
-            {t('operations.transferStagePrompt')}
-            <select
-              className={operationInput}
-              value={reviewStage}
-              onChange={(event) => setReviewStage(event.target.value as typeof reviewStage)}
-            >
-              <option value=''>{t('operations.transferStagePlaceholder')}</option>
-              <option value='SCREENED'>{t('operations.transferStageScreened')}</option>
-              <option value='CONSENTED'>{t('operations.transferStageConsented')}</option>
-            </select>
-          </label>
-          <p className='mt-2 text-xs leading-5 text-muted-foreground'>{t('operations.transferStageTemporaryHint')}</p>
-        </section>
       )}
       {canStartNegotiation && (
         <OperationDialogPanel icon={GitPullRequestArrow} title={t('operations.startTransferSection')}>
