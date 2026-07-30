@@ -2336,7 +2336,7 @@
     },
     "status": {
       "SUBMITTED": "Awaiting Board screening",
-      "UNDER_REVIEW": "Under Board review",
+      "UNDER_REVIEW": "Approved by Board · ownership unchanged",
       "REJECTED_BY_BOARD": "Rejected by Board",
       "NEGOTIATING": "Awaiting original Mangaka",
       "REJECTED_BY_ORIGINAL_MANGAKA": "Rejected by original Mangaka",
@@ -2350,21 +2350,34 @@
     },
     "actions": {
       "create": "Create request",
-      "accept": "Accept negotiation",
+      "accept": "Accept transfer proposal",
       "reject": "Reject",
       "sign": "Sign transfer contract",
       "cancel": "Cancel",
       "submit": "Submit request",
       "sendOtp": "Send signing OTP",
       "confirmSign": "Confirm signature",
-      "reviewContract": "Review terms and sign"
+      "reviewContract": "Review terms and sign",
+      "openContracts": "Open contracts"
     },
     "card": {
       "unknownSeries": "Unknown series",
       "unknownMangaka": "Unknown Mangaka",
       "requester": "Requester: {{name}}",
       "percentage": "Proposed ownership: {{value}}%",
-      "contractReadyHint": "The transfer contract is ready. Review the amount, ownership split, and signature progress before confirming."
+      "contractReadyHint": "The transfer contract is ready. Review the amount, ownership split, and signature progress before confirming.",
+      "replacementContractHint": "The full-buyout replacement contract is awaiting signatures. Ownership changes only after the contract becomes effective.",
+      "ownershipPending": "This request is still in progress. The series remains with its current Mangaka until every contract and signature step is complete.",
+      "ownershipUnchanged": "The request ended without completing a transfer. Series ownership remains unchanged.",
+      "ownershipCompleted": "The transfer is complete. Ownership has been updated according to the effective agreement."
+    },
+    "confirm": {
+      "acceptTitle": "Confirm transfer acceptance",
+      "acceptDescription": "After acceptance, the Editor may proceed with drafting the transfer agreement. Make sure you have reviewed the proposal.",
+      "acceptAction": "Confirm acceptance",
+      "rejectTitle": "Confirm transfer rejection",
+      "rejectDescription": "Rejecting ends the negotiation branch and cannot be undone from this interface.",
+      "rejectAction": "Confirm rejection"
     },
     "create": {
       "title": "Create transfer request",
@@ -2435,6 +2448,8 @@
       "contractNotFound": "The transfer contract is no longer available.",
       "requestNotFound": "The transfer request from this notification is unavailable or you cannot access it.",
       "noActiveContract": "This series has no active contract eligible for transfer.",
+      "activeRequestExists": "This series already has an active transfer request.",
+      "awaitingContractDecision": "The transfer agreement is awaiting Board approval and cannot be signed yet.",
       "generic": "Could not complete the transfer action. Please try again.",
       "notYourTurn": "You are not the current signer or this contract is not ready for your signature."
     }

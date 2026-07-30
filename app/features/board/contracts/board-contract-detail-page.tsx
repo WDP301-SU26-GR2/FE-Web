@@ -9,6 +9,7 @@ import type {
   ContractVersionResDtoOutput,
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
+import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel, StatusBadge } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
@@ -17,8 +18,8 @@ import { useAuth } from '~/features/auth/context/auth-context'
 
 export function BoardContractDetailPage({
   contract,
-  boardRoster = [],
-  boardRosterLoadFailed = false,
+  contractDecisions = [],
+  approvedAmendmentDecisions = [],
   progress,
   amendments,
   conditions,
@@ -27,8 +28,8 @@ export function BoardContractDetailPage({
   hasSupplementaryDataError = false
 }: {
   contract: ContractResDtoOutput
-  boardRoster?: string[]
-  boardRosterLoadFailed?: boolean
+  contractDecisions?: BoardDecisionResDtoOutput[]
+  approvedAmendmentDecisions?: BoardDecisionResDtoOutput[]
   progress: ContractStatusProgressResDtoOutput | null
   amendments: AmendmentResDtoOutput[]
   conditions: PaymentConditionListResDtoOutputDataItem[]
@@ -41,8 +42,11 @@ export function BoardContractDetailPage({
   const fetcher = useFetcher<BoardActionResult>()
   const [signOpen, setSignOpen] = useState(false)
   const [changesOpen, setChangesOpen] = useState(false)
-  const isRosterMember = boardRoster.includes(authSession?.user.id ?? '')
-  const canAttemptBoardAction = isRosterMember || boardRosterLoadFailed || boardRoster.length === 0
+  const approvedDecision = contractDecisions.find((decision) => decision.result === 'APPROVED')
+  const rejectedDecision = contractDecisions.find((decision) => decision.result === 'REJECTED')
+  const actionDecision = approvedDecision ?? rejectedDecision
+  const isRosterMember = actionDecision?.allowedEditorIds?.includes(authSession?.user.id ?? '') ?? false
+  const canAttemptBoardAction = Boolean(actionDecision && isRosterMember)
   const currentBoardSignature = progress?.boardProgress.signedEditors.find(
     (editor) => editor.id === authSession?.user.id
   )
@@ -143,6 +147,14 @@ export function BoardContractDetailPage({
         </div>
       </BoardPanel>
       <BoardPanel title={t('contracts.actions')}>
+        {contract.status === 'MANGAKA_APPROVED' && !approvedDecision && !rejectedDecision && (
+          <div className='mb-4 rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning-foreground'>
+            <p>{t('contracts.decisionRequired')}</p>
+            <Link to='/dashboard/board/decisions' className='mt-2 inline-flex font-bold text-primary underline'>
+              {t('contracts.openDecisions')}
+            </Link>
+          </div>
+        )}
         {!conditionsReady && (
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
@@ -153,37 +165,38 @@ export function BoardContractDetailPage({
             </p>
           </div>
         )}
-        {!canAttemptBoardAction && (
+        {actionDecision && !canAttemptBoardAction && (
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
             <ShieldAlert className='mt-0.5 size-4 shrink-0' />
             <p>{t('contracts.notInDecisionRoster')}</p>
-          </div>
-        )}
-        {canAttemptBoardAction && !isRosterMember && contract.boardDecisionId && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
-            <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>{t('contracts.rosterUnavailable')}</p>
           </div>
         )}
         <fetcher.Form method='post' className='grid gap-3'>
           <div className='flex flex-wrap gap-2'>
             {canAttemptBoardAction && contract.status === 'MANGAKA_APPROVED' && (
               <>
-                <button
-                  name='intent'
-                  value='approve'
-                  disabled={fetcher.state !== 'idle' || !conditionsReady}
-                  className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  {t('contracts.approve')}
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setChangesOpen(true)}
-                  className='h-9 rounded-md border border-border px-3 text-xs font-bold'
-                >
-                  {t('contracts.changes')}
-                </button>
+                {approvedDecision && (
+                  <>
+                    <input type='hidden' name='boardDecisionId' value={approvedDecision.id} />
+                    <button
+                      name='intent'
+                      value='approve'
+                      disabled={fetcher.state !== 'idle' || !conditionsReady}
+                      className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                    >
+                      {t('contracts.applyApproval')}
+                    </button>
+                  </>
+                )}
+                {rejectedDecision && (
+                  <button
+                    type='button'
+                    onClick={() => setChangesOpen(true)}
+                    className='h-9 rounded-md border border-border px-3 text-xs font-bold'
+                  >
+                    {t('contracts.applyChanges')}
+                  </button>
+                )}
               </>
             )}
             <div className='flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4'>
@@ -234,6 +247,7 @@ export function BoardContractDetailPage({
         size='md'
       >
         <fetcher.Form method='post' className='grid gap-3'>
+          {rejectedDecision && <input type='hidden' name='boardDecisionId' value={rejectedDecision.id} />}
           <label htmlFor='board-contract-change-reason' className='text-xs font-semibold text-foreground'>
             {t('contracts.changeReason')} <span className='text-destructive'>*</span>
           </label>
@@ -275,7 +289,16 @@ export function BoardContractDetailPage({
       <BoardPanel title={t('contracts.amendments')}>
         <div className='space-y-3'>
           {amendments.map((item) => (
-            <AmendmentRow key={item.id} contractId={contract.id} amendment={item} canSign={isRosterMember} />
+            <AmendmentRow
+              key={item.id}
+              contractId={contract.id}
+              amendment={item}
+              canSign={canSignAmendment(item.id, approvedAmendmentDecisions, authSession?.user.id)}
+              awaitingDecision={
+                item.status === 'PENDING_SIGNATURES' &&
+                !approvedAmendmentDecisions.some((decision) => decision.details?.resourceId === item.id)
+              }
+            />
           ))}
           {!amendments.length && <p className='text-xs text-muted-foreground'>{t('contracts.emptyAmendments')}</p>}
         </div>
@@ -287,11 +310,13 @@ export function BoardContractDetailPage({
 function AmendmentRow({
   contractId,
   amendment,
-  canSign
+  canSign,
+  awaitingDecision
 }: {
   contractId: string
   amendment: AmendmentResDtoOutput
   canSign: boolean
+  awaitingDecision: boolean
 }) {
   const { t } = useTranslation('board')
   const [signOpen, setSignOpen] = useState(false)
@@ -310,6 +335,11 @@ function AmendmentRow({
           <PenLine className='h-4 w-4' />
           {t('contracts.signAmendment')}
         </button>
+      )}
+      {awaitingDecision && (
+        <p className='mt-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning-foreground'>
+          {t('contracts.amendmentAwaitingDecision')}
+        </p>
       )}
       {signOpen && (
         <AmendmentSignDialog contractId={contractId} amendmentId={amendment.id} onClose={() => setSignOpen(false)} />
@@ -382,6 +412,16 @@ function formatDate(value: string | null) {
   if (!value) return '—'
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN')
+}
+
+function canSignAmendment(
+  amendmentId: string,
+  decisions: BoardDecisionResDtoOutput[],
+  currentUserId: string | undefined
+) {
+  if (!currentUserId) return false
+  const decision = decisions.find((item) => item.details?.resourceId === amendmentId)
+  return decision?.allowedEditorIds?.includes(currentUserId) ?? false
 }
 
 function AmendmentSignDialog({

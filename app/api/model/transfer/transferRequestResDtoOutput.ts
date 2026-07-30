@@ -56,6 +56,11 @@ export interface TransferRequestResDtoOutput {
    * @nullable
    */
   transferContractId?: string | null;
+  /**
+   * Contract thay thế (Full Buyout Mô hình A) sinh từ yêu cầu này; null nếu chưa có / không phải Full Buyout
+   * @nullable
+   */
+  replacementContractId?: string | null;
   /** Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD | REJECTED_BY_ORIGINAL_MANGAKA | REJECTED | CANCELLED. Values: SUBMITTED, UNDER_REVIEW, REJECTED_BY_BOARD, NEGOTIATING, REJECTED_BY_ORIGINAL_MANGAKA, PROPOSED, ACCEPTED, REJECTED, CANCELLED, AWAITING_REPLACEMENT_SIGNATURES, AWAITING_TRANSFER_SIGNATURES, COMPLETED */
   status: TransferRequestResDtoOutputStatus;
   /** @nullable */

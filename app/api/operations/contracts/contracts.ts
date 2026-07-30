@@ -25,6 +25,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type {
   AmendmentListItemDtoOutput,
   AmendmentResDtoOutput,
+  BoardApproveContractBodyDto,
+  BoardRequestContractChangesBodyDto,
   ContractAmendmentControllerCreateAmendmentPathParameters,
   ContractAmendmentControllerGetAmendmentPathParameters,
   ContractAmendmentControllerListAmendmentsPathParameters,
@@ -490,14 +492,16 @@ export const getContractControllerBoardApproveUrl = ({ id }: ContractControllerB
   return `/contracts/${id}/board-approve`
 }
 
-export const contractControllerBoardApprove = async ({ id }: ContractControllerBoardApprovePathParameters, options?: RequestInit): Promise<contractControllerBoardApproveResponse> => {
+export const contractControllerBoardApprove = async ({ id }: ContractControllerBoardApprovePathParameters,
+    boardApproveContractBodyDto: BoardApproveContractBodyDto, options?: RequestInit): Promise<contractControllerBoardApproveResponse> => {
   
   return customFetch<contractControllerBoardApproveResponse>(getContractControllerBoardApproveUrl({ id }),
   {      
     ...options,
-    method: 'POST'
-    
-    
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      boardApproveContractBodyDto,)
   }
 );}
 
@@ -526,7 +530,7 @@ export const getContractControllerBoardRequestChangesUrl = ({ id }: ContractCont
 }
 
 export const contractControllerBoardRequestChanges = async ({ id }: ContractControllerBoardRequestChangesPathParameters,
-    contractChangeReasonBodyDto: ContractChangeReasonBodyDto, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
+    boardRequestContractChangesBodyDto: BoardRequestContractChangesBodyDto, options?: RequestInit): Promise<contractControllerBoardRequestChangesResponse> => {
   
   return customFetch<contractControllerBoardRequestChangesResponse>(getContractControllerBoardRequestChangesUrl({ id }),
   {      
@@ -534,7 +538,7 @@ export const contractControllerBoardRequestChanges = async ({ id }: ContractCont
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      contractChangeReasonBodyDto,)
+      boardRequestContractChangesBodyDto,)
   }
 );}
 

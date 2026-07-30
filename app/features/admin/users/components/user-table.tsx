@@ -100,16 +100,14 @@ export function UserTable({ users, deletedUserIds, onAction }: UserTableProps) {
                   </td>
                   <td className='px-5 py-4'>
                     <div className='flex items-center justify-end gap-1'>
-                      {!isDeleted && (
-                        <Link
-                          to={`/dashboard/admin/users/${user.id}`}
-                          title={t('users.actions.viewDetail')}
-                          aria-label={`${t('users.actions.viewDetail')}: ${user.displayName ?? user.name}`}
-                          className='rounded-lg p-2 text-sky-700 transition-colors hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-300'
-                        >
-                          <Eye className='size-4' />
-                        </Link>
-                      )}
+                      <Link
+                        to={`/dashboard/admin/users/${user.id}`}
+                        title={t('users.actions.viewDetail')}
+                        aria-label={`${t('users.actions.viewDetail')}: ${user.displayName ?? user.name}`}
+                        className='rounded-lg p-2 text-sky-700 transition-colors hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-300'
+                      >
+                        <Eye className='size-4' />
+                      </Link>
                       {user.role !== 'SUPER_ADMIN' &&
                         (isDeleted ? (
                           <ActionButton

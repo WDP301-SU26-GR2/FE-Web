@@ -109,15 +109,31 @@ export default function RouteComponent({ loaderData }: { loaderData: Awaited<Ret
   const lifecycleHref = seriesId
     ? `/dashboard/editor/operations/lifecycle?seriesId=${encodeURIComponent(seriesId)}&decisionId=${encodeURIComponent(loaderData.decision.id)}`
     : undefined
+  const resourceHref = contractResourceHref(loaderData.decision.details, loaderData.contractResourceParentId)
 
   return (
     <BoardDecisionDetailPage
       {...loaderData}
       canCreateReport
       lifecycleHref={lifecycleHref}
+      resourceHref={resourceHref}
       backPath={`/dashboard/editor/board/sessions/${loaderData.decision.boardSessionId}`}
     />
   )
+}
+
+function contractResourceHref(
+  details: Record<string, unknown> | null | undefined,
+  contractResourceParentId: string | null
+) {
+  if (!details || typeof details.resourceId !== 'string') return undefined
+  if (details.resourceType === 'PUBLICATION_CONTRACT' || details.resourceType === 'REPLACEMENT_CONTRACT')
+    return `/dashboard/editor/contracts/${encodeURIComponent(details.resourceId)}`
+  if (details.resourceType === 'TRANSFER_CONTRACT')
+    return `/dashboard/editor/operations/transfers?contractId=${encodeURIComponent(details.resourceId)}`
+  if (details.resourceType === 'CONTRACT_AMENDMENT' && contractResourceParentId)
+    return `/dashboard/editor/contracts/${encodeURIComponent(contractResourceParentId)}?amendmentId=${encodeURIComponent(details.resourceId)}`
+  return undefined
 }
 
 function requiredValue(form: FormData, key: string) {

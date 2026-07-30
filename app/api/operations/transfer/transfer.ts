@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type {
   AssignFullBuyoutBodyDto,
+  AssignFullBuyoutResDtoOutput,
   BoardDecisionTransferBodyDto,
   CreateTransferContractBodyDto,
   CreateTransferRequestBodyDto,
@@ -33,6 +34,7 @@ import type {
   TransferControllerBoardApproveScreeningPathParameters,
   TransferControllerBoardAssignFullBuyoutPathParameters,
   TransferControllerBoardRejectScreeningPathParameters,
+  TransferControllerGetAssignedEditorRequestsParams,
   TransferControllerGetSignaturesPathParameters,
   TransferControllerGetTransferContractByIdPathParameters,
   TransferControllerGetTransferRequestByIdPathParameters,
@@ -144,6 +146,48 @@ export const getTransferControllerGetPendingBoardRequestsUrl = () => {
 export const transferControllerGetPendingBoardRequests = async ( options?: RequestInit): Promise<transferControllerGetPendingBoardRequestsResponse> => {
   
   return customFetch<transferControllerGetPendingBoardRequestsResponse>(getTransferControllerGetPendingBoardRequestsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Danh sách yêu cầu chuyển nhượng của các series Editor phụ trách (kèm lịch sử, lọc ?status=)
+ */
+export type transferControllerGetAssignedEditorRequestsResponse200 = {
+  data: TransferRequestListResDtoOutput
+  status: 200
+}
+    
+export type transferControllerGetAssignedEditorRequestsResponseSuccess = (transferControllerGetAssignedEditorRequestsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type transferControllerGetAssignedEditorRequestsResponse = (transferControllerGetAssignedEditorRequestsResponseSuccess)
+
+export const getTransferControllerGetAssignedEditorRequestsUrl = (params?: TransferControllerGetAssignedEditorRequestsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/transfers/requests/assigned-editor?${stringifiedParams}` : `/transfers/requests/assigned-editor`
+}
+
+export const transferControllerGetAssignedEditorRequests = async (params?: TransferControllerGetAssignedEditorRequestsParams, options?: RequestInit): Promise<transferControllerGetAssignedEditorRequestsResponse> => {
+  
+  return customFetch<transferControllerGetAssignedEditorRequestsResponse>(getTransferControllerGetAssignedEditorRequestsUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -266,7 +310,7 @@ export const transferControllerBoardRejectScreening = async ({ id }: TransferCon
  * @summary Board chọn Full Buyout → bàn giao series cho Mangaka B
  */
 export type transferControllerBoardAssignFullBuyoutResponse201 = {
-  data: MessageResDtoOutput
+  data: AssignFullBuyoutResDtoOutput
   status: 201
 }
     

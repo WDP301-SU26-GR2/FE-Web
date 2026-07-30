@@ -1238,6 +1238,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardApproveContractBodyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -1245,19 +1255,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContractResDto_Output"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Error.ContractBoardDecisionMissing",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 400,
-                  "code": "Error.ContractBoardDecisionMissing",
-                  "message": "Không tìm thấy quyết định Hội đồng của hợp đồng"
                 }
               }
             }
@@ -1276,7 +1273,7 @@
             }
           },
           "404": {
-            "description": "Error.ContractNotFound",
+            "description": "Error.ContractNotFound | Error.BoardDecisionNotFound (boardDecisionId) - board decision does not exist (or id is not a valid ObjectId)",
             "content": {
               "application/json": {
                 "example": {
@@ -1297,6 +1294,19 @@
                   "statusCode": 409,
                   "code": "Error.InvalidContractTransition",
                   "message": "Không thể chuyển hợp đồng sang trạng thái này"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error.InvalidContractDecision (boardDecisionId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 422,
+                  "code": "Error.InvalidContractDecision",
+                  "message": "Quyết định Hội đồng không khớp với hợp đồng hoặc phiên bản hiện hành"
                 }
               }
             }
@@ -1331,7 +1341,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContractChangeReasonBodyDto"
+                "$ref": "#/components/schemas/BoardRequestContractChangesBodyDto"
               }
             }
           }
@@ -1343,19 +1353,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContractResDto_Output"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Error.ContractBoardDecisionMissing",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 400,
-                  "code": "Error.ContractBoardDecisionMissing",
-                  "message": "Không tìm thấy quyết định Hội đồng của hợp đồng"
                 }
               }
             }
@@ -1374,7 +1371,7 @@
             }
           },
           "404": {
-            "description": "Error.ContractNotFound",
+            "description": "Error.ContractNotFound | Error.BoardDecisionNotFound (boardDecisionId) - board decision does not exist (or id is not a valid ObjectId)",
             "content": {
               "application/json": {
                 "example": {
@@ -1395,6 +1392,19 @@
                   "statusCode": 409,
                   "code": "Error.InvalidContractTransition",
                   "message": "Không thể chuyển hợp đồng sang trạng thái này"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error.InvalidContractDecision (boardDecisionId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 422,
+                  "code": "Error.InvalidContractDecision",
+                  "message": "Quyết định Hội đồng không khớp với hợp đồng hoặc phiên bản hiện hành"
                 }
               }
             }
@@ -2476,7 +2486,7 @@
             }
           },
           "409": {
-            "description": "Error.AmendmentNotPendingSignatures (status) - amendment must be PENDING_SIGNATURES to sign/reject | Error.MangakaSignNotRequired - FULL_BUYOUT amendment is board-signed only; mangaka signature not required",
+            "description": "Error.AmendmentNotPendingSignatures (status) - amendment must be PENDING_SIGNATURES to sign/reject | Error.ContractApprovalDecisionRequired (boardDecisionId) | Error.MangakaSignNotRequired - FULL_BUYOUT amendment is board-signed only; mangaka signature not required",
             "content": {
               "application/json": {
                 "example": {
@@ -2569,7 +2579,7 @@
             }
           },
           "409": {
-            "description": "Error.AmendmentNotPendingSignatures (status) - amendment must be PENDING_SIGNATURES to sign/reject",
+            "description": "Error.AmendmentNotPendingSignatures (status) - amendment must be PENDING_SIGNATURES to sign/reject | Error.ContractApprovalDecisionRequired (boardDecisionId)",
             "content": {
               "application/json": {
                 "example": {
@@ -2763,6 +2773,1160 @@
         "summary": "Editor hủy phụ lục (non-terminal → VOIDED)",
         "tags": [
           "contracts"
+        ]
+      }
+    },
+    "/board/sessions": {
+      "post": {
+        "operationId": "BoardController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBoardSessionBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesNotFound (seriesId) - series does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesNotFound",
+                  "message": "Không tìm thấy series"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.BoardSessionAlreadyExists (title) - a board session with this title is already UPCOMING or ACTIVE",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.BoardSessionAlreadyExists",
+                  "message": "Phiên họp Hội đồng này đã tồn tại"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error.InvalidBoardMembers (allowedEditorIds) - board member count must be odd to prevent tie votes | Error.RosterSourceRequired (seriesId) - provide allowedEditorIds, or seriesId so the roster can be auto-assigned | Error.NotEnoughBoardMembers (allowedEditorIds) - fewer than 3 active board members exist — cannot form a valid session | Error.RosterSizeTooLarge (rosterSize) - rosterSize phải ≤ min(boardTotalMembers, 9) và là số lẻ ≥ 3.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 422,
+                  "code": "Error.InvalidBoardMembers",
+                  "message": "Danh sách thành viên Hội đồng không hợp lệ"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editor tạo phiên họp Hội đồng → SCHEDULED",
+        "tags": [
+          "board"
+        ]
+      },
+      "get": {
+        "operationId": "BoardController_getSessions",
+        "parameters": [
+          {
+            "name": "mine",
+            "required": false,
+            "in": "query",
+            "description": "'true' = chỉ phiên caller là creator hoặc trong roster",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "UPCOMING",
+                "ACTIVE",
+                "CONCLUDED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardSessionListItemDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách phiên họp Hội đồng",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/suggest-members": {
+      "get": {
+        "operationId": "BoardController_suggestMembers",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "query",
+            "description": "MongoDB ObjectId (24 hexadecimal characters)",
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 3,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestBoardMembersResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesNotFound (seriesId) - series does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesNotFound",
+                  "message": "Không tìm thấy series"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error.NotEnoughBoardMembers (allowedEditorIds) - fewer than 3 active board members exist — cannot form a valid session | Error.RosterSizeTooLarge (rosterSize) - rosterSize phải ≤ min(boardTotalMembers, 9) và là số lẻ ≥ 3.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 422,
+                  "code": "Error.NotEnoughBoardMembers",
+                  "message": "Không đủ thành viên phù hợp để tạo phiên họp"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gợi ý roster Board theo thể loại của series (PB-05) — lẻ, >= 3",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}": {
+      "get": {
+        "operationId": "BoardController_getSessionById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardSessionNotFound",
+                  "message": "Không tìm thấy phiên họp Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chi tiết phiên họp Hội đồng",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}/start": {
+      "patch": {
+        "operationId": "BoardController_startSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardSessionNotFound",
+                  "message": "Không tìm thấy phiên họp Hội đồng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.InvalidBoardSessionTransition (status) - board session status transition is not allowed by BOARD_SESSION_TRANSITIONS",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.BoardSessionNotOpen",
+                  "message": "Phiên họp Hội đồng hiện chưa mở"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Kích hoạt phiên họp Hội đồng → ACTIVE",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}/conclude": {
+      "patch": {
+        "operationId": "BoardController_concludeSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSessionCreator (sessionId) - only the board session creator or a Super Admin can conclude the session",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSessionCreator",
+                  "message": "Chỉ người tạo phiên họp mới được thực hiện thao tác này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardSessionNotFound",
+                  "message": "Không tìm thấy phiên họp Hội đồng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidBoardSessionTransition (status) - board session status transition is not allowed by BOARD_SESSION_TRANSITIONS",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidBoardSessionTransition",
+                  "message": "Không thể chuyển phiên họp sang trạng thái này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Kết thúc phiên họp Hội đồng → CONCLUDED; quyết định treo → EXPIRED",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}/phase": {
+      "patch": {
+        "operationId": "BoardController_advancePhase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvancePhaseBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSessionCreator (sessionId) - only the board session creator or a Super Admin can conclude the session",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSessionCreator",
+                  "message": "Chỉ người tạo phiên họp mới được thực hiện thao tác này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardSessionNotFound",
+                  "message": "Không tìm thấy phiên họp Hội đồng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.InvalidPhaseTransition (phase) - session phase only moves forward: PRESENTING -> QA -> VOTING (skipping allowed)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.BoardSessionNotOpen",
+                  "message": "Phiên họp Hội đồng hiện chưa mở"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creator chuyển giai đoạn phiên họp: PRESENTING → QA → VOTING (forward-only, cho nhảy cóc)",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/sessions/{id}/messages": {
+      "get": {
+        "operationId": "BoardController_getSessionMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 200,
+              "exclusiveMinimum": true,
+              "default": 50,
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardMessageListResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSessionParticipant (id) - only the session creator, roster members, or a Super Admin can read meeting messages",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSessionParticipant",
+                  "message": "Bạn không phải thành viên của phiên họp này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardSessionNotFound",
+                  "message": "Không tìm thấy phiên họp Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lịch sử chat Q&A của phiên họp (creator/roster/Super Admin)",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/config": {
+      "get": {
+        "operationId": "BoardController_getConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardConfigResDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Xem cấu hình biểu quyết Hội đồng hiện tại",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/decisions": {
+      "post": {
+        "operationId": "BoardController_createDecision",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBoardDecisionBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardDecisionResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardSessionNotFound",
+                  "message": "Không tìm thấy phiên họp Hội đồng"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error.InvalidBoardMembers (allowedEditorIds) - board member count must be odd to prevent tie votes",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 422,
+                  "code": "Error.InvalidBoardMembers",
+                  "message": "Danh sách thành viên Hội đồng không hợp lệ"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editor tạo quyết định Hội đồng nháp → PENDING",
+        "tags": [
+          "board"
+        ]
+      },
+      "get": {
+        "operationId": "BoardController_getDecisions",
+        "parameters": [
+          {
+            "name": "boardSessionId",
+            "required": false,
+            "in": "query",
+            "description": "Lọc decision theo phiên họp",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetSeriesId",
+            "required": false,
+            "in": "query",
+            "description": "Lọc decision theo series mục tiêu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mine",
+            "required": false,
+            "in": "query",
+            "description": "'true' = chỉ decision thuộc roster của tôi",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardDecisionListItemDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách quyết định Hội đồng",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/decisions/{id}": {
+      "get": {
+        "operationId": "BoardController_getDecisionDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardDecisionResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardDecisionNotFound",
+                  "message": "Không tìm thấy quyết định Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chi tiết quyết định Hội đồng",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/decisions/{id}/votes": {
+      "get": {
+        "operationId": "BoardController_getDecisionVotes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardVoteResDto_Output"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardDecisionNotFound",
+                  "message": "Không tìm thấy quyết định Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách phiếu biểu quyết của quyết định",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/decisions/{id}/vote": {
+      "post": {
+        "operationId": "BoardController_castVote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CastVoteBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.VoterNotAllowed (voterId) - caller is not in session.allowedEditorIds",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.VoterNotAllowed",
+                  "message": "Bạn không được phép biểu quyết quyết định này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardDecisionNotFound",
+                  "message": "Không tìm thấy quyết định Hội đồng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.VotingNotOpen (id) - castVote requires session.phase = VOTING - the session creator must advance the phase first | Error.DecisionAlreadyFinalized (id) - decision already APPROVED/REJECTED/EXPIRED — voting closed | Error.VoterAlreadyVoted (voterId) - voter has already cast a vote on this decision",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.BoardSessionNotOpen",
+                  "message": "Phiên họp Hội đồng hiện chưa mở"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Board/Editor bỏ phiếu cho quyết định → cập nhật kết quả",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/reports": {
+      "get": {
+        "operationId": "BoardController_getReports",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": false,
+            "in": "query",
+            "description": "Toàn bộ report của series — dùng khi mở phiên mới",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "boardDecisionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SeriesReportResDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách báo cáo Hội đồng",
+        "tags": [
+          "board"
+        ]
+      },
+      "post": {
+        "operationId": "BoardController_createSeriesReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSeriesReportBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesReportResDto_Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error.BoardSessionClosedReport (sessionId) - cannot submit a series report for a CONCLUDED session",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 400,
+                  "code": "Error.BoardSessionClosedReport",
+                  "message": "Không thể tạo báo cáo cho phiên họp đã đóng"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.EditorNotAssignedToSeries (userId) - only the Editor currently assigned to the report series may submit it",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.EditorNotAssignedToSeries",
+                  "message": "Chỉ Editor phụ trách series mới được nộp báo cáo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId) | Error.SeriesNotFound (seriesId) - series does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardDecisionNotFound",
+                  "message": "Không tìm thấy quyết định Hội đồng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.ReportDecisionSeriesMismatch (seriesId) - report seriesId must match the BoardDecision targetSeriesId",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.ReportDecisionSeriesMismatch",
+                  "message": "Báo cáo phải thuộc đúng series của quyết định Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editor tạo báo cáo phân tích series cho Hội đồng",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/reports/{id}": {
+      "get": {
+        "operationId": "BoardController_getReportById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesReportResDto_Output"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardReportNotFound (reportId) - series report does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardReportNotFound",
+                  "message": "Không tìm thấy báo cáo Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chi tiết báo cáo Hội đồng",
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/board/config/{id}": {
+      "patch": {
+        "operationId": "BoardController_updateConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBoardConfigBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardConfigResDto_Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error.BoardConfigLocked (config) - cannot update BoardConfig while a session is ACTIVE/UPCOMING",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 400,
+                  "code": "Error.BoardConfigLocked",
+                  "message": "Cấu hình Hội đồng hiện không thể chỉnh sửa"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.BoardConfigNotFound (config) - system has no active BoardConfig row",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.BoardConfigNotFound",
+                  "message": "Không tìm thấy cấu hình Hội đồng"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Super Admin cập nhật cấu hình biểu quyết Hội đồng",
+        "tags": [
+          "board"
         ]
       }
     },
@@ -11424,1147 +12588,6 @@
         ]
       }
     },
-    "/board/sessions": {
-      "post": {
-        "operationId": "BoardController_createSession",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBoardSessionBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.SeriesNotFound (seriesId) - series does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.SeriesNotFound",
-                  "message": "Không tìm thấy series"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.BoardSessionAlreadyExists (title) - a board session with this title is already UPCOMING or ACTIVE",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.BoardSessionAlreadyExists",
-                  "message": "Phiên họp Hội đồng này đã tồn tại"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Error.InvalidBoardMembers (allowedEditorIds) - board member count must be odd to prevent tie votes | Error.RosterSourceRequired (seriesId) - provide allowedEditorIds, or seriesId so the roster can be auto-assigned | Error.NotEnoughBoardMembers (allowedEditorIds) - fewer than 3 active board members exist — cannot form a valid session | Error.RosterSizeTooLarge (rosterSize) - rosterSize phải ≤ min(boardTotalMembers, 9) và là số lẻ ≥ 3.",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 422,
-                  "code": "Error.InvalidBoardMembers",
-                  "message": "Danh sách thành viên Hội đồng không hợp lệ"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Editor tạo phiên họp Hội đồng → SCHEDULED",
-        "tags": [
-          "board"
-        ]
-      },
-      "get": {
-        "operationId": "BoardController_getSessions",
-        "parameters": [
-          {
-            "name": "mine",
-            "required": false,
-            "in": "query",
-            "description": "'true' = chỉ phiên caller là creator hoặc trong roster",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "UPCOMING",
-                "ACTIVE",
-                "CONCLUDED"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BoardSessionListItemDto_Output"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Danh sách phiên họp Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/suggest-members": {
-      "get": {
-        "operationId": "BoardController_suggestMembers",
-        "parameters": [
-          {
-            "name": "seriesId",
-            "required": true,
-            "in": "query",
-            "description": "MongoDB ObjectId (24 hexadecimal characters)",
-            "schema": {
-              "pattern": "^[0-9a-fA-F]{24}$",
-              "type": "string"
-            }
-          },
-          {
-            "name": "size",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 3,
-              "maximum": 9007199254740991,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuggestBoardMembersResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.SeriesNotFound (seriesId) - series does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.SeriesNotFound",
-                  "message": "Không tìm thấy series"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Error.NotEnoughBoardMembers (allowedEditorIds) - fewer than 3 active board members exist — cannot form a valid session | Error.RosterSizeTooLarge (rosterSize) - rosterSize phải ≤ min(boardTotalMembers, 9) và là số lẻ ≥ 3.",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 422,
-                  "code": "Error.NotEnoughBoardMembers",
-                  "message": "Không đủ thành viên phù hợp để tạo phiên họp"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Gợi ý roster Board theo thể loại của series (PB-05) — lẻ, >= 3",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/sessions/{id}": {
-      "get": {
-        "operationId": "BoardController_getSessionById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardSessionNotFound",
-                  "message": "Không tìm thấy phiên họp Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Chi tiết phiên họp Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/sessions/{id}/start": {
-      "patch": {
-        "operationId": "BoardController_startSession",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardSessionNotFound",
-                  "message": "Không tìm thấy phiên họp Hội đồng"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.InvalidBoardSessionTransition (status) - board session status transition is not allowed by BOARD_SESSION_TRANSITIONS",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.BoardSessionNotOpen",
-                  "message": "Phiên họp Hội đồng hiện chưa mở"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Kích hoạt phiên họp Hội đồng → ACTIVE",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/sessions/{id}/conclude": {
-      "patch": {
-        "operationId": "BoardController_concludeSession",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSessionCreator (sessionId) - only the board session creator or a Super Admin can conclude the session",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSessionCreator",
-                  "message": "Chỉ người tạo phiên họp mới được thực hiện thao tác này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardSessionNotFound",
-                  "message": "Không tìm thấy phiên họp Hội đồng"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidBoardSessionTransition (status) - board session status transition is not allowed by BOARD_SESSION_TRANSITIONS",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidBoardSessionTransition",
-                  "message": "Không thể chuyển phiên họp sang trạng thái này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Kết thúc phiên họp Hội đồng → CONCLUDED; quyết định treo → EXPIRED",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/sessions/{id}/phase": {
-      "patch": {
-        "operationId": "BoardController_advancePhase",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdvancePhaseBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardSessionResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSessionCreator (sessionId) - only the board session creator or a Super Admin can conclude the session",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSessionCreator",
-                  "message": "Chỉ người tạo phiên họp mới được thực hiện thao tác này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardSessionNotFound",
-                  "message": "Không tìm thấy phiên họp Hội đồng"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.InvalidPhaseTransition (phase) - session phase only moves forward: PRESENTING -> QA -> VOTING (skipping allowed)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.BoardSessionNotOpen",
-                  "message": "Phiên họp Hội đồng hiện chưa mở"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Creator chuyển giai đoạn phiên họp: PRESENTING → QA → VOTING (forward-only, cho nhảy cóc)",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/sessions/{id}/messages": {
-      "get": {
-        "operationId": "BoardController_getSessionMessages",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maximum": 200,
-              "exclusiveMinimum": true,
-              "default": 50,
-              "type": "integer",
-              "minimum": 0
-            }
-          },
-          {
-            "name": "offset",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "maximum": 9007199254740991,
-              "default": 0,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardMessageListResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSessionParticipant (id) - only the session creator, roster members, or a Super Admin can read meeting messages",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSessionParticipant",
-                  "message": "Bạn không phải thành viên của phiên họp này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardSessionNotFound",
-                  "message": "Không tìm thấy phiên họp Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Lịch sử chat Q&A của phiên họp (creator/roster/Super Admin)",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/config": {
-      "get": {
-        "operationId": "BoardController_getConfig",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardConfigResDto_Output"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Xem cấu hình biểu quyết Hội đồng hiện tại",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/decisions": {
-      "post": {
-        "operationId": "BoardController_createDecision",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBoardDecisionBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardDecisionResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardSessionNotFound",
-                  "message": "Không tìm thấy phiên họp Hội đồng"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Error.InvalidBoardMembers (allowedEditorIds) - board member count must be odd to prevent tie votes",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 422,
-                  "code": "Error.InvalidBoardMembers",
-                  "message": "Danh sách thành viên Hội đồng không hợp lệ"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Editor tạo quyết định Hội đồng nháp → PENDING",
-        "tags": [
-          "board"
-        ]
-      },
-      "get": {
-        "operationId": "BoardController_getDecisions",
-        "parameters": [
-          {
-            "name": "boardSessionId",
-            "required": false,
-            "in": "query",
-            "description": "Lọc decision theo phiên họp",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "targetSeriesId",
-            "required": false,
-            "in": "query",
-            "description": "Lọc decision theo series mục tiêu",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BoardDecisionListItemDto_Output"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Danh sách quyết định Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/decisions/{id}": {
-      "get": {
-        "operationId": "BoardController_getDecisionDetails",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardDecisionResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardDecisionNotFound",
-                  "message": "Không tìm thấy quyết định Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Chi tiết quyết định Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/decisions/{id}/votes": {
-      "get": {
-        "operationId": "BoardController_getDecisionVotes",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BoardVoteResDto_Output"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardDecisionNotFound",
-                  "message": "Không tìm thấy quyết định Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Danh sách phiếu biểu quyết của quyết định",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/decisions/{id}/vote": {
-      "post": {
-        "operationId": "BoardController_castVote",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CastVoteBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.VoterNotAllowed (voterId) - caller is not in session.allowedEditorIds",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.VoterNotAllowed",
-                  "message": "Bạn không được phép biểu quyết quyết định này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardDecisionNotFound",
-                  "message": "Không tìm thấy quyết định Hội đồng"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.BoardSessionNotOpen (status) - board session is not ACTIVE; voting/config update not allowed | Error.VotingNotOpen (id) - castVote requires session.phase = VOTING - the session creator must advance the phase first | Error.DecisionAlreadyFinalized (id) - decision already APPROVED/REJECTED/EXPIRED — voting closed | Error.VoterAlreadyVoted (voterId) - voter has already cast a vote on this decision",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.BoardSessionNotOpen",
-                  "message": "Phiên họp Hội đồng hiện chưa mở"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Board/Editor bỏ phiếu cho quyết định → cập nhật kết quả",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/reports": {
-      "get": {
-        "operationId": "BoardController_getReports",
-        "parameters": [
-          {
-            "name": "seriesId",
-            "required": false,
-            "in": "query",
-            "description": "Toàn bộ report của series — dùng khi mở phiên mới",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "boardDecisionId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SeriesReportResDto_Output"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Danh sách báo cáo Hội đồng",
-        "tags": [
-          "board"
-        ]
-      },
-      "post": {
-        "operationId": "BoardController_createSeriesReport",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSeriesReportBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SeriesReportResDto_Output"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Error.BoardSessionClosedReport (sessionId) - cannot submit a series report for a CONCLUDED session",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 400,
-                  "code": "Error.BoardSessionClosedReport",
-                  "message": "Không thể tạo báo cáo cho phiên họp đã đóng"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.EditorNotAssignedToSeries (userId) - only the Editor currently assigned to the report series may submit it",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.EditorNotAssignedToSeries",
-                  "message": "Chỉ Editor phụ trách series mới được nộp báo cáo"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardDecisionNotFound (decisionId) - board decision does not exist (or id is not a valid ObjectId) | Error.BoardSessionNotFound (sessionId) - board session does not exist (or id is not a valid ObjectId) | Error.SeriesNotFound (seriesId) - series does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardDecisionNotFound",
-                  "message": "Không tìm thấy quyết định Hội đồng"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.ReportDecisionSeriesMismatch (seriesId) - report seriesId must match the BoardDecision targetSeriesId",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.ReportDecisionSeriesMismatch",
-                  "message": "Báo cáo phải thuộc đúng series của quyết định Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Editor tạo báo cáo phân tích series cho Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/reports/{id}": {
-      "get": {
-        "operationId": "BoardController_getReportById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SeriesReportResDto_Output"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardReportNotFound (reportId) - series report does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardReportNotFound",
-                  "message": "Không tìm thấy báo cáo Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Chi tiết báo cáo Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
-    "/board/config/{id}": {
-      "patch": {
-        "operationId": "BoardController_updateConfig",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBoardConfigBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BoardConfigResDto_Output"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Error.BoardConfigLocked (config) - cannot update BoardConfig while a session is ACTIVE/UPCOMING",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 400,
-                  "code": "Error.BoardConfigLocked",
-                  "message": "Cấu hình Hội đồng hiện không thể chỉnh sửa"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.BoardConfigNotFound (config) - system has no active BoardConfig row",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.BoardConfigNotFound",
-                  "message": "Không tìm thấy cấu hình Hội đồng"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Super Admin cập nhật cấu hình biểu quyết Hội đồng",
-        "tags": [
-          "board"
-        ]
-      }
-    },
     "/vote/otp": {
       "post": {
         "operationId": "SurveyController_requestOtp",
@@ -17303,7 +17326,7 @@
             }
           },
           "409": {
-            "description": "Error.TransferRequesterAlreadyOwnsSeries",
+            "description": "Error.TransferRequesterAlreadyOwnsSeries | Error.ActiveTransferRequestAlreadyExists",
             "content": {
               "application/json": {
                 "example": {
@@ -17389,6 +17412,57 @@
           }
         ],
         "summary": "Danh sách yêu cầu chuyển nhượng chờ Board xử lý",
+        "tags": [
+          "transfer"
+        ]
+      }
+    },
+    "/transfers/requests/assigned-editor": {
+      "get": {
+        "operationId": "TransferController_getAssignedEditorRequests",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD | REJECTED_BY_ORIGINAL_MANGAKA | REJECTED | CANCELLED. Values: SUBMITTED, UNDER_REVIEW, REJECTED_BY_BOARD, NEGOTIATING, REJECTED_BY_ORIGINAL_MANGAKA, PROPOSED, ACCEPTED, REJECTED, CANCELLED, AWAITING_REPLACEMENT_SIGNATURES, AWAITING_TRANSFER_SIGNATURES, COMPLETED",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SUBMITTED",
+                "UNDER_REVIEW",
+                "REJECTED_BY_BOARD",
+                "NEGOTIATING",
+                "REJECTED_BY_ORIGINAL_MANGAKA",
+                "PROPOSED",
+                "ACCEPTED",
+                "REJECTED",
+                "CANCELLED",
+                "AWAITING_REPLACEMENT_SIGNATURES",
+                "AWAITING_TRANSFER_SIGNATURES",
+                "COMPLETED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRequestListResDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách yêu cầu chuyển nhượng của các series Editor phụ trách (kèm lịch sử, lọc ?status=)",
         "tags": [
           "transfer"
         ]
@@ -17693,7 +17767,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageResDto_Output"
+                  "$ref": "#/components/schemas/AssignFullBuyoutResDto_Output"
                 }
               }
             }
@@ -18147,6 +18221,19 @@
                   "statusCode": 404,
                   "code": "Error.TransferContractNotFound",
                   "message": "Không tìm thấy hợp đồng chuyển nhượng"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.TransferContractApprovalDecisionRequired (boardDecisionId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.TransferContractApprovalDecisionRequired",
+                  "message": "Hợp đồng chuyển nhượng chưa có quyết định CONTRACT được Hội đồng phê duyệt"
                 }
               }
             }
@@ -20359,6 +20446,40 @@
         ],
         "additionalProperties": false
       },
+      "BoardApproveContractBodyDto": {
+        "type": "object",
+        "properties": {
+          "boardDecisionId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "MongoDB ObjectId (24 hexadecimal characters)"
+          }
+        },
+        "required": [
+          "boardDecisionId"
+        ],
+        "additionalProperties": false
+      },
+      "BoardRequestContractChangesBodyDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "boardDecisionId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "MongoDB ObjectId (24 hexadecimal characters)"
+          }
+        },
+        "required": [
+          "reason",
+          "boardDecisionId"
+        ],
+        "additionalProperties": false
+      },
       "SignContractWithOtpBodyDto": {
         "type": "object",
         "properties": {
@@ -21488,6 +21609,1026 @@
         },
         "required": [
           "voidReason"
+        ],
+        "additionalProperties": false
+      },
+      "CreateBoardSessionBodyDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 100
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "endTime": {
+            "description": "Giờ kết thúc dự kiến; bỏ trống = chỉ kết thúc thủ công",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          },
+          "allowedEditorIds": {
+            "description": "Bỏ trống → hệ thống tự phân công theo seriesId (PB-05)",
+            "minItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "description": "MongoDB ObjectId (24 hexadecimal characters)"
+            }
+          },
+          "seriesId": {
+            "description": "Nguồn thể loại cho auto-assign roster. BẮT BUỘC khi omit allowedEditorIds",
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "rosterSize": {
+            "description": "Sĩ số mong muốn (sẽ được ép về số lẻ). Mặc định lấy BoardConfig.quorumMin",
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "title",
+          "startTime"
+        ]
+      },
+      "BoardSessionResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "creatorId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UPCOMING",
+              "ACTIVE",
+              "CONCLUDED"
+            ],
+            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "PRESENTING",
+              "QA",
+              "VOTING"
+            ],
+            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
+          },
+          "creator": {
+            "type": "object",
+            "description": "CÓ ở GET /board/sessions + GET /board/sessions/:id (enrich)",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "displayName ?? name"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "displayName",
+              "avatar"
+            ],
+            "additionalProperties": false
+          },
+          "members": {
+            "type": "array",
+            "description": "Resolve từ allowedEditorIds — CÓ ở list + detail",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string",
+                  "description": "displayName ?? name"
+                },
+                "avatar": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "displayName",
+                "avatar"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "allowedEditorIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endTime": {
+            "description": "ISO 8601 date-time (UTC)",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "creatorId",
+          "status",
+          "phase",
+          "allowedEditorIds",
+          "startTime",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "SuggestBoardMembersResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "avatar": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "specialtyGenres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ACTION",
+                      "ADVENTURE",
+                      "COMEDY",
+                      "DRAMA",
+                      "FANTASY",
+                      "HORROR",
+                      "MYSTERY",
+                      "ROMANCE",
+                      "SCI_FI",
+                      "SLICE_OF_LIFE",
+                      "SPORTS",
+                      "SUPERNATURAL",
+                      "THRILLER",
+                      "HISTORICAL",
+                      "ISEKAI",
+                      "MECHA",
+                      "PSYCHOLOGICAL"
+                    ],
+                    "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
+                  }
+                },
+                "matchedGenres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ACTION",
+                      "ADVENTURE",
+                      "COMEDY",
+                      "DRAMA",
+                      "FANTASY",
+                      "HORROR",
+                      "MYSTERY",
+                      "ROMANCE",
+                      "SCI_FI",
+                      "SLICE_OF_LIFE",
+                      "SPORTS",
+                      "SUPERNATURAL",
+                      "THRILLER",
+                      "HISTORICAL",
+                      "ISEKAI",
+                      "MECHA",
+                      "PSYCHOLOGICAL"
+                    ],
+                    "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
+                  },
+                  "description": "Giao giữa sở trường và thể loại của series"
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Số thể loại khớp"
+                },
+                "hasProfile": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "userId",
+                "displayName",
+                "avatar",
+                "specialtyGenres",
+                "matchedGenres",
+                "score",
+                "hasProfile"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "size": {
+            "type": "number",
+            "description": "Sĩ số roster đề xuất — LUÔN lẻ và >= 3"
+          }
+        },
+        "required": [
+          "items",
+          "size"
+        ],
+        "additionalProperties": false
+      },
+      "BoardSessionListItemDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "creatorId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UPCOMING",
+              "ACTIVE",
+              "CONCLUDED"
+            ],
+            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "PRESENTING",
+              "QA",
+              "VOTING"
+            ],
+            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
+          },
+          "creator": {
+            "type": "object",
+            "description": "CÓ ở GET /board/sessions + GET /board/sessions/:id (enrich)",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "displayName ?? name"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "displayName",
+              "avatar"
+            ],
+            "additionalProperties": false
+          },
+          "startTime": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endTime": {
+            "description": "ISO 8601 date-time (UTC)",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "creatorId",
+          "status",
+          "phase",
+          "startTime",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AdvancePhaseBodyDto": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "enum": [
+              "PRESENTING",
+              "QA",
+              "VOTING"
+            ],
+            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
+          }
+        },
+        "required": [
+          "phase"
+        ],
+        "additionalProperties": false
+      },
+      "BoardMessageListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sessionId": {
+                  "type": "string"
+                },
+                "sender": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "displayName ?? name"
+                    },
+                    "avatar": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "displayName",
+                    "avatar"
+                  ],
+                  "additionalProperties": false
+                },
+                "content": {
+                  "type": "string"
+                },
+                "phase": {
+                  "type": "string",
+                  "enum": [
+                    "PRESENTING",
+                    "QA",
+                    "VOTING"
+                  ],
+                  "description": "Phase lúc tin nhắn được gửi"
+                },
+                "createdAt": {
+                  "description": "ISO 8601 date-time (UTC)",
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                }
+              },
+              "required": [
+                "id",
+                "sessionId",
+                "sender",
+                "content",
+                "phase",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "BoardConfigResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "updatedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "boardTotalMembers": {
+            "type": "number"
+          },
+          "quorumMin": {
+            "type": "number",
+            "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
+          },
+          "approveMajorityRatio": {
+            "type": "number"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "boardTotalMembers",
+          "quorumMin",
+          "approveMajorityRatio",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CreateBoardDecisionBodyDto__schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateBoardDecisionBodyDto__schema0"
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": true
+          }
+        ],
+        "nullable": true
+      },
+      "CreateBoardDecisionBodyDto": {
+        "type": "object",
+        "properties": {
+          "boardSessionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "targetSeriesId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferRequestId": {
+            "type": "string",
+            "nullable": true
+          },
+          "decisionType": {
+            "type": "string",
+            "enum": [
+              "CONTINUE",
+              "CANCEL",
+              "HIATUS",
+              "ENDING_ALLOWANCE",
+              "SERIES_CONTRACT_APPROVAL",
+              "SERIALIZATION",
+              "CANCELLATION",
+              "FORMAT_CHANGE",
+              "COMPLETION",
+              "REPRINT",
+              "TRANSFER",
+              "CONTRACT"
+            ],
+            "description": "Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "boardSessionId",
+          "targetSeriesId",
+          "decisionType",
+          "details"
+        ]
+      },
+      "BoardDecisionResDto_Output__schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardDecisionResDto_Output__schema0"
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": true
+          }
+        ],
+        "nullable": true
+      },
+      "BoardDecisionResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "targetSeriesId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetSeries": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "additionalProperties": false,
+            "description": "CÓ ở GET /board/decisions + /:id (enrich); null nếu decision không gắn series",
+            "nullable": true
+          },
+          "boardSessionId": {
+            "type": "string"
+          },
+          "decisionType": {
+            "type": "string",
+            "enum": [
+              "CONTINUE",
+              "CANCEL",
+              "HIATUS",
+              "ENDING_ALLOWANCE",
+              "SERIES_CONTRACT_APPROVAL",
+              "SERIALIZATION",
+              "CANCELLATION",
+              "FORMAT_CHANGE",
+              "COMPLETION",
+              "REPRINT",
+              "TRANSFER",
+              "CONTRACT",
+              null
+            ],
+            "description": "Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT",
+            "nullable": true
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PENDING_QUORUM",
+              "APPROVED",
+              "REJECTED",
+              "EXPIRED",
+              null
+            ],
+            "description": "Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới). Values: PENDING, PENDING_QUORUM, APPROVED, REJECTED, EXPIRED",
+            "nullable": true
+          },
+          "totalVotes": {
+            "type": "number"
+          },
+          "approveCount": {
+            "type": "number"
+          },
+          "rejectCount": {
+            "type": "number"
+          },
+          "quorumMet": {
+            "type": "boolean"
+          },
+          "endingChapterAllowance": {
+            "type": "number",
+            "nullable": true
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "decidedAt": {
+            "description": "ISO 8601 date-time (UTC)",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "nullable": true
+          },
+          "allowedEditorIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "voterId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "voteValue": {
+                  "type": "string",
+                  "enum": [
+                    "APPROVE",
+                    "REJECT",
+                    "ABSTAIN",
+                    null
+                  ],
+                  "description": "Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN",
+                  "nullable": true
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "votedAt": {
+                  "description": "ISO 8601 date-time (UTC)",
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                }
+              },
+              "required": [
+                "votedAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "boardSessionId",
+          "totalVotes",
+          "approveCount",
+          "rejectCount",
+          "quorumMet",
+          "votes"
+        ],
+        "additionalProperties": false
+      },
+      "BoardDecisionListItemDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "targetSeriesId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetSeries": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "additionalProperties": false,
+            "description": "CÓ ở GET /board/decisions + /:id (enrich); null nếu decision không gắn series",
+            "nullable": true
+          },
+          "boardSessionId": {
+            "type": "string"
+          },
+          "decisionType": {
+            "type": "string",
+            "enum": [
+              "CONTINUE",
+              "CANCEL",
+              "HIATUS",
+              "ENDING_ALLOWANCE",
+              "SERIES_CONTRACT_APPROVAL",
+              "SERIALIZATION",
+              "CANCELLATION",
+              "FORMAT_CHANGE",
+              "COMPLETION",
+              "REPRINT",
+              "TRANSFER",
+              "CONTRACT",
+              null
+            ],
+            "description": "Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT",
+            "nullable": true
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PENDING_QUORUM",
+              "APPROVED",
+              "REJECTED",
+              "EXPIRED",
+              null
+            ],
+            "description": "Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới). Values: PENDING, PENDING_QUORUM, APPROVED, REJECTED, EXPIRED",
+            "nullable": true
+          },
+          "totalVotes": {
+            "type": "number"
+          },
+          "approveCount": {
+            "type": "number"
+          },
+          "rejectCount": {
+            "type": "number"
+          },
+          "quorumMet": {
+            "type": "boolean"
+          },
+          "endingChapterAllowance": {
+            "type": "number",
+            "nullable": true
+          },
+          "decidedAt": {
+            "description": "ISO 8601 date-time (UTC)",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "boardSessionId",
+          "totalVotes",
+          "approveCount",
+          "rejectCount",
+          "quorumMet"
+        ],
+        "additionalProperties": false
+      },
+      "BoardVoteResDto_Output": {
+        "type": "object",
+        "properties": {
+          "voterId": {
+            "type": "string",
+            "nullable": true
+          },
+          "voteValue": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "ABSTAIN",
+              null
+            ],
+            "description": "Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "votedAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "votedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CastVoteBodyDto": {
+        "type": "object",
+        "properties": {
+          "voteValue": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "ABSTAIN"
+            ],
+            "description": "Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "voteValue"
+        ],
+        "additionalProperties": false
+      },
+      "SeriesReportResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "seriesId": {
+            "type": "string",
+            "nullable": true
+          },
+          "boardDecisionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "preparedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportType": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "string",
+            "nullable": true
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 date-time (UTC)",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "attachments",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSeriesReportBodyDto": {
+        "type": "object",
+        "properties": {
+          "seriesId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "boardDecisionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reportType": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "seriesId",
+          "boardDecisionId",
+          "reportType",
+          "content",
+          "attachments"
+        ]
+      },
+      "UpdateBoardConfigBodyDto": {
+        "type": "object",
+        "properties": {
+          "boardTotalMembers": {
+            "type": "number"
+          },
+          "quorumMin": {
+            "type": "number",
+            "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
+          },
+          "approveMajorityRatio": {
+            "type": "number"
+          },
+          "updatedBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "boardTotalMembers",
+          "quorumMin",
+          "approveMajorityRatio",
+          "updatedBy"
         ],
         "additionalProperties": false
       },
@@ -27388,1022 +28529,6 @@
         ],
         "additionalProperties": false
       },
-      "CreateBoardSessionBodyDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 5,
-            "maxLength": 100
-          },
-          "startTime": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          },
-          "endTime": {
-            "description": "Giờ kết thúc dự kiến; bỏ trống = chỉ kết thúc thủ công",
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 500,
-            "nullable": true
-          },
-          "allowedEditorIds": {
-            "description": "Bỏ trống → hệ thống tự phân công theo seriesId (PB-05)",
-            "minItems": 3,
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[0-9a-fA-F]{24}$",
-              "description": "MongoDB ObjectId (24 hexadecimal characters)"
-            }
-          },
-          "seriesId": {
-            "description": "Nguồn thể loại cho auto-assign roster. BẮT BUỘC khi omit allowedEditorIds",
-            "type": "string",
-            "pattern": "^[0-9a-fA-F]{24}$"
-          },
-          "rosterSize": {
-            "description": "Sĩ số mong muốn (sẽ được ép về số lẻ). Mặc định lấy BoardConfig.quorumMin",
-            "type": "integer",
-            "minimum": 3,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "title",
-          "startTime"
-        ]
-      },
-      "BoardSessionResDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "creatorId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "UPCOMING",
-              "ACTIVE",
-              "CONCLUDED"
-            ],
-            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED"
-          },
-          "phase": {
-            "type": "string",
-            "enum": [
-              "PRESENTING",
-              "QA",
-              "VOTING"
-            ],
-            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
-          },
-          "creator": {
-            "type": "object",
-            "description": "CÓ ở GET /board/sessions + GET /board/sessions/:id (enrich)",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "displayName": {
-                "type": "string",
-                "description": "displayName ?? name"
-              },
-              "avatar": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "required": [
-              "id",
-              "displayName",
-              "avatar"
-            ],
-            "additionalProperties": false
-          },
-          "members": {
-            "type": "array",
-            "description": "Resolve từ allowedEditorIds — CÓ ở list + detail",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "displayName": {
-                  "type": "string",
-                  "description": "displayName ?? name"
-                },
-                "avatar": {
-                  "type": "string",
-                  "nullable": true
-                }
-              },
-              "required": [
-                "id",
-                "displayName",
-                "avatar"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "allowedEditorIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "startTime": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          },
-          "endTime": {
-            "description": "ISO 8601 date-time (UTC)",
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "description",
-          "creatorId",
-          "status",
-          "phase",
-          "allowedEditorIds",
-          "startTime",
-          "createdAt",
-          "updatedAt"
-        ],
-        "additionalProperties": false
-      },
-      "SuggestBoardMembersResDto_Output": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "userId": {
-                  "type": "string"
-                },
-                "displayName": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "avatar": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "specialtyGenres": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "ACTION",
-                      "ADVENTURE",
-                      "COMEDY",
-                      "DRAMA",
-                      "FANTASY",
-                      "HORROR",
-                      "MYSTERY",
-                      "ROMANCE",
-                      "SCI_FI",
-                      "SLICE_OF_LIFE",
-                      "SPORTS",
-                      "SUPERNATURAL",
-                      "THRILLER",
-                      "HISTORICAL",
-                      "ISEKAI",
-                      "MECHA",
-                      "PSYCHOLOGICAL"
-                    ],
-                    "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
-                  }
-                },
-                "matchedGenres": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "ACTION",
-                      "ADVENTURE",
-                      "COMEDY",
-                      "DRAMA",
-                      "FANTASY",
-                      "HORROR",
-                      "MYSTERY",
-                      "ROMANCE",
-                      "SCI_FI",
-                      "SLICE_OF_LIFE",
-                      "SPORTS",
-                      "SUPERNATURAL",
-                      "THRILLER",
-                      "HISTORICAL",
-                      "ISEKAI",
-                      "MECHA",
-                      "PSYCHOLOGICAL"
-                    ],
-                    "description": "Manga genre (mảng, nhiều thể loại / series). Values: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, MYSTERY, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER, HISTORICAL, ISEKAI, MECHA, PSYCHOLOGICAL"
-                  },
-                  "description": "Giao giữa sở trường và thể loại của series"
-                },
-                "score": {
-                  "type": "number",
-                  "description": "Số thể loại khớp"
-                },
-                "hasProfile": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "userId",
-                "displayName",
-                "avatar",
-                "specialtyGenres",
-                "matchedGenres",
-                "score",
-                "hasProfile"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "size": {
-            "type": "number",
-            "description": "Sĩ số roster đề xuất — LUÔN lẻ và >= 3"
-          }
-        },
-        "required": [
-          "items",
-          "size"
-        ],
-        "additionalProperties": false
-      },
-      "BoardSessionListItemDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "creatorId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "UPCOMING",
-              "ACTIVE",
-              "CONCLUDED"
-            ],
-            "description": "Board session status: UPCOMING (chờ tới giờ), ACTIVE (đang họp/vote), CONCLUDED (đã bế mạc). Values: UPCOMING, ACTIVE, CONCLUDED"
-          },
-          "phase": {
-            "type": "string",
-            "enum": [
-              "PRESENTING",
-              "QA",
-              "VOTING"
-            ],
-            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
-          },
-          "creator": {
-            "type": "object",
-            "description": "CÓ ở GET /board/sessions + GET /board/sessions/:id (enrich)",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "displayName": {
-                "type": "string",
-                "description": "displayName ?? name"
-              },
-              "avatar": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "required": [
-              "id",
-              "displayName",
-              "avatar"
-            ],
-            "additionalProperties": false
-          },
-          "startTime": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          },
-          "endTime": {
-            "description": "ISO 8601 date-time (UTC)",
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "creatorId",
-          "status",
-          "phase",
-          "startTime",
-          "createdAt",
-          "updatedAt"
-        ],
-        "additionalProperties": false
-      },
-      "AdvancePhaseBodyDto": {
-        "type": "object",
-        "properties": {
-          "phase": {
-            "type": "string",
-            "enum": [
-              "PRESENTING",
-              "QA",
-              "VOTING"
-            ],
-            "description": "Giai đoạn trong phiên họp Board: PRESENTING (editor trình bày hồ sơ), QA (Board hỏi đáp qua chat), VOTING (chỉ bỏ phiếu — chat bị khóa). Values: PRESENTING, QA, VOTING"
-          }
-        },
-        "required": [
-          "phase"
-        ],
-        "additionalProperties": false
-      },
-      "BoardMessageListResDto_Output": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "sessionId": {
-                  "type": "string"
-                },
-                "sender": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "displayName ?? name"
-                    },
-                    "avatar": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "displayName",
-                    "avatar"
-                  ],
-                  "additionalProperties": false
-                },
-                "content": {
-                  "type": "string"
-                },
-                "phase": {
-                  "type": "string",
-                  "enum": [
-                    "PRESENTING",
-                    "QA",
-                    "VOTING"
-                  ],
-                  "description": "Phase lúc tin nhắn được gửi"
-                },
-                "createdAt": {
-                  "description": "ISO 8601 date-time (UTC)",
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                }
-              },
-              "required": [
-                "id",
-                "sessionId",
-                "sender",
-                "content",
-                "phase",
-                "createdAt"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "total": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "items",
-          "total"
-        ],
-        "additionalProperties": false
-      },
-      "BoardConfigResDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "updatedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "boardTotalMembers": {
-            "type": "number"
-          },
-          "quorumMin": {
-            "type": "number",
-            "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
-          },
-          "approveMajorityRatio": {
-            "type": "number"
-          },
-          "isDefault": {
-            "type": "boolean"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "id",
-          "boardTotalMembers",
-          "quorumMin",
-          "approveMajorityRatio",
-          "updatedAt"
-        ],
-        "additionalProperties": false
-      },
-      "CreateBoardDecisionBodyDto__schema0": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateBoardDecisionBodyDto__schema0"
-            }
-          },
-          {
-            "type": "object",
-            "additionalProperties": true
-          }
-        ],
-        "nullable": true
-      },
-      "CreateBoardDecisionBodyDto": {
-        "type": "object",
-        "properties": {
-          "boardSessionId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "targetSeriesId": {
-            "type": "string",
-            "nullable": true
-          },
-          "decisionType": {
-            "type": "string",
-            "enum": [
-              "CONTINUE",
-              "CANCEL",
-              "HIATUS",
-              "ENDING_ALLOWANCE",
-              "SERIES_CONTRACT_APPROVAL",
-              "SERIALIZATION",
-              "CANCELLATION",
-              "FORMAT_CHANGE",
-              "COMPLETION",
-              "REPRINT",
-              "TRANSFER",
-              "CONTRACT"
-            ],
-            "description": "Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT"
-          },
-          "details": {
-            "type": "object",
-            "additionalProperties": true,
-            "nullable": true
-          }
-        },
-        "required": [
-          "boardSessionId",
-          "targetSeriesId",
-          "decisionType",
-          "details"
-        ]
-      },
-      "BoardDecisionResDto_Output__schema0": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BoardDecisionResDto_Output__schema0"
-            }
-          },
-          {
-            "type": "object",
-            "additionalProperties": true
-          }
-        ],
-        "nullable": true
-      },
-      "BoardDecisionResDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "targetSeriesId": {
-            "type": "string",
-            "nullable": true
-          },
-          "targetSeries": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "title"
-            ],
-            "additionalProperties": false,
-            "description": "CÓ ở GET /board/decisions + /:id (enrich); null nếu decision không gắn series",
-            "nullable": true
-          },
-          "boardSessionId": {
-            "type": "string"
-          },
-          "decisionType": {
-            "type": "string",
-            "enum": [
-              "CONTINUE",
-              "CANCEL",
-              "HIATUS",
-              "ENDING_ALLOWANCE",
-              "SERIES_CONTRACT_APPROVAL",
-              "SERIALIZATION",
-              "CANCELLATION",
-              "FORMAT_CHANGE",
-              "COMPLETION",
-              "REPRINT",
-              "TRANSFER",
-              "CONTRACT",
-              null
-            ],
-            "description": "Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT",
-            "nullable": true
-          },
-          "result": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "PENDING_QUORUM",
-              "APPROVED",
-              "REJECTED",
-              "EXPIRED",
-              null
-            ],
-            "description": "Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới). Values: PENDING, PENDING_QUORUM, APPROVED, REJECTED, EXPIRED",
-            "nullable": true
-          },
-          "totalVotes": {
-            "type": "number"
-          },
-          "approveCount": {
-            "type": "number"
-          },
-          "rejectCount": {
-            "type": "number"
-          },
-          "quorumMet": {
-            "type": "boolean"
-          },
-          "endingChapterAllowance": {
-            "type": "number",
-            "nullable": true
-          },
-          "details": {
-            "type": "object",
-            "additionalProperties": true,
-            "nullable": true
-          },
-          "decidedAt": {
-            "description": "ISO 8601 date-time (UTC)",
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
-            "nullable": true
-          },
-          "allowedEditorIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "votes": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "voterId": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "voteValue": {
-                  "type": "string",
-                  "enum": [
-                    "APPROVE",
-                    "REJECT",
-                    "ABSTAIN",
-                    null
-                  ],
-                  "description": "Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN",
-                  "nullable": true
-                },
-                "note": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "votedAt": {
-                  "description": "ISO 8601 date-time (UTC)",
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                }
-              },
-              "required": [
-                "votedAt"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "id",
-          "boardSessionId",
-          "totalVotes",
-          "approveCount",
-          "rejectCount",
-          "quorumMet",
-          "votes"
-        ],
-        "additionalProperties": false
-      },
-      "BoardDecisionListItemDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "targetSeriesId": {
-            "type": "string",
-            "nullable": true
-          },
-          "targetSeries": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "title"
-            ],
-            "additionalProperties": false,
-            "description": "CÓ ở GET /board/decisions + /:id (enrich); null nếu decision không gắn series",
-            "nullable": true
-          },
-          "boardSessionId": {
-            "type": "string"
-          },
-          "decisionType": {
-            "type": "string",
-            "enum": [
-              "CONTINUE",
-              "CANCEL",
-              "HIATUS",
-              "ENDING_ALLOWANCE",
-              "SERIES_CONTRACT_APPROVAL",
-              "SERIALIZATION",
-              "CANCELLATION",
-              "FORMAT_CHANGE",
-              "COMPLETION",
-              "REPRINT",
-              "TRANSFER",
-              "CONTRACT",
-              null
-            ],
-            "description": "Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT",
-            "nullable": true
-          },
-          "result": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "PENDING_QUORUM",
-              "APPROVED",
-              "REJECTED",
-              "EXPIRED",
-              null
-            ],
-            "description": "Kết quả quyết định Hội đồng: PENDING (đang bỏ phiếu), PENDING_QUORUM (chưa đủ quorum), APPROVED (thông qua), REJECTED (bác bỏ), EXPIRED (phiên đóng khi chưa chốt → cần mở phiên mới). Values: PENDING, PENDING_QUORUM, APPROVED, REJECTED, EXPIRED",
-            "nullable": true
-          },
-          "totalVotes": {
-            "type": "number"
-          },
-          "approveCount": {
-            "type": "number"
-          },
-          "rejectCount": {
-            "type": "number"
-          },
-          "quorumMet": {
-            "type": "boolean"
-          },
-          "endingChapterAllowance": {
-            "type": "number",
-            "nullable": true
-          },
-          "decidedAt": {
-            "description": "ISO 8601 date-time (UTC)",
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "id",
-          "boardSessionId",
-          "totalVotes",
-          "approveCount",
-          "rejectCount",
-          "quorumMet"
-        ],
-        "additionalProperties": false
-      },
-      "BoardVoteResDto_Output": {
-        "type": "object",
-        "properties": {
-          "voterId": {
-            "type": "string",
-            "nullable": true
-          },
-          "voteValue": {
-            "type": "string",
-            "enum": [
-              "APPROVE",
-              "REJECT",
-              "ABSTAIN",
-              null
-            ],
-            "description": "Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN",
-            "nullable": true
-          },
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "votedAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "votedAt"
-        ],
-        "additionalProperties": false
-      },
-      "CastVoteBodyDto": {
-        "type": "object",
-        "properties": {
-          "voteValue": {
-            "type": "string",
-            "enum": [
-              "APPROVE",
-              "REJECT",
-              "ABSTAIN"
-            ],
-            "description": "Giá trị phiếu bầu của thành viên Hội đồng: APPROVE, REJECT, ABSTAIN. Values: APPROVE, REJECT, ABSTAIN"
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 300
-          }
-        },
-        "required": [
-          "voteValue"
-        ],
-        "additionalProperties": false
-      },
-      "SeriesReportResDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "seriesId": {
-            "type": "string",
-            "nullable": true
-          },
-          "boardDecisionId": {
-            "type": "string",
-            "nullable": true
-          },
-          "preparedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "reportType": {
-            "type": "string",
-            "nullable": true
-          },
-          "content": {
-            "type": "string",
-            "nullable": true
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO 8601 date-time (UTC)",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          }
-        },
-        "required": [
-          "id",
-          "attachments",
-          "createdAt"
-        ],
-        "additionalProperties": false
-      },
-      "CreateSeriesReportBodyDto": {
-        "type": "object",
-        "properties": {
-          "seriesId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "boardDecisionId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "reportType": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string",
-            "minLength": 1
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "seriesId",
-          "boardDecisionId",
-          "reportType",
-          "content",
-          "attachments"
-        ]
-      },
-      "UpdateBoardConfigBodyDto": {
-        "type": "object",
-        "properties": {
-          "boardTotalMembers": {
-            "type": "number"
-          },
-          "quorumMin": {
-            "type": "number",
-            "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
-          },
-          "approveMajorityRatio": {
-            "type": "number"
-          },
-          "updatedBy": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "boardTotalMembers",
-          "quorumMin",
-          "approveMajorityRatio",
-          "updatedBy"
-        ],
-        "additionalProperties": false
-      },
       "VoteOtpRequestBodyDto": {
         "type": "object",
         "properties": {
@@ -33464,6 +33589,11 @@
             "description": "TransferContract (hợp đồng CHUYỂN NHƯỢNG 3 bên) đã soạn cho yêu cầu này; null khi Editor chưa soạn. Dùng id này gọi GET /transfers/contracts/:id và POST /transfers/contracts/:id/sign. CHỈ có ở 3 route GET request; response của route mutation không mang field này",
             "nullable": true
           },
+          "replacementContractId": {
+            "type": "string",
+            "description": "Contract thay thế (Full Buyout Mô hình A) sinh từ yêu cầu này; null nếu chưa có / không phải Full Buyout",
+            "nullable": true
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -33608,6 +33738,11 @@
                   "description": "TransferContract (hợp đồng CHUYỂN NHƯỢNG 3 bên) đã soạn cho yêu cầu này; null khi Editor chưa soạn. Dùng id này gọi GET /transfers/contracts/:id và POST /transfers/contracts/:id/sign. CHỈ có ở 3 route GET request; response của route mutation không mang field này",
                   "nullable": true
                 },
+                "replacementContractId": {
+                  "type": "string",
+                  "description": "Contract thay thế (Full Buyout Mô hình A) sinh từ yêu cầu này; null nếu chưa có / không phải Full Buyout",
+                  "nullable": true
+                },
                 "status": {
                   "type": "string",
                   "enum": [
@@ -33723,6 +33858,42 @@
           "valuationAmount",
           "conditions"
         ]
+      },
+      "AssignFullBuyoutResDto_Output": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "replacementContractId": {
+            "type": "string",
+            "description": "Contract (hợp đồng XUẤT BẢN mới, Full Buyout) vừa tạo cho Mangaka B"
+          },
+          "requestStatus": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "UNDER_REVIEW",
+              "REJECTED_BY_BOARD",
+              "NEGOTIATING",
+              "REJECTED_BY_ORIGINAL_MANGAKA",
+              "PROPOSED",
+              "ACCEPTED",
+              "REJECTED",
+              "CANCELLED",
+              "AWAITING_REPLACEMENT_SIGNATURES",
+              "AWAITING_TRANSFER_SIGNATURES",
+              "COMPLETED"
+            ],
+            "description": "Vòng đời yêu cầu chuyển nhượng: SUBMITTED → UNDER_REVIEW → NEGOTIATING/PROPOSED → ACCEPTED; nhánh từ chối/hủy: REJECTED_BY_BOARD | REJECTED_BY_ORIGINAL_MANGAKA | REJECTED | CANCELLED. Values: SUBMITTED, UNDER_REVIEW, REJECTED_BY_BOARD, NEGOTIATING, REJECTED_BY_ORIGINAL_MANGAKA, PROPOSED, ACCEPTED, REJECTED, CANCELLED, AWAITING_REPLACEMENT_SIGNATURES, AWAITING_TRANSFER_SIGNATURES, COMPLETED"
+          }
+        },
+        "required": [
+          "message",
+          "replacementContractId",
+          "requestStatus"
+        ],
+        "additionalProperties": false
       },
       "CreateTransferContractBodyDto": {
         "type": "object",

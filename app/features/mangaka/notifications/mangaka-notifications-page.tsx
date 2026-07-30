@@ -68,6 +68,12 @@ function mangakaNotificationHref(
     return { href: '/dashboard/mangaka/contracts', translationKey: 'notifications.item.openContract' }
   }
   if (prefix === 'TRANSFER') {
+    if (item.referenceType === 'TRANSFER_REPLACEMENT_CONTRACT_DRAFTED') {
+      return {
+        href: `/dashboard/mangaka/contracts/${id}`,
+        translationKey: 'notifications.item.openContract'
+      }
+    }
     const queryKey =
       item.referenceType.includes('CONTRACT') || item.referenceType.includes('SIGN') ? 'contractId' : 'requestId'
     return { href: `/dashboard/mangaka/transfers?${queryKey}=${id}`, translationKey: 'notifications.item.openTransfer' }

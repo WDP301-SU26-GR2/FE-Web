@@ -1,5 +1,6 @@
 import {
   transferControllerCreateTransferContract,
+  transferControllerGetAssignedEditorRequests,
   transferControllerGetSignatures,
   transferControllerGetTransferContractById,
   transferControllerGetTransferRequestById,
@@ -14,9 +15,20 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
   const requestId = url.searchParams.get('requestId')?.trim() ?? ''
   const requestedContractId = url.searchParams.get('contractId')?.trim() ?? ''
-  if (!requestId && !requestedContractId)
-    return { request: null, contract: null, requestId: '', contractId: '', signatures: [], hasError: false }
+  const status = url.searchParams.get('status')?.trim() ?? ''
   try {
+    const assigned = await transferControllerGetAssignedEditorRequests(status ? { status: status as never } : undefined)
+    if (!requestId && !requestedContractId)
+      return {
+        requests: assigned.data.data,
+        request: null,
+        contract: null,
+        requestId: '',
+        contractId: '',
+        status,
+        signatures: [],
+        hasError: false
+      }
     const response = requestId ? await transferControllerGetTransferRequestById({ id: requestId }) : null
     const transferRequest = response?.status === 200 ? response.data : null
     const contractId = requestedContractId || transferRequest?.transferContractId || ''
@@ -25,19 +37,23 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
     ])
     return {
+      requests: assigned.data.data,
       request: transferRequest,
       contract: contract?.status === 200 ? contract.data : null,
       requestId,
       contractId,
+      status,
       signatures: signatures?.status === 200 ? signatures.data.signatures : [],
       hasError: Boolean(requestId && response?.status !== 200)
     }
   } catch {
     return {
+      requests: [],
       request: null,
       contract: null,
       requestId,
       contractId: requestedContractId,
+      status,
       signatures: [],
       hasError: true
     }
