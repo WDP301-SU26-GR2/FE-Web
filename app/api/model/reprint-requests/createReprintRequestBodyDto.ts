@@ -27,6 +27,7 @@ import type { CreateReprintRequestBodyDtoRevisionMode } from './createReprintReq
 export interface CreateReprintRequestBodyDto {
   /** @minLength 1 */
   seriesId: string;
+  /** Reprint revision mode: AS_IS (giữ nguyên) hoặc WITH_REVISION (được sửa). Values: AS_IS, WITH_REVISION */
   revisionMode: CreateReprintRequestBodyDtoRevisionMode;
   /** @minLength 1 */
   reason: string;

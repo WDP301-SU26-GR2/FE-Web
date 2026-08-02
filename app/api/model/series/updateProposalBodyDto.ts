@@ -25,6 +25,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { UpdateProposalBodyDtoGenresItem } from './updateProposalBodyDtoGenresItem';
 import type { UpdateProposalBodyDtoDemographic } from './updateProposalBodyDtoDemographic';
 import type { UpdateProposalBodyDtoPublicationType } from './updateProposalBodyDtoPublicationType';
+import type { UpdateProposalBodyDtoStoryboardPagesItem } from './updateProposalBodyDtoStoryboardPagesItem';
 
 export interface UpdateProposalBodyDto {
   /**
@@ -63,4 +64,6 @@ export interface UpdateProposalBodyDto {
    * @nullable
    */
   estimatedLength?: number | null;
+  /** @nullable */
+  storyboardPages?: UpdateProposalBodyDtoStoryboardPagesItem[] | null;
 }

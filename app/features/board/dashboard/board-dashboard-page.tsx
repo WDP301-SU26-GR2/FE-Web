@@ -21,18 +21,18 @@ import { SemanticStatusBadge } from '~/shared/components/status-badge'
 import { cn } from '~/shared/lib/cn'
 
 const sections = [
-  ['sessions', UsersRound, 'bg-sky-500/10 text-sky-700 dark:text-sky-300'],
-  ['decisions', ClipboardCheck, 'bg-violet-500/10 text-violet-700 dark:text-violet-300'],
-  ['contracts', FileSignature, 'bg-amber-500/10 text-amber-700 dark:text-amber-300'],
-  ['payments', BadgeDollarSign, 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'],
-  ['deadlines', CalendarClock, 'bg-orange-500/10 text-orange-700 dark:text-orange-300'],
-  ['rankings', ChartNoAxesCombined, 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'],
-  ['reprints', RefreshCcw, 'bg-teal-500/10 text-teal-700 dark:text-teal-300'],
-  ['transfers', Scale, 'bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300'],
-  ['audit', History, 'bg-slate-500/10 text-slate-700 dark:text-slate-300'],
-  ['reference', LibraryBig, 'bg-blue-500/10 text-blue-700 dark:text-blue-300'],
-  ['notifications', Bell, 'bg-rose-500/10 text-rose-700 dark:text-rose-300'],
-  ['profile', UserRoundCog, 'bg-purple-500/10 text-purple-700 dark:text-purple-300']
+  ['sessions', UsersRound, 'bg-info/10 text-info'],
+  ['decisions', ClipboardCheck, 'bg-primary/10 text-primary'],
+  ['contracts', FileSignature, 'bg-warning/10 text-warning'],
+  ['payments', BadgeDollarSign, 'bg-success/10 text-success'],
+  ['deadlines', CalendarClock, 'bg-warning/10 text-warning'],
+  ['rankings', ChartNoAxesCombined, 'bg-info/10 text-info'],
+  ['reprints', RefreshCcw, 'bg-success/10 text-success'],
+  ['transfers', Scale, 'bg-primary/10 text-primary'],
+  ['audit', History, 'bg-muted text-muted-foreground'],
+  ['reference', LibraryBig, 'bg-info/10 text-info'],
+  ['notifications', Bell, 'bg-destructive/10 text-destructive'],
+  ['profile', UserRoundCog, 'bg-primary/10 text-primary']
 ] as const
 
 export function BoardDashboardPage({

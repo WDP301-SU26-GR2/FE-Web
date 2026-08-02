@@ -104,7 +104,7 @@ export function MangakaContractDetailPage({
   const { t, i18n } = useTranslation('mangaka')
   const fetcher = useFetcher<MangakaContractActionResult>()
   const isWorking = fetcher.state !== 'idle'
-  const [requestChangesOpen, setRequestChangesOpen] = useState(false)
+  const [rejectOpen, setRejectOpen] = useState(false)
   const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
 
   return (
@@ -184,7 +184,7 @@ export function MangakaContractDetailPage({
             />
             <Metric
               label={t('contracts.detail.boardSignatureProgress')}
-              value={`${progress.boardProgress.totalSigned}/${progress.boardProgress.totalRequired}`}
+              value={t(progress.representative.signed ? 'contracts.detail.signed' : 'contracts.detail.notSigned')}
             />
           </div>
         )}
@@ -193,32 +193,22 @@ export function MangakaContractDetailPage({
             {t('contracts.detail.progressLoadFailed')}
           </p>
         )}
-        {contract.status === 'MANGAKA_REVIEW' && (
+        {contract.status === 'AWAITING_MANGAKA' && (
           <div className='flex flex-wrap gap-3'>
-            <fetcher.Form method='post'>
-              <button
-                name='intent'
-                value='approve'
-                disabled={isWorking || !conditionsReady}
-                className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
-              >
-                {t('contracts.actions.approveTerms')}
-              </button>
-            </fetcher.Form>
             <button
               type='button'
               disabled={isWorking}
-              onClick={() => setRequestChangesOpen(true)}
-              className='h-10 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:opacity-50'
+              onClick={() => setRejectOpen(true)}
+              className='h-10 rounded-md border border-destructive px-4 text-sm font-bold text-destructive disabled:opacity-50'
             >
-              {t('contracts.actions.requestChanges')}
+              {t('contracts.actions.rejectContract')}
             </button>
           </div>
         )}
-        <div className={contract.status === 'MANGAKA_REVIEW' ? 'mt-5 border-t border-border pt-5' : ''}>
+        <div className={contract.status === 'AWAITING_MANGAKA' ? 'mt-5 border-t border-border pt-5' : ''}>
           <h3 className='text-sm font-bold text-foreground'>{t('contracts.detail.mangakaSignature')}</h3>
           <p className='mt-1 text-xs text-muted-foreground'>
-            {contract.status === 'BOARD_APPROVED'
+            {contract.status === 'AWAITING_MANGAKA'
               ? t('contracts.detail.signatureReady')
               : contract.mangakaSignedAt
                 ? t('contracts.detail.signedAt', {
@@ -231,7 +221,7 @@ export function MangakaContractDetailPage({
               type='submit'
               name='intent'
               value='sendOtp'
-              disabled={isWorking || contract.status !== 'BOARD_APPROVED' || !conditionsReady}
+              disabled={isWorking || contract.status !== 'AWAITING_MANGAKA' || !conditionsReady}
               formNoValidate
               className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
             >
@@ -245,20 +235,20 @@ export function MangakaContractDetailPage({
               maxLength={6}
               placeholder={t('contracts.fields.otpPlaceholder')}
               required
-              disabled={contract.status !== 'BOARD_APPROVED' || !conditionsReady}
+              disabled={contract.status !== 'AWAITING_MANGAKA' || !conditionsReady}
               className={`${inputClass} w-40`}
             />
             <button
               name='intent'
               value='signContract'
-              disabled={isWorking || contract.status !== 'BOARD_APPROVED' || !conditionsReady}
+              disabled={isWorking || contract.status !== 'AWAITING_MANGAKA' || !conditionsReady}
               className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
             >
               {t('contracts.actions.signContract')}
             </button>
           </fetcher.Form>
         </div>
-        {contract.status !== 'MANGAKA_REVIEW' && contract.status !== 'BOARD_APPROVED' && !contract.mangakaSignedAt && (
+        {contract.status !== 'AWAITING_MANGAKA' && !contract.mangakaSignedAt && (
           <p className='text-sm text-muted-foreground'>
             {t(`contracts.detail.statusHints.${contract.status}`, {
               defaultValue: t('contracts.detail.statusHints.default')
@@ -291,21 +281,21 @@ export function MangakaContractDetailPage({
       </Panel>
 
       <Dialog
-        open={requestChangesOpen && contract.status === 'MANGAKA_REVIEW'}
+        open={rejectOpen && contract.status === 'AWAITING_MANGAKA'}
         onClose={() => {
-          if (!isWorking) setRequestChangesOpen(false)
+          if (!isWorking) setRejectOpen(false)
         }}
         titleId='request-contract-changes-title'
         descriptionId='request-contract-changes-description'
-        title={t('contracts.requestChanges.title')}
-        description={t('contracts.requestChanges.description')}
+        title={t('contracts.reject.title')}
+        description={t('contracts.reject.description')}
         size='md'
         footer={
           <div className='flex justify-end gap-2'>
             <button
               type='button'
               disabled={isWorking}
-              onClick={() => setRequestChangesOpen(false)}
+              onClick={() => setRejectOpen(false)}
               className='h-10 rounded-md border border-border px-4 text-sm font-bold text-foreground disabled:opacity-50'
             >
               {t('contracts.actions.cancel')}
@@ -317,15 +307,15 @@ export function MangakaContractDetailPage({
               className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
             >
               {isWorking && <Loader2 className='size-4 animate-spin' />}
-              {t('contracts.actions.submitRequest')}
+              {t('contracts.actions.rejectContract')}
             </button>
           </div>
         }
       >
         <fetcher.Form id='request-contract-changes-form' method='post' className='space-y-2'>
-          <input type='hidden' name='intent' value='requestChanges' />
+          <input type='hidden' name='intent' value='rejectContract' />
           <label htmlFor='contract-change-reason' className='block text-sm font-semibold text-foreground'>
-            {t('contracts.requestChanges.reason')} <span className='text-destructive'>*</span>
+            {t('contracts.reject.reason')} <span className='text-destructive'>*</span>
           </label>
           <textarea
             id='contract-change-reason'
@@ -335,11 +325,11 @@ export function MangakaContractDetailPage({
             maxLength={1000}
             rows={6}
             autoFocus
-            placeholder={t('contracts.requestChanges.placeholder')}
+            placeholder={t('contracts.reject.placeholder')}
             className='w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary'
           />
-          <p className='text-xs text-muted-foreground'>{t('contracts.requestChanges.hint')}</p>
-          {fetcher.state === 'idle' && fetcher.data?.intent === 'requestChanges' && !fetcher.data.ok && (
+          <p className='text-xs text-muted-foreground'>{t('contracts.reject.hint')}</p>
+          {fetcher.state === 'idle' && fetcher.data?.intent === 'rejectContract' && !fetcher.data.ok && (
             <p className='text-xs font-semibold text-destructive'>{fetcher.data.message}</p>
           )}
         </fetcher.Form>

@@ -1,10 +1,12 @@
-import { chapterControllerListPages, chapterControllerProgress } from '~/api/operations/chapters/chapters'
 import {
-  chapterNameControllerGetOne,
-  chapterNameControllerList,
-  nameControllerGetOne,
-  nameControllerList
-} from '~/api/operations/names/names'
+  chapterControllerListBySeries,
+  chapterControllerListPages,
+  chapterControllerProgress
+} from '~/api/operations/chapters/chapters'
+import {
+  chapterStoryboardControllerGetOne,
+  chapterStoryboardControllerList
+} from '~/api/operations/storyboards/storyboards'
 import {
   publicationControllerGetOne,
   publicationControllerList
@@ -24,16 +26,15 @@ import {
 import { tankobonControllerCreate, tankobonControllerDashboard } from '~/api/operations/tankobon/tankobon'
 import { usersControllerListAssistants, usersControllerListMangakas } from '~/api/operations/users/users'
 import { BoardReferencePage, type BoardActionResult } from '~/features/board'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   const search = new URL(request.url).searchParams
   const seriesId = search.get('seriesId')?.trim() ?? ''
-  const seriesNameId = search.get('seriesNameId')?.trim() ?? ''
   const publicationVersionId = search.get('publicationVersionId')?.trim() ?? ''
   const surveyPeriodId = search.get('surveyPeriodId')?.trim() ?? ''
   const chapterId = search.get('chapterId')?.trim() ?? ''
-  const chapterNameId = search.get('chapterNameId')?.trim() ?? ''
+  const storyboardId = search.get('storyboardId')?.trim() ?? ''
 
   const [seriesResponse, periodsResponse, assistants, mangakas, revisions] = await Promise.all([
     settle(seriesControllerListSeries({ limit: 100, offset: 0 })),
@@ -43,17 +44,16 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
     settle(revisionControllerList({ limit: 100, offset: 0 }))
   ])
 
-  const [seriesDetail, defense, seriesNames, seriesName, publicationVersions, publicationVersion, trend] = seriesId
+  const [seriesDetail, defense, publicationVersions, publicationVersion, trend, chapters] = seriesId
     ? await Promise.all([
         settle(seriesControllerGetSeries({ id: seriesId })),
         settle(tankobonControllerDashboard({ id: seriesId })),
-        settle(nameControllerList({ id: seriesId })),
-        seriesNameId ? settle(nameControllerGetOne({ id: seriesId, nameId: seriesNameId })) : null,
         settle(publicationControllerList({ seriesId })),
         publicationVersionId ? settle(publicationControllerGetOne({ id: publicationVersionId })) : null,
-        settle(surveyControllerGetSeriesTrend({ seriesId, periods: 12 }))
+        settle(surveyControllerGetSeriesTrend({ seriesId, periods: 12 })),
+        settle(chapterControllerListBySeries({ seriesId }))
       ])
-    : [null, null, null, null, null, null, null]
+    : [null, null, null, null, null, null]
 
   const [surveyPeriod, rankings, surveyData, readerVotes, boardRanking] = surveyPeriodId
     ? await Promise.all([
@@ -65,10 +65,10 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
       ])
     : [null, null, null, null, null]
 
-  const [chapterNames, chapterName, pages, progress, stages] = chapterId
+  const [storyboards, selectedStoryboard, pages, progress, stages] = chapterId
     ? await Promise.all([
-        settle(chapterNameControllerList({ id: chapterId })),
-        chapterNameId ? settle(chapterNameControllerGetOne({ id: chapterId, nameId: chapterNameId })) : null,
+        settle(chapterStoryboardControllerList({ id: chapterId })),
+        storyboardId ? settle(chapterStoryboardControllerGetOne({ id: chapterId, storyboardId })) : null,
         settle(chapterControllerListPages({ id: chapterId })),
         settle(chapterControllerProgress({ id: chapterId })),
         settle(productionStageControllerList({ id: chapterId }))
@@ -77,21 +77,20 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 
   return {
     series: seriesResponse?.items ?? [],
-    periods: periodsResponse ?? [],
-    selected: { seriesId, seriesNameId, publicationVersionId, surveyPeriodId, chapterId, chapterNameId },
+    periods: periodsResponse?.items ?? [],
+    selected: { seriesId, publicationVersionId, surveyPeriodId, chapterId, storyboardId },
     directories: { assistants, mangakas },
     revisions,
     seriesData: {
       detail: seriesDetail,
       defense,
-      names: seriesNames,
-      selectedName: seriesName,
       publicationVersions,
       selectedPublicationVersion: publicationVersion,
-      rankingTrend: trend
+      rankingTrend: trend,
+      chapters
     },
     surveyData: { period: surveyPeriod, rankings, offlineData: surveyData, readerVotes, boardRanking },
-    chapterData: { chapterNames, chapterSelectedName: chapterName, pages, progress, stages }
+    chapterData: { storyboards, selectedStoryboard, pages, progress, stages }
   }
 }
 
@@ -113,6 +112,7 @@ export async function clientAction({ request }: ClientActionFunctionArgs): Promi
     return {
       ok: false,
       intent,
+      errorCode: extractApiErrorCode(error),
       message: extractApiErrorMessage(error, 'Không thể thực hiện thao tác tham chiếu.')
     }
   }

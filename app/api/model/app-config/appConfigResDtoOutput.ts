@@ -37,12 +37,12 @@ export interface AppConfigResDtoOutput {
    */
   coOwnerApprovalGraceDays: number;
   /**
-   * Maximum name review rounds before loop warning
+   * Maximum storyboard review rounds before loop warning
    * @minimum 0
    * @maximum 9007199254740991
    * @exclusiveMinimum
    */
-  nameMaxReviewRounds: number;
+  storyboardMaxReviewRounds: number;
   /**
    * Minimum reputation score for recommendations
    * @minimum 1
@@ -82,5 +82,11 @@ export interface AppConfigResDtoOutput {
    * @maximum 9007199254740991
    */
   assignmentGraceDays: number;
+  /**
+   * Grace days before unclaimed contract review escalates
+   * @minimum 0
+   * @maximum 9007199254740991
+   */
+  boardRepClaimGraceDays: number;
   updatedAt: string;
 }

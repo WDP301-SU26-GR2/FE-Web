@@ -38,7 +38,7 @@ export function EditorLifecyclePage({
   decisionHistory: BoardDecisionListItemDtoOutput[]
   hasError: boolean
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const [requestedAction, setRequestedAction] = useState<LifecycleAction | ''>('')
   const selectedSeries = series.find((item) => item.id === focusSeriesId)
@@ -85,7 +85,9 @@ export function EditorLifecyclePage({
           <div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
             <Metric
               label={t('operations.lifecycleCurrentStatus')}
-              value={t(`filters.seriesStatuses.${selectedSeries.status}`, { defaultValue: selectedSeries.status })}
+              value={t(`filters.seriesStatuses.${selectedSeries.status}`, {
+                defaultValue: t('common.notAvailable')
+              })}
             />
             {defense && (
               <>
@@ -187,7 +189,7 @@ export function EditorLifecyclePage({
               <div className='rounded-lg border border-primary/20 bg-primary/5 p-3'>
                 <p className='text-xs font-bold text-foreground'>{t('operations.completionProposalRecorded')}</p>
                 <p className='mt-1 text-xs text-muted-foreground'>
-                  {formatHistoryDate(focusSeries.completionProposal.proposedAt)}
+                  {formatHistoryDate(focusSeries.completionProposal.proposedAt, i18n.language)}
                 </p>
                 <p className='mt-2 whitespace-pre-wrap text-xs text-muted-foreground'>
                   {focusSeries.completionProposal.reason}
@@ -208,7 +210,7 @@ export function EditorLifecyclePage({
                         : t('board.decisionType')}
                     </p>
                     <p className='mt-1 text-xs text-muted-foreground'>
-                      {formatHistoryDate(decision.decidedAt ?? decision.createdAt)}
+                      {formatHistoryDate(decision.decidedAt ?? decision.createdAt, i18n.language)}
                     </p>
                   </div>
                   <BoardStatus value={decision.result ?? 'PENDING'} />
@@ -218,7 +220,9 @@ export function EditorLifecyclePage({
             {focusSeries && (
               <div className='rounded-lg border border-border p-3'>
                 <p className='text-xs font-bold text-foreground'>{t('operations.seriesCreated')}</p>
-                <p className='mt-1 text-xs text-muted-foreground'>{formatHistoryDate(focusSeries.createdAt)}</p>
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  {formatHistoryDate(focusSeries.createdAt, i18n.language)}
+                </p>
               </div>
             )}
             {!lifecycleHistory.length && !focusSeries?.completionProposal && !focusSeries && (
@@ -275,8 +279,8 @@ function getLifecycleActionLabel(action: LifecycleAction, t: ReturnType<typeof u
   return t(`actions.${action}`)
 }
 
-function formatHistoryDate(value?: string | null) {
+function formatHistoryDate(value: string | null | undefined, locale: string) {
   if (!value) return '—'
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
 }

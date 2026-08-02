@@ -12,14 +12,13 @@ type RevisionRequestsDrawerProps = {
   open: boolean
   onClose: () => void
   seriesId: string
-  nameId: string | null | undefined
 }
 
 const PAGE_SIZE = 4
 
 const TARGET_LABEL_KEY = {
   PROPOSAL: 'seriesDetail.revisions.target.PROPOSAL',
-  NAME: 'seriesDetail.revisions.target.NAME',
+  STORYBOARD: 'seriesDetail.revisions.target.STORYBOARD',
   MANUSCRIPT: 'seriesDetail.revisions.target.MANUSCRIPT',
   TASK: 'seriesDetail.revisions.target.TASK'
 } as const satisfies Record<RevisionRequestListResDtoOutputItemsItem['targetType'], string>
@@ -39,7 +38,7 @@ function formatDateTime(iso: string, locale: string): string {
  * - Pagination: PAGE_SIZE rounds per page.
  * - Items are intentionally rendered WITHOUT the backend id.
  */
-export function RevisionRequestsDrawer({ open, onClose, seriesId, nameId }: RevisionRequestsDrawerProps) {
+export function RevisionRequestsDrawer({ open, onClose, seriesId }: RevisionRequestsDrawerProps) {
   const { t, i18n } = useTranslation('mangaka')
   const { session } = useAuth()
   const currentUserId = session?.user?.id ?? null
@@ -47,7 +46,7 @@ export function RevisionRequestsDrawer({ open, onClose, seriesId, nameId }: Revi
   const [pendingResolution, setPendingResolution] = useState<RevisionRequestListResDtoOutputItemsItem | null>(null)
 
   const { items, isLoading, error, page, totalPages, setPage, paginatedItems, resolvingId, resolve, refresh } =
-    useRevisionRequestsDrawer(open, seriesId, nameId)
+    useRevisionRequestsDrawer(open, seriesId)
 
   // Lock body scroll + listen for ESC while the drawer is open.
   useEffect(() => {

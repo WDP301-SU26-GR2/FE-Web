@@ -8,7 +8,7 @@ import { cn } from '~/shared/lib/cn'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { seriesControllerCreateProposal } from '~/api/operations/series/series'
-import type { CreateProposalBodyDto, CreateProposalResDtoOutput } from '~/api/model/series'
+import type { CreateProposalBodyDto, SeriesResDtoOutput } from '~/api/model/series'
 import { BasicInfoStep } from './wizard-steps/basic-info-step'
 import { StorySummaryStep } from './wizard-steps/story-summary-step'
 import { CharacterDesignStep } from './wizard-steps/character-design-step'
@@ -212,7 +212,7 @@ export function CreateProposalWizard() {
         estimatedLength: formData.estimatedLength ? Number(formData.estimatedLength) : undefined,
         synopsis: formData.synopsis || undefined,
         characterDesigns: characterKeys.map((c) => c.key),
-        namePages: namePageKeys.map((p, idx) => ({
+        storyboardPages: namePageKeys.map((p, idx) => ({
           pageNumber: p.pageNumber || idx + 1,
           fileUrl: p.key
         }))
@@ -222,7 +222,7 @@ export function CreateProposalWizard() {
 
       // 5) Done — go back to My Series
       toast.success(t('wizard.createSuccess'))
-      navigate(`/dashboard/mangaka/series/${(response.data as CreateProposalResDtoOutput).series.id}`)
+      navigate(`/dashboard/mangaka/series/${(response.data as SeriesResDtoOutput).id}`)
     } catch (err) {
       const fallback = t('wizard.errors.submitFailed')
       const message = extractApiErrorMessage(err, fallback).trim()

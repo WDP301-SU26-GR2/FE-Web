@@ -2,21 +2,25 @@ import {
   reprintRequestControllerBoardApprove,
   reprintRequestControllerAssignReviser,
   reprintRequestControllerFindAll,
-  reprintRequestControllerFindById,
-  reprintRequestControllerGetChapterById,
-  reprintRequestControllerGetChapters
+  reprintRequestControllerFindById
 } from '~/api/operations/reprint-requests/reprint-requests'
+import { AssignReviserBodyDtoReviserType, ReprintRequestResDtoOutputStatus } from '~/api/model/reprint-requests'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { usersControllerListMangakas } from '~/api/operations/users/users'
 import { BoardReprintsPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/reprints'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const searchParams = new URL(request.url).searchParams
   const requestId = searchParams.get('requestId')?.trim() ?? ''
   const seriesId = searchParams.get('seriesId')?.trim() ?? ''
+  const requestedStatus = searchParams.get('status') ?? ''
+  const status = isEnumValue(ReprintRequestResDtoOutputStatus, requestedStatus)
+    ? requestedStatus
+    : ReprintRequestResDtoOutputStatus.PENDING
   if (requestId) {
     try {
       const [response, seriesResponse, contractsResponse, mangakasResponse] = await Promise.all([
@@ -32,41 +36,24 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
         contractTypes: activeContractTypes(contractsResponse.data),
         mangakas: mangakasResponse.data.items,
         hasError: false,
-        seriesId: response.data.seriesId
+        seriesId: response.data.seriesId,
+        status: response.data.status
       }
     } catch {
-      return { requests: [], series: [], contractTypes: {}, mangakas: [], hasError: true, seriesId: '' }
+      return { requests: [], series: [], contractTypes: {}, mangakas: [], hasError: true, seriesId: '', status }
     }
   }
   try {
     const [response, seriesResponse, contractsResponse, mangakasResponse] = await Promise.all([
-      reprintRequestControllerFindAll({
-        status: undefined as unknown as string,
-        seriesId: seriesId || (undefined as unknown as string)
-      }),
+      seriesId ? reprintRequestControllerFindAll({ status, seriesId }) : Promise.resolve(null),
       seriesControllerListSeries({ limit: 100, offset: 0 }),
       contractControllerGetContracts(),
       usersControllerListMangakas({ limit: 100, offset: 0 })
     ])
     const requests = await Promise.all(
-      response.data.map((item) =>
+      (response?.data ?? []).map((item) =>
         reprintRequestControllerFindById({ id: item.id })
-          .then(async (detail) => {
-            const chapters = await reprintRequestControllerGetChapters({ id: item.id }).catch(() => null)
-            if (chapters?.status === 200) {
-              await Promise.all(
-                chapters.data.map((chapter) =>
-                  chapter.originalChapterId
-                    ? reprintRequestControllerGetChapterById({
-                        id: item.id,
-                        chapterId: chapter.originalChapterId
-                      }).catch(() => null)
-                    : null
-                )
-              )
-            }
-            return detail.data
-          })
+          .then((detail) => detail.data)
           .catch(() => null)
       )
     )
@@ -76,10 +63,11 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       contractTypes: activeContractTypes(contractsResponse.data),
       mangakas: mangakasResponse.data.items,
       hasError: false,
-      seriesId
+      seriesId,
+      status
     }
   } catch {
-    return { requests: [], series: [], contractTypes: {}, mangakas: [], hasError: true, seriesId }
+    return { requests: [], series: [], contractTypes: {}, mangakas: [], hasError: true, seriesId, status }
   }
 }
 
@@ -93,11 +81,13 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         { approve: intent === 'approve', reason: String(form.get('reason') ?? '') || undefined }
       )
     } else if (intent === 'assignReviser') {
+      const reviserType = required(form, 'reviserType')
+      if (!isEnumValue(AssignReviserBodyDtoReviserType, reviserType)) return { ok: false, intent }
       await reprintRequestControllerAssignReviser(
         { id: required(form, 'requestId'), chapterId: required(form, 'chapterId') },
         {
           reviserId: required(form, 'reviserId'),
-          reviserType: required(form, 'reviserType') as 'INTERNAL_TEAM' | 'OTHER_MANGAKA'
+          reviserType
         }
       )
     } else return { ok: false, intent }
@@ -108,7 +98,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         intent === 'assignReviser' ? 'reviserAssigned' : intent === 'approve' ? 'reprintApproved' : 'reprintRejected'
     }
   } catch (error) {
-    return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác tái bản.') }
+    return {
+      ok: false,
+      intent,
+      errorCode: extractApiErrorCode(error),
+      message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác tái bản.')
+    }
   }
 }
 

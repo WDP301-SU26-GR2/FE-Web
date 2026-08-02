@@ -10,9 +10,9 @@ import type { SeriesResDtoOutput } from '~/api/model/series'
 import type { DefenseDashboardResDtoOutput } from '~/api/model/tankobon'
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import { BoardDecisionDetailPage, type BoardActionResult } from '~/features/board'
-import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import { loadBoardDecisionDetail } from '../board/decision-detail-loader'
 import type { ClientActionFunctionArgs, ClientLoaderFunctionArgs } from 'react-router'
+import i18n from '~/shared/lib/i18n'
 
 export async function clientLoader({ params }: ClientLoaderFunctionArgs) {
   const id = requiredParam(params.id)
@@ -32,11 +32,7 @@ export async function clientAction({ request, params }: ClientActionFunctionArgs
       const note = String(form.get('content') ?? '').trim()
       const evidenceSections = readEvidenceSections(form)
       if (!note && evidenceSections.length === 0) {
-        return {
-          ok: false,
-          intent,
-          message: 'Hãy chọn ít nhất một nguồn dữ liệu hoặc nhập nhận định biên tập.'
-        }
+        return { ok: false, intent }
       }
       const needsDashboard = evidenceSections.some((section) => section !== 'LIFECYCLE')
       const [series, defense] = await Promise.all([
@@ -47,19 +43,16 @@ export async function clientAction({ request, params }: ClientActionFunctionArgs
       ])
       if (series.status !== 200) return { ok: false, intent }
       if (needsDashboard && defense?.status !== 200) {
-        return {
-          ok: false,
-          intent,
-          message: 'Không thể tải dữ liệu đã chọn. Vui lòng thử lại để báo cáo không lưu snapshot thiếu.'
-        }
+        return { ok: false, intent }
       }
       const reportContent = buildReportContent(
         evidenceSections,
         note,
         series.data,
-        defense?.status === 200 ? defense.data : null
+        defense?.status === 200 ? defense.data : null,
+        String(form.get('reportLocale')) === 'en' ? 'en' : 'vi'
       )
-      const response = await boardControllerCreateSeriesReport({
+      await boardControllerCreateSeriesReport({
         seriesId: decision.data.targetSeriesId,
         boardDecisionId: id,
         reportType: requiredValue(form, 'reportType'),
@@ -72,8 +65,7 @@ export async function clientAction({ request, params }: ClientActionFunctionArgs
       return {
         ok: true,
         intent,
-        messageKey: 'reportCreated',
-        message: extractApiSuccessMessage(response, 'Đã thêm báo cáo vào quyết định.')
+        messageKey: 'reportCreated'
       }
     }
     if (intent !== 'vote') return { ok: false, intent }
@@ -90,12 +82,8 @@ export async function clientAction({ request, params }: ClientActionFunctionArgs
       }
     )
     return { ok: true, intent, messageKey: 'voteSubmitted' }
-  } catch (error) {
-    return {
-      ok: false,
-      intent,
-      message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác với quyết định.')
-    }
+  } catch {
+    return { ok: false, intent }
   }
 }
 
@@ -161,19 +149,49 @@ function buildReportContent(
   sections: EvidenceSection[],
   note: string,
   series: SeriesResDtoOutput,
-  defense: DefenseDashboardResDtoOutput | null
+  defense: DefenseDashboardResDtoOutput | null,
+  locale: 'en' | 'vi'
 ) {
-  const blocks = [`[Snapshot dữ liệu hệ thống · ${new Date().toISOString()}]`, `Series: ${series.title}`]
+  const t = i18n.getFixedT(locale, 'editor')
+  const labels = {
+    snapshot: t('board.reportSnapshot.snapshot'),
+    series: t('board.reportSnapshot.series'),
+    lifecycle: t('board.reportSnapshot.lifecycle'),
+    currentStatus: t('board.reportSnapshot.currentStatus'),
+    latestReason: t('board.reportSnapshot.latestReason'),
+    none: t('board.reportSnapshot.none'),
+    cadence: t('board.reportSnapshot.cadence'),
+    magazine: t('board.reportSnapshot.magazine'),
+    startIssue: t('board.reportSnapshot.startIssue'),
+    notAvailable: t('board.reportSnapshot.notAvailable'),
+    serialization: t('board.reportSnapshot.serialization'),
+    publishedChapters: t('board.reportSnapshot.publishedChapters'),
+    serializedSince: t('board.reportSnapshot.serializedSince'),
+    volume: t('board.reportSnapshot.volume'),
+    units: t('board.reportSnapshot.units'),
+    sales: t('board.reportSnapshot.sales'),
+    totalUnits: t('board.reportSnapshot.totalUnits'),
+    volumeCount: t('board.reportSnapshot.volumeCount'),
+    recentVolumes: t('board.reportSnapshot.recentVolumes'),
+    rank: t('board.reportSnapshot.rank'),
+    votes: t('board.reportSnapshot.votes'),
+    change: t('board.reportSnapshot.change'),
+    risk: t('board.reportSnapshot.risk'),
+    ranking: t('board.reportSnapshot.ranking'),
+    editorialAnalysis: t('board.reportSnapshot.editorialAnalysis')
+  }
+  const missing = labels.notAvailable
+  const blocks = [`[${labels.snapshot} · ${new Date().toISOString()}]`, `${labels.series}: ${series.title}`]
 
   if (sections.includes('LIFECYCLE')) {
     blocks.push(
       [
-        '## Trạng thái vòng đời',
-        `- Trạng thái hiện tại: ${series.status}`,
-        `- Lý do trạng thái gần nhất: ${series.statusReason || 'Không có'}`,
-        `- Nhịp phát hành: ${series.publicationType || 'Chưa xác định'}`,
-        `- Tạp chí: ${series.magazine || 'Chưa xác định'}`,
-        `- Số kỳ bắt đầu: ${series.startIssueNumber ?? 'Chưa xác định'}`
+        `## ${labels.lifecycle}`,
+        `- ${labels.currentStatus}: ${series.status}`,
+        `- ${labels.latestReason}: ${series.statusReason || labels.none}`,
+        `- ${labels.cadence}: ${series.publicationType || missing}`,
+        `- ${labels.magazine}: ${series.magazine || missing}`,
+        `- ${labels.startIssue}: ${series.startIssueNumber ?? missing}`
       ].join('\n')
     )
   }
@@ -182,27 +200,29 @@ function buildReportContent(
     blocks.push(
       defense
         ? [
-            '## Tiến độ xuất bản',
-            `- Số chương đã xuất bản: ${defense.serialization.chaptersPublished}`,
-            `- Bắt đầu đăng dài kỳ: ${defense.serialization.serializedSince || 'Chưa có dữ liệu'}`
+            `## ${labels.serialization}`,
+            `- ${labels.publishedChapters}: ${defense.serialization.chaptersPublished}`,
+            `- ${labels.serializedSince}: ${defense.serialization.serializedSince || missing}`
           ].join('\n')
-        : '## Tiến độ xuất bản\n- Dữ liệu hiện không khả dụng'
+        : `## ${labels.serialization}\n- ${missing}`
     )
   }
 
   if (sections.includes('SALES')) {
     const recentVolumes = defense?.tankobon.volumes
       .slice(-5)
-      .map((volume) => `- Tập ${volume.volumeNumber}: ${volume.unitsSold} bản (${volume.period})`)
+      .map(
+        (volume) => `- ${labels.volume} ${volume.volumeNumber}: ${volume.unitsSold} ${labels.units} (${volume.period})`
+      )
     blocks.push(
       defense
         ? [
-            '## Doanh số tankobon',
-            `- Tổng số bản bán: ${defense.tankobon.totalUnitsSold}`,
-            `- Số tập có dữ liệu: ${defense.tankobon.volumes.length}`,
-            ...(recentVolumes?.length ? ['- Các tập gần nhất:', ...recentVolumes] : [])
+            `## ${labels.sales}`,
+            `- ${labels.totalUnits}: ${defense.tankobon.totalUnitsSold}`,
+            `- ${labels.volumeCount}: ${defense.tankobon.volumes.length}`,
+            ...(recentVolumes?.length ? [`- ${labels.recentVolumes}:`, ...recentVolumes] : [])
           ].join('\n')
-        : '## Doanh số tankobon\n- Dữ liệu hiện không khả dụng'
+        : `## ${labels.sales}\n- ${missing}`
     )
   }
 
@@ -211,17 +231,13 @@ function buildReportContent(
       .slice(-5)
       .map(
         (item) =>
-          `- ${item.recordedAt}: hạng ${item.rankPosition ?? '—'}, ${item.voteCount} phiếu, thay đổi ${
-            item.rankChange ?? '—'
-          }, rủi ro ${item.riskLevel}`
+          `- ${item.recordedAt}: ${labels.rank} ${item.rankPosition ?? '—'}, ${item.voteCount} ${labels.votes}, ${labels.change} ${item.rankChange ?? '—'}, ${labels.risk} ${item.riskLevel}`
       )
     blocks.push(
-      rankingLines?.length
-        ? ['## Xếp hạng và rủi ro', ...rankingLines].join('\n')
-        : '## Xếp hạng và rủi ro\n- Dữ liệu hiện không khả dụng'
+      rankingLines?.length ? [`## ${labels.ranking}`, ...rankingLines].join('\n') : `## ${labels.ranking}\n- ${missing}`
     )
   }
 
-  if (note) blocks.push(`## Nhận định biên tập\n${note}`)
+  if (note) blocks.push(`## ${labels.editorialAnalysis}\n${note}`)
   return blocks.join('\n\n').slice(0, 5000)
 }

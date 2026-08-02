@@ -25,10 +25,9 @@ import {
   SeriesResDtoOutputStatus as SeriesStatusEnum
 } from '~/api/model/series'
 import type { SeriesResDtoOutput } from '~/api/model/series'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 
-import { useSeriesDetail } from './use-series-detail'
+import { useSeriesDetail, type ProposalStoryboardView } from './use-series-detail'
 import { useSubmitSeries } from './use-submit-series'
 import { useProposalActions } from './use-proposal-actions'
 import { useProposalRevisions } from './use-proposal-revisions'
@@ -169,7 +168,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const { series, names, isLoading, error, notFound, refresh } = useSeriesDetail(seriesId)
   const { session } = useAuth()
   const { submit, isSubmitting } = useSubmitSeries()
-  const { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen } = useProposalActions()
+  const { activeAction, deleteDraft, withdraw, resubmitProposal, reopen } = useProposalActions()
   const {
     activeAction: activeLifecycleAction,
     updateMetadata,
@@ -212,19 +211,14 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
 
   // Edit is available to the owner while the proposal is editable per §6.1:
   // series DRAFT, OR proposal PROPOSAL_REVISION. BE also enforces (409).
-  const proposalName = useMemo(
-    () => names.find((name) => name.id === proposal?.nameId) ?? names.find((name) => name.kind === 'PROPOSAL') ?? null,
-    [names, proposal?.nameId]
-  )
-  const { revisions, refreshRevisions } = useProposalRevisions(seriesId, proposalName?.id)
+  const proposalName = useMemo(() => names.find((name) => name.kind === 'PROPOSAL') ?? null, [names])
+  const { revisions, refreshRevisions } = useProposalRevisions(seriesId)
   const canSubmit = canPrepareSubmit && !!proposalName && proposalName.pages.length > 0
 
   const canEdit =
     !!session?.user?.id &&
     session.user.id === series?.mangakaId &&
-    (series?.status === SeriesStatusEnum.DRAFT ||
-      proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION ||
-      proposalName?.status === 'REVISION')
+    (series?.status === SeriesStatusEnum.DRAFT || proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION)
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
   const { isOriginalMangaka, isLoading: isFranchiseEligibilityLoading } = useFranchiseConsentEligibility(
@@ -249,7 +243,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   // Per Spec 22: at ABANDONED/WITHDRAWN Mangaka can "Nộp lại" (reopen → DRAFT, back to queue).
   const canReopen = isOwner && ['ABANDONED', 'WITHDRAWN'].includes(series?.status ?? '')
   const canResubmitProposal = isOwner && proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION
-  const canResubmitName = isOwner && proposalName?.status === 'REVISION'
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
   const nextChapterNumber = useMemo(() => {
     if (chapters.length === 0) return 1
@@ -414,22 +407,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     {t('seriesDetail.actions.resubmitProposal.button')}
                   </button>
                 )}
-                {canResubmitName && proposalName && (
-                  <button
-                    type='button'
-                    disabled={activeAction !== null}
-                    onClick={async () => {
-                      if (await resubmitName(series.id, proposalName.id)) {
-                        refresh()
-                        refreshRevisions()
-                      }
-                    }}
-                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
-                  >
-                    <RefreshCw className={cn('h-3.5 w-3.5', activeAction === 'resubmitName' && 'animate-spin')} />
-                    {t('seriesDetail.actions.resubmitName.button')}
-                  </button>
-                )}
                 {isOwner && revisions.length > 0 && (
                   <button
                     type='button'
@@ -504,19 +481,11 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             <div className='grid grid-cols-1 gap-3 rounded-lg border border-border bg-background/40 p-3 text-sm sm:grid-cols-2 lg:grid-cols-3'>
               <MetaItem
                 label={t('seriesDetail.demographic')}
-                value={
-                  series.demographic
-                    ? translateDemographic(series.demographic, t)
-                    : '—'
-                }
+                value={series.demographic ? translateDemographic(series.demographic, t) : '—'}
               />
               <MetaItem
                 label={t('seriesDetail.publicationType')}
-                value={
-                  series.publicationType
-                    ? translatePublicationType(series.publicationType, t)
-                    : '—'
-                }
+                value={series.publicationType ? translatePublicationType(series.publicationType, t) : '—'}
               />
               <MetaItem
                 label={t('seriesDetail.editor')}
@@ -833,7 +802,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         open={revisionDrawerOpen}
         onClose={() => setRevisionDrawerOpen(false)}
         seriesId={series.id}
-        nameId={proposalName?.id ?? null}
       />
     </div>
   )
@@ -963,7 +931,7 @@ function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
 }
 
 type NamesBodyProps = {
-  names: NameListResDtoOutputItemsItem[]
+  names: ProposalStoryboardView[]
   locale: string
   /** Open the carousel viewer for a given Name's pages at a given page index. */
   onOpen: (items: ImageCarouselItem[], startIndex: number) => void
@@ -1057,7 +1025,7 @@ function SampleNameRow({
   locale,
   onOpen
 }: {
-  name: NameListResDtoOutputItemsItem
+  name: ProposalStoryboardView
   locale: string
   onOpen: (items: ImageCarouselItem[], startIndex: number) => void
 }) {
@@ -1095,7 +1063,7 @@ function SampleNameRow({
             meta.className
           )}
         >
-          {translateNameStatus(name.status, t)}
+          {translateProposalStatus(name.status, t)}
         </span>
       </div>
 

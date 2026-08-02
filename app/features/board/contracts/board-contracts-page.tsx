@@ -1,11 +1,17 @@
 import { Link } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ContractResDtoOutput } from '~/api/model/contracts'
+import { ContractListItemDtoOutputContractType, type ContractListItemDtoOutput } from '~/api/model/contracts'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
-export function BoardContractsPage({ contracts, hasError }: { contracts: ContractResDtoOutput[]; hasError: boolean }) {
-  const { t } = useTranslation('board')
+export function BoardContractsPage({
+  contracts,
+  hasError
+}: {
+  contracts: ContractListItemDtoOutput[]
+  hasError: boolean
+}) {
+  const { t, i18n } = useTranslation('board')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [contractType, setContractType] = useState('')
@@ -32,13 +38,13 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
           <option value=''>{t('filters.allContractStatuses')}</option>
           {statuses.map((value) => (
             <option key={value} value={value}>
-              {t(`filters.contractStatuses.${value}`, { defaultValue: value })}
+              {t(`filters.contractStatuses.${value}`, { defaultValue: t('common.notAvailable') })}
             </option>
           ))}
         </select>
         <select className={boardInput} value={contractType} onChange={(event) => setContractType(event.target.value)}>
           <option value=''>{t('filters.allContractTypes')}</option>
-          {['FULL_BUYOUT', 'REVENUE_SHARE'].map((value) => (
+          {Object.values(ContractListItemDtoOutputContractType).map((value) => (
             <option key={value} value={value}>
               {t(`filters.contractTypes.${value}`)}
             </option>
@@ -57,9 +63,11 @@ export function BoardContractsPage({ contracts, hasError }: { contracts: Contrac
               <StatusBadge value={contract.status} />
             </div>
             <p className='mt-2 text-xs text-muted-foreground'>
-              {t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
+              {t(`filters.contractTypes.${contract.contractType}`, { defaultValue: t('common.notAvailable') })}
             </p>
-            <p className='mt-3 text-xs font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
+            <p className='mt-3 text-xs font-bold'>
+              {new Intl.NumberFormat(i18n.language).format(contract.valuationAmount ?? 0)}
+            </p>
           </Link>
         ))}
       </div>

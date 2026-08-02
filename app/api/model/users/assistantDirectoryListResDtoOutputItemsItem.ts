@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { AssistantDirectoryListResDtoOutputItemsItemSpecializationsItem } from './assistantDirectoryListResDtoOutputItemsItemSpecializationsItem';
+import type { AssistantDirectoryListResDtoOutputItemsItemExperienceLevel } from './assistantDirectoryListResDtoOutputItemsItemExperienceLevel';
 import type { AssistantDirectoryListResDtoOutputItemsItemAvailabilityStatus } from './assistantDirectoryListResDtoOutputItemsItemAvailabilityStatus';
 
 export type AssistantDirectoryListResDtoOutputItemsItem = {
@@ -32,8 +33,11 @@ export type AssistantDirectoryListResDtoOutputItemsItem = {
   /** @nullable */
   avatar: string | null;
   specializations: AssistantDirectoryListResDtoOutputItemsItemSpecializationsItem[];
-  /** @nullable */
-  experienceLevel: string | null;
+  /**
+   * Mức kinh nghiệm hồ sơ: JUNIOR, MID, SENIOR. Values: JUNIOR, MID, SENIOR
+   * @nullable
+   */
+  experienceLevel: AssistantDirectoryListResDtoOutputItemsItemExperienceLevel;
   portfolioFiles: string[];
   /**
    * Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE. Values: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE

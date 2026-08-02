@@ -8,17 +8,15 @@ import {
   seriesControllerReopen,
   seriesControllerWithdraw
 } from '~/api/operations/series/series'
-import { nameControllerResubmit } from '~/api/operations/names/names'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
-type ProposalAction = 'delete' | 'withdraw' | 'resubmitProposal' | 'resubmitName' | 'reopen'
+type ProposalAction = 'delete' | 'withdraw' | 'resubmitProposal' | 'reopen'
 
 type UseProposalActionsResult = {
   activeAction: ProposalAction | null
   deleteDraft: (seriesId: string) => Promise<boolean>
   withdraw: (seriesId: string, reason: string) => Promise<boolean>
   resubmitProposal: (seriesId: string) => Promise<boolean>
-  resubmitName: (seriesId: string, nameId: string) => Promise<boolean>
   reopen: (seriesId: string) => Promise<boolean>
 }
 
@@ -71,12 +69,7 @@ export function useProposalActions(): UseProposalActionsResult {
     [run]
   )
 
-  const resubmitName = useCallback(
-    (seriesId: string, nameId: string) => run('resubmitName', () => nameControllerResubmit({ id: seriesId, nameId })),
-    [run]
-  )
-
   const reopen = useCallback((seriesId: string) => run('reopen', () => seriesControllerReopen({ id: seriesId })), [run])
 
-  return { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen }
+  return { activeAction, deleteDraft, withdraw, resubmitProposal, reopen }
 }

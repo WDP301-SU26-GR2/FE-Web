@@ -27,11 +27,11 @@ import type { RevisionControllerListIsResolved } from './revisionControllerListI
 
 export type RevisionControllerListParams = {
 /**
- * Đối tượng của vòng yêu cầu sửa: PROPOSAL, NAME, MANUSCRIPT, TASK. Values: PROPOSAL, NAME, MANUSCRIPT, TASK
+ * Đối tượng của vòng yêu cầu sửa: PROPOSAL, STORYBOARD, MANUSCRIPT, TASK. Values: PROPOSAL, STORYBOARD, MANUSCRIPT, TASK
  */
 targetType?: RevisionControllerListTargetType;
 /**
- * seriesId | nameId | chapterId | taskId theo targetType
+ * seriesId | storyboardId | chapterId | taskId theo targetType
  */
 targetId?: string;
 /**

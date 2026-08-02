@@ -176,8 +176,7 @@ export function SeriesSelect({
       <option value=''>{t('operations.selectSeries')}</option>
       {series.map((item) => (
         <option key={item.id} value={item.id}>
-          {item.title} ·{' '}
-          {t(`filters.seriesStatuses.${item.status}`, { defaultValue: item.status.replaceAll('_', ' ') })}
+          {item.title} · {t(`filters.seriesStatuses.${item.status}`, { defaultValue: t('common.notAvailable') })}
         </option>
       ))}
     </select>
@@ -218,24 +217,23 @@ function getActionVisual(intent: string, destructive?: boolean): { icon: LucideI
   if (/(approve|finalize|complete|pay)/.test(value)) {
     return {
       icon: CheckCircle2,
-      className:
-        'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-500 dark:text-emerald-950'
+      className: 'border-success bg-success text-success-foreground hover:opacity-90'
     }
   }
   if (/(start|open|resume)/.test(value)) {
     return {
       icon: Play,
-      className: 'border-sky-600 bg-sky-600 text-white hover:bg-sky-700 dark:border-sky-500 dark:bg-sky-500'
+      className: 'border-info bg-info text-info-foreground hover:opacity-90'
     }
   }
   if (/(revision|reopen|return)/.test(value)) {
     return {
       icon: RotateCcw,
-      className: 'border-amber-500/40 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:text-amber-300'
+      className: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/20'
     }
   }
   if (/(import|upload)/.test(value)) {
-    return { icon: Upload, className: 'border-violet-600 bg-violet-600 text-white hover:bg-violet-700' }
+    return { icon: Upload, className: 'border-secondary bg-secondary text-secondary-foreground hover:opacity-90' }
   }
   if (/(create|add)/.test(value)) {
     return { icon: Plus, className: 'border-primary bg-primary text-primary-foreground hover:opacity-90' }
@@ -255,8 +253,8 @@ export function OperationFeedback({ data }: { data?: EditorActionResult }) {
     if (!data || lastData.current === data) return
     lastData.current = data
     const message = data.ok
-      ? data.message || t(`messages.${data.messageKey ?? 'operationCompleted'}`)
-      : data.message || t(`errors.${data.errorKey ?? 'actionFailed'}`)
+      ? t(`messages.${data.messageKey ?? 'operationCompleted'}`)
+      : t(`errors.${data.errorKey ?? 'actionFailed'}`)
     const id = `editor-operation-${data.intent}-${data.ok ? 'success' : 'error'}-${data.messageKey ?? data.errorKey ?? ''}`
     if (data.ok) {
       toast.success(message, { id })

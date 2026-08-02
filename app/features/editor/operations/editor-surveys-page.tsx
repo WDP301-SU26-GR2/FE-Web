@@ -20,6 +20,7 @@ import type {
   RankingRecordListResDtoOutputItemsItem,
   ReaderVoteListItemDtoOutput,
   SurveyDataResDtoOutput,
+  SurveyPeriodListResDtoOutputItemsItem,
   SurveyPeriodResDtoOutput
 } from '~/api/model/survey'
 import {
@@ -57,7 +58,7 @@ export function EditorSurveysPage({
 }: {
   series: PublicSeriesListResDtoOutputItemsItem[]
   eligibleSeriesCandidates: PublicSeriesListResDtoOutputItemsItem[]
-  surveys: SurveyPeriodResDtoOutput[]
+  surveys: SurveyPeriodListResDtoOutputItemsItem[]
   selectedSurvey: SurveyPeriodResDtoOutput | null
   selectedSurveyId: string
   votes: ReaderVoteListItemDtoOutput[]
@@ -758,7 +759,7 @@ function OnlineVotes({
       </table>
       {!votes.length && <EmptySurveyData text={t('operations.emptyOnlineVotes')} />}
       {flaggedVotes > 0 && (
-        <p className='mt-3 text-xs font-bold text-amber-700'>
+        <p className='mt-3 text-xs font-bold text-warning'>
           {t('operations.flaggedVoteCount', { count: flaggedVotes })}
         </p>
       )}
@@ -862,7 +863,7 @@ function RankingResults({
         </article>
       ))}
       {!reflected && rankings.length > 0 && (
-        <p className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-semibold text-amber-800 dark:text-amber-200'>
+        <p className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs font-semibold text-warning'>
           {t('operations.provisionalRankingNotice')}
         </p>
       )}
@@ -934,7 +935,7 @@ function SurveyWorkflow({ status }: { status: SurveyPeriodResDtoOutput['status']
                 current
                   ? 'border-primary bg-primary/10 text-primary'
                   : complete
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700'
+                    ? 'border-success/30 bg-success/10 text-success'
                     : 'border-border text-muted-foreground'
               }`}
             >

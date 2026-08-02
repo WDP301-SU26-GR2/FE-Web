@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { PublicationVersionListResDtoOutputItemsItemReadingDirection } from './publicationVersionListResDtoOutputItemsItemReadingDirection';
+import type { PublicationVersionListResDtoOutputItemsItemVersionType } from './publicationVersionListResDtoOutputItemsItemVersionType';
 
 export type PublicationVersionListResDtoOutputItemsItem = {
   id: string;
@@ -31,10 +32,10 @@ export type PublicationVersionListResDtoOutputItemsItem = {
   /** Reading direction: RTL (right-to-left, manga gốc) | LTR (left-to-right, bản dịch phương Tây). Values: RTL, LTR */
   readingDirection: PublicationVersionListResDtoOutputItemsItemReadingDirection;
   /**
-   * ORIGINAL | DIGITAL | FLIPPED (hoặc null nếu không set)
+   * Loại phiên bản phát hành: ORIGINAL, DIGITAL hoặc FLIPPED. Values: ORIGINAL, DIGITAL, FLIPPED
    * @nullable
    */
-  versionType: string | null;
+  versionType: PublicationVersionListResDtoOutputItemsItemVersionType;
   /** @nullable */
   notes: string | null;
   /** ISO 8601 */

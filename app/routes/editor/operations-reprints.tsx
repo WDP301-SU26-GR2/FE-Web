@@ -3,9 +3,7 @@ import {
   reprintRequestControllerAssignReviser,
   reprintRequestControllerCreate,
   reprintRequestControllerFindAll,
-  reprintRequestControllerFindById,
-  reprintRequestControllerGetChapterById,
-  reprintRequestControllerGetChapters
+  reprintRequestControllerFindById
 } from '~/api/operations/reprint-requests/reprint-requests'
 import { usersControllerListMangakas } from '~/api/operations/users/users'
 import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
@@ -13,7 +11,8 @@ import { contractControllerGetContracts } from '~/api/operations/contracts/contr
 import { EditorReprintsPage, type EditorActionResult } from '~/features/editor'
 import { loadOperationalSeries, required } from './operations-route-utils'
 import type { Route } from './+types/operations-reprints'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { AssignReviserBodyDtoReviserType, CreateReprintRequestBodyDtoRevisionMode } from '~/api/model/reprint-requests'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusRequestId = new URL(request.url).searchParams.get('requestId') ?? ''
@@ -23,37 +22,11 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       usersControllerListMangakas({ limit: 100, offset: 0 }),
       contractControllerGetContracts()
     ])
-    const responses = await Promise.all(
-      series.map((item) =>
-        reprintRequestControllerFindAll({
-          status: undefined as unknown as string,
-          seriesId: item.id
-        })
-      )
-    )
-    const reprintList = Array.from(
-      new Map(responses.flatMap((response) => response.data).map((item) => [item.id, item])).values()
-    )
+    const reprintResponse = await listAllReprints()
+    const reprintList = reprintResponse.data
     const reprints = await Promise.all(
       reprintList.map(async (item) => {
-        const [detail, chapters] = await Promise.all([
-          reprintRequestControllerFindById({ id: item.id }).catch(() => null),
-          reprintRequestControllerGetChapters({ id: item.id }).catch(() => null)
-        ])
-        if (chapters?.status === 200) {
-          await Promise.all(
-            chapters.data.flatMap((chapter) =>
-              chapter.originalChapterId
-                ? [
-                    reprintRequestControllerGetChapterById({
-                      id: item.id,
-                      chapterId: chapter.originalChapterId
-                    }).catch(() => null)
-                  ]
-                : []
-            )
-          )
-        }
+        const detail = await reprintRequestControllerFindById({ id: item.id }).catch(() => null)
         return detail?.status === 200 ? detail.data : null
       })
     )
@@ -92,9 +65,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         chapterRangeEnd < chapterRangeStart
       )
         return { ok: false, intent, errorKey: 'invalidChapterRange' }
+      const revisionMode = required(form, 'revisionMode')
+      if (!isEnumValue(CreateReprintRequestBodyDtoRevisionMode, revisionMode))
+        return { ok: false, intent, errorKey: 'invalidAction' }
       await reprintRequestControllerCreate({
         seriesId: required(form, 'seriesId'),
-        revisionMode: required(form, 'revisionMode') as 'AS_IS' | 'WITH_REVISION',
+        revisionMode,
         reason: required(form, 'reason'),
         chapterRangeStart,
         chapterRangeEnd
@@ -104,19 +80,30 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         { id: required(form, 'reprintId'), chapterId: required(form, 'reprintChapterId') },
         { originalChapterId: required(form, 'reprintChapterId'), approve: intent === 'approveReprintChapter' }
       )
-    else if (intent === 'assignReviser')
+    else if (intent === 'assignReviser') {
+      const reviserType = required(form, 'reviserType')
+      if (!isEnumValue(AssignReviserBodyDtoReviserType, reviserType))
+        return { ok: false, intent, errorKey: 'invalidAction' }
       await reprintRequestControllerAssignReviser(
         { id: required(form, 'reprintId'), chapterId: required(form, 'reprintChapterId') },
         {
           reviserId: required(form, 'reviserId'),
-          reviserType: required(form, 'reviserType') as 'INTERNAL_TEAM' | 'OTHER_MANGAKA'
+          reviserType
         }
       )
-    else return { ok: false, intent, errorKey: 'invalidAction' }
+    } else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
-  } catch (error) {
-    return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác tái bản.') }
+  } catch {
+    return { ok: false, intent, errorKey: 'actionFailed' }
   }
+}
+
+function listAllReprints() {
+  // Swagger currently marks both filters as required although the endpoint and URL builder allow them to be omitted.
+  return reprintRequestControllerFindAll({
+    status: undefined as unknown as string,
+    seriesId: undefined as unknown as string
+  })
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

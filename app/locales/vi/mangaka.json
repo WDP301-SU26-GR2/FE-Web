@@ -218,7 +218,13 @@
       "search": "Tên hoặc bút danh",
       "searchPlaceholder": "Tìm Mangaka",
       "level": "Cấp độ kinh nghiệm",
-      "levelPlaceholder": "Ví dụ: cao cấp",
+      "levelPlaceholder": "Chọn cấp độ kinh nghiệm",
+      "allLevels": "Tất cả cấp độ kinh nghiệm",
+      "levels": {
+        "JUNIOR": "Sơ cấp",
+        "MID": "Trung cấp",
+        "SENIOR": "Cao cấp"
+      },
       "genre": "Thể loại",
       "allGenres": "Tất cả thể loại"
     },
@@ -626,7 +632,7 @@
       "openDrawer": "Xem yêu cầu chỉnh sửa",
       "target": {
         "PROPOSAL": "Proposal",
-        "NAME": "Name mẫu",
+        "STORYBOARD": "Bản phác thảo mẫu",
         "MANUSCRIPT": "Manuscript",
         "TASK": "Task"
       },
@@ -2511,25 +2517,25 @@
       "mangakaSignature": "Chữ ký Mangaka",
       "signed": "Đã ký",
       "notSigned": "Chưa ký",
-      "boardSignatureProgress": "Tiến độ chữ ký Hội đồng",
+      "boardSignatureProgress": "Chữ ký đại diện Hội đồng",
       "progressLoadFailed": "Không thể tải tiến độ chữ ký mới nhất. Hãy tải lại trang trước khi tiếp tục nếu cần đối chiếu chữ ký.",
-      "signatureReady": "Hội đồng đã phê duyệt. Hãy nhận OTP và ký hợp đồng.",
+      "signatureReady": "Đại diện Hội đồng đã ký. Hãy nhận OTP, sau đó chấp nhận và ký hợp đồng.",
       "signedAt": "Đã ký lúc {{date}}.",
-      "signatureLocked": "Chỉ mở sau khi Mangaka đồng ý điều khoản và Hội đồng phê duyệt.",
+      "signatureLocked": "Chỉ có thể ký sau khi đại diện Hội đồng ký hợp đồng.",
       "amendmentsEmpty": "Chưa có phụ lục.",
       "amendmentFallback": "Phụ lục hợp đồng",
       "statusHints": {
         "DRAFT": "Editor đang hoàn thiện điều khoản hợp đồng.",
-        "NEGOTIATION": "Editor đang hoàn thiện điều khoản hợp đồng.",
-        "MANGAKA_APPROVED": "Đã đồng ý điều khoản, đang chờ Hội đồng phê duyệt.",
-        "MANGAKA_SIGNED": "Bạn đã ký, đang chờ Hội đồng hoàn tất chữ ký.",
+        "BOARD_REVIEW": "Hội đồng đang xem xét hợp đồng và chọn một người đại diện.",
+        "AWAITING_MANGAKA": "Hợp đồng đang chờ bạn chấp nhận hoặc từ chối.",
+        "REJECTED_BY_MANGAKA": "Bạn đã từ chối hợp đồng này. Biên tập viên có thể soạn một bản mới.",
         "FULLY_EXECUTED": "Hợp đồng đã được ký đầy đủ và có hiệu lực.",
         "default": "Hợp đồng hiện không cần thao tác từ bạn."
       }
     },
     "actions": {
       "approveTerms": "Đồng ý điều khoản",
-      "requestChanges": "Yêu cầu chỉnh sửa",
+      "rejectContract": "Từ chối hợp đồng",
       "sendOtp": "Gửi mã OTP",
       "sendOtpShort": "Gửi OTP",
       "signContract": "Ký hợp đồng",
@@ -2543,6 +2549,13 @@
       "description": "Nêu rõ điều khoản cần Editor xem xét và cập nhật.",
       "reason": "Lý do chỉnh sửa",
       "placeholder": "Ví dụ: Đề nghị điều chỉnh tỷ lệ sở hữu và làm rõ điều khoản chấm dứt hợp đồng.",
+      "hint": "Bắt buộc, tối đa 1000 ký tự."
+    },
+    "reject": {
+      "title": "Từ chối hợp đồng",
+      "description": "Việc từ chối là kết thúc đối với hợp đồng này. Biên tập viên phải soạn bản mới nếu tiếp tục thương lượng.",
+      "reason": "Lý do từ chối",
+      "placeholder": "Nêu rõ lý do bạn không thể chấp nhận hợp đồng này.",
       "hint": "Bắt buộc, tối đa 1000 ký tự."
     },
     "amendment": {

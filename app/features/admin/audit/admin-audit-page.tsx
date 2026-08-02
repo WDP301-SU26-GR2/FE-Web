@@ -91,7 +91,7 @@ export function AdminAuditPage({
             <option value=''>{t('audit.filters.allEntities')}</option>
             {ENTITY_TYPES.map((type) => (
               <option key={type} value={type}>
-                {t(`audit.entityTypes.${type}`, { defaultValue: type.replaceAll('_', ' ') })}
+                {t(`audit.entityTypes.${type}`, { defaultValue: t('common.notAvailable') })}
               </option>
             ))}
           </select>
@@ -150,11 +150,11 @@ export function AdminAuditPage({
                   <div className='min-w-0'>
                     <div className='flex flex-wrap items-center gap-2'>
                       <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary'>
-                        {t(`audit.actions.${item.action}`, { defaultValue: item.action.replaceAll('_', ' ') })}
+                        {t(`audit.actions.${item.action}`, { defaultValue: t('common.notAvailable') })}
                       </span>
                       <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
                         {t(`audit.entityTypes.${item.entityType}`, {
-                          defaultValue: item.entityType.replaceAll('_', ' ')
+                          defaultValue: t('common.notAvailable')
                         })}
                       </span>
                     </div>
@@ -165,7 +165,7 @@ export function AdminAuditPage({
                         reference={references.entities[`${item.entityType}:${item.entityId}`]}
                         id={item.entityId}
                         fallback={t(`audit.entityTypes.${item.entityType}`, {
-                          defaultValue: item.entityType.replaceAll('_', ' ')
+                          defaultValue: t('common.notAvailable')
                         })}
                         openLabel={t('audit.openRecord')}
                       />
@@ -189,13 +189,13 @@ export function AdminAuditPage({
                   <div className='mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-bold text-foreground'>
                     <span>
                       {item.fromState
-                        ? t(`audit.states.${item.fromState}`, { defaultValue: item.fromState.replaceAll('_', ' ') })
+                        ? t(`audit.states.${item.fromState}`, { defaultValue: t('common.notAvailable') })
                         : '—'}
                     </span>
                     <ArrowRight className='size-3.5 text-primary' />
                     <span>
                       {item.toState
-                        ? t(`audit.states.${item.toState}`, { defaultValue: item.toState.replaceAll('_', ' ') })
+                        ? t(`audit.states.${item.toState}`, { defaultValue: t('common.notAvailable') })
                         : '—'}
                     </span>
                   </div>
@@ -259,7 +259,7 @@ function ReferenceCard({
         {reference?.subtitle && (
           <p className='mt-0.5 truncate text-[11px] text-muted-foreground'>
             {t(`audit.states.${reference.subtitle}`, {
-              defaultValue: reference.subtitle.replaceAll('_', ' ')
+              defaultValue: t('common.notAvailable')
             })}
           </p>
         )}

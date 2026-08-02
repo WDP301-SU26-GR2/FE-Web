@@ -41,7 +41,7 @@ export function EditorDeadlinesPage({
   focusRequestId: string
   hasError: boolean
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useOperationFetcher()
   const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId || items[0]?.id || '')
   const [action, setAction] = useState<DeadlineAction | null>(null)
@@ -90,7 +90,7 @@ export function EditorDeadlinesPage({
             <div className='text-xs'>
               <p className='font-bold text-foreground'>
                 {t('operations.deadlineCurrent')}:{' '}
-                {formatDate(selectedChapter?.schedule?.currentDeadline, t('operations.notAvailable'))}
+                {formatDate(selectedChapter?.schedule?.currentDeadline, t('operations.notAvailable'), i18n.language)}
               </p>
               <p className='mt-1 text-muted-foreground'>
                 {!chapterCanRequest
@@ -129,7 +129,8 @@ export function EditorDeadlinesPage({
                 >
                   <span className='min-w-0'>
                     <span className='block text-xs font-bold text-foreground'>
-                      {formatDate(item.currentDeadline, '—')} → {formatDate(item.requestedDeadline, '—')}
+                      {formatDate(item.currentDeadline, '—', i18n.language)} →{' '}
+                      {formatDate(item.requestedDeadline, '—', i18n.language)}
                     </span>
                     <span className='mt-1 block truncate text-xs text-muted-foreground'>
                       {t('operations.deadlineRequestedBy', {
@@ -158,7 +159,7 @@ export function EditorDeadlinesPage({
                   label={t(`operations.deadlineStatuses.${selectedRequest.status}`)}
                 />
                 <span className='text-xs text-muted-foreground'>
-                  {formatDate(selectedRequest.createdAt, t('operations.notAvailable'))}
+                  {formatDate(selectedRequest.createdAt, t('operations.notAvailable'), i18n.language)}
                 </span>
               </div>
 
@@ -166,12 +167,12 @@ export function EditorDeadlinesPage({
                 <DeadlineDetail
                   icon={Clock3}
                   label={t('operations.deadlineCurrent')}
-                  value={formatDate(selectedRequest.currentDeadline, t('operations.notAvailable'))}
+                  value={formatDate(selectedRequest.currentDeadline, t('operations.notAvailable'), i18n.language)}
                 />
                 <DeadlineDetail
                   icon={CalendarRange}
                   label={t('operations.deadlineProposed')}
-                  value={formatDate(selectedRequest.requestedDeadline, t('operations.notAvailable'))}
+                  value={formatDate(selectedRequest.requestedDeadline, t('operations.notAvailable'), i18n.language)}
                 />
                 <DeadlineDetail
                   icon={UserRound}
@@ -195,8 +196,8 @@ export function EditorDeadlinesPage({
               <div
                 className={`rounded-lg border p-3 text-xs ${
                   selectedRequest.affectsSlot
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
-                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                    ? 'border-warning/30 bg-warning/10 text-warning'
+                    : 'border-success/30 bg-success/10 text-success'
                 }`}
               >
                 <p className='flex items-center gap-2 font-bold'>
@@ -324,7 +325,7 @@ function DeadlineActionDialog({
       size='sm'
     >
       {(isFinalize || isEscalate) && (
-        <p className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300'>
+        <p className='mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning'>
           {isFinalize
             ? request?.affectsSlot
               ? t('operations.deadlineFinalizeBoardWarning')
@@ -373,10 +374,10 @@ function DeadlineDetail({ icon: Icon, label, value }: { icon: typeof Clock3; lab
   )
 }
 
-function formatDate(value: string | null | undefined, fallback: string) {
+function formatDate(value: string | null | undefined, fallback: string, locale: string) {
   if (!value) return fallback
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString(locale)
 }
 
 function localDateTimeMinimum() {

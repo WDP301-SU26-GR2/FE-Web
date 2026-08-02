@@ -12,10 +12,9 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const intent = required(form, 'intent')
   try {
     if (intent !== 'reportRevenue') return { ok: false, intent, errorKey: 'invalidAction' }
-    await contractControllerReportRevenue(
-      { id: params.id },
-      { revenue: Number(required(form, 'revenue')), period: required(form, 'period') }
-    )
+    const revenue = Number(required(form, 'revenue'))
+    if (!Number.isFinite(revenue) || revenue <= 0) return { ok: false, intent, errorKey: 'invalidContractMoney' }
+    await contractControllerReportRevenue({ id: params.id }, { revenue, period: required(form, 'period') })
     return { ok: true, intent, messageKey: intent }
   } catch (error) {
     return { ok: false, intent, errorKey: contractErrorKey(error) }

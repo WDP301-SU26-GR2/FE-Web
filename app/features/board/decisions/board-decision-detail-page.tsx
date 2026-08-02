@@ -85,7 +85,7 @@ export function BoardDecisionDetailPage({
     !readOnly && sessionStatus === 'ACTIVE' && livePhase === 'VOTING' && decisionOpen && voterAllowed && !alreadyVoted
   const seriesTitle = decision.targetSeries?.title ?? t('decisions.unknownSeries')
   const typeLabel = decision.decisionType
-    ? t(`filters.decisionTypes.${decision.decisionType}`, { defaultValue: decision.decisionType })
+    ? t(`filters.decisionTypes.${decision.decisionType}`, { defaultValue: t('common.notAvailable') })
     : t('decisions.title')
   const displayTitle =
     decision.decisionType === 'SERIALIZATION'
@@ -279,8 +279,8 @@ function DecisionDetails({ details }: { details: Record<string, unknown> }) {
         {Object.entries(details).map(([key, value]) => (
           <DecisionFact
             key={key}
-            label={t(`decisions.detailFields.${key}`, { defaultValue: humanizeKey(key) })}
-            value={formatDetailValue(value)}
+            label={t(`decisions.detailFields.${key}`, { defaultValue: t('common.data') })}
+            value={formatDetailValue(value, t('common.yes'), t('common.no'))}
           />
         ))}
       </dl>
@@ -289,18 +289,18 @@ function DecisionDetails({ details }: { details: Record<string, unknown> }) {
 }
 
 function ReportCard({ report }: { report: SeriesReportResDtoOutput }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   return (
     <article className='rounded-lg border border-border p-3'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <strong>
           {report.reportType
             ? t(`reports.types.${report.reportType}`, {
-                defaultValue: report.reportType.toLowerCase().replaceAll('_', ' ')
+                defaultValue: t('common.notAvailable')
               })
             : t('reports.title')}
         </strong>
-        <time className='text-xs text-muted-foreground'>{formatDate(report.createdAt)}</time>
+        <time className='text-xs text-muted-foreground'>{formatDate(report.createdAt, i18n.language)}</time>
       </div>
       {report.content && <p className='mt-2 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>}
       {report.attachments.length > 0 && (
@@ -394,7 +394,7 @@ function CreateReportDialog({
   series: BoardMeetingSeriesBrief['series'] | null
   defense: DefenseDashboardResDtoOutput | null
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const [attachments, setAttachments] = useState<string[]>([])
   const [attachmentsUploading, setAttachmentsUploading] = useState(false)
@@ -448,6 +448,7 @@ function CreateReportDialog({
     >
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createReport' />
+        <input type='hidden' name='reportLocale' value={i18n.language === 'en' ? 'en' : 'vi'} />
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('reports.reportType')}
           <select className={boardInput} name='reportType' required defaultValue='DEFENSE'>
@@ -680,21 +681,14 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, locale: string) {
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
 }
 
-function humanizeKey(value: string) {
-  return value
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replaceAll('_', ' ')
-    .replace(/^./, (character) => character.toUpperCase())
-}
-
-function formatDetailValue(value: unknown) {
+function formatDetailValue(value: unknown, yesLabel: string, noLabel: string) {
   if (value == null || value === '') return '—'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (typeof value === 'boolean') return value ? yesLabel : noLabel
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
 }

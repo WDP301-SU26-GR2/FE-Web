@@ -1,6 +1,12 @@
 import { Link, useFetcher, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
+import {
+  PayPaymentBodyDtoPaymentMethod,
+  PaymentRecordResDtoOutputPaymentSource,
+  PaymentRecordResDtoOutputPaymentType,
+  PaymentRecordResDtoOutputStatus,
+  type PaymentRecordResDtoOutput
+} from '~/api/model/payments'
 import {
   ArrowLeft,
   BadgeCheck,
@@ -53,7 +59,6 @@ export function BoardPaymentsPage({
   const paymentType = searchParams.get('paymentType') ?? ''
   const paymentSource = searchParams.get('paymentSource') ?? ''
   const [search, setSearch] = useState('')
-  const paymentTypes = [...new Set(payments.map((payment) => payment.paymentType))]
   const filteredPayments = payments.filter(
     (payment) =>
       (!paymentStatus || payment.status === paymentStatus) &&
@@ -109,9 +114,9 @@ export function BoardPaymentsPage({
             onChange={(event) => updateFilter('status', event.target.value)}
           >
             <option value=''>{t('filters.allStatuses')}</option>
-            {['PENDING', 'TRIGGERED', 'APPROVED', 'PAID', 'MISSED', 'FAILED', 'CANCELLED'].map((value) => (
+            {Object.values(PaymentRecordResDtoOutputStatus).map((value) => (
               <option key={value} value={value}>
-                {t(`filters.paymentStatuses.${value}`, { defaultValue: value })}
+                {t(`filters.paymentStatuses.${value}`, { defaultValue: t('common.notAvailable') })}
               </option>
             ))}
           </select>
@@ -121,9 +126,9 @@ export function BoardPaymentsPage({
             onChange={(event) => updateFilter('paymentType', event.target.value)}
           >
             <option value=''>{t('filters.allPaymentTypes')}</option>
-            {paymentTypes.map((value) => (
+            {Object.values(PaymentRecordResDtoOutputPaymentType).map((value) => (
               <option key={value} value={value}>
-                {t(`filters.paymentTypes.${value}`, { defaultValue: value })}
+                {t(`filters.paymentTypes.${value}`, { defaultValue: t('common.notAvailable') })}
               </option>
             ))}
           </select>
@@ -133,7 +138,7 @@ export function BoardPaymentsPage({
             onChange={(event) => updateFilter('paymentSource', event.target.value)}
           >
             <option value=''>{t('filters.allPaymentSources')}</option>
-            {['CONTRACT', 'REPRINT', 'TRANSFER', 'TERMINATION', 'MANUAL'].map((value) => (
+            {Object.values(PaymentRecordResDtoOutputPaymentSource).map((value) => (
               <option key={value} value={value}>
                 {t(`filters.paymentSources.${value}`)}
               </option>
@@ -189,10 +194,10 @@ function PaymentCard({
         <div>
           <strong>
             {payment.series?.title ??
-              t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })}
+              t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: t('common.notAvailable') })}
           </strong>
           <p className='mt-1 text-xs text-muted-foreground'>
-            {t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })} ·{' '}
+            {t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: t('common.notAvailable') })} ·{' '}
             {payment.receiver?.displayName ?? t('payments.unknownReceiver')}
           </p>
           {payment.description ? <p className='mt-1 text-xs text-muted-foreground'>{payment.description}</p> : null}
@@ -221,7 +226,16 @@ function PaymentCard({
           <BoardActionDialog title={t('payments.pay')}>
             <fetcher.Form method='post' className='grid gap-3'>
               <input type='hidden' name='paymentId' value={payment.id} />
-              <input className={boardInput} name='paymentMethod' placeholder={t('payments.method')} required />
+              <select className={boardInput} name='paymentMethod' defaultValue='' required>
+                <option value='' disabled>
+                  {t('payments.method')}
+                </option>
+                {Object.values(PayPaymentBodyDtoPaymentMethod).map((value) => (
+                  <option key={value} value={value}>
+                    {t(`payments.methods.${value}`)}
+                  </option>
+                ))}
+              </select>
               <input
                 className={boardInput}
                 name='transactionReference'
@@ -327,7 +341,9 @@ function PaymentDetailsDialog({
                       {payment.series?.title ?? t('payments.unknownSeries')}
                     </p>
                     <p className='mt-1 text-[11px] text-muted-foreground'>
-                      {t(`filters.paymentTypes.${payment.paymentType}`, { defaultValue: payment.paymentType })}
+                      {t(`filters.paymentTypes.${payment.paymentType}`, {
+                        defaultValue: t('common.notAvailable')
+                      })}
                     </p>
                   </div>
                 </div>
@@ -381,7 +397,7 @@ function PaymentDetailsDialog({
                   <PaymentFact
                     label={t('payments.source')}
                     value={t(`filters.paymentSources.${payment.paymentSource}`, {
-                      defaultValue: payment.paymentSource
+                      defaultValue: t('common.notAvailable')
                     })}
                   />
                   <PaymentFact label={t('payments.period')} value={payment.period} />

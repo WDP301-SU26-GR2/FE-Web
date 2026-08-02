@@ -34,7 +34,7 @@ import type {
 import { customFetch } from '../../mutator/custom-fetch';
 
 /**
- * @summary Tạo annotation/markup (TEXT/HIGHLIGHT/DRAWING + coordinates) trên target (Page/Region/Task/Manuscript/Name)
+ * @summary Tạo annotation/markup (TEXT/HIGHLIGHT/DRAWING + coordinates) trên target (Page/Region/Task/Manuscript/Storyboard)
  */
 export type annotationControllerCreateResponse201 = {
   data: AnnotationResDtoOutput

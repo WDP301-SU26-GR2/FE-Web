@@ -30,7 +30,7 @@ import type { RevisionRequestResDtoOutputSeries } from './revisionRequestResDtoO
 
 export interface RevisionRequestResDtoOutput {
   id: string;
-  /** Đối tượng của vòng yêu cầu sửa: PROPOSAL, NAME, MANUSCRIPT, TASK. Values: PROPOSAL, NAME, MANUSCRIPT, TASK */
+  /** Đối tượng của vòng yêu cầu sửa: PROPOSAL, STORYBOARD, MANUSCRIPT, TASK. Values: PROPOSAL, STORYBOARD, MANUSCRIPT, TASK */
   targetType: RevisionRequestResDtoOutputTargetType;
   targetId: string;
   /**

@@ -1,14 +1,13 @@
 import { BookOpenText, FileText, Images, PanelsTopLeft, Tags, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NameResDtoOutput } from '~/api/model/names'
 import type { SeriesResDtoOutput } from '~/api/model/series'
 import { StatusBadge } from '../../components/board-ui'
 
 export interface BoardMeetingSeriesBrief {
   series: SeriesResDtoOutput
   characterDesigns: SignedImage[]
-  proposalName: (Omit<NameResDtoOutput, 'pages'> & { pages: SignedNamePage[] }) | null
+  proposalStoryboardPages: SignedStoryboardPage[]
 }
 
 export interface SignedImage {
@@ -16,7 +15,7 @@ export interface SignedImage {
   url: string
 }
 
-export interface SignedNamePage extends SignedImage {
+export interface SignedStoryboardPage extends SignedImage {
   pageNumber: number
 }
 
@@ -26,7 +25,7 @@ interface SeriesMeetingBriefProps {
 
 export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
   const { t } = useTranslation('board')
-  const { series, characterDesigns, proposalName } = brief
+  const { series, characterDesigns, proposalStoryboardPages } = brief
   const proposal = series.proposal
 
   return (
@@ -104,7 +103,7 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
         title={t('sessions.seriesBrief.characterDesignsTitle')}
         type='character'
       />
-      <NameStory name={proposalName} />
+      <ProposalStoryboard pages={proposalStoryboardPages} />
     </article>
   )
 }
@@ -146,24 +145,18 @@ function ImageGallery({ images, title, type }: { images: SignedImage[]; title: s
   )
 }
 
-function NameStory({ name }: { name: BoardMeetingSeriesBrief['proposalName'] }) {
+function ProposalStoryboard({ pages }: { pages: BoardMeetingSeriesBrief['proposalStoryboardPages'] }) {
   const { t } = useTranslation('board')
-  if (!name) return <p className='mt-4 text-xs text-muted-foreground'>{t('sessions.seriesBrief.noStory')}</p>
+  if (!pages.length) return <p className='mt-4 text-xs text-muted-foreground'>{t('sessions.seriesBrief.noStory')}</p>
 
   return (
     <section className='mt-5 border-t border-border pt-5'>
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <h4 className='flex items-center gap-2 text-xs font-bold text-foreground'>
-          <PanelsTopLeft className='size-4 text-primary' />
-          {t('sessions.seriesBrief.storyTitle')}
-        </h4>
-        <span className='text-xs text-muted-foreground'>
-          {t('sessions.seriesBrief.storyVersion', { version: name.version })} ·{' '}
-          {t(`sessions.seriesBrief.nameStatuses.${name.status}`)}
-        </span>
-      </div>
+      <h4 className='flex items-center gap-2 text-xs font-bold text-foreground'>
+        <PanelsTopLeft className='size-4 text-primary' />
+        {t('sessions.seriesBrief.storyTitle')}
+      </h4>
       <ImageGallery
-        images={name.pages.map((page) => ({ key: page.key, url: page.url }))}
+        images={pages.map((page) => ({ key: page.key, url: page.url }))}
         title={t('sessions.seriesBrief.storyPages')}
         type='story'
       />

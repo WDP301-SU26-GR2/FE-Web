@@ -13,28 +13,28 @@ const APPROVED_STATUSES = new Set(['READY_FOR_PRINT', 'AWAITING_CO_OWNER_APPROVA
 const STATUS_META: Record<string, { className: string; dotClassName: string }> = {
   DRAFT: { className: 'border-border bg-muted text-muted-foreground', dotClassName: 'bg-muted-foreground' },
   IN_PRODUCTION: {
-    className: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
-    dotClassName: 'bg-amber-500'
+    className: 'border-warning/30 bg-warning/10 text-warning',
+    dotClassName: 'bg-warning'
   },
   EDITOR_REVIEW: {
     className: 'border-primary/30 bg-primary/10 text-primary',
     dotClassName: 'bg-primary'
   },
   EDITOR_REVISION: {
-    className: 'border-orange-500/30 bg-orange-500/10 text-orange-700',
-    dotClassName: 'bg-orange-500'
+    className: 'border-warning/30 bg-warning/10 text-warning',
+    dotClassName: 'bg-warning'
   },
   READY_FOR_PRINT: {
-    className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700',
-    dotClassName: 'bg-emerald-500'
+    className: 'border-success/30 bg-success/10 text-success',
+    dotClassName: 'bg-success'
   },
   AWAITING_CO_OWNER_APPROVAL: {
-    className: 'border-violet-500/30 bg-violet-500/10 text-violet-700',
-    dotClassName: 'bg-violet-500'
+    className: 'border-info/30 bg-info/10 text-info',
+    dotClassName: 'bg-info'
   },
   PUBLISHED: {
-    className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700',
-    dotClassName: 'bg-emerald-500'
+    className: 'border-success/30 bg-success/10 text-success',
+    dotClassName: 'bg-success'
   }
 }
 
@@ -115,7 +115,7 @@ export function EditorPublicationPage({
             icon={<FileCheck2 className='size-5' />}
             label={t('publicationUx.approved')}
             value={approved.length}
-            className='border-emerald-500/25 bg-emerald-500/5 text-emerald-700'
+            className='border-success/25 bg-success/5 text-success'
             active={activeGroup === 'approved'}
             onClick={() => setActiveGroup('approved')}
           />
@@ -123,7 +123,7 @@ export function EditorPublicationPage({
             icon={<Clock3 className='size-5' />}
             label={t('publicationUx.inProgress')}
             value={inProgress.length}
-            className='border-amber-500/25 bg-amber-500/5 text-amber-700'
+            className='border-warning/25 bg-warning/5 text-warning'
             active={activeGroup === 'progress'}
             onClick={() => setActiveGroup('progress')}
           />
@@ -131,7 +131,7 @@ export function EditorPublicationPage({
             icon={<CheckCircle2 className='size-5' />}
             label={t('publication.history')}
             value={published.length}
-            className='border-emerald-500/25 bg-emerald-500/5 text-emerald-700'
+            className='border-success/25 bg-success/5 text-success'
             active={activeGroup === 'history'}
             onClick={() => setActiveGroup('history')}
           />

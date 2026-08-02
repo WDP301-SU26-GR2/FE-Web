@@ -8,8 +8,12 @@ import {
 } from '~/api/operations/transfer/transfer'
 import { EditorTransfersPage, type EditorActionResult } from '~/features/editor'
 import { required } from './operations-route-utils'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { Route } from './+types/operations-transfers'
+import {
+  CreateTransferContractBodyDtoTransferType,
+  TransferControllerGetAssignedEditorRequestsStatus
+} from '~/api/model/transfer'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
@@ -17,7 +21,15 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const requestedContractId = url.searchParams.get('contractId')?.trim() ?? ''
   const status = url.searchParams.get('status')?.trim() ?? ''
   try {
-    const assigned = await transferControllerGetAssignedEditorRequests(status ? { status: status as never } : undefined)
+    let statusFilter: TransferControllerGetAssignedEditorRequestsStatus | undefined
+    if (status) {
+      if (!isEnumValue(TransferControllerGetAssignedEditorRequestsStatus, status))
+        throw new Error('Invalid transfer status')
+      statusFilter = status
+    }
+    const assigned = await transferControllerGetAssignedEditorRequests(
+      statusFilter ? { status: statusFilter } : undefined
+    )
     if (!requestId && !requestedContractId)
       return {
         requests: assigned.data.data,
@@ -72,21 +84,30 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         originalMangaka: Number(required(form, 'originalMangakaShare')),
         newMangaka: Number(required(form, 'newMangakaShare'))
       }
-      const transferType = required(form, 'transferType') as 'FULL_TRANSFER' | 'PARTIAL_TRANSFER'
-      if (Object.values(newOwnershipSplit).reduce((sum, value) => sum + value, 0) !== 100)
-        throw new Error('Invalid ownership split')
+      const transferType = required(form, 'transferType')
+      const transferAmount = Number(required(form, 'transferAmount'))
+      if (!isEnumValue(CreateTransferContractBodyDtoTransferType, transferType))
+        return { ok: false, intent, errorKey: 'invalidAction' }
+      if (
+        !Number.isFinite(transferAmount) ||
+        transferAmount <= 0 ||
+        Object.values(newOwnershipSplit).some((value) => !Number.isFinite(value) || value < 0)
+      )
+        return { ok: false, intent, errorKey: 'invalidContractMoney' }
+      if (Math.abs(Object.values(newOwnershipSplit).reduce((sum, value) => sum + value, 0) - 100) > 0.001)
+        return { ok: false, intent, errorKey: 'ownershipMismatch' }
       if (transferType === 'FULL_TRANSFER' && newOwnershipSplit.originalMangaka !== 0)
-        throw new Error('Chuyển nhượng toàn bộ phải đưa tỷ lệ của Mangaka cũ về 0%.')
+        return { ok: false, intent, errorKey: 'ownershipMismatch' }
       if (transferType === 'PARTIAL_TRANSFER' && newOwnershipSplit.originalMangaka <= 0)
-        throw new Error('Chuyển nhượng một phần phải giữ tỷ lệ sở hữu cho Mangaka cũ.')
+        return { ok: false, intent, errorKey: 'ownershipMismatch' }
       const response = await transferControllerCreateTransferContract({
         transferRequestId: required(form, 'transferRequestId'),
-        transferAmount: Number(required(form, 'transferAmount')),
+        transferAmount,
         transferType,
         newOwnershipSplit,
         coOwnerApprovalRequired: transferType === 'PARTIAL_TRANSFER'
       })
-      if (response.status !== 201) throw new Error('Không nhận được hợp đồng chuyển nhượng vừa tạo.')
+      if (response.status !== 201) return { ok: false, intent, errorKey: 'actionFailed' }
       return {
         ok: true,
         intent,
@@ -95,13 +116,8 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       }
     } else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
-  } catch (error) {
-    return {
-      ok: false,
-      intent,
-      errorKey: 'actionFailed',
-      message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.')
-    }
+  } catch {
+    return { ok: false, intent, errorKey: 'actionFailed' }
   }
 }
 

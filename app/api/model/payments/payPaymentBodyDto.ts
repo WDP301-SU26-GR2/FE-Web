@@ -22,10 +22,11 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { PayPaymentBodyDtoPaymentMethod } from './payPaymentBodyDtoPaymentMethod';
 
 export interface PayPaymentBodyDto {
-  /** @minLength 1 */
-  paymentMethod: string;
+  /** Phương thức thanh toán: BANK_TRANSFER hoặc CASH. Values: BANK_TRANSFER, CASH */
+  paymentMethod: PayPaymentBodyDtoPaymentMethod;
   /** @minLength 1 */
   transactionReference: string;
   note?: string;

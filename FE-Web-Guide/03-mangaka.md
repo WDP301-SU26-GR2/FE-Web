@@ -6,30 +6,30 @@
 
 ---
 
-## 0. Tổng quan phạm vi — 128 route độc quyền MANGAKA
+## 0. Tổng quan phạm vi — 124 route role-specific MANGAKA
 
-Đối chiếu `test/flows/route-roles.ts`: MANGAKA có đúng **128 route** trong `allowed[]` (126 → 127 do Spec 26 thêm `POST /chapters/:id/stages/:stageId/reopen` (§2.7.1); 127 → 128 do **Spec 27** thêm `GET /transfers/contracts/:id` (§5.6)) (đếm lại bằng script parse trực tiếp file — khớp con số đã công bố ở `01` §8). Chia 6 nhóm theo module:
+Đối chiếu `test/flows/route-roles.ts` sau §87: MANGAKA có đúng **124 route** trong `allowed[]`. Chia 6 nhóm theo module:
 
 | Nhóm | Module | Số route | Mục |
 |---|---|---|---|
-| A | `series` + `name` (series-scoped) | 17 | §1 |
-| B | `chapter` + `name` (chapter-scoped) + `production-stage` | **29** | §2 |
+| A | `series` + proposal embedded | 12 | §1 |
+| B | `chapter` + `storyboard` + `production-stage` | **29** | §2 |
 | C | `task` + `ai` (Region/Task/AI) | 20 | §3 |
 | D | `studio` + `reviews` + `users` (directory/profile) | 13 | §4 |
 | E | `contract` + `payment` + `transfer` + `reprint` | 31 | §5 |
 | F | `deadline` + `publication` + `survey` (rankings) + `dashboard` + `revision` + `annotation` | 17 | §6 |
 
-Ngoài 128 route độc quyền này, Mangaka còn dùng các route **AUTH** dùng chung mọi role (xem `01` §5.8, §3, §4): `POST /auth/change-password`, `GET/PATCH /me`, `GET /notifications` + đánh dấu đã đọc, `POST /uploads/sign` + `/sign-download`, `GET /chapters` + `GET /chapters/:id` (đọc, scoping riêng trong service), `GET /assistants/:userId`, `GET /mangakas/:userId`, `GET /staff/:userId`, `GET /assistant-reviews`, `GET /mangaka-reviews`, `GET /contracts/health`, `DELETE /annotations/:id`, `PATCH /annotations/:id/resolve`.
+Ngoài 124 route role-specific này, Mangaka còn dùng các route **AUTH** dùng chung mọi role (xem `01` §5.8, §3, §4).
 
-**Xác nhận đủ 127/127** — không route MANGAKA nào trong `route-roles.ts` bị bỏ sót trong 6 nhóm bên dưới (đối chiếu 1-1, xem ghi chú cuối file §7).
+**Xác nhận theo generator: 124 route có `allowed[]` chứa MANGAKA**; PUBLIC/AUTH dùng chung được mô tả trong file convention.
 
 ---
 
-## 1. Nhóm A — Series / Proposal / Name (Proposal) / Franchise — 17 route
+## 1. Nhóm A — Series / Proposal / Franchise — 12 route
 
 ### 1.1. Narrative flow (Flow 1 — Series Proposal & Serialization)
 
-State machine thật (`series.constant.ts` → `SERIES_TRANSITIONS`), khác nhẹ so với bảng mô tả trong Requiment (không có state trung gian `NAME_SUBMITTED`/`NAME_IN_REVIEW` cấp Series — các state đó là `NameStatus` của Name gắn kèm, không phải `SeriesStatus`):
+State machine thật (`series.constant.ts` → `SERIES_TRANSITIONS`) không có state phác thảo proposal riêng; proposal review nằm trong `ProposalStatus`:
 
 ```
 DRAFT → IN_REVIEW → READY_TO_PITCH → PITCHED → SERIALIZED → {HIATUS ⇄ SERIALIZED} → {COMPLETING → COMPLETED | CANCELLING → CANCELLED}
@@ -57,7 +57,7 @@ ABANDONED | WITHDRAWN → DRAFT (Mangaka tự mở lại — POST /series/:id/re
 | Tình huống | Status/Error | Khi nào |
 |---|---|---|
 | Sửa/xoá proposal khi không phải `DRAFT`/`PROPOSAL_REVISION` | 409 `Error.ProposalNotEditable` / `Error.ProposalNotDeletable` | Đã submit, đang review, hoặc đã qua giai đoạn proposal |
-| Submit khi chưa có Name mẫu hoặc series không `DRAFT` | 409 `Error.InvalidProposalState` | `series.proposal.nameId` rỗng hoặc `status !== DRAFT` |
+| Submit khi proposal thiếu dữ liệu hoặc series không `DRAFT` | 409 `Error.InvalidProposalState` | `proposal` không hợp lệ hoặc `status !== DRAFT` |
 | Submit series phái sinh (`parentSeriesId` set, gốc `REVENUE_SHARE` + `FULLY_EXECUTED`, khác Mangaka) chưa được gốc đồng ý | 409 `Error.FranchiseConsentRequired` | `franchiseConsentStatus` đang `PENDING`/`REJECTED` |
 | Gọi action không phải chủ sở hữu | 403 `Error.NotSeriesOwner` | `series.mangakaId !== userId` |
 | Chuyển trạng thái sai bước | 409 `Error.InvalidSeriesTransition` / `Error.InvalidProposalState` | Không khớp `SERIES_TRANSITIONS`/vòng đời proposal |
@@ -86,7 +86,7 @@ Response `SeriesRes` — field quan trọng FE cần:
 | `franchiseConsentStatus` | `enum FranchiseConsentStatus`\|null | `null` = không phải series phái sinh cần gate; `PENDING` = đang chờ Mangaka gốc |
 | `reviewStartedAt` | string\|null | Có giá trị = Editor đã bắt đầu review, **khoá nhả** (Editor không release được nữa) |
 | `completionProposal` | object\|null | `{proposedByRole, proposedById, reason, proposedEndingChapters, proposedAt}` — đề xuất kết thúc tự nhiên PB-06 |
-| `proposal` | object\|null | `{nameId, synopsis, characterDesigns[], estimatedLength, status: enum ProposalStatus, createdAt}` |
+| `proposal` | object\|null | `{synopsis, characterDesigns[], storyboardPages[], estimatedLength, status: ProposalStatus, createdAt}` |
 
 Lỗi: `Error.SeriesNotFound` (404) · `Error.SeriesAccessDenied` (403).
 
@@ -115,25 +115,25 @@ Lỗi: `Error.SeriesNotFound` (404) · `Error.SeriesAccessDenied` (403) · `Erro
 | `synopsis` | tuỳ | string (≤5000) | |
 | `characterDesigns` | tuỳ (default `[]`) | string[] | Object key R2 |
 | `estimatedLength` | tuỳ | number (int ≥1) | Số chương ước tính |
-| `namePages` | tuỳ (default `[]`) | `{pageNumber, fileUrl}[]` | Trang Name mẫu ban đầu (có thể để rỗng, thêm sau qua Name module) |
+| `storyboardPages` | tuỳ (default `[]`) | `{pageNumber, fileUrl}[]` | Trang phác thảo nhúng thẳng trong proposal (Spec 28); có thể để rỗng, cập nhật sau qua `PUT /series/proposals/:id` |
 | `parentSeriesId` | tuỳ | string | Khai franchise — series gốc (Flow 11) |
 | `relationshipType` | tuỳ | `enum RelationshipType` | Bắt buộc có ý nghĩa khi có `parentSeriesId` |
 
-Response 201 `CreateProposalRes = { series: SeriesRes, name: NameRes }`. Lỗi: `Error.ParentSeriesNotFound` (422, path `parentSeriesId`).
+Response 201 **`SeriesRes` phẳng** (Spec 28 — KHÔNG còn `{series, name}`; proposal nằm ở `SeriesRes.proposal` với `storyboardPages[]` embedded). Lỗi: `Error.ParentSeriesNotFound` (422, path `parentSeriesId`).
 
 #### `PUT /series/proposals/:id` — sửa proposal (partial)
 
-Mọi field ở trên (trừ `namePages`) dạng `.nullish()` — omit/`null` = giữ nguyên. Chỉ sửa được khi `Series.status === DRAFT` hoặc `proposal.status === PROPOSAL_REVISION`. **KHÔNG** nhận `namePages` (sửa trang Name qua route Name riêng §2 nhóm sau — thực ra proposal-Name dùng route `POST/PUT /series/:id/names/:nameId/pages`).
+Các field partial dạng `.nullish()` — omit/`null` giữ nguyên. `storyboardPages` nhận trực tiếp: mảng rỗng clear, mảng mới replace toàn bộ; chỉ sửa khi Series DRAFT hoặc proposal PROPOSAL_REVISION.
 
 Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.ProposalNotEditable` (409).
 
 #### `DELETE /series/proposals/:id` — xoá hẳn draft tạo nhầm
 
-Chỉ khi `Series.status === DRAFT`. Cascade xoá Name liên quan. Response `MessageResDto` (`"Đã xoá bản đề xuất"`). Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.ProposalNotDeletable` (409).
+Chỉ khi `Series.status === DRAFT`. Xoá cả aggregate proposal (Spec 28 — proposal embed trong Series, không có Name row riêng). Response `MessageResDto` (`"Đã xoá bản đề xuất"`). Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.ProposalNotDeletable` (409).
 
 #### `POST /series/:id/submit` — nộp hồ sơ vào hàng đợi review
 
-Không body. Response 201 `CreateProposalRes` (giống shape tạo proposal — trả cả `series` lẫn `name` đã đổi status). Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.InvalidProposalState` (409 — không `DRAFT` hoặc chưa có Name mẫu) · `Error.FranchiseConsentRequired` (409).
+Không body. Response 201 **`SeriesRes` phẳng** (Spec 28 — proposal `PROPOSAL_REVIEW` + Series `IN_REVIEW`, đọc ở `SeriesRes.proposal`). Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.InvalidProposalState` (409 — không `DRAFT`) · `Error.FranchiseConsentRequired` (409).
 
 #### `POST /series/:id/proposal/resubmit` — nộp lại proposal sau revision
 
@@ -168,45 +168,20 @@ Chỉ gọi được bởi Mangaka của series **gốc** (`parentSeries.mangaka
 
 Chỉ khi `Series.status` là `SERIALIZED`/`HIATUS`. **Không** đổi `status` — chỉ set `completionProposal` (embedded) + thông báo cho Editor phụ trách. Route này **cả MANGAKA lẫn EDITOR** đều gọi được (bên nào đề xuất, bên kia nhận thông báo). Response `SeriesRes`. Lỗi: `Error.SeriesAccessDenied` (403 — không phải Mangaka/Editor của series) · `Error.SeriesNotProposableForCompletion` (409, path `status`) · `Error.SeriesNotFound` (404).
 
-#### `GET /series/:id/names` — list proposal-Name của series
+#### Proposal storyboard pages (Spec 28 — không có route riêng)
 
-Query `limit`/`offset` (như trên). Response `{ items: NameRes[] }`. Chỉ trả proposal-Name (`kind=PROPOSAL`) — Name của chapter xem ở `GET /chapters/:id/names` (nhóm B). Lỗi: `Error.SeriesNotFound` (404) · `Error.SeriesAccessDenied` (403).
-
-#### `GET /series/:id/names/:nameId` — chi tiết 1 proposal-Name
-
-`NameRes`: `{id, seriesId, chapterId: null, chapterNumber: null, kind: 'PROPOSAL', status: enum NameStatus, version, pages: {pageNumber,fileUrl}[], submittedAt}`. Lỗi: `Error.SeriesNotFound` (404) · `Error.SeriesAccessDenied` (403) · `Error.NameNotFound` (404).
-
-#### `POST /series/:id/names/:nameId/pages` — thêm 1 trang Name (append)
-
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `pageNumber` | ✅ | number (int ≥1) |
-| `fileUrl` | ✅ | string (object key R2) |
-
-Chỉ khi Name đang `DRAFT`/`REVISION`. Response 201 `NameRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.InvalidNameState` (409, path `status`).
-
-#### `PUT /series/:id/names/:nameId/pages` — thay TOÀN BỘ trang Name
-
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `pages` | ✅ | `{pageNumber, fileUrl}[]` (thay thế toàn bộ, không phải patch) |
-
-Cùng điều kiện/lỗi như route append ở trên. Response 200 `NameRes`.
-
-#### `POST /series/:id/names/:nameId/resubmit` — nộp lại proposal-Name sau revision
-
-Không body. Chỉ khi `NameStatus.REVISION`. → `IN_REVIEW`, `version += 1`. Nếu vượt `AppConfig.nameMaxReviewRounds` (mặc định 8) → tự động cảnh báo Editor (không chặn Mangaka). Response 201 `NameRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.InvalidNameState` (409).
+`GET /series/:id` trả `proposal.storyboardPages`. Tạo/sửa qua `POST /series/proposals` và `PUT /series/proposals/:id`; `storyboardPages: []` clear, omit/`null` giữ nguyên. Toàn bộ `/series/:id/names/*` đã bị xoá và phải trả 404.
 
 ---
 
-## 2. Nhóm B — Chapter / Name (chapter-scoped) / Page / Production Stage — 28 route
+## 2. Nhóm B — Chapter / Storyboard / Page / Production Stage
 
 ### 2.1. Narrative flow (Flow 2 + Flow 3 — chapter-first + stage hard-gate)
 
 ```
 POST /chapters (chapterNumber+title) → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule rỗng
     ↓
-POST /chapters/:id/names → Name(kind=CHAPTER, DRAFT) → submit → Editor review (loop) → APPROVED
+POST /chapters/:id/storyboards → Storyboard(DRAFT) → submit → Editor review (loop) → APPROVED
     ↓ [Gate #1: upload page CHỈ khi Name APPROVED]
 POST /chapters/:id/pages (originalFile) → Page(DRAFT); Name APPROVED lần đầu → backend seed 4 ProductionStage:
     INKING=ACTIVE, DETAILING/LETTERING/FINAL_CHECK=LOCKED
@@ -280,7 +255,7 @@ Response `ChapterProgressRes` — field quan trọng:
 
 | Field | Kiểu | Ghi chú |
 |---|---|---|
-| `nameStatus` | `enum NameStatus`\|null | null = chưa gắn Name |
+| `storyboardStatus` | `enum StoryboardStatus`\|null | null = chưa gắn Storyboard |
 | `pagesReady` / `pagesPending` | number | Suy ra từ Task (xem §2.1) |
 | `taskBreakdown` | object | Đếm theo từng `TaskStatus` (assigned/inProgress/submitted/underReview/approved/revisionRequested/onHold/cancelled) |
 | `progressPct` | number (0-1) | `pagesReady/totalPages`; **= 1** khi bản thảo đã rời tay Mangaka (đang/đã qua Editor review, chờ co-owner, hoặc đã publish) |
@@ -329,7 +304,7 @@ Lỗi (cả 2 route): `Error.NotCoOwner` (403) · `Error.CoOwnerApprovalNotPendi
 | `pageNumber` | ✅ | number (int ≥1) |
 | `originalFile` | ✅ | string (object key R2 — file gốc **bất biến**) |
 
-Response 201 `PageRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404) · `Error.ChapterOnHold` (409) · `Error.ChapterNameNotApproved` (409, path `nameId` — Gate #1) · `Error.ProductionPageSetLocked` (409 — không thêm được page mới sau khi stage đầu tiên đã `COMPLETED`).
+Response 201 `PageRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404) · `Error.ChapterOnHold` (409) · `Error.ChapterStoryboardNotApproved` (409, path `storyboardId`) · `Error.ProductionPageSetLocked` (409).
 
 #### `GET /chapters/:id/pages` — list trang (scoped)
 
@@ -356,41 +331,17 @@ Response `DeletePageRes = { pageId, deletedRegions, deletedTasks }`. Lỗi: `Err
 
 Response `DeletePagesBulkRes = { deletedPages, deletedRegions, deletedTasks }`. Lỗi giống route xoá đơn (áp cho từng page — **1 page fail thì cả batch fail**, không xoá 1 phần).
 
-### 2.6. Chapter-Name (storyboard gắn với 1 chương cụ thể)
+### 2.6. Storyboard của Chapter (Spec 28)
 
-Base path `chapters/:id/names` (module `name`, controller `ChapterNameController`) — cùng shape `NameRes` với proposal-Name (§1) nhưng `chapterId` có giá trị, `kind = CHAPTER`.
+Base path `/chapters/:id/storyboards`; response `StoryboardRes = {id,seriesId,chapterId,status,version,submittedAt,pages}` và không còn `kind/chapterNumber`.
 
-#### `POST /chapters/:id/names` — tạo chapter-Name
+- `POST /chapters/:id/storyboards` body `{storyboardPages:[{pageNumber,fileUrl}]}` tạo Storyboard `DRAFT`.
+- `GET /chapters/:id/storyboards` và `GET /chapters/:id/storyboards/:storyboardId` đọc theo scope.
+- `POST .../:storyboardId/submit` chuyển `DRAFT→SUBMITTED`; `POST .../resubmit` chuyển `REVISION→IN_REVIEW`, tăng version và cảnh báo theo `storyboardMaxReviewRounds`.
+- `PUT .../:storyboardId/pages` replace toàn bộ; `POST .../:storyboardId/pages` append một trang, chỉ khi `DRAFT/REVISION`.
+- `DELETE .../:storyboardId` chỉ khi Chapter DRAFT và Storyboard chưa APPROVED.
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `namePages` | ✅ | `{pageNumber, fileUrl}[]` (≥1 phần tử) |
-
-Chỉ khi `Chapter.status === DRAFT` và series đang `SERIALIZED`/`CANCELLING`/`COMPLETING`, và chapter **chưa có** Name (0..1 quan hệ). Response 201 `NameRes`. Lỗi: `Error.ChapterNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.ChapterNotDraftForName` (409, path `status`) · `Error.ChapterNameAlreadyExists` (409, path `id`).
-
-#### `POST /chapters/:id/names/:nameId/submit` — nộp cho Editor
-
-Không body. Chỉ khi `NameStatus.DRAFT`. → `SUBMITTED` (set `submittedAt`). Response 201 `NameRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404) · `Error.NameNotFound` (404) · `Error.InvalidNameState` (409).
-
-#### `GET /chapters/:id/names` — list (thực tế 0..1 phần tử)
-
-Response `{ items: NameRes[] }`. Lỗi: `Error.ChapterNotFound` (404) · `Error.SeriesAccessDenied` (403).
-
-#### `GET /chapters/:id/names/:nameId` — chi tiết
-
-Lỗi: `Error.ChapterNotFound` (404) · `Error.SeriesAccessDenied` (403) · `Error.NameNotFound` (404).
-
-#### `POST /chapters/:id/names/:nameId/resubmit` — nộp lại sau `REVISION`
-
-Giống hệt cơ chế proposal-Name §1 (version++, cảnh báo Editor nếu vượt `nameMaxReviewRounds`). Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404) · `Error.NameNotFound` (404) · `Error.InvalidNameState` (409).
-
-#### `PUT` / `POST /chapters/:id/names/:nameId/pages` — thay toàn bộ / thêm 1 trang
-
-Cùng schema/lỗi với route proposal-Name tương ứng ở §1 (chỉ áp dụng khi Name `DRAFT`/`REVISION`).
-
-#### `DELETE /chapters/:id/names/:nameId` — xoá chapter-Name để vẽ lại
-
-Chỉ khi `Chapter.status === DRAFT` **và** Name chưa `APPROVED`. Response `MessageResDto` (`"Đã xoá name của chương"`). Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404) · `Error.NameNotFound` (404) · `Error.NameNotDeletable` (409, path `status`).
+Mã lỗi dùng prefix Storyboard: `Error.StoryboardNotFound`, `Error.InvalidStoryboardState`, `Error.ChapterNotDraftForStoryboard`, `Error.ChapterStoryboardAlreadyExists`, `Error.StoryboardNotDeletable`.
 
 ### 2.7. Production Stage (Spec production-stages 2026-07-22/24)
 
@@ -1018,25 +969,22 @@ Query `ListMangakasQuery`: `q?`, `genre?` (`enum Genre`), `level?`, `limit`/`off
 
 ### 5.1. Contract — Narrative flow (Flow 6)
 
-State machine (`contract.constant.ts` → `CONTRACT_TRANSITIONS`):
+> 🔴 **§87 (2026-08-01) — flow ký đổi sang 2-PHASE.** Mangaka chỉ tham gia **Phase 2** (cuối), chỉ **accept hoặc reject**, KHÔNG có vòng thương lượng. State machine (`contract.constant.ts` → `CONTRACT_TRANSITIONS`):
 
 ```
-DRAFT → MANGAKA_REVIEW → {MANGAKA_APPROVED | NEGOTIATION}
-MANGAKA_APPROVED → {BOARD_APPROVED | NEGOTIATION}
-BOARD_APPROVED → {MANGAKA_SIGNED | FULLY_EXECUTED | NEGOTIATION}   (ký cả 2 chiều, thứ tự tự do)
-NEGOTIATION → MANGAKA_REVIEW
-MANGAKA_SIGNED → FULLY_EXECUTED
-ACTIVATION_PENDING → FULLY_EXECUTED   (hợp đồng thay thế sau Transfer — Board kích hoạt)
+DRAFT → BOARD_REVIEW → AWAITING_MANGAKA → FULLY_EXECUTED
+AWAITING_MANGAKA → ACTIVATION_PENDING → FULLY_EXECUTED   (HĐ thay thế sau Transfer FULL_BUYOUT)
+AWAITING_MANGAKA → REJECTED_BY_MANGAKA                    (Mangaka từ chối → Editor redraft HĐ MỚI)
+DRAFT|BOARD_REVIEW|AWAITING_MANGAKA → VOIDED             (hủy trước ký)
 FULLY_EXECUTED → {FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED}
 ```
 
-Trước `FULLY_EXECUTED` còn có thể `VOIDED` (rút trước ký).
+⚠ **Đã XOÁ** (không còn route/status): `PATCH /contracts/:id/status`, `POST /contracts/:id/request-changes`, `POST /contracts/:id/signatures/mangaka`, và các status `MANGAKA_REVIEW`/`MANGAKA_APPROVED`/`BOARD_APPROVED`/`NEGOTIATION`/`MANGAKA_SIGNED`.
 
-Editor soạn Contract (`DRAFT`, KHÔNG thuộc route MANGAKA) → `POST /contracts` gửi cho Mangaka (`PATCH /contracts/:id/status {status:"MANGAKA_REVIEW"}`, do Editor gọi) →
+**Luồng mới với Mangaka:** Editor soạn HĐ → gửi Hội đồng duyệt (Phase 1 nội bộ: Board comment + 1 đại diện ký). Khi đại diện ký xong, HĐ sang **`AWAITING_MANGAKA`** → tới lượt Mangaka (nhận notification `CONTRACT`). Mangaka mở HĐ đọc điều khoản (`GET /contracts/:id`, `GET /contracts/:id/pdf` chỉ có sau executed) rồi chọn:
 
-- Mangaka **đồng ý** → `PATCH /contracts/:id/status { status: "MANGAKA_APPROVED" }` — **đây là action approve chính thức của Mangaka**, không có route riêng tên "approve". ⚠ Route dùng chung `MANGAKA`+`EDITOR`, nhưng thân service (`ContractWorkflowService.updateStatusByWorkflow`) chỉ map 2 giá trị: `MANGAKA_REVIEW` (Editor gửi cho Mangaka) và `MANGAKA_APPROVED` (Mangaka đồng ý) — gửi giá trị khác → 400 `Error.InvalidContractStatus`. **FE Mangaka chỉ nên bao giờ gửi `{status:"MANGAKA_APPROVED"}` ở route này.**
-- Mangaka **muốn sửa** → `POST /contracts/:id/request-changes { reason }` → `NEGOTIATION` (Editor sửa lại, quay vòng).
-- Board duyệt cuối (`BOARD_APPROVED`, route Board) → Mangaka **ký** `POST /contracts/:id/signatures/mangaka { otpCode }` → Board ký → `FULLY_EXECUTED` (khoá, không sửa được nữa — mọi thay đổi sau đó qua `ContractAmendment`, route Editor tạo nhưng Mangaka ký/từ chối).
+- **Đồng ý** → **`POST /contracts/:id/sign-mangaka { otpCode }`** (ký OTP) → `FULLY_EXECUTED` (hoặc `ACTIVATION_PENDING` nếu là HĐ replacement transfer) → emit `contract.executed`. Khoá, mọi thay đổi sau đó qua `ContractAmendment`.
+- **Từ chối** → **`POST /contracts/:id/reject { reason }`** → `REJECTED_BY_MANGAKA` (terminal). KHÔNG quay vòng — Editor sẽ **redraft** một HĐ MỚI (clone điều khoản, `supersedesContractId`), Mangaka nhận HĐ mới để accept/reject lại.
 
 **Giải ngân tự động** (Mangaka chỉ xem, không thao tác): mỗi `PaymentCondition` tự trigger khi đạt mốc (chapter/ranking/thời gian) → `PaymentRecord(TRIGGERED)` → Board duyệt → `PAID`.
 
@@ -1045,10 +993,8 @@ Editor soạn Contract (`DRAFT`, KHÔNG thuộc route MANGAKA) → `POST /contra
 | Tình huống | Status/Error | Khi nào |
 |---|---|---|
 | Xem/thao tác hợp đồng không phải của mình | 403 `Error.ContractAccessDenied` / `Error.NotContractMangaka` | |
-| Gửi `status` không hợp lệ (khác `MANGAKA_REVIEW`/`MANGAKA_APPROVED`) | 400 `Error.InvalidContractStatus` | `PATCH /contracts/:id/status` |
-| Chuyển trạng thái sai bước | 409 `Error.InvalidContractTransition` (path `status`) | |
-| `request-changes` khi hợp đồng không ở giai đoạn thương lượng | 409 `Error.InvalidContractTransition` | |
-| Ký khi hợp đồng chưa `BOARD_APPROVED`/`MANGAKA_SIGNED` | 409 `Error.ContractNotSignableYet` (path `status`) | |
+| Accept/reject khi HĐ chưa `AWAITING_MANGAKA` | 409 `Error.ContractNotAwaitingMangaka` / `Error.InvalidContractTransition` | `sign-mangaka` / `reject` |
+| Ký khi HĐ chưa sẵn sàng | 409 `Error.ContractNotSignableYet` (path `status`) | `sign-mangaka` |
 | Ký lại lần 2 | 400 `Error.ContractAlreadySigned` | |
 | Xuất PDF khi chưa `FULLY_EXECUTED` trở lên | 409 `Error.ContractNotExecutedForPdf` | `GET /contracts/:id/pdf` |
 | Ký/từ chối phụ lục khi không `PENDING_SIGNATURES` | 409 `Error.AmendmentNotPendingSignatures` | |
@@ -1056,11 +1002,11 @@ Editor soạn Contract (`DRAFT`, KHÔNG thuộc route MANGAKA) → `POST /contra
 
 #### `GET /contracts` — danh sách hợp đồng theo scope
 
-Không query. **Response là mảng thô** `ContractListItemDto[]` (KHÔNG bọc `{items,total,...}` — khác quy ước phân trang chung, xem `01` §2). Mỗi item = `ContractRes` bỏ `boardDecision`, `terminationClause`, `sourceTransferRequestId`, `mangakaSignedAt`, `boardSignedAt`.
+Không query. **Response là mảng thô** `ContractListItemDto[]` (KHÔNG bọc `{items,total,...}` — khác quy ước phân trang chung, xem `01` §2). Mỗi item = `ContractRes` bỏ `boardDecision`, `terminationClause`, `sourceTransferRequestId`, `mangakaSignedAt`, `representativeSignedAt`, `mangakaRejectedAt`, `rejectionReason` (giữ `representativeId`/`representative`/`supersedesContractId`).
 
 #### `GET /contracts/:id` — chi tiết hợp đồng
 
-`ContractRes` — field quan trọng: `status: enum ContractStatus`, `contractType: enum ContractType`, `valuationAmount`, `publisherOwnershipPct`/`mangakaOwnershipPct`, `terminationClause`, `contractStart`/`contractEnd`, `mangakaSignedAt`/`boardSignedAt` (null = chưa ký), `boardDecision` (object có ở GET list/detail: `{id, decisionType, result, decidedAt, boardSession:{id,title,startTime}}`). Lỗi: `Error.ContractNotFound` (404) · `Error.ContractAccessDenied` (403).
+`ContractRes` (§87) — field quan trọng: `status: enum ContractStatus`, `contractType`, `valuationAmount`, `publisherOwnershipPct`/`mangakaOwnershipPct`, `terminationClause`, `contractStart`/`contractEnd`, `mangakaSignedAt` (null = Mangaka chưa ký), **`representativeId`/`representative` (Board đại diện), `representativeSignedAt` (đại diện đã ký chưa — quyết định HĐ đã sang lượt Mangaka hay chưa), `supersedesContractId` (HĐ này là bản redraft của HĐ nào), `rejectionReason`/`mangakaRejectedAt`**, `boardDecision` (`{id, decisionType, result, decidedAt, boardSession:{...}}`). ⚠ **Đã bỏ `boardSignedAt`**. Lỗi: `Error.ContractNotFound` (404) · `Error.ContractAccessDenied` (403).
 
 #### `GET /contracts/:id/pdf` — tải PDF hợp đồng đã ký
 
@@ -1068,31 +1014,25 @@ Chỉ từ `FULLY_EXECUTED` trở lên (`PDF_EXPORTABLE_STATUSES`: `FULLY_EXECUT
 
 #### `GET /contracts/:id/status` — trạng thái + tiến độ ký
 
-Response `ContractStatusProgressRes`: `{id, status, mangaka:{id,isSigned,signedAt}, boardProgress:{totalRequired, totalSigned, signedEditors:[{id,actionAt}], pendingEditors:[{id,actionAt:null}]}}`. Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403).
+Response `ContractStatusProgressRes` (§87): `{id, status, mangaka:{id,isSigned,signedAt}, representative:{id/null, claimed, signed, signedAt}}`. ⚠ Đã thay `boardProgress{...}` bằng `representative{...}` (chỉ 1 đại diện ký). Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403).
 
-#### `PATCH /contracts/:id/status` — cập nhật trạng thái (chỉ dùng cho `MANGAKA_APPROVED`)
-
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `status` | ✅ | `enum ContractStatus` | **Mangaka chỉ gửi `"MANGAKA_APPROVED"`** — giá trị khác bị service từ chối (xem §5.1) |
-
-Response 200 `ContractRes`. Lỗi: `Error.ContractNotFound` (404) · `Error.NotAssignedContractEditor` (403 — không áp dụng cho Mangaka thực tế) · `Error.NotContractMangaka` (403 — không phải Mangaka của hợp đồng) · `Error.InvalidContractTransition` (409) · `Error.InvalidContractStatus` (400, không khai trong `@ApiErrors` nhưng có thể gặp).
-
-#### `POST /contracts/:id/request-changes` — yêu cầu chỉnh sửa điều khoản
-
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | ✅ | string (1-1000) |
-
-→ `NEGOTIATION`. Response 201 `ContractRes`. Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403) · `Error.InvalidContractTransition` (409).
-
-#### `POST /contracts/:id/signatures/mangaka` — ký bằng OTP
+#### `POST /contracts/:id/sign-mangaka` — Accept + ký OTP (Phase 2) 🆕 §87
 
 | Field | Bắt buộc | Kiểu |
 |---|---|---|
 | `otpCode` | ✅ | string (đúng 6 ký tự) |
 
-OTP xin qua `POST /auth/send-otp-email` (`purpose` nội bộ dùng riêng cho ký hợp đồng — `OtpPurpose.SIGNING_CONTRACT`). Response 201 `ContractRes`. Lỗi: `Error.ContractNotFound` (404) · `Error.ContractAlreadySigned` (400) · `Error.ContractNotSignableYet` (409) · `Error.NotContractMangaka` (403).
+Chỉ khi HĐ `AWAITING_MANGAKA`. OTP `purpose=SIGNING_CONTRACT` (hệ thống gửi email khi HĐ tới `AWAITING_MANGAKA`). Ký xong → `FULLY_EXECUTED` (hoặc `ACTIVATION_PENDING` nếu HĐ replacement transfer) + emit `contract.executed`. Response 201 `ContractRes`.
+Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403) · `Error.ContractNotAwaitingMangaka` / `Error.ContractNotSignableYet` (409) · `Error.ContractAlreadySigned` (400) · OTP sai/hết hạn → 422/410.
+
+#### `POST /contracts/:id/reject` — Từ chối hợp đồng (Phase 2) 🆕 §87
+
+| Field | Bắt buộc | Kiểu |
+|---|---|---|
+| `reason` | ✅ | string (1-1000) |
+
+Chỉ khi HĐ `AWAITING_MANGAKA` → `REJECTED_BY_MANGAKA` (terminal). Editor phải `redraft` HĐ mới; Mangaka sẽ nhận HĐ mới sau. Response 201 `ContractRes`.
+Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403) · `Error.ContractNotAwaitingMangaka` / `Error.InvalidContractTransition` (409).
 
 #### `GET /contracts/:id/versions` — lịch sử phiên bản
 
@@ -1402,11 +1342,12 @@ Query `GetSeriesTrendQuery`: `seriesId` (✅), `periods` (tuỳ, 1-60, default 1
 
 Query `surveyPeriodId` (string, path qua `@Query`). Response cùng shape `BoardRankingListRes` ở trên nhưng liệt kê **mọi** series trong kỳ đó (không giới hạn series của mình — dùng để Mangaka so sánh vị trí mình với series khác). Lỗi: `Error.SurveyPeriodNotFound` (404).
 
-⚠️ **Lấy `surveyPeriodId` ở đâu? Mangaka KHÔNG gọi được `GET /survey-periods`** (route đó chỉ EDITOR/BOARD/SUPER_ADMIN). 2 đường hợp lệ cho Mangaka:
-1. **`GET /dashboard/mangaka`** (§6.4) → `rankings[].surveyPeriodId`… — thực tế `DashboardRankingItem` **không trả** `surveyPeriodId`, chỉ có `recordedAt`, nên đường này **chỉ dùng để hiển thị hạng kỳ gần nhất**, không lấy được id để gọi `/rankings/board`.
-2. **`GET /vote/periods?magazine=&publicationType=&limit=`** — route **public** (không cần token, xem `02-guest-reader.md` §4.2), trả danh sách kỳ đã `REFLECTED` kèm `id`. **Đây là cách duy nhất Mangaka lấy được `surveyPeriodId`** để gọi `/rankings/board`. FE cứ gọi thẳng route public này từ trang Mangaka (không gửi Authorization header cũng được).
+✅ **Lấy `surveyPeriodId` ở đâu? (W1 — 2026-08-02: Mangaka NAY GỌI ĐƯỢC `GET /survey-periods`).** 3 đường:
+1. **`GET /survey-periods?magazine=&publicationType=&status=&limit=&offset=`** 🆕 — route nội bộ nay mở cho **MANGAKA** (+EDITOR/BOARD/SUPER_ADMIN). Có **filter** (magazine/publicationType/status) + **phân trang**; response nay là **`{ items, total, limit, offset }`** (⚠ trước là mảng thô — breaking). Mỗi item = `SurveyPeriodRes` (kèm `id`). Đây là cách chuẩn để Mangaka lấy `surveyPeriodId`.
+2. **`GET /vote/periods?magazine=&publicationType=&limit=`** — route public (kỳ đã `REFLECTED`), vẫn dùng được.
+3. `GET /dashboard/mangaka` chỉ có `recordedAt` (không có `surveyPeriodId`) — chỉ hiển thị hạng gần nhất.
 
-Ngoài ra: **không có API nội bộ nào trả bảng xếp hạng tổng hợp NHIỀU kỳ.** Muốn xem "xếp hạng trung bình cả tháng/cả năm", dùng route public **`GET /rankings/aggregate?magazine=&publicationType=&level=MONTH|YEAR&year=&month=`** (xem `02-guest-reader.md` §4.4) — lưu ý bản public này **không có** `isAtRisk`/`riskLevel`/`isReliable`, và chỉ gom theo **tháng/năm dương lịch**, không hỗ trợ "N kỳ gần nhất". Muốn xem xu hướng nhiều kỳ **có tín hiệu nguy cơ** thì phải dùng `GET /rankings?seriesId=&periods=N` (route #trên) — nhưng nó chỉ cho **1 series**, không phải bảng xếp hạng.
+✅ **Ranking tổng hợp nhiều kỳ CÓ tín hiệu nguy cơ (W1):** **`GET /rankings/internal/aggregate?magazine=&publicationType=&level=MONTH|YEAR&year=&month=`** 🆕 — bản nội bộ của `/rankings/aggregate`, gộp nhiều kỳ REFLECTED theo `averageNormalizedScore` NHƯNG mỗi item **có thêm `isAtRisk`/`riskLevel`/`isReliable`** (record kỳ mới nhất). Mangaka gọi được. (Route public `/rankings/aggregate` vẫn ẩn 3 tín hiệu này.) Muốn xu hướng 1 series thì dùng `GET /rankings?seriesId=&periods=N` như trên.
 
 > **Lưu ý nghiệp vụ (đối chiếu Requiment 2.1d):** Requiment mô tả "ranking phản ánh kết quả bình chọn từ ~8 tuần trước" cho mô hình postcard giấy — nhưng hệ thống số hoá vote online **ghi nhận tức thời, không có độ trễ nhân tạo** (xem Flow 4 note "Quyết định logic về độ trễ 8 tuần"). Field `issueNumber` (kỳ áp dụng) và `reflectedIssueNumber` (kỳ dữ liệu thực phản ánh) chỉ khác nhau khi Editor **nhập offline** (postcard); vote online mặc định 2 trường bằng nhau. Series mới có `< 8 chương` hoặc đang `HIATUS` được loại trừ khỏi đánh giá nguy cơ (`isAtRisk`).
 
@@ -1438,7 +1379,7 @@ Query `ListRevisionRequestsQuery`: `targetType?` (`enum RevisionTargetType`), `t
 | Field | Kiểu | Ghi chú |
 |---|---|---|
 | `targetType` | `enum RevisionTargetType` | `PROPOSAL`\|`NAME`\|`MANUSCRIPT`\|`TASK` |
-| `targetId` | string | `seriesId`\|`nameId`\|`chapterId`\|`taskId` tuỳ `targetType` |
+| `targetId` | string | `seriesId`\|`storyboardId`\|`chapterId`\|`taskId` tuỳ `targetType` |
 | `round` | number | Lần yêu cầu sửa thứ mấy trên cùng target |
 | `reason` | string | Nội dung cần sửa — **bắt buộc đọc trước khi resolve** |
 | `recipientId` | string | Người phải sửa — chỉ người này resolve được |
@@ -1476,11 +1417,11 @@ Query `ListAnnotationQuery`: `targetType` (✅, `enum AnnotationTargetType`), `t
 
 ## 7. Xác nhận cuối cùng & phát hiện đáng chú ý
 
-**Đủ 128/128 route** — đối chiếu script parse `route-roles.ts` (đếm bằng regex trực tiếp, không dựa danh sách gợi ý trong đề bài) cho đúng 128 route có `RoleCode.MANGAKA` trong `allowed[]`, tất cả đã xuất hiện trong 6 nhóm §1-§6 (A=17, B=**29**, C=20, D=**14**, E=31, F=17 = 128; nhóm B +1 do Spec 26 thêm `POST /chapters/:id/stages/:stageId/reopen`, nhóm D +1 do **Spec 27** thêm `GET /transfers/contracts/:id`). Danh sách gợi ý ban đầu trong đề bài lệch nhẹ (thiếu/dư vài route so với 6 nhóm A-F thực tế, vd `GET /studio/overview` nằm ở module `chapter` chứ không phải `studio`; `GET /mangakas` không có trong danh sách gợi ý nhưng có thật trong `allowed[]`; nhóm F gộp cả `GET/POST /annotations` dù đề bài liệt kê rời) — đã tự đối chiếu lại theo `route-roles.ts` làm chuẩn.
+**Đủ 124/124 route** (§87 + W1, 2026-08-02) — script parse `route-roles.ts` cho đúng **124** route có `RoleCode.MANGAKA` trong `allowed[]`. So với Spec 28 (123): contract Phase-2 §87 net **−1** (bỏ `PATCH /contracts/:id/status`, `request-changes`, `signatures/mangaka`; thêm `sign-mangaka`, `reject`) → 122; rồi **W1 +2** (mở `GET /survey-periods` cho Mangaka + thêm `GET /rankings/internal/aggregate`) → **124**. *(Số breakdown A–F theo nhóm chỉ mang tính điều hướng; nguồn chuẩn tuyệt đối là `route-roles.ts`.)*
 
 **Phát hiện đáng chú ý so với 2 guide cũ (`FE-API-Guide-v3.md`/`FE-Mobile-RN-Guide.md` — chỉ liếc văn phong, không dùng làm nguồn):**
 
-1. **`PATCH /contracts/:id/status` không phải action tổng quát** — với Mangaka, giá trị `status` hợp lệ DUY NHẤT là `"MANGAKA_APPROVED"` (mọi giá trị khác bị `ContractWorkflowService` từ chối 400 `Error.InvalidContractStatus`, kể cả không nằm trong `@ApiErrors` khai ở controller). FE không nên coi route này như PATCH tự do theo enum `ContractStatus`.
+1. **Contract Phase 2 (§87): Mangaka chỉ có 2 action** — `POST /contracts/:id/sign-mangaka` (accept + OTP) hoặc `POST /contracts/:id/reject` (+lý do), chỉ khi HĐ `AWAITING_MANGAKA`. KHÔNG còn `PATCH /contracts/:id/status`/`request-changes` (đã xoá) và KHÔNG có vòng thương lượng — reject là terminal, Editor redraft HĐ mới.
 2. **Đơn vị duyệt sản xuất là Task, không phải Page** — `PageStatus` hoàn toàn backend-driven (không có route cho Mangaka set trực tiếp); "trang sẵn sàng" là suy ra từ Task, khớp đúng ghi chú SRS §2.1c nhưng dễ bị hiểu nhầm nếu chỉ đọc tên enum.
 3. **`GET /contracts`, `GET /contracts/:id/versions`, `GET /contracts/:contractId/amendments`, `GET /reprint-requests` và các route con của nó trả MẢNG THÔ**, không bọc `{items,total,limit,offset}` như đa số route khác — FE phải xử lý 2 kiểu response khác nhau tuỳ route (đã ghi rõ trong từng mục ở trên).
 4. **`reprint-requests/:id/chapters/:chapterId`** — `:chapterId` param thực chất là `originalChapterId` (id của chapter gốc đã `PUBLISHED`), KHÔNG phải id riêng của bản ghi `ReprintChapter` (embedded type không có `id`).
@@ -1489,4 +1430,4 @@ Query `ListAnnotationQuery`: `targetType` (✅, `enum AnnotationTargetType`), `t
 7. **`AssistantProfile`/`MangakaProfile` dùng PUT full-upsert** (không phải PATCH partial) — gửi thiếu field nào thì field đó về default (`[]`/`undefined`), khác hẳn quy tắc "omit = giữ nguyên" của các PATCH khác trong hệ thống (xem `01` §2 ngoại lệ).
 8. **Không có route nào cho Mangaka tự đặt/gia hạn deadline chapter trực tiếp** (`PUT /chapters/:id/schedule`, `PATCH .../schedule/extend` là EDITOR-only) — Mangaka chỉ tác động deadline qua `deadline-requests` (thương lượng, Flow 10).
 
-Không phát hiện enum nào ngoài 66 enum đã liệt kê ở `01` §7 trong toàn bộ 127 route (đã verify từng schema Zod).
+Không phát hiện enum nào ngoài 66 enum đã liệt kê ở `01` §7 trong toàn bộ 124 route (đã verify từng schema Zod).

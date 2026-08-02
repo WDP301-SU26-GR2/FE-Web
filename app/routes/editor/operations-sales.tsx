@@ -16,10 +16,14 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const intent = required(form, 'intent')
   try {
     if (intent !== 'tankobon') return { ok: false, intent, errorKey: 'invalidAction' }
+    const volumeNumber = Number(required(form, 'volumeNumber'))
+    const unitsSold = Number(required(form, 'unitsSold'))
+    if (!Number.isInteger(volumeNumber) || volumeNumber < 1 || !Number.isInteger(unitsSold) || unitsSold < 0)
+      return { ok: false, intent, errorKey: 'invalidAction' }
     await tankobonControllerCreate({
       seriesId: required(form, 'seriesId'),
-      volumeNumber: Number(required(form, 'volumeNumber')),
-      unitsSold: Number(required(form, 'unitsSold')),
+      volumeNumber,
+      unitsSold,
       period: required(form, 'period')
     })
     return { ok: true, intent, messageKey: intent }

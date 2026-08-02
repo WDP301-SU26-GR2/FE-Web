@@ -45,16 +45,16 @@ export function EditorPublicationVersionsPage({
           {versions.map((item) => (
             <article key={item.id} className='rounded-lg border border-border p-3'>
               <strong>
-                {t(`operations.languages.${item.language}`, { defaultValue: item.language })} ·{' '}
+                {t(`operations.languages.${item.language}`, { defaultValue: t('common.notAvailable') })} ·{' '}
                 {item.versionType
                   ? t(`operations.versionTypes.${item.versionType}`, {
-                      defaultValue: item.versionType.replaceAll('_', ' ')
+                      defaultValue: t('common.notAvailable')
                     })
                   : '—'}
               </strong>
               <p className='text-xs text-muted-foreground'>
                 {t(`operations.readingDirections.${item.readingDirection}`, {
-                  defaultValue: item.readingDirection
+                  defaultValue: t('common.notAvailable')
                 })}
                 {item.notes ? ` · ${item.notes}` : ''}
               </p>
@@ -95,7 +95,7 @@ export function EditorPublicationVersionsPage({
             </option>
             {versions.map((item) => (
               <option key={item.id} value={item.id}>
-                {t(`operations.languages.${item.language}`, { defaultValue: item.language })} ·{' '}
+                {t(`operations.languages.${item.language}`, { defaultValue: t('common.notAvailable') })} ·{' '}
                 {item.versionType
                   ? t(`operations.versionTypes.${item.versionType}`)
                   : t(`operations.readingDirections.${item.readingDirection}`)}
@@ -105,11 +105,13 @@ export function EditorPublicationVersionsPage({
           <input name='language' className={operationInput} placeholder='JA / EN / VI' />
           <select name='readingDirection' className={operationInput} defaultValue=''>
             <option value=''>{t('operations.keepCurrent')}</option>
+            <option value='__CLEAR__'>{t('actions.clearValue')}</option>
             <option value='RTL'>{t('operations.readingDirections.RTL')}</option>
             <option value='LTR'>{t('operations.readingDirections.LTR')}</option>
           </select>
           <select name='versionType' className={operationInput} defaultValue=''>
             <option value=''>{t('operations.keepCurrent')}</option>
+            <option value='__CLEAR__'>{t('actions.clearValue')}</option>
             {['ORIGINAL', 'DIGITAL', 'FLIPPED'].map((value) => (
               <option key={value} value={value}>
                 {t(`operations.versionTypes.${value}`)}
@@ -117,6 +119,14 @@ export function EditorPublicationVersionsPage({
             ))}
           </select>
           <input name='notes' className={`${operationInput} sm:col-span-2`} placeholder={t('operations.notes')} />
+          <label className='flex items-center gap-2 text-xs text-muted-foreground'>
+            <input type='checkbox' name='clearLanguage' />
+            {t('operations.clearLanguage')}
+          </label>
+          <label className='flex items-center gap-2 text-xs text-muted-foreground'>
+            <input type='checkbox' name='clearNotes' />
+            {t('operations.clearNotes')}
+          </label>
           <div className='grid grid-cols-2 gap-2 sm:col-span-2'>
             <OperationAction intent='updatePublicationVersion' label={t('actions.updateVersion')} />
             <OperationAction intent='removePublicationVersion' label={t('actions.remove')} destructive />

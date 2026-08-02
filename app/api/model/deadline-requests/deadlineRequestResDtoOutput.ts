@@ -22,6 +22,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { DeadlineRequestResDtoOutputRequestedBy } from './deadlineRequestResDtoOutputRequestedBy';
+import type { DeadlineRequestResDtoOutputLastProposedBy } from './deadlineRequestResDtoOutputLastProposedBy';
 import type { DeadlineRequestResDtoOutputStatus } from './deadlineRequestResDtoOutputStatus';
 import type { DeadlineRequestResDtoOutputSeries } from './deadlineRequestResDtoOutputSeries';
 import type { DeadlineRequestResDtoOutputChapter } from './deadlineRequestResDtoOutputChapter';
@@ -34,15 +36,15 @@ export interface DeadlineRequestResDtoOutput {
   /** @nullable */
   seriesId: string | null;
   /**
-   * Phe khởi tạo: 'MANGAKA' | 'EDITOR'
+   * Phe thương lượng hạn nộp: MANGAKA hoặc EDITOR. Values: MANGAKA, EDITOR
    * @nullable
    */
-  requestedBy: string | null;
+  requestedBy: DeadlineRequestResDtoOutputRequestedBy;
   /**
-   * Phe đề xuất gần nhất
+   * Phe thương lượng hạn nộp: MANGAKA hoặc EDITOR. Values: MANGAKA, EDITOR
    * @nullable
    */
-  lastProposedBy: string | null;
+  lastProposedBy: DeadlineRequestResDtoOutputLastProposedBy;
   /** @nullable */
   currentDeadline: string | null;
   /** @nullable */

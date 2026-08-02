@@ -4,6 +4,7 @@ import type { BoardActionResult } from '../types'
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel, EmptyState } from '../components/board-ui'
 import { BusinessDataView } from '~/shared/components/business-data-view'
 import { ProtectedTaskFilePanel } from '~/shared/components/protected-task-file-panel'
+import { SignedImage } from '~/shared/components/signed-image'
 
 type SelectItem = { id: string; title?: string; issueNumber?: string | number | null; status?: string }
 
@@ -21,11 +22,10 @@ export function BoardReferencePage({
   periods: SelectItem[]
   selected: {
     seriesId: string
-    seriesNameId: string
     publicationVersionId: string
     surveyPeriodId: string
     chapterId: string
-    chapterNameId: string
+    storyboardId: string
   }
   directories: { assistants: unknown; mangakas: unknown }
   revisions: unknown
@@ -46,20 +46,12 @@ export function BoardReferencePage({
 
       <BoardPanel title={t('reference.seriesTitle')}>
         <p className='mb-4 text-xs leading-5 text-muted-foreground'>{t('reference.seriesHelp')}</p>
-        <Form method='get' replace preventScrollReset className='grid gap-3 lg:grid-cols-3'>
+        <Form method='get' replace preventScrollReset className='grid gap-3 lg:grid-cols-2'>
           <select className={boardInput} name='seriesId' defaultValue={selected.seriesId} required>
             <option value=''>{t('reference.selectSeries')}</option>
             {series.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.title ?? t('common.noDescription')}
-              </option>
-            ))}
-          </select>
-          <select className={boardInput} name='seriesNameId' defaultValue={selected.seriesNameId}>
-            <option value=''>{t('reference.seriesNameId')}</option>
-            {selectItems(seriesData.names).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
               </option>
             ))}
           </select>
@@ -93,9 +85,9 @@ export function BoardReferencePage({
             placeholder={t('reference.chapterId')}
             required
           />
-          <select className={boardInput} name='chapterNameId' defaultValue={selected.chapterNameId}>
-            <option value=''>{t('reference.chapterNameId')}</option>
-            {selectItems(chapterData.chapterNames).map((item) => (
+          <select className={boardInput} name='storyboardId' defaultValue={selected.storyboardId}>
+            <option value=''>{t('reference.storyboardId')}</option>
+            {selectItems(chapterData.storyboards).map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
               </option>
@@ -105,6 +97,7 @@ export function BoardReferencePage({
             {t('common.load')}
           </button>
         </Form>
+        <StoryboardPreview value={chapterData.selectedStoryboard} />
         <DatasetGrid data={chapterData} emptyText={t('reference.enterChapter')} />
       </BoardPanel>
 
@@ -115,9 +108,7 @@ export function BoardReferencePage({
             {periods.map((item) => (
               <option key={item.id} value={item.id}>
                 {t('rankings.issue', { issue: item.issueNumber ?? '—' })} ·{' '}
-                {item.status
-                  ? t(`rankings.statuses.${item.status}`, { defaultValue: item.status.replaceAll('_', ' ') })
-                  : '—'}
+                {item.status ? t(`rankings.statuses.${item.status}`, { defaultValue: t('common.notAvailable') }) : '—'}
               </option>
             ))}
           </select>
@@ -193,6 +184,32 @@ export function BoardReferencePage({
   )
 }
 
+function StoryboardPreview({ value }: { value: unknown }) {
+  const { t } = useTranslation('board')
+  if (!value || typeof value !== 'object' || !('pages' in value) || !Array.isArray(value.pages)) return null
+  const pages = value.pages.flatMap((page) => {
+    if (!page || typeof page !== 'object') return []
+    const record = page as Record<string, unknown>
+    if (typeof record.fileUrl !== 'string' || typeof record.pageNumber !== 'number') return []
+    return [{ fileUrl: record.fileUrl, pageNumber: record.pageNumber }]
+  })
+  if (!pages.length) return null
+  return (
+    <section className='mt-4'>
+      <h3 className='text-xs font-bold text-foreground'>{t('reference.storyboardPreview')}</h3>
+      <div className='mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+        {pages.map((page) => (
+          <SignedImage
+            key={`${page.pageNumber}:${page.fileUrl}`}
+            r2Key={page.fileUrl}
+            alt={t('reference.storyboardPageAlt', { number: page.pageNumber })}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function DatasetGrid({ data, emptyText }: { data: Record<string, unknown>; emptyText: string }) {
   const { t } = useTranslation('board')
   const entries = Object.entries(data).filter(([, value]) => value !== null)
@@ -207,17 +224,13 @@ function DatasetGrid({ data, emptyText }: { data: Record<string, unknown>; empty
       {entries.map(([key, value]) => (
         <section key={key} className='min-w-0 rounded-lg border border-border p-4'>
           <h3 className='mb-3 text-xs font-bold text-foreground'>
-            {t(`reference.datasets.${key}`, { defaultValue: humanize(key) })}
+            {t(`reference.datasets.${key}`, { defaultValue: t('common.data') })}
           </h3>
           <BusinessDataView value={value} emptyText={emptyText} />
         </section>
       ))}
     </div>
   )
-}
-
-function humanize(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ')
 }
 
 function selectItems(value: unknown): Array<{ id: string; label: string }> {

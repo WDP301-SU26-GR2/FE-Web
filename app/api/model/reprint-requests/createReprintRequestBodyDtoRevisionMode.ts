@@ -23,6 +23,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Reprint revision mode: AS_IS (giữ nguyên) hoặc WITH_REVISION (được sửa). Values: AS_IS, WITH_REVISION
+ */
 export type CreateReprintRequestBodyDtoRevisionMode = typeof CreateReprintRequestBodyDtoRevisionMode[keyof typeof CreateReprintRequestBodyDtoRevisionMode];
 
 

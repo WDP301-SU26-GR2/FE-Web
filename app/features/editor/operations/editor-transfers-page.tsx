@@ -157,9 +157,11 @@ export function EditorTransfersPage({
             {signatures.map((signature) => (
               <div key={signature.id} className='flex justify-between rounded-md bg-muted p-3 text-xs'>
                 <strong>
-                  {t(`operations.transferSignatureRoles.${signature.role}`, { defaultValue: signature.role })}
+                  {t(`operations.transferSignatureRoles.${signature.role}`, {
+                    defaultValue: t('common.notAvailable')
+                  })}
                 </strong>
-                <span>{new Date(signature.signedAt).toLocaleString()}</span>
+                <span>{new Date(signature.signedAt).toLocaleString(i18n.language)}</span>
               </div>
             ))}
             {!signatures.length && <p className='text-xs text-muted-foreground'>{t('operations.noSignatures')}</p>}

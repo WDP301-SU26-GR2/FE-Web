@@ -1,7 +1,8 @@
 import { EditorOperationsPage } from '~/features/editor'
+import { SITE } from '~/shared/config/site'
 
 export function meta() {
-  return [{ title: 'Editorial Operations - MangaStudio Pro' }]
+  return [{ title: SITE.name }]
 }
 
 export default function EditorOperationsRoute() {

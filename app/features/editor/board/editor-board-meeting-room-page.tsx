@@ -3,7 +3,7 @@ import { ArrowLeft, Gavel, Loader2, MessageSquareText, Play, Plus, Radio, Send, 
 import { Link, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import type { BoardDecisionResDtoOutput } from '~/api/model/board'
+import { BoardSessionResDtoOutputStatus, type BoardDecisionResDtoOutput } from '~/api/model/board'
 import type { BoardMeetingSession, BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { TransferRequestListResDtoOutputDataItem } from '~/api/model/transfer'
@@ -11,6 +11,7 @@ import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
 import type { EditorActionResult } from '../types'
 import { orderBoardDecisions } from './board-order'
+import { BOARD_SESSION_INTENTS } from './board-session-flow'
 import { boardInput, BoardFeedback, BoardStatus, useBoardFetcher } from './components/board-shared'
 import { useEditorMeetingRoom } from './hooks/use-editor-meeting-room'
 
@@ -54,12 +55,11 @@ export function EditorBoardMeetingRoomPage({
   })
   const { updatePhase } = meeting
   const isCreator = manageAll || session.creatorId === authSession?.user.id
-  const canChat = allowChat && session.status === 'ACTIVE' && meeting.phase !== 'VOTING'
-  const allDecisionsFinal =
-    meeting.decisions.length > 0 &&
-    meeting.decisions.every((decision) => ['APPROVED', 'REJECTED', 'EXPIRED'].includes(decision.result ?? ''))
+  const canChat = allowChat && session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase !== 'VOTING'
   const canPrepareSession =
-    isCreator && (session.status === 'UPCOMING' || (session.status === 'ACTIVE' && meeting.phase === 'PRESENTING'))
+    isCreator &&
+    (session.status === BoardSessionResDtoOutputStatus.UPCOMING ||
+      (session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'PRESENTING'))
 
   useEffect(() => {
     if (fetcher.data?.ok && fetcher.data.intent === 'advancePhase' && fetcher.data.phase) {
@@ -97,7 +97,7 @@ export function EditorBoardMeetingRoomPage({
           </div>
           <div className='flex flex-wrap justify-end gap-2'>
             <BoardStatus value={session.status} />
-            {session.status !== 'CONCLUDED' && <BoardStatus value={meeting.phase} />}
+            {session.status !== BoardSessionResDtoOutputStatus.CONCLUDED && <BoardStatus value={meeting.phase} />}
           </div>
         </div>
         <div className='mt-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
@@ -122,16 +122,16 @@ export function EditorBoardMeetingRoomPage({
         </div>
       </header>
 
-      {isCreator && session.status !== 'CONCLUDED' && (
+      {isCreator && session.status !== BoardSessionResDtoOutputStatus.CONCLUDED && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='font-bold text-foreground'>{t('board.meeting.phaseControls')}</h2>
           <div className='mt-3 flex flex-wrap gap-2'>
-            {session.status === 'UPCOMING' && (
+            {session.status === BoardSessionResDtoOutputStatus.UPCOMING && (
               <fetcher.Form method='post'>
                 <button
                   name='intent'
-                  value='startSession'
-                  disabled={fetcher.state !== 'idle' || meeting.decisions.length === 0}
+                  value={BOARD_SESSION_INTENTS.start}
+                  disabled={fetcher.state !== 'idle'}
                   className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
                 >
                   <Play className='size-4' />
@@ -139,7 +139,7 @@ export function EditorBoardMeetingRoomPage({
                 </button>
               </fetcher.Form>
             )}
-            {session.status === 'ACTIVE' && meeting.phase === 'PRESENTING' && (
+            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'PRESENTING' && (
               <fetcher.Form method='post'>
                 <input type='hidden' name='intent' value='advancePhase' />
                 <button
@@ -152,7 +152,7 @@ export function EditorBoardMeetingRoomPage({
                 </button>
               </fetcher.Form>
             )}
-            {session.status === 'ACTIVE' && meeting.phase === 'QA' && (
+            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'QA' && (
               <fetcher.Form method='post'>
                 <input type='hidden' name='intent' value='advancePhase' />
                 <button
@@ -165,11 +165,11 @@ export function EditorBoardMeetingRoomPage({
                 </button>
               </fetcher.Form>
             )}
-            {session.status === 'ACTIVE' && meeting.phase === 'VOTING' && allDecisionsFinal && (
+            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && (
               <fetcher.Form method='post'>
                 <button
                   name='intent'
-                  value='concludeSession'
+                  value={BOARD_SESSION_INTENTS.conclude}
                   disabled={fetcher.state !== 'idle'}
                   className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
                 >
@@ -179,9 +179,6 @@ export function EditorBoardMeetingRoomPage({
               </fetcher.Form>
             )}
           </div>
-          {session.status === 'UPCOMING' && meeting.decisions.length === 0 && (
-            <p className='mt-2 text-xs font-semibold text-muted-foreground'>{t('board.decisionRequiredBeforeStart')}</p>
-          )}
           <BoardFeedback data={fetcher.data} />
         </section>
       )}
@@ -317,7 +314,7 @@ function AddSessionDecisionDialog({
   const [seriesId, setSeriesId] = useState('')
   const [resourceId, setResourceId] = useState('')
   const [transferRequestId, setTransferRequestId] = useState('')
-  const eligibleStatuses = decisionType === 'SERIALIZATION' ? ['READY_TO_PITCH', 'PITCHED'] : ['SERIALIZED', 'HIATUS']
+  const eligibleStatuses = decisionType === 'SERIALIZATION' ? ['PITCHED'] : ['SERIALIZED', 'HIATUS']
   const eligibleSeries = series.filter(
     (item) => eligibleStatuses.includes(item.status) && !hasDecisionConflict(decisions, item.id, decisionType)
   )
@@ -458,9 +455,7 @@ function AddSessionDecisionDialog({
         </label>
         {selectedSeries && (
           <div className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs leading-5 text-muted-foreground'>
-            {decisionType === 'SERIALIZATION' && selectedSeries.status === 'READY_TO_PITCH'
-              ? t('board.meeting.willPitchAndCreateDecision')
-              : t('board.meeting.willCreateSelectedDecision')}
+            {t('board.meeting.willCreateSelectedDecision')}
           </div>
         )}
         {!eligibleSeries.length && (
@@ -588,7 +583,7 @@ function PublicationTypeField({ selectedSeries }: { selectedSeries?: SeriesListR
 
 function getDecisionTitle(decision: BoardDecisionResDtoOutput, t: ReturnType<typeof useTranslation<'editor'>>['t']) {
   const type = t(`board.decisionTypeLabels.${decision.decisionType}`, {
-    defaultValue: decision.decisionType ?? t('board.sections.decisions')
+    defaultValue: t('common.notAvailable')
   })
   if (!decision.targetSeries?.title) return type
   return decision.decisionType === 'SERIALIZATION'

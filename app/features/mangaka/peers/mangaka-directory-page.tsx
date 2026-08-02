@@ -2,7 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Filter, Search, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { UsersControllerListMangakasGenre, type MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
+import {
+  UsersControllerListMangakasGenre,
+  UsersControllerListMangakasLevel,
+  type MangakaDirectoryListResDtoOutputItemsItem
+} from '~/api/model/users'
 import { Pagination } from '~/shared/components/pagination'
 import { Button } from '~/shared/ui'
 
@@ -11,6 +15,7 @@ import { MangakaPublicProfileDialog } from './components/mangaka-public-profile-
 import { useMangakaDirectory } from './use-mangaka-directory'
 
 const GENRES = Object.values(UsersControllerListMangakasGenre)
+const LEVELS = Object.values(UsersControllerListMangakasLevel)
 
 export function MangakaDirectoryPage() {
   const { t } = useTranslation('mangaka')
@@ -31,7 +36,7 @@ export function MangakaDirectoryPage() {
     refresh
   } = useMangakaDirectory()
   const [queryInput, setQueryInput] = useState('')
-  const [levelInput, setLevelInput] = useState('')
+  const [levelInput, setLevelInput] = useState<UsersControllerListMangakasLevel | ''>('')
   const [profileTarget, setProfileTarget] = useState<MangakaDirectoryListResDtoOutputItemsItem | null>(null)
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -42,7 +47,7 @@ export function MangakaDirectoryPage() {
   const applyTextFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setQuery(queryInput.trim() || undefined)
-    setLevel(levelInput.trim() || undefined)
+    setLevel(levelInput || undefined)
   }
 
   const clearFilters = () => {
@@ -86,14 +91,18 @@ export function MangakaDirectoryPage() {
             <Filter className='h-3.5 w-3.5' />
             {t('mangakaDirectory.filters.level')}
           </span>
-          <input
-            type='text'
+          <select
             value={levelInput}
-            maxLength={100}
-            onChange={(event) => setLevelInput(event.target.value)}
-            placeholder={t('mangakaDirectory.filters.levelPlaceholder')}
+            onChange={(event) => setLevelInput(event.target.value as UsersControllerListMangakasLevel | '')}
             className='h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring'
-          />
+          >
+            <option value=''>{t('mangakaDirectory.filters.allLevels')}</option>
+            {LEVELS.map((option) => (
+              <option key={option} value={option}>
+                {t(`mangakaDirectory.filters.levels.${option}`)}
+              </option>
+            ))}
+          </select>
         </label>
         <div className='flex flex-wrap gap-2'>
           <Button type='submit' variant='primary'>

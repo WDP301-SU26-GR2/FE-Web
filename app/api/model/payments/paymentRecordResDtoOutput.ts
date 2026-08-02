@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type { PaymentRecordResDtoOutputPaymentType } from './paymentRecordResDtoOutputPaymentType';
 import type { PaymentRecordResDtoOutputPaymentSource } from './paymentRecordResDtoOutputPaymentSource';
+import type { PaymentRecordResDtoOutputPaymentMethod } from './paymentRecordResDtoOutputPaymentMethod';
 import type { PaymentRecordResDtoOutputStatus } from './paymentRecordResDtoOutputStatus';
 import type { PaymentRecordResDtoOutputSeries } from './paymentRecordResDtoOutputSeries';
 import type { PaymentRecordResDtoOutputReceiver } from './paymentRecordResDtoOutputReceiver';
@@ -47,15 +48,21 @@ export interface PaymentRecordResDtoOutput {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
    */
   approvedAt: string | null;
+  /** Loại khoản chi cho Mangaka: CONDITION_PAYOUT (đạt điều kiện) | REVENUE_SHARE (chia lợi nhuận định kỳ) | COMPENSATION (đền bù khi huỷ series) | CHAPTER_MILESTONE | RECURRING_CHAPTER | RANKING_MILESTONE | TIME_BOUND (các payout theo điều kiện) | TRANSFER (liên quan chuyển nhượng). Values: CONDITION_PAYOUT, REVENUE_SHARE, COMPENSATION, CHAPTER_MILESTONE, RECURRING_CHAPTER, RANKING_MILESTONE, TIME_BOUND, TRANSFER */
   paymentType: PaymentRecordResDtoOutputPaymentType;
+  /** Nguồn phát sinh khoản chi: CONTRACT (hợp đồng gốc) | REPRINT (tái bản) | TRANSFER (chuyển nhượng) | TERMINATION (huỷ/kết thúc hợp đồng) | MANUAL (tạo thủ công). Values: CONTRACT, REPRINT, TRANSFER, TERMINATION, MANUAL */
   paymentSource: PaymentRecordResDtoOutputPaymentSource;
   amount: number;
   /** @nullable */
   period: string | null;
-  /** @nullable */
-  paymentMethod: string | null;
+  /**
+   * Phương thức thanh toán: BANK_TRANSFER hoặc CASH. Values: BANK_TRANSFER, CASH
+   * @nullable
+   */
+  paymentMethod: PaymentRecordResDtoOutputPaymentMethod;
   /** @nullable */
   transactionReference: string | null;
+  /** Trạng thái khoản chi: TRIGGERED (điều kiện đạt) | PENDING (chờ xử lý) → APPROVED (Board duyệt) → PAID (đã trả); MISSED/FAILED/CANCELLED = không chi trả. Values: TRIGGERED, MISSED, PENDING, APPROVED, PAID, FAILED, CANCELLED */
   status: PaymentRecordResDtoOutputStatus;
   /**
    * ISO 8601 date-time (UTC)

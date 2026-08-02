@@ -45,13 +45,14 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     if (intent === 'appConfig') {
       const response = await appConfigControllerUpdate({
         coOwnerApprovalGraceDays: integer(formData, 'coOwnerApprovalGraceDays'),
-        nameMaxReviewRounds: integer(formData, 'nameMaxReviewRounds'),
+        storyboardMaxReviewRounds: integer(formData, 'storyboardMaxReviewRounds'),
         reputationRecommendThreshold: number(formData, 'reputationRecommendThreshold'),
         hiatusTooLongDays: integer(formData, 'hiatusTooLongDays'),
         lowVoteReliabilityThreshold: integer(formData, 'lowVoteReliabilityThreshold'),
         rankingAggregateMinCoverageRatio: number(formData, 'rankingAggregateMinCoveragePercent') / 100,
         maxUploadBytes: integer(formData, 'maxUploadMb') * 1024 * 1024,
-        assignmentGraceDays: integer(formData, 'assignmentGraceDays')
+        assignmentGraceDays: integer(formData, 'assignmentGraceDays'),
+        boardRepClaimGraceDays: integer(formData, 'boardRepClaimGraceDays')
       })
       if (response.status !== 200) return failure(intent, 'validation')
       return success(intent, 'appUpdated', extractApiSuccessMessage(response, 'Đã cập nhật cấu hình hệ thống.'))

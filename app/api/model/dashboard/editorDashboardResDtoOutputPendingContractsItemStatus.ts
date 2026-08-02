@@ -24,7 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
- * Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED | VOIDED. Values: DRAFT, MANGAKA_REVIEW, MANGAKA_APPROVED, BOARD_APPROVED, NEGOTIATION, MANGAKA_SIGNED, ACTIVATION_PENDING, FULLY_EXECUTED, FULFILLED, TERMINATED, TERMINATED_BY_BREACH, EXPIRED, VOIDED
+ * DRAFT: Editor đang soạn; có thể cập nhật điều khoản và payment conditions. | BOARD_REVIEW: Editor đã submit; chờ một Board representative trong roster claim và ký. | AWAITING_MANGAKA: Board representative đã ký; chờ Mangaka chấp nhận/ký hoặc từ chối. | ACTIVATION_PENDING: Replacement contract đã đủ chữ ký; chờ transfer finalizer kích hoạt và terminate hợp đồng cũ. | FULLY_EXECUTED: Hợp đồng đã đủ chữ ký và có hiệu lực. | REJECTED_BY_MANGAKA: Mangaka từ chối sau bước Board representative ký; Editor có thể redraft. | FULFILLED: Hợp đồng đã hoàn thành nghĩa vụ. | TERMINATED: Hợp đồng đã chấm dứt. | TERMINATED_BY_BREACH: Hợp đồng chấm dứt do vi phạm. | EXPIRED: Hợp đồng hết hạn. | VOIDED: Hợp đồng nháp/đang ký đã bị vô hiệu hoá.. Values: DRAFT, BOARD_REVIEW, AWAITING_MANGAKA, ACTIVATION_PENDING, FULLY_EXECUTED, REJECTED_BY_MANGAKA, FULFILLED, TERMINATED, TERMINATED_BY_BREACH, EXPIRED, VOIDED
  */
 export type EditorDashboardResDtoOutputPendingContractsItemStatus = typeof EditorDashboardResDtoOutputPendingContractsItemStatus[keyof typeof EditorDashboardResDtoOutputPendingContractsItemStatus];
 
@@ -32,13 +32,11 @@ export type EditorDashboardResDtoOutputPendingContractsItemStatus = typeof Edito
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const EditorDashboardResDtoOutputPendingContractsItemStatus = {
   DRAFT: 'DRAFT',
-  MANGAKA_REVIEW: 'MANGAKA_REVIEW',
-  MANGAKA_APPROVED: 'MANGAKA_APPROVED',
-  BOARD_APPROVED: 'BOARD_APPROVED',
-  NEGOTIATION: 'NEGOTIATION',
-  MANGAKA_SIGNED: 'MANGAKA_SIGNED',
+  BOARD_REVIEW: 'BOARD_REVIEW',
+  AWAITING_MANGAKA: 'AWAITING_MANGAKA',
   ACTIVATION_PENDING: 'ACTIVATION_PENDING',
   FULLY_EXECUTED: 'FULLY_EXECUTED',
+  REJECTED_BY_MANGAKA: 'REJECTED_BY_MANGAKA',
   FULFILLED: 'FULFILLED',
   TERMINATED: 'TERMINATED',
   TERMINATED_BY_BREACH: 'TERMINATED_BY_BREACH',

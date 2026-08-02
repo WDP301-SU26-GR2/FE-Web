@@ -2,12 +2,12 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { chapterNameControllerResubmit } from '~/api/operations/names/names'
-import type { NameResDtoOutput } from '~/api/model/names'
+import type { StoryboardResDtoOutput } from '~/api/model/storyboards'
+import { chapterStoryboardControllerResubmit } from '~/api/operations/storyboards/storyboards'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseResubmitNameResult = {
-  resubmit: (input: { chapterId: string; nameId: string }) => Promise<NameResDtoOutput | null>
+  resubmit: (input: { chapterId: string; nameId: string }) => Promise<StoryboardResDtoOutput | null>
   isResubmitting: boolean
 }
 
@@ -29,9 +29,12 @@ export function useResubmitName(): UseResubmitNameResult {
     async (input: { chapterId: string; nameId: string }) => {
       setIsResubmitting(true)
       try {
-        const res = await chapterNameControllerResubmit({ id: input.chapterId, nameId: input.nameId })
+        const res = await chapterStoryboardControllerResubmit({
+          id: input.chapterId,
+          storyboardId: input.nameId
+        })
         toast.success(t('publication.nameSection.resubmit.success'))
-        return res.data as NameResDtoOutput
+        return res.data as StoryboardResDtoOutput
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('publication.error.generic')))
         return null

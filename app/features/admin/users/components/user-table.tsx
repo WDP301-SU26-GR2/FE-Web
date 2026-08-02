@@ -14,9 +14,9 @@ export interface UserTableProps {
 }
 
 const ACTION_STYLES: Record<AdminUserAction, string> = {
-  status: 'text-sky-700 hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-300',
-  resetPassword: 'text-violet-700 hover:bg-violet-500/10 hover:text-violet-800 dark:text-violet-300',
-  restore: 'text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-300',
+  status: 'text-info hover:bg-info/10',
+  resetPassword: 'text-primary hover:bg-primary/10',
+  restore: 'text-success hover:bg-success/10',
   delete: 'text-destructive hover:bg-destructive/10'
 } as const
 
@@ -104,7 +104,7 @@ export function UserTable({ users, deletedUserIds, onAction }: UserTableProps) {
                         to={`/dashboard/admin/users/${user.id}`}
                         title={t('users.actions.viewDetail')}
                         aria-label={`${t('users.actions.viewDetail')}: ${user.displayName ?? user.name}`}
-                        className='rounded-lg p-2 text-sky-700 transition-colors hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-300'
+                        className='rounded-lg p-2 text-info transition-colors hover:bg-info/10'
                       >
                         <Eye className='size-4' />
                       </Link>

@@ -9,7 +9,7 @@
 
 - `00-INDEX.md` — mục lục, chọn role.
 - `01-conventions-and-auth.md` (file này) — response envelope, lỗi, phân trang, upload file, realtime, **Auth & Tài khoản** (dùng chung mọi role đã đăng nhập), **enum dictionary đầy đủ 66 enum**, **FE env vars**.
-- `02-guest-reader.md` … `07-super-admin.md` — theo role, chỉ liệt kê API **role đó gọi được** (đối chiếu `test/flows/route-roles.ts` — file sinh tự động từ Reflect metadata runtime, 277 route, **nguồn sự thật duy nhất về quyền route**).
+- `02-guest-reader.md` … `07-super-admin.md` — theo role, chỉ liệt kê API **role đó gọi được** (đối chiếu `test/flows/route-roles.ts` — file sinh tự động từ Reflect metadata runtime, 278 route, **nguồn sự thật duy nhất về quyền route**).
 - Mỗi bảng field trong các file role ghi rõ: **Bắt buộc?** (✅/⛔/tuỳ) · **Kiểu/enum** (enum thì tra ở §7 file này) · **Ghi chú** (ràng buộc, ý nghĩa nghiệp vụ).
 
 ---
@@ -67,7 +67,7 @@ Response **lỗi** luôn qua `CatchEverythingFilter` (bộ lọc lỗi DUY NHẤ
 
 Nguồn: `src/modules/storage/*`, ground-truth 2026-07-27.
 
-Mọi field kiểu file (`coverImage`, `originalFile`, `compositeFile`, `portfolioFiles`, `avatar`, `namePages[].fileUrl`...) lưu **object key** trên R2, KHÔNG phải URL. Luồng bắt buộc luôn là 3 bước:
+Mọi field kiểu file (`coverImage`, `originalFile`, `compositeFile`, `portfolioFiles`, `avatar`, `storyboardPages[].fileUrl`...) lưu **object key** trên R2, KHÔNG phải URL. Luồng bắt buộc luôn là 3 bước:
 
 1. **Xin URL upload** — `POST /uploads/sign` (cần Bearer, mọi role đã login đều gọi được — route access `AUTH`):
 
@@ -93,7 +93,7 @@ Lỗi có thể gặp: `Error.UnsupportedFileType` (422) · `Error.FileTooLarge`
 
 - **Mặc định polling** — không có WebSocket cho notification. `GET /notifications` kèm `unreadCount` dùng làm badge; poll 15–30s hoặc khi focus tab.
 - **Duy nhất WebSocket `/board`** (Socket.IO, namespace `/board`) cho phiên họp Hội đồng realtime (chat + tally) — chi tiết ở `06-board-member.md` §Board Session (đọc code `src/modules/board/board.gateway.ts`). Ngoài ra có namespace `/vote` **public** (không cần token) cho tally bình chọn độc giả realtime — chi tiết ở `02-guest-reader.md`.
-- **Notification** (`GET /notifications?isRead=&type=&limit=&offset=`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all` — route `AUTH`, mọi role đã login gọi được): field `type` là enum `NotificationType` (`SYSTEM`/`CONTRACT`/`TASK`/`DEADLINE`/`SURVEY`/`BOARD`/`REVIEW`); `referenceType` là chuỗi dạng `<ENTITY>_<ACTION>` (vd `TASK_ASSIGNED`, `PROPOSAL_RESUBMITTED`) dùng để deep-link — mỗi role-file liệt kê đúng các `referenceType` module đó thật sự phát ra (grep `notify(` / `notifySafe(` trong module tương ứng, đừng đoán).
+- **Notification** (`GET /notifications?isRead=&type=&limit=&offset=`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all` — route `AUTH`, mọi role đã login gọi được): `NotificationRes` gồm `id`, `type` (enum `NotificationType`: `SYSTEM`/`CONTRACT`/`TASK`/`DEADLINE`/`SURVEY`/`BOARD`/`REVIEW`), **`title`** (🆕 Spec 29 — tiêu đề tiếng Việt suy từ `referenceType`, LUÔN có kể cả notification cũ; FE render `title` làm tiêu đề), `content` (nội dung tiếng Việt), `referenceId`, `referenceType`, `isRead`, `createdAt`. `referenceType` là chuỗi `<ENTITY>_<ACTION>` (vd `TASK_ASSIGNED`, `PROPOSAL_RESUBMITTED`, `CONTRACT_REPRESENTATIVE_ASSIGNED`) dùng để deep-link — mỗi role-file liệt kê đúng các `referenceType` module đó thật sự phát ra (grep `notify(` / `notifySafe(` trong module tương ứng, đừng đoán).
 - Notification chống trùng bằng `dedupeKey` nội bộ — FE **không cần tự dedupe** danh sách trả về.
 
 ---
@@ -205,8 +205,8 @@ Theo `src/core/config/env-schema.ts` (nguồn sự thật duy nhất, 2026-07-27
 - **`FranchiseConsentStatus`** (read-only): `PENDING` · `APPROVED` · `REJECTED`.
 
 ### 7.3. Name & Chapter Production
-- **`NameStatus`**: `DRAFT` · `SUBMITTED` · `IN_REVIEW` · `REVISION` · `APPROVED`.
-- **`NameKind`**: `PROPOSAL` · `CHAPTER`.
+- **`StoryboardStatus`**: `DRAFT` · `SUBMITTED` · `IN_REVIEW` · `REVISION` · `APPROVED` (chỉ Storyboard của chapter; không còn `kind`).
+- **Proposal storyboard pages**: `SeriesProposal.storyboardPages[]` là composite embedded và đi theo `ProposalStatus`, không có lifecycle riêng.
 - **`ChapterStatus`** (read-only, dẫn xuất từ Manuscript): `DRAFT` · `IN_PRODUCTION` · `COMPLETED` · `PUBLISHED`.
 - **`ChapterHoldAction`** (read-only, trong `holdHistory[]`): `HOLD` · `RESUME`.
 - **`ManuscriptStatus`**: `DRAFT` · `IN_PRODUCTION` · `EDITOR_REVIEW` · `EDITOR_REVISION` · `READY_FOR_PRINT` · `AWAITING_CO_OWNER_APPROVAL` · `PUBLISHED`.
@@ -236,7 +236,7 @@ Theo `src/core/config/env-schema.ts` (nguồn sự thật duy nhất, 2026-07-27
 
 ### 7.6. Contract & Payment (Flow 6)
 - **`ContractType`**: `FULL_BUYOUT` (NXB mua đứt) · `REVENUE_SHARE` (ăn chia — mọi quyết định lớn cần Mangaka đồng ý).
-- **`ContractStatus`** (read-only): `DRAFT` · `MANGAKA_REVIEW` · `MANGAKA_APPROVED` · `BOARD_APPROVED` · `NEGOTIATION` · `MANGAKA_SIGNED` · `ACTIVATION_PENDING` (🆕 — HĐ thay thế của giao dịch FULL_BUYOUT chờ kích hoạt, KHÔNG cho publish/PDF) · `FULLY_EXECUTED` · `FULFILLED` · `TERMINATED` · `TERMINATED_BY_BREACH` · `EXPIRED` · `VOIDED`.
+- **`ContractStatus`** (read-only, §87 flow 2-phase): `DRAFT` · `BOARD_REVIEW` (Phase 1 — Board comment + đại diện ký) · `AWAITING_MANGAKA` (Phase 2 — chờ Mangaka accept/reject) · `ACTIVATION_PENDING` (HĐ thay thế của giao dịch FULL_BUYOUT chờ transfer kích hoạt, KHÔNG cho publish/PDF) · `FULLY_EXECUTED` · `REJECTED_BY_MANGAKA` (terminal — Mangaka từ chối, Editor phải `redraft` HĐ mới) · `FULFILLED` · `TERMINATED` · `TERMINATED_BY_BREACH` · `EXPIRED` · `VOIDED`. ⚠ **Đã bỏ** `MANGAKA_REVIEW`/`MANGAKA_APPROVED`/`BOARD_APPROVED`/`NEGOTIATION`/`MANGAKA_SIGNED` (flow cũ 1-phase).
 - **`ConditionType`**: `CHAPTER_MILESTONE` · `RECURRING_CHAPTER` · `RANKING_MILESTONE` · `TIME_BOUND`.
 - **`PaymentConditionStatus`** (read-only): `PENDING` · `ACHIEVED` · `PAID` · `CANCELLED` · `MISSED` · `DISABLED`.
 - **`PaymentType`** (read-only): `CONDITION_PAYOUT` · `REVENUE_SHARE` · `COMPENSATION` · `CHAPTER_MILESTONE` · `RECURRING_CHAPTER` · `RANKING_MILESTONE` · `TIME_BOUND` · `TRANSFER`.
@@ -281,7 +281,7 @@ Theo `src/core/config/env-schema.ts` (nguồn sự thật duy nhất, 2026-07-27
 
 ## 8. Danh sách vai trò & phạm vi route (tổng quan — chi tiết từng route ở file role)
 
-Nguồn: `BE-dev/test/flows/route-roles.ts` (**sinh tự động từ Reflect metadata runtime lúc boot, 277 route, 2026-07-27** — là nguồn sự thật duy nhất về việc route nào role nào gọi được, không suy đoán từ code nghiệp vụ).
+Nguồn: `BE-dev/test/flows/route-roles.ts` (**sinh tự động từ Reflect metadata runtime lúc boot, 278 route, cập nhật 2026-08-02** — là nguồn sự thật duy nhất về việc route nào role nào gọi được, không suy đoán từ code nghiệp vụ).
 
 | Role | Số route độc quyền (`@Roles` chứa role đó) | File guide |
 |---|---|---|

@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { MangakaProfileBodyDtoGenresItem } from './mangakaProfileBodyDtoGenresItem';
+import type { MangakaProfileBodyDtoExperienceLevel } from './mangakaProfileBodyDtoExperienceLevel';
 
 export interface MangakaProfileBodyDto {
   /**
@@ -31,7 +32,8 @@ export interface MangakaProfileBodyDto {
    */
   penName: string;
   genres?: MangakaProfileBodyDtoGenresItem[];
-  experienceLevel?: string;
+  /** Mức kinh nghiệm hồ sơ: JUNIOR, MID, SENIOR. Values: JUNIOR, MID, SENIOR */
+  experienceLevel?: MangakaProfileBodyDtoExperienceLevel;
   bio?: string;
   portfolioFiles?: string[];
 }

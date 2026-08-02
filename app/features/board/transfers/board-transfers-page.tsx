@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { PenLine } from 'lucide-react'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import type {
+  AssignFullBuyoutBodyDtoConditionsItemType as AssignFullBuyoutConditionType,
   TransferContractResDtoOutput,
   TransferRequestResDtoOutput,
   TransferSignatureListResDtoOutputSignaturesItem
 } from '~/api/model/transfer'
+import { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
 import {
   BoardActionDialog,
   boardInput,
@@ -50,7 +52,12 @@ export function BoardTransfersPage({
   const isApprovalRosterMember =
     approvedContractDecision?.allowedEditorIds?.includes(authSession?.user.id ?? '') ?? false
   const canBoardSign = Boolean(
-    contract && approvedContractDecision && isApprovalRosterMember && hasMangakaA && hasMangakaB && !hasBoard
+    contract?.status === 'B_SIGNED' &&
+    approvedContractDecision &&
+    isApprovalRosterMember &&
+    hasMangakaA &&
+    hasMangakaB &&
+    !hasBoard
   )
   const statuses = [...new Set(requests.map((item) => item.status))]
   const filteredRequests = requests.filter(
@@ -127,8 +134,10 @@ export function BoardTransfersPage({
             <div className='mt-3 grid gap-2'>
               {signatures.map((signature) => (
                 <div key={signature.id} className='flex justify-between rounded-lg border border-border p-3 text-xs'>
-                  <span>{t(`transfers.signatureRoles.${signature.role}`, { defaultValue: signature.role })}</span>
-                  <span>{new Date(signature.signedAt).toLocaleString()}</span>
+                  <span>
+                    {t(`transfers.signatureRoles.${signature.role}`, { defaultValue: t('common.notAvailable') })}
+                  </span>
+                  <span>{new Date(signature.signedAt).toLocaleString(i18n.language)}</span>
                 </div>
               ))}
             </div>
@@ -147,7 +156,7 @@ export function BoardTransfersPage({
           <option value=''>{t('filters.allTransferStatuses')}</option>
           {statuses.map((value) => (
             <option key={value} value={value}>
-              {t(`filters.transferStatuses.${value}`, { defaultValue: value })}
+              {t(`filters.transferStatuses.${value}`, { defaultValue: t('common.notAvailable') })}
             </option>
           ))}
         </select>
@@ -219,7 +228,7 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
       </fetcher.Form>
       {fetcher.data?.intent === 'sendOtp' && (
         <p className={`text-xs ${fetcher.data.ok ? 'text-primary' : 'text-destructive'}`}>
-          {fetcher.data.ok ? t('messages.otpSent') : fetcher.data.message || t('common.failure')}
+          {fetcher.data.ok ? t('messages.otpSent') : t('common.failure')}
         </p>
       )}
       <BoardFeedback data={fetcher.data?.intent === 'sign' ? fetcher.data : undefined} />
@@ -242,7 +251,7 @@ function TransferCard({
   const eligibleDecisions = decisions.filter((decision) => {
     return (
       (decision.targetSeriesId ?? decision.targetSeries?.id) === currentItem.seriesId &&
-      decision.details?.transferRequestId === currentItem.id
+      (typeof decision.details?.transferRequestId !== 'string' || decision.details.transferRequestId === currentItem.id)
     )
   })
   const [decisionId, setDecisionId] = useState('')
@@ -270,7 +279,7 @@ function TransferCard({
           <strong>{currentItem.series?.title ?? t('transfers.unknownSeries')}</strong>
           <p className='mt-1 text-xs text-muted-foreground'>
             {t(`transfers.types.${currentItem.proposedType}`, {
-              defaultValue: currentItem.proposedType?.replaceAll('_', ' ') ?? '—'
+              defaultValue: t('common.notAvailable')
             })}{' '}
             · {currentItem.requestingMangaka?.displayName ?? t('transfers.unknownMangaka')}
           </p>
@@ -298,7 +307,7 @@ function TransferCard({
                 </option>
                 {eligibleDecisions.map((decision) => (
                   <option key={decision.id} value={decision.id}>
-                    {t(`filters.decisionResults.${decision.result}`, { defaultValue: decision.result ?? '' })} ·{' '}
+                    {t(`filters.decisionResults.${decision.result}`, { defaultValue: t('common.notAvailable') })} ·{' '}
                     {decision.targetSeries?.title ?? currentItem.series?.title ?? t('transfers.unknownSeries')}
                   </option>
                 ))}
@@ -416,12 +425,18 @@ function FullBuyoutForm({
           </div>
           {Array.from({ length: conditionCount }, (_, index) => (
             <div key={index} className='grid gap-2 rounded-md bg-muted/50 p-3 sm:grid-cols-2'>
-              <select className={boardInput} name='conditionType' defaultValue='CHAPTER_MILESTONE'>
-                {['CHAPTER_MILESTONE', 'RECURRING_CHAPTER', 'RANKING_MILESTONE', 'TIME_BOUND'].map((type) => (
-                  <option key={type} value={type}>
-                    {t(`transfers.conditionTypes.${type}`)}
-                  </option>
-                ))}
+              <select
+                className={boardInput}
+                name='conditionType'
+                defaultValue={AssignFullBuyoutBodyDtoConditionsItemType.CHAPTER_MILESTONE}
+              >
+                {(Object.values(AssignFullBuyoutBodyDtoConditionsItemType) as AssignFullBuyoutConditionType[]).map(
+                  (type) => (
+                    <option key={type} value={type}>
+                      {t(`transfers.conditionTypes.${type}`)}
+                    </option>
+                  )
+                )}
               </select>
               <input
                 className={boardInput}

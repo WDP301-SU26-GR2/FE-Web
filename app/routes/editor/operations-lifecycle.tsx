@@ -9,7 +9,6 @@ import { boardControllerGetDecisions } from '~/api/operations/board/board'
 import { tankobonControllerDashboard } from '~/api/operations/tankobon/tankobon'
 import { seriesControllerGetSeries } from '~/api/operations/series/series'
 import { EditorLifecyclePage, type EditorActionResult } from '~/features/editor'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { loadOperationalSeries, optional, optionalNumber, required } from './operations-route-utils'
 import type { Route } from './+types/operations-lifecycle'
 
@@ -72,13 +71,8 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     else if (intent === 'forceCancel') await seriesControllerForceCancel({ id: required(form, 'seriesId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
-  } catch (error) {
-    return {
-      ok: false,
-      intent,
-      errorKey: 'actionFailed',
-      message: extractApiErrorMessage(error, 'Không thể cập nhật vòng đời bộ truyện.')
-    }
+  } catch {
+    return { ok: false, intent, errorKey: 'actionFailed' }
   }
 }
 

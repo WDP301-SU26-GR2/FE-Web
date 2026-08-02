@@ -5,7 +5,7 @@ import {
   paymentConditionControllerGetPaymentConditions,
   paymentConditionControllerUpdatePaymentCondition
 } from '~/api/operations/contracts/contracts'
-import { EditorContractConditionsPage, type EditorActionResult } from '~/features/editor'
+import { EditorContractConditionsPage, canEditContract, type EditorActionResult } from '~/features/editor'
 import { contractErrorKey, loadContractBase, paymentPayout, paymentThreshold, required } from './contract-route-utils'
 import type { Route } from './+types/contract-conditions'
 
@@ -23,7 +23,7 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   try {
     const contract = await contractControllerGetContractById({ id: params.id })
     if (contract.status !== 200) throw new Error('CONTRACT_NOT_FOUND')
-    if (!['DRAFT', 'NEGOTIATION'].includes(contract.data.status)) throw new Error('PAYMENT_CONDITION_LOCKED')
+    if (!canEditContract(contract.data)) return { ok: false, intent, errorKey: 'paymentConditionLocked' }
     if (intent === 'createCondition')
       await paymentConditionControllerCreatePaymentCondition(
         { contractId: params.id },

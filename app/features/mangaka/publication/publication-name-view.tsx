@@ -5,7 +5,7 @@ import { BookPlus, FileCheck2, Loader2, Pencil, Send, Trash2 } from 'lucide-reac
 import { cn } from '~/shared/lib/cn'
 import { Button } from '~/shared/ui'
 import { Dialog } from '~/shared/ui/dialog'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
+import type { StoryboardListResDtoOutputItemsItem } from '~/api/model/storyboards'
 
 import { usePublicationContext } from './publication-shell-context'
 import { NamePageCard } from './components/name-page-card'
@@ -192,7 +192,7 @@ export function PublicationNameView() {
 }
 
 type DocumentHeaderProps = {
-  name: NameListResDtoOutputItemsItem | null
+  name: StoryboardListResDtoOutputItemsItem | null
   chapter: NonNullable<ReturnType<typeof usePublicationContext>['chapter']>
   canCreate: boolean
   canEdit: boolean
@@ -364,7 +364,7 @@ function PageGrid({
   name,
   onOpen
 }: {
-  name: NameListResDtoOutputItemsItem
+  name: StoryboardListResDtoOutputItemsItem
   onOpen: (page: { pageNumber: number; fileUrl: string }) => void
 }) {
   const { t } = useTranslation('mangaka')

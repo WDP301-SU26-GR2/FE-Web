@@ -26,6 +26,7 @@ import type {
   BoardRankingListResDtoOutput,
   CreateSurveyPeriodBodyDto,
   ImportSurveyDataBodyDto,
+  InternalRankingAggregateResDtoOutput,
   LatestVoteResultsResDtoOutput,
   MessageResDtoOutput,
   OpenVotePeriodsResDtoOutput,
@@ -39,16 +40,19 @@ import type {
   ReaderVoteListItemDtoOutput,
   SurveyControllerFinalizeRankingPathParameters,
   SurveyControllerGetBoardRankingParams,
+  SurveyControllerGetInternalRankingAggregateParams,
   SurveyControllerGetOpenVotePeriodsParams,
   SurveyControllerGetRankingRecordsPathParameters,
   SurveyControllerGetSeriesTrendParams,
   SurveyControllerGetSurveyPeriodByIdPathParameters,
   SurveyControllerGetSurveyPeriodSurveyDataPathParameters,
   SurveyControllerGetSurveyPeriodVotesPathParameters,
+  SurveyControllerGetSurveyPeriodsParams,
   SurveyControllerGetVoteContextParams,
   SurveyControllerGetVoteLiveParams,
   SurveyControllerUpdateSurveyPeriodStatusPathParameters,
   SurveyDataResDtoOutput,
+  SurveyPeriodListResDtoOutput,
   SurveyPeriodResDtoOutput,
   UpdateSurveyPeriodStatusBodyDto,
   VoteContextResDtoOutput,
@@ -261,10 +265,10 @@ export const surveyControllerGetVoteContext = async (params: SurveyControllerGet
 
 
 /**
- * @summary Danh sách kỳ bình chọn
+ * @summary Danh sách kỳ bình chọn nội bộ có bộ lọc và phân trang
  */
 export type surveyControllerGetSurveyPeriodsResponse200 = {
-  data: SurveyPeriodResDtoOutput[]
+  data: SurveyPeriodListResDtoOutput
   status: 200
 }
     
@@ -275,17 +279,24 @@ export type surveyControllerGetSurveyPeriodsResponseSuccess = (surveyControllerG
 
 export type surveyControllerGetSurveyPeriodsResponse = (surveyControllerGetSurveyPeriodsResponseSuccess)
 
-export const getSurveyControllerGetSurveyPeriodsUrl = () => {
+export const getSurveyControllerGetSurveyPeriodsUrl = (params?: SurveyControllerGetSurveyPeriodsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/survey-periods`
+  return stringifiedParams.length > 0 ? `/survey-periods?${stringifiedParams}` : `/survey-periods`
 }
 
-export const surveyControllerGetSurveyPeriods = async ( options?: RequestInit): Promise<surveyControllerGetSurveyPeriodsResponse> => {
+export const surveyControllerGetSurveyPeriods = async (params?: SurveyControllerGetSurveyPeriodsParams, options?: RequestInit): Promise<surveyControllerGetSurveyPeriodsResponse> => {
   
-  return customFetch<surveyControllerGetSurveyPeriodsResponse>(getSurveyControllerGetSurveyPeriodsUrl(),
+  return customFetch<surveyControllerGetSurveyPeriodsResponse>(getSurveyControllerGetSurveyPeriodsUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -654,6 +665,48 @@ export const getSurveyControllerGetSeriesTrendUrl = (params: SurveyControllerGet
 export const surveyControllerGetSeriesTrend = async (params: SurveyControllerGetSeriesTrendParams, options?: RequestInit): Promise<surveyControllerGetSeriesTrendResponse> => {
   
   return customFetch<surveyControllerGetSeriesTrendResponse>(getSurveyControllerGetSeriesTrendUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Xếp hạng tổng hợp nhiều kỳ cho nội bộ, kèm tín hiệu nguy cơ mới nhất
+ */
+export type surveyControllerGetInternalRankingAggregateResponse200 = {
+  data: InternalRankingAggregateResDtoOutput
+  status: 200
+}
+    
+export type surveyControllerGetInternalRankingAggregateResponseSuccess = (surveyControllerGetInternalRankingAggregateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type surveyControllerGetInternalRankingAggregateResponse = (surveyControllerGetInternalRankingAggregateResponseSuccess)
+
+export const getSurveyControllerGetInternalRankingAggregateUrl = (params: SurveyControllerGetInternalRankingAggregateParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/rankings/internal/aggregate?${stringifiedParams}` : `/rankings/internal/aggregate`
+}
+
+export const surveyControllerGetInternalRankingAggregate = async (params: SurveyControllerGetInternalRankingAggregateParams, options?: RequestInit): Promise<surveyControllerGetInternalRankingAggregateResponse> => {
+  
+  return customFetch<surveyControllerGetInternalRankingAggregateResponse>(getSurveyControllerGetInternalRankingAggregateUrl(params),
   {      
     ...options,
     method: 'GET'

@@ -2,8 +2,11 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { chapterNameControllerAddPage, chapterNameControllerUpdatePages } from '~/api/operations/names/names'
-import type { NameResDtoOutput } from '~/api/model/names'
+import type { StoryboardResDtoOutput } from '~/api/model/storyboards'
+import {
+  chapterStoryboardControllerAddPage,
+  chapterStoryboardControllerUpdatePages
+} from '~/api/operations/storyboards/storyboards'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export type NamePageInput = {
@@ -16,8 +19,8 @@ type UseUpdateNamePagesResult = {
     chapterId: string
     nameId: string
     pages: NamePageInput[]
-  }) => Promise<NameResDtoOutput | null>
-  addPage: (input: { chapterId: string; nameId: string; page: NamePageInput }) => Promise<NameResDtoOutput | null>
+  }) => Promise<StoryboardResDtoOutput | null>
+  addPage: (input: { chapterId: string; nameId: string; page: NamePageInput }) => Promise<StoryboardResDtoOutput | null>
   isUpdating: boolean
 }
 
@@ -40,8 +43,8 @@ export function useUpdateNamePages(): UseUpdateNamePagesResult {
     async (input: { chapterId: string; nameId: string; pages: NamePageInput[] }) => {
       setIsUpdating(true)
       try {
-        const res = await chapterNameControllerUpdatePages(
-          { id: input.chapterId, nameId: input.nameId },
+        const res = await chapterStoryboardControllerUpdatePages(
+          { id: input.chapterId, storyboardId: input.nameId },
           {
             pages: input.pages.map((p) => ({
               pageNumber: p.pageNumber,
@@ -50,7 +53,7 @@ export function useUpdateNamePages(): UseUpdateNamePagesResult {
           }
         )
         toast.success(t('publication.nameSection.edit.success'))
-        return res.data as NameResDtoOutput
+        return res.data as StoryboardResDtoOutput
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('publication.error.generic')))
         return null
@@ -65,9 +68,12 @@ export function useUpdateNamePages(): UseUpdateNamePagesResult {
     async (input: { chapterId: string; nameId: string; page: NamePageInput }) => {
       setIsUpdating(true)
       try {
-        const res = await chapterNameControllerAddPage({ id: input.chapterId, nameId: input.nameId }, input.page)
+        const res = await chapterStoryboardControllerAddPage(
+          { id: input.chapterId, storyboardId: input.nameId },
+          input.page
+        )
         toast.success(t('publication.nameSection.edit.success'))
-        return res.data as NameResDtoOutput
+        return res.data as StoryboardResDtoOutput
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('publication.error.generic')))
         return null

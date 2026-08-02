@@ -25,6 +25,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { TransferRequestListResDtoOutputDataItemSeries } from './transferRequestListResDtoOutputDataItemSeries';
 import type { TransferRequestListResDtoOutputDataItemRequestingMangaka } from './transferRequestListResDtoOutputDataItemRequestingMangaka';
 import type { TransferRequestListResDtoOutputDataItemOriginalMangaka } from './transferRequestListResDtoOutputDataItemOriginalMangaka';
+import type { TransferRequestListResDtoOutputDataItemOriginalContractType } from './transferRequestListResDtoOutputDataItemOriginalContractType';
+import type { TransferRequestListResDtoOutputDataItemProposedType } from './transferRequestListResDtoOutputDataItemProposedType';
 import type { TransferRequestListResDtoOutputDataItemStatus } from './transferRequestListResDtoOutputDataItemStatus';
 
 export type TransferRequestListResDtoOutputDataItem = {
@@ -38,10 +40,16 @@ export type TransferRequestListResDtoOutputDataItem = {
   requestingMangaka?: TransferRequestListResDtoOutputDataItemRequestingMangaka;
   /** @nullable */
   originalMangaka?: TransferRequestListResDtoOutputDataItemOriginalMangaka;
-  /** @nullable */
-  originalContractType?: string | null;
-  /** @nullable */
-  proposedType?: string | null;
+  /**
+   * Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE
+   * @nullable
+   */
+  originalContractType?: TransferRequestListResDtoOutputDataItemOriginalContractType;
+  /**
+   * Kiểu chuyển nhượng (chỉ có nghĩa khi HĐ gốc REVENUE_SHARE): FULL_TRANSFER (B mua trọn phần của A, A ra đi) | PARTIAL_TRANSFER (A giữ lại một phần → A thành co-owner, duyệt mỗi chapter mới — BR-TRANSFER-03). Values: FULL_TRANSFER, PARTIAL_TRANSFER
+   * @nullable
+   */
+  proposedType?: TransferRequestListResDtoOutputDataItemProposedType;
   /** @nullable */
   proposedPercentage?: number | null;
   /**

@@ -15,7 +15,7 @@ export function EditorContractHistoryPage({
   progress: ContractStatusProgressResDtoOutput | null
   versions: ContractVersionResDtoOutput[]
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.versions')}>
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
@@ -24,7 +24,9 @@ export function EditorContractHistoryPage({
             <article key={version.id} className='rounded-lg border border-border p-3'>
               <div className='flex justify-between'>
                 <strong>v{version.versionNumber}</strong>
-                <span className='text-xs text-muted-foreground'>{new Date(version.createdAt).toLocaleString()}</span>
+                <span className='text-xs text-muted-foreground'>
+                  {new Date(version.createdAt).toLocaleString(i18n.language)}
+                </span>
               </div>
               <p className='mt-2 text-xs text-muted-foreground'>
                 {version.note ?? '—'} · {version.valuationAmount ?? '—'}

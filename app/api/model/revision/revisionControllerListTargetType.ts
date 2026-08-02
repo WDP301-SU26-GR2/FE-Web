@@ -29,7 +29,7 @@ export type RevisionControllerListTargetType = typeof RevisionControllerListTarg
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RevisionControllerListTargetType = {
   PROPOSAL: 'PROPOSAL',
-  NAME: 'NAME',
+  STORYBOARD: 'STORYBOARD',
   MANUSCRIPT: 'MANUSCRIPT',
   TASK: 'TASK',
 } as const;

@@ -22,6 +22,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { DefenseDashboardResDtoOutputRankingTrendItemRiskLevel } from './defenseDashboardResDtoOutputRankingTrendItemRiskLevel';
 
 export type DefenseDashboardResDtoOutputRankingTrendItem = {
   surveyPeriodId: string;
@@ -45,6 +46,7 @@ export type DefenseDashboardResDtoOutputRankingTrendItem = {
    */
   rankChange: number | null;
   isAtRisk: boolean;
-  riskLevel: string;
+  /** Mức nguy cơ của series theo kết quả ranking kỳ: NONE bình thường, LOW at-risk kỳ này, MEDIUM 3+ kỳ liên tiếp, SEVERE 5+ kỳ liên tiếp (feed Board). Values: NONE, LOW, MEDIUM, SEVERE */
+  riskLevel: DefenseDashboardResDtoOutputRankingTrendItemRiskLevel;
   recordedAt: string;
 };

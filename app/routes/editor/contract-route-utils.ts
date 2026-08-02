@@ -4,6 +4,7 @@ import {
   contractControllerGetContractById
 } from '~/api/operations/contracts/contracts'
 import type { AmendmentListItemDtoOutput, AmendmentResDtoOutput } from '~/api/model/contracts'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 
 export async function loadContractBase(id: string) {
   const [contract, progress] = await Promise.all([
@@ -91,28 +92,23 @@ export function ownershipIsValid(contractType: string, publisher: number, mangak
 }
 
 export function contractErrorKey(error: unknown) {
-  const payload =
-    error && typeof error === 'object' && 'data' in error
-      ? (error as { data?: { code?: string; message?: string } }).data
-      : undefined
-  const code = payload?.code
-  const message = payload?.message ?? (error instanceof Error ? error.message : '')
+  const code = extractApiErrorCode(error)
+  const localCode = error instanceof Error ? error.message : ''
 
   if (code === 'Error.SeriesNotSerialized') return 'seriesNotSerialized'
+  if (code === 'Error.ContractNotFound') return 'contractNotFound'
+  if (code === 'Error.ContractAccessDenied') return 'contractAccessDenied'
+  if (code === 'Error.NotAssignedContractEditor') return 'notAssignedContractEditor'
+  if (code === 'Error.InvalidContractMoney') return 'invalidContractMoney'
   if (code === 'Error.InvalidContractTransition') return 'invalidContractTransition'
-  if (message.includes('INVALID_CONTRACT_STATUS_FOR_THIS_ACTION')) return 'invalidContractTransition'
-  if (message.includes('Trạng thái hợp đồng không phù hợp')) return 'invalidContractTransition'
   if (code === 'Error.ContractNotAmendable') return 'contractNotAmendable'
   if (code === 'Error.OpenAmendmentExists') return 'openAmendmentExists'
   if (code === 'Error.OwnershipMismatch') return 'ownershipMismatch'
   if (code === 'Error.AmendmentNoChanges') return 'amendmentNoChanges'
-  if (code?.includes('PAYMENT_CONDITION_NOT_EDITABLE')) return 'invalidState'
   if (code?.startsWith('Error.AmendmentNot')) return 'invalidState'
-  if (code?.includes('REVENUE_NOT_APPLICABLE')) return 'revenueNotApplicable'
-  if (code?.includes('ONLY_ASSIGNED_EDITOR')) return 'notAssigned'
-  if (message.includes('PAYOUT_VALUE_REQUIRED')) return 'payoutRequired'
-  if (message.includes('PAYMENT_CONDITION_REQUIRED')) return 'paymentConditionRequired'
-  if (message.includes('PAYMENT_CONDITION_LOCKED')) return 'paymentConditionLocked'
+  if (code === 'Error.RevenueNotApplicable') return 'revenueNotApplicable'
+  if (localCode === 'PAYOUT_VALUE_REQUIRED') return 'payoutRequired'
+  if (localCode === 'PAYMENT_CONDITION_LOCKED') return 'paymentConditionLocked'
   return 'actionFailed'
 }
 

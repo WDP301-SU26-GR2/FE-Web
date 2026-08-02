@@ -1,19 +1,20 @@
 import {
+  contractControllerSubmitReview,
   contractControllerUpdateContract,
-  contractControllerUpdateStatus,
   paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
-import { EditorContractTermsPage, type EditorActionResult } from '~/features/editor'
+import type { EditorUpdateContractBodyDtoContractType } from '~/api/model/contracts'
 import {
-  contractErrorKey,
-  datesAreValid,
-  loadContractBase,
-  optionalText,
-  ownershipIsValid,
-  required
-} from './contract-route-utils'
+  EDITOR_CONTRACT_INTENTS,
+  EditorContractTermsPage,
+  contractDatesAreValid,
+  contractOwnershipIsValid,
+  contractValuationIsValid,
+  mapEditorContractError,
+  type EditorActionResult
+} from '~/features/editor'
+import { loadContractBase, optionalText, required } from './contract-route-utils'
 import type { Route } from './+types/contract-terms'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, conditions] = await Promise.all([
@@ -27,33 +28,25 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = required(form, 'intent')
   try {
-    if (intent === 'advanceContract' || intent === 'saveAndAdvanceContract') {
-      const conditions = await paymentConditionControllerGetPaymentConditions({ contractId: params.id })
-      if (conditions.status !== 200 || !hasValidPaymentCondition(conditions.data.data))
-        return { ok: false, intent, errorKey: 'paymentConditionRequired' }
-    }
-    if (intent === 'advanceContract') {
-      await contractControllerUpdateStatus(
-        { id: params.id },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'MANGAKA_REVIEW' })
-        }
-      )
-    } else if (intent === 'updateContract' || intent === 'saveAndAdvanceContract') {
-      const contractType = required(form, 'contractType') as 'FULL_BUYOUT' | 'REVENUE_SHARE'
+    if (intent === EDITOR_CONTRACT_INTENTS.submitReview) {
+      await contractControllerSubmitReview({ id: params.id })
+    } else if (intent === EDITOR_CONTRACT_INTENTS.update || intent === EDITOR_CONTRACT_INTENTS.saveAndSubmitReview) {
+      const contractType = required(form, 'contractType') as EditorUpdateContractBodyDtoContractType
+      const valuationAmount = Number(required(form, 'valuationAmount'))
       const publisherOwnershipPct = Number(required(form, 'publisherOwnershipPct'))
       const mangakaOwnershipPct = Number(required(form, 'mangakaOwnershipPct'))
       const contractStart = required(form, 'contractStart')
       const contractEnd = required(form, 'contractEnd')
-      if (!ownershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct))
+      if (!contractValuationIsValid(valuationAmount)) return { ok: false, intent, errorKey: 'invalidContractMoney' }
+      if (!contractOwnershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct))
         return { ok: false, intent, errorKey: 'ownershipMismatch' }
-      if (!datesAreValid(contractStart, contractEnd)) return { ok: false, intent, errorKey: 'invalidContractDates' }
+      if (!contractDatesAreValid(contractStart, contractEnd))
+        return { ok: false, intent, errorKey: 'invalidContractDates' }
       await contractControllerUpdateContract(
         { id: params.id },
         {
           contractType,
-          valuationAmount: Number(required(form, 'valuationAmount')),
+          valuationAmount,
           publisherOwnershipPct,
           mangakaOwnershipPct,
           terminationClause: required(form, 'terminationClause'),
@@ -62,19 +55,13 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
           note: optionalText(form, 'note')
         }
       )
-      if (intent === 'saveAndAdvanceContract') {
-        await contractControllerUpdateStatus(
-          { id: params.id },
-          {
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'MANGAKA_REVIEW' })
-          }
-        )
+      if (intent === EDITOR_CONTRACT_INTENTS.saveAndSubmitReview) {
+        await contractControllerSubmitReview({ id: params.id })
       }
     } else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
   } catch (error) {
-    return { ok: false, intent, errorKey: contractErrorKey(error) }
+    return { ok: false, intent, errorKey: mapEditorContractError(error) }
   }
 }
 

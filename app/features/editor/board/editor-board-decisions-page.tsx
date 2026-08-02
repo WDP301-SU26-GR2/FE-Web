@@ -97,7 +97,7 @@ export function EditorBoardDecisionsPage({
             {[...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))].map(
               (value) => (
                 <option key={value} value={value}>
-                  {t(`board.decisionTypeLabels.${value}`, { defaultValue: value })}
+                  {t(`board.decisionTypeLabels.${value}`, { defaultValue: t('common.notAvailable') })}
                 </option>
               )
             )}
@@ -110,7 +110,7 @@ export function EditorBoardDecisionsPage({
             <option value=''>{t('board.filters.allResults')}</option>
             {['PENDING', 'PENDING_QUORUM', 'APPROVED', 'REJECTED', 'EXPIRED'].map((value) => (
               <option key={value} value={value}>
-                {t(`board.decisionResultLabels.${value}`, { defaultValue: value })}
+                {t(`board.decisionResultLabels.${value}`, { defaultValue: t('common.notAvailable') })}
               </option>
             ))}
           </select>
@@ -160,7 +160,7 @@ function DecisionCard({
   const seriesTitle = decision.targetSeries?.title ?? series.find((item) => item.id === decision.targetSeriesId)?.title
   const sessionTitle = sessions.find((item) => item.id === decision.boardSessionId)?.title
   const typeLabel = decision.decisionType
-    ? t(`board.decisionTypeLabels.${decision.decisionType}`, { defaultValue: decision.decisionType })
+    ? t(`board.decisionTypeLabels.${decision.decisionType}`, { defaultValue: t('common.notAvailable') })
     : t('board.sections.decisions')
   const displayTitle =
     decision.decisionType === 'SERIALIZATION'

@@ -218,7 +218,13 @@
       "search": "Name or pen name",
       "searchPlaceholder": "Search Mangaka",
       "level": "Experience level",
-      "levelPlaceholder": "Example: senior",
+      "levelPlaceholder": "Select an experience level",
+      "allLevels": "All experience levels",
+      "levels": {
+        "JUNIOR": "Junior",
+        "MID": "Intermediate",
+        "SENIOR": "Senior"
+      },
       "genre": "Genre",
       "allGenres": "All genres"
     },
@@ -626,7 +632,7 @@
       "openDrawer": "View revision requests",
       "target": {
         "PROPOSAL": "Proposal",
-        "NAME": "Sample Name",
+        "STORYBOARD": "Sample storyboard",
         "MANUSCRIPT": "Manuscript",
         "TASK": "Task"
       },
@@ -2511,25 +2517,25 @@
       "mangakaSignature": "Mangaka signature",
       "signed": "Signed",
       "notSigned": "Not signed",
-      "boardSignatureProgress": "Board signature progress",
+      "boardSignatureProgress": "Board representative signature",
       "progressLoadFailed": "We could not load the latest signature progress. Reload the page before continuing if you need to verify signatures.",
-      "signatureReady": "The Board has approved this contract. Request an OTP and sign it.",
+      "signatureReady": "The Board representative has signed. Request an OTP, then accept and sign the contract.",
       "signedAt": "Signed at {{date}}.",
-      "signatureLocked": "Signing becomes available after the Mangaka accepts the terms and the Board approves the contract.",
+      "signatureLocked": "Signing becomes available after the Board representative signs the contract.",
       "amendmentsEmpty": "No amendments are available.",
       "amendmentFallback": "Contract amendment",
       "statusHints": {
         "DRAFT": "The Editor is preparing the contract terms.",
-        "NEGOTIATION": "The Editor is preparing the contract terms.",
-        "MANGAKA_APPROVED": "You accepted the terms; Board approval is pending.",
-        "MANGAKA_SIGNED": "You signed the contract; the remaining Board signatures are pending.",
+        "BOARD_REVIEW": "The Board is reviewing the contract and selecting a representative.",
+        "AWAITING_MANGAKA": "The contract is waiting for your acceptance or rejection.",
+        "REJECTED_BY_MANGAKA": "You rejected this contract. The Editor may prepare a new draft.",
         "FULLY_EXECUTED": "The contract has all required signatures and is now effective.",
         "default": "This contract currently requires no action from you."
       }
     },
     "actions": {
       "approveTerms": "Accept terms",
-      "requestChanges": "Request changes",
+      "rejectContract": "Reject contract",
       "sendOtp": "Send OTP",
       "sendOtpShort": "Send OTP",
       "signContract": "Sign contract",
@@ -2543,6 +2549,13 @@
       "description": "Describe the terms the Editor should review and update.",
       "reason": "Reason for changes",
       "placeholder": "Example: Please revise the ownership split and clarify the termination clause.",
+      "hint": "Required, up to 1,000 characters."
+    },
+    "reject": {
+      "title": "Reject contract",
+      "description": "Rejecting is final for this contract. The Editor must create a new draft if negotiations continue.",
+      "reason": "Rejection reason",
+      "placeholder": "Explain clearly why you cannot accept this contract.",
       "hint": "Required, up to 1,000 characters."
     },
     "amendment": {

@@ -3,10 +3,6 @@ import { boardControllerGetConfig } from '~/api/operations/board/board'
 import { boardDashboardControllerBoard } from '~/api/operations/dashboard/dashboard'
 import type { Route } from './+types/index'
 
-export function meta() {
-  return [{ title: 'Board Dashboard - MangaStudio Pro' }]
-}
-
 export async function clientLoader() {
   try {
     const [response, config] = await Promise.all([

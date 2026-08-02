@@ -1,6 +1,6 @@
 # mangaka-web
 
-Frontend của dự án **Mangaka** — nền tảng đăng và xuất bản truyện tranh dành cho tác giả (FPT University, semester 8, môn WDP).
+Frontend của dự án **Mangaka** — hệ thống đăng và xuất bản truyện tranh dành cho tác giả (FPT University, semester 8, môn WDP).
 
 > **Dev FE mới?** Đọc [`ARCHITECTURE.md`](./ARCHITECTURE.md) trước — giải thích kiến trúc kèm ví dụ thực tế.
 >

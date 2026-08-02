@@ -28,6 +28,7 @@ import type { ContractResDtoOutputEditor } from './contractResDtoOutputEditor';
 import type { ContractResDtoOutputBoardDecision } from './contractResDtoOutputBoardDecision';
 import type { ContractResDtoOutputContractType } from './contractResDtoOutputContractType';
 import type { ContractResDtoOutputStatus } from './contractResDtoOutputStatus';
+import type { ContractResDtoOutputRepresentative } from './contractResDtoOutputRepresentative';
 
 export interface ContractResDtoOutput {
   id: string;
@@ -75,7 +76,7 @@ export interface ContractResDtoOutput {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
    */
   contractEnd: string | null;
-  /** Vòng đời hợp đồng: DRAFT → MANGAKA_REVIEW → MANGAKA_APPROVED → BOARD_APPROVED → NEGOTIATION → MANGAKA_SIGNED → FULLY_EXECUTED (khoá); kết thúc: FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED | VOIDED. Values: DRAFT, MANGAKA_REVIEW, MANGAKA_APPROVED, BOARD_APPROVED, NEGOTIATION, MANGAKA_SIGNED, ACTIVATION_PENDING, FULLY_EXECUTED, FULFILLED, TERMINATED, TERMINATED_BY_BREACH, EXPIRED, VOIDED */
+  /** DRAFT: Editor đang soạn; có thể cập nhật điều khoản và payment conditions. | BOARD_REVIEW: Editor đã submit; chờ một Board representative trong roster claim và ký. | AWAITING_MANGAKA: Board representative đã ký; chờ Mangaka chấp nhận/ký hoặc từ chối. | ACTIVATION_PENDING: Replacement contract đã đủ chữ ký; chờ transfer finalizer kích hoạt và terminate hợp đồng cũ. | FULLY_EXECUTED: Hợp đồng đã đủ chữ ký và có hiệu lực. | REJECTED_BY_MANGAKA: Mangaka từ chối sau bước Board representative ký; Editor có thể redraft. | FULFILLED: Hợp đồng đã hoàn thành nghĩa vụ. | TERMINATED: Hợp đồng đã chấm dứt. | TERMINATED_BY_BREACH: Hợp đồng chấm dứt do vi phạm. | EXPIRED: Hợp đồng hết hạn. | VOIDED: Hợp đồng nháp/đang ký đã bị vô hiệu hoá.. Values: DRAFT, BOARD_REVIEW, AWAITING_MANGAKA, ACTIVATION_PENDING, FULLY_EXECUTED, REJECTED_BY_MANGAKA, FULFILLED, TERMINATED, TERMINATED_BY_BREACH, EXPIRED, VOIDED */
   status: ContractResDtoOutputStatus;
   /**
    * ISO 8601 date-time (UTC)
@@ -83,12 +84,29 @@ export interface ContractResDtoOutput {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
    */
   mangakaSignedAt: string | null;
+  /** @nullable */
+  representativeId?: string | null;
+  /**
+   * Đại diện Hội đồng đã claim/gán; absent ở mutation path
+   * @nullable
+   */
+  representative?: ContractResDtoOutputRepresentative;
   /**
    * ISO 8601 date-time (UTC)
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
    */
-  boardSignedAt: string | null;
+  representativeSignedAt?: string | null;
+  /** @nullable */
+  supersedesContractId?: string | null;
+  /** @nullable */
+  rejectionReason?: string | null;
+  /**
+   * ISO 8601 date-time (UTC)
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+   */
+  mangakaRejectedAt?: string | null;
   /**
    * ISO 8601 date-time (UTC)
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$

@@ -8,6 +8,15 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
+import {
+  CONTRACT_FIELD_LIMITS,
+  EDITOR_CONTRACT_INTENTS,
+  canEditContract,
+  canSubmitContractForReview,
+  contractDatesAreValid,
+  contractValuationIsValid,
+  ownershipIsValid
+} from './contract-flow'
 import { ContractActionMessage, ContractPageLayout, contractInput } from './components/contract-shared'
 
 export function EditorContractTermsPage({
@@ -21,22 +30,22 @@ export function EditorContractTermsPage({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
-  const editable = ['MANGAKA_REVIEW', 'MANGAKA_APPROVED', 'BOARD_APPROVED', 'NEGOTIATION'].includes(contract.status)
-  const canSendDraft = contract.status === 'DRAFT'
+  const editable = canEditContract(contract)
+  const canSubmitReview = canSubmitContractForReview(contract)
   const validConditionCount = conditions.filter(
     (condition) =>
       condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
   ).length
   const hasValidCondition = validConditionCount > 0
   const [contractType, setContractType] = useState(contract.contractType)
+  const [valuationAmount, setValuationAmount] = useState(contract.valuationAmount ?? 0)
   const [publisherOwnershipPct, setPublisherOwnershipPct] = useState(contract.publisherOwnershipPct ?? 0)
   const [mangakaOwnershipPct, setMangakaOwnershipPct] = useState(contract.mangakaOwnershipPct ?? 0)
   const [contractStart, setContractStart] = useState(toLocal(contract.contractStart))
   const [contractEnd, setContractEnd] = useState(toLocal(contract.contractEnd))
-  const ownershipValid =
-    publisherOwnershipPct + mangakaOwnershipPct === 100 &&
-    (contractType !== 'FULL_BUYOUT' || (publisherOwnershipPct === 100 && mangakaOwnershipPct === 0))
-  const datesValid = Boolean(contractStart && contractEnd && contractEnd > contractStart)
+  const ownershipValid = ownershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct)
+  const datesValid = contractDatesAreValid(contractStart, contractEnd)
+  const valuationValid = contractValuationIsValid(valuationAmount)
 
   function selectContractType(value: typeof contractType) {
     setContractType(value)
@@ -77,7 +86,8 @@ export function EditorContractTermsPage({
             name='valuationAmount'
             type='number'
             min={0}
-            defaultValue={contract.valuationAmount ?? 0}
+            value={valuationAmount}
+            onChange={(event) => setValuationAmount(Number(event.target.value))}
             disabled={!editable}
             required
             className={contractInput}
@@ -138,46 +148,32 @@ export function EditorContractTermsPage({
           />
           <textarea
             name='note'
-            maxLength={500}
+            maxLength={CONTRACT_FIELD_LIMITS.versionNoteMaxLength}
             disabled={!editable}
             className='min-h-20 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70 md:col-span-2'
             placeholder={t('contractDetail.editNote')}
           />
-          {canSendDraft && (
-            <div className='md:col-span-2'>
-              <p className='mb-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground'>
-                {t('contractDetail.sendDraftHint')}
-              </p>
-              <button
-                name='intent'
-                value='advanceContract'
-                disabled={fetcher.state !== 'idle' || !hasValidCondition}
-                className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
-              >
-                {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
-                {t('actions.sendForMangakaReview')}
-              </button>
-            </div>
-          )}
           {editable && (
             <div className='grid gap-3 md:col-span-2 sm:grid-cols-2'>
               <button
                 name='intent'
-                value='updateContract'
-                disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid}
+                value={EDITOR_CONTRACT_INTENTS.update}
+                disabled={fetcher.state !== 'idle' || !valuationValid || !ownershipValid || !datesValid}
                 className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-50'
               >
                 {t('actions.saveContract')}
               </button>
-              <button
-                name='intent'
-                value='saveAndAdvanceContract'
-                disabled={fetcher.state !== 'idle' || !ownershipValid || !datesValid || !hasValidCondition}
-                className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
-              >
-                {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
-                {t('actions.saveAndAdvanceContract')}
-              </button>
+              {canSubmitReview && (
+                <button
+                  name='intent'
+                  value={EDITOR_CONTRACT_INTENTS.saveAndSubmitReview}
+                  disabled={fetcher.state !== 'idle' || !valuationValid || !ownershipValid || !datesValid}
+                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                >
+                  {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
+                  {t('actions.saveAndSubmitContractReview')}
+                </button>
+              )}
             </div>
           )}
         </fetcher.Form>

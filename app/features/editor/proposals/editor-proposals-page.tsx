@@ -1,5 +1,5 @@
 import { Link, useFetcher } from 'react-router'
-import { BookOpen, Inbox, Loader2, LockKeyhole, Unlock } from 'lucide-react'
+import { BookOpen, Inbox, Loader2, LockKeyhole } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
 import { useState } from 'react'
@@ -7,12 +7,19 @@ import { useState } from 'react'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../types'
 import { EditorActionToast } from '../components/editor-action-toast'
+import { EDITOR_PROPOSAL_INTENTS, EDITOR_PROPOSAL_ROUTES } from './proposal-review'
 
 export function EditorProposalsPage({
   items,
+  total,
+  limit,
+  offset,
   hasError
 }: {
   items: SeriesListResDtoOutputItemsItem[]
+  total: number
+  limit: number
+  offset: number
   hasError: boolean
 }) {
   const { t } = useTranslation('editor')
@@ -42,10 +49,10 @@ export function EditorProposalsPage({
           placeholder={t('filters.searchProposals')}
         />
         <select className={filterInput} value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value=''>{t('filters.allProposalStatuses')}</option>
+          <option value=''>{t('filters.allSeriesStatuses')}</option>
           {statuses.map((value) => (
             <option key={value} value={value}>
-              {t(`filters.proposalStatuses.${value}`, { defaultValue: value })}
+              {t(`filters.seriesStatuses.${value}`, { defaultValue: t('common.notAvailable') })}
             </option>
           ))}
         </select>
@@ -60,6 +67,36 @@ export function EditorProposalsPage({
         items={filteredItems.filter((item) => item.editorId)}
         empty={t('proposals.emptyAssigned')}
       />
+      <nav
+        className='flex items-center justify-between gap-3 border-t border-border pt-4'
+        aria-label={t('pagination.label')}
+      >
+        <Link
+          to={EDITOR_PROPOSAL_ROUTES.listPage(Math.max(0, offset - limit))}
+          aria-disabled={offset === 0}
+          className={`inline-flex h-9 items-center rounded-md border border-border px-3 text-xs font-bold text-foreground ${
+            offset === 0 ? 'pointer-events-none opacity-50' : 'hover:bg-muted'
+          }`}
+        >
+          {t('pagination.previous')}
+        </Link>
+        <span className='text-xs text-muted-foreground'>
+          {t('pagination.summary', {
+            from: total ? offset + 1 : 0,
+            to: Math.min(offset + items.length, total),
+            total
+          })}
+        </span>
+        <Link
+          to={EDITOR_PROPOSAL_ROUTES.listPage(offset + limit)}
+          aria-disabled={offset + items.length >= total}
+          className={`inline-flex h-9 items-center rounded-md border border-border px-3 text-xs font-bold text-foreground ${
+            offset + items.length >= total ? 'pointer-events-none opacity-50' : 'hover:bg-muted'
+          }`}
+        >
+          {t('pagination.next')}
+        </Link>
+      </nav>
     </div>
   )
 }
@@ -132,7 +169,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
       <div className='mt-5 flex flex-wrap gap-2 border-t border-border pt-4'>
         {item.editorId ? (
           <Link
-            to={`/dashboard/editor/proposals/${item.id}`}
+            to={EDITOR_PROPOSAL_ROUTES.detail(item.id)}
             className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted'
           >
             <BookOpen className='size-4' />
@@ -144,23 +181,17 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
             {t('proposals.claimToReview')}
           </span>
         )}
-        {item.status === 'IN_REVIEW' && (
+        {item.status === 'IN_REVIEW' && !item.editorId && (
           <fetcher.Form method='post'>
             <input type='hidden' name='seriesId' value={item.id} />
-            <input type='hidden' name='intent' value={item.editorId ? 'release' : 'claim'} />
+            <input type='hidden' name='intent' value={EDITOR_PROPOSAL_INTENTS.claim} />
             <button
               type='submit'
               disabled={busy}
               className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
             >
-              {busy ? (
-                <Loader2 className='size-4 animate-spin' />
-              ) : item.editorId ? (
-                <Unlock className='size-4' />
-              ) : (
-                <LockKeyhole className='size-4' />
-              )}
-              {item.editorId ? t('actions.release') : t('actions.claim')}
+              {busy ? <Loader2 className='size-4 animate-spin' /> : <LockKeyhole className='size-4' />}
+              {t('actions.claim')}
             </button>
           </fetcher.Form>
         )}

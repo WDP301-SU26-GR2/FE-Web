@@ -8,6 +8,7 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
+import { canEditContract } from './contract-flow'
 import {
   ContractActionMessage,
   ContractDialogPanel,
@@ -27,7 +28,7 @@ export function EditorContractConditionsPage({
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const [conditionType, setConditionType] = useState('CHAPTER_MILESTONE')
-  const canManageConditions = ['DRAFT', 'NEGOTIATION'].includes(contract.status)
+  const canManageConditions = canEditContract(contract)
   return (
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.conditions')}>
       {!canManageConditions && (

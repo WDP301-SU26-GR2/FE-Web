@@ -7,7 +7,6 @@ import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import {
   OperationAction,
   OperationFeedback,
@@ -191,8 +190,8 @@ function ReprintChapterForm({
     try {
       const response = await storageControllerSignDownload({ key: selectedChapter.manuscriptFile })
       window.open(response.data.downloadUrl, '_blank', 'noopener,noreferrer')
-    } catch (error) {
-      toast.error(extractApiErrorMessage(error, t('errors.reprintDownloadFailed')))
+    } catch {
+      toast.error(t('errors.reprintDownloadFailed'))
     } finally {
       setIsDownloading(false)
     }

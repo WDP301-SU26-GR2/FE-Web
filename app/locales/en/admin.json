@@ -1,4 +1,8 @@
 {
+  "common": {
+    "notAvailable": "Not available",
+    "data": "Data"
+  },
   "navigation": {
     "backDashboard": "Back to Admin dashboard"
   },
@@ -259,7 +263,8 @@
       "title": "Business parameters",
       "description": "Shared operational thresholds; server caches may take up to 30 seconds to refresh.",
       "coOwnerApprovalGraceDays": "Co-owner approval grace period",
-      "nameMaxReviewRounds": "Maximum storyboard review rounds",
+      "storyboardMaxReviewRounds": "Maximum storyboard review rounds",
+      "boardRepClaimGraceDays": "Representative claim grace period",
       "reputationRecommendThreshold": "Recommendation reputation threshold",
       "hiatusTooLongDays": "Long-hiatus threshold",
       "lowVoteReliabilityThreshold": "Low vote reliability threshold",

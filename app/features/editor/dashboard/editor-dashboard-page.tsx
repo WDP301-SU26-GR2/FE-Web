@@ -101,7 +101,7 @@ export function EditorDashboardPage({
                       <SemanticStatusBadge
                         value={series.riskLevel ?? ''}
                         label={t(`operations.riskLevels.${series.riskLevel}`, {
-                          defaultValue: series.riskLevel?.replaceAll('_', ' ') ?? t('common.notAvailable')
+                          defaultValue: t('common.notAvailable')
                         })}
                       />
                       {series.rankPosition ? <span>#{series.rankPosition}</span> : null}
@@ -120,7 +120,7 @@ export function EditorDashboardPage({
           description={t('dashboard.proposals.description')}
           href='/dashboard/editor/proposals'
           action={t('dashboard.proposals.action')}
-          tone='bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          tone='bg-warning/10 text-warning'
         />
         <WorkflowCard
           icon={Gavel}
@@ -128,7 +128,7 @@ export function EditorDashboardPage({
           description={t('dashboard.board.description')}
           href='/dashboard/editor/board'
           action={t('dashboard.board.action')}
-          tone='bg-violet-500/10 text-violet-700 dark:text-violet-300'
+          tone='bg-secondary text-secondary-foreground'
         />
         <WorkflowCard
           icon={FileSignature}
@@ -136,7 +136,7 @@ export function EditorDashboardPage({
           description={t('dashboard.contracts.description')}
           href='/dashboard/editor/contracts'
           action={t('dashboard.contracts.action')}
-          tone='bg-sky-500/10 text-sky-700 dark:text-sky-300'
+          tone='bg-info/10 text-info'
         />
         <WorkflowCard
           icon={BookCheck}
@@ -144,7 +144,7 @@ export function EditorDashboardPage({
           description={t('dashboard.publication.description')}
           href='/dashboard/editor/publication'
           action={t('dashboard.publication.action')}
-          tone='bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+          tone='bg-success/10 text-success'
         />
         <WorkflowCard
           icon={Wrench}
@@ -152,7 +152,7 @@ export function EditorDashboardPage({
           description={t('dashboard.operations.description')}
           href='/dashboard/editor/operations'
           action={t('dashboard.operations.action')}
-          tone='bg-orange-500/10 text-orange-700 dark:text-orange-300'
+          tone='bg-primary/10 text-primary'
         />
       </div>
     </div>

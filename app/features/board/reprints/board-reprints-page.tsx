@@ -1,7 +1,11 @@
 import { Form, useFetcher } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
+import {
+  AssignReviserBodyDtoReviserType,
+  ReprintRequestResDtoOutputStatus,
+  type ReprintRequestResDtoOutput
+} from '~/api/model/reprint-requests'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
@@ -22,7 +26,8 @@ export function BoardReprintsPage({
   contractTypes,
   mangakas,
   hasError,
-  seriesId
+  seriesId,
+  status: selectedStatus
 }: {
   requests: ReprintRequestResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
@@ -30,11 +35,9 @@ export function BoardReprintsPage({
   mangakas: MangakaDirectoryListResDtoOutputItemsItem[]
   hasError: boolean
   seriesId: string
+  status: string
 }) {
   const { t } = useTranslation('board')
-  const [status, setStatus] = useState('')
-  const statuses = [...new Set(requests.map((item) => item.status))]
-  const filteredRequests = requests.filter((item) => !status || item.status === status)
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -43,7 +46,7 @@ export function BoardReprintsPage({
         backHref='/dashboard/board/operations'
       />
       <BoardPanel title={t('reprints.lookup')}>
-        <Form method='get' replace preventScrollReset className='flex flex-col gap-3 sm:flex-row'>
+        <Form method='get' replace preventScrollReset className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId} required>
             <option value=''>{t('reprints.selectSeries')}</option>
             {series.map((item) => (
@@ -52,26 +55,25 @@ export function BoardReprintsPage({
               </option>
             ))}
           </select>
+          <select className={boardInput} name='status' defaultValue={selectedStatus} required>
+            {Object.values(ReprintRequestResDtoOutputStatus).map((value) => (
+              <option key={value} value={value}>
+                {t(`filters.reprintStatuses.${value}`, { defaultValue: t('common.notAvailable') })}
+              </option>
+            ))}
+          </select>
           <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
             {t('common.load')}
           </button>
         </Form>
       </BoardPanel>
-      <select className={boardInput} value={status} onChange={(event) => setStatus(event.target.value)}>
-        <option value=''>{t('filters.allReprintStatuses')}</option>
-        {statuses.map((value) => (
-          <option key={value} value={value}>
-            {t(`filters.reprintStatuses.${value}`, { defaultValue: value })}
-          </option>
-        ))}
-      </select>
       {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-4'>
-        {filteredRequests.map((item) => (
+        {requests.map((item) => (
           <ReprintCard key={item.id} item={item} contractType={contractTypes[item.seriesId]} mangakas={mangakas} />
         ))}
       </div>
-      {!filteredRequests.length && <EmptyState text={t('reprints.empty')} />}
+      {!requests.length && <EmptyState text={t('reprints.empty')} />}
     </div>
   )
 }
@@ -91,7 +93,7 @@ function ReprintCard({
   const isRevenueShareReview =
     contractType === 'REVENUE_SHARE' && (item.status === 'MANGAKA_APPROVED' || item.status === 'MANGAKA_REVIEW')
   const canReview = isFullBuyoutReview || isRevenueShareReview
-  const canReject = isFullBuyoutReview
+  const canReject = canReview
   const isSubmitting = fetcher.state !== 'idle'
   const revisableChapters = item.chapters.filter(
     (chapter) => chapter.originalChapterId && ['PENDING', 'IN_REVISION'].includes(chapter.status)
@@ -108,7 +110,7 @@ function ReprintCard({
           <strong>{item.series?.title ?? t('reprints.unknownSeries')}</strong>
           {item.requester ? <p className='mt-1 text-xs text-muted-foreground'>{item.requester.displayName}</p> : null}
           <p className='mt-1 text-xs text-muted-foreground'>
-            {t(`reprints.revisionModes.${item.revisionMode}`, { defaultValue: item.revisionMode })} ·{' '}
+            {t(`reprints.revisionModes.${item.revisionMode}`, { defaultValue: t('common.notAvailable') })} ·{' '}
             {item.chapterRangeStart}-{item.chapterRangeEnd}
           </p>
         </div>
@@ -125,7 +127,7 @@ function ReprintCard({
                 name='intent'
                 value='approve'
                 disabled={isSubmitting}
-                className='h-10 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50'
+                className='h-10 rounded-md bg-success px-3 text-xs font-bold text-success-foreground hover:opacity-90 disabled:opacity-50'
               >
                 {isSubmitting ? (
                   <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />
@@ -150,11 +152,6 @@ function ReprintCard({
                 </button>
               )}
             </fetcher.Form>
-            {!canReject && (
-              <p className='mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300'>
-                {t('reprints.revenueShareRejectUnavailable')}
-              </p>
-            )}
             <BoardFeedback data={fetcher.data} />
           </BoardActionDialog>
         </div>
@@ -182,6 +179,9 @@ function AssignReviserDialog({
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
+  const [reviserType, setReviserType] = useState<keyof typeof AssignReviserBodyDtoReviserType>(
+    AssignReviserBodyDtoReviserType.OTHER_MANGAKA
+  )
   return (
     <BoardActionDialog title={t('reprints.assignReviser')}>
       <fetcher.Form method='post' className='grid gap-3'>
@@ -196,17 +196,35 @@ function AssignReviserDialog({
             </option>
           ))}
         </select>
-        <input type='hidden' name='reviserType' value='OTHER_MANGAKA' />
-        <select className={boardInput} name='reviserId' required>
-          <option value=''>{t('reprints.selectReviser')}</option>
-          {mangakas.map((mangaka) => (
-            <option key={mangaka.userId} value={mangaka.userId}>
-              {mangaka.penName || mangaka.displayName || t('reprints.unknownMangaka')}
+        <select
+          className={boardInput}
+          name='reviserType'
+          value={reviserType}
+          onChange={(event) => setReviserType(event.target.value as keyof typeof AssignReviserBodyDtoReviserType)}
+        >
+          {Object.values(AssignReviserBodyDtoReviserType).map((value) => (
+            <option key={value} value={value}>
+              {t(`reprints.reviserTypes.${value}`)}
             </option>
           ))}
         </select>
+        {reviserType === AssignReviserBodyDtoReviserType.OTHER_MANGAKA ? (
+          <select className={boardInput} name='reviserId' required>
+            <option value=''>{t('reprints.selectReviser')}</option>
+            {mangakas.map((mangaka) => (
+              <option key={mangaka.userId} value={mangaka.userId}>
+                {mangaka.penName || mangaka.displayName || t('reprints.unknownMangaka')}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input className={boardInput} name='reviserId' placeholder={t('reprints.internalReviserId')} required />
+        )}
         <button
-          disabled={!mangakas.length || fetcher.state !== 'idle'}
+          disabled={
+            (reviserType === AssignReviserBodyDtoReviserType.OTHER_MANGAKA && !mangakas.length) ||
+            fetcher.state !== 'idle'
+          }
           className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
         >
           {fetcher.state !== 'idle' && <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />}

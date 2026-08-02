@@ -1,5 +1,5 @@
 {
-  "appName": "Manga Creation Workflow and Publishing Management System",
+  "appName": "Hệ thống quản lý sáng tác và xuất bản truyện tranh",
   "language": "Ngôn ngữ",
   "theme": "Giao diện",
   "light": "Sáng",
@@ -26,11 +26,11 @@
     "messageGeneric": "Đã xảy ra lỗi không xác định."
   },
   "layout": {
-    "brand": "Manga Creation Workflow and Publishing Management System",
-    "brandPro": "Pro",
+    "brand": "Hệ thống quản lý sáng tác và xuất bản truyện tranh",
+    "brandPro": "Chuyên nghiệp",
     "productionEnvironment": "Môi trường sản xuất",
     "supportSection": "Hỗ trợ & Thao tác",
-    "searchPlaceholder": "Tìm series, bản thảo hoặc tài nguyên...",
+    "searchPlaceholder": "Tìm bộ truyện, bản thảo hoặc tài nguyên...",
     "closeMenu": "Đóng menu",
     "openMenu": "Mở menu",
     "notifications": "Thông báo",
@@ -51,8 +51,8 @@
   },
   "nav": {
     "home": "Trang chủ",
-    "mySeries": "Series của tôi",
-    "studio": "Studio",
+    "mySeries": "Bộ truyện của tôi",
+    "studio": "Xưởng vẽ",
     "assistantDirectory": "Danh bạ trợ lý",
     "mangakaDirectory": "Danh bạ Mangaka",
     "ranking": "Xếp hạng",
@@ -62,7 +62,7 @@
     "payments": "Thanh toán",
     "notifications": "Thông báo",
     "myTasks": "Nhiệm vụ của tôi",
-    "chapterPages": "Trang chapter",
+    "chapterPages": "Trang chương",
     "proposals": "Hồ sơ",
     "boardWorkflow": "Quy trình Hội đồng",
     "operations": "Vận hành",
@@ -84,22 +84,22 @@
   "profile": {
     "mangakaName": "Hồ sơ Mangaka",
     "mangakaRole": "Tác giả",
-    "mangakaBadge": "PRO LICENSE",
+    "mangakaBadge": "TÁC GIẢ CHUYÊN NGHIỆP",
     "assistantName": "Trợ lý",
     "assistantRole": "Trợ lý",
-    "assistantBadge": "ASSISTANT",
+    "assistantBadge": "TRỢ LÝ",
     "editorName": "Biên tập viên",
     "editorRole": "Biên tập",
-    "editorBadge": "EDITOR",
+    "editorBadge": "BIÊN TẬP VIÊN",
     "boardName": "Thành viên Hội đồng",
     "boardRole": "Hội đồng",
-    "boardBadge": "BOARD_MEMBER",
+    "boardBadge": "THÀNH VIÊN HỘI ĐỒNG",
     "adminName": "Quản trị viên",
     "adminRole": "Quản trị",
-    "adminBadge": "SUPER_ADMIN"
+    "adminBadge": "QUẢN TRỊ VIÊN CẤP CAO"
   },
   "roleEnum": {
-    "MANGAKA": "Mangaka",
+    "MANGAKA": "Tác giả",
     "ASSISTANT": "Trợ lý",
     "EDITOR": "Biên tập viên",
     "BOARD_MEMBER": "Hội đồng",
@@ -111,11 +111,11 @@
     "board": "Bảng điều khiển Hội đồng",
     "admin": "Bảng điều khiển Quản trị",
     "comingSoonAssistant": "Bảng điều khiển cho vai trò ASSISTANT — sắp ra mắt.",
-    "comingSoonEditor": "Bảng điều khiển cho vai trò EDITOR — sắp ra mắt.",
+    "comingSoonEditor": "Bảng điều khiển cho vai trò biên tập viên — sắp ra mắt.",
     "comingSoonBoard": "Bảng điều khiển cho vai trò BOARD_MEMBER — sắp ra mắt.",
     "comingSoonAdmin": "Bảng điều khiển cho vai trò SUPER_ADMIN — sắp ra mắt.",
     "newChapter": "Chương mới",
-    "newChapterHint": "Chọn series để tạo chương mới"
+    "newChapterHint": "Chọn bộ truyện để tạo chương mới"
   },
   "notificationsPage": {
     "title": "Thông báo",
@@ -238,7 +238,7 @@
       "thresholds": {
         "chapter": "Đạt {{value}} chương đã xuất bản",
         "recurringChapter": "Sau mỗi {{value}} chương đã xuất bản",
-        "ranking": "Đạt top {{value}} bảng xếp hạng",
+        "ranking": "Đạt hạng {{value}} trên bảng xếp hạng",
         "deadline": "Hoàn thành trước {{value}}",
         "configured": "Theo cấu hình hợp đồng"
       }
@@ -258,12 +258,12 @@
     "placeholder": "Mô tả cụ thể vấn đề và kết quả mong muốn…",
     "x": "Vị trí ngang X (%)",
     "y": "Vị trí dọc Y (%)",
-    "coordinateGuide": "Có thể để trống tọa độ nếu ghi chú áp dụng cho toàn bộ task.",
+    "coordinateGuide": "Có thể để trống tọa độ nếu ghi chú áp dụng cho toàn bộ công việc.",
     "cancel": "Hủy",
     "save": "Lưu ghi chú",
     "loading": "Đang tải ghi chú…",
-    "loadError": "Không thể tải annotation của task.",
-    "mutationError": "Không thể cập nhật annotation. Vui lòng thử lại.",
+    "loadError": "Không thể tải ghi chú của công việc.",
+    "mutationError": "Không thể cập nhật ghi chú. Vui lòng thử lại.",
     "retry": "Thử lại",
     "created": "Đã thêm ghi chú chỉnh sửa.",
     "resolved": "Đã đánh dấu ghi chú hoàn tất.",
@@ -271,8 +271,8 @@
     "resolve": "Đóng ghi chú",
     "remove": "Xóa",
     "resolvedBadge": "Đã đóng",
-    "unknownAuthor": "Người review",
+    "unknownAuthor": "Người duyệt",
     "noContent": "Không có nội dung văn bản.",
-    "empty": "Task chưa có ghi chú chỉnh sửa."
+    "empty": "Công việc chưa có ghi chú chỉnh sửa."
   }
 }

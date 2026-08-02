@@ -11,6 +11,8 @@ import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
+import { PayPaymentBodyDtoPaymentMethod } from '~/api/model/payments'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
@@ -47,10 +49,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   try {
     let message = ''
     if (intent === 'pay') {
+      const paymentMethod = required(form, 'paymentMethod')
+      if (!isEnumValue(PayPaymentBodyDtoPaymentMethod, paymentMethod)) return { ok: false, intent }
       const response = await paymentControllerPayPayment(
         { id },
         {
-          paymentMethod: required(form, 'paymentMethod'),
+          paymentMethod,
           transactionReference: required(form, 'transactionReference'),
           ...(String(form.get('note') ?? '').trim() ? { note: String(form.get('note')).trim() } : {})
         }

@@ -22,12 +22,12 @@ const READ_FILTERS = ['all', 'unread', 'read'] as const
 
 const TYPE_TONE: Record<NonNullable<NotificationListResDtoOutputItemsItemType>, string> = {
   SYSTEM: 'border-border bg-muted text-muted-foreground',
-  CONTRACT: 'border-violet-500/20 bg-violet-500/10 text-violet-700',
-  TASK: 'border-sky-500/20 bg-sky-500/10 text-sky-700',
-  DEADLINE: 'border-rose-500/20 bg-rose-500/10 text-rose-700',
-  SURVEY: 'border-amber-500/20 bg-amber-500/10 text-amber-700',
-  BOARD: 'border-indigo-500/20 bg-indigo-500/10 text-indigo-700',
-  REVIEW: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
+  CONTRACT: 'border-primary/20 bg-primary/10 text-primary',
+  TASK: 'border-info/20 bg-info/10 text-info',
+  DEADLINE: 'border-destructive/20 bg-destructive/10 text-destructive',
+  SURVEY: 'border-warning/20 bg-warning/10 text-warning-foreground',
+  BOARD: 'border-primary/20 bg-primary/10 text-primary',
+  REVIEW: 'border-success/20 bg-success/10 text-success'
 }
 
 export function RoleNotificationsPage({
@@ -267,7 +267,7 @@ function formatDate(value: string, locale: string) {
       }).format(date)
 }
 
-function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: NotificationRole) {
+export function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: NotificationRole) {
   if (!item.referenceType || !item.referenceId) return null
   const prefix = item.referenceType.split('_')[0]
   const id = encodeURIComponent(item.referenceId)
@@ -277,7 +277,8 @@ function notificationTarget(item: NotificationListResDtoOutputItemsItem, role: N
     if (item.referenceType === 'BOARD_DECISION_CREATED') return `/dashboard/editor/board/decisions/${id}`
     if (item.referenceType === 'REVISION_RESOLVED') return `/dashboard/editor/operations/insights?revisionId=${id}`
     if (['PROPOSAL', 'SERIES', 'FRANCHISE'].includes(prefix)) return `/dashboard/editor/proposals/${id}`
-    if (prefix === 'NAME' || prefix === 'REVISION') return `/dashboard/editor/proposals?referenceId=${id}`
+    if (prefix === 'STORYBOARD') return `/dashboard/editor/publication?referenceId=${id}&referenceType=STORYBOARD`
+    if (prefix === 'REVISION') return `/dashboard/editor/operations/insights?revisionId=${id}`
     if (prefix === 'CONTRACT') return `/dashboard/editor/contracts/${id}`
     if (prefix === 'AMENDMENT' || prefix === 'PAYMENT') return `/dashboard/editor/contracts?referenceId=${id}`
     if (['CHAPTER', 'MANUSCRIPT', 'PAGE'].includes(prefix))

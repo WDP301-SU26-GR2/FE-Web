@@ -7,18 +7,16 @@ import {
 } from '~/api/operations/survey/survey'
 import { publicControllerListSeries } from '~/api/operations/public/public'
 import { EditorSurveysPage } from '~/features/editor'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 import type { Route } from './+types/operations-surveys'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const searchParams = new URL(request.url).searchParams
   const focusSurveyId = (searchParams.get('surveyId') || searchParams.get('referenceId') || '').trim()
   try {
-    const [series, eligibleSeriesCandidates, surveys] = await Promise.all([
-      loadPublicSeriesCatalog(),
-      loadPublicSeriesCatalog('SERIALIZED'),
-      surveyControllerGetSurveyPeriods()
-    ])
-    const uniqueSurveys = [...new Map(surveys.data.map((survey) => [survey.id, survey])).values()]
+    const [series, surveys] = await Promise.all([loadPublicSeriesCatalog(), loadSurveyPeriods()])
+    const eligibleSeriesCandidates = series.filter((item) => item.status === 'SERIALIZED')
+    const uniqueSurveys = [...new Map(surveys.map((survey) => [survey.id, survey])).values()]
     const orderedSurveys = uniqueSurveys.sort(
       (left, right) => new Date(right.startDate).getTime() - new Date(left.startDate).getTime()
     )
@@ -74,6 +72,12 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       hasError: true
     }
   }
+}
+
+async function loadSurveyPeriods() {
+  return loadAllOffsetItems((pagination) =>
+    surveyControllerGetSurveyPeriods(pagination).then((response) => response.data)
+  )
 }
 
 export async function loadPublicSeriesCatalog(status?: 'SERIALIZED') {

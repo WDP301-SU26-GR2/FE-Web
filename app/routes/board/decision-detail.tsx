@@ -4,7 +4,10 @@ import {
   boardControllerGetSessionById
 } from '~/api/operations/board/board'
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
+import { CastVoteBodyDtoVoteValue } from '~/api/model/board'
 import { BoardDecisionDetailPage, type BoardActionResult } from '~/features/board'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 import { loadBoardDecisionDetail } from './decision-detail-loader'
 import type { Route } from './+types/decision-detail'
 
@@ -22,16 +25,19 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
     const session = await boardControllerGetSessionById({ id: decision.data.boardSessionId })
     if (session.status !== 200 || session.data.status !== 'ACTIVE' || readBoardSessionPhase(session.data) !== 'VOTING')
       return { ok: false, intent }
+    const voteValue = String(form.get('voteValue') ?? '')
+    const note = String(form.get('note') ?? '').trim()
+    if (!isEnumValue(CastVoteBodyDtoVoteValue, voteValue) || note.length > 300) return { ok: false, intent }
     await boardControllerCastVote(
       { id: params.id },
       {
-        voteValue: String(form.get('voteValue')) as 'APPROVE' | 'REJECT' | 'ABSTAIN',
-        note: String(form.get('note') ?? '') || undefined
+        voteValue,
+        note: note || undefined
       }
     )
     return { ok: true, intent, messageKey: 'voteSubmitted' }
-  } catch {
-    return { ok: false, intent }
+  } catch (error) {
+    return { ok: false, intent, errorCode: extractApiErrorCode(error) }
   }
 }
 

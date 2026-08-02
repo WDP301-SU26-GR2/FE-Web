@@ -2,8 +2,8 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { chapterNameControllerCreate } from '~/api/operations/names/names'
-import type { NameResDtoOutput } from '~/api/model/names'
+import type { StoryboardResDtoOutput } from '~/api/model/storyboards'
+import { chapterStoryboardControllerCreate } from '~/api/operations/storyboards/storyboards'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export type NamePageInput = {
@@ -14,7 +14,7 @@ export type NamePageInput = {
 
 type UseCreateNameResult = {
   /** Fire `POST /chapters/:id/names`. Returns the new Name on success, null on failure. */
-  createName: (input: { chapterId: string; pages: NamePageInput[] }) => Promise<NameResDtoOutput | null>
+  createName: (input: { chapterId: string; pages: NamePageInput[] }) => Promise<StoryboardResDtoOutput | null>
   isCreating: boolean
 }
 
@@ -35,16 +35,16 @@ export function useCreateName(): UseCreateNameResult {
       if (!input.chapterId || input.pages.length === 0) return null
       setIsCreating(true)
       try {
-        const res = await chapterNameControllerCreate(
+        const res = await chapterStoryboardControllerCreate(
           { id: input.chapterId },
           {
-            namePages: input.pages.map((p) => ({
+            storyboardPages: input.pages.map((p) => ({
               pageNumber: p.pageNumber,
               fileUrl: p.fileUrl
             }))
           }
         )
-        const created = res.data as NameResDtoOutput
+        const created = res.data as StoryboardResDtoOutput
         toast.success(t('publication.nameSection.create.success'))
         return created
       } catch (err) {

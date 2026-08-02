@@ -9,19 +9,30 @@ import {
   ImagePlus,
   Loader2,
   LockKeyhole,
+  Presentation,
   RotateCcw,
   Save,
-  Trash2
+  Trash2,
+  Unlock
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { EditorActionResult, EditorProposalDetailData } from '../types'
-import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
+import {
+  EDITOR_PROPOSAL_INTENTS,
+  EDITOR_PROPOSAL_ROUTES,
+  canEditSeriesMetadata,
+  canRejectProposal,
+  canReleaseSeries,
+  canReopenReview,
+  canReviewProposal,
+  isAssignedEditor,
+  isReadyToPitch
+} from './proposal-review'
 
 export function EditorProposalDetailPage({
   data,
@@ -38,23 +49,27 @@ export function EditorProposalDetailPage({
     return (
       <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive'>
         <h1 className='font-bold'>{t('errors.loadTitle')}</h1>
-        <Link to='/dashboard/editor/proposals' className='mt-4 inline-flex text-xs font-bold underline'>
+        <Link to={EDITOR_PROPOSAL_ROUTES.list} className='mt-4 inline-flex text-xs font-bold underline'>
           {t('actions.back')}
         </Link>
       </div>
     )
   }
 
-  const { series, name } = data
-  const assigned = Boolean(session?.user.id && series.editorId === session.user.id)
-  const metadataEditable = assigned && series.status === 'IN_REVIEW'
-  const proposalReviewable = series.proposal?.status === 'PROPOSAL_REVIEW'
-  const nameReviewable = name?.status === 'SUBMITTED' || name?.status === 'IN_REVIEW'
+  const { series } = data
+  const userId = session?.user.id
+  const assigned = isAssignedEditor(series, userId)
+  const metadataEditable = canEditSeriesMetadata(series, userId)
+  const proposalReviewable = canReviewProposal(series, userId)
+  const releasable = canReleaseSeries(series, userId)
+  const rejectable = canRejectProposal(series, userId)
+  const reopenable = canReopenReview(series, userId)
+  const readyToPitch = isReadyToPitch(series, userId)
 
   return (
     <div className='space-y-6 pb-12'>
       <Link
-        to='/dashboard/editor/proposals'
+        to={EDITOR_PROPOSAL_ROUTES.list}
         className='inline-flex items-center gap-2 text-xs font-bold text-muted-foreground'
       >
         <ArrowLeft className='size-4' />
@@ -91,6 +106,21 @@ export function EditorProposalDetailPage({
         </div>
       </header>
       <EditorActionToast data={fetcher.data} scope={`editor-proposal-detail-${series.id}`} />
+      <ProposalContext data={data} />
+      {releasable && (
+        <fetcher.Form method='post' className='flex justify-end'>
+          <input type='hidden' name='seriesId' value={series.id} />
+          <button
+            name='intent'
+            value={EDITOR_PROPOSAL_INTENTS.release}
+            disabled={fetcher.state !== 'idle'}
+            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+          >
+            <Unlock className='size-4' />
+            {t('actions.release')}
+          </button>
+        </fetcher.Form>
+      )}
       {assigned && <EditorMetadataForm data={data} fetcher={fetcher} editable={metadataEditable} />}
       <div className='space-y-6'>
         <ReviewPanel
@@ -114,65 +144,74 @@ export function EditorProposalDetailPage({
               ) : null
             )}
           </div>
+          <div className='mt-6 border-t border-border pt-5'>
+            <div className='mb-3 flex items-center justify-between gap-3'>
+              <h3 className='text-sm font-bold text-foreground'>{t('proposalDetail.storyboardTitle')}</h3>
+              <span className='text-xs text-muted-foreground'>
+                {t('proposalDetail.storyboardPageCount', { count: data.storyboardPages.length })}
+              </span>
+            </div>
+            {data.storyboardPages.length ? (
+              <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+                {data.storyboardPages.map((page) => (
+                  <figure key={`${page.pageNumber}-${page.key}`}>
+                    {page.url ? (
+                      <img
+                        src={page.url}
+                        alt={t('proposalDetail.storyboardPageAlt', { number: page.pageNumber })}
+                        className='aspect-[3/4] w-full rounded-lg border border-border object-cover'
+                      />
+                    ) : (
+                      <div className='grid aspect-[3/4] place-items-center rounded-lg border border-dashed border-border bg-muted p-3 text-center text-xs text-muted-foreground'>
+                        {t('proposalDetail.storyboardUnavailable')}
+                      </div>
+                    )}
+                    <figcaption className='mt-1 text-center text-xs text-muted-foreground'>
+                      {t('proposalDetail.storyboardPage', { number: page.pageNumber })}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            ) : (
+              <div className='rounded-lg border border-dashed border-border bg-muted p-5 text-center text-xs text-muted-foreground'>
+                {t('proposalDetail.noStoryboardPages')}
+              </div>
+            )}
+          </div>
           <ReviewForm
             fetcher={fetcher}
             seriesId={series.id}
-            approveIntent='approveProposal'
-            reviseIntent='reviseProposal'
+            approveIntent={EDITOR_PROPOSAL_INTENTS.approve}
+            reviseIntent={EDITOR_PROPOSAL_INTENTS.requestRevision}
             disabled={!assigned || !proposalReviewable}
           />
         </ReviewPanel>
-        <ReviewPanel
-          title={t('proposalDetail.nameTitle')}
-          status={name?.status ?? t('common.notAvailable')}
-          facts={[
-            [t('proposalDetail.version'), String(name?.version ?? 0)],
-            [t('proposalDetail.pages'), String(name?.pages.length ?? 0)]
-          ]}
-        >
-          <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
-            {data.namePageUrls.map((page) =>
-              page.url ? (
-                <figure key={page.pageNumber}>
-                  <img
-                    src={page.url}
-                    alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
-                    className='aspect-[3/4] w-full rounded-lg border border-border object-cover'
-                  />
-                  <figcaption className='mt-1 text-center text-xs text-muted-foreground'>
-                    {t('proposalDetail.page', { number: page.pageNumber })}
-                  </figcaption>
-                </figure>
-              ) : null
-            )}
-          </div>
-          {name && (
-            <>
-              <ReviewForm
-                fetcher={fetcher}
-                seriesId={series.id}
-                nameId={name.id}
-                approveIntent='approveName'
-                reviseIntent='reviseName'
-                disabled={!assigned || !nameReviewable}
-              />
-              <div className='mt-5'>
-                <EditorAnnotationPanel
-                  title={t('chapterReview.nameAnnotations')}
-                  annotations={data.nameAnnotations}
-                  target='NAME'
-                  targetId={name.id}
-                  contextFields={{ seriesId: series.id, nameId: name.id }}
-                  createIntent='createNameAnnotation'
-                  resolveIntent='resolveNameAnnotation'
-                  removeIntent='removeNameAnnotation'
-                />
-              </div>
-            </>
-          )}
-        </ReviewPanel>
       </div>
-      {series.status === 'IN_REVIEW' && (
+      {readyToPitch && (
+        <section className='rounded-xl border border-primary/30 bg-primary/10 p-5'>
+          <div className='flex flex-wrap items-center justify-between gap-4'>
+            <div>
+              <h2 className='font-bold text-foreground'>{t('proposalDetail.readyToPitchTitle')}</h2>
+              <p className='mt-1 text-xs leading-5 text-muted-foreground'>
+                {t('proposalDetail.readyToPitchDescription')}
+              </p>
+            </div>
+            <fetcher.Form method='post'>
+              <input type='hidden' name='seriesId' value={series.id} />
+              <button
+                name='intent'
+                value={EDITOR_PROPOSAL_INTENTS.pitch}
+                disabled={fetcher.state !== 'idle'}
+                className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+              >
+                <Presentation className='size-4' />
+                {t('actions.pitch')}
+              </button>
+            </fetcher.Form>
+          </div>
+        </section>
+      )}
+      {rejectable && (
         <fetcher.Form method='post' className='rounded-xl border border-destructive/30 bg-destructive/10 p-5'>
           <input type='hidden' name='seriesId' value={series.id} />
           <h2 className='font-bold text-destructive'>{t('proposalDetail.rejectTitle')}</h2>
@@ -186,7 +225,7 @@ export function EditorProposalDetailPage({
           />
           <button
             name='intent'
-            value='rejectSeries'
+            value={EDITOR_PROPOSAL_INTENTS.reject}
             disabled={fetcher.state !== 'idle'}
             className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-destructive px-4 text-xs font-bold text-destructive-foreground disabled:opacity-50'
           >
@@ -195,7 +234,7 @@ export function EditorProposalDetailPage({
           </button>
         </fetcher.Form>
       )}
-      {series.status === 'REJECTED' && (
+      {reopenable && (
         <fetcher.Form method='post' className='rounded-xl border border-primary/30 bg-primary/10 p-5'>
           <input type='hidden' name='seriesId' value={series.id} />
           <h2 className='font-bold text-foreground'>{t('proposalDetail.reopenTitle')}</h2>
@@ -209,7 +248,7 @@ export function EditorProposalDetailPage({
           />
           <button
             name='intent'
-            value='reopenReview'
+            value={EDITOR_PROPOSAL_INTENTS.reopen}
             disabled={fetcher.state !== 'idle'}
             className='mt-3 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
@@ -218,6 +257,57 @@ export function EditorProposalDetailPage({
           </button>
         </fetcher.Form>
       )}
+    </div>
+  )
+}
+
+function ProposalContext({ data }: { data: EditorProposalDetailData }) {
+  const { t, i18n } = useTranslation('editor')
+  const { series } = data
+  const relationship = series.relationshipType
+    ? t(`proposalDetail.relationshipTypes.${series.relationshipType}`)
+    : t('proposalDetail.originalSeries')
+  const consent = series.franchiseConsentStatus
+    ? t(`proposalDetail.franchiseConsentStatuses.${series.franchiseConsentStatus}`)
+    : t('proposalDetail.franchiseConsentNotRequired')
+  const reviewStarted = series.reviewStartedAt
+    ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+        new Date(series.reviewStartedAt)
+      )
+    : t('proposalDetail.reviewNotStarted')
+
+  return (
+    <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+      <h2 className='font-bold text-foreground'>{t('proposalDetail.contextTitle')}</h2>
+      <dl className='mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+        <ContextFact
+          label={t('proposalDetail.mangaka')}
+          value={series.mangaka?.displayName ?? t('common.notAvailable')}
+        />
+        <ContextFact label={t('proposalDetail.relationship')} value={relationship} />
+        <ContextFact label={t('proposalDetail.franchiseConsent')} value={consent} />
+        <ContextFact label={t('proposalDetail.reviewStartedAt')} value={reviewStarted} />
+      </dl>
+      {series.parentSeriesId && (
+        <p className='mt-4 text-xs text-muted-foreground'>
+          {t('proposalDetail.parentSeriesReference', { id: series.parentSeriesId })}
+        </p>
+      )}
+      {series.statusReason && (
+        <div className='mt-4 rounded-lg border border-border bg-muted p-3'>
+          <p className='text-xs font-bold text-foreground'>{t('proposalDetail.statusReason')}</p>
+          <p className='mt-1 whitespace-pre-wrap text-xs leading-5 text-muted-foreground'>{series.statusReason}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ContextFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className='text-[11px] font-bold uppercase tracking-wide text-muted-foreground'>{label}</dt>
+      <dd className='mt-1 text-xs font-semibold text-foreground'>{value}</dd>
     </div>
   )
 }
@@ -306,15 +396,15 @@ function EditorMetadataForm({
       setDesigns(normalizedDesigns)
 
       const formData = new FormData()
-      formData.set('intent', 'updateMetadata')
+      formData.set('intent', EDITOR_PROPOSAL_INTENTS.updateMetadata)
       formData.set('seriesId', series.id)
       formData.set('title', title.trim())
       formData.set('synopsis', synopsis.trim())
       formData.set('coverImage', coverKey)
       formData.set('characterDesigns', normalizedDesigns.map((design) => design.key).join('\n'))
       await fetcher.submit(formData, { method: 'post' })
-    } catch (error) {
-      setUploadError(extractApiErrorMessage(error, t('proposalDetail.uploadError')))
+    } catch {
+      setUploadError(t('proposalDetail.uploadError'))
     } finally {
       setUploading(false)
     }
@@ -329,7 +419,7 @@ function EditorMetadataForm({
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-            editable ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
+            editable ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
           }`}
         >
           {editable ? <Check className='size-3.5' /> : <LockKeyhole className='size-3.5' />}
@@ -338,7 +428,7 @@ function EditorMetadataForm({
       </div>
 
       {!editable && (
-        <div className='mx-5 mt-5 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-900 dark:text-amber-100'>
+        <div className='mx-5 mt-5 flex items-start gap-3 rounded-lg border border-border bg-muted p-4 text-xs text-muted-foreground'>
           <LockKeyhole className='mt-0.5 size-4 shrink-0' />
           <p>{t('proposalDetail.lockedDescription')}</p>
         </div>
@@ -448,7 +538,7 @@ function EditorMetadataForm({
                         type='button'
                         onClick={() => removeDesign(design.id)}
                         aria-label={t('proposalDetail.removeCharacter', { number: index + 1 })}
-                        className='absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100'
+                        className='absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-full bg-foreground/80 text-background opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100'
                       >
                         <Trash2 className='size-4' />
                       </button>
@@ -518,7 +608,7 @@ function ReviewPanel({
   const { t } = useTranslation('editor')
   const statusLabel = t(
     [`filters.proposalStatuses.${status}`, `filters.nameStatuses.${status}`, `filters.seriesStatuses.${status}`],
-    { defaultValue: status.replaceAll('_', ' ') }
+    { defaultValue: t('common.notAvailable') }
   )
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
@@ -545,14 +635,12 @@ function ReviewPanel({
 function ReviewForm({
   fetcher,
   seriesId,
-  nameId,
   approveIntent,
   reviseIntent,
   disabled
 }: {
   fetcher: ReturnType<typeof useFetcher<EditorActionResult>>
   seriesId: string
-  nameId?: string
   approveIntent: string
   reviseIntent: string
   disabled: boolean
@@ -562,7 +650,6 @@ function ReviewForm({
   return (
     <fetcher.Form method='post' className='mt-5 space-y-3 border-t border-border pt-4'>
       <input type='hidden' name='seriesId' value={seriesId} />
-      {nameId && <input type='hidden' name='nameId' value={nameId} />}
       <textarea
         name='reason'
         maxLength={1000}

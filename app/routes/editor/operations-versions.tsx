@@ -7,8 +7,14 @@ import {
 } from '~/api/operations/publication-versions/publication-versions'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorPublicationVersionsPage, type EditorActionResult } from '~/features/editor'
-import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
+import {
+  CreatePublicationVersionBodyDtoReadingDirection,
+  CreatePublicationVersionBodyDtoVersionType,
+  UpdatePublicationVersionBodyDtoReadingDirection,
+  UpdatePublicationVersionBodyDtoVersionType
+} from '~/api/model/publication-versions'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 import { optional, required } from './operations-route-utils'
 import type { Route } from './+types/operations-versions'
 
@@ -36,42 +42,57 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const form = await request.formData()
   const intent = required(form, 'intent')
   try {
-    let message = ''
     if (intent === 'createPublicationVersion') {
-      const response = await publicationControllerCreate(
+      const language = required(form, 'language').trim()
+      const readingDirection = required(form, 'readingDirection')
+      const versionType = required(form, 'versionType')
+      const notes = optional(form, 'notes') ?? null
+      if (
+        language.length > 20 ||
+        (notes?.length ?? 0) > 2000 ||
+        !isEnumValue(CreatePublicationVersionBodyDtoReadingDirection, readingDirection) ||
+        !isEnumValue(CreatePublicationVersionBodyDtoVersionType, versionType)
+      )
+        return { ok: false, intent, errorKey: 'invalidAction' }
+      await publicationControllerCreate(
         { seriesId: required(form, 'seriesId') },
         {
-          language: required(form, 'language'),
-          readingDirection: required(form, 'readingDirection') as 'RTL' | 'LTR',
-          versionType: required(form, 'versionType') as 'ORIGINAL' | 'DIGITAL' | 'FLIPPED',
-          notes: optional(form, 'notes') ?? null
+          language,
+          readingDirection,
+          versionType,
+          notes
         }
       )
-      message = extractApiSuccessMessage(response, 'Đã tạo phiên bản xuất bản.')
     } else if (intent === 'updatePublicationVersion') {
-      const response = await publicationControllerUpdate(
-        { id: required(form, 'versionId') },
-        {
-          language: optional(form, 'language'),
-          readingDirection: optional(form, 'readingDirection') as 'RTL' | 'LTR' | undefined,
-          versionType: optional(form, 'versionType') as 'ORIGINAL' | 'DIGITAL' | 'FLIPPED' | undefined,
-          notes: optional(form, 'notes')
-        }
+      const language = form.get('clearLanguage') === 'on' ? null : optional(form, 'language')
+      const readingDirection = nullableEnumField(
+        form,
+        'readingDirection',
+        UpdatePublicationVersionBodyDtoReadingDirection
       )
-      message = extractApiSuccessMessage(response, 'Đã cập nhật phiên bản xuất bản.')
+      const versionType = nullableEnumField(form, 'versionType', UpdatePublicationVersionBodyDtoVersionType)
+      const notes = form.get('clearNotes') === 'on' ? null : optional(form, 'notes')
+      if ((language != null && language.length > 20) || (notes != null && notes.length > 2000))
+        return { ok: false, intent, errorKey: 'invalidAction' }
+      await publicationControllerUpdate(
+        { id: required(form, 'versionId') },
+        { language, readingDirection, versionType, notes }
+      )
     } else if (intent === 'removePublicationVersion') {
-      const response = await publicationControllerRemove({ id: required(form, 'versionId') })
-      message = extractApiSuccessMessage(response, 'Đã xóa phiên bản xuất bản.')
+      await publicationControllerRemove({ id: required(form, 'versionId') })
     } else return { ok: false, intent, errorKey: 'invalidAction' }
-    return { ok: true, intent, messageKey: intent, message }
-  } catch (error) {
-    return {
-      ok: false,
-      intent,
-      errorKey: 'actionFailed',
-      message: extractApiErrorMessage(error, 'Không thể cập nhật phiên bản xuất bản.')
-    }
+    return { ok: true, intent, messageKey: intent }
+  } catch {
+    return { ok: false, intent, errorKey: 'actionFailed' }
   }
+}
+
+function nullableEnumField<T extends string>(form: FormData, key: string, values: Record<string, T>) {
+  const value = String(form.get(key) ?? '')
+  if (!value) return undefined
+  if (value === '__CLEAR__') return null
+  if (!isEnumValue(values, value)) throw new Error(`Invalid ${key}`)
+  return value
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

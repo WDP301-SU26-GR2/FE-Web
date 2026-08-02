@@ -2,11 +2,23 @@ import { useEffect, useState } from 'react'
 import { CalendarClock, CircleAlert, Loader2, Play, Plus, Radio, Square } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
+import {
+  BoardSessionResDtoOutputStatus,
+  type BoardDecisionResDtoOutput,
+  type BoardSessionResDtoOutput
+} from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
 import { orderBoardDecisions, orderBoardSessions } from './board-order'
+import {
+  BOARD_SESSION_INTENTS,
+  BOARD_ROSTER_MODES,
+  BOARD_SESSION_FIELD_LIMITS,
+  isValidBoardSessionTimeRange,
+  isValidManualBoardRoster,
+  parseManualBoardMemberIds
+} from './board-session-flow'
 import {
   boardInput,
   BoardFeedback,
@@ -23,6 +35,7 @@ export function EditorBoardSessionsPage({
   sessions,
   decisions,
   suggestedMemberCount,
+  maximumMemberCount,
   hasError,
   manageAll = false,
   backPath = '/dashboard/editor/board',
@@ -32,6 +45,7 @@ export function EditorBoardSessionsPage({
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
   suggestedMemberCount: number
+  maximumMemberCount: number
   hasError: boolean
   manageAll?: boolean
   backPath?: string
@@ -44,7 +58,7 @@ export function EditorBoardSessionsPage({
   const [sessionStatus, setSessionStatus] = useState('')
   useBoardAutoRefresh()
   const currentUserId = authSession?.user.id ?? ''
-  const visibleSessions = manageAll ? sessions : sessions.filter((session) => session.creatorId === currentUserId)
+  const visibleSessions = sessions
   const visibleSessionIds = new Set(visibleSessions.map((session) => session.id))
   const visibleDecisions = decisions.filter((decision) => visibleSessionIds.has(decision.boardSessionId))
   const voteProgress = useEditorSessionVoteProgress(visibleSessions, visibleDecisions)
@@ -88,12 +102,14 @@ export function EditorBoardSessionsPage({
               onChange={(event) => setSessionStatus(event.target.value)}
             >
               <option value=''>{t('board.filters.allStatuses')}</option>
-              <option value='UPCOMING'>{t('board.sessionStatuses.UPCOMING')}</option>
-              <option value='ACTIVE'>{t('board.sessionStatuses.ACTIVE')}</option>
-              <option value='CONCLUDED'>{t('board.sessionStatuses.CONCLUDED')}</option>
+              {Object.values(BoardSessionResDtoOutputStatus).map((status) => (
+                <option key={status} value={status}>
+                  {t(`board.sessionStatuses.${status}`)}
+                </option>
+              ))}
             </select>
           </div>
-          {!!visibleSessions.some((session) => session.status === 'ACTIVE') && (
+          {!!visibleSessions.some((session) => session.status === BoardSessionResDtoOutputStatus.ACTIVE) && (
             <div className='flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
               <Radio className={`size-4 ${voteProgress.connectionState === 'connected' ? 'text-primary' : ''}`} />
               {t(`board.realtime.${voteProgress.connectionState}`)}
@@ -116,6 +132,7 @@ export function EditorBoardSessionsPage({
         <CreateSessionDialog
           series={series}
           suggestedMemberCount={suggestedMemberCount}
+          maximumMemberCount={maximumMemberCount}
           onClose={() => setCreateDialogOpen(false)}
         />
       )}
@@ -126,33 +143,32 @@ export function EditorBoardSessionsPage({
 function CreateSessionDialog({
   series,
   suggestedMemberCount,
+  maximumMemberCount,
   onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   suggestedMemberCount: number
+  maximumMemberCount: number
   onClose: () => void
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
+  const suggestionFetcher = useBoardFetcher()
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [rosterMode, setRosterMode] = useState<'automatic' | 'manual'>(series.length ? 'automatic' : 'manual')
+  const [rosterMode, setRosterMode] = useState<(typeof BOARD_ROSTER_MODES)[keyof typeof BOARD_ROSTER_MODES]>(
+    series.length ? BOARD_ROSTER_MODES.automatic : BOARD_ROSTER_MODES.manual
+  )
   const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState(series[0]?.id ?? '')
   const [manualRosterIds, setManualRosterIds] = useState('')
-  const timeRangeIsValid = Boolean(startTime) && (!endTime || endTime > startTime)
-  const parsedManualRosterIds = [
-    ...new Set(
-      manualRosterIds
-        .split(/[\s,;]+/)
-        .map((value) => value.trim())
-        .filter(Boolean)
-    )
-  ]
-  const manualRosterIsValid =
-    parsedManualRosterIds.length >= 3 &&
-    parsedManualRosterIds.length % 2 === 1 &&
-    parsedManualRosterIds.every((id) => /^[0-9a-fA-F]{24}$/.test(id))
-  const rosterIsValid = rosterMode === 'automatic' ? Boolean(rosterSourceSeriesId) : manualRosterIsValid
+  const [suggestedForSeriesId, setSuggestedForSeriesId] = useState('')
+  const timeRangeIsValid = isValidBoardSessionTimeRange(startTime, endTime || undefined)
+  const parsedManualRosterIds = parseManualBoardMemberIds(manualRosterIds)
+  const manualRosterIsValid = isValidManualBoardRoster(parsedManualRosterIds, maximumMemberCount)
+  const rosterIsValid =
+    rosterMode === BOARD_ROSTER_MODES.automatic ? Boolean(rosterSourceSeriesId) : manualRosterIsValid
+  const suggestedMembers =
+    suggestedForSeriesId === rosterSourceSeriesId ? suggestionFetcher.data?.suggestedMembers : undefined
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
@@ -170,9 +186,9 @@ function CreateSessionDialog({
       size='xl'
     >
       <fetcher.Form method='post' className='grid gap-4'>
-        <input type='hidden' name='intent' value='createSession' />
+        <input type='hidden' name='intent' value={BOARD_SESSION_INTENTS.create} />
         <input type='hidden' name='rosterSize' value={suggestedMemberCount} />
-        <aside className='rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100'>
+        <aside className='rounded-lg border border-border bg-muted p-3 text-foreground'>
           <div className='flex items-center gap-2 text-xs font-bold'>
             <CircleAlert className='size-4 shrink-0' />
             {t('board.sessionRulesTitle')}
@@ -189,10 +205,10 @@ function CreateSessionDialog({
                 className='mt-0.5'
                 type='radio'
                 name='rosterMode'
-                value='automatic'
-                checked={rosterMode === 'automatic'}
+                value={BOARD_ROSTER_MODES.automatic}
+                checked={rosterMode === BOARD_ROSTER_MODES.automatic}
                 disabled={!series.length}
-                onChange={() => setRosterMode('automatic')}
+                onChange={() => setRosterMode(BOARD_ROSTER_MODES.automatic)}
               />
               <span>
                 <strong className='block text-foreground'>{t('board.automaticRoster')}</strong>
@@ -204,9 +220,9 @@ function CreateSessionDialog({
                 className='mt-0.5'
                 type='radio'
                 name='rosterMode'
-                value='manual'
-                checked={rosterMode === 'manual'}
-                onChange={() => setRosterMode('manual')}
+                value={BOARD_ROSTER_MODES.manual}
+                checked={rosterMode === BOARD_ROSTER_MODES.manual}
+                onChange={() => setRosterMode(BOARD_ROSTER_MODES.manual)}
               />
               <span>
                 <strong className='block text-foreground'>{t('board.manualRosterMode')}</strong>
@@ -215,7 +231,7 @@ function CreateSessionDialog({
             </label>
           </div>
         </fieldset>
-        {rosterMode === 'automatic' ? (
+        {rosterMode === BOARD_ROSTER_MODES.automatic ? (
           <label className='grid gap-1.5 text-xs font-semibold'>
             {t('board.rosterSourceSeries')}
             <select
@@ -228,11 +244,57 @@ function CreateSessionDialog({
               <option value=''>{t('board.selectRosterSourceSeries')}</option>
               {series.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.title} · {t(`filters.seriesStatuses.${item.status}`, { defaultValue: item.status })}
+                  {item.title} ·{' '}
+                  {t(`filters.seriesStatuses.${item.status}`, { defaultValue: t('common.notAvailable') })}
                 </option>
               ))}
             </select>
             <span className='font-normal text-muted-foreground'>{t('board.rosterSourceSeriesHint')}</span>
+            <button
+              type='button'
+              disabled={!rosterSourceSeriesId || suggestionFetcher.state !== 'idle'}
+              onClick={() => {
+                setSuggestedForSeriesId(rosterSourceSeriesId)
+                void suggestionFetcher.submit(
+                  {
+                    intent: BOARD_SESSION_INTENTS.suggestMembers,
+                    seriesId: rosterSourceSeriesId,
+                    rosterSize: String(suggestedMemberCount)
+                  },
+                  { method: 'post' }
+                )
+              }}
+              className='mt-1 inline-flex h-9 w-fit items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+            >
+              {suggestionFetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
+              {t('actions.previewSuggestedMembers')}
+            </button>
+            {suggestedMembers && (
+              <div className='mt-2 grid gap-2 rounded-lg border border-border bg-background p-3'>
+                <strong className='text-xs text-foreground'>
+                  {t('board.suggestedMembersTitle', {
+                    count: suggestionFetcher.data?.suggestedSize ?? suggestedMembers.length
+                  })}
+                </strong>
+                {suggestedMembers.map((member) => (
+                  <div key={member.userId} className='rounded-md bg-muted p-2 font-normal'>
+                    <span className='block font-semibold text-foreground'>
+                      {member.displayName || t('board.unnamedBoardMember')}
+                    </span>
+                    <span className='mt-1 block text-muted-foreground'>
+                      {t('board.suggestedMemberMatch', {
+                        genres: member.matchedGenres.join(', ') || t('board.noMatchedGenres'),
+                        score: member.score
+                      })}
+                    </span>
+                  </div>
+                ))}
+                {!suggestedMembers.length && (
+                  <span className='font-normal text-muted-foreground'>{t('board.emptySuggestedMembers')}</span>
+                )}
+              </div>
+            )}
+            <BoardFeedback data={suggestionFetcher.data} />
           </label>
         ) : (
           <label className='grid gap-1.5 text-xs font-semibold'>
@@ -248,7 +310,7 @@ function CreateSessionDialog({
             <span
               className={`font-normal ${manualRosterIds && !manualRosterIsValid ? 'text-destructive' : 'text-muted-foreground'}`}
             >
-              {t('board.manualRosterValidation')}
+              {t('board.manualRosterValidation', { maximum: maximumMemberCount })}
             </span>
           </label>
         )}
@@ -259,7 +321,13 @@ function CreateSessionDialog({
         )}
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.sessionName')}
-          <input className={boardInput} name='title' minLength={5} required />
+          <input
+            className={boardInput}
+            name='title'
+            minLength={BOARD_SESSION_FIELD_LIMITS.titleMinLength}
+            maxLength={BOARD_SESSION_FIELD_LIMITS.titleMaxLength}
+            required
+          />
         </label>
         <div className='grid min-w-0 gap-3'>
           <label className='grid min-w-0 gap-1.5 text-xs font-semibold'>
@@ -291,7 +359,11 @@ function CreateSessionDialog({
         </div>
         <label className='grid gap-1.5 text-xs font-semibold'>
           {t('board.sessionNote')}
-          <textarea className={`${boardInput} min-h-24 py-2`} name='description' maxLength={500} />
+          <textarea
+            className={`${boardInput} min-h-24 py-2`}
+            name='description'
+            maxLength={BOARD_SESSION_FIELD_LIMITS.descriptionMaxLength}
+          />
         </label>
         <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
           <button
@@ -337,13 +409,14 @@ function SessionCard({
   const fetcher = useBoardFetcher()
   const isCreator = session.creatorId === currentUserId
   const canManage = isCreator || manageAll
-  const hasDecision = decisions.length > 0
-  const allDecisionsFinal =
-    hasDecision && decisions.every((decision) => ['APPROVED', 'REJECTED', 'EXPIRED'].includes(decision.result ?? ''))
-  const intent = session.status === 'UPCOMING' ? 'startSession' : 'concludeSession'
+  const intent =
+    session.status === BoardSessionResDtoOutputStatus.UPCOMING
+      ? BOARD_SESSION_INTENTS.start
+      : BOARD_SESSION_INTENTS.conclude
   const showStateAction =
     canManage &&
-    (session.status === 'UPCOMING' || (session.status === 'ACTIVE' && session.phase === 'VOTING' && allDecisionsFinal))
+    (session.status === BoardSessionResDtoOutputStatus.UPCOMING ||
+      session.status === BoardSessionResDtoOutputStatus.ACTIVE)
 
   return (
     <article className='rounded-lg border border-border p-4'>
@@ -385,12 +458,12 @@ function SessionCard({
           <input type='hidden' name='intent' value={intent} />
           <input type='hidden' name='sessionId' value={session.id} />
           <button
-            disabled={fetcher.state !== 'idle' || (session.status === 'UPCOMING' && !hasDecision)}
+            disabled={fetcher.state !== 'idle'}
             className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground'
           >
             {fetcher.state !== 'idle' ? (
               <Loader2 className='size-4 animate-spin' />
-            ) : session.status === 'UPCOMING' ? (
+            ) : session.status === BoardSessionResDtoOutputStatus.UPCOMING ? (
               <Play className='size-4' />
             ) : (
               <Square className='size-4' />
@@ -398,9 +471,6 @@ function SessionCard({
             {t(`actions.${intent}`)}
           </button>
         </fetcher.Form>
-      )}
-      {(isCreator || manageAll) && session.status === 'UPCOMING' && !hasDecision && (
-        <p className='mt-2 text-xs font-semibold text-muted-foreground'>{t('board.decisionRequiredBeforeStart')}</p>
       )}
       <BoardFeedback data={fetcher.data} />
     </article>
@@ -426,12 +496,12 @@ function SessionDecisionProgress({
           {decision.targetSeries?.title
             ? t('board.decisionDisplay.genericTitle', {
                 type: t(`board.decisionTypeLabels.${decision.decisionType}`, {
-                  defaultValue: decision.decisionType ?? t('board.sections.decisions')
+                  defaultValue: t('common.notAvailable')
                 }),
                 series: decision.targetSeries.title
               })
             : t(`board.decisionTypeLabels.${decision.decisionType}`, {
-                defaultValue: decision.decisionType ?? t('board.sections.decisions')
+                defaultValue: t('common.notAvailable')
               })}
         </strong>
         <span className={decision.quorumMet ? 'font-semibold text-primary' : 'text-muted-foreground'}>

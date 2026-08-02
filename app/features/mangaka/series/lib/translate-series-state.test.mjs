@@ -1,11 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
-  translateNameStatus,
-  translateProposalStatus,
-  translateSeriesStatus
-} from './translate-series-state.ts'
+import { translateNameStatus, translateProposalStatus, translateSeriesStatus } from './translate-series-state.ts'
 
 const translate = (key) => key
 

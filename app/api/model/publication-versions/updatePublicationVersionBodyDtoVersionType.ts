@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
+ * Loại phiên bản phát hành: ORIGINAL, DIGITAL hoặc FLIPPED. Values: ORIGINAL, DIGITAL, FLIPPED
  * @nullable
  */
 export type UpdatePublicationVersionBodyDtoVersionType = typeof UpdatePublicationVersionBodyDtoVersionType[keyof typeof UpdatePublicationVersionBodyDtoVersionType] | null;

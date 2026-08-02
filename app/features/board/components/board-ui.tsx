@@ -94,7 +94,7 @@ export function StatusBadge({ value }: { value: string }) {
       `audit.actions.${value}`,
       `common:businessData.values.${value}`
     ],
-    { defaultValue: value.replaceAll('_', ' ') }
+    { defaultValue: t('common.notAvailable') }
   )
   return <SemanticStatusBadge value={value} label={label} />
 }
@@ -107,9 +107,12 @@ export function Feedback({ data }: { data?: BoardActionResult }) {
   useEffect(() => {
     if (!data || lastData.current === data) return
     lastData.current = data
+    const errorKey = data.errorCode?.replace(/^Error\./, '')
     const message = data.ok
-      ? data.message || t(`messages.${data.messageKey ?? data.intent}`, { defaultValue: t('common.success') })
-      : data.message || t('common.failure')
+      ? t(`messages.${data.messageKey ?? data.intent}`, { defaultValue: t('common.success') })
+      : errorKey
+        ? t(`errors.${errorKey}`, { defaultValue: t('common.failure') })
+        : t('common.failure')
     const id = `board-${data.intent}-${data.ok ? 'success' : 'error'}-${data.messageKey ?? data.requestId ?? ''}`
     if (data.ok) {
       toast.success(message, { id })

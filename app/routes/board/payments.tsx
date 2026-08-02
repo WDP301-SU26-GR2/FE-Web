@@ -9,9 +9,11 @@ import {
   paymentControllerPayPayment
 } from '~/api/operations/payments/payments'
 import { BoardPaymentsPage, type BoardActionResult } from '~/features/board'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
+import { PayPaymentBodyDtoPaymentMethod } from '~/api/model/payments'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   try {
@@ -49,10 +51,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     if (intent === 'approve') {
       await paymentControllerApprovePayment({ id })
     } else if (intent === 'pay') {
+      const paymentMethod = required(form, 'paymentMethod')
+      if (!isEnumValue(PayPaymentBodyDtoPaymentMethod, paymentMethod)) return { ok: false, intent }
       await paymentControllerPayPayment(
         { id },
         {
-          paymentMethod: required(form, 'paymentMethod'),
+          paymentMethod,
           transactionReference: required(form, 'transactionReference'),
           ...(String(form.get('note') ?? '').trim() ? { note: String(form.get('note')).trim() } : {})
         }
@@ -69,6 +73,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     return {
       ok: false,
       intent,
+      errorCode: extractApiErrorCode(error),
       message: extractApiErrorMessage(error, 'Không thể cập nhật khoản thanh toán. Vui lòng thử lại.')
     }
   }

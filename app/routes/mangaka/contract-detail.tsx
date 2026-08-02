@@ -7,10 +7,9 @@ import {
   contractAmendmentControllerListAmendments,
   contractAmendmentControllerGetAmendment,
   contractAmendmentControllerRejectAmendment,
-  contractControllerRequestChanges,
   contractAmendmentControllerSignAmendmentMangaka,
-  contractControllerSignMangaka,
-  contractControllerUpdateStatus
+  contractControllerReject,
+  contractControllerSignMangaka
 } from '~/api/operations/contracts/contracts'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { MangakaContractDetailPage, type MangakaContractActionResult } from '~/features/mangaka'
@@ -65,17 +64,9 @@ export async function clientAction({
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (['approve', 'sendOtp', 'signContract'].includes(intent)) await assertValidPaymentConditions(params.id)
-    if (intent === 'approve')
-      await contractControllerUpdateStatus(
-        { id: params.id },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'MANGAKA_APPROVED' })
-        }
-      )
-    else if (intent === 'requestChanges')
-      await contractControllerRequestChanges({ id: params.id }, { reason: required(form, 'reason') })
+    if (['sendOtp', 'signContract'].includes(intent)) await assertValidPaymentConditions(params.id)
+    if (intent === 'rejectContract')
+      await contractControllerReject({ id: params.id }, { reason: required(form, 'reason') })
     else if (intent === 'sendOtp') {
       const me = await usersControllerGetMe()
       if (me.status !== 200) throw new Error(tMangaka('contracts.errors.accountUnavailable'))

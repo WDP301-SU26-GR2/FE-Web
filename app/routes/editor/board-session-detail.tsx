@@ -12,17 +12,20 @@ import {
 import {
   contractAmendmentControllerListAmendments,
   contractControllerGetContractById,
-  contractControllerGetContracts,
-  contractControllerGetContractVersions
+  contractControllerGetContracts
 } from '~/api/operations/contracts/contracts'
 import {
   transferControllerGetAssignedEditorRequests,
   transferControllerGetTransferContractById
 } from '~/api/operations/transfer/transfer'
-import { seriesControllerGetSeries, seriesControllerPitch } from '~/api/operations/series/series'
-import type { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
-import { EditorBoardMeetingRoomPage, type EditorActionResult } from '~/features/editor'
-import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
+import { seriesControllerGetSeries } from '~/api/operations/series/series'
+import { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
+import {
+  BOARD_SESSION_INTENTS,
+  EditorBoardMeetingRoomPage,
+  mapBoardSessionError,
+  type EditorActionResult
+} from '~/features/editor'
 import { hydrateBoardDecisions, loadBoardSessionSeries, required } from './board-route-utils'
 import type { Route } from './+types/board-session-detail'
 
@@ -50,13 +53,10 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 }
 
 export function clientAction(args: Route.ClientActionArgs): Promise<EditorActionResult> {
-  return runBoardSessionAction(args, { allowPitch: true })
+  return runBoardSessionAction(args)
 }
 
-export async function runBoardSessionAction(
-  { request, params }: Route.ClientActionArgs,
-  { allowPitch }: { allowPitch: boolean }
-): Promise<EditorActionResult> {
+export async function runBoardSessionAction({ request, params }: Route.ClientActionArgs): Promise<EditorActionResult> {
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
@@ -73,21 +73,8 @@ export async function runBoardSessionAction(
       if (series.status !== 200) return { ok: false, intent, errorKey: 'invalidState' }
 
       const decisionType = required(form, 'decisionType') as CreateBoardDecisionBodyDtoDecisionType
-      const supportedDecisionTypes = [
-        'SERIALIZATION',
-        'CONTINUE',
-        'CANCEL',
-        'HIATUS',
-        'ENDING_ALLOWANCE',
-        'SERIES_CONTRACT_APPROVAL',
-        'CANCELLATION',
-        'FORMAT_CHANGE',
-        'COMPLETION',
-        'REPRINT',
-        'TRANSFER',
-        'CONTRACT'
-      ]
-      if (!supportedDecisionTypes.includes(decisionType)) return { ok: false, intent, errorKey: 'invalidState' }
+      if (!Object.values(CreateBoardDecisionBodyDtoDecisionType).includes(decisionType))
+        return { ok: false, intent, errorKey: 'invalidState' }
 
       const existingDecisions = await boardControllerGetDecisions({ boardSessionId: params.id })
       const existingDecisionDetails = await Promise.all(
@@ -121,12 +108,7 @@ export async function runBoardSessionAction(
 
       const details: Record<string, unknown> = {}
       if (decisionType === 'SERIALIZATION') {
-        if (!['READY_TO_PITCH', 'PITCHED'].includes(series.data.status))
-          return { ok: false, intent, errorKey: 'invalidState' }
-        if (series.data.status === 'READY_TO_PITCH') {
-          if (!allowPitch) return { ok: false, intent, errorKey: 'invalidState' }
-          await seriesControllerPitch({ id: seriesId })
-        }
+        if (series.data.status !== 'PITCHED') return { ok: false, intent, errorKey: 'invalidState' }
         const startIssueNumber = Number(required(form, 'startIssueNumber'))
         if (!Number.isInteger(startIssueNumber) || startIssueNumber < 1)
           return { ok: false, intent, errorKey: 'invalidState' }
@@ -185,28 +167,25 @@ export async function runBoardSessionAction(
         ok: true,
         intent,
         messageKey: 'addSessionDecision',
-        message: extractApiSuccessMessage(createdDecision, 'Đã thêm quyết định vào phiên họp.'),
         decision: createdDecision.data
       }
     }
-    if (intent === 'startSession') {
+    if (intent === BOARD_SESSION_INTENTS.start) {
       const response = await boardControllerStartSession({ id: params.id })
       if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
       return {
         ok: true,
         intent,
-        messageKey: intent,
-        message: extractApiSuccessMessage(response, 'Đã bắt đầu phiên họp Hội đồng.')
+        messageKey: intent
       }
     }
-    if (intent === 'concludeSession') {
+    if (intent === BOARD_SESSION_INTENTS.conclude) {
       const response = await boardControllerConcludeSession({ id: params.id })
       if (response.status !== 200) return { ok: false, intent, errorKey: 'actionFailed' }
       return {
         ok: true,
         intent,
-        messageKey: intent,
-        message: extractApiSuccessMessage(response, 'Đã kết thúc phiên họp Hội đồng.')
+        messageKey: intent
       }
     }
     if (intent !== 'advancePhase') return { ok: false, intent, errorKey: 'invalidAction' }
@@ -218,20 +197,13 @@ export async function runBoardSessionAction(
       ok: true,
       intent,
       messageKey: 'advancePhase',
-      message: extractApiSuccessMessage(
-        response,
-        phase === 'QA'
-          ? 'Đã chuyển phiên họp sang giai đoạn thảo luận.'
-          : 'Đã chuyển phiên họp sang giai đoạn bỏ phiếu.'
-      ),
       phase: response.data.phase
     }
   } catch (error) {
     return {
       ok: false,
       intent,
-      errorKey: 'actionFailed',
-      message: extractApiErrorMessage(error, 'Không thể thực hiện thao tác trong phiên họp.')
+      errorKey: mapBoardSessionError(error)
     }
   }
 }
@@ -251,28 +223,12 @@ async function loadContractDecisionResources(
 ) {
   const resources = await Promise.all(
     contracts.map(async (contract) => {
-      const [detail, versions, amendments] = await Promise.all([
+      const [detail, amendments] = await Promise.all([
         contractControllerGetContractById({ id: contract.id }).catch(() => null),
-        contractControllerGetContractVersions({ id: contract.id }).catch(() => null),
         contractAmendmentControllerListAmendments({ contractId: contract.id }).catch(() => null)
       ])
-      const currentVersion = versions?.status === 200 ? versions.data.at(-1) : null
       const contractDetail = detail?.status === 200 ? detail.data : null
       const title = contractDetail?.series?.title ?? contract.series?.title ?? contract.id
-      const contractResource =
-        contractDetail?.status === 'MANGAKA_APPROVED' && currentVersion
-          ? {
-              resourceType: contractDetail.sourceTransferRequestId
-                ? ('REPLACEMENT_CONTRACT' as const)
-                : ('PUBLICATION_CONTRACT' as const),
-              resourceId: contract.id,
-              versionId: currentVersion.id,
-              seriesId: contract.seriesId,
-              label: `${title} · ${
-                contractDetail.sourceTransferRequestId ? 'Replacement Contract' : 'Publication Contract'
-              } · v${currentVersion.versionNumber}`
-            }
-          : null
       const amendmentResources =
         amendments?.status === 200
           ? amendments.data
@@ -282,10 +238,10 @@ async function loadContractDecisionResources(
                 resourceId: amendment.id,
                 versionId: '',
                 seriesId: contract.seriesId,
-                label: `${title} · Amendment · ${amendment.id}`
+                label: `${title} · ${amendment.id}`
               }))
           : []
-      return [...(contractResource ? [contractResource] : []), ...amendmentResources]
+      return amendmentResources
     })
   )
   const transferResources = await Promise.all(
@@ -300,7 +256,7 @@ async function loadContractDecisionResources(
         resourceId: request.transferContractId,
         versionId: '',
         seriesId: request.seriesId,
-        label: `${request.series?.title ?? request.seriesId} · Transfer Contract`
+        label: `${request.series?.title ?? request.seriesId} · ${request.transferContractId}`
       }
     })
   )
