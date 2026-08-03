@@ -41,8 +41,6 @@ export {
 
 export { EditorContractsPage } from './contracts/editor-contracts-page'
 export { EditorContractDetailPage } from './contracts/editor-contract-detail-page'
-export { EditorContractTermsPage } from './contracts/editor-contract-terms-page'
-export { EditorContractConditionsPage } from './contracts/editor-contract-conditions-page'
 export { EditorContractHistoryPage } from './contracts/editor-contract-history-page'
 export { EditorContractRevenuePage } from './contracts/editor-contract-revenue-page'
 export { EditorContractPaymentsPage } from './contracts/editor-contract-payments-page'

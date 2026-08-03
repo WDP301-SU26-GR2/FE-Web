@@ -39,8 +39,6 @@ const TITLE_ROUTES: readonly TitleRoute[] = [
   [/^\/dashboard\/editor\/board\/decisions$/, 'Quyết định Hội đồng'],
   [/^\/dashboard\/editor\/board\/lifecycle$/, 'Quyết định vòng đời bộ truyện'],
   [/^\/dashboard\/editor\/board$/, 'Quy trình Hội đồng'],
-  [/^\/dashboard\/editor\/contracts\/[^/]+\/terms$/, 'Điều khoản hợp đồng'],
-  [/^\/dashboard\/editor\/contracts\/[^/]+\/conditions$/, 'Điều kiện thanh toán'],
   [/^\/dashboard\/editor\/contracts\/[^/]+\/history$/, 'Lịch sử hợp đồng'],
   [/^\/dashboard\/editor\/contracts\/[^/]+\/revenue$/, 'Doanh thu hợp đồng'],
   [/^\/dashboard\/editor\/contracts\/[^/]+\/amendments$/, 'Phụ lục hợp đồng'],

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useFetcher, useNavigate } from 'react-router'
 import {
   ArrowLeft,
@@ -19,20 +19,22 @@ import type { EditorActionResult } from '../types'
 import { ContractHeader } from './components/contract-shared'
 import { ContractActionMessage } from './components/contract-shared'
 import { EDITOR_CONTRACT_INTENTS, canRedraftContract } from './contract-flow'
-import { ContractDecisionBasis, ContractPdfButton } from '~/shared/components/contracts'
+import { ContractTermsForm } from './editor-contract-terms-page'
+import { ContractConditionsManager } from './editor-contract-conditions-page'
+import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
+import { Dialog } from '~/shared/ui/dialog'
 
 export function EditorContractDetailPage({ data }: { data: EditorContractDetailData }) {
   const { t, i18n } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const navigate = useNavigate()
+  const [openDetail, setOpenDetail] = useState<'terms' | 'conditions' | null>(null)
   const basePath = `/dashboard/editor/contracts/${data.contract.id}`
   const validConditionCount = data.conditions.filter(
     (condition) =>
       condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
   ).length
   const sections = [
-    ['terms', FilePenLine],
-    ['conditions', Milestone],
     ['history', FileClock],
     ['payments', WalletCards],
     ['revenue', Landmark],
@@ -55,6 +57,70 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
         <ContractPdfButton contract={data.contract} conditionsCount={validConditionCount} />
       </div>
       <ContractDecisionBasis contract={data.contract} decisionPath='/dashboard/editor/board/decisions' />
+      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div className='flex flex-wrap items-start justify-between gap-3'>
+          <div>
+            <h2 className='flex items-center gap-2 font-bold text-foreground'>
+              <FilePenLine className='size-5 text-primary' />
+              {t('contractDetail.sections.terms')}
+            </h2>
+            <p className='mt-1 text-xs text-muted-foreground'>{t('contractDetail.sectionDescriptions.terms')}</p>
+          </div>
+          <button
+            type='button'
+            onClick={() => setOpenDetail('terms')}
+            className='inline-flex items-center gap-1 text-xs font-bold text-primary'
+          >
+            {t('contractDetail.editTerms')}
+            <ChevronRight className='size-4' />
+          </button>
+        </div>
+        <dl className='mt-5 grid gap-4 text-xs sm:grid-cols-2 lg:grid-cols-3'>
+          {[
+            [t('contracts.contractType'), t(`filters.contractTypes.${data.contract.contractType}`)],
+            [t('contracts.valuation'), formatMoney(data.contract.valuationAmount, i18n.language)],
+            [t('contracts.publisherPct'), formatPercent(data.contract.publisherOwnershipPct, i18n.language)],
+            [t('contracts.mangakaPct'), formatPercent(data.contract.mangakaOwnershipPct, i18n.language)],
+            [t('contracts.contractStart'), formatDate(data.contract.contractStart, i18n.language)],
+            [t('contracts.contractEnd'), formatDate(data.contract.contractEnd, i18n.language)]
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className='text-muted-foreground'>{label}</dt>
+              <dd className='mt-1 font-semibold text-foreground'>{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className='mt-5 border-t border-border pt-4'>
+          <p className='text-xs text-muted-foreground'>{t('contracts.terminationClause')}</p>
+          <p className='mt-1 whitespace-pre-wrap text-xs font-semibold leading-5 text-foreground'>
+            {data.contract.terminationClause || t('common.notAvailable')}
+          </p>
+        </div>
+      </section>
+      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
+        <div className='mb-5 flex flex-wrap items-start justify-between gap-3'>
+          <div>
+            <h2 className='flex items-center gap-2 font-bold text-foreground'>
+              <Milestone className='size-5 text-primary' />
+              {t('contractDetail.sections.conditions')}
+            </h2>
+            <p className='mt-1 text-xs text-muted-foreground'>
+              {validConditionCount
+                ? t('contractDetail.paymentConditionReady', { count: validConditionCount })
+                : t('contractDetail.paymentConditionMissing')}
+            </p>
+          </div>
+          <button
+            type='button'
+            onClick={() => setOpenDetail('conditions')}
+            className='inline-flex items-center gap-1 text-xs font-bold text-primary'
+          >
+            {t('contractDetail.manageConditions')}
+            <ChevronRight className='size-4' />
+          </button>
+        </div>
+        <PaymentConditionsSummary conditions={data.conditions} />
+      </section>
       {data.contract.supersedesContractId && (
         <section className='rounded-xl border border-border bg-muted/40 p-4 text-xs text-foreground'>
           {t('contractDetail.supersedesContract')}{' '}
@@ -129,17 +195,6 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
           >
             <Icon className='size-6 text-primary' />
             <h2 className='mt-4 font-bold text-foreground'>{t(`contractDetail.sections.${key}`)}</h2>
-            {key === 'conditions' && (
-              <span
-                className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                  validConditionCount ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'
-                }`}
-              >
-                {validConditionCount
-                  ? t('contractDetail.validConditionCount', { count: validConditionCount })
-                  : t('contractDetail.noValidConditions')}
-              </span>
-            )}
             <p className='mt-2 min-h-10 text-xs text-muted-foreground'>
               {t(`contractDetail.sectionDescriptions.${key}`)}
             </p>
@@ -150,6 +205,44 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
           </Link>
         ))}
       </div>
+      <Dialog
+        compact
+        open={openDetail === 'terms'}
+        onClose={() => setOpenDetail(null)}
+        titleId='editor-contract-terms-detail-title'
+        title={t('contractDetail.sections.terms')}
+        description={t('contractDetail.sectionDescriptions.terms')}
+        size='xl'
+      >
+        <ContractTermsForm contract={data.contract} action={basePath} />
+      </Dialog>
+      <Dialog
+        compact
+        open={openDetail === 'conditions'}
+        onClose={() => setOpenDetail(null)}
+        titleId='editor-contract-conditions-detail-title'
+        title={t('contractDetail.sections.conditions')}
+        description={t('contractDetail.sectionDescriptions.conditions')}
+        size='xl'
+      >
+        <ContractConditionsManager contract={data.contract} conditions={data.conditions} action={basePath} />
+      </Dialog>
     </div>
   )
+}
+
+function formatMoney(value: number | null, locale: string) {
+  return value == null ? '—' : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
+}
+
+function formatPercent(value: number | null, locale: string) {
+  return value == null ? '—' : `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)}%`
+}
+
+function formatDate(value: string | null, locale: string) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }

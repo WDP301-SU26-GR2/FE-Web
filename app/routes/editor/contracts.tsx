@@ -2,7 +2,8 @@ import { boardControllerGetDecisions, boardControllerGetSessions } from '~/api/o
 import {
   contractControllerCreateDraft,
   contractControllerGetContractById,
-  contractControllerGetContracts
+  contractControllerGetContracts,
+  paymentConditionControllerCreatePaymentCondition
 } from '~/api/operations/contracts/contracts'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
@@ -21,7 +22,7 @@ import {
 } from '~/features/editor'
 import { SITE } from '~/shared/config/site'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
-import { required } from './contract-route-utils'
+import { paymentPayout, paymentThreshold, required } from './contract-route-utils'
 import { hydrateBoardDecisions, hydrateBoardSessions } from './board-route-utils'
 
 import type { Route } from './+types/contracts'
@@ -78,7 +79,14 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       return { ok: false, intent, errorKey: 'ownershipMismatch' }
     if (!contractDatesAreValid(contractStart, contractEnd))
       return { ok: false, intent, errorKey: 'invalidContractDates' }
-    await contractControllerCreateDraft({
+    const conditionType = required(formData, 'conditionType') as
+      | 'CHAPTER_MILESTONE'
+      | 'RECURRING_CHAPTER'
+      | 'RANKING_MILESTONE'
+      | 'TIME_BOUND'
+    const thresholdConfig = paymentThreshold(formData)
+    const payout = paymentPayout(formData)
+    const createdContract = await contractControllerCreateDraft({
       seriesId,
       mangakaId: required(formData, 'mangakaId'),
       boardDecisionId: required(formData, 'boardDecisionId'),
@@ -90,7 +98,16 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       contractStart: new Date(contractStart).toISOString(),
       contractEnd: new Date(contractEnd).toISOString()
     })
-    return { ok: true, intent, messageKey: 'createContract' }
+    await paymentConditionControllerCreatePaymentCondition(
+      { contractId: createdContract.data.id },
+      {
+        conditionType,
+        thresholdConfig,
+        isRecurring: conditionType === 'RECURRING_CHAPTER',
+        ...payout
+      }
+    )
+    return { ok: true, intent, messageKey: 'createContract', contractId: createdContract.data.id }
   } catch (error) {
     return { ok: false, intent, errorKey: mapEditorContractError(error) }
   }

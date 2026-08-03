@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { Link, useFetcher, useNavigate } from 'react-router'
 import { FilePlus2, FileSignature, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -15,12 +15,18 @@ import {
   contractValuationIsValid,
   ownershipIsValid
 } from './contract-flow'
+import {
+  InitialPaymentConditionFields,
+  type InitialConditionType,
+  type InitialPayoutMode
+} from './components/initial-payment-condition-fields'
 
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 export function EditorContractsPage({ data, hasError }: { data: EditorContractsData; hasError: boolean }) {
   const { t, i18n } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
+  const navigate = useNavigate()
   const [decisionId, setDecisionId] = useState('')
   const [contractType, setContractType] = useState<CreateContractBodyDtoContractType>(
     CreateContractBodyDtoContractType.REVENUE_SHARE
@@ -30,6 +36,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const [mangakaOwnershipPct, setMangakaOwnershipPct] = useState(50)
   const [contractStart, setContractStart] = useState('')
   const [contractEnd, setContractEnd] = useState('')
+  const [conditionType, setConditionType] = useState<InitialConditionType>('CHAPTER_MILESTONE')
+  const [payoutMode, setPayoutMode] = useState<InitialPayoutMode>('amount')
   const [createOpen, setCreateOpen] = useState(false)
   const [contractSearch, setContractSearch] = useState('')
   const [contractStatus, setContractStatus] = useState('')
@@ -76,8 +84,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
     if (submittedRef.current && fetcher.state === 'idle' && fetcher.data?.ok) {
       submittedRef.current = false
       setCreateOpen(false)
+      if (fetcher.data.contractId) void navigate(`/dashboard/editor/contracts/${fetcher.data.contractId}`)
     }
-  }, [fetcher.data, fetcher.state])
+  }, [fetcher.data, fetcher.state, navigate])
 
   return (
     <div className='space-y-7 pb-12'>
@@ -259,11 +268,19 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <textarea
-              name='terminationClause'
-              required
-              className='min-h-24 rounded-md border border-input bg-background p-3 text-xs text-foreground md:col-span-2'
-              placeholder={t('contracts.terminationClause')}
+            <label className='grid gap-1.5 text-xs font-semibold md:col-span-2'>
+              {t('contracts.terminationClause')}
+              <textarea
+                name='terminationClause'
+                required
+                className='min-h-24 rounded-md border border-input bg-background p-3 text-xs text-foreground'
+              />
+            </label>
+            <InitialPaymentConditionFields
+              conditionType={conditionType}
+              onConditionTypeChange={setConditionType}
+              payoutMode={payoutMode}
+              onPayoutModeChange={setPayoutMode}
             />
             <button
               disabled={
