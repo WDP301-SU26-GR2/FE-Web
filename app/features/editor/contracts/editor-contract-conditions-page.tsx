@@ -8,7 +8,7 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
-import { canEditContract } from './contract-flow'
+import { CONTRACT_FIELD_LIMITS, canEditContract } from './contract-flow'
 import {
   ContractActionMessage,
   ContractDialogPanel,
@@ -55,17 +55,18 @@ export function EditorContractConditionsPage({
           <input
             name='payoutAmount'
             type='number'
-            min={0}
-            step='any'
+            min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+            max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+            step={1}
             className={contractInput}
             placeholder={t('contractDetail.payoutAmount')}
           />
           <input
             name='payoutPct'
             type='number'
-            min={0}
+            min={1}
             max={100}
-            step='any'
+            step={1}
             className={contractInput}
             placeholder={t('contractDetail.payoutPct')}
           />
@@ -114,17 +115,18 @@ export function EditorContractConditionsPage({
                   <input
                     name='payoutAmount'
                     type='number'
-                    min={0}
-                    step='any'
+                    min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+                    max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+                    step={1}
                     defaultValue={condition.payoutAmount ?? ''}
                     className={contractInput}
                   />
                   <input
                     name='payoutPct'
                     type='number'
-                    min={0}
+                    min={1}
                     max={100}
-                    step='any'
+                    step={1}
                     defaultValue={condition.payoutPct ?? ''}
                     className={contractInput}
                   />
@@ -168,6 +170,8 @@ function ThresholdField({ type, config }: { type: string; config?: unknown }) {
         name='every'
         type='number'
         min={1}
+        max={CONTRACT_FIELD_LIMITS.chapterMaximum}
+        step={1}
         required
         defaultValue={numeric(values.every)}
         className={contractInput}
@@ -180,6 +184,8 @@ function ThresholdField({ type, config }: { type: string; config?: unknown }) {
         name='topRank'
         type='number'
         min={1}
+        max={CONTRACT_FIELD_LIMITS.rankingMaximum}
+        step={1}
         required
         defaultValue={numeric(values.topRank)}
         className={contractInput}
@@ -193,6 +199,8 @@ function ThresholdField({ type, config }: { type: string; config?: unknown }) {
       name='chapter'
       type='number'
       min={1}
+      max={CONTRACT_FIELD_LIMITS.chapterMaximum}
+      step={1}
       required
       defaultValue={numeric(values.chapter)}
       className={contractInput}

@@ -22,6 +22,7 @@ import { seriesControllerGetSeries } from '~/api/operations/series/series'
 import { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
 import {
   BOARD_SESSION_INTENTS,
+  BOARD_DECISION_LIMITS,
   EditorBoardMeetingRoomPage,
   mapBoardSessionError,
   type EditorActionResult
@@ -110,7 +111,11 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
       if (decisionType === 'SERIALIZATION') {
         if (series.data.status !== 'PITCHED') return { ok: false, intent, errorKey: 'invalidState' }
         const startIssueNumber = Number(required(form, 'startIssueNumber'))
-        if (!Number.isInteger(startIssueNumber) || startIssueNumber < 1)
+        if (
+          !Number.isSafeInteger(startIssueNumber) ||
+          startIssueNumber < 1 ||
+          startIssueNumber > BOARD_DECISION_LIMITS.startIssueMaximum
+        )
           return { ok: false, intent, errorKey: 'invalidState' }
         const publicationType = required(form, 'publicationType')
         if (!['WEEKLY', 'MONTHLY', 'IRREGULAR'].includes(publicationType))

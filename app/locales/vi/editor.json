@@ -1337,7 +1337,7 @@
     "revisionReasonRequired": "Hãy nhập lý do trước khi yêu cầu chỉnh sửa.",
     "ownershipMismatch": "Tổng tỷ lệ sở hữu phải bằng 100%; hợp đồng mua đứt phải là nhà xuất bản 100% và tác giả 0%.",
     "invalidContractDates": "Thời gian kết thúc hợp đồng phải sau thời gian bắt đầu.",
-    "invalidContractMoney": "Hãy nhập giá trị hợp đồng lớn hơn không và tỷ lệ sở hữu hợp lệ.",
+    "invalidContractMoney": "Giá trị hợp đồng phải là số nguyên từ 1 đến 1.000.000.000.000 và tỷ lệ sở hữu phải là số nguyên hợp lệ.",
     "contractNotFound": "Không tìm thấy hợp đồng.",
     "contractAccessDenied": "Bạn không có quyền truy cập hợp đồng này.",
     "notAssignedContractEditor": "Chỉ biên tập viên phụ trách mới có thể sửa hợp đồng này.",
@@ -1371,7 +1371,7 @@
     "deadlineInvalidTransition": "Yêu cầu đã đổi trạng thái và không còn cho phép thao tác này. Hãy tải lại dữ liệu.",
     "deadlineNotCounterparty": "Hiện chưa đến lượt biên tập viên phản hồi đề xuất này.",
     "reprintDownloadFailed": "Không thể mở bản thảo tái bản. Vui lòng thử lại.",
-    "payoutRequired": "Cần nhập số tiền hoặc phần trăm chi trả lớn hơn 0.",
+    "payoutRequired": "Chỉ nhập một kiểu chi trả: số tiền nguyên từ 1 đến 1.000.000.000.000 hoặc phần trăm nguyên từ 1 đến 100.",
     "paymentConditionRequired": "Cần ít nhất một điều kiện thanh toán hợp lệ trước khi gửi hợp đồng cho Mangaka.",
     "paymentConditionLocked": "Không thể thay đổi điều kiện thanh toán sau khi hợp đồng đã được gửi đi duyệt.",
     "invalidChapterRange": "Khoảng chương không hợp lệ. Chương kết thúc phải lớn hơn hoặc bằng chương bắt đầu."

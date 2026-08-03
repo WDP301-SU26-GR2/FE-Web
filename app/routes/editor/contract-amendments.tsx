@@ -5,7 +5,7 @@ import {
   contractAmendmentControllerUpdateAmendment,
   contractAmendmentControllerVoidAmendment
 } from '~/api/operations/contracts/contracts'
-import { EditorContractAmendmentsPage, type EditorActionResult } from '~/features/editor'
+import { EditorContractAmendmentsPage, contractValuationIsValid, type EditorActionResult } from '~/features/editor'
 import {
   clauses,
   contractErrorKey,
@@ -89,7 +89,8 @@ function amendmentChanges(form: FormData) {
 }
 
 function validateChanges(form: FormData, changes: ReturnType<typeof amendmentChanges>) {
-  const { publisherOwnershipPct, mangakaOwnershipPct, contractStart, contractEnd } = changes
+  const { valuationAmount, publisherOwnershipPct, mangakaOwnershipPct, contractStart, contractEnd } = changes
+  if (valuationAmount != null && !contractValuationIsValid(valuationAmount)) return 'invalidContractMoney'
   if (publisherOwnershipPct != null || mangakaOwnershipPct != null) {
     if (
       publisherOwnershipPct == null ||

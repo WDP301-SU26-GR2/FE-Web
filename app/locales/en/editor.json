@@ -1337,7 +1337,7 @@
     "revisionReasonRequired": "Enter a reason before requesting revisions.",
     "ownershipMismatch": "Ownership percentages must total 100%; a full buyout must use 100% publisher and 0% Mangaka.",
     "invalidContractDates": "The contract end must be later than its start.",
-    "invalidContractMoney": "Enter a valuation greater than zero and a valid ownership split.",
+    "invalidContractMoney": "Enter a whole-number valuation from 1 to 1,000,000,000,000 and valid whole-number ownership percentages.",
     "contractNotFound": "The contract could not be found.",
     "contractAccessDenied": "You do not have access to this contract.",
     "notAssignedContractEditor": "Only the assigned Editor can modify this contract.",
@@ -1371,7 +1371,7 @@
     "deadlineInvalidTransition": "The request state has changed and no longer permits this action. Reload the data.",
     "deadlineNotCounterparty": "It is not currently the Editor's turn to respond.",
     "reprintDownloadFailed": "The reprint manuscript could not be opened. Please try again.",
-    "payoutRequired": "Enter a payout amount or payout percentage greater than 0.",
+    "payoutRequired": "Enter exactly one whole-number payout: an amount from 1 to 1,000,000,000,000 or a percentage from 1 to 100.",
     "paymentConditionRequired": "At least one valid payment condition is required before sending the contract to the Mangaka.",
     "paymentConditionLocked": "Payment conditions cannot be changed after the contract has been submitted for review.",
     "invalidChapterRange": "The chapter range is invalid. The ending chapter must not precede the starting chapter."

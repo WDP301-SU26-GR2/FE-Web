@@ -8,6 +8,7 @@ import { Dialog } from '~/shared/ui/dialog'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { CreateContractBodyDtoContractType } from '~/api/model/contracts'
 import {
+  CONTRACT_FIELD_LIMITS,
   EDITOR_CONTRACT_INTENTS,
   blocksNewContractCreation,
   contractDatesAreValid,
@@ -192,7 +193,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               <input
                 name='valuationAmount'
                 type='number'
-                min={0}
+                min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+                max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+                step={1}
                 required
                 value={valuationAmount}
                 onChange={(event) => setValuationAmount(Number(event.target.value))}
@@ -204,8 +207,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               <input
                 name='publisherOwnershipPct'
                 type='number'
-                min={0}
-                max={100}
+                min={contractType === CreateContractBodyDtoContractType.FULL_BUYOUT ? 100 : 1}
+                max={contractType === CreateContractBodyDtoContractType.FULL_BUYOUT ? 100 : 99}
+                step={1}
                 required
                 readOnly={contractType === CreateContractBodyDtoContractType.FULL_BUYOUT}
                 value={publisherOwnershipPct}
@@ -218,8 +222,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               <input
                 name='mangakaOwnershipPct'
                 type='number'
-                min={0}
-                max={100}
+                min={contractType === CreateContractBodyDtoContractType.FULL_BUYOUT ? 0 : 1}
+                max={contractType === CreateContractBodyDtoContractType.FULL_BUYOUT ? 0 : 99}
+                step={1}
                 required
                 readOnly={contractType === CreateContractBodyDtoContractType.FULL_BUYOUT}
                 value={mangakaOwnershipPct}

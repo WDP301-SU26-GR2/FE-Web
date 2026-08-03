@@ -15,7 +15,13 @@ export const EDITOR_CONTRACT_INTENTS = {
 } as const
 
 export const CONTRACT_FIELD_LIMITS = {
-  versionNoteMaxLength: 500
+  versionNoteMaxLength: 500,
+  moneyMinimum: 1,
+  moneyMaximum: 1_000_000_000_000,
+  percentageMinimum: 0,
+  percentageMaximum: 100,
+  chapterMaximum: 10_000,
+  rankingMaximum: 1_000
 } as const
 
 const EDITABLE_STATUSES = new Set<ContractResDtoOutput['status']>([
@@ -68,7 +74,7 @@ export function ownershipIsValid(
   publisher: number,
   mangaka: number
 ): boolean {
-  if (!Number.isFinite(publisher) || !Number.isFinite(mangaka) || publisher + mangaka !== 100) return false
+  if (!Number.isInteger(publisher) || !Number.isInteger(mangaka) || publisher + mangaka !== 100) return false
   if (contractType === 'FULL_BUYOUT') return publisher === 100 && mangaka === 0
   return publisher > 0 && publisher < 100 && mangaka > 0 && mangaka < 100
 }
@@ -80,7 +86,11 @@ export function contractDatesAreValid(start: string, end: string): boolean {
 }
 
 export function contractValuationIsValid(value: number): boolean {
-  return Number.isFinite(value) && value > 0
+  return (
+    Number.isSafeInteger(value) &&
+    value >= CONTRACT_FIELD_LIMITS.moneyMinimum &&
+    value <= CONTRACT_FIELD_LIMITS.moneyMaximum
+  )
 }
 
 export function isContractType(value: string): value is ContractResDtoOutputContractType {

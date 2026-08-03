@@ -85,7 +85,9 @@ export function EditorContractTermsPage({
           <input
             name='valuationAmount'
             type='number'
-            min={0}
+            min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+            max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+            step={1}
             value={valuationAmount}
             onChange={(event) => setValuationAmount(Number(event.target.value))}
             disabled={!editable}
@@ -95,8 +97,9 @@ export function EditorContractTermsPage({
           <input
             name='publisherOwnershipPct'
             type='number'
-            min={0}
-            max={100}
+            min={contractType === 'FULL_BUYOUT' ? 100 : 1}
+            max={contractType === 'FULL_BUYOUT' ? 100 : 99}
+            step={1}
             required
             readOnly={contractType === 'FULL_BUYOUT'}
             value={publisherOwnershipPct}
@@ -107,8 +110,9 @@ export function EditorContractTermsPage({
           <input
             name='mangakaOwnershipPct'
             type='number'
-            min={0}
-            max={100}
+            min={contractType === 'FULL_BUYOUT' ? 0 : 1}
+            max={contractType === 'FULL_BUYOUT' ? 0 : 99}
+            step={1}
             required
             readOnly={contractType === 'FULL_BUYOUT'}
             value={mangakaOwnershipPct}

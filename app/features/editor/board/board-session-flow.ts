@@ -23,6 +23,10 @@ export const BOARD_SESSION_FIELD_LIMITS = {
   descriptionMaxLength: 500
 } as const
 
+export const BOARD_DECISION_LIMITS = {
+  startIssueMaximum: 1_000_000
+} as const
+
 const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/
 
 const ERROR_KEY_BY_CODE = {

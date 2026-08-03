@@ -26,6 +26,7 @@ export { EditorBoardSessionsPage } from './board/editor-board-sessions-page'
 export { EditorBoardMeetingRoomPage } from './board/editor-board-meeting-room-page'
 export { EditorBoardDecisionsPage } from './board/editor-board-decisions-page'
 export {
+  BOARD_DECISION_LIMITS,
   BOARD_ROSTER_LIMITS,
   BOARD_ROSTER_MODES,
   BOARD_SESSION_FIELD_LIMITS,

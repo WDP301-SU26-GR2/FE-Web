@@ -11,7 +11,7 @@ import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
 import type { EditorActionResult } from '../types'
 import { orderBoardDecisions } from './board-order'
-import { BOARD_SESSION_INTENTS } from './board-session-flow'
+import { BOARD_DECISION_LIMITS, BOARD_SESSION_INTENTS } from './board-session-flow'
 import { boardInput, BoardFeedback, BoardStatus, useBoardFetcher } from './components/board-shared'
 import { useEditorMeetingRoom } from './hooks/use-editor-meeting-room'
 
@@ -477,6 +477,8 @@ function AddSessionDecisionDialog({
                   name='startIssueNumber'
                   type='number'
                   min={1}
+                  max={BOARD_DECISION_LIMITS.startIssueMaximum}
+                  step={1}
                   required
                   disabled={!selectedSeries}
                 />
