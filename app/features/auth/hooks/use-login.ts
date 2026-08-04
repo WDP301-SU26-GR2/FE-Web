@@ -7,8 +7,6 @@ import type { LoginBodyDto, LoginResDtoOutput, LoginResDtoOutputUser } from '~/a
 import { useAuth } from '~/features/auth/context/auth-context'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
-import { isEmailNotVerifiedError } from '../lib/is-email-not-verified-error'
-
 type LoginSuccess = {
   user: LoginResDtoOutputUser
   accessToken: string
@@ -16,11 +14,9 @@ type LoginSuccess = {
   mustChangePassword: boolean
 }
 
-export type LoginResult = LoginSuccess | { kind: 'email-not-verified' } | null
-
 type UseLoginResult = {
-  submit: (payload: LoginBodyDto) => Promise<LoginResult>
-  submitGoogle: (idToken: string) => Promise<LoginResult>
+  submit: (payload: LoginBodyDto) => Promise<LoginSuccess | null>
+  submitGoogle: (idToken: string) => Promise<LoginSuccess | null>
   isSubmitting: boolean
 }
 
@@ -50,16 +46,12 @@ export function useLogin(): UseLoginResult {
   )
 
   const runLogin = useCallback(
-    async (request: () => Promise<{ data: LoginResDtoOutput }>): Promise<LoginResult> => {
+    async (request: () => Promise<{ data: LoginResDtoOutput }>): Promise<LoginSuccess | null> => {
       setIsSubmitting(true)
       try {
         const response = await request()
         return completeLogin(response.data)
       } catch (err) {
-        if (isEmailNotVerifiedError(err)) {
-          return { kind: 'email-not-verified' }
-        }
-
         toast.error(extractApiErrorMessage(err, t('login.errorGeneric')))
         return null
       } finally {
