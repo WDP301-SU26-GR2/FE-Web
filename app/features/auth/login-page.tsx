@@ -5,16 +5,10 @@ import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Layers } from '
 
 import { useLogin } from '~/features/auth/hooks/use-login'
 import { startGoogleSignIn } from '~/features/auth/lib/google-identity'
-import { authControllerSendOtp } from '~/api/operations/auth/auth'
-import { SendOtpBodyDtoPurpose } from '~/api/model/auth'
 import { ROLE_DASHBOARD_PATH } from '~/shared/components'
 import { env } from '~/shared/config/env'
 import { cn } from '~/shared/lib/cn'
 import { BrandLogo } from '~/shared/components/brand-logo'
-import { STORAGE_KEYS } from '~/shared/config/site'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
-import { writeStorage } from '~/shared/lib/storage'
-import { toast } from 'sonner'
 
 export function LoginPage() {
   const { t } = useTranslation('auth')
@@ -24,8 +18,6 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isSendingVerificationOtp, setIsSendingVerificationOtp] = useState(false)
-  const [emailNotVerified, setEmailNotVerified] = useState(false)
   // Inline validation only — real auth errors are surfaced via toast
   // (see useLogin). Keeps the form responsive without blocking submit.
   const [validationError, setValidationError] = useState('')
@@ -33,7 +25,6 @@ export function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setValidationError('')
-    setEmailNotVerified(false)
 
     if (!email) {
       setValidationError(t('login.errorEmailRequired'))
@@ -46,10 +37,7 @@ export function LoginPage() {
 
     const result = await submit({ email, password })
     if (!result) return
-    if (!('user' in result)) {
-      setEmailNotVerified(true)
-      return
-    }
+    if (!('user' in result)) return
 
     if (result.mustChangePassword) {
       navigate('/change-password')
@@ -60,20 +48,6 @@ export function LoginPage() {
     // Fallback về Mangaka nếu role không map được.
     const target = ROLE_DASHBOARD_PATH[result.user.role] ?? '/dashboard/mangaka'
     navigate(target)
-  }
-
-  const handleSendVerificationOtp = async () => {
-    setIsSendingVerificationOtp(true)
-    try {
-      await authControllerSendOtp({ email, purpose: SendOtpBodyDtoPurpose.REGISTER })
-      writeStorage(STORAGE_KEYS.pendingRegisterEmail, email)
-      toast.success(t('login.emailNotVerified.sendCodeSuccess'))
-      navigate('/verify-email')
-    } catch (error) {
-      toast.error(extractApiErrorMessage(error, t('login.emailNotVerified.sendCodeError')))
-    } finally {
-      setIsSendingVerificationOtp(false)
-    }
   }
 
   const handleGoogleLogin = () => {
@@ -88,10 +62,7 @@ export function LoginPage() {
       onCredential: async (idToken) => {
         const result = await submitGoogle(idToken)
         if (!result) return
-        if (!('user' in result)) {
-          setValidationError(t('login.errorGeneric'))
-          return
-        }
+        if (!('user' in result)) return
 
         if (result.mustChangePassword) {
           navigate('/change-password')
@@ -163,23 +134,6 @@ export function LoginPage() {
             {validationError && (
               <div className='flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive'>
                 <span className='font-semibold'>{validationError}</span>
-              </div>
-            )}
-
-            {emailNotVerified && (
-              <div className='space-y-3 rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm'>
-                <p className='font-semibold'>{t('login.emailNotVerified.notice')}</p>
-                <button
-                  type='button'
-                  onClick={handleSendVerificationOtp}
-                  disabled={isSendingVerificationOtp}
-                  className='inline-flex items-center gap-2 font-bold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-60'
-                >
-                  {isSendingVerificationOtp && <Loader2 className='h-4 w-4 animate-spin' />}
-                  {t(
-                    isSendingVerificationOtp ? 'login.emailNotVerified.sendingCode' : 'login.emailNotVerified.sendCode'
-                  )}
-                </button>
               </div>
             )}
 

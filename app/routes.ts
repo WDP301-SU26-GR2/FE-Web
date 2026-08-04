@@ -6,7 +6,6 @@ export default [
   // Auth (login/register/change-password)
   route('login', 'routes/auth/login.tsx'),
   route('register', 'routes/auth/register.tsx'),
-  route('verify-email', 'routes/auth/verify-email.tsx'),
   route('forgot-password', 'routes/auth/forgot-password.tsx'),
   route('change-password', 'routes/auth/change-password.tsx'),
 
