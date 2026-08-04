@@ -14,7 +14,6 @@ import {
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { MangakaContractDetailPage, type MangakaContractActionResult } from '~/features/mangaka'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 import i18n from '~/shared/lib/i18n'
 
 const tMangaka = i18n.getFixedT(null, 'mangaka')
@@ -64,7 +63,6 @@ export async function clientAction({
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (['sendOtp', 'signContract'].includes(intent)) await assertValidPaymentConditions(params.id)
     if (intent === 'rejectContract')
       await contractControllerReject({ id: params.id }, { reason: required(form, 'reason') })
     else if (intent === 'sendOtp') {
@@ -92,12 +90,6 @@ export async function clientAction({
       message: extractApiErrorMessage(error, tMangaka('contracts.errors.actionFailed'))
     }
   }
-}
-
-async function assertValidPaymentConditions(contractId: string) {
-  const response = await paymentConditionControllerGetPaymentConditions({ contractId })
-  if (response.status !== 200 || !hasValidPaymentCondition(response.data.data))
-    throw new Error(tMangaka('contracts.errors.paymentConditionsRequired'))
 }
 
 function required(form: FormData, key: string) {

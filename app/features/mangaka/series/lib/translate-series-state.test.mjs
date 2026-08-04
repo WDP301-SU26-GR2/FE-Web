@@ -13,8 +13,8 @@ test('translates a documented proposal status to its detail locale key', () => {
   assert.equal(translateProposalStatus('PROPOSAL_REVISION', translate), 'seriesDetail.proposalStatus.PROPOSAL_REVISION')
 })
 
-test('translates a documented Name status to its detail locale key', () => {
-  assert.equal(translateNameStatus('IN_REVIEW', translate), 'seriesDetail.nameStatus.IN_REVIEW')
+test('translates a documented Storyboard status to its detail locale key', () => {
+  assert.equal(translateNameStatus('IN_REVIEW', translate), 'seriesDetail.storyboardStatus.IN_REVIEW')
 })
 
 test('uses the generic locale key for a missing Name status', () => {

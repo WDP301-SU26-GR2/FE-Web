@@ -28,11 +28,11 @@ const PROPOSAL_STATUS_KEYS: Record<string, string> = {
 }
 
 const NAME_STATUS_KEYS: Record<string, string> = {
-  DRAFT: 'seriesDetail.nameStatus.DRAFT',
-  SUBMITTED: 'seriesDetail.nameStatus.SUBMITTED',
-  IN_REVIEW: 'seriesDetail.nameStatus.IN_REVIEW',
-  REVISION: 'seriesDetail.nameStatus.REVISION',
-  APPROVED: 'seriesDetail.nameStatus.APPROVED'
+  DRAFT: 'seriesDetail.storyboardStatus.DRAFT',
+  SUBMITTED: 'seriesDetail.storyboardStatus.SUBMITTED',
+  IN_REVIEW: 'seriesDetail.storyboardStatus.IN_REVIEW',
+  REVISION: 'seriesDetail.storyboardStatus.REVISION',
+  APPROVED: 'seriesDetail.storyboardStatus.APPROVED'
 }
 
 export function translateSeriesStatus(status: string | null | undefined, t: Translate): string {

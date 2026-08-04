@@ -447,7 +447,7 @@
   "mySeries": {
     "title": "My Series",
     "subtitle": "Manage all your comic series",
-    "proposeNewSeries": "Propose New Series",
+    "proposeNewSeries": "Create Series Dossier",
     "newChapter": "New Chapter",
     "activeSeries": "Active Series",
     "published": "Published",
@@ -471,7 +471,7 @@
     },
     "empty": {
       "title": "No series yet",
-      "description": "Create your first proposal to submit it to the editorial board."
+      "description": "Create your first series dossier to submit it to the editorial board."
     },
     "error": {
       "loadFailed": "Failed to load your series. Please try again.",
@@ -498,22 +498,22 @@
   },
   "seriesDetail": {
     "title": "Series Detail",
-    "subtitle": "View proposal information and sample Name pages",
+    "subtitle": "View series dossier information and sample storyboard pages",
     "back": "Back to My Series",
     "loading": "Loading...",
     "editProposal": {
-      "button": "Edit Proposal",
-      "title": "Edit Proposal",
-      "subtitle": "Update your proposal fields. Leave a field unchanged to keep its current value.",
-      "notEditableTitle": "Proposal is not editable",
-      "notEditableDescription": "This proposal can only be edited while the series is DRAFT or while the proposal is awaiting your revisions (PROPOSAL_REVISION).",
+      "button": "Edit Series Dossier",
+      "title": "Edit Series Dossier",
+      "subtitle": "Update your series dossier fields. Leave a field unchanged to keep its current value.",
+      "notEditableTitle": "Series dossier is not editable",
+      "notEditableDescription": "This series dossier can only be edited while the series is DRAFT or while it is awaiting your revisions (PROPOSAL_REVISION).",
       "sectionBasic": "Basic Information",
       "sectionSynopsis": "Synopsis",
       "sectionCharacters": "Character Designs",
-      "sectionName": "Sample Name Pages",
-      "existingNamePages": "Current Name pages",
-      "removeNamePage": "Remove Name page {{n}}",
-      "restoreNamePage": "Restore Name page {{n}}",
+      "sectionName": "Sample Storyboard Pages",
+      "existingNamePages": "Current storyboard pages",
+      "removeNamePage": "Remove storyboard page {{n}}",
+      "restoreNamePage": "Restore storyboard page {{n}}",
       "newCover": "New cover selected",
       "keepCover": "Keep current cover",
       "removeCover": "Remove cover",
@@ -523,17 +523,17 @@
       "removeExistingCharacter": "Remove existing character design",
       "removeExistingCharacterConfirm": "Remove this character design? It will be deleted when you save.",
       "markForRemoval": "Marked for removal",
-      "loading": "Loading proposal...",
-      "loadFailed": "Failed to load the proposal.",
+      "loading": "Loading series dossier...",
+      "loadFailed": "Failed to load the series dossier.",
       "retry": "Retry",
-      "success": "Proposal updated.",
-      "nameSuccess": "Sample Name pages updated.",
-      "nameErrorGeneric": "Failed to update the sample Name pages. Please try again.",
-      "nameMissing": "The proposal's sample Name could not be found. Reload the series and try again.",
-      "nameConflict": "The sample Name can no longer be edited in its current state.",
-      "errorGeneric": "Failed to update proposal. Please try again.",
-      "errorConflict": "This proposal can no longer be edited (status changed).",
-      "errorPermission": "You can only edit proposals you own.",
+      "success": "Series dossier updated.",
+      "nameSuccess": "Sample storyboard pages updated.",
+      "nameErrorGeneric": "Failed to update the sample storyboard pages. Please try again.",
+      "nameMissing": "The series dossier's sample storyboard could not be found. Reload the series and try again.",
+      "nameConflict": "The sample storyboard can no longer be edited in its current state.",
+      "errorGeneric": "Failed to update series dossier. Please try again.",
+      "errorConflict": "This series dossier can no longer be edited (status changed).",
+      "errorPermission": "You can only edit series dossiers you own.",
       "errorNotFound": "The series no longer exists. Reload your series list.",
       "unsavedChangesTitle": "Discard unsaved changes?",
       "unsavedChangesDescription": "You have unsaved changes that will be lost if you leave this page.",
@@ -631,7 +631,7 @@
       "round": "Round {{round}}",
       "openDrawer": "View revision requests",
       "target": {
-        "PROPOSAL": "Proposal",
+        "PROPOSAL": "Series dossier",
         "STORYBOARD": "Sample storyboard",
         "MANUSCRIPT": "Manuscript",
         "TASK": "Task"
@@ -706,13 +706,13 @@
       "DRAFT": "Draft",
       "PROPOSAL_REVIEW": "In review",
       "PROPOSAL_REVISION": "Needs revision",
-      "PROPOSAL_APPROVED": "Proposal approved",
+      "PROPOSAL_APPROVED": "Series dossier approved",
       "PITCHED": "Pitched",
       "APPROVED": "Approved",
       "REJECTED": "Rejected",
       "WITHDRAWN": "Withdrawn by Mangaka"
     },
-    "nameStatus": {
+    "storyboardStatus": {
       "DRAFT": "Draft",
       "SUBMITTED": "Submitted",
       "IN_REVIEW": "In review",
@@ -720,8 +720,8 @@
       "APPROVED": "Approved"
     },
     "proposal": {
-      "title": "Proposal",
-      "empty": "This series has no proposal yet.",
+      "title": "Series dossier",
+      "empty": "This series has no series dossier yet.",
       "synopsis": "Synopsis",
       "synopsisMore": "Read more",
       "synopsisLess": "Show less",
@@ -735,61 +735,61 @@
       "characterDesignAlt": "Character design {{n}}",
       "estimatedLength": "Estimated length",
       "chaptersCount": "{{count}} chapters",
-      "createdAt": "Proposal created at",
-      "nameId": "Sample Name"
+      "createdAt": "Series dossier created at",
+      "nameId": "Sample storyboard"
     },
     "names": {
-      "title": "Names (Storyboards)",
-      "empty": "No Name pages yet.",
-      "count": "{{count}} name",
-      "alt": "Name page {{label}}",
-      "altShort": "Name page",
-      "sampleLabel": "Sample Name (Proposal)",
+      "title": "Storyboards",
+      "empty": "No storyboard pages yet.",
+      "count": "{{count}} storyboards",
+      "alt": "Storyboard page {{label}}",
+      "altShort": "Storyboard page",
+      "sampleLabel": "Sample storyboard (Series dossier)",
       "chapterLabel": "Chapter {{n}}",
       "versionLabel": "Version {{n}}",
-      "pageAlt": "Name page {{n}}",
+      "pageAlt": "Storyboard page {{n}}",
       "pagesCount_one": "{{count}} page",
       "pagesCount_other": "{{count}} pages"
     },
     "actions": {
       "cancel": "Cancel",
-      "errorGeneric": "The proposal action failed. Reload and try again.",
+      "errorGeneric": "The series dossier action failed. Reload and try again.",
       "delete": {
         "button": "Delete draft",
         "title": "Delete this draft?",
-        "description": "\"{{title}}\" and its sample Name will be permanently deleted.",
+        "description": "\"{{title}}\" and its sample storyboard will be permanently deleted.",
         "confirm": "Delete draft",
-        "success": "Draft proposal deleted."
+        "success": "Draft series dossier deleted."
       },
       "withdraw": {
         "button": "Withdraw",
-        "title": "Withdraw this proposal?",
+        "title": "Withdraw this series dossier?",
         "description": "\"{{title}}\" will leave the editorial workflow and move to Withdrawn.",
         "reasonLabel": "Reason",
         "reasonPlaceholder": "Tell the Editor why you are withdrawing...",
         "reasonHint": "{{count}}/1000 characters · required",
-        "reasonRequired": "Enter a reason before withdrawing this proposal.",
-        "confirm": "Withdraw proposal",
-        "success": "Proposal withdrawn."
+        "reasonRequired": "Enter a reason before withdrawing this series dossier.",
+        "confirm": "Withdraw series dossier",
+        "success": "Series dossier withdrawn."
       },
       "reopen": {
         "button": "Reopen",
-        "success": "Proposal reopened. Back to draft to edit and resubmit."
+        "success": "Series dossier reopened. Back to draft to edit and resubmit."
       },
       "resubmitProposal": {
-        "button": "Resubmit proposal",
-        "success": "Proposal resubmitted for review."
+        "button": "Resubmit series dossier",
+        "success": "Series dossier resubmitted for review."
       },
       "resubmitName": {
-        "button": "Resubmit Name",
-        "success": "Sample Name resubmitted for review."
+        "button": "Resubmit storyboard",
+        "success": "Sample storyboard resubmitted for review."
       },
       "errors": {
-        "NotSeriesOwner": "You can only change proposals you own.",
-        "ProposalNotEditable": "The proposal is no longer editable in its current state.",
-        "ProposalNotDeletable": "Only a draft proposal can be deleted.",
-        "InvalidProposalState": "The proposal is not waiting for resubmission.",
-        "InvalidNameState": "The sample Name is not waiting for resubmission.",
+        "NotSeriesOwner": "You can only change series dossiers you own.",
+        "ProposalNotEditable": "The series dossier is no longer editable in its current state.",
+        "ProposalNotDeletable": "Only a draft series dossier can be deleted.",
+        "InvalidProposalState": "The series dossier is not waiting for resubmission.",
+        "InvalidNameState": "The sample storyboard is not waiting for resubmission.",
         "InvalidSeriesTransition": "The series is not in a state that allows this action.",
         "SeriesNotFound": "The series no longer exists."
       }
@@ -804,20 +804,19 @@
       "back": "Back to My Series"
     },
     "submit": {
-      "button": "Submit series",
-      "missingNamePages": "Add at least one sample Name page before submitting.",
+      "button": "Submit series dossier",
       "dialogTitle": "Submit series for editorial review?",
-      "dialogDescription": "\"{{title}}\" will move into the review queue. After submitting you will not be able to edit the proposal until the Editor responds.",
-      "bullet1": "The proposal moves to In Review.",
-      "bullet2": "Your sample Name pages are sent to the Editor.",
-      "bullet3": "You cannot edit the proposal while it is under review.",
+      "dialogDescription": "\"{{title}}\" will move into the review queue. After submitting you will not be able to edit the series dossier until the Editor responds.",
+      "bullet1": "The series dossier moves to In Review.",
+      "bullet2": "Your sample storyboard pages are sent to the Editor.",
+      "bullet3": "You cannot edit the series dossier while it is under review.",
       "cancel": "Cancel",
       "confirm": "Submit series",
       "submitting": "Submitting series...",
       "success": "Series submitted for editorial review.",
-      "errorPermission": "Only the series owner can submit this proposal.",
+      "errorPermission": "Only the series owner can submit this series dossier.",
       "errorConflict": "The series can no longer be submitted in its current state.",
-      "errorFranchiseConsent": "The original Mangaka must approve this franchise proposal before it can be submitted.",
+      "errorFranchiseConsent": "The original Mangaka must approve this franchise series dossier before it can be submitted.",
       "errorGeneric": "Failed to submit series. Please try again."
     },
     "publication": {
@@ -2491,13 +2490,11 @@
     },
     "statuses": {
       "DRAFT": "Draft",
-      "MANGAKA_REVIEW": "Mangaka review",
-      "MANGAKA_APPROVED": "Mangaka approved",
-      "BOARD_APPROVED": "Board approved",
-      "NEGOTIATION": "Negotiation",
-      "MANGAKA_SIGNED": "Signed by Mangaka",
+      "BOARD_REVIEW": "Board review",
+      "AWAITING_MANGAKA": "Awaiting Mangaka response",
       "ACTIVATION_PENDING": "Activation pending",
       "FULLY_EXECUTED": "Fully executed",
+      "REJECTED_BY_MANGAKA": "Rejected by Mangaka",
       "FULFILLED": "Fulfilled",
       "TERMINATED": "Terminated",
       "TERMINATED_BY_BREACH": "Terminated for breach",
@@ -2513,7 +2510,6 @@
         "paymentConditions": "Payment conditions",
         "amendments": "Contract amendments"
       },
-      "paymentConditionsRequired": "You cannot approve or sign until at least one valid payment condition is available.",
       "mangakaSignature": "Mangaka signature",
       "signed": "Signed",
       "notSigned": "Not signed",
@@ -2572,7 +2568,6 @@
       "accountUnavailable": "Could not load your account.",
       "invalidAction": "This contract action is invalid.",
       "actionFailed": "Could not complete the action. Check the current contract status and try again.",
-      "paymentConditionsRequired": "This contract must have at least one valid payment condition before it can be approved or signed.",
       "requiredField": "Please complete all required fields."
     },
     "versions": {
