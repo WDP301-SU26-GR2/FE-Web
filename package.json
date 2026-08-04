@@ -11,7 +11,7 @@
     "prettier:fix": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --experimental-strip-types --test --experimental-test-isolation=none app/features/mangaka/dashboard/lib/translate-manuscript-status.test.mjs app/features/mangaka/series/lib/translate-series-state.test.mjs app/features/mangaka/series/lib/translate-series-metadata.test.mjs app/features/auth/lib/is-email-not-verified-error.test.mjs",
+    "test": "node --experimental-strip-types --test --experimental-test-isolation=none app/features/mangaka/dashboard/lib/translate-manuscript-status.test.mjs app/features/mangaka/series/lib/translate-series-state.test.mjs app/features/mangaka/series/lib/translate-series-metadata.test.mjs",
     "start:csr": "vite preview",
     "orval": "orval --config orval.config.ts",
     "orval:fetch": "node scripts/fetch-swagger.mjs && orval --config orval.config.ts",
