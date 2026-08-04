@@ -5929,7 +5929,7 @@
             "bearer": []
           }
         ],
-        "summary": "Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level; ưu tiên isRecommended/reputation (ẩn email/phone)",
+        "summary": "Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level; ưu tiên isRecommended/reputation (kèm email/phone để liên hệ)",
         "tags": [
           "users"
         ]
@@ -6091,7 +6091,7 @@
             "bearer": []
           }
         ],
-        "summary": "Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)",
+        "summary": "Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (kèm email/phone để liên hệ)",
         "tags": [
           "users"
         ]
@@ -8811,7 +8811,7 @@
             "bearer": []
           }
         ],
-        "summary": "Đề xuất kết thúc series tự nhiên (Mangaka/Editor) — PB-06",
+        "summary": "Biên tập viên đề xuất kết thúc bộ truyện tự nhiên (PB-06). Tác giả dùng POST /series-requests.",
         "tags": [
           "series"
         ]
@@ -8889,828 +8889,6 @@
         "summary": "Editor đóng series CANCELLING không ending (Req 1.11c) — PB-06",
         "tags": [
           "series"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards": {
-      "post": {
-        "operationId": "ChapterStoryboardController_create",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateChapterStoryboardBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSeriesOwner - current user is not the series owner",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSeriesOwner",
-                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.ChapterNotDraftForStoryboard (status) - chapter must be in DRAFT status to create a storyboard | Error.ChapterStoryboardAlreadyExists (id) - this chapter already has a storyboard assigned",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.ChapterNotDraftForStoryboard",
-                  "message": "Chương không còn ở giai đoạn tạo bản phác thảo"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mangaka tạo chapter-storyboard (bản phác thảo) cho chapter DRAFT — chapter-first",
-        "tags": [
-          "storyboards"
-        ]
-      },
-      "get": {
-        "operationId": "ChapterStoryboardController_list",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardListResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.SeriesAccessDenied - current user cannot access this series",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.SeriesAccessDenied",
-                  "message": "Bạn không có quyền truy cập bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId)",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List storyboard của chapter (thực tế 0..1)",
-        "tags": [
-          "storyboards"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards/{storyboardId}/submit": {
-      "post": {
-        "operationId": "ChapterStoryboardController_submit",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSeriesOwner - current user is not the series owner",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSeriesOwner",
-                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidStoryboardState",
-                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mangaka nộp chapter-storyboard lên Editor duyệt → DRAFT chuyển SUBMITTED",
-        "tags": [
-          "storyboards"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards/{storyboardId}": {
-      "get": {
-        "operationId": "ChapterStoryboardController_getOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.SeriesAccessDenied - current user cannot access this series",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.SeriesAccessDenied",
-                  "message": "Bạn không có quyền truy cập bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Chi tiết storyboard của chapter",
-        "tags": [
-          "storyboards"
-        ]
-      },
-      "delete": {
-        "operationId": "ChapterStoryboardController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSeriesOwner - current user is not the series owner",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSeriesOwner",
-                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.StoryboardNotDeletable (status) - only a not-yet-approved storyboard on a DRAFT chapter can be deleted",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.StoryboardNotDeletable",
-                  "message": "Không thể xoá bản phác thảo ở trạng thái hiện tại"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mangaka xoá storyboard của chapter để vẽ lại (chỉ chapter DRAFT + storyboard chưa APPROVED)",
-        "tags": [
-          "storyboards"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards/{storyboardId}/request-revision": {
-      "post": {
-        "operationId": "ChapterStoryboardController_requestRevision",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StoryboardReasonBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotAssignedEditor - current editor is not assigned to this series",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotAssignedEditor",
-                  "message": "Bạn không phải biên tập viên được phân công cho bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidStoryboardState",
-                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Editor phụ trách yêu cầu sửa storyboard của chapter → REVISION",
-        "tags": [
-          "storyboards"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards/{storyboardId}/resubmit": {
-      "post": {
-        "operationId": "ChapterStoryboardController_resubmit",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSeriesOwner - current user is not the series owner",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSeriesOwner",
-                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidStoryboardState",
-                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mangaka nộp lại storyboard của chapter → IN_REVIEW, version++",
-        "tags": [
-          "storyboards"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards/{storyboardId}/approve": {
-      "post": {
-        "operationId": "ChapterStoryboardController_approve",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotAssignedEditor - current editor is not assigned to this series",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotAssignedEditor",
-                  "message": "Bạn không phải biên tập viên được phân công cho bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidStoryboardState",
-                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Editor duyệt storyboard của chapter → APPROVED (mở gate upload page)",
-        "tags": [
-          "storyboards"
-        ]
-      }
-    },
-    "/chapters/{id}/storyboards/{storyboardId}/pages": {
-      "put": {
-        "operationId": "ChapterStoryboardController_updatePages",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStoryboardPagesBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSeriesOwner - current user is not the series owner",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSeriesOwner",
-                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidStoryboardState",
-                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mangaka thay TOÀN BỘ trang storyboard của chapter (chỉ DRAFT/REVISION)",
-        "tags": [
-          "storyboards"
-        ]
-      },
-      "post": {
-        "operationId": "ChapterStoryboardController_addPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "storyboardId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddStoryboardPageBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoryboardResDto_Output"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error.NotSeriesOwner - current user is not the series owner",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 403,
-                  "code": "Error.NotSeriesOwner",
-                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 404,
-                  "code": "Error.ChapterNotFound",
-                  "message": "Không tìm thấy chương"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "statusCode": 409,
-                  "code": "Error.InvalidStoryboardState",
-                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mangaka thêm 1 trang vào storyboard của chapter (append; chỉ DRAFT/REVISION)",
-        "tags": [
-          "storyboards"
         ]
       }
     },
@@ -12032,6 +11210,1298 @@
         "summary": "Xác nhận output của toàn bộ page trong stage ACTIVE",
         "tags": [
           "Production Stages"
+        ]
+      }
+    },
+    "/series-requests": {
+      "post": {
+        "operationId": "SeriesRequestController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSeriesRequestBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesRequestResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesRequestAccessDenied - only the owning mangaka (create/cancel) or the assigned editor (accept/reject) may act",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesRequestAccessDenied",
+                  "message": "Bạn không có quyền với yêu cầu này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesRequestNotFound - series request does not exist (or malformed id)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesRequestNotFound",
+                  "message": "Không tìm thấy yêu cầu"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.SeriesRequestNotAllowed - series status does not allow this request type (WITHDRAW needs READY_TO_PITCH; HIATUS needs SERIALIZED; COMPLETION needs SERIALIZED or HIATUS) | Error.OpenSeriesRequestExists - the series already has a PENDING request; resolve or cancel it first",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.SeriesRequestNotAllowed",
+                  "message": "Bộ truyện đang ở trạng thái không cho phép gửi yêu cầu này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tác giả gửi yêu cầu rút hồ sơ / tạm ngưng / kết thúc sớm → PENDING",
+        "tags": [
+          "series-requests"
+        ]
+      },
+      "get": {
+        "operationId": "SeriesRequestController_list",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": false,
+            "in": "query",
+            "description": "MongoDB ObjectId (24 hexadecimal characters)",
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Allowed values: PENDING, ACCEPTED, REJECTED, CANCELLED. Values: PENDING, ACCEPTED, REJECTED, CANCELLED",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REJECTED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "requestType",
+            "required": false,
+            "in": "query",
+            "description": "Allowed values: WITHDRAW, HIATUS, COMPLETION. Values: WITHDRAW, HIATUS, COMPLETION",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WITHDRAW",
+                "HIATUS",
+                "COMPLETION"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesRequestListResDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách yêu cầu theo phạm vi của người gọi",
+        "tags": [
+          "series-requests"
+        ]
+      }
+    },
+    "/series-requests/{id}": {
+      "get": {
+        "operationId": "SeriesRequestController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesRequestResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesRequestAccessDenied - only the owning mangaka (create/cancel) or the assigned editor (accept/reject) may act",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesRequestAccessDenied",
+                  "message": "Bạn không có quyền với yêu cầu này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesRequestNotFound - series request does not exist (or malformed id)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesRequestNotFound",
+                  "message": "Không tìm thấy yêu cầu"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chi tiết một yêu cầu",
+        "tags": [
+          "series-requests"
+        ]
+      }
+    },
+    "/series-requests/{id}/accept": {
+      "post": {
+        "operationId": "SeriesRequestController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptSeriesRequestBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesRequestResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesRequestAccessDenied - only the owning mangaka (create/cancel) or the assigned editor (accept/reject) may act",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesRequestAccessDenied",
+                  "message": "Bạn không có quyền với yêu cầu này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesRequestNotFound - series request does not exist (or malformed id)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesRequestNotFound",
+                  "message": "Không tìm thấy yêu cầu"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.SeriesRequestNotAllowed - series status does not allow this request type (WITHDRAW needs READY_TO_PITCH; HIATUS needs SERIALIZED; COMPLETION needs SERIALIZED or HIATUS) | Error.InvalidSeriesRequestTransition - request is no longer PENDING — it was already accepted/rejected/cancelled",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.SeriesRequestNotAllowed",
+                  "message": "Bộ truyện đang ở trạng thái không cho phép gửi yêu cầu này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Biên tập viên chấp nhận yêu cầu. WITHDRAW → rút hồ sơ ngay; HIATUS → tạm ngưng ngay; COMPLETION → chỉ ghi nhận, cần trình Hội đồng",
+        "tags": [
+          "series-requests"
+        ]
+      }
+    },
+    "/series-requests/{id}/reject": {
+      "post": {
+        "operationId": "SeriesRequestController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectSeriesRequestBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesRequestResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesRequestAccessDenied - only the owning mangaka (create/cancel) or the assigned editor (accept/reject) may act",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesRequestAccessDenied",
+                  "message": "Bạn không có quyền với yêu cầu này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesRequestNotFound - series request does not exist (or malformed id)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesRequestNotFound",
+                  "message": "Không tìm thấy yêu cầu"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidSeriesRequestTransition - request is no longer PENDING — it was already accepted/rejected/cancelled",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidSeriesRequestTransition",
+                  "message": "Yêu cầu này đã được xử lý trước đó"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Biên tập viên từ chối yêu cầu (bắt buộc nêu lý do); bộ truyện giữ nguyên trạng thái",
+        "tags": [
+          "series-requests"
+        ]
+      }
+    },
+    "/series-requests/{id}/cancel": {
+      "post": {
+        "operationId": "SeriesRequestController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesRequestResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesRequestAccessDenied - only the owning mangaka (create/cancel) or the assigned editor (accept/reject) may act",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesRequestAccessDenied",
+                  "message": "Bạn không có quyền với yêu cầu này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.SeriesRequestNotFound - series request does not exist (or malformed id)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.SeriesRequestNotFound",
+                  "message": "Không tìm thấy yêu cầu"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidSeriesRequestTransition - request is no longer PENDING — it was already accepted/rejected/cancelled",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidSeriesRequestTransition",
+                  "message": "Yêu cầu này đã được xử lý trước đó"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tác giả tự huỷ yêu cầu đang chờ",
+        "tags": [
+          "series-requests"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards": {
+      "post": {
+        "operationId": "ChapterStoryboardController_create",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChapterStoryboardBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSeriesOwner",
+                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.ChapterNotDraftForStoryboard (status) - chapter must be in DRAFT status to create a storyboard | Error.ChapterStoryboardAlreadyExists (id) - this chapter already has a storyboard assigned",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.ChapterNotDraftForStoryboard",
+                  "message": "Chương không còn ở giai đoạn tạo bản phác thảo"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka tạo chapter-storyboard (bản phác thảo) cho chapter DRAFT — chapter-first",
+        "tags": [
+          "storyboards"
+        ]
+      },
+      "get": {
+        "operationId": "ChapterStoryboardController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardListResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesAccessDenied - current user cannot access this series",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesAccessDenied",
+                  "message": "Bạn không có quyền truy cập bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List storyboard của chapter (thực tế 0..1)",
+        "tags": [
+          "storyboards"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards/{storyboardId}/submit": {
+      "post": {
+        "operationId": "ChapterStoryboardController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSeriesOwner",
+                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidStoryboardState",
+                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka nộp chapter-storyboard lên Editor duyệt → DRAFT chuyển SUBMITTED",
+        "tags": [
+          "storyboards"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards/{storyboardId}": {
+      "get": {
+        "operationId": "ChapterStoryboardController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.SeriesAccessDenied - current user cannot access this series",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.SeriesAccessDenied",
+                  "message": "Bạn không có quyền truy cập bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chi tiết storyboard của chapter",
+        "tags": [
+          "storyboards"
+        ]
+      },
+      "delete": {
+        "operationId": "ChapterStoryboardController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSeriesOwner",
+                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.StoryboardNotDeletable (status) - only a not-yet-approved storyboard on a DRAFT chapter can be deleted",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.StoryboardNotDeletable",
+                  "message": "Không thể xoá bản phác thảo ở trạng thái hiện tại"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka xoá storyboard của chapter để vẽ lại (chỉ chapter DRAFT + storyboard chưa APPROVED)",
+        "tags": [
+          "storyboards"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards/{storyboardId}/request-revision": {
+      "post": {
+        "operationId": "ChapterStoryboardController_requestRevision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoryboardReasonBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotAssignedEditor - current editor is not assigned to this series",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotAssignedEditor",
+                  "message": "Bạn không phải biên tập viên được phân công cho bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidStoryboardState",
+                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editor phụ trách yêu cầu sửa storyboard của chapter → REVISION",
+        "tags": [
+          "storyboards"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards/{storyboardId}/resubmit": {
+      "post": {
+        "operationId": "ChapterStoryboardController_resubmit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSeriesOwner",
+                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidStoryboardState",
+                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka nộp lại storyboard của chapter → IN_REVIEW, version++",
+        "tags": [
+          "storyboards"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards/{storyboardId}/approve": {
+      "post": {
+        "operationId": "ChapterStoryboardController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotAssignedEditor - current editor is not assigned to this series",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotAssignedEditor",
+                  "message": "Bạn không phải biên tập viên được phân công cho bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidStoryboardState",
+                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editor duyệt storyboard của chapter → APPROVED (mở gate upload page)",
+        "tags": [
+          "storyboards"
+        ]
+      }
+    },
+    "/chapters/{id}/storyboards/{storyboardId}/pages": {
+      "put": {
+        "operationId": "ChapterStoryboardController_updatePages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStoryboardPagesBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSeriesOwner",
+                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidStoryboardState",
+                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka thay TOÀN BỘ trang storyboard của chapter (chỉ DRAFT/REVISION)",
+        "tags": [
+          "storyboards"
+        ]
+      },
+      "post": {
+        "operationId": "ChapterStoryboardController_addPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storyboardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStoryboardPageBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryboardResDto_Output"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error.NotSeriesOwner - current user is not the series owner",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.NotSeriesOwner",
+                  "message": "Bạn không phải chủ sở hữu bộ truyện này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound (id) - chapter does not exist (or id is not a valid ObjectId) | Error.StoryboardNotFound - storyboard does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error.InvalidStoryboardState (status) - storyboard state does not allow this action",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 409,
+                  "code": "Error.InvalidStoryboardState",
+                  "message": "Bản phác thảo đang ở trạng thái không cho phép thao tác này"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mangaka thêm 1 trang vào storyboard của chapter (append; chỉ DRAFT/REVISION)",
+        "tags": [
+          "storyboards"
         ]
       }
     },
@@ -18014,7 +18484,7 @@
             "bearer": []
           }
         ],
-        "summary": "Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT (chỉ khi request ACCEPTED)",
+        "summary": "Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT (chỉ khi request UNDER_REVIEW)",
         "tags": [
           "transfer"
         ]
@@ -20302,8 +20772,9 @@
             "description": "Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE"
           },
           "valuationAmount": {
-            "type": "number",
+            "type": "integer",
             "exclusiveMinimum": true,
+            "maximum": 100000000000,
             "minimum": 0
           },
           "publisherOwnershipPct": {
@@ -20357,8 +20828,9 @@
             "description": "Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE"
           },
           "valuationAmount": {
-            "type": "number",
+            "type": "integer",
             "exclusiveMinimum": true,
+            "maximum": 100000000000,
             "minimum": 0
           },
           "publisherOwnershipPct": {
@@ -20690,8 +21162,9 @@
             "type": "boolean"
           },
           "payoutAmount": {
-            "type": "number",
-            "minimum": 0
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000000
           },
           "payoutPct": {
             "type": "number",
@@ -20705,7 +21178,7 @@
         ],
         "additionalProperties": false
       },
-      "PaymentConditionResDto_Output__schema0": {
+      "PaymentConditionResDto_Output__schema0_Output": {
         "anyOf": [
           {
             "type": "string"
@@ -20719,7 +21192,7 @@
           {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PaymentConditionResDto_Output__schema0"
+              "$ref": "#/components/schemas/PaymentConditionResDto_Output__schema0_Output"
             }
           },
           {
@@ -20750,7 +21223,7 @@
           "thresholdConfig": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PaymentConditionResDto_Output__schema0"
+                "$ref": "#/components/schemas/PaymentConditionResDto_Output__schema0_Output"
               }
             ],
             "nullable": true
@@ -20804,7 +21277,7 @@
         ],
         "additionalProperties": false
       },
-      "PaymentConditionListResDto_Output__schema0": {
+      "PaymentConditionListResDto_Output__schema0_Output": {
         "anyOf": [
           {
             "type": "string"
@@ -20818,7 +21291,7 @@
           {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PaymentConditionListResDto_Output__schema0"
+              "$ref": "#/components/schemas/PaymentConditionListResDto_Output__schema0_Output"
             }
           },
           {
@@ -20854,7 +21327,7 @@
                 "thresholdConfig": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/PaymentConditionListResDto_Output__schema0"
+                      "$ref": "#/components/schemas/PaymentConditionListResDto_Output__schema0_Output"
                     }
                   ],
                   "nullable": true
@@ -20920,8 +21393,9 @@
         "properties": {
           "thresholdConfig": {},
           "payoutAmount": {
-            "type": "number",
-            "minimum": 0
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000000
           },
           "payoutPct": {
             "type": "number",
@@ -20950,8 +21424,9 @@
             "minLength": 1
           },
           "valuationAmount": {
-            "type": "number",
+            "type": "integer",
             "exclusiveMinimum": true,
+            "maximum": 100000000000,
             "minimum": 0
           },
           "publisherOwnershipPct": {
@@ -21298,8 +21773,9 @@
             "minLength": 1
           },
           "valuationAmount": {
-            "type": "number",
+            "type": "integer",
             "exclusiveMinimum": true,
+            "maximum": 100000000000,
             "minimum": 0
           },
           "publisherOwnershipPct": {
@@ -21948,7 +22424,7 @@
           "details"
         ]
       },
-      "BoardDecisionResDto_Output__schema0": {
+      "BoardDecisionResDto_Output__schema0_Output": {
         "anyOf": [
           {
             "type": "string"
@@ -21962,7 +22438,7 @@
           {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/BoardDecisionResDto_Output__schema0"
+              "$ref": "#/components/schemas/BoardDecisionResDto_Output__schema0_Output"
             }
           },
           {
@@ -23705,6 +24181,14 @@
             "type": "string",
             "nullable": true
           },
+          "email": {
+            "type": "string",
+            "description": "Email liên hệ (danh bạ nội bộ hiển thị contact)"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Số điện thoại liên hệ"
+          },
           "hasProfile": {
             "type": "boolean",
             "description": "false = user chưa build hồ sơ; field profile = default rỗng"
@@ -23721,6 +24205,8 @@
           "ratingAvg",
           "ratingCount",
           "isRecommended",
+          "email",
+          "phoneNumber",
           "hasProfile"
         ],
         "additionalProperties": false
@@ -23861,6 +24347,14 @@
             "type": "string",
             "nullable": true
           },
+          "email": {
+            "type": "string",
+            "description": "Email liên hệ (danh bạ nội bộ hiển thị contact)"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Số điện thoại liên hệ"
+          },
           "hasProfile": {
             "type": "boolean",
             "description": "false = user chưa build hồ sơ; field profile = default rỗng"
@@ -23878,6 +24372,8 @@
           "ratingAvg",
           "ratingCount",
           "isRecommended",
+          "email",
+          "phoneNumber",
           "hasProfile"
         ],
         "additionalProperties": false
@@ -23962,6 +24458,14 @@
                 },
                 "isRecommended": {
                   "type": "boolean"
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Email liên hệ (danh bạ nội bộ hiển thị contact)"
+                },
+                "phoneNumber": {
+                  "type": "string",
+                  "description": "Số điện thoại liên hệ"
                 }
               },
               "required": [
@@ -23976,7 +24480,9 @@
                 "reputationScore",
                 "ratingAvg",
                 "ratingCount",
-                "isRecommended"
+                "isRecommended",
+                "email",
+                "phoneNumber"
               ],
               "additionalProperties": false
             }
@@ -24081,6 +24587,14 @@
                 },
                 "isRecommended": {
                   "type": "boolean"
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Email liên hệ (danh bạ nội bộ hiển thị contact)"
+                },
+                "phoneNumber": {
+                  "type": "string",
+                  "description": "Số điện thoại liên hệ"
                 }
               },
               "required": [
@@ -24096,7 +24610,9 @@
                 "reputationScore",
                 "ratingAvg",
                 "ratingCount",
-                "isRecommended"
+                "isRecommended",
+                "email",
+                "phoneNumber"
               ],
               "additionalProperties": false
             }
@@ -25894,250 +26410,6 @@
         ],
         "additionalProperties": false
       },
-      "CreateChapterStoryboardBodyDto": {
-        "type": "object",
-        "properties": {
-          "storyboardPages": {
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "pageNumber": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991
-                },
-                "fileUrl": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              },
-              "required": [
-                "pageNumber",
-                "fileUrl"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "storyboardPages"
-        ],
-        "additionalProperties": false
-      },
-      "StoryboardResDto_Output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "seriesId": {
-            "type": "string"
-          },
-          "chapterId": {
-            "type": "string",
-            "description": "Storyboard LUÔN thuộc 1 chapter (Spec 28)"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "SUBMITTED",
-              "IN_REVIEW",
-              "REVISION",
-              "APPROVED"
-            ],
-            "description": "Trạng thái bản phác thảo của chương: DRAFT (đang soạn) → SUBMITTED (đã nộp) → IN_REVIEW (Editor đang xem) ⇄ REVISION (cần sửa) → APPROVED (đã duyệt). Values: DRAFT, SUBMITTED, IN_REVIEW, REVISION, APPROVED"
-          },
-          "version": {
-            "type": "number",
-            "description": "Tăng mỗi lần resubmit"
-          },
-          "pages": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "pageNumber": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991
-                },
-                "fileUrl": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              },
-              "required": [
-                "pageNumber",
-                "fileUrl"
-              ],
-              "additionalProperties": false
-            },
-            "description": "Các trang vẽ thô; fileUrl là object key (R2)"
-          },
-          "submittedAt": {
-            "type": "string",
-            "description": "ISO 8601; null khi chưa submit",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "seriesId",
-          "chapterId",
-          "status",
-          "version",
-          "pages",
-          "submittedAt"
-        ],
-        "additionalProperties": false
-      },
-      "StoryboardListResDto_Output": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "seriesId": {
-                  "type": "string"
-                },
-                "chapterId": {
-                  "type": "string",
-                  "description": "Storyboard LUÔN thuộc 1 chapter (Spec 28)"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "DRAFT",
-                    "SUBMITTED",
-                    "IN_REVIEW",
-                    "REVISION",
-                    "APPROVED"
-                  ],
-                  "description": "Trạng thái bản phác thảo của chương: DRAFT (đang soạn) → SUBMITTED (đã nộp) → IN_REVIEW (Editor đang xem) ⇄ REVISION (cần sửa) → APPROVED (đã duyệt). Values: DRAFT, SUBMITTED, IN_REVIEW, REVISION, APPROVED"
-                },
-                "version": {
-                  "type": "number",
-                  "description": "Tăng mỗi lần resubmit"
-                },
-                "pages": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "pageNumber": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 9007199254740991
-                      },
-                      "fileUrl": {
-                        "type": "string",
-                        "minLength": 1
-                      }
-                    },
-                    "required": [
-                      "pageNumber",
-                      "fileUrl"
-                    ],
-                    "additionalProperties": false
-                  },
-                  "description": "Các trang vẽ thô; fileUrl là object key (R2)"
-                },
-                "submittedAt": {
-                  "type": "string",
-                  "description": "ISO 8601; null khi chưa submit",
-                  "nullable": true
-                }
-              },
-              "required": [
-                "id",
-                "seriesId",
-                "chapterId",
-                "status",
-                "version",
-                "pages",
-                "submittedAt"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "items"
-        ],
-        "additionalProperties": false
-      },
-      "StoryboardReasonBodyDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1000
-          }
-        },
-        "required": [
-          "reason"
-        ],
-        "additionalProperties": false
-      },
-      "UpdateStoryboardPagesBodyDto": {
-        "type": "object",
-        "properties": {
-          "pages": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "pageNumber": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991
-                },
-                "fileUrl": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              },
-              "required": [
-                "pageNumber",
-                "fileUrl"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "pages"
-        ],
-        "additionalProperties": false
-      },
-      "AddStoryboardPageBodyDto": {
-        "type": "object",
-        "properties": {
-          "pageNumber": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 9007199254740991
-          },
-          "fileUrl": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "pageNumber",
-          "fileUrl"
-        ],
-        "additionalProperties": false
-      },
       "CreateChapterBodyDto": {
         "type": "object",
         "properties": {
@@ -27662,6 +27934,513 @@
         },
         "required": [
           "items"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSeriesRequestBodyDto": {
+        "type": "object",
+        "properties": {
+          "seriesId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "MongoDB ObjectId (24 hexadecimal characters)"
+          },
+          "requestType": {
+            "type": "string",
+            "enum": [
+              "WITHDRAW",
+              "HIATUS",
+              "COMPLETION"
+            ],
+            "description": "Allowed values: WITHDRAW, HIATUS, COMPLETION. Values: WITHDRAW, HIATUS, COMPLETION"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "expectedReturnDate": {
+            "description": "Chỉ dùng cho HIATUS — ngày dự kiến quay lại",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "proposedEndingChapters": {
+            "description": "Chỉ dùng cho COMPLETION — số chương đề nghị để kết truyện",
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 50,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "seriesId",
+          "requestType",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "SeriesRequestResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "seriesId": {
+            "type": "string"
+          },
+          "requestedBy": {
+            "type": "string"
+          },
+          "requestType": {
+            "type": "string",
+            "enum": [
+              "WITHDRAW",
+              "HIATUS",
+              "COMPLETION"
+            ],
+            "description": "Allowed values: WITHDRAW, HIATUS, COMPLETION. Values: WITHDRAW, HIATUS, COMPLETION"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expectedReturnDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "proposedEndingChapters": {
+            "type": "number",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "description": "Allowed values: PENDING, ACCEPTED, REJECTED, CANCELLED. Values: PENDING, ACCEPTED, REJECTED, CANCELLED"
+          },
+          "decidedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "decisionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "rejectReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "seriesId",
+          "requestedBy",
+          "requestType",
+          "reason",
+          "expectedReturnDate",
+          "proposedEndingChapters",
+          "status",
+          "decidedBy",
+          "decidedAt",
+          "decisionNote",
+          "rejectReason",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "SeriesRequestListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "seriesId": {
+                  "type": "string"
+                },
+                "requestedBy": {
+                  "type": "string"
+                },
+                "requestType": {
+                  "type": "string",
+                  "enum": [
+                    "WITHDRAW",
+                    "HIATUS",
+                    "COMPLETION"
+                  ],
+                  "description": "Allowed values: WITHDRAW, HIATUS, COMPLETION. Values: WITHDRAW, HIATUS, COMPLETION"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "expectedReturnDate": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "proposedEndingChapters": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "PENDING",
+                    "ACCEPTED",
+                    "REJECTED",
+                    "CANCELLED"
+                  ],
+                  "description": "Allowed values: PENDING, ACCEPTED, REJECTED, CANCELLED. Values: PENDING, ACCEPTED, REJECTED, CANCELLED"
+                },
+                "decidedBy": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "decidedAt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "decisionNote": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "rejectReason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "seriesId",
+                "requestedBy",
+                "requestType",
+                "reason",
+                "expectedReturnDate",
+                "proposedEndingChapters",
+                "status",
+                "decidedBy",
+                "decidedAt",
+                "decisionNote",
+                "rejectReason",
+                "createdAt",
+                "updatedAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "AcceptSeriesRequestBodyDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "expectedReturnDate": {
+            "description": "Biên tập viên ghi đè ngày quay lại (chỉ HIATUS); bỏ trống = giữ ngày tác giả xin",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RejectSeriesRequestBodyDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "CreateChapterStoryboardBodyDto": {
+        "type": "object",
+        "properties": {
+          "storyboardPages": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pageNumber": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "fileUrl": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "pageNumber",
+                "fileUrl"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "storyboardPages"
+        ],
+        "additionalProperties": false
+      },
+      "StoryboardResDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "seriesId": {
+            "type": "string"
+          },
+          "chapterId": {
+            "type": "string",
+            "description": "Storyboard LUÔN thuộc 1 chapter (Spec 28)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SUBMITTED",
+              "IN_REVIEW",
+              "REVISION",
+              "APPROVED"
+            ],
+            "description": "Trạng thái bản phác thảo của chương: DRAFT (đang soạn) → SUBMITTED (đã nộp) → IN_REVIEW (Editor đang xem) ⇄ REVISION (cần sửa) → APPROVED (đã duyệt). Values: DRAFT, SUBMITTED, IN_REVIEW, REVISION, APPROVED"
+          },
+          "version": {
+            "type": "number",
+            "description": "Tăng mỗi lần resubmit"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pageNumber": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "fileUrl": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "pageNumber",
+                "fileUrl"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Các trang vẽ thô; fileUrl là object key (R2)"
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "ISO 8601; null khi chưa submit",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "seriesId",
+          "chapterId",
+          "status",
+          "version",
+          "pages",
+          "submittedAt"
+        ],
+        "additionalProperties": false
+      },
+      "StoryboardListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "seriesId": {
+                  "type": "string"
+                },
+                "chapterId": {
+                  "type": "string",
+                  "description": "Storyboard LUÔN thuộc 1 chapter (Spec 28)"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "DRAFT",
+                    "SUBMITTED",
+                    "IN_REVIEW",
+                    "REVISION",
+                    "APPROVED"
+                  ],
+                  "description": "Trạng thái bản phác thảo của chương: DRAFT (đang soạn) → SUBMITTED (đã nộp) → IN_REVIEW (Editor đang xem) ⇄ REVISION (cần sửa) → APPROVED (đã duyệt). Values: DRAFT, SUBMITTED, IN_REVIEW, REVISION, APPROVED"
+                },
+                "version": {
+                  "type": "number",
+                  "description": "Tăng mỗi lần resubmit"
+                },
+                "pages": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "pageNumber": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "fileUrl": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "pageNumber",
+                      "fileUrl"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "description": "Các trang vẽ thô; fileUrl là object key (R2)"
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "description": "ISO 8601; null khi chưa submit",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "seriesId",
+                "chapterId",
+                "status",
+                "version",
+                "pages",
+                "submittedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "StoryboardReasonBodyDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateStoryboardPagesBodyDto": {
+        "type": "object",
+        "properties": {
+          "pages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pageNumber": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "fileUrl": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "pageNumber",
+                "fileUrl"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "pages"
+        ],
+        "additionalProperties": false
+      },
+      "AddStoryboardPageBodyDto": {
+        "type": "object",
+        "properties": {
+          "pageNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "fileUrl": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "pageNumber",
+          "fileUrl"
         ],
         "additionalProperties": false
       },
@@ -31692,7 +32471,7 @@
           "unitsSold": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "maximum": 1000000000
           },
           "period": {
             "type": "string",
@@ -33620,8 +34399,9 @@
             "minLength": 1
           },
           "valuationAmount": {
-            "type": "number",
+            "type": "integer",
             "exclusiveMinimum": true,
+            "maximum": 100000000000,
             "minimum": 0
           },
           "conditions": {
@@ -33707,8 +34487,9 @@
             "minLength": 1
           },
           "transferAmount": {
-            "type": "number",
+            "type": "integer",
             "exclusiveMinimum": true,
+            "maximum": 100000000000,
             "minimum": 0
           },
           "transferType": {
@@ -34410,6 +35191,12 @@
             "maximum": 9007199254740991,
             "description": "Grace days before unclaimed contract review escalates"
           },
+          "taskOverdueGraceHours": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Số giờ ân hạn sau hạn nộp trước khi công việc bị tự huỷ"
+          },
           "updatedAt": {
             "type": "string"
           }
@@ -34426,6 +35213,7 @@
           "maxUploadBytes",
           "assignmentGraceDays",
           "boardRepClaimGraceDays",
+          "taskOverdueGraceHours",
           "updatedAt"
         ],
         "additionalProperties": false
@@ -34498,6 +35286,13 @@
             "minimum": 0,
             "maximum": 9007199254740991,
             "description": "Grace days before unclaimed contract review escalates",
+            "nullable": true
+          },
+          "taskOverdueGraceHours": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 168,
+            "description": "Số giờ ân hạn trước khi công việc quá hạn bị tự huỷ; tối đa 168 giờ (7 ngày)",
             "nullable": true
           }
         },
