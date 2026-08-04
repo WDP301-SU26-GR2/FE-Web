@@ -37,7 +37,6 @@ export function LoginPage() {
 
     const result = await submit({ email, password })
     if (!result) return
-    if (!('user' in result)) return
 
     if (result.mustChangePassword) {
       navigate('/change-password')
@@ -62,7 +61,6 @@ export function LoginPage() {
       onCredential: async (idToken) => {
         const result = await submitGoogle(idToken)
         if (!result) return
-        if (!('user' in result)) return
 
         if (result.mustChangePassword) {
           navigate('/change-password')
