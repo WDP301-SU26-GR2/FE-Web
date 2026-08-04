@@ -1,6 +1,6 @@
 import { ArrowLeft, FileSignature, KeyRound, Loader2 } from 'lucide-react'
-import { Link, useFetcher } from 'react-router'
-import { useState, type ReactNode } from 'react'
+import { Link, useFetcher, useRevalidator } from 'react-router'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   AmendmentResDtoOutput,
@@ -12,7 +12,7 @@ import type {
 } from '~/api/model/contracts'
 import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
 import { Dialog } from '~/shared/ui/dialog'
-import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
+import { canRespondToAmendment, canRespondToContract } from './contract-action-eligibility'
 import { ContractVersionHistoryPanel } from './contract-version-history-panel'
 
 export type MangakaContractActionResult = {
@@ -103,9 +103,14 @@ export function MangakaContractDetailPage({
 }) {
   const { t, i18n } = useTranslation('mangaka')
   const fetcher = useFetcher<MangakaContractActionResult>()
+  const revalidator = useRevalidator()
   const isWorking = fetcher.state !== 'idle'
   const [rejectOpen, setRejectOpen] = useState(false)
-  const conditionsReady = !conditionsLoadFailed && hasValidPaymentCondition(conditions)
+  const canRespond = canRespondToContract({ status: contract.status })
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok) revalidator.revalidate()
+  }, [fetcher.data, fetcher.state, revalidator])
 
   return (
     <div className='flex flex-col gap-6 pb-12'>
@@ -171,11 +176,6 @@ export function MangakaContractDetailPage({
       </Panel>
 
       <Panel title={t('contracts.detail.sections.actions')} className='order-4'>
-        {!conditionsReady && (
-          <p className='mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm font-semibold text-destructive'>
-            {t('contracts.detail.paymentConditionsRequired')}
-          </p>
-        )}
         {progress && (
           <div className='mb-5 grid gap-3 rounded-lg border border-border p-4 text-sm sm:grid-cols-2'>
             <Metric
@@ -193,7 +193,7 @@ export function MangakaContractDetailPage({
             {t('contracts.detail.progressLoadFailed')}
           </p>
         )}
-        {contract.status === 'AWAITING_MANGAKA' && (
+        {canRespond && (
           <div className='flex flex-wrap gap-3'>
             <button
               type='button'
@@ -205,10 +205,10 @@ export function MangakaContractDetailPage({
             </button>
           </div>
         )}
-        <div className={contract.status === 'AWAITING_MANGAKA' ? 'mt-5 border-t border-border pt-5' : ''}>
+        <div className={canRespond ? 'mt-5 border-t border-border pt-5' : ''}>
           <h3 className='text-sm font-bold text-foreground'>{t('contracts.detail.mangakaSignature')}</h3>
           <p className='mt-1 text-xs text-muted-foreground'>
-            {contract.status === 'AWAITING_MANGAKA'
+            {canRespond
               ? t('contracts.detail.signatureReady')
               : contract.mangakaSignedAt
                 ? t('contracts.detail.signedAt', {
@@ -221,7 +221,7 @@ export function MangakaContractDetailPage({
               type='submit'
               name='intent'
               value='sendOtp'
-              disabled={isWorking || contract.status !== 'AWAITING_MANGAKA' || !conditionsReady}
+              disabled={isWorking || !canRespond}
               formNoValidate
               className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
             >
@@ -235,20 +235,20 @@ export function MangakaContractDetailPage({
               maxLength={6}
               placeholder={t('contracts.fields.otpPlaceholder')}
               required
-              disabled={contract.status !== 'AWAITING_MANGAKA' || !conditionsReady}
+              disabled={!canRespond}
               className={`${inputClass} w-40`}
             />
             <button
               name='intent'
               value='signContract'
-              disabled={isWorking || contract.status !== 'AWAITING_MANGAKA' || !conditionsReady}
+              disabled={isWorking || !canRespond}
               className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
             >
               {t('contracts.actions.signContract')}
             </button>
           </fetcher.Form>
         </div>
-        {contract.status !== 'AWAITING_MANGAKA' && !contract.mangakaSignedAt && (
+        {!canRespond && !contract.mangakaSignedAt && (
           <p className='text-sm text-muted-foreground'>
             {t(`contracts.detail.statusHints.${contract.status}`, {
               defaultValue: t('contracts.detail.statusHints.default')
@@ -281,7 +281,7 @@ export function MangakaContractDetailPage({
       </Panel>
 
       <Dialog
-        open={rejectOpen && contract.status === 'AWAITING_MANGAKA'}
+        open={rejectOpen && canRespond}
         onClose={() => {
           if (!isWorking) setRejectOpen(false)
         }}
@@ -347,7 +347,7 @@ function MangakaAmendmentRow({
 }) {
   const { t } = useTranslation('mangaka')
   const fetcher = useFetcher<MangakaContractActionResult>()
-  const canRespond = contract.contractType === 'REVENUE_SHARE' && amendment.status === 'PENDING_SIGNATURES'
+  const canRespond = canRespondToAmendment({ contractType: contract.contractType, amendmentStatus: amendment.status })
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>

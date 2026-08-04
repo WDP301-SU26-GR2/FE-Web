@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { authControllerGoogleLogin, authControllerLogin } from '~/api/operations/auth/auth'
 import type { LoginBodyDto, LoginResDtoOutput, LoginResDtoOutputUser } from '~/api/model/auth'
 import { useAuth } from '~/features/auth/context/auth-context'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type LoginSuccess = {
   user: LoginResDtoOutputUser
@@ -14,9 +14,15 @@ type LoginSuccess = {
   mustChangePassword: boolean
 }
 
+type EmailNotVerified = {
+  emailNotVerified: true
+}
+
+type LoginResult = LoginSuccess | EmailNotVerified | null
+
 type UseLoginResult = {
-  submit: (payload: LoginBodyDto) => Promise<LoginSuccess | null>
-  submitGoogle: (idToken: string) => Promise<LoginSuccess | null>
+  submit: (payload: LoginBodyDto) => Promise<LoginResult>
+  submitGoogle: (idToken: string) => Promise<LoginResult>
   isSubmitting: boolean
 }
 
@@ -46,12 +52,15 @@ export function useLogin(): UseLoginResult {
   )
 
   const runLogin = useCallback(
-    async (request: () => Promise<{ data: LoginResDtoOutput }>): Promise<LoginSuccess | null> => {
+    async (request: () => Promise<{ data: LoginResDtoOutput }>): Promise<LoginResult> => {
       setIsSubmitting(true)
       try {
         const response = await request()
         return completeLogin(response.data)
       } catch (err) {
+        if (extractApiErrorCode(err) === 'Error.EmailNotVerified') {
+          return { emailNotVerified: true }
+        }
         toast.error(extractApiErrorMessage(err, t('login.errorGeneric')))
         return null
       } finally {

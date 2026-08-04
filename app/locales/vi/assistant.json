@@ -1,8 +1,8 @@
 {
   "dashboard": {
     "title": "Không gian làm việc Trợ lý",
-    "subtitle": "Nhiệm vụ, quan hệ studio và lời mời đang chờ ở cùng một nơi.",
-    "engineStatus": "Assistant workspace v1.0.0 • Đồng bộ: {{time}} trước",
+    "subtitle": "Nhiệm vụ, quan hệ xưởng vẽ và lời mời đang chờ ở cùng một nơi.",
+    "engineStatus": "Không gian làm việc Trợ lý v1.0.0 • Đồng bộ: {{time}} trước",
     "activeNow": "Đang hợp tác",
     "viewAll": "Xem tất cả",
     "statCards": {
@@ -18,56 +18,56 @@
       },
       "upcomingDeadlines": {
         "label": "Đến hạn trong 7 ngày",
-        "description": "Nhiệm vụ có deadline gần nhất",
+        "description": "Nhiệm vụ có hạn chót gần nhất",
         "delta": "{{count}} sắp đến hạn"
       },
       "rating": {
         "label": "Đánh giá trung bình",
-        "description": "Điểm đánh giá từ các Mangaka đã cộng tác",
+        "description": "Điểm đánh giá từ các tác giả đã cộng tác",
         "delta": "{{avg}} • {{count}} đánh giá"
       }
     }
   },
   "chapterPages": {
-    "title": "Xem tổng thể chapter",
-    "description": "Xem thứ tự, trạng thái và bản ghép của toàn bộ trang trong chapter mà bạn đang cộng tác — không chỉ riêng trang đã được giao task.",
-    "chapterIdLabel": "Mã chapter",
-    "chapterIdPlaceholder": "Nhập mã chapter từ brief hoặc liên kết công việc",
-    "open": "Mở chapter",
-    "accessHint": "Bạn chỉ truy cập được chapter thuộc Mangaka đang có quan hệ cộng tác hiệu lực. Ảnh chỉ hiển thị trên trang bạn có task để đảm bảo đúng quyền tải file.",
-    "loading": "Đang tải ngữ cảnh chapter...",
-    "gridTitle": "Các trang trong chapter",
+    "title": "Xem tổng thể chương",
+    "description": "Xem thứ tự, trạng thái và bản ghép của toàn bộ trang trong chương mà bạn đang cộng tác — không chỉ riêng trang đã được giao nhiệm vụ.",
+    "chapterIdLabel": "Mã chương",
+    "chapterIdPlaceholder": "Nhập mã chương từ mô tả công việc hoặc liên kết công việc",
+    "open": "Mở chương",
+    "accessHint": "Bạn chỉ truy cập được chương thuộc tác giả đang có quan hệ cộng tác hiệu lực. Ảnh chỉ hiển thị trên trang bạn có nhiệm vụ để đảm bảo đúng quyền tải tệp.",
+    "loading": "Đang tải ngữ cảnh chương...",
+    "gridTitle": "Các trang trong chương",
     "pageCount": "{{count}} trang",
-    "previewPolicy": "Trang chưa có task vẫn hiển thị metadata để bạn hiểu mạch chapter; hệ thống không tải file khi chưa có quyền qua task.",
+    "previewPolicy": "Trang chưa có nhiệm vụ vẫn hiển thị siêu dữ liệu để bạn hiểu mạch chương; hệ thống không tải tệp khi chưa có quyền qua nhiệm vụ.",
     "pageNumber": "Trang {{number}}",
     "pageAlt": "Bản xem trước trang {{number}}",
     "revision": "Bản ghép r{{revision}}",
     "previewLoading": "Đang tải bản xem trước",
-    "previewUnavailable": "Không thể tải bản xem trước qua task này.",
-    "noTaskPreview": "Chưa có task của bạn trên trang này; chỉ hiển thị metadata.",
-    "noFile": "Trang chưa có file hiển thị.",
-    "taskAccess": "Có task được giao — bạn có quyền xem file qua workspace task.",
-    "metadataOnly": "Chưa có task trên trang này — chế độ xem metadata.",
+    "previewUnavailable": "Không thể tải bản xem trước qua nhiệm vụ này.",
+    "noTaskPreview": "Chưa có nhiệm vụ của bạn trên trang này; chỉ hiển thị siêu dữ liệu.",
+    "noFile": "Trang chưa có tệp hiển thị.",
+    "taskAccess": "Có nhiệm vụ được giao — bạn có quyền xem tệp qua không gian làm việc của nhiệm vụ.",
+    "metadataOnly": "Chưa có nhiệm vụ trên trang này — chế độ xem siêu dữ liệu.",
     "status": {
       "DRAFT": "Đang sản xuất",
       "COMPLETED": "Đã hoàn tất",
       "REVISING": "Đang chỉnh sửa"
     },
     "errors": {
-      "title": "Không thể mở chapter",
-      "loadFailed": "Không thể tải các trang của chapter này. Hãy kiểm tra mã chapter và quyền cộng tác."
+      "title": "Không thể mở chương",
+      "loadFailed": "Không thể tải các trang của chương này. Hãy kiểm tra mã chương và quyền cộng tác."
     },
     "empty": {
-      "initialTitle": "Nhập mã chapter để bắt đầu",
-      "initialDescription": "Bạn có thể lấy mã chapter từ brief, đường dẫn công việc hoặc trao đổi với Mangaka phụ trách.",
-      "noPagesTitle": "Chapter chưa có trang",
-      "noPagesDescription": "Chapter hợp lệ nhưng chưa có trang sản xuất nào để hiển thị."
+      "initialTitle": "Nhập mã chương để bắt đầu",
+      "initialDescription": "Bạn có thể lấy mã chương từ mô tả công việc, đường dẫn công việc hoặc trao đổi với tác giả phụ trách.",
+      "noPagesTitle": "Chương chưa có trang",
+      "noPagesDescription": "Chương hợp lệ nhưng chưa có trang sản xuất nào để hiển thị."
     }
   },
   "tasks": {
     "title": "Nhiệm vụ của tôi",
-    "subtitle": "Các nhiệm vụ sản xuất được Mangaka giao cho bạn.",
-    "back": "Quay lại dashboard",
+    "subtitle": "Các nhiệm vụ sản xuất được tác giả giao cho bạn.",
+    "back": "Quay lại bảng điều khiển",
     "filters": {
       "status": "Trạng thái",
       "all": "Tất cả",
@@ -75,7 +75,7 @@
         "ASSIGNED": "Đã giao",
         "IN_PROGRESS": "Đang làm",
         "SUBMITTED": "Đã nộp",
-        "UNDER_REVIEW": "Đang review",
+        "UNDER_REVIEW": "Đang xét duyệt",
         "APPROVED": "Đã duyệt",
         "REVISION_REQUESTED": "Yêu cầu sửa",
         "ON_HOLD": "Tạm dừng",
@@ -84,8 +84,8 @@
     },
     "taskType": {
       "BACKGROUND": "Vẽ nền",
-      "SCREENTONE": "Dán tone",
-      "EFFECT_LINES": "Speed line",
+      "SCREENTONE": "Dán mảng sắc độ",
+      "EFFECT_LINES": "Đường tốc độ",
       "INKING": "Đi mực",
       "COLORING": "Tô màu",
       "LETTERING": "Chữ/thoại"
@@ -94,8 +94,8 @@
       "taskType": "Loại công việc",
       "taskTypeNone": "Chưa phân loại",
       "priority": "Độ ưu tiên",
-      "deadline": "Deadline",
-      "deadlineNone": "Không có deadline",
+      "deadline": "Hạn chót",
+      "deadlineNone": "Không có hạn chót",
       "versions": "{{count}} bản nộp",
       "versions_other": "{{count}} bản nộp",
       "pageLabel": "Trang #{{id}}",
@@ -104,26 +104,26 @@
       "regionType": "Loại",
       "regionSize": "Kích thước",
       "openAssignedPage": "Mở ảnh trang và vùng được giao",
-      "revisionRequest": "Mangaka yêu cầu chỉnh sửa",
+      "revisionRequest": "Tác giả yêu cầu chỉnh sửa",
       "revisionRequestFallback": "Vui lòng chỉnh sửa bản đã nộp và gửi một phiên bản mới.",
       "regionAssigned": "Vùng #{{id}}",
       "fullPage": "Toàn trang (không gắn vùng)",
       "statusReason": "Ghi chú",
       "regionCount_one": "{{count}} vùng được giao",
       "regionCount_other": "{{count}} vùng được giao",
-      "groupTask": "Task theo nhóm"
+      "groupTask": "Nhiệm vụ theo nhóm"
     },
     "dialog": {
       "title": "Chi tiết nhiệm vụ",
-      "description": "Xem ảnh gốc từ Mangaka, bản đã nộp (nếu có), và tải file về máy.",
+      "description": "Xem ảnh gốc từ tác giả, bản đã nộp (nếu có), và tải tệp về máy.",
       "loading": "Đang tải ảnh...",
       "loadFailed": "Không tải được ảnh.",
-      "noOriginalFile": "Trang này chưa có file ảnh gốc.",
+      "noOriginalFile": "Trang này chưa có tệp ảnh gốc.",
       "pageUnavailable": "Không tìm thấy trang này trong các chương bạn đang tham gia.",
       "imageAlt": "Trang {{n}}",
       "image": {
-        "original": "Ảnh gốc (Mangaka giao)",
-        "stageInput": "Ảnh đầu vào của stage",
+        "original": "Ảnh gốc (tác giả giao)",
+        "stageInput": "Ảnh đầu vào của công đoạn",
         "submitted": "Bản đã nộp",
         "noImage": "Chưa có ảnh"
       },
@@ -133,7 +133,7 @@
       "regionType": {
         "PANEL": "Khung truyện",
         "BACKGROUND": "Nền",
-        "SCREEN_TONE": "Tone",
+        "SCREEN_TONE": "Mảng sắc độ",
         "EFFECT_LINES": "Hiệu ứng đường",
         "SFX": "Hiệu ứng chữ",
         "CHARACTER": "Nhân vật"
@@ -141,21 +141,21 @@
       "regionCoords": "Toạ độ: ({{x}}, {{y}}) {{w}}×{{h}}",
       "downloadOriginal": "Tải ảnh gốc",
       "downloadSubmitted": "Tải bản nộp",
-      "downloadFailed": "Không tải được file. Vui lòng thử lại.",
+      "downloadFailed": "Không tải được tệp. Vui lòng thử lại.",
       "viewFullsize": "Xem đầy đủ",
-      "attachments": "Tài liệu tham khảo từ Mangaka",
+      "attachments": "Tài liệu tham khảo từ tác giả",
       "attachmentImage": "Ảnh tham khảo: {{name}}",
       "attachmentDocument": "Tài liệu: {{name}}",
       "viewAttachment": "Mở",
       "downloadAttachment": "Tải xuống"
     },
     "actions": {
-      "start": "Bắt đầu task",
+      "start": "Bắt đầu nhiệm vụ",
       "continueRevision": "Tiếp tục chỉnh sửa",
       "submit": "Nộp kết quả",
-      "openWorkspace": "Mở workspace",
+      "openWorkspace": "Mở không gian làm việc",
       "resolveRevision": "Đánh dấu đã xử lý vòng sửa",
-      "resultFile": "File kết quả",
+      "resultFile": "Tệp kết quả",
       "selectedFile": "Đã chọn: {{name}} ({{size}})"
     },
     "pagination": {
@@ -165,36 +165,36 @@
     },
     "empty": {
       "title": "Chưa có nhiệm vụ nào",
-      "description": "Khi Mangaka giao task cho bạn, task sẽ hiện ở đây."
+      "description": "Khi tác giả giao nhiệm vụ cho bạn, nhiệm vụ sẽ hiện ở đây."
     },
     "error": {
-      "loadFailed": "Không tải được danh sách task. Vui lòng thử lại.",
-      "startFailed": "Không thể bắt đầu task.",
-      "submitFailed": "Không thể nộp kết quả task.",
+      "loadFailed": "Không tải được danh sách nhiệm vụ. Vui lòng thử lại.",
+      "startFailed": "Không thể bắt đầu nhiệm vụ.",
+      "submitFailed": "Không thể nộp kết quả nhiệm vụ.",
       "resolveRevisionFailed": "Không thể đánh dấu đã xử lý vòng sửa.",
-      "fileTooLarge": "File kết quả phải có dung lượng tối đa 15 MB.",
+      "fileTooLarge": "Tệp kết quả phải có dung lượng tối đa 15 MB.",
       "retry": "Thử lại",
-      "noFileToSubmit": "Vui lòng đính kèm key file kết quả trước khi nộp.",
-      "submitSuccess": "Đã nộp task. Đang chờ Mangaka review."
+      "noFileToSubmit": "Vui lòng đính kèm tệp kết quả trước khi nộp.",
+      "submitSuccess": "Đã nộp nhiệm vụ. Đang chờ tác giả xét duyệt."
     },
     "success": {
-      "started": "Đã bắt đầu task.",
+      "started": "Đã bắt đầu nhiệm vụ.",
       "revisionStarted": "Đã bắt đầu chỉnh sửa. Hãy tải lên kết quả mới khi hoàn tất.",
       "revisionResolved": "Đã đánh dấu vòng sửa là đã xử lý."
     },
     "workspace": {
-      "title": "Workspace task",
-      "description": "Xem yêu cầu sản xuất, feedback, các phiên bản và nộp kết quả.",
-      "loadFailed": "Không thể tải workspace của task này.",
-      "previewFiles": "Xem file",
-      "viewTaskFiles": "Xem file task",
+      "title": "Không gian làm việc của nhiệm vụ",
+      "description": "Xem yêu cầu sản xuất, phản hồi, các phiên bản và nộp kết quả.",
+      "loadFailed": "Không thể tải không gian làm việc của nhiệm vụ này.",
+      "previewFiles": "Xem tệp",
+      "viewTaskFiles": "Xem tệp của nhiệm vụ",
       "statusReason": "Ghi chú mới nhất:",
       "brief": "Yêu cầu sản xuất",
-      "taskDescription": "Mô tả task từ Mangaka",
-      "noDescription": "Mangaka chưa cung cấp yêu cầu bổ sung.",
-      "stageInputHint": "Task này dùng ảnh snapshot đầu vào bất biến của stage. Hãy dùng ảnh này để xử lý; ảnh gốc trang chỉ để tham khảo.",
-      "legacyInputHint": "Đây là task cũ không theo stage. Hãy dùng file ảnh gốc của trang làm đầu vào xử lý.",
-      "mangakaFeedback": "Feedback từ Mangaka",
+      "taskDescription": "Mô tả nhiệm vụ từ tác giả",
+      "noDescription": "Tác giả chưa cung cấp yêu cầu bổ sung.",
+      "stageInputHint": "Nhiệm vụ này dùng ảnh chụp đầu vào bất biến của công đoạn. Hãy dùng ảnh này để xử lý; ảnh gốc trang chỉ để tham khảo.",
+      "legacyInputHint": "Đây là nhiệm vụ cũ không theo công đoạn. Hãy dùng tệp ảnh gốc của trang làm đầu vào xử lý.",
+      "mangakaFeedback": "Phản hồi từ tác giả",
       "versions": "Lịch sử nộp bài",
       "versionNumber": "Phiên bản {{number}}",
       "noVersions": "Bạn chưa nộp phiên bản nào.",
@@ -204,37 +204,37 @@
         "REVISION_REQUESTED": "Yêu cầu chỉnh sửa"
       },
       "submitTitle": "Nộp kết quả",
-      "submitHint": "Tải file hoàn thành để gửi Mangaka duyệt.",
+      "submitHint": "Tải tệp hoàn thành để gửi tác giả duyệt.",
       "revisionTracker": "Theo dõi vòng sửa",
-      "resolveHint": "Bạn đã nộp file đã sửa. Bây giờ có thể đánh dấu từng vòng sửa đã hoàn thành.",
-      "resolveAfterSubmit": "Hãy nộp file đã sửa trước. Đánh dấu vòng sửa hoàn thành không tự nộp task.",
+      "resolveHint": "Bạn đã nộp tệp đã sửa. Bây giờ có thể đánh dấu từng vòng sửa đã hoàn thành.",
+      "resolveAfterSubmit": "Hãy nộp tệp đã sửa trước. Đánh dấu vòng sửa hoàn thành không tự nộp nhiệm vụ.",
       "revisionRound": "Vòng sửa {{round}}"
     },
     "resources": {
-      "title": "File Mangaka giao",
-      "description": "Ảnh đầu vào từ page và tài liệu tham khảo Mangaka đính kèm. Bài nộp của Assistant được xem riêng trong lịch sử nộp bài.",
-      "stageInput": "Ảnh đầu vào của stage",
-      "pageOriginal": "Ảnh gốc của page",
-      "pageOriginalReference": "Ảnh gốc của page (tham khảo)",
+      "title": "Tệp tác giả giao",
+      "description": "Ảnh đầu vào từ trang và tài liệu tham khảo do tác giả đính kèm. Bài nộp của trợ lý được xem riêng trong lịch sử nộp bài.",
+      "stageInput": "Ảnh đầu vào của công đoạn",
+      "pageOriginal": "Ảnh gốc của trang",
+      "pageOriginalReference": "Ảnh gốc của trang (tham khảo)",
       "attachments": "Tài liệu tham khảo đính kèm",
-      "noInput": "Mangaka chưa cung cấp file ảnh đầu vào cho task này.",
+      "noInput": "Tác giả chưa cung cấp tệp ảnh đầu vào cho nhiệm vụ này.",
       "noAttachments": "Không có tài liệu tham khảo đính kèm.",
-      "loadFailed": "Không tải được file task này.",
-      "openFile": "Mở file"
+      "loadFailed": "Không tải được tệp của nhiệm vụ này.",
+      "openFile": "Mở tệp"
     },
     "submission": {
       "title": "Bản đã nộp phiên bản {{number}}",
-      "description": "Đây là file Assistant đã nộp ở phiên bản được chọn.",
-      "noFile": "Phiên bản này không có file được lưu.",
+      "description": "Đây là tệp trợ lý đã nộp ở phiên bản được chọn.",
+      "noFile": "Phiên bản này không có tệp được lưu.",
       "imageAlt": "Bản nộp phiên bản {{number}}",
-      "openFile": "Mở file đã nộp",
+      "openFile": "Mở tệp đã nộp",
       "viewVersion": "Xem phiên bản {{number}}"
     }
   },
   "studio": {
-    "title": "Quan hệ Studio",
-    "subtitle": "Các cộng tác đang và đã thực hiện với Mangaka.",
-    "back": "Quay lại dashboard",
+    "title": "Quan hệ Xưởng vẽ",
+    "subtitle": "Các cộng tác đang và đã thực hiện với tác giả.",
+    "back": "Quay lại bảng điều khiển",
     "filters": {
       "status": "Trạng thái",
       "all": "Tất cả",
@@ -247,24 +247,24 @@
     },
     "taskType": {
       "BACKGROUND": "Vẽ nền",
-      "SCREENTONE": "Dán tone",
-      "EFFECT_LINES": "Speed line",
+      "SCREENTONE": "Dán mảng sắc độ",
+      "EFFECT_LINES": "Đường tốc độ",
       "INKING": "Đi mực",
       "COLORING": "Tô màu",
       "LETTERING": "Chữ/thoại"
     },
     "card": {
-      "unknownMangaka": "Mangaka",
+      "unknownMangaka": "Tác giả",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
-      "seriesNone": "Không có series context",
+      "seriesNone": "Không có ngữ cảnh series",
       "terminatedReason": "Lý do: {{reason}}",
       "noReason": "Không có lý do",
       "ended": "Bắt đầu {{date}}",
-      "taskTypesTitle": "Loại task được giao",
+      "taskTypesTitle": "Loại nhiệm vụ được giao",
       "loadingDetails": "Đang tải chi tiết hợp tác...",
       "activeNowBadge": "Đang hợp tác",
-      "notActiveNow": "Hợp tác này vẫn có trạng thái ACTIVE nhưng hiện ngoài thời hạn thuê. Mangaka chưa thể giao task mới cho đến khi gia hạn hoặc giao lại.",
+      "notActiveNow": "Hợp tác này vẫn có trạng thái đang hoạt động nhưng hiện ngoài thời hạn thuê. Tác giả chưa thể giao nhiệm vụ mới cho đến khi gia hạn hoặc giao lại.",
       "endedBadge": "Đã kết thúc"
     },
     "pagination": {
@@ -273,11 +273,11 @@
       "showingRange": "Hiển thị {{from}}–{{to}} của {{total}}"
     },
     "empty": {
-      "title": "Chưa có quan hệ studio nào",
-      "description": "Chấp nhận một lời mời cộng tác để bắt đầu làm việc với Mangaka."
+      "title": "Chưa có quan hệ xưởng vẽ nào",
+      "description": "Chấp nhận một lời mời cộng tác để bắt đầu làm việc với tác giả."
     },
     "error": {
-      "loadFailed": "Không tải được quan hệ studio. Vui lòng thử lại.",
+      "loadFailed": "Không tải được quan hệ xưởng vẽ. Vui lòng thử lại.",
       "retry": "Thử lại",
       "detailFailed": "Không thể tải chi tiết hợp tác."
     },
@@ -288,8 +288,8 @@
   },
   "invites": {
     "title": "Lời mời cộng tác",
-    "subtitle": "Lời mời do Mangaka gửi yêu cầu bạn tham gia studio của họ.",
-    "back": "Quay lại dashboard",
+    "subtitle": "Lời mời do tác giả gửi yêu cầu bạn tham gia xưởng vẽ của họ.",
+    "back": "Quay lại bảng điều khiển",
     "filters": {
       "status": "Trạng thái",
       "all": "Tất cả",
@@ -303,17 +303,17 @@
     },
     "taskType": {
       "BACKGROUND": "Vẽ nền",
-      "SCREENTONE": "Dán tone",
-      "EFFECT_LINES": "Speed line",
+      "SCREENTONE": "Dán mảng sắc độ",
+      "EFFECT_LINES": "Đường tốc độ",
       "INKING": "Đi mực",
       "COLORING": "Tô màu",
       "LETTERING": "Chữ/thoại"
     },
     "card": {
-      "unknownMangaka": "Mangaka",
+      "unknownMangaka": "Tác giả",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
-      "seriesNone": "Không có series context",
+      "seriesNone": "Không có ngữ cảnh series",
       "taskTypesTitle": "Sẽ làm việc về",
       "loadingDetails": "Đang tải chi tiết lời mời...",
       "receivedAt": "Nhận {{date}}"
@@ -331,7 +331,7 @@
     },
     "empty": {
       "title": "Chưa có lời mời nào",
-      "description": "Khi Mangaka gửi lời mời cộng tác, lời mời sẽ hiện ở đây."
+      "description": "Khi tác giả gửi lời mời cộng tác, lời mời sẽ hiện ở đây."
     },
     "error": {
       "loadFailed": "Không tải được lời mời. Vui lòng thử lại.",
@@ -341,14 +341,14 @@
       "detailFailed": "Không thể tải chi tiết lời mời."
     },
     "success": {
-      "accepted": "Đã chấp nhận lời mời. StudioAssignment ACTIVE đã được tạo.",
+      "accepted": "Đã chấp nhận lời mời. Quan hệ hợp tác tại xưởng vẽ đã được tạo.",
       "declined": "Đã từ chối lời mời."
     }
   },
   "notifications": {
     "title": "Thông báo",
-    "subtitle": "Cập nhật về nhiệm vụ, thay đổi deadline và kết quả review.",
-    "back": "Quay lại dashboard",
+    "subtitle": "Cập nhật về nhiệm vụ, thay đổi hạn chót và kết quả xét duyệt.",
+    "back": "Quay lại bảng điều khiển",
     "filters": {
       "all": "Tất cả",
       "unread": "Chưa đọc",
@@ -358,7 +358,7 @@
       "SYSTEM": "Hệ thống",
       "CONTRACT": "Hợp đồng",
       "TASK": "Nhiệm vụ",
-      "DEADLINE": "Deadline",
+      "DEADLINE": "Hạn chót",
       "SURVEY": "Khảo sát",
       "BOARD": "Hội đồng",
       "REVIEW": "Đánh giá"
@@ -366,10 +366,10 @@
     "item": {
       "noContent": "(không có nội dung)",
       "openTarget": "Mở",
-      "openChapter": "Mở chapter",
+      "openChapter": "Mở chương",
       "openTask": "Mở nhiệm vụ",
       "openContract": "Mở hợp đồng",
-      "openDeadline": "Mở deadline",
+      "openDeadline": "Mở hạn chót",
       "openAssistant": "Mở trợ lý",
       "openRevision": "Mở vòng sửa",
       "reference": "Tham chiếu: {{type}} • {{id}}"

@@ -31,7 +31,7 @@
       "description": "Xem và phản hồi yêu cầu đồng thuận cho series phái sinh."
     },
     "myStudio": {
-      "title": "Studio của tôi",
+      "title": "Xưởng vẽ của tôi",
       "description": "Quản lý phân công trợ lý và các lần cộng tác đã kết thúc."
     },
     "paymentDetail": {
@@ -63,7 +63,7 @@
       "description": "Cập nhật đề xuất series còn cho phép chỉnh sửa."
     },
     "series": {
-      "title": "Series của tôi",
+      "title": "Bộ truyện của tôi",
       "description": "Quản lý các đề xuất và series đã xuất bản của bạn."
     }
   },
@@ -75,7 +75,7 @@
     "actionRequired": "YÊU CẦU XỬ LÝ",
     "dueInHours": "Hạn còn {{hours}} giờ",
     "dueInDays": "Hạn còn {{days}} ngày",
-    "openStudio": "Mở Studio",
+    "openStudio": "Mở Xưởng vẽ",
     "openReview": "Xem phản hồi",
     "weeklyRankings": "Bảng xếp hạng tuần",
     "viewAnalyticsReport": "Xem báo cáo chi tiết",
@@ -369,7 +369,7 @@
     }
   },
   "myStudio": {
-    "title": "Studio",
+    "title": "Xưởng vẽ",
     "subtitle": "Theo dõi các trợ lý đang/đã cộng tác cho series của bạn.",
     "filters": {
       "status": "Trạng thái",
@@ -426,7 +426,7 @@
       "review": "Đánh giá trợ lý",
       "reviewed": "Đã đánh giá",
       "terminateTitle": "Kết thúc hợp tác này?",
-      "terminateDescription": "Thao tác sẽ kết thúc ngay quan hệ studio đang hoạt động. Hãy ghi rõ lý do cho Assistant.",
+      "terminateDescription": "Thao tác sẽ kết thúc ngay mối quan hệ hợp tác tại xưởng vẽ đang hoạt động. Hãy ghi rõ lý do cho Assistant.",
       "reviewTitle": "Đánh giá hợp tác",
       "reviewDescription": "Chỉ có thể đánh giá sau khi hợp tác đã kết thúc và mỗi Assistant chỉ nhận một đánh giá từ bạn.",
       "forAssistant": "Trợ lý: {{name}}",
@@ -445,9 +445,9 @@
     }
   },
   "mySeries": {
-    "title": "Series của tôi",
+    "title": "Bộ truyện của tôi",
     "subtitle": "Quản lý tất cả series truyện của bạn",
-    "proposeNewSeries": "Tạo proposal mới",
+    "proposeNewSeries": "Tạo hồ sơ series mới",
     "newChapter": "Chương mới",
     "activeSeries": "Series đang hoạt động",
     "published": "Đã xuất bản",
@@ -471,7 +471,7 @@
     },
     "empty": {
       "title": "Bạn chưa có series nào",
-      "description": "Hãy tạo proposal đầu tiên để gửi lên ban biên tập xét duyệt."
+      "description": "Hãy tạo hồ sơ series đầu tiên để gửi lên ban biên tập xét duyệt."
     },
     "error": {
       "loadFailed": "Không thể tải danh sách series. Vui lòng thử lại.",
@@ -498,22 +498,22 @@
   },
   "seriesDetail": {
     "title": "Series Detail",
-    "subtitle": "Xem thông tin proposal và các trang Name mẫu",
-    "back": "Về My Series",
+    "subtitle": "Xem thông tin hồ sơ series và các trang bản phác khung truyện mẫu",
+    "back": "Về Bộ truyện của tôi",
     "loading": "Đang tải...",
     "editProposal": {
-      "button": "Sửa Proposal",
-      "title": "Sửa Proposal",
-      "subtitle": "Cập nhật các trường của proposal. Giữ nguyên trường nào thì trường đó không đổi.",
-      "notEditableTitle": "Không thể sửa proposal",
-      "notEditableDescription": "Chỉ sửa được proposal khi series đang ở DRAFT hoặc khi proposal đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
+      "button": "Sửa hồ sơ series",
+      "title": "Sửa hồ sơ series",
+      "subtitle": "Cập nhật các trường của hồ sơ series. Giữ nguyên trường nào thì trường đó không đổi.",
+      "notEditableTitle": "Không thể sửa hồ sơ series",
+      "notEditableDescription": "Chỉ sửa được hồ sơ series khi series đang ở DRAFT hoặc khi hồ sơ series đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
       "sectionBasic": "Thông tin cơ bản",
       "sectionSynopsis": "Tóm tắt cốt truyện",
       "sectionCharacters": "Thiết kế nhân vật",
-      "sectionName": "Các trang Name mẫu",
-      "existingNamePages": "Các trang Name hiện tại",
-      "removeNamePage": "Xoá trang Name {{n}}",
-      "restoreNamePage": "Khôi phục trang Name {{n}}",
+      "sectionName": "Các trang bản phác khung truyện mẫu",
+      "existingNamePages": "Các trang bản phác khung truyện hiện tại",
+      "removeNamePage": "Xoá trang bản phác khung truyện {{n}}",
+      "restoreNamePage": "Khôi phục trang bản phác khung truyện {{n}}",
       "newCover": "Đã chọn ảnh bìa mới",
       "keepCover": "Giữ ảnh bìa hiện tại",
       "removeCover": "Xoá ảnh bìa",
@@ -523,17 +523,17 @@
       "removeExistingCharacter": "Xoá ảnh thiết kế nhân vật này",
       "removeExistingCharacterConfirm": "Xoá ảnh thiết kế nhân vật này? Ảnh sẽ bị xoá khi bạn lưu.",
       "markForRemoval": "Đã đánh dấu xoá",
-      "loading": "Đang tải proposal...",
-      "loadFailed": "Không thể tải proposal.",
+      "loading": "Đang tải hồ sơ series...",
+      "loadFailed": "Không thể tải hồ sơ series.",
       "retry": "Thử lại",
-      "success": "Đã cập nhật proposal.",
-      "nameSuccess": "Đã cập nhật các trang Name mẫu.",
-      "nameErrorGeneric": "Không thể cập nhật Name mẫu. Vui lòng thử lại.",
-      "nameMissing": "Không tìm thấy Name mẫu của proposal. Hãy tải lại series rồi thử lại.",
-      "nameConflict": "Name mẫu không còn sửa được ở trạng thái hiện tại.",
-      "errorGeneric": "Không thể cập nhật proposal. Vui lòng thử lại.",
-      "errorConflict": "Proposal này không còn sửa được (trạng thái đã đổi).",
-      "errorPermission": "Bạn chỉ có thể sửa proposal của chính mình.",
+      "success": "Đã cập nhật hồ sơ series.",
+      "nameSuccess": "Đã cập nhật các trang bản phác khung truyện mẫu.",
+      "nameErrorGeneric": "Không thể cập nhật bản phác khung truyện mẫu. Vui lòng thử lại.",
+      "nameMissing": "Không tìm thấy bản phác khung truyện mẫu của hồ sơ series. Hãy tải lại series rồi thử lại.",
+      "nameConflict": "Bản phác khung truyện mẫu không còn sửa được ở trạng thái hiện tại.",
+      "errorGeneric": "Không thể cập nhật hồ sơ series. Vui lòng thử lại.",
+      "errorConflict": "Hồ sơ series này không còn sửa được (trạng thái đã đổi).",
+      "errorPermission": "Bạn chỉ có thể sửa hồ sơ series của chính mình.",
       "errorNotFound": "Series không còn tồn tại. Hãy tải lại danh sách series.",
       "unsavedChangesTitle": "Bỏ các thay đổi chưa lưu?",
       "unsavedChangesDescription": "Bạn có những thay đổi chưa lưu — chúng sẽ bị mất nếu rời trang.",
@@ -631,7 +631,7 @@
       "round": "Vòng {{round}}",
       "openDrawer": "Xem yêu cầu chỉnh sửa",
       "target": {
-        "PROPOSAL": "Proposal",
+        "PROPOSAL": "Hồ sơ series",
         "STORYBOARD": "Bản phác thảo mẫu",
         "MANUSCRIPT": "Manuscript",
         "TASK": "Task"
@@ -645,7 +645,7 @@
       "resolveSuccess": "Đã đánh dấu hoàn tất yêu cầu chỉnh sửa.",
       "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại.",
       "drawer": {
-        "subtitle": "Các vòng yêu cầu sửa proposal / Name / manuscript của series này",
+        "subtitle": "Các vòng yêu cầu sửa hồ sơ series / bản phác khung truyện / bản thảo của series này",
         "close": "Đóng",
         "empty": {
           "title": "Chưa có yêu cầu chỉnh sửa nào",
@@ -706,13 +706,13 @@
       "DRAFT": "Bản nháp",
       "PROPOSAL_REVIEW": "Đang xét duyệt",
       "PROPOSAL_REVISION": "Cần chỉnh sửa",
-      "PROPOSAL_APPROVED": "Đã duyệt proposal",
+      "PROPOSAL_APPROVED": "Đã duyệt hồ sơ series",
       "PITCHED": "Đã pitch",
       "APPROVED": "Đã duyệt",
       "REJECTED": "Bị từ chối",
       "WITHDRAWN": "Mangaka rút"
     },
-    "nameStatus": {
+    "storyboardStatus": {
       "DRAFT": "Bản nháp",
       "SUBMITTED": "Đã nộp",
       "IN_REVIEW": "Đang xét duyệt",
@@ -720,8 +720,8 @@
       "APPROVED": "Đã duyệt"
     },
     "proposal": {
-      "title": "Proposal",
-      "empty": "Series chưa có proposal.",
+      "title": "Hồ sơ series",
+      "empty": "Series chưa có hồ sơ series.",
       "synopsis": "Tóm tắt cốt truyện",
       "synopsisMore": "Xem thêm",
       "synopsisLess": "Thu gọn",
@@ -735,61 +735,61 @@
       "characterDesignAlt": "Thiết kế nhân vật {{n}}",
       "estimatedLength": "Số chương ước tính",
       "chaptersCount": "{{count}} chương",
-      "createdAt": "Ngày tạo proposal",
-      "nameId": "Name mẫu"
+      "createdAt": "Ngày tạo hồ sơ series",
+      "nameId": "Bản phác khung truyện mẫu"
     },
     "names": {
-      "title": "Name (Storyboard)",
-      "empty": "Chưa có trang Name nào.",
-      "count": "{{count}} name",
-      "alt": "Trang Name {{label}}",
-      "altShort": "Trang Name",
-      "sampleLabel": "Name mẫu (Proposal)",
+      "title": "Bản phác khung truyện",
+      "empty": "Chưa có trang bản phác khung truyện nào.",
+      "count": "{{count}} bản phác khung truyện",
+      "alt": "Trang bản phác khung truyện {{label}}",
+      "altShort": "Trang bản phác khung truyện",
+      "sampleLabel": "Bản phác khung truyện mẫu (Hồ sơ series)",
       "chapterLabel": "Chương {{n}}",
       "versionLabel": "Phiên bản {{n}}",
-      "pageAlt": "Trang Name {{n}}",
+      "pageAlt": "Trang bản phác khung truyện {{n}}",
       "pagesCount_one": "{{count}} trang",
       "pagesCount_other": "{{count}} trang"
     },
     "actions": {
       "cancel": "Huỷ",
-      "errorGeneric": "Không thể thực hiện thao tác với proposal. Hãy tải lại và thử lại.",
+      "errorGeneric": "Không thể thực hiện thao tác với hồ sơ series. Hãy tải lại và thử lại.",
       "delete": {
         "button": "Xoá bản nháp",
         "title": "Xoá bản nháp này?",
-        "description": "\"{{title}}\" và Name mẫu đi kèm sẽ bị xoá vĩnh viễn.",
+        "description": "\"{{title}}\" và bản phác khung truyện mẫu đi kèm sẽ bị xoá vĩnh viễn.",
         "confirm": "Xoá bản nháp",
-        "success": "Đã xoá proposal nháp."
+        "success": "Đã xoá hồ sơ series nháp."
       },
       "withdraw": {
         "button": "Rút hồ sơ",
-        "title": "Rút proposal này?",
+        "title": "Rút hồ sơ series này?",
         "description": "\"{{title}}\" sẽ rời luồng biên tập và chuyển sang trạng thái Đã rút.",
         "reasonLabel": "Lý do",
         "reasonPlaceholder": "Cho Editor biết lý do bạn rút hồ sơ...",
         "reasonHint": "{{count}}/1000 ký tự · bắt buộc",
         "reasonRequired": "Hãy nhập lý do trước khi rút hồ sơ.",
-        "confirm": "Rút proposal",
-        "success": "Đã rút proposal."
+        "confirm": "Rút hồ sơ series",
+        "success": "Đã rút hồ sơ series."
       },
       "reopen": {
         "button": "Nộp lại",
         "success": "Đã mở lại hồ sơ. Về bản nháp để chỉnh sửa và nộp lại."
       },
       "resubmitProposal": {
-        "button": "Nộp lại proposal",
-        "success": "Đã nộp lại proposal để xét duyệt."
+        "button": "Nộp lại hồ sơ series",
+        "success": "Đã nộp lại hồ sơ series để xét duyệt."
       },
       "resubmitName": {
-        "button": "Nộp lại Name",
-        "success": "Đã nộp lại Name mẫu để xét duyệt."
+        "button": "Nộp lại bản phác khung truyện",
+        "success": "Đã nộp lại bản phác khung truyện mẫu để xét duyệt."
       },
       "errors": {
-        "NotSeriesOwner": "Bạn chỉ có thể thay đổi proposal của chính mình.",
-        "ProposalNotEditable": "Proposal không còn sửa được ở trạng thái hiện tại.",
-        "ProposalNotDeletable": "Chỉ proposal nháp mới có thể bị xoá.",
-        "InvalidProposalState": "Proposal hiện không chờ được nộp lại.",
-        "InvalidNameState": "Name mẫu hiện không chờ được nộp lại.",
+        "NotSeriesOwner": "Bạn chỉ có thể thay đổi hồ sơ series của chính mình.",
+        "ProposalNotEditable": "Hồ sơ series không còn sửa được ở trạng thái hiện tại.",
+        "ProposalNotDeletable": "Chỉ hồ sơ series nháp mới có thể bị xoá.",
+        "InvalidProposalState": "Hồ sơ series hiện không chờ được nộp lại.",
+        "InvalidNameState": "Bản phác khung truyện mẫu hiện không chờ được nộp lại.",
         "InvalidSeriesTransition": "Series không ở trạng thái cho phép thao tác này.",
         "SeriesNotFound": "Series không còn tồn tại."
       }
@@ -801,23 +801,22 @@
     "notFound": {
       "title": "Không tìm thấy series",
       "description": "Series này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
-      "back": "Về My Series"
+      "back": "Về Bộ truyện của tôi"
     },
     "submit": {
-      "button": "Nộp series",
-      "missingNamePages": "Hãy thêm ít nhất một trang Name mẫu trước khi nộp.",
+      "button": "Nộp hồ sơ series",
       "dialogTitle": "Nộp series để biên tập viên xét duyệt?",
-      "dialogDescription": "Series \"{{title}}\" sẽ được chuyển sang trạng thái Đang xét duyệt. Sau khi nộp, bạn sẽ không thể sửa proposal cho tới khi Editor phản hồi.",
-      "bullet1": "Proposal chuyển sang trạng thái Đang xét duyệt.",
-      "bullet2": "Trang Name mẫu được gửi kèm cho Editor review.",
-      "bullet3": "Không thể chỉnh sửa proposal trong khi đang được xét duyệt.",
+      "dialogDescription": "Series \"{{title}}\" sẽ được chuyển sang trạng thái Đang xét duyệt. Sau khi nộp, bạn sẽ không thể sửa hồ sơ series cho tới khi Editor phản hồi.",
+      "bullet1": "Hồ sơ series chuyển sang trạng thái Đang xét duyệt.",
+      "bullet2": "Trang bản phác khung truyện mẫu được gửi kèm cho Editor duyệt.",
+      "bullet3": "Không thể chỉnh sửa hồ sơ series trong khi đang được xét duyệt.",
       "cancel": "Huỷ",
       "confirm": "Nộp series",
       "submitting": "Đang nộp series...",
       "success": "Đã nộp series để biên tập xét duyệt.",
-      "errorPermission": "Chỉ chủ sở hữu series mới có thể nộp proposal này.",
+      "errorPermission": "Chỉ chủ sở hữu series mới có thể nộp hồ sơ series này.",
       "errorConflict": "Series không còn có thể nộp ở trạng thái hiện tại.",
-      "errorFranchiseConsent": "Mangaka của series gốc phải đồng ý proposal nhượng quyền trước khi có thể nộp.",
+      "errorFranchiseConsent": "Mangaka của series gốc phải đồng ý hồ sơ series nhượng quyền trước khi có thể nộp.",
       "errorGeneric": "Không thể nộp series. Vui lòng thử lại."
     },
     "publication": {
@@ -1321,16 +1320,16 @@
     }
   },
   "wizard": {
-    "title": "Propose New Series",
-    "subtitle": "Điền thông tin để tạo proposal series mới cho ban biên tập xem xét.",
+    "title": "Hồ sơ series mới",
+    "subtitle": "Điền thông tin để tạo hồ sơ series mới cho ban biên tập xem xét.",
     "step1": "Thông tin cơ bản",
     "step1Desc": "Tiêu đề, ảnh bìa, thể loại, nhóm độc giả và tần suất phát hành.",
     "step2": "Tóm tắt cốt truyện",
     "step2Desc": "Viết nội dung tóm tắt cốt truyện cho series (tối đa 5000 ký tự).",
     "step3": "Thiết kế nhân vật",
     "step3Desc": "Tải lên hình ảnh thiết kế nhân vật chính (ảnh sẽ gửi dưới dạng object key).",
-    "step4": "Trang Name mẫu",
-    "step4Desc": "Tải lên hình ảnh các trang Name mẫu (storyboard) cho chương đầu tiên.",
+    "step4": "Bản phác khung truyện",
+    "step4Desc": "Tải lên hình ảnh các trang bản phác khung truyện cho chương đầu tiên.",
     "back": "Quay lại",
     "next": "Tiếp theo",
     "submit": "Tạo bản nháp",
@@ -1386,7 +1385,7 @@
     "synopsisPlaceholder": "Bắt đầu viết tóm tắt cốt truyện của bạn ở đây (tối đa 5000 ký tự)...",
     "wordCount": "{{count}} từ",
     "charCount": "{{count}} / 5000 ký tự",
-    "uploadNamePageTitle": "Tải lên trang Name mẫu",
+    "uploadNamePageTitle": "Tải lên trang bản phác khung truyện",
     "uploadNamePageSubtitle": "Kéo và thả hoặc chọn file hình ảnh (PNG, JPG, WEBP)",
     "uploadCharacterTitle": "Tải lên hình ảnh thiết kế nhân vật",
     "uploadCharacterSubtitle": "Kéo và thả hoặc chọn file hình ảnh (PNG, JPG, WEBP)",
@@ -1412,7 +1411,7 @@
     "title": "Nhiệm vụ",
     "composer": {
       "title": "Giao nhiệm vụ",
-      "fromStudio": "Từ Studio — chọn trợ lý, series, chương, trang",
+      "fromStudio": "Từ Xưởng vẽ — chọn trợ lý, series, chương, trang",
       "fromWorkbench": "Từ Workbench — chọn trợ lý cho trang hiện tại",
       "close": "Đóng",
       "back": "Quay lại",
@@ -1531,7 +1530,7 @@
       "next": "Tiếp"
     },
     "detail": {
-      "back": "Quay lại nhiệm vụ Studio",
+      "back": "Quay lại nhiệm vụ Xưởng vẽ",
       "eyebrow": "Chi tiết nhiệm vụ",
       "untitled": "Nhiệm vụ sản xuất",
       "type": "Loại nhiệm vụ",
@@ -1549,14 +1548,14 @@
       "errorTitle": "Không thể mở nhiệm vụ",
       "errors": {
         "notFound": "Nhiệm vụ không còn tồn tại hoặc không thuộc series của bạn.",
-        "generic": "Không thể tải chi tiết nhiệm vụ. Hãy quay lại Studio và thử lại."
+        "generic": "Không thể tải chi tiết nhiệm vụ. Hãy quay lại Xưởng vẽ và thử lại."
       }
     }
   },
   "studio": {
     "overview": {
       "open": "Tổng quan sản xuất",
-      "eyebrow": "Studio sản xuất",
+      "eyebrow": "Xưởng vẽ sản xuất",
       "title": "Tổng quan sản xuất chương",
       "description": "Theo dõi các chương đang sản xuất theo mức cảnh báo và hạn chót. Mở chương để tiếp tục phần việc cần ưu tiên.",
       "listLabel": "Các chương đang sản xuất",
@@ -1599,7 +1598,7 @@
       "actions": {
         "refresh": "Làm mới",
         "retry": "Thử lại",
-        "backToStudio": "Quay lại Studio",
+        "backToStudio": "Quay lại Xưởng vẽ",
         "openChapter": "Mở chương"
       },
       "empty": {
@@ -1614,7 +1613,7 @@
       "title": "Nhiệm vụ",
       "composer": {
         "title": "Giao nhiệm vụ",
-        "fromStudio": "Từ Studio — chọn trợ lý, series, chương, trang",
+        "fromStudio": "Từ Xưởng vẽ — chọn trợ lý, series, chương, trang",
         "fromWorkbench": "Từ Workbench — chọn trợ lý cho trang hiện tại",
         "close": "Đóng",
         "back": "Quay lại",
@@ -2494,13 +2493,11 @@
     },
     "statuses": {
       "DRAFT": "Bản nháp",
-      "MANGAKA_REVIEW": "Mangaka xem xét",
-      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
-      "BOARD_APPROVED": "Hội đồng đã phê duyệt",
-      "NEGOTIATION": "Đang thương lượng",
-      "MANGAKA_SIGNED": "Mangaka đã ký",
+      "BOARD_REVIEW": "Hội đồng đang xét duyệt",
+      "AWAITING_MANGAKA": "Chờ Mangaka phản hồi",
       "ACTIVATION_PENDING": "Chờ kích hoạt",
       "FULLY_EXECUTED": "Đã ký đầy đủ",
+      "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
       "FULFILLED": "Đã hoàn thành",
       "TERMINATED": "Đã chấm dứt",
       "TERMINATED_BY_BREACH": "Chấm dứt do vi phạm",
@@ -2516,7 +2513,6 @@
         "paymentConditions": "Điều kiện thanh toán",
         "amendments": "Phụ lục hợp đồng"
       },
-      "paymentConditionsRequired": "Không thể đồng ý hoặc ký cho tới khi tải được ít nhất một điều kiện thanh toán hợp lệ.",
       "mangakaSignature": "Chữ ký Mangaka",
       "signed": "Đã ký",
       "notSigned": "Chưa ký",
@@ -2575,7 +2571,6 @@
       "accountUnavailable": "Không thể đọc tài khoản.",
       "invalidAction": "Thao tác hợp đồng không hợp lệ.",
       "actionFailed": "Không thể thực hiện thao tác. Vui lòng kiểm tra trạng thái và thử lại.",
-      "paymentConditionsRequired": "Không thể duyệt hoặc ký vì hợp đồng chưa có điều kiện thanh toán hợp lệ.",
       "requiredField": "Vui lòng điền đầy đủ các trường bắt buộc."
     },
     "versions": {

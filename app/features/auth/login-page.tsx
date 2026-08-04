@@ -4,16 +4,20 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Layers } from 'lucide-react'
 
 import { useLogin } from '~/features/auth/hooks/use-login'
+import { useRegister } from '~/features/auth/hooks/use-register'
 import { startGoogleSignIn } from '~/features/auth/lib/google-identity'
 import { ROLE_DASHBOARD_PATH } from '~/shared/components'
 import { env } from '~/shared/config/env'
 import { cn } from '~/shared/lib/cn'
 import { BrandLogo } from '~/shared/components/brand-logo'
+import { STORAGE_KEYS } from '~/shared/config/site'
+import { writeStorage } from '~/shared/lib/storage'
 
 export function LoginPage() {
   const { t } = useTranslation('auth')
   const navigate = useNavigate()
   const { submit, submitGoogle, isSubmitting } = useLogin()
+  const { sendOtp, isSendingOtp } = useRegister()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,6 +25,8 @@ export function LoginPage() {
   // Inline validation only — real auth errors are surfaced via toast
   // (see useLogin). Keeps the form responsive without blocking submit.
   const [validationError, setValidationError] = useState('')
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const isBusy = isSubmitting || isSendingOtp
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -38,6 +44,11 @@ export function LoginPage() {
     const result = await submit({ email, password })
     if (!result) return
 
+    if ('emailNotVerified' in result) {
+      setVerificationEmail(email)
+      return
+    }
+
     if (result.mustChangePassword) {
       navigate('/change-password')
       return
@@ -47,6 +58,16 @@ export function LoginPage() {
     // Fallback về Mangaka nếu role không map được.
     const target = ROLE_DASHBOARD_PATH[result.user.role] ?? '/dashboard/mangaka'
     navigate(target)
+  }
+
+  const handleVerifyEmail = async () => {
+    if (!verificationEmail) return
+
+    const sent = await sendOtp({ email: verificationEmail, purpose: 'REGISTER' })
+    if (!sent) return
+
+    writeStorage(STORAGE_KEYS.pendingRegisterEmail, verificationEmail)
+    navigate('/register?step=verify')
   }
 
   const handleGoogleLogin = () => {
@@ -61,6 +82,11 @@ export function LoginPage() {
       onCredential: async (idToken) => {
         const result = await submitGoogle(idToken)
         if (!result) return
+
+        if ('emailNotVerified' in result) {
+          setValidationError(t('login.errorGeneric'))
+          return
+        }
 
         if (result.mustChangePassword) {
           navigate('/change-password')
@@ -135,6 +161,20 @@ export function LoginPage() {
               </div>
             )}
 
+            {verificationEmail && (
+              <div className='rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm'>
+                <p className='font-semibold text-foreground'>{t('login.emailNotVerified')}</p>
+                <button
+                  type='button'
+                  onClick={handleVerifyEmail}
+                  disabled={isBusy}
+                  className='mt-3 text-sm font-bold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-60'
+                >
+                  {isSendingOtp ? t('register.sendingOtp') : t('login.verifyEmail')}
+                </button>
+              </div>
+            )}
+
             <div className='space-y-4'>
               {/* Email Input */}
               <div className='space-y-1.5'>
@@ -146,9 +186,12 @@ export function LoginPage() {
                   <input
                     type='email'
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setVerificationEmail('')
+                    }}
                     placeholder={t('login.emailPlaceholder')}
-                    disabled={isSubmitting}
+                    disabled={isBusy}
                     className={cn(
                       'w-full rounded-lg border border-input bg-card/50 py-3 pl-11 pr-4 text-sm transition-all',
                       'focus:border-primary focus:bg-background focus:ring-1 focus:ring-ring focus:outline-none',
@@ -175,7 +218,7 @@ export function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={t('login.passwordPlaceholder')}
-                    disabled={isSubmitting}
+                    disabled={isBusy}
                     className={cn(
                       'w-full rounded-lg border border-input bg-card/50 py-3 pl-11 pr-12 text-sm transition-all',
                       'focus:border-primary focus:bg-background focus:ring-1 focus:ring-ring focus:outline-none',
@@ -185,7 +228,7 @@ export function LoginPage() {
                   <button
                     type='button'
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={isSubmitting}
+                    disabled={isBusy}
                     className='absolute top-1/2 right-3 -translate-y-1/2 p-1 text-muted-foreground/80 hover:text-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-60'
                   >
                     {showPassword ? <EyeOff className='h-5 w-5' /> : <Eye className='h-5 w-5' />}
@@ -197,7 +240,7 @@ export function LoginPage() {
             {/* Login Button */}
             <button
               type='submit'
-              disabled={isSubmitting}
+              disabled={isBusy}
               className={cn(
                 'flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-all',
                 'shadow-lg shadow-primary/25 cursor-pointer',
@@ -232,7 +275,7 @@ export function LoginPage() {
               <button
                 type='button'
                 onClick={handleGoogleLogin}
-                disabled={isSubmitting}
+                disabled={isBusy}
                 className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card/40 py-2.5 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60'
               >
                 {/* SVG for Google logo */}
