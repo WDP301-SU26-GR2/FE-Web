@@ -43,6 +43,8 @@ export function EditorTransfersPage({
   const [transferType, setTransferType] = useState<'FULL_TRANSFER' | 'PARTIAL_TRANSFER'>('FULL_TRANSFER')
   const isRevenueShare = request?.originalContractType === 'REVENUE_SHARE'
   const canStartNegotiation = Boolean(request && isRevenueShare && request.status === 'UNDER_REVIEW')
+  // ACCEPTED is the explicit proof that Mangaka A consented. UNDER_REVIEW is only the
+  // earlier Board-screened state and must never unlock contract creation.
   const canCreateContract = Boolean(
     request && isRevenueShare && request.status === 'ACCEPTED' && !request.transferContractId && !contract
   )

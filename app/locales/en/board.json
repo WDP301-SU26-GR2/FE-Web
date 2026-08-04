@@ -531,6 +531,7 @@
     "adminPermissionHint": "You cannot approve a triggered payout, but you may cancel it. You can only confirm payment or cancel after Board approval.",
     "empty": "No payment records are available.",
     "approve": "Approve payout",
+    "approveConfirmation": "Approve the payout of {{amount}} to {{receiver}}? Review the details before confirming.",
     "method": "Payment method",
     "methods": { "BANK_TRANSFER": "Bank transfer", "CASH": "Cash" },
     "reference": "Transaction reference",

@@ -210,17 +210,27 @@ function PaymentCard({
       <div className='mt-4 flex flex-wrap gap-2'>
         <PaymentDetailsDialog payment={payment} contractBasePath={contractBasePath} seriesBasePath={seriesBasePath} />
         {canApprove && payment.status === 'TRIGGERED' && (
-          <fetcher.Form method='post'>
-            <input type='hidden' name='paymentId' value={payment.id} />
-            <button
-              name='intent'
-              value='approve'
-              className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
-            >
-              <BadgeCheck className='mr-1.5 inline size-4' aria-hidden='true' />
-              {t('payments.approve')}
-            </button>
-          </fetcher.Form>
+          <BoardActionDialog title={t('payments.approve')}>
+            <fetcher.Form method='post' className='grid gap-4'>
+              <input type='hidden' name='paymentId' value={payment.id} />
+              <p className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning-foreground'>
+                {t('payments.approveConfirmation', {
+                  amount: new Intl.NumberFormat(i18n.language).format(payment.amount),
+                  receiver: payment.receiver?.displayName ?? t('payments.unknownReceiver')
+                })}
+              </p>
+              <button
+                name='intent'
+                value='approve'
+                disabled={fetcher.state !== 'idle'}
+                className='h-10 rounded-md bg-success px-3 text-xs font-bold text-success-foreground disabled:opacity-50'
+              >
+                <BadgeCheck className='mr-1.5 inline size-4' aria-hidden='true' />
+                {t('payments.approve')}
+              </button>
+            </fetcher.Form>
+            <BoardFeedback data={fetcher.data} />
+          </BoardActionDialog>
         )}
         {payment.status === 'APPROVED' && (
           <BoardActionDialog title={t('payments.pay')}>

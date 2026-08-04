@@ -2390,6 +2390,7 @@
       "description": "Choose a series and explain how you plan to take over and develop it.",
       "series": "Series",
       "seriesPlaceholder": "Select a series",
+      "noEligibleSeries": "There are currently no eligible SERIALIZED or HIATUS series. Series you own are excluded from this list.",
       "type": "Transfer type",
       "percentage": "Ownership percentage (1–99%)",
       "plan": "Takeover plan",
@@ -2422,6 +2423,7 @@
       "progressTitle": "Three-party signature progress",
       "pending": "Not signed",
       "waitYourTurn": "It is not your signing turn yet. This action will unlock after the previous signer finishes.",
+      "boardApprovalRequired": "The transferring Mangaka can sign only after the Board approves a CONTRACT decision for this agreement. If approval is still pending, the signature will be rejected and the agreement will remain unchanged.",
       "notSigner": "The current account is not a signer on this contract.",
       "roles": {
         "MANGAKA_A": "Transferring Mangaka",
@@ -2455,6 +2457,7 @@
       "requestNotFound": "The transfer request from this notification is unavailable or you cannot access it.",
       "noActiveContract": "This series has no active contract eligible for transfer.",
       "activeRequestExists": "This series already has an active transfer request.",
+      "seriesNotEligible": "Only serialized or hiatus series can receive a transfer request.",
       "awaitingContractDecision": "The transfer agreement is awaiting Board approval and cannot be signed yet.",
       "generic": "Could not complete the transfer action. Please try again.",
       "notYourTurn": "You are not the current signer or this contract is not ready for your signature."

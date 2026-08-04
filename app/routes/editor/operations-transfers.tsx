@@ -14,6 +14,7 @@ import {
   TransferControllerGetAssignedEditorRequestsStatus
 } from '~/api/model/transfer'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
@@ -116,9 +117,20 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       }
     } else return { ok: false, intent, errorKey: 'invalidAction' }
     return { ok: true, intent, messageKey: intent }
-  } catch {
-    return { ok: false, intent, errorKey: 'actionFailed' }
+  } catch (error) {
+    return { ok: false, intent, errorKey: transferErrorKey(extractApiErrorCode(error)) }
   }
+}
+
+function transferErrorKey(code?: string) {
+  const keys: Record<string, string> = {
+    'Error.InvalidTransferState': 'transferInvalidState',
+    'Error.OnlyAppliesToRevenueShare': 'transferRevenueShareOnly',
+    'Error.TransferAccessDenied': 'transferAccessDenied',
+    'Error.TransferRequestNotFound': 'transferRequestNotFound',
+    'Error.InvalidOwnershipSplit': 'ownershipMismatch'
+  }
+  return (code && keys[code]) || 'actionFailed'
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

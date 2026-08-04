@@ -511,6 +511,8 @@ Query: `seriesId` (ObjectId, bắt buộc), `size` (tuỳ, ≥3).
 
 **POST body** (Editor tạo nháp `PENDING`):
 
+UI tạo mới chỉ mở 7 loại còn có flow tiêu thụ rõ ràng: `SERIALIZATION`, `CONTINUE`, `CANCELLATION`, `FORMAT_CHANGE`, `COMPLETION`, `CONTRACT`, `TRANSFER`. Các enum lịch sử `CANCEL`, `HIATUS`, `ENDING_ALLOWANCE`, `SERIES_CONTRACT_APPROVAL`, `REPRINT` vẫn có thể xuất hiện ở dữ liệu cũ để tra cứu nhưng không được tạo mới: `HIATUS` do Editor gọi route lifecycle trực tiếp; `ENDING_ALLOWANCE` là field của `CANCELLATION`; hợp đồng dùng `CONTRACT`; reprint dùng route Board approve/reject riêng.
+
 | Field            | Bắt buộc | Kiểu/enum           | Ghi chú                                                                                                                                                                                                                                                                                              |
 | ---------------- | -------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `boardSessionId` | ✅       | string              |                                                                                                                                                                                                                                                                                                      |
@@ -602,7 +604,7 @@ Editor (hoặc Board) thấy series "hot nhưng cũ" → **`POST /reprint-reques
 
 ### Narrative — Flow 8 (Transfer, phần Editor)
 
-Board sàng lọc `TransferRequest` xong (route Board) → nếu gốc `REVENUE_SHARE`, Board giao Editor đàm phán: **`POST /transfers/requests/:id/start-negotiation`** (`UNDER_REVIEW → NEGOTIATING`) → Editor deal với Mangaka A (ngoài hệ thống) → A đồng ý/từ chối (route Mangaka) → Editor **`POST /transfers/contracts`** soạn `TransferContract` 3 bên (transferAmount, transferType, newOwnershipSplit) → A → B → Board ký OTP (route riêng từng bên) → `FULLY_EXECUTED` → `TransferRequest.COMPLETED`.
+Board sàng lọc `TransferRequest` xong (route Board) → nếu gốc `REVENUE_SHARE`, Board giao Editor đàm phán: **`POST /transfers/requests/:id/start-negotiation`** (`UNDER_REVIEW → NEGOTIATING`) → Editor deal với Mangaka A (ngoài hệ thống) → A đồng ý (`NEGOTIATING → ACCEPTED`) hoặc từ chối (route Mangaka) → chỉ khi `ACCEPTED`, Editor **`POST /transfers/contracts`** soạn `TransferContract` 3 bên (transferAmount, transferType, newOwnershipSplit) → Editor đưa chính hợp đồng vào decision `CONTRACT` (`details.resourceType=TRANSFER_CONTRACT`, `details.resourceId=transferContractId`) → decision được Hội đồng duyệt → A → B → Board ký OTP → `FULLY_EXECUTED` → `TransferRequest.COMPLETED`.
 
 ### 1-2. `GET/POST /contracts` — Danh sách / Tạo hợp đồng nháp
 
@@ -838,7 +840,7 @@ Chỉ áp dụng khi `revisionMode=WITH_REVISION` VÀ contract gốc `FULL_BUYOU
 
 | Field                     | Bắt buộc | Kiểu/enum                | Ghi chú                                                                                 |
 | ------------------------- | -------- | ------------------------ | --------------------------------------------------------------------------------------- |
-| `transferRequestId`       | ✅       | string                   | request phải `UNDER_REVIEW`                                                             |
+| `transferRequestId`       | ✅       | string                   | request phải `ACCEPTED` — Mangaka gốc đã đồng ý                                         |
 | `transferAmount`          | ✅       | number dương             | B trả A                                                                                 |
 | `transferType`            | ✅       | enum `TransferType`      | `FULL_TRANSFER` \| `PARTIAL_TRANSFER`                                                   |
 | `newOwnershipSplit`       | ✅       | Record\<string, number\> | tổng phải = 100                                                                         |

@@ -18014,7 +18014,7 @@
             "bearer": []
           }
         ],
-        "summary": "Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT (chỉ khi request UNDER_REVIEW)",
+        "summary": "Editor tạo hợp đồng chuyển nhượng 3 bên → DRAFT (chỉ khi request ACCEPTED)",
         "tags": [
           "transfer"
         ]

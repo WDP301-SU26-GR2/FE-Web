@@ -5,6 +5,7 @@ import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/
 import type { BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { Dialog } from '~/shared/ui/dialog'
 import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
 import { orderBoardDecisions } from './board-order'
 import {
@@ -157,6 +158,7 @@ function DecisionCard({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
+  const [voteOpen, setVoteOpen] = useState(false)
   const seriesTitle = decision.targetSeries?.title ?? series.find((item) => item.id === decision.targetSeriesId)?.title
   const sessionTitle = sessions.find((item) => item.id === decision.boardSessionId)?.title
   const typeLabel = decision.decisionType
@@ -169,7 +171,7 @@ function DecisionCard({
           type: typeLabel,
           series: seriesTitle ?? t('board.unknownSeries')
         })
-  const open = canVote && (decision.result === 'PENDING' || decision.result === 'PENDING_QUORUM')
+  const votingAvailable = canVote && (decision.result === 'PENDING' || decision.result === 'PENDING_QUORUM')
 
   return (
     <article className='rounded-lg border border-border p-4'>
@@ -198,11 +200,40 @@ function DecisionCard({
           total: decision.totalVotes
         })}
       </p>
-      {open && (
-        <fetcher.Form method='post' className='mt-4 grid gap-2 border-t border-border pt-3'>
+      {votingAvailable && (
+        <div className='mt-4 flex justify-end border-t border-border pt-3'>
+          <button
+            type='button'
+            onClick={() => setVoteOpen(true)}
+            className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+          >
+            {t('board.castVote')}
+          </button>
+        </div>
+      )}
+      <Dialog
+        compact
+        open={voteOpen}
+        onClose={() => setVoteOpen(false)}
+        titleId={`editor-vote-${decision.id}`}
+        title={t('board.castVote')}
+        description={displayTitle}
+        descriptionId={`editor-vote-${decision.id}-description`}
+        size='sm'
+      >
+        <fetcher.Form method='post' className='grid gap-3'>
           <input type='hidden' name='intent' value='castVote' />
           <input type='hidden' name='decisionId' value={decision.id} />
-          <input name='note' maxLength={300} className={boardInput} placeholder={t('board.voteNote')} />
+          <label className='grid gap-1.5 text-xs font-bold text-foreground'>
+            {t('board.voteNote')}
+            <textarea
+              name='note'
+              maxLength={300}
+              rows={3}
+              className={`${boardInput} h-auto py-2 font-normal`}
+              placeholder={t('board.voteNote')}
+            />
+          </label>
           <div className='grid grid-cols-3 gap-2'>
             {(['APPROVE', 'REJECT', 'ABSTAIN'] as const).map((voteValue) => (
               <button
@@ -210,15 +241,19 @@ function DecisionCard({
                 name='voteValue'
                 value={voteValue}
                 disabled={fetcher.state !== 'idle'}
-                className='rounded-md border border-border px-2 py-2 text-xs font-bold text-foreground disabled:opacity-50'
+                className={
+                  voteValue === 'REJECT'
+                    ? 'rounded-md border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs font-bold text-destructive disabled:opacity-50'
+                    : 'rounded-md border border-border px-2 py-2 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+                }
               >
                 {t(`board.voteValues.${voteValue}`)}
               </button>
             ))}
           </div>
+          <BoardFeedback data={fetcher.data} />
         </fetcher.Form>
-      )}
-      <BoardFeedback data={fetcher.data} />
+      </Dialog>
     </article>
   )
 }

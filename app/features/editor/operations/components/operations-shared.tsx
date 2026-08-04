@@ -154,7 +154,8 @@ export function SeriesSelect({
   value,
   onChange,
   name = 'seriesId',
-  required = true
+  required = true,
+  disabled = false
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   defaultValue?: string
@@ -162,6 +163,7 @@ export function SeriesSelect({
   onChange?: (value: string) => void
   name?: string
   required?: boolean
+  disabled?: boolean
 }) {
   const { t } = useTranslation('editor')
   return (
@@ -171,6 +173,7 @@ export function SeriesSelect({
       value={value}
       onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       required={required}
+      disabled={disabled}
       className={operationInput}
     >
       <option value=''>{t('operations.selectSeries')}</option>

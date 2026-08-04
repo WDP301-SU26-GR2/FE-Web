@@ -54,6 +54,10 @@ export { MangakaFinancePage, MangakaPaymentDetailPage } from './finance'
 
 // Transfers
 export { loadPublicSeriesCatalog } from './transfers/load-public-series-catalog'
+export {
+  isTransferEligibleSeriesStatus,
+  selectEligibleTransferSeries
+} from './transfers/select-eligible-transfer-series'
 
 // Contracts (review, negotiation and signing)
 export {

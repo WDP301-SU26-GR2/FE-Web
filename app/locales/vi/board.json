@@ -531,6 +531,7 @@
     "adminPermissionHint": "Bạn không duyệt khoản chi ở trạng thái Đã phát sinh, nhưng có thể hủy khoản chi đó. Chỉ khi Hội đồng đã duyệt chi, bạn mới có thể xác nhận đã trả hoặc hủy.",
     "empty": "Chưa có khoản thanh toán.",
     "approve": "Duyệt khoản chi",
+    "approveConfirmation": "Duyệt khoản chi {{amount}} cho {{receiver}}? Hãy kiểm tra chi tiết trước khi xác nhận.",
     "method": "Phương thức thanh toán",
     "methods": { "BANK_TRANSFER": "Chuyển khoản ngân hàng", "CASH": "Tiền mặt" },
     "reference": "Mã giao dịch",

@@ -19,11 +19,12 @@ import {
   transferControllerGetTransferContractById
 } from '~/api/operations/transfer/transfer'
 import { seriesControllerGetSeries } from '~/api/operations/series/series'
-import { CreateBoardDecisionBodyDtoDecisionType } from '~/api/model/board'
 import {
   BOARD_SESSION_INTENTS,
   BOARD_DECISION_LIMITS,
   EditorBoardMeetingRoomPage,
+  hasBoardDecisionConflict,
+  isBoardSessionDecisionType,
   mapBoardSessionError,
   type EditorActionResult
 } from '~/features/editor'
@@ -73,9 +74,9 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
       const series = await seriesControllerGetSeries({ id: seriesId })
       if (series.status !== 200) return { ok: false, intent, errorKey: 'invalidState' }
 
-      const decisionType = required(form, 'decisionType') as CreateBoardDecisionBodyDtoDecisionType
-      if (!Object.values(CreateBoardDecisionBodyDtoDecisionType).includes(decisionType))
-        return { ok: false, intent, errorKey: 'invalidState' }
+      const rawDecisionType = required(form, 'decisionType')
+      if (!isBoardSessionDecisionType(rawDecisionType)) return { ok: false, intent, errorKey: 'invalidState' }
+      const decisionType = rawDecisionType
 
       const existingDecisions = await boardControllerGetDecisions({ boardSessionId: params.id })
       const existingDecisionDetails = await Promise.all(
@@ -85,25 +86,34 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
             .catch(() => null)
         )
       )
-      const endingTypes = new Set(['COMPLETION', 'CANCELLATION', 'CANCEL'])
       const resourceId = String(form.get('resourceId') ?? '').trim()
       const versionId = String(form.get('versionId') ?? '').trim()
       const transferRequestId = String(form.get('transferRequestId') ?? '').trim()
-      const conflicts = existingDecisionDetails.some(
-        (decision) =>
-          decision !== null &&
-          decision.targetSeriesId === seriesId &&
-          ((decisionType === 'CONTRACT' &&
-            decision.decisionType === 'CONTRACT' &&
-            decision.details?.resourceId === resourceId &&
-            (decision.details?.versionId ?? '') === versionId) ||
-            (decisionType === 'TRANSFER' &&
-              decision.decisionType === 'TRANSFER' &&
-              decision.details?.transferRequestId === transferRequestId) ||
-            (decisionType !== 'CONTRACT' &&
-              decisionType !== 'TRANSFER' &&
-              (decision.decisionType === decisionType ||
-                (endingTypes.has(decision.decisionType ?? '') && endingTypes.has(decisionType)))))
+      if (decisionType === 'CONTRACT') {
+        const [contracts, assignedTransfers] = await Promise.all([
+          contractControllerGetContracts().catch(() => null),
+          transferControllerGetAssignedEditorRequests().catch(() => null)
+        ])
+        const resources = await loadContractDecisionResources(contracts?.data ?? [], assignedTransfers?.data.data ?? [])
+        const selectedResource = resources.find(
+          (resource) =>
+            resource.resourceId === resourceId &&
+            resource.versionId === versionId &&
+            resource.seriesId === seriesId &&
+            resource.resourceType === String(form.get('resourceType') ?? '')
+        )
+        if (!selectedResource) return { ok: false, intent, errorKey: 'invalidState' }
+      }
+      if (decisionType === 'TRANSFER') {
+        const assignedTransfers = await transferControllerGetAssignedEditorRequests()
+        const selectedTransfer = assignedTransfers.data.data.find(
+          (item) => item.id === transferRequestId && item.seriesId === seriesId && item.status === 'SUBMITTED'
+        )
+        if (!selectedTransfer) return { ok: false, intent, errorKey: 'invalidState' }
+      }
+      const conflicts = hasBoardDecisionConflict(
+        existingDecisionDetails.filter((decision) => decision !== null),
+        { seriesId, decisionType, resourceId, versionId, transferRequestId }
       )
       if (conflicts) return { ok: false, intent, errorKey: 'invalidState' }
 
@@ -129,7 +139,7 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
         if (decisionType !== 'CONTRACT' && !['SERIALIZED', 'HIATUS'].includes(series.data.status))
           return { ok: false, intent, errorKey: 'invalidState' }
         details.note = String(form.get('decisionNote') ?? '').trim() || null
-        if (decisionType === 'CANCELLATION' || decisionType === 'ENDING_ALLOWANCE') {
+        if (decisionType === 'CANCELLATION') {
           const allowanceValue = String(form.get('endingChapterAllowance') ?? '').trim()
           if (allowanceValue) {
             const endingChapterAllowance = Number(allowanceValue)
@@ -147,11 +157,7 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
         if (decisionType === 'TRANSFER') details.transferRequestId = required(form, 'transferRequestId')
         if (decisionType === 'CONTRACT') {
           const resourceType = required(form, 'resourceType')
-          if (
-            !['PUBLICATION_CONTRACT', 'REPLACEMENT_CONTRACT', 'TRANSFER_CONTRACT', 'CONTRACT_AMENDMENT'].includes(
-              resourceType
-            )
-          )
+          if (!['TRANSFER_CONTRACT', 'CONTRACT_AMENDMENT'].includes(resourceType))
             return { ok: false, intent, errorKey: 'invalidState' }
           Object.assign(details, {
             resourceType,

@@ -5,8 +5,7 @@ import {
   seriesControllerReopenReview,
   seriesControllerReject,
   seriesControllerRequestProposalRevision,
-  seriesControllerPitch,
-  seriesControllerUpdateSeriesMetadata
+  seriesControllerPitch
 } from '~/api/operations/series/series'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
 import { SITE } from '~/shared/config/site'
@@ -78,20 +77,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       await seriesControllerReopenReview({ id: seriesId }, { reason })
     } else if (intent === EDITOR_PROPOSAL_INTENTS.release) await seriesControllerRelease({ id: seriesId })
     else if (intent === EDITOR_PROPOSAL_INTENTS.pitch) await seriesControllerPitch({ id: seriesId })
-    else if (intent === EDITOR_PROPOSAL_INTENTS.updateMetadata) {
-      await seriesControllerUpdateSeriesMetadata(
-        { id: seriesId },
-        {
-          title: required(formData, 'title'),
-          synopsis: String(formData.get('synopsis') ?? '').trim(),
-          coverImage: String(formData.get('coverImage') ?? '').trim(),
-          characterDesigns: String(formData.get('characterDesigns') ?? '')
-            .split(/[\n,]/)
-            .map((key) => key.trim())
-            .filter(Boolean)
-        }
-      )
-    } else return { ok: false, intent, errorKey: 'invalidAction' }
+    else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
       : intent === EDITOR_PROPOSAL_INTENTS.reject
@@ -102,19 +88,11 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
             ? 'released'
             : intent === EDITOR_PROPOSAL_INTENTS.pitch
               ? 'pitch'
-              : intent === EDITOR_PROPOSAL_INTENTS.updateMetadata
-                ? 'updated'
-                : 'revisionRequested'
+              : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
     return { ok: false, intent, errorKey: mapEditorProposalError(error) }
   }
-}
-
-function required(formData: FormData, key: string) {
-  const value = String(formData.get(key) ?? '').trim()
-  if (!value) throw new Error(`Missing ${key}`)
-  return value
 }
 
 export default function EditorProposalDetailRoute({ loaderData }: Route.ComponentProps) {

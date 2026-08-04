@@ -10,14 +10,14 @@
 
 Đối chiếu `test/flows/route-roles.ts` sau §87: MANGAKA có đúng **124 route** trong `allowed[]`. Chia 6 nhóm theo module:
 
-| Nhóm | Module | Số route | Mục |
-|---|---|---|---|
-| A | `series` + proposal embedded | 12 | §1 |
-| B | `chapter` + `storyboard` + `production-stage` | **29** | §2 |
-| C | `task` + `ai` (Region/Task/AI) | 20 | §3 |
-| D | `studio` + `reviews` + `users` (directory/profile) | 13 | §4 |
-| E | `contract` + `payment` + `transfer` + `reprint` | 31 | §5 |
-| F | `deadline` + `publication` + `survey` (rankings) + `dashboard` + `revision` + `annotation` | 17 | §6 |
+| Nhóm | Module                                                                                     | Số route | Mục |
+| ---- | ------------------------------------------------------------------------------------------ | -------- | --- |
+| A    | `series` + proposal embedded                                                               | 12       | §1  |
+| B    | `chapter` + `storyboard` + `production-stage`                                              | **29**   | §2  |
+| C    | `task` + `ai` (Region/Task/AI)                                                             | 20       | §3  |
+| D    | `studio` + `reviews` + `users` (directory/profile)                                         | 13       | §4  |
+| E    | `contract` + `payment` + `transfer` + `reprint`                                            | 31       | §5  |
+| F    | `deadline` + `publication` + `survey` (rankings) + `dashboard` + `revision` + `annotation` | 17       | §6  |
 
 Ngoài 124 route role-specific này, Mangaka còn dùng các route **AUTH** dùng chung mọi role (xem `01` §5.8, §3, §4).
 
@@ -54,17 +54,17 @@ ABANDONED | WITHDRAWN → DRAFT (Mangaka tự mở lại — POST /series/:id/re
 
 ### 1.2. Bảng unhappy case (chung nhóm A)
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Sửa/xoá proposal khi không phải `DRAFT`/`PROPOSAL_REVISION` | 409 `Error.ProposalNotEditable` / `Error.ProposalNotDeletable` | Đã submit, đang review, hoặc đã qua giai đoạn proposal |
-| Submit khi proposal thiếu dữ liệu hoặc series không `DRAFT` | 409 `Error.InvalidProposalState` | `proposal` không hợp lệ hoặc `status !== DRAFT` |
-| Submit series phái sinh (`parentSeriesId` set, gốc `REVENUE_SHARE` + `FULLY_EXECUTED`, khác Mangaka) chưa được gốc đồng ý | 409 `Error.FranchiseConsentRequired` | `franchiseConsentStatus` đang `PENDING`/`REJECTED` |
-| Gọi action không phải chủ sở hữu | 403 `Error.NotSeriesOwner` | `series.mangakaId !== userId` |
-| Chuyển trạng thái sai bước | 409 `Error.InvalidSeriesTransition` / `Error.InvalidProposalState` | Không khớp `SERIES_TRANSITIONS`/vòng đời proposal |
-| `parentSeriesId` gửi lên không tồn tại | 422 `Error.ParentSeriesNotFound` (path `parentSeriesId`) | Lúc `POST /series/proposals` |
-| Đề xuất kết thúc khi series không `SERIALIZED`/`HIATUS` | 409 `Error.SeriesNotProposableForCompletion` | vd series đang `COMPLETING`/`CANCELLING` |
-| Xem series không thuộc mình | 403 `Error.SeriesAccessDenied` | `GET /series/:id` scope theo `mangakaId` |
-| Id không phải ObjectId hợp lệ | 404 `Error.SeriesNotFound` | Guard chuẩn `01` §1 |
+| Tình huống                                                                                                                | Status/Error                                                       | Khi nào                                                |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------ |
+| Sửa/xoá proposal khi không phải `DRAFT`/`PROPOSAL_REVISION`                                                               | 409 `Error.ProposalNotEditable` / `Error.ProposalNotDeletable`     | Đã submit, đang review, hoặc đã qua giai đoạn proposal |
+| Submit khi proposal thiếu dữ liệu hoặc series không `DRAFT`                                                               | 409 `Error.InvalidProposalState`                                   | `proposal` không hợp lệ hoặc `status !== DRAFT`        |
+| Submit series phái sinh (`parentSeriesId` set, gốc `REVENUE_SHARE` + `FULLY_EXECUTED`, khác Mangaka) chưa được gốc đồng ý | 409 `Error.FranchiseConsentRequired`                               | `franchiseConsentStatus` đang `PENDING`/`REJECTED`     |
+| Gọi action không phải chủ sở hữu                                                                                          | 403 `Error.NotSeriesOwner`                                         | `series.mangakaId !== userId`                          |
+| Chuyển trạng thái sai bước                                                                                                | 409 `Error.InvalidSeriesTransition` / `Error.InvalidProposalState` | Không khớp `SERIES_TRANSITIONS`/vòng đời proposal      |
+| `parentSeriesId` gửi lên không tồn tại                                                                                    | 422 `Error.ParentSeriesNotFound` (path `parentSeriesId`)           | Lúc `POST /series/proposals`                           |
+| Đề xuất kết thúc khi series không `SERIALIZED`/`HIATUS`                                                                   | 409 `Error.SeriesNotProposableForCompletion`                       | vd series đang `COMPLETING`/`CANCELLING`               |
+| Xem series không thuộc mình                                                                                               | 403 `Error.SeriesAccessDenied`                                     | `GET /series/:id` scope theo `mangakaId`               |
+| Id không phải ObjectId hợp lệ                                                                                             | 404 `Error.SeriesNotFound`                                         | Guard chuẩn `01` §1                                    |
 
 ### 1.3. Chi tiết từng route
 
@@ -78,26 +78,26 @@ Response `{ items: SeriesListItem[], total, limit, offset }` — `SeriesListItem
 
 Response `SeriesRes` — field quan trọng FE cần:
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `status` | `enum SeriesStatus` | Điều hướng UI theo state machine §1.1 |
-| `editorId` / `editor` | string\|null / `UserMini`\|null | `null` = đang ở hàng đợi chưa ai nhận |
-| `magazine` / `startIssueNumber` | string\|null / number\|null | Board set khi `SERIALIZED`; trước đó luôn `null` |
-| `franchiseConsentStatus` | `enum FranchiseConsentStatus`\|null | `null` = không phải series phái sinh cần gate; `PENDING` = đang chờ Mangaka gốc |
-| `reviewStartedAt` | string\|null | Có giá trị = Editor đã bắt đầu review, **khoá nhả** (Editor không release được nữa) |
-| `completionProposal` | object\|null | `{proposedByRole, proposedById, reason, proposedEndingChapters, proposedAt}` — đề xuất kết thúc tự nhiên PB-06 |
-| `proposal` | object\|null | `{synopsis, characterDesigns[], storyboardPages[], estimatedLength, status: ProposalStatus, createdAt}` |
+| Field                           | Kiểu                                | Ghi chú                                                                                                        |
+| ------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `status`                        | `enum SeriesStatus`                 | Điều hướng UI theo state machine §1.1                                                                          |
+| `editorId` / `editor`           | string\|null / `UserMini`\|null     | `null` = đang ở hàng đợi chưa ai nhận                                                                          |
+| `magazine` / `startIssueNumber` | string\|null / number\|null         | Board set khi `SERIALIZED`; trước đó luôn `null`                                                               |
+| `franchiseConsentStatus`        | `enum FranchiseConsentStatus`\|null | `null` = không phải series phái sinh cần gate; `PENDING` = đang chờ Mangaka gốc                                |
+| `reviewStartedAt`               | string\|null                        | Có giá trị = Editor đã bắt đầu review, **khoá nhả** (Editor không release được nữa)                            |
+| `completionProposal`            | object\|null                        | `{proposedByRole, proposedById, reason, proposedEndingChapters, proposedAt}` — đề xuất kết thúc tự nhiên PB-06 |
+| `proposal`                      | object\|null                        | `{synopsis, characterDesigns[], storyboardPages[], estimatedLength, status: ProposalStatus, createdAt}`        |
 
 Lỗi: `Error.SeriesNotFound` (404) · `Error.SeriesAccessDenied` (403).
 
 #### `PATCH /series/:id` — sửa metadata trình bày
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `title` | tuỳ | string (1-200) | |
-| `coverImage` | tuỳ | string\|null | Object key R2; `''` = xoá ảnh bìa; omit/`null` = giữ nguyên |
-| `synopsis` | tuỳ | string\|null | `''` = xoá |
-| `characterDesigns` | tuỳ | string[]\|null | Object key R2; `[]` = xoá hết mảng |
+| Field              | Bắt buộc | Kiểu           | Ghi chú                                                     |
+| ------------------ | -------- | -------------- | ----------------------------------------------------------- |
+| `title`            | tuỳ      | string (1-200) |                                                             |
+| `coverImage`       | tuỳ      | string\|null   | Object key R2; `''` = xoá ảnh bìa; omit/`null` = giữ nguyên |
+| `synopsis`         | tuỳ      | string\|null   | `''` = xoá                                                  |
+| `characterDesigns` | tuỳ      | string[]\|null | Object key R2; `[]` = xoá hết mảng                          |
 
 Cho sửa ở **mọi** giai đoạn trừ khi series đã kết thúc (`SERIES_METADATA_TERMINAL_STATUSES`: `COMPLETED`/`CANCELLED`/`ABANDONED`/`WITHDRAWN`/`REJECTED`). Field concept/roster (genres/demographic) và field Board sở hữu (slot) **không** có trong schema này — gửi lên bị `.strict()` từ chối 422.
 
@@ -105,19 +105,19 @@ Lỗi: `Error.SeriesNotFound` (404) · `Error.SeriesAccessDenied` (403) · `Erro
 
 #### `POST /series/proposals` — tạo proposal mới
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `title` | ✅ | string (1-200) | |
-| `coverImage` | tuỳ | string | Object key R2 |
-| `genres` | tuỳ (default `[]`) | `enum Genre[]` | |
-| `demographic` | tuỳ | `enum Demographic` | |
-| `publicationType` | tuỳ | `enum PublicationType` | |
-| `synopsis` | tuỳ | string (≤5000) | |
-| `characterDesigns` | tuỳ (default `[]`) | string[] | Object key R2 |
-| `estimatedLength` | tuỳ | number (int ≥1) | Số chương ước tính |
-| `storyboardPages` | tuỳ (default `[]`) | `{pageNumber, fileUrl}[]` | Trang phác thảo nhúng thẳng trong proposal (Spec 28); có thể để rỗng, cập nhật sau qua `PUT /series/proposals/:id` |
-| `parentSeriesId` | tuỳ | string | Khai franchise — series gốc (Flow 11) |
-| `relationshipType` | tuỳ | `enum RelationshipType` | Bắt buộc có ý nghĩa khi có `parentSeriesId` |
+| Field              | Bắt buộc           | Kiểu                      | Ghi chú                                                                                                            |
+| ------------------ | ------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `title`            | ✅                 | string (1-200)            |                                                                                                                    |
+| `coverImage`       | tuỳ                | string                    | Object key R2                                                                                                      |
+| `genres`           | tuỳ (default `[]`) | `enum Genre[]`            |                                                                                                                    |
+| `demographic`      | tuỳ                | `enum Demographic`        |                                                                                                                    |
+| `publicationType`  | tuỳ                | `enum PublicationType`    |                                                                                                                    |
+| `synopsis`         | tuỳ                | string (≤5000)            |                                                                                                                    |
+| `characterDesigns` | tuỳ (default `[]`) | string[]                  | Object key R2                                                                                                      |
+| `estimatedLength`  | tuỳ                | number (int ≥1)           | Số chương ước tính                                                                                                 |
+| `storyboardPages`  | tuỳ (default `[]`) | `{pageNumber, fileUrl}[]` | Trang phác thảo nhúng thẳng trong proposal (Spec 28); có thể để rỗng, cập nhật sau qua `PUT /series/proposals/:id` |
+| `parentSeriesId`   | tuỳ                | string                    | Khai franchise — series gốc (Flow 11)                                                                              |
+| `relationshipType` | tuỳ                | `enum RelationshipType`   | Bắt buộc có ý nghĩa khi có `parentSeriesId`                                                                        |
 
 Response 201 **`SeriesRes` phẳng** (Spec 28 — KHÔNG còn `{series, name}`; proposal nằm ở `SeriesRes.proposal` với `storyboardPages[]` embedded). Lỗi: `Error.ParentSeriesNotFound` (422, path `parentSeriesId`).
 
@@ -141,9 +141,9 @@ Không body. Chỉ khi `proposal.status === PROPOSAL_REVISION`. Response 201 `Se
 
 #### `POST /series/:id/withdraw` — Mangaka rút hồ sơ
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | ✅ | string (1-1000) |
+| Field    | Bắt buộc | Kiểu            |
+| -------- | -------- | --------------- |
+| `reason` | ✅       | string (1-1000) |
 
 Transition trước (chặn theo `SERIES_TRANSITIONS` — từ `PITCHED` trở đi bị 409), rồi mới ghi `proposal.status = WITHDRAWN`. Response 201 `SeriesRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.SeriesNotFound` (404) · `Error.InvalidSeriesTransition` (409, ẩn dưới message chung khi gọi qua service transition — thực chất route không khai riêng nhưng state machine vẫn chặn).
 
@@ -153,18 +153,18 @@ Không body. → `Series.status = DRAFT`, bỏ `editorId` cũ, Name mẫu propos
 
 #### `POST /series/:id/franchise-consent` — Mangaka **gốc** đồng ý/từ chối series phái sinh
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `approve` | ✅ | boolean | `true` = đồng ý → `APPROVED`; `false` → `REJECTED` (chỉ chặn **submit** của series phái sinh, không xoá series) |
+| Field     | Bắt buộc | Kiểu    | Ghi chú                                                                                                         |
+| --------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `approve` | ✅       | boolean | `true` = đồng ý → `APPROVED`; `false` → `REJECTED` (chỉ chặn **submit** của series phái sinh, không xoá series) |
 
 Chỉ gọi được bởi Mangaka của series **gốc** (`parentSeries.mangakaId === userId`), KHÔNG phải Mangaka của series phái sinh. Lỗi: `Error.SeriesNotFound` (404) · `Error.NotOriginalMangaka` (403 — không phải chủ series gốc) · `Error.NotFranchiseConsentTarget` (409 — series phái sinh không ở trạng thái `PENDING` chờ đồng ý, vd gốc là `FULL_BUYOUT` nên không cần gate).
 
 #### `POST /series/:id/propose-completion` — đề xuất kết thúc tự nhiên (PB-06)
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `reason` | ✅ | string (1-1000) | |
-| `proposedEndingChapters` | tuỳ | number (int, dương) \| null | Số chương kết thúc dự kiến (gợi ý, không ràng buộc) |
+| Field                    | Bắt buộc | Kiểu                        | Ghi chú                                             |
+| ------------------------ | -------- | --------------------------- | --------------------------------------------------- |
+| `reason`                 | ✅       | string (1-1000)             |                                                     |
+| `proposedEndingChapters` | tuỳ      | number (int, dương) \| null | Số chương kết thúc dự kiến (gợi ý, không ràng buộc) |
 
 Chỉ khi `Series.status` là `SERIALIZED`/`HIATUS`. **Không** đổi `status` — chỉ set `completionProposal` (embedded) + thông báo cho Editor phụ trách. Route này **cả MANGAKA lẫn EDITOR** đều gọi được (bên nào đề xuất, bên kia nhận thông báo). Response `SeriesRes`. Lỗi: `Error.SeriesAccessDenied` (403 — không phải Mangaka/Editor của series) · `Error.SeriesNotProposableForCompletion` (409, path `status`) · `Error.SeriesNotFound` (404).
 
@@ -210,38 +210,38 @@ POST /chapters/:id/manuscript/submit → bulk Page DRAFT→COMPLETED, Manuscript
 
 ### 2.2. Bảng unhappy case chung nhóm B
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Chapter đang `hold` (Editor tạm dừng) | 409 `Error.ChapterOnHold` | Mọi thao tác tạo page/task/submit khi `Chapter.hold != null` |
-| Upload page khi Name chưa `APPROVED` | 409 `Error.ChapterNameNotApproved` | Gate #1 Flow 2 |
-| Sửa/xoá page khi không `DRAFT`/`REVISING` | 409 `Error.PageNotEditable` | Page đang `COMPLETED` (ở tay Editor) |
-| Xoá page có task đã `APPROVED` | 409 `Error.PageHasApprovedTasks` | Bảo toàn công đã duyệt |
-| Submit manuscript thiếu trang / còn task chưa duyệt hết / stage chưa xong | 409 `Error.NoPagesToSubmit` / `Error.TasksNotAllApproved` / `Error.ProductionNotFinalized` | Gate cuối trước `EDITOR_REVIEW` |
-| Trùng số chương/trang trong cùng phạm vi | 409 `Error.DuplicateChapterNumber` / `Error.DuplicatePageNumber` | |
-| Đổi `chapterNumber` khi không phải `DRAFT` | 409 `Error.ChapterNumberLocked` | Chapter-first: số chương khoá sau khi rời DRAFT |
-| Sửa/xoá stage khi đã có task hoặc đã `COMPLETED` | 409 `Error.StageNotEditable` / `Error.StageNotDeletable` | |
-| Complete stage khi còn task mở hoặc chưa confirm output đủ page | 409 `Error.StageHasOpenTasks` / `Error.StageOutputNotReady` | |
-| Không phải chủ sở hữu series | 403 `Error.NotSeriesOwner` / `Error.StageAccessDenied` | |
-| Series đã hết ending allowance (CANCELLING) | 409 `Error.EndingAllowanceExceeded` | Tạo chapter mới khi Board đã giới hạn số chương kết thúc |
+| Tình huống                                                                | Status/Error                                                                               | Khi nào                                                      |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| Chapter đang `hold` (Editor tạm dừng)                                     | 409 `Error.ChapterOnHold`                                                                  | Mọi thao tác tạo page/task/submit khi `Chapter.hold != null` |
+| Upload page khi Name chưa `APPROVED`                                      | 409 `Error.ChapterNameNotApproved`                                                         | Gate #1 Flow 2                                               |
+| Sửa/xoá page khi không `DRAFT`/`REVISING`                                 | 409 `Error.PageNotEditable`                                                                | Page đang `COMPLETED` (ở tay Editor)                         |
+| Xoá page có task đã `APPROVED`                                            | 409 `Error.PageHasApprovedTasks`                                                           | Bảo toàn công đã duyệt                                       |
+| Submit manuscript thiếu trang / còn task chưa duyệt hết / stage chưa xong | 409 `Error.NoPagesToSubmit` / `Error.TasksNotAllApproved` / `Error.ProductionNotFinalized` | Gate cuối trước `EDITOR_REVIEW`                              |
+| Trùng số chương/trang trong cùng phạm vi                                  | 409 `Error.DuplicateChapterNumber` / `Error.DuplicatePageNumber`                           |                                                              |
+| Đổi `chapterNumber` khi không phải `DRAFT`                                | 409 `Error.ChapterNumberLocked`                                                            | Chapter-first: số chương khoá sau khi rời DRAFT              |
+| Sửa/xoá stage khi đã có task hoặc đã `COMPLETED`                          | 409 `Error.StageNotEditable` / `Error.StageNotDeletable`                                   |                                                              |
+| Complete stage khi còn task mở hoặc chưa confirm output đủ page           | 409 `Error.StageHasOpenTasks` / `Error.StageOutputNotReady`                                |                                                              |
+| Không phải chủ sở hữu series                                              | 403 `Error.NotSeriesOwner` / `Error.StageAccessDenied`                                     |                                                              |
+| Series đã hết ending allowance (CANCELLING)                               | 409 `Error.EndingAllowanceExceeded`                                                        | Tạo chapter mới khi Board đã giới hạn số chương kết thúc     |
 
 ### 2.3. Chapter — CRUD & lifecycle
 
 #### `POST /chapters` — tạo chapter slot (chapter-first)
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `seriesId` | ✅ | string | Phải là series mình sở hữu, đã `SERIALIZED`/`CANCELLING`/`COMPLETING` |
-| `chapterNumber` | ✅ | number (int, dương) | Không trùng trong series |
-| `title` | tuỳ | string (≤200) | |
+| Field           | Bắt buộc | Kiểu                | Ghi chú                                                               |
+| --------------- | -------- | ------------------- | --------------------------------------------------------------------- |
+| `seriesId`      | ✅       | string              | Phải là series mình sở hữu, đã `SERIALIZED`/`CANCELLING`/`COMPLETING` |
+| `chapterNumber` | ✅       | number (int, dương) | Không trùng trong series                                              |
+| `title`         | tuỳ      | string (≤200)       |                                                                       |
 
 → tạo `Chapter(DRAFT)` + `Manuscript(DRAFT)` + `Schedule` rỗng (Editor set deadline sau, §6). Response 201 `ChapterRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404 — seriesId sai) · `Error.DuplicateChapterNumber` (409) · `Error.SeriesNotSerialized` (409) · `Error.EndingAllowanceExceeded` (409 — series `CANCELLING` đã đạt trần Board cấp).
 
 #### `PATCH /chapters/:id` — sửa title/chapterNumber
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `title` | tuỳ | string(≤200)\|null | omit/null giữ nguyên; sửa được tới trước `PUBLISHED` |
-| `chapterNumber` | tuỳ | number\|null | **Chỉ sửa được khi `Chapter.status === DRAFT`** |
+| Field           | Bắt buộc | Kiểu               | Ghi chú                                              |
+| --------------- | -------- | ------------------ | ---------------------------------------------------- |
+| `title`         | tuỳ      | string(≤200)\|null | omit/null giữ nguyên; sửa được tới trước `PUBLISHED` |
+| `chapterNumber` | tuỳ      | number\|null       | **Chỉ sửa được khi `Chapter.status === DRAFT`**      |
 
 Lỗi: `Error.ChapterNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.ChapterNotEditable` (409 — title khi đã `PUBLISHED`) · `Error.ChapterNumberLocked` (409 — đổi số khi không `DRAFT`) · `Error.DuplicateChapterNumber` (409).
 
@@ -253,21 +253,21 @@ Chỉ khi `Chapter.status === DRAFT`. Cascade Name/Manuscript/Schedule/Pages. Re
 
 Response `ChapterProgressRes` — field quan trọng:
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `storyboardStatus` | `enum StoryboardStatus`\|null | null = chưa gắn Storyboard |
-| `pagesReady` / `pagesPending` | number | Suy ra từ Task (xem §2.1) |
-| `taskBreakdown` | object | Đếm theo từng `TaskStatus` (assigned/inProgress/submitted/underReview/approved/revisionRequested/onHold/cancelled) |
-| `progressPct` | number (0-1) | `pagesReady/totalPages`; **= 1** khi bản thảo đã rời tay Mangaka (đang/đã qua Editor review, chờ co-owner, hoặc đã publish) |
-| `warningLevel` | `enum WarningLevel` (read-only, tính runtime — KHÔNG có trong schema.prisma) | `NONE`/`YELLOW`/`RED`/`CRITICAL` — xem ngưỡng bảng dưới |
-| `currentStage` | `{id,name,order,status}`\|null | Stage `ACTIVE` hiện tại; `null` = chapter legacy không dùng stage |
-| `onHold` | boolean | |
+| Field                         | Kiểu                                                                         | Ghi chú                                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `storyboardStatus`            | `enum StoryboardStatus`\|null                                                | null = chưa gắn Storyboard                                                                                                  |
+| `pagesReady` / `pagesPending` | number                                                                       | Suy ra từ Task (xem §2.1)                                                                                                   |
+| `taskBreakdown`               | object                                                                       | Đếm theo từng `TaskStatus` (assigned/inProgress/submitted/underReview/approved/revisionRequested/onHold/cancelled)          |
+| `progressPct`                 | number (0-1)                                                                 | `pagesReady/totalPages`; **= 1** khi bản thảo đã rời tay Mangaka (đang/đã qua Editor review, chờ co-owner, hoặc đã publish) |
+| `warningLevel`                | `enum WarningLevel` (read-only, tính runtime — KHÔNG có trong schema.prisma) | `NONE`/`YELLOW`/`RED`/`CRITICAL` — xem ngưỡng bảng dưới                                                                     |
+| `currentStage`                | `{id,name,order,status}`\|null                                               | Stage `ACTIVE` hiện tại; `null` = chapter legacy không dùng stage                                                           |
+| `onHold`                      | boolean                                                                      |                                                                                                                             |
 
 **Ngưỡng `warningLevel`** (`computeWarningLevel`, `chapter.constant.ts`) — không có deadline → `NONE`; đã trễ (`remainingHours < 0`) → `CRITICAL`; còn lại theo `PublicationType`:
 
-| `publicationType` | `YELLOW` khi | `RED` khi |
-|---|---|---|
-| `WEEKLY` | còn ≤48h **và** `progressPct < 0.7` | còn ≤24h **và** `progressPct < 0.9` |
+| `publicationType`        | `YELLOW` khi                         | `RED` khi                            |
+| ------------------------ | ------------------------------------ | ------------------------------------ |
+| `WEEKLY`                 | còn ≤48h **và** `progressPct < 0.7`  | còn ≤24h **và** `progressPct < 0.9`  |
 | Khác (MONTHLY/IRREGULAR) | còn ≤120h **và** `progressPct < 0.6` | còn ≤48h **và** `progressPct < 0.85` |
 
 Lỗi: `Error.ChapterNotFound` (404) · `Error.ChapterAccessDenied` (403).
@@ -299,10 +299,10 @@ Lỗi (cả 2 route): `Error.NotCoOwner` (403) · `Error.CoOwnerApprovalNotPendi
 
 #### `POST /chapters/:id/pages` — upload trang (penciling/inking)
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `pageNumber` | ✅ | number (int ≥1) |
-| `originalFile` | ✅ | string (object key R2 — file gốc **bất biến**) |
+| Field          | Bắt buộc | Kiểu                                           |
+| -------------- | -------- | ---------------------------------------------- |
+| `pageNumber`   | ✅       | number (int ≥1)                                |
+| `originalFile` | ✅       | string (object key R2 — file gốc **bất biến**) |
 
 Response 201 `PageRes`. Lỗi: `Error.NotSeriesOwner` (403) · `Error.ChapterNotFound` (404) · `Error.ChapterOnHold` (409) · `Error.ChapterStoryboardNotApproved` (409, path `storyboardId`) · `Error.ProductionPageSetLocked` (409).
 
@@ -312,10 +312,10 @@ Không query đặc biệt. Response `{ items: PageRes[] }`. `PageRes` gồm `id
 
 #### `PATCH /pages/:pageId` — cập nhật file/số trang
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `compositeFile` | tuỳ | string\|null | Object key bản tổng hợp; omit/null giữ nguyên |
-| `pageNumber` | tuỳ | number\|null | Đổi số trang; trùng trong chapter → 409 |
+| Field           | Bắt buộc | Kiểu         | Ghi chú                                       |
+| --------------- | -------- | ------------ | --------------------------------------------- |
+| `compositeFile` | tuỳ      | string\|null | Object key bản tổng hợp; omit/null giữ nguyên |
+| `pageNumber`    | tuỳ      | number\|null | Đổi số trang; trùng trong chapter → 409       |
 
 Lỗi: `Error.NotSeriesOwner` (403) · `Error.PageNotFound` (404) · `Error.PageNotEditable` (409) · `Error.ChapterOnHold` (409) · `Error.DuplicatePageNumber` (409) · `Error.StageOutputInvalid` (422, path `items` — hiếm gặp ở route này, chủ yếu dùng khi động tới output stage).
 
@@ -325,9 +325,9 @@ Response `DeletePageRes = { pageId, deletedRegions, deletedTasks }`. Lỗi: `Err
 
 #### `DELETE /chapters/:id/pages` — xoá nhiều trang (all-or-nothing, ≤50)
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `pageIds` | ✅ | string[] ObjectId (1-50) |
+| Field     | Bắt buộc | Kiểu                     |
+| --------- | -------- | ------------------------ |
+| `pageIds` | ✅       | string[] ObjectId (1-50) |
 
 Response `DeletePagesBulkRes = { deletedPages, deletedRegions, deletedTasks }`. Lỗi giống route xoá đơn (áp cho từng page — **1 page fail thì cả batch fail**, không xoá 1 phần).
 
@@ -350,10 +350,10 @@ Mã lỗi dùng prefix Storyboard: `Error.StoryboardNotFound`, `Error.InvalidSto
 Một chapter được vẽ theo **dây chuyền**: bản mực thô → tô nền/screentone → đặt chữ → kiểm cuối. Mỗi công đoạn là
 `ProductionStage`, và với **mỗi trang** trong mỗi công đoạn, BE giữ một biên nhận `ProductionStagePage` gồm 2 nửa:
 
-| Nửa | Tên field | Nghĩa | Ai ghi |
-|---|---|---|---|
-| **INPUT** | `inputFileKey` · `inputSourceType` · `inputRevision` | **Đề bài** — ảnh mà công đoạn này bắt đầu từ đó. **BẤT BIẾN** suốt thời gian stage mở | BE tự ghi, **không API nào sửa được** |
-| **OUTPUT** | `outputFileKey` · `outputSourceType` · `outputRevision` · `outputConfirmedAt/By` | **Kết quả** — ảnh công đoạn này giao nộp. Mangaka xác nhận | Mangaka qua `PUT .../outputs` |
+| Nửa        | Tên field                                                                        | Nghĩa                                                                                 | Ai ghi                                |
+| ---------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------- |
+| **INPUT**  | `inputFileKey` · `inputSourceType` · `inputRevision`                             | **Đề bài** — ảnh mà công đoạn này bắt đầu từ đó. **BẤT BIẾN** suốt thời gian stage mở | BE tự ghi, **không API nào sửa được** |
+| **OUTPUT** | `outputFileKey` · `outputSourceType` · `outputRevision` · `outputConfirmedAt/By` | **Kết quả** — ảnh công đoạn này giao nộp. Mangaka xác nhận                            | Mangaka qua `PUT .../outputs`         |
 
 **Luật nối chuỗi (một dòng duy nhất cần nhớ):**
 
@@ -418,10 +418,10 @@ mất. Snapshot input giải quyết đúng chuyện đó: **đề bài của m�
 
 Bước 5 có **2 lựa chọn cho từng trang**, và đây là chỗ FE hay nhầm nhất:
 
-| Gửi gì | Nghĩa | Ảnh hưởng |
-|---|---|---|
-| `{ pageId, fileKey: "<ảnh mới>" }` | Công đoạn này **có làm ra ảnh mới** | `outputRevision = compositeRevision + 1`; **đồng thời cập nhật `Page.compositeFile`** ⇒ đổi ảnh hiển thị của trang |
-| `{ pageId, reuseInput: true }` | Công đoạn này **không đổi gì trên trang này** | output = input nguyên văn; **KHÔNG** đụng `Page.compositeFile` |
+| Gửi gì                             | Nghĩa                                         | Ảnh hưởng                                                                                                          |
+| ---------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `{ pageId, fileKey: "<ảnh mới>" }` | Công đoạn này **có làm ra ảnh mới**           | `outputRevision = compositeRevision + 1`; **đồng thời cập nhật `Page.compositeFile`** ⇒ đổi ảnh hiển thị của trang |
+| `{ pageId, reuseInput: true }`     | Công đoạn này **không đổi gì trên trang này** | output = input nguyên văn; **KHÔNG** đụng `Page.compositeFile`                                                     |
 
 Gửi **đúng một** trong hai (gửi cả hai hoặc không gửi gì → 422 `Error.StageOutputInvalid`).
 Phải gửi đủ **mọi** trang của chapter trong một lần gọi, nếu thiếu → 422.
@@ -443,24 +443,24 @@ Phải gửi đủ **mọi** trang của chapter trong một lần gọi, nếu 
 
 #### 2.7.0e. Khoá & mở khoá — vì sao đang sản xuất thì sửa gì cũng bị chặn
 
-| Muốn làm | Điều kiện | Lỗi khi không thoả |
-|---|---|---|
-| Thêm / xoá trang | **Stage đầu tiên** (INKING) phải `ACTIVE` | 409 `Error.ProductionPageSetLocked` |
-| `PATCH /pages/:id` đổi `compositeFile` | Chapter **không có stage nào** (chapter legacy) | 422 `Error.StageOutputInvalid` |
-| Tạo task / chạy AI | Phải truyền `stageId` của stage đang `ACTIVE`, và `taskType` ∈ `taskTypes` của stage đó | 422 `Error.StageRequired` · 409 `Error.StageLocked` · 422 `Error.TaskTypeNotInStage` |
-| Sửa `Page` / `Region` / Task | `Page.status` ∈ {`DRAFT`, `REVISING`} | 409 `Error.PageNotEditable` |
+| Muốn làm                               | Điều kiện                                                                               | Lỗi khi không thoả                                                                   |
+| -------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Thêm / xoá trang                       | **Stage đầu tiên** (INKING) phải `ACTIVE`                                               | 409 `Error.ProductionPageSetLocked`                                                  |
+| `PATCH /pages/:id` đổi `compositeFile` | Chapter **không có stage nào** (chapter legacy)                                         | 422 `Error.StageOutputInvalid`                                                       |
+| Tạo task / chạy AI                     | Phải truyền `stageId` của stage đang `ACTIVE`, và `taskType` ∈ `taskTypes` của stage đó | 422 `Error.StageRequired` · 409 `Error.StageLocked` · 422 `Error.TaskTypeNotInStage` |
+| Sửa `Page` / `Region` / Task           | `Page.status` ∈ {`DRAFT`, `REVISING`}                                                   | 409 `Error.PageNotEditable`                                                          |
 
 `Page.originalFile` **chỉ set được lúc tạo trang** — không có API nào đổi. Muốn ảnh gốc khác thì xoá trang tạo lại
 (và chỉ xoá được khi INKING đang `ACTIVE` + trang không có task `APPROVED`).
 
 Template mặc định seed lúc Name chapter được duyệt lần đầu (`DEFAULT_STAGE_TEMPLATE`):
 
-| `order` | `name` | `taskTypes` cho phép | `isFinalCheck` |
-|---|---|---|---|
-| 1 | `INKING` | `INKING` | false |
-| 2 | `DETAILING` | `BACKGROUND`, `SCREENTONE`, `EFFECT_LINES`, `COLORING` | false |
-| 3 | `LETTERING` | `LETTERING` | false |
-| 4 | `FINAL_CHECK` | (rỗng) | true — không nhận task, chỉ là gate submit manuscript |
+| `order` | `name`        | `taskTypes` cho phép                                   | `isFinalCheck`                                        |
+| ------- | ------------- | ------------------------------------------------------ | ----------------------------------------------------- |
+| 1       | `INKING`      | `INKING`                                               | false                                                 |
+| 2       | `DETAILING`   | `BACKGROUND`, `SCREENTONE`, `EFFECT_LINES`, `COLORING` | false                                                 |
+| 3       | `LETTERING`   | `LETTERING`                                            | false                                                 |
+| 4       | `FINAL_CHECK` | (rỗng)                                                 | true — không nhận task, chỉ là gate submit manuscript |
 
 Chỉ **một** stage `ACTIVE` tại một thời điểm; `LOCKED` → `ACTIVE` khi stage trước `COMPLETED`. Task tạo trong stage nào thì `taskType` phải thuộc `taskTypes` của stage đó (kiểm tra ở nhóm C).
 
@@ -468,22 +468,22 @@ Chỉ **một** stage `ACTIVE` tại một thời điểm; `LOCKED` → `ACTIVE`
 
 Response `StageListRes`:
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `stages[]` | array | Mỗi phần tử: `{id, chapterId, order, name, taskTypes: enum Specialization[], isFinalCheck, status: enum ProductionStageStatus, deadline, startedAt, completedAt, analytics, warnings?}` |
-| `analytics` | object | `{taskCount, approvedCount, openCount, totalTaskDurationMs, avgTaskDurationMs, lateTaskCount, stageDurationMs, longestTask: {taskId,taskType,assistantId,durationMs}\|null}` |
-| `currentStage` | `{id,name,order}`\|null | Stage `ACTIVE` hiện tại |
-| `bottleneckStage` | `{stageId,name,stageDurationMs}`\|null | Stage tốn thời gian nhất (so `stageDurationMs`) |
+| Field             | Kiểu                                   | Ghi chú                                                                                                                                                                                 |
+| ----------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stages[]`        | array                                  | Mỗi phần tử: `{id, chapterId, order, name, taskTypes: enum Specialization[], isFinalCheck, status: enum ProductionStageStatus, deadline, startedAt, completedAt, analytics, warnings?}` |
+| `analytics`       | object                                 | `{taskCount, approvedCount, openCount, totalTaskDurationMs, avgTaskDurationMs, lateTaskCount, stageDurationMs, longestTask: {taskId,taskType,assistantId,durationMs}\|null}`            |
+| `currentStage`    | `{id,name,order}`\|null                | Stage `ACTIVE` hiện tại                                                                                                                                                                 |
+| `bottleneckStage` | `{stageId,name,stageDurationMs}`\|null | Stage tốn thời gian nhất (so `stageDurationMs`)                                                                                                                                         |
 
 Lỗi: `Error.StageAccessDenied` (403).
 
 #### `POST /chapters/:id/stages` — chèn custom stage
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `name` | ✅ | string (1-120) | |
-| `taskTypes` | tuỳ (default `[]`) | `enum Specialization[]` | |
-| `afterStageId` | ✅ | ObjectId | Chèn ngay **sau** stage này (chỉ chèn được trong vùng chưa mở — chưa `ACTIVE`/`COMPLETED`) |
+| Field          | Bắt buộc           | Kiểu                    | Ghi chú                                                                                    |
+| -------------- | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------ |
+| `name`         | ✅                 | string (1-120)          |                                                                                            |
+| `taskTypes`    | tuỳ (default `[]`) | `enum Specialization[]` |                                                                                            |
+| `afterStageId` | ✅                 | ObjectId                | Chèn ngay **sau** stage này (chỉ chèn được trong vùng chưa mở — chưa `ACTIVE`/`COMPLETED`) |
 
 Lỗi: `Error.StageAccessDenied` (403) · `Error.StageNotFound` (404) · **`Error.StageNotInsertable`** (409).
 
@@ -500,10 +500,10 @@ Lỗi: `Error.StageAccessDenied` (403) · `Error.StageNotFound` (404) · **`Erro
 
 #### `PATCH /chapters/:id/stages/:stageId` — sửa tên/deadline
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `name` | tuỳ | string (1-120) |
-| `deadline` | tuỳ | ISO datetime (có offset)\|null |
+| Field      | Bắt buộc | Kiểu                           |
+| ---------- | -------- | ------------------------------ |
+| `name`     | tuỳ      | string (1-120)                 |
+| `deadline` | tuỳ      | ISO datetime (có offset)\|null |
 
 Chỉ sửa được stage chưa `COMPLETED`. Lỗi: `Error.StageAccessDenied` (403) · `Error.StageNotFound` (404) · `Error.StageNotEditable` (409).
 
@@ -527,9 +527,9 @@ Response `{ items: StagePage[] }` — mỗi phần tử: `{stageId, pageId, inpu
 
 #### `PUT /chapters/:id/stages/:stageId/outputs` — xác nhận output cho toàn bộ Page
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `items` | ✅ | array (1-200) | Mỗi phần tử: `{pageId, fileKey?}` **hoặc** `{pageId, reuseInput: true}` — chọn **đúng 1** trong 2 (`fileKey` hoặc `reuseInput`), không cả hai không cả không |
+| Field   | Bắt buộc | Kiểu          | Ghi chú                                                                                                                                                      |
+| ------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `items` | ✅       | array (1-200) | Mỗi phần tử: `{pageId, fileKey?}` **hoặc** `{pageId, reuseInput: true}` — chọn **đúng 1** trong 2 (`fileKey` hoặc `reuseInput`), không cả hai không cả không |
 
 Response 200 `{ items: StagePage[] }` (giống shape GET ở trên). Lỗi: `Error.StageAccessDenied` (403) · `Error.StageNotFound` (404) · `Error.StageNotActive` (409) · `Error.StageHasOpenTasks` (409) · `Error.StagePageNotFound` (404, path `pageId`) · `Error.StageOutputInvalid` (422, path `items`) · `Error.ProductionNotFinalized` (409).
 
@@ -546,12 +546,12 @@ Vòng review của Editor trở thành vòng lặp rỗng. Nay đã có đườn
 
 Không body. Response **201**:
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `message` | string | `"Đã mở lại giai đoạn sản xuất"` (đọc ở **top-level** envelope, không nằm trong `data`) |
-| `stageId` | string | Stage vừa mở lại, nay `ACTIVE` |
-| `relockedStageIds` | string[] | Các stage phía sau đã bị đưa về `LOCKED` |
-| `clearedStagePages` | number | Số bản ghi StagePage của các stage phía sau đã bị xoá |
+| Field               | Kiểu     | Ghi chú                                                                                 |
+| ------------------- | -------- | --------------------------------------------------------------------------------------- |
+| `message`           | string   | `"Đã mở lại giai đoạn sản xuất"` (đọc ở **top-level** envelope, không nằm trong `data`) |
+| `stageId`           | string   | Stage vừa mở lại, nay `ACTIVE`                                                          |
+| `relockedStageIds`  | string[] | Các stage phía sau đã bị đưa về `LOCKED`                                                |
+| `clearedStagePages` | number   | Số bản ghi StagePage của các stage phía sau đã bị xoá                                   |
 
 Lỗi: `Error.StageAccessDenied` (403 — không phải Mangaka sở hữu) · `Error.ChapterOnHold` (409) ·
 **`Error.StageReopenNotAllowed`** (409 — bản thảo không ở `EDITOR_REVISION`) · `Error.StageNotFound` (404) ·
@@ -589,10 +589,12 @@ của giai đoạn vừa mở lại (BE-A đã tái hiện được bằng dữ 
 
 ```jsonc
 // Trang 1 cần sửa → file mới.  Trang 2 giữ nguyên → echo lại outputFileKey cũ.
-{ "items": [
+{
+  "items": [
     { "pageId": "<p1>", "fileKey": "<file Assistant vừa nộp>" },
     { "pageId": "<p2>", "fileKey": "<đúng outputFileKey đang có sẵn của p2>" }
-] }
+  ]
+}
 ```
 
 ⚠️ **Đừng gửi `reuseInput: true`** cho trang chỉ muốn giữ nguyên. Chỉ dùng `reuseInput` khi thật sự muốn **bỏ**
@@ -600,10 +602,10 @@ phần việc của giai đoạn đó cho trang ấy.
 
 #### Hai cách sửa bài — chọn theo `reason` của Editor
 
-| | Editor chê phần việc mà một stage sẵn có phụ trách | Việc sửa không thuộc stage nào sẵn có |
-|---|---|---|
-| **Làm gì** | `reopen` đúng stage đó → giao task → confirm outputs → `complete` | `reopen` một stage làm **neo** → `POST /chapters/:id/stages` với `afterStageId` = stage vừa reopen → `complete` stage neo → stage mới thành `ACTIVE` |
-| **Stage neo có phải làm lại thật không** | Có, đó chính là việc cần sửa | Không — confirm giữ nguyên cho mọi trang rồi complete luôn |
+|                                          | Editor chê phần việc mà một stage sẵn có phụ trách                | Việc sửa không thuộc stage nào sẵn có                                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Làm gì**                               | `reopen` đúng stage đó → giao task → confirm outputs → `complete` | `reopen` một stage làm **neo** → `POST /chapters/:id/stages` với `afterStageId` = stage vừa reopen → `complete` stage neo → stage mới thành `ACTIVE` |
+| **Stage neo có phải làm lại thật không** | Có, đó chính là việc cần sửa                                      | Không — confirm giữ nguyên cho mọi trang rồi complete luôn                                                                                           |
 
 🔴 **Không chèn được stage mới nếu chưa reopen** (mọi stage đều `COMPLETED` ⇒ không còn neo hợp lệ), và
 **không đặt được stage sau `FINAL_CHECK`** — stage mới luôn chèn vào **trước** `FINAL_CHECK`, `order` của
@@ -619,7 +621,7 @@ toàn bộ dây chuyền. Reopen stage 3 thì page-set vẫn khoá (`Error.Produ
 
 `POST /chapters/:id/manuscript/resubmit` nay trả **409 `Error.ProductionNotFinalized`** nếu còn **bất kỳ stage sản
 xuất nào (`isFinalCheck === false`) đang `ACTIVE`**. Phải đóng hết chuỗi cho tới khi `FINAL_CHECK` `ACTIVE` (hoặc mọi
-stage `COMPLETED`) rồi mới nộp lại được. Thông báo gợi ý: *"Còn giai đoạn sản xuất đang mở — hoàn thành trước khi nộp lại."*
+stage `COMPLETED`) rồi mới nộp lại được. Thông báo gợi ý: _"Còn giai đoạn sản xuất đang mở — hoàn thành trước khi nộp lại."_
 `resubmit` cũng tự đóng `FINAL_CHECK` giống `submit`.
 
 ---
@@ -665,28 +667,28 @@ APPROVED / CANCELLED → (terminal)
 
 ### 3.2. Bảng unhappy case chung nhóm C
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Region/Task đụng vào trang không phải mình sở hữu | 403 `Error.NotSeriesOwner` | |
-| Sửa/xoá task khi chapter đang hold hoặc page không editable | 409 `Error.ChapterOnHold` / `Error.PageNotEditable` | |
-| Giao task cho Assistant chưa có hợp tác hiệu lực | 409 `Error.AssistantNotHired` (path `assistantId`) | Không có `StudioAssignment ACTIVE` trong `hireStart–hireEnd` (BR-ASSIST-01) |
-| `assetIds` tham chiếu asset không tồn tại | 422 `Error.AssetNotFound` (path `assetIds`) | |
-| Xoá region đã có task `APPROVED` | 409 `Error.RegionHasApprovedTasks` | Bảo toàn công đã duyệt |
-| Sửa `description` sau khi task rời `ASSIGNED` | 409 `Error.TaskDescriptionLocked` (path `description`) | Chỉ sửa mô tả khi còn `ASSIGNED`; từ `IN_PROGRESS` phải dùng revision/cancel/reassign |
-| Chuyển trạng thái task sai bước | 409 `Error.InvalidTaskTransition` (path `status`) | Không khớp `TASK_TRANSITIONS` |
-| AI chưa bật (`AI_SERVICE_URL` rỗng) | 503 `Error.AiNotEnabled` | |
-| Trang chưa có file gốc | 422 `Error.PageHasNoFile` | Gọi `/segment` khi `Page.originalFile` rỗng |
-| Đã có AI job đang chạy trên trang | 409 `Error.SegmentJobAlreadyRunning` | |
-| Apply AI job không còn hợp lệ (stage đã đổi/khác input) | 409 `Error.AiJobNotApplicable` / `Error.AiJobSourceStale` | |
+| Tình huống                                                  | Status/Error                                              | Khi nào                                                                               |
+| ----------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Region/Task đụng vào trang không phải mình sở hữu           | 403 `Error.NotSeriesOwner`                                |                                                                                       |
+| Sửa/xoá task khi chapter đang hold hoặc page không editable | 409 `Error.ChapterOnHold` / `Error.PageNotEditable`       |                                                                                       |
+| Giao task cho Assistant chưa có hợp tác hiệu lực            | 409 `Error.AssistantNotHired` (path `assistantId`)        | Không có `StudioAssignment ACTIVE` trong `hireStart–hireEnd` (BR-ASSIST-01)           |
+| `assetIds` tham chiếu asset không tồn tại                   | 422 `Error.AssetNotFound` (path `assetIds`)               |                                                                                       |
+| Xoá region đã có task `APPROVED`                            | 409 `Error.RegionHasApprovedTasks`                        | Bảo toàn công đã duyệt                                                                |
+| Sửa `description` sau khi task rời `ASSIGNED`               | 409 `Error.TaskDescriptionLocked` (path `description`)    | Chỉ sửa mô tả khi còn `ASSIGNED`; từ `IN_PROGRESS` phải dùng revision/cancel/reassign |
+| Chuyển trạng thái task sai bước                             | 409 `Error.InvalidTaskTransition` (path `status`)         | Không khớp `TASK_TRANSITIONS`                                                         |
+| AI chưa bật (`AI_SERVICE_URL` rỗng)                         | 503 `Error.AiNotEnabled`                                  |                                                                                       |
+| Trang chưa có file gốc                                      | 422 `Error.PageHasNoFile`                                 | Gọi `/segment` khi `Page.originalFile` rỗng                                           |
+| Đã có AI job đang chạy trên trang                           | 409 `Error.SegmentJobAlreadyRunning`                      |                                                                                       |
+| Apply AI job không còn hợp lệ (stage đã đổi/khác input)     | 409 `Error.AiJobNotApplicable` / `Error.AiJobSourceStale` |                                                                                       |
 
 ### 3.3. Region
 
 #### `POST /pages/:id/regions` — khoanh vùng thủ công
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `coordinates` | ✅ | `{x≥0, y≥0, width>0, height>0}` | Pixel, top-left origin |
-| `regionType` | tuỳ | `enum RegionType` | |
+| Field         | Bắt buộc | Kiểu                            | Ghi chú                |
+| ------------- | -------- | ------------------------------- | ---------------------- |
+| `coordinates` | ✅       | `{x≥0, y≥0, width>0, height>0}` | Pixel, top-left origin |
+| `regionType`  | tuỳ      | `enum RegionType`               |                        |
 
 Response 201 `RegionRes`. Lỗi: `Error.PageNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
 
@@ -696,11 +698,11 @@ Response `{ items: RegionRes[] }`. `RegionRes`: `{id, pageId, coordinates, regio
 
 #### `PATCH /regions/:id` — sửa vùng (partial)
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `coordinates` | tuỳ | như trên \| null (giữ nguyên) |
-| `regionType` | tuỳ | `enum RegionType`\|null |
-| `confirmedByMangaka` | tuỳ | boolean\|null |
+| Field                | Bắt buộc | Kiểu                          |
+| -------------------- | -------- | ----------------------------- |
+| `coordinates`        | tuỳ      | như trên \| null (giữ nguyên) |
+| `regionType`         | tuỳ      | `enum RegionType`\|null       |
+| `confirmedByMangaka` | tuỳ      | boolean\|null                 |
 
 Lỗi: `Error.RegionNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
 
@@ -712,10 +714,10 @@ Response `DeleteRegionRes = { regionId, cancelledTaskIds: string[] }` — task c
 
 #### `POST /pages/:id/segment` — chạy AI phân vùng (async)
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `mode` | tuỳ (default `MODEL`) | `enum AiSegmentMode` | `MODEL`\|`HEURISTIC` |
-| `stageId` | tuỳ | ObjectId | Bắt buộc **thực tế** khi chapter đang stage-mode (route validate qua `StageRequiredException` nếu thiếu) |
+| Field     | Bắt buộc              | Kiểu                 | Ghi chú                                                                                                  |
+| --------- | --------------------- | -------------------- | -------------------------------------------------------------------------------------------------------- |
+| `mode`    | tuỳ (default `MODEL`) | `enum AiSegmentMode` | `MODEL`\|`HEURISTIC`                                                                                     |
+| `stageId` | tuỳ                   | ObjectId             | Bắt buộc **thực tế** khi chapter đang stage-mode (route validate qua `StageRequiredException` nếu thiếu) |
 
 Response 201 `{ jobId, status: enum AiJobStatus }` — poll qua `GET /ai-jobs/:id`. Lỗi: `Error.PageNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.PageHasNoFile` (422) · `Error.AiNotEnabled` (503) · `Error.SegmentJobAlreadyRunning` (409) · `Error.AiEnqueueFailed` (503) · `Error.StageRequired` (422) · `Error.StageNotFound` (404) · `Error.StageLocked` (409) · `Error.StagePageNotFound` (404) · `Error.ChapterOnHold` (409).
 
@@ -735,49 +737,49 @@ Không body. Giữ nguyên region `MANUAL`/`confirmedByMangaka=true`/đã gắn 
 
 #### `POST /tasks` — giao 1 task (1 trang, 0..N vùng)
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `pageId` | ✅ | string | |
-| `regionIds` | tuỳ (default `[]`, ≤50) | string[] | Rỗng = giao cả trang |
-| `assistantId` | ✅ | string | Phải có `StudioAssignment ACTIVE` hợp lệ |
-| `taskType` | ✅ | `enum Specialization` | Phải thuộc `taskTypes` của stage `ACTIVE` (nếu chapter dùng stage) |
-| `stageId` | tuỳ | string | Bắt buộc thực tế với chapter có stage; **không đổi được sau khi tạo** |
-| `description` | tuỳ | string (1-2000) | Chỉ sửa được khi còn `ASSIGNED` |
-| `deadline` | tuỳ | ISO datetime (offset) | |
-| `priority` | tuỳ (default 0) | number (int ≥0) | Chỉ để hiển thị/ưu tiên, không phải state machine |
-| `assetIds` | tuỳ (default `[]`) | string[] | Reference image đính kèm |
+| Field         | Bắt buộc                | Kiểu                  | Ghi chú                                                               |
+| ------------- | ----------------------- | --------------------- | --------------------------------------------------------------------- |
+| `pageId`      | ✅                      | string                |                                                                       |
+| `regionIds`   | tuỳ (default `[]`, ≤50) | string[]              | Rỗng = giao cả trang                                                  |
+| `assistantId` | ✅                      | string                | Phải có `StudioAssignment ACTIVE` hợp lệ                              |
+| `taskType`    | ✅                      | `enum Specialization` | Phải thuộc `taskTypes` của stage `ACTIVE` (nếu chapter dùng stage)    |
+| `stageId`     | tuỳ                     | string                | Bắt buộc thực tế với chapter có stage; **không đổi được sau khi tạo** |
+| `description` | tuỳ                     | string (1-2000)       | Chỉ sửa được khi còn `ASSIGNED`                                       |
+| `deadline`    | tuỳ                     | ISO datetime (offset) |                                                                       |
+| `priority`    | tuỳ (default 0)         | number (int ≥0)       | Chỉ để hiển thị/ưu tiên, không phải state machine                     |
+| `assetIds`    | tuỳ (default `[]`)      | string[]              | Reference image đính kèm                                              |
 
 Response 201 `TaskRes` (đầy đủ field, xem bảng response bên dưới). Lỗi: `Error.PageNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.AssistantNotHired` (409) · `Error.AssetNotFound` (422) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
 
 **`TaskRes` — field response quan trọng:**
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `status` | `enum TaskStatus` | |
-| `statusReason` | string\|null | Lý do lần đổi trạng thái gần nhất (cancel/reassign) |
-| `stageInputFile` / `stageInputSourceType` / `stageInputRevision` | | Snapshot input bất biến của stage — chỉ có khi task gắn stage |
-| `versions[]` | `TaskVersion[]` | `{submittedBy, versionNumber, file, reviewStatus: enum TaskVersionReviewStatus, reviewerNote, submittedAt, submitter?}` — lịch sử mọi lần Assistant nộp |
-| `assistant` | `UserMini`\|null | Có ở GET list/detail |
-| `assets[]` | | `{id, filePath (dùng cho `download-url`), name, assetType}` — có ở GET list/detail |
-| `regions[]` | | Có ở GET list/detail; task nhóm nhiều trang trả `[]` |
-| `pageOriginalFile` / `pageDisplayFile` | | Object key để ký signed URL review — có ở GET list/detail |
-| `groupId` / `groupTitle` | string\|null | Nhóm việc (task group) chứa task này |
+| Field                                                            | Kiểu              | Ghi chú                                                                                                                                                 |
+| ---------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `status`                                                         | `enum TaskStatus` |                                                                                                                                                         |
+| `statusReason`                                                   | string\|null      | Lý do lần đổi trạng thái gần nhất (cancel/reassign)                                                                                                     |
+| `stageInputFile` / `stageInputSourceType` / `stageInputRevision` |                   | Snapshot input bất biến của stage — chỉ có khi task gắn stage                                                                                           |
+| `versions[]`                                                     | `TaskVersion[]`   | `{submittedBy, versionNumber, file, reviewStatus: enum TaskVersionReviewStatus, reviewerNote, submittedAt, submitter?}` — lịch sử mọi lần Assistant nộp |
+| `assistant`                                                      | `UserMini`\|null  | Có ở GET list/detail                                                                                                                                    |
+| `assets[]`                                                       |                   | `{id, filePath (dùng cho `download-url`), name, assetType}` — có ở GET list/detail                                                                      |
+| `regions[]`                                                      |                   | Có ở GET list/detail; task nhóm nhiều trang trả `[]`                                                                                                    |
+| `pageOriginalFile` / `pageDisplayFile`                           |                   | Object key để ký signed URL review — có ở GET list/detail                                                                                               |
+| `groupId` / `groupTitle`                                         | string\|null      | Nhóm việc (task group) chứa task này                                                                                                                    |
 
 #### `POST /tasks/batch` — giao nhiều task (all-or-nothing, ≤50)
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `items` | ✅ | mảng, mỗi phần tử **1 vùng** (`regionId?` optional, không phải `regionIds[]`) — cùng field còn lại như `POST /tasks` |
+| Field   | Bắt buộc | Kiểu                                                                                                                 |
+| ------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `items` | ✅       | mảng, mỗi phần tử **1 vùng** (`regionId?` optional, không phải `regionIds[]`) — cùng field còn lại như `POST /tasks` |
 
 Response 201 `{ items: TaskRes[], total, limit, offset }`. Lỗi giống `POST /tasks`.
 
 #### `POST /tasks/group` — giao 1 đầu việc trải nhiều trang
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `pageIds` | ✅ | ObjectId[] (1-50) | Backend tạo N task, mỗi trang 1 task, chung `groupId` |
-| `assistantId` / `taskType` / `stageId` / `description` / `deadline` / `priority` / `assetIds` | | như `POST /tasks` | |
-| `groupTitle` | tuỳ | string (1-200) | Tên hiển thị nhóm, vd "Vẽ nền ch.5" |
+| Field                                                                                         | Bắt buộc | Kiểu              | Ghi chú                                               |
+| --------------------------------------------------------------------------------------------- | -------- | ----------------- | ----------------------------------------------------- |
+| `pageIds`                                                                                     | ✅       | ObjectId[] (1-50) | Backend tạo N task, mỗi trang 1 task, chung `groupId` |
+| `assistantId` / `taskType` / `stageId` / `description` / `deadline` / `priority` / `assetIds` |          | như `POST /tasks` |                                                       |
+| `groupTitle`                                                                                  | tuỳ      | string (1-200)    | Tên hiển thị nhóm, vd "Vẽ nền ch.5"                   |
 
 Response 201 `TaskGroupRes = { groupId, groupTitle, items: TaskRes[], total }`. Region/tiến độ/duyệt vẫn theo **từng trang** — group chỉ để gom hiển thị + thao tác hàng loạt.
 
@@ -787,12 +789,12 @@ Không body. Chỉ duyệt task đang `SUBMITTED`/`UNDER_REVIEW`; task khác tr�
 
 #### `PATCH /tasks/:id` — sửa task
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `assetIds` | tuỳ | string[]\|null | `[]` = xoá hết; omit/null giữ nguyên |
-| `description` | tuỳ | string\|null | **Chỉ sửa được khi `status === ASSIGNED`** |
-| `deadline` | tuỳ | ISO datetime\|null | |
-| `priority` | tuỳ | number\|null | |
+| Field         | Bắt buộc | Kiểu               | Ghi chú                                    |
+| ------------- | -------- | ------------------ | ------------------------------------------ |
+| `assetIds`    | tuỳ      | string[]\|null     | `[]` = xoá hết; omit/null giữ nguyên       |
+| `description` | tuỳ      | string\|null       | **Chỉ sửa được khi `status === ASSIGNED`** |
+| `deadline`    | tuỳ      | ISO datetime\|null |                                            |
+| `priority`    | tuỳ      | number\|null       |                                            |
 
 Lỗi: `Error.TaskNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.AssetNotFound` (422) · `Error.TaskDescriptionLocked` (409) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
 
@@ -802,9 +804,9 @@ Lỗi: `Error.TaskNotFound` (404) (403 ngầm khi không đúng scope sở hữu
 
 #### `POST /tasks/:id/download-url` — ký signed URL tải file của task
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `key` | ✅ | string | Phải là 1 trong các object key **thuộc task này** (ảnh gốc trang hoặc file version) |
+| Field | Bắt buộc | Kiểu   | Ghi chú                                                                             |
+| ----- | -------- | ------ | ----------------------------------------------------------------------------------- |
+| `key` | ✅       | string | Phải là 1 trong các object key **thuộc task này** (ảnh gốc trang hoặc file version) |
 
 Response 201 `{ downloadUrl, expiresAt }`. Lỗi: `Error.TaskNotFound` (404) · `Error.TaskFileForbidden` (403, path `key` — key không thuộc task).
 
@@ -818,25 +820,25 @@ Không body → `APPROVED` (set `completedAt`). Lỗi: `Error.TaskNotFound` (404
 
 #### `POST /tasks/:id/request-revision` — yêu cầu sửa
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reviewerNote` | ✅ | string (1-1000) |
+| Field          | Bắt buộc | Kiểu            |
+| -------------- | -------- | --------------- |
+| `reviewerNote` | ✅       | string (1-1000) |
 
 → `REVISION_REQUESTED`. Markup chi tiết tạo **riêng** qua `POST /annotations` (targetType=`PAGE`, `taskId` = task này). Lỗi giống `approve`.
 
 #### `POST /tasks/:id/cancel` — huỷ task
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | tuỳ | string |
+| Field    | Bắt buộc | Kiểu   |
+| -------- | -------- | ------ |
+| `reason` | tuỳ      | string |
 
 → `CANCELLED`. Lỗi: `Error.TaskNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.PageNotEditable` (409) · `Error.TaskNotCancellable` (409 — đã `APPROVED`/`CANCELLED`).
 
 #### `POST /tasks/:id/reassign` — giao lại cho Assistant khác
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `assistantId` | ✅ | string |
+| Field         | Bắt buộc | Kiểu   |
+| ------------- | -------- | ------ |
+| `assistantId` | ✅       | string |
 
 → `ASSIGNED` (assistant mới), giữ lịch sử version cũ. Lỗi: `Error.TaskNotFound` (404) · `Error.NotSeriesOwner` (403) · `Error.TaskNotReassignable` (409) · `Error.AssistantNotHired` (409) · `Error.ChapterOnHold` (409) · `Error.PageNotEditable` (409).
 
@@ -864,27 +866,27 @@ Hết hạn hợp tác sớm → POST /studio-assignments/:id/terminate (Mangaka
 
 ### 4.2. Bảng unhappy case
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Mời người không phải Assistant | 422 `Error.TargetNotAssistant` (path `assistantId`) | |
-| `hireStart`/`hireEnd` không hợp lệ (start≥end, end quá khứ) | 422 `Error.InvalidHirePeriod` (path `hireEnd`) | |
-| Đã có hợp tác `ACTIVE` khác với đúng cặp Mangaka-Assistant | 409 `Error.DuplicateActiveCollaboration` (path `assistantId`) | |
-| Huỷ/xem invite không phải của mình | 403 `Error.NotInviteOwner` / 404 `Error.InviteNotFound` | |
-| Terminate assignment không phải `ACTIVE` | 409 `Error.AssignmentNotActive` | |
-| Đánh giá chính mình | 422 `Error.CannotReviewSelf` (path `targetId`) | |
-| Đánh giá khi hợp tác chưa kết thúc | 422 `Error.ReviewRequiresEndedAssignment` (path `studioAssignmentId`) | Chỉ review sau khi assignment không còn `ACTIVE` |
+| Tình huống                                                  | Status/Error                                                          | Khi nào                                          |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
+| Mời người không phải Assistant                              | 422 `Error.TargetNotAssistant` (path `assistantId`)                   |                                                  |
+| `hireStart`/`hireEnd` không hợp lệ (start≥end, end quá khứ) | 422 `Error.InvalidHirePeriod` (path `hireEnd`)                        |                                                  |
+| Đã có hợp tác `ACTIVE` khác với đúng cặp Mangaka-Assistant  | 409 `Error.DuplicateActiveCollaboration` (path `assistantId`)         |                                                  |
+| Huỷ/xem invite không phải của mình                          | 403 `Error.NotInviteOwner` / 404 `Error.InviteNotFound`               |                                                  |
+| Terminate assignment không phải `ACTIVE`                    | 409 `Error.AssignmentNotActive`                                       |                                                  |
+| Đánh giá chính mình                                         | 422 `Error.CannotReviewSelf` (path `targetId`)                        |                                                  |
+| Đánh giá khi hợp tác chưa kết thúc                          | 422 `Error.ReviewRequiresEndedAssignment` (path `studioAssignmentId`) | Chỉ review sau khi assignment không còn `ACTIVE` |
 
 ### 4.3. Collaboration Invite
 
 #### `POST /collaboration-invites` — mời Assistant cộng tác
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `assistantId` | ✅ | string | |
-| `seriesId` | tuỳ | string | Metadata — **không validate** series tồn tại/sở hữu |
-| `hireStart` | ✅ | ISO datetime (offset) | |
-| `hireEnd` | ✅ | ISO datetime (offset) | Phải sau `hireStart` |
-| `taskTypes` | ✅ (≥1) | `enum Specialization[]` | |
+| Field         | Bắt buộc | Kiểu                    | Ghi chú                                             |
+| ------------- | -------- | ----------------------- | --------------------------------------------------- |
+| `assistantId` | ✅       | string                  |                                                     |
+| `seriesId`    | tuỳ      | string                  | Metadata — **không validate** series tồn tại/sở hữu |
+| `hireStart`   | ✅       | ISO datetime (offset)   |                                                     |
+| `hireEnd`     | ✅       | ISO datetime (offset)   | Phải sau `hireStart`                                |
+| `taskTypes`   | ✅ (≥1)  | `enum Specialization[]` |                                                     |
 
 Response 201 `InviteRes`. Lỗi: `Error.AssistantNotFound` (404) · `Error.TargetNotAssistant` (422) · `Error.InvalidHirePeriod` (422) · `Error.DuplicateActiveCollaboration` (409).
 
@@ -912,9 +914,9 @@ Query `status?` (`enum StudioAssignmentStatus`), `activeNow?` (`'true'|'false'`,
 
 #### `POST /studio-assignments/:id/terminate` — kết thúc sớm
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | ✅ | string (1-500) |
+| Field    | Bắt buộc | Kiểu           |
+| -------- | -------- | -------------- |
+| `reason` | ✅       | string (1-500) |
 
 → `TERMINATED`. Lỗi: `Error.AssignmentNotFound` (404) · `Error.NotAssignmentOwner` (403) · `Error.AssignmentNotActive` (409).
 
@@ -930,13 +932,13 @@ Query `ListMangakasQuery`: `q?`, `genre?` (`enum Genre`), `level?`, `limit`/`off
 
 #### `POST /assistant-reviews` — đánh giá Assistant sau hợp tác
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `assistantId` | ✅ | string | |
-| `rating` | ✅ | number (int 1-5) | |
-| `comment` | tuỳ | string (≤1000) | |
-| `studioAssignmentId` | ✅ | string | Assignment phải **không còn `ACTIVE`** |
-| `seriesId` | tuỳ | string | |
+| Field                | Bắt buộc | Kiểu             | Ghi chú                                |
+| -------------------- | -------- | ---------------- | -------------------------------------- |
+| `assistantId`        | ✅       | string           |                                        |
+| `rating`             | ✅       | number (int 1-5) |                                        |
+| `comment`            | tuỳ      | string (≤1000)   |                                        |
+| `studioAssignmentId` | ✅       | string           | Assignment phải **không còn `ACTIVE`** |
+| `seriesId`           | tuỳ      | string           |                                        |
 
 `@@unique([mangakaId, assistantId])` ở DB — mỗi cặp chỉ review 1 lần (gọi lại → Prisma P2002 → 409). Response 201 `ReviewRes`. Lỗi: `Error.CannotReviewSelf` (422) · `Error.ReviewRequiresEndedAssignment` (422) · `Error.ProfileNotFound` (404 — hồ sơ Assistant chưa tồn tại).
 
@@ -944,13 +946,13 @@ Query `ListMangakasQuery`: `q?`, `genre?` (`enum Genre`), `level?`, `limit`/`off
 
 `PUT` (full upsert, **không phải patch** — gửi thiếu field nào thì field đó ghi đè về default):
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `penName` | ✅ | string (1-100) | |
-| `genres` | tuỳ (default `[]`) | `enum Genre[]` | |
-| `experienceLevel` | tuỳ | string | Tự do |
-| `bio` | tuỳ | string | |
-| `portfolioFiles` | tuỳ (default `[]`) | string[] | Object key R2 |
+| Field             | Bắt buộc           | Kiểu           | Ghi chú       |
+| ----------------- | ------------------ | -------------- | ------------- |
+| `penName`         | ✅                 | string (1-100) |               |
+| `genres`          | tuỳ (default `[]`) | `enum Genre[]` |               |
+| `experienceLevel` | tuỳ                | string         | Tự do         |
+| `bio`             | tuỳ                | string         |               |
+| `portfolioFiles`  | tuỳ (default `[]`) | string[]       | Object key R2 |
 
 `GET` trả cùng shape: thêm `userId, reputationScore, ratingAvg, ratingCount, isRecommended` (⛔ read-only, tính từ `mangaka-reviews` do Editor chấm), `displayName?/avatar?` (⛔ từ `User`), `hasProfile: boolean` (`false` = chưa từng PUT — field khác là default rỗng, **không phải 404**). Lỗi `GET`: `Error.ProfileNotFound` (404, hiếm gặp).
 
@@ -962,10 +964,10 @@ Query `ListMangakasQuery`: `q?`, `genre?` (`enum Genre`), `level?`, `limit`/`off
 
 `Contract.contractType` là biến điều khiển xuyên suốt Flow 6/7/8:
 
-| `contractType` | Quyền kiểm soát |
-|---|---|
-| `FULL_BUYOUT` | NXB (Board) toàn quyền tái bản/chuyển nhượng — **không cần hỏi Mangaka gốc** |
-| `REVENUE_SHARE` | Mangaka giữ % sở hữu → **mọi quyết định lớn phải có Mangaka đồng ý** |
+| `contractType`  | Quyền kiểm soát                                                              |
+| --------------- | ---------------------------------------------------------------------------- |
+| `FULL_BUYOUT`   | NXB (Board) toàn quyền tái bản/chuyển nhượng — **không cần hỏi Mangaka gốc** |
+| `REVENUE_SHARE` | Mangaka giữ % sở hữu → **mọi quyết định lớn phải có Mangaka đồng ý**         |
 
 ### 5.1. Contract — Narrative flow (Flow 6)
 
@@ -990,15 +992,15 @@ FULLY_EXECUTED → {FULFILLED | TERMINATED | TERMINATED_BY_BREACH | EXPIRED}
 
 ### 5.2. Bảng unhappy case chung Contract/Amendment
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Xem/thao tác hợp đồng không phải của mình | 403 `Error.ContractAccessDenied` / `Error.NotContractMangaka` | |
-| Accept/reject khi HĐ chưa `AWAITING_MANGAKA` | 409 `Error.ContractNotAwaitingMangaka` / `Error.InvalidContractTransition` | `sign-mangaka` / `reject` |
-| Ký khi HĐ chưa sẵn sàng | 409 `Error.ContractNotSignableYet` (path `status`) | `sign-mangaka` |
-| Ký lại lần 2 | 400 `Error.ContractAlreadySigned` | |
-| Xuất PDF khi chưa `FULLY_EXECUTED` trở lên | 409 `Error.ContractNotExecutedForPdf` | `GET /contracts/:id/pdf` |
-| Ký/từ chối phụ lục khi không `PENDING_SIGNATURES` | 409 `Error.AmendmentNotPendingSignatures` | |
-| Ký/từ chối phụ lục của hợp đồng `FULL_BUYOUT` | 409 `Error.MangakaSignNotRequired` | Board toàn quyền, Mangaka không có vai trò ký |
+| Tình huống                                        | Status/Error                                                               | Khi nào                                       |
+| ------------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------- |
+| Xem/thao tác hợp đồng không phải của mình         | 403 `Error.ContractAccessDenied` / `Error.NotContractMangaka`              |                                               |
+| Accept/reject khi HĐ chưa `AWAITING_MANGAKA`      | 409 `Error.ContractNotAwaitingMangaka` / `Error.InvalidContractTransition` | `sign-mangaka` / `reject`                     |
+| Ký khi HĐ chưa sẵn sàng                           | 409 `Error.ContractNotSignableYet` (path `status`)                         | `sign-mangaka`                                |
+| Ký lại lần 2                                      | 400 `Error.ContractAlreadySigned`                                          |                                               |
+| Xuất PDF khi chưa `FULLY_EXECUTED` trở lên        | 409 `Error.ContractNotExecutedForPdf`                                      | `GET /contracts/:id/pdf`                      |
+| Ký/từ chối phụ lục khi không `PENDING_SIGNATURES` | 409 `Error.AmendmentNotPendingSignatures`                                  |                                               |
+| Ký/từ chối phụ lục của hợp đồng `FULL_BUYOUT`     | 409 `Error.MangakaSignNotRequired`                                         | Board toàn quyền, Mangaka không có vai trò ký |
 
 #### `GET /contracts` — danh sách hợp đồng theo scope
 
@@ -1018,18 +1020,18 @@ Response `ContractStatusProgressRes` (§87): `{id, status, mangaka:{id,isSigned,
 
 #### `POST /contracts/:id/sign-mangaka` — Accept + ký OTP (Phase 2) 🆕 §87
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `otpCode` | ✅ | string (đúng 6 ký tự) |
+| Field     | Bắt buộc | Kiểu                  |
+| --------- | -------- | --------------------- |
+| `otpCode` | ✅       | string (đúng 6 ký tự) |
 
 Chỉ khi HĐ `AWAITING_MANGAKA`. OTP `purpose=SIGNING_CONTRACT` (hệ thống gửi email khi HĐ tới `AWAITING_MANGAKA`). Ký xong → `FULLY_EXECUTED` (hoặc `ACTIVATION_PENDING` nếu HĐ replacement transfer) + emit `contract.executed`. Response 201 `ContractRes`.
 Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403) · `Error.ContractNotAwaitingMangaka` / `Error.ContractNotSignableYet` (409) · `Error.ContractAlreadySigned` (400) · OTP sai/hết hạn → 422/410.
 
 #### `POST /contracts/:id/reject` — Từ chối hợp đồng (Phase 2) 🆕 §87
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | ✅ | string (1-1000) |
+| Field    | Bắt buộc | Kiểu            |
+| -------- | -------- | --------------- |
+| `reason` | ✅       | string (1-1000) |
 
 Chỉ khi HĐ `AWAITING_MANGAKA` → `REJECTED_BY_MANGAKA` (terminal). Editor phải `redraft` HĐ mới; Mangaka sẽ nhận HĐ mới sau. Response 201 `ContractRes`.
 Lỗi: `Error.ContractNotFound` (404) · `Error.NotContractMangaka` (403) · `Error.ContractNotAwaitingMangaka` / `Error.InvalidContractTransition` (409).
@@ -1054,17 +1056,17 @@ Response mảng thô `AmendmentListItemDto[]` (= `AmendmentRes` bỏ `signatures
 
 #### `POST /contracts/:contractId/amendments/:id/sign/mangaka` — ký phụ lục
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `otpCode` | ✅ | string (6 ký tự) |
+| Field     | Bắt buộc | Kiểu             |
+| --------- | -------- | ---------------- |
+| `otpCode` | ✅       | string (6 ký tự) |
 
 Chỉ áp dụng với hợp đồng `REVENUE_SHARE` (FULL_BUYOUT không cần Mangaka ký). Response 201 `AmendmentRes`. Lỗi: `Error.AmendmentNotPendingSignatures` (409) · `Error.MangakaSignNotRequired` (409) · `Error.NotContractMangaka` (403).
 
 #### `POST /contracts/:contractId/amendments/:id/reject` — từ chối phụ lục
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | ✅ | string (≥1) |
+| Field    | Bắt buộc | Kiểu        |
+| -------- | -------- | ----------- |
+| `reason` | ✅       | string (≥1) |
 
 → về `DRAFT` (Editor sửa lại). Response 200 `AmendmentRes`. Lỗi: `Error.AmendmentNotPendingSignatures` (409) · `Error.MangakaSignNotRequired` (409) · `Error.NotContractMangaka` (403).
 
@@ -1072,7 +1074,7 @@ Chỉ áp dụng với hợp đồng `REVENUE_SHARE` (FULL_BUYOUT không cần M
 
 #### `GET /contracts/:contractId/payment-conditions` — danh sách điều kiện thanh toán
 
-Response `PaymentConditionListRes = { data: PaymentConditionModel[] }` (bọc `data`, không phải `items`). Mỗi phần tử: `{id, contractId, conditionType: enum ConditionType, thresholdConfig (JSON tuỳ loại — vd `{chapter:N}` cho `CHAPTER_MILESTONE`, `{every:N}` cho `RECURRING_CHAPTER`, `{topRank:N}` cho `RANKING_MILESTONE`, `{deadline:"YYYY-MM-DD"}` cho `TIME_BOUND`), payoutAmount, payoutPct, isRecurring, status: enum PaymentConditionStatus, lastTriggeredValue, achievedAt}`. Lỗi: `Error.ContractNotFound` (404) · `Error.NotAssignedPaymentEditor` (403 — thực ra route cho phép MANGAKA/BOARD đọc, lỗi này chủ yếu áp cho Editor sai phụ trách).
+Response `PaymentConditionListRes = { data: PaymentConditionModel[] }` (bọc `data`, không phải `items`). Mỗi phần tử: `{id, contractId, conditionType: enum ConditionType, thresholdConfig (JSON tuỳ loại — vd `{chapter:N}`cho`CHAPTER_MILESTONE`, `{every:N}`cho`RECURRING_CHAPTER`, `{topRank:N}`cho`RANKING_MILESTONE`, `{deadline:"YYYY-MM-DD"}`cho`TIME_BOUND`), payoutAmount, payoutPct, isRecurring, status: enum PaymentConditionStatus, lastTriggeredValue, achievedAt}`. Lỗi: `Error.ContractNotFound` (404) · `Error.NotAssignedPaymentEditor` (403 — thực ra route cho phép MANGAKA/BOARD đọc, lỗi này chủ yếu áp cho Editor sai phụ trách).
 
 ### 5.5. Payment Record (chỉ đọc với Mangaka)
 
@@ -1094,10 +1096,12 @@ POST /transfers/requests (seriesId + planDescription + proposedType + proposedPe
 Board xem xét sơ bộ (route Board): board-approve/board-reject
     ↓
 [Contract.contractType GỐC]
-  FULL_BUYOUT → Board tự xử lý toàn bộ (assign-full-buyout) → COMPLETED, B nhận series ngay, KHÔNG cần B thao tác gì thêm
+  FULL_BUYOUT → Board assign-full-buyout → AWAITING_REPLACEMENT_SIGNATURES
+      → B ký hợp đồng xuất bản thay thế → hợp đồng có hiệu lực → COMPLETED
   REVENUE_SHARE → Editor start-negotiation → NEGOTIATING
       → Mangaka A (chủ gốc) mangaka-accept/mangaka-reject (route của A, KHÔNG phải B)
-      → A đồng ý → Editor tạo TransferContract 3 bên
+      → A đồng ý → ACCEPTED → Editor tạo TransferContract 3 bên
+      → Hội đồng thông qua decision CONTRACT gắn resourceType=TRANSFER_CONTRACT + resourceId=transferContractId
       → Ký: A → B → Board → FULLY_EXECUTED → COMPLETED
 ```
 
@@ -1105,24 +1109,25 @@ Mangaka **B** (bên xin nhận) dùng: `POST /transfers/requests`, `GET .../mine
 
 **Bảng unhappy case:**
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Series đã có Mangaka gửi request (chính mình đang sở hữu) | 409 `Error.TransferRequesterAlreadyOwnsSeries` | |
-| Mangaka gửi request không phải `ACTIVE` | 403 `Error.TransferRequestingMangakaInactive` | BR-TRANSFER-01 |
-| `proposedType`/`proposedPercentage` không khớp quy tắc | 422 `Error.InvalidTransferProposal` (path `proposedPercentage`) | `PARTIAL_TRANSFER` thiếu %/​≥100, hoặc `FULL_TRANSFER` mà có % |
-| Accept/reject khi không ở `NEGOTIATING` | 400 `Error.RequestNotInNegotiatingStage` | |
-| Xem/ký request không thuộc mình | 403 `Error.TransferAccessDenied` | |
-| Ký lại lần 2 | 400 `Error.TransferAlreadySigned` | |
-| OTP/email không khớp user | 404 `Error.TransferSignerNotFound` | |
+| Tình huống                                                | Status/Error                                                    | Khi nào                                                        |
+| --------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| Series đã có Mangaka gửi request (chính mình đang sở hữu) | 409 `Error.TransferRequesterAlreadyOwnsSeries`                  |                                                                |
+| Mangaka gửi request không phải `ACTIVE`                   | 403 `Error.TransferRequestingMangakaInactive`                   | BR-TRANSFER-01                                                 |
+| `proposedType`/`proposedPercentage` không khớp quy tắc    | 422 `Error.InvalidTransferProposal` (path `proposedPercentage`) | `PARTIAL_TRANSFER` thiếu %/​≥100, hoặc `FULL_TRANSFER` mà có % |
+| Accept/reject khi không ở `NEGOTIATING`                   | 400 `Error.RequestNotInNegotiatingStage`                        |                                                                |
+| Xem/ký request không thuộc mình                           | 403 `Error.TransferAccessDenied`                                |                                                                |
+| Ký lại lần 2                                              | 400 `Error.TransferAlreadySigned`                               |                                                                |
+| OTP/email không khớp user                                 | 404 `Error.TransferSignerNotFound`                              |                                                                |
+| Mangaka A ký khi chưa có decision `CONTRACT` được duyệt   | 409 `Error.TransferContractApprovalDecisionRequired`            | Hợp đồng vẫn giữ `DRAFT`                                       |
 
 #### `POST /transfers/requests` — Mangaka B tạo yêu cầu
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `seriesId` | ✅ | ObjectId | Series đang có Mangaka khác sở hữu |
-| `planDescription` | ✅ | string (≥1) | Kế hoạch/hồ sơ năng lực |
-| `proposedType` | ✅ | `enum TransferType` | `FULL_TRANSFER`\|`PARTIAL_TRANSFER` |
-| `proposedPercentage` | tuỳ | number (0-100, dương) | **Bắt buộc và <100** nếu `PARTIAL_TRANSFER`; **cấm gửi** nếu `FULL_TRANSFER` |
+| Field                | Bắt buộc | Kiểu                  | Ghi chú                                                                        |
+| -------------------- | -------- | --------------------- | ------------------------------------------------------------------------------ |
+| `seriesId`           | ✅       | ObjectId              | Series đang có Mangaka khác sở hữu và có trạng thái `SERIALIZED` hoặc `HIATUS` |
+| `planDescription`    | ✅       | string (≥1)           | Kế hoạch/hồ sơ năng lực                                                        |
+| `proposedType`       | ✅       | `enum TransferType`   | `FULL_TRANSFER`\|`PARTIAL_TRANSFER`                                            |
+| `proposedPercentage` | tuỳ      | number (0-100, dương) | **Bắt buộc và <100** nếu `PARTIAL_TRANSFER`; **cấm gửi** nếu `FULL_TRANSFER`   |
 
 Response 201 `TransferRequestRes`. Lỗi: `Error.NoActiveContractForSeries` (400) · `Error.TransferRequestingMangakaInactive` (403) · `Error.TransferRequesterAlreadyOwnsSeries` (409) · `Error.InvalidTransferProposal` (422).
 
@@ -1139,9 +1144,11 @@ Không query. Response `TransferRequestListRes = { data: TransferRequestListItem
 
 #### `POST /transfers/requests/:id/mangaka-accept` / `mangaka-reject` — Mangaka **A** (chủ gốc) phản hồi
 
-Không body. Chỉ khi `status === NEGOTIATING`. `accept` → tiếp tục soạn `TransferContract`; `reject` → `REJECTED_BY_ORIGINAL_MANGAKA`. Lỗi: `Error.TransferRequestNotFound` (404) · `Error.RequestNotInNegotiatingStage` (400) · `Error.TransferAccessDenied` (403).
+Không body. Chỉ khi `status === NEGOTIATING`. `accept` → `ACCEPTED`, cho phép Editor soạn `TransferContract`; `reject` → `REJECTED_BY_ORIGINAL_MANGAKA`. Lỗi: `Error.TransferRequestNotFound` (404) · `Error.RequestNotInNegotiatingStage` (400) · `Error.TransferAccessDenied` (403).
 
 #### `POST /transfers/contracts/:id/sign` — ký hợp đồng chuyển nhượng 3 bên
+
+Trước chữ ký đầu tiên của Mangaka A, Hội đồng phải có một decision `CONTRACT` đã `APPROVED` với `details.resourceType = TRANSFER_CONTRACT` và `details.resourceId = transferContractId`. Thiếu quyết định này → 409 `Error.TransferContractApprovalDecisionRequired`; Mangaka B và Board chỉ được mở lượt sau khi chữ ký trước đã hoàn tất.
 
 **Lấy `:id` (`transferContractId`) ở đâu — 🆕 Spec 27 (2026-07-29):** đọc field **`transferContractId`** ở bất kỳ route GET request nào (`GET /transfers/requests/mine`, `GET /transfers/requests/:id`). Field này `null` khi Editor chưa soạn hợp đồng, có giá trị ngay khi Editor tạo xong. Trước Spec 27 field này **không tồn tại** ⇒ Mangaka không có đường lấy id để ký (chỉ Editor thấy id trong response lúc tạo); nếu bạn đọc tài liệu/code cũ hơn 2026-07-29 thì đó là lý do.
 
@@ -1149,12 +1156,12 @@ Không body. Chỉ khi `status === NEGOTIATING`. `accept` → tiếp tục soạ
 A → B → Hội đồng **im lặng hoàn toàn**: hợp đồng soạn xong không ai được báo, A ký xong B không biết đến lượt.
 Nay mỗi mốc đều bắn notification (`NotificationType.CONTRACT`, đọc qua `GET /notifications`):
 
-| Thời điểm | Người nhận | `referenceType` | `referenceId` |
-|---|---|---|---|
-| Editor soạn xong hợp đồng | **Mangaka A** (ký trước) + **Mangaka B** | `TRANSFER_CONTRACT_DRAFTED` | `transferContractId` |
-| A ký xong → tới lượt B | **Mangaka B** | `TRANSFER_CONTRACT_AWAITING_SIGNATURE` | `transferContractId` |
-| B ký xong → tới lượt Hội đồng | **Board roster của phiên** | `TRANSFER_CONTRACT_AWAITING_SIGNATURE` | `transferContractId` |
-| Hoàn tất chuyển nhượng | Mangaka B | `TRANSFER_SETTLEMENT_COMPLETED` | `transferRequestId` |
+| Thời điểm                     | Người nhận                               | `referenceType`                        | `referenceId`        |
+| ----------------------------- | ---------------------------------------- | -------------------------------------- | -------------------- |
+| Editor soạn xong hợp đồng     | **Mangaka A** (ký trước) + **Mangaka B** | `TRANSFER_CONTRACT_DRAFTED`            | `transferContractId` |
+| A ký xong → tới lượt B        | **Mangaka B**                            | `TRANSFER_CONTRACT_AWAITING_SIGNATURE` | `transferContractId` |
+| B ký xong → tới lượt Hội đồng | **Board roster của phiên**               | `TRANSFER_CONTRACT_AWAITING_SIGNATURE` | `transferContractId` |
+| Hoàn tất chuyển nhượng        | Mangaka B                                | `TRANSFER_SETTLEMENT_COMPLETED`        | `transferRequestId`  |
 
 ⚠️ `referenceId` của 3 dòng đầu là **`transferContractId`** (dùng thẳng cho `GET /transfers/contracts/:id`),
 dòng cuối là **`transferRequestId`** — đừng dùng lẫn. Notification là **best-effort** (`notifySafe`): nếu hệ thống
@@ -1165,9 +1172,9 @@ thông báo lỗi thì hợp đồng **vẫn được tạo/ký bình thường*
 
 **Nên gọi `GET /transfers/contracts/:id` (🆕 Spec 27, mô tả ngay dưới) TRƯỚC khi ký** để đọc điều khoản — nếu không thì đang ký mù.
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `otpCode` | ✅ | string (6 ký tự) |
+| Field     | Bắt buộc | Kiểu             |
+| --------- | -------- | ---------------- |
+| `otpCode` | ✅       | string (6 ký tự) |
 
 Vai trò ký (`TransferSignerRole`): `MANGAKA_A` (chủ gốc) → `MANGAKA_B` (bên nhận) → `BOARD`. Route dùng chung MANGAKA (cả A lẫn B) và BOARD_MEMBER — service tự xác định vai trò theo `userId`. Response 201 `MessageResDto`. Lỗi: `Error.TransferContractNotFound` (404) · `Error.TransferSignerNotFound` (404) · `Error.TransferAlreadySigned` (400) · `Error.TransferContractNotFoundAfterUpdate` (404) · `Error.TransferAccessDenied` (403).
 
@@ -1175,18 +1182,18 @@ Vai trò ký (`TransferSignerRole`): `MANGAKA_A` (chủ gốc) → `MANGAKA_B` (
 
 Không tham số ngoài `:id`. Cho phép: **Mangaka A** (bên nhượng) · **Mangaka B** (bên nhận) · **Editor phụ trách series** · **Board member trong roster quyết định TRANSFER** · **Super Admin**. Mangaka ngoài giao dịch → 403.
 
-| Field response | Kiểu | Ghi chú |
-|---|---|---|
-| `id`, `transferRequestId`, `seriesId` | string \| null | |
-| `fromMangakaId` / `toMangakaId` | string \| null | A (nhượng) / B (nhận) |
-| `series`, `fromMangaka`, `toMangaka` | mini embed | hiển thị tên, không phải logic |
-| `transferType` | `enum TransferType` | `FULL_TRANSFER` \| `PARTIAL_TRANSFER` |
-| `transferAmount` | number \| null | **số tiền B trả A** |
-| `newOwnershipSplit` | `Record<string, number>` \| null | tỷ lệ sở hữu MỚI, tổng = 100. `null` nếu dữ liệu cũ ghi sai shape (BE narrow an toàn thay vì ném lỗi) |
-| `coOwnerApprovalRequired` | boolean | `true` ⇒ sau khi ký xong, mỗi chapter mới phải A duyệt (BR-TRANSFER-03) |
-| `status` | `enum TransferContractStatus` | `DRAFT → A_SIGNED → B_SIGNED → BOARD_SIGNED → FULLY_EXECUTED` (hoặc `VOIDED`) |
-| `createdAt` | string (ISO) | |
-| `signatures[]` | array | `{id, transferContractId, userId, role: enum TransferSignerRole, signedAt}` |
+| Field response                        | Kiểu                             | Ghi chú                                                                                               |
+| ------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `id`, `transferRequestId`, `seriesId` | string \| null                   |                                                                                                       |
+| `fromMangakaId` / `toMangakaId`       | string \| null                   | A (nhượng) / B (nhận)                                                                                 |
+| `series`, `fromMangaka`, `toMangaka`  | mini embed                       | hiển thị tên, không phải logic                                                                        |
+| `transferType`                        | `enum TransferType`              | `FULL_TRANSFER` \| `PARTIAL_TRANSFER`                                                                 |
+| `transferAmount`                      | number \| null                   | **số tiền B trả A**                                                                                   |
+| `newOwnershipSplit`                   | `Record<string, number>` \| null | tỷ lệ sở hữu MỚI, tổng = 100. `null` nếu dữ liệu cũ ghi sai shape (BE narrow an toàn thay vì ném lỗi) |
+| `coOwnerApprovalRequired`             | boolean                          | `true` ⇒ sau khi ký xong, mỗi chapter mới phải A duyệt (BR-TRANSFER-03)                               |
+| `status`                              | `enum TransferContractStatus`    | `DRAFT → A_SIGNED → B_SIGNED → BOARD_SIGNED → FULLY_EXECUTED` (hoặc `VOIDED`)                         |
+| `createdAt`                           | string (ISO)                     |                                                                                                       |
+| `signatures[]`                        | array                            | `{id, transferContractId, userId, role: enum TransferSignerRole, signedAt}`                           |
 
 **Dùng `status` để biết tới lượt ai ký:** `DRAFT` = chờ A · `A_SIGNED` = chờ B · `B_SIGNED` = chờ Board. Ký sai lượt → `Error.InvalidTransferState` (409).
 **Lỗi:** `Error.TransferContractNotFound` (404 — kể cả id rác không phải ObjectId) · `Error.TransferAccessDenied` (403).
@@ -1194,6 +1201,7 @@ Không tham số ngoài `:id`. Cho phép: **Mangaka A** (bên nhượng) · **Ma
 #### `GET /transfers/contracts/:id/signatures` — danh sách chữ ký
 
 Response `{ signatures: [{id, transferContractId, userId, role: enum TransferSignerRole, signedAt}] }`. Lỗi: `Error.TransferContractNotFound` (404) · `Error.TransferAccessDenied` (403).
+
 > Route này là **tập con** của `GET /transfers/contracts/:id` ở trên (cùng RBAC). Nếu cần cả điều khoản lẫn chữ ký thì gọi route detail, khỏi gọi 2 lần.
 
 ### 5.7. Reprint (Flow 7 — Tái bản, chỉ đọc + phản hồi với Mangaka)
@@ -1212,11 +1220,11 @@ PROPOSED → [REVENUE_SHARE] PATCH /reprint-requests/:id/mangaka-review {accept:
 
 **Bảng unhappy case:**
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Chuyển trạng thái sai bước | 409 `Error.InvalidReprintTransition` (path `status`) | |
-| Hành động không được phép theo Ownership Principle | 403 `Error.ReprintActionNotAllowed` (path `status`) | vd Mangaka cố review request `FULL_BUYOUT` |
-| Cập nhật manuscript cho chapter không tồn tại trong request | 404 `Error.ReprintChapterNotFound` | |
+| Tình huống                                                  | Status/Error                                         | Khi nào                                    |
+| ----------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------ |
+| Chuyển trạng thái sai bước                                  | 409 `Error.InvalidReprintTransition` (path `status`) |                                            |
+| Hành động không được phép theo Ownership Principle          | 403 `Error.ReprintActionNotAllowed` (path `status`)  | vd Mangaka cố review request `FULL_BUYOUT` |
+| Cập nhật manuscript cho chapter không tồn tại trong request | 404 `Error.ReprintChapterNotFound`                   |                                            |
 
 #### `GET /reprint-requests` — danh sách (scope theo role)
 
@@ -1236,19 +1244,19 @@ Response mảng thô `[ReprintChapterRes]`. Mỗi phần tử: `{originalChapter
 
 #### `PATCH /reprint-requests/:id/chapters/:chapterId/manuscript` — nộp bản thảo sửa đổi
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `originalChapterId` | ✅ | string (khớp `:chapterId`) |
-| `manuscriptFile` | ✅ | string (object key R2) |
+| Field               | Bắt buộc | Kiểu                       |
+| ------------------- | -------- | -------------------------- |
+| `originalChapterId` | ✅       | string (khớp `:chapterId`) |
+| `manuscriptFile`    | ✅       | string (object key R2)     |
 
 Chỉ áp dụng khi `revisionMode = WITH_REVISION`. Response 200 `ReprintRequestRes`. Lỗi: `Error.ReprintRequestNotFound` (404) · `Error.ReprintChapterNotFound` (404) · `Error.InvalidReprintTransition` (409) · `Error.ReprintActionNotAllowed` (403).
 
 #### `PATCH /reprint-requests/:id/mangaka-review` — Mangaka phản hồi (chỉ áp dụng `REVENUE_SHARE`)
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `accept` | ✅ | boolean | `true`→`MANGAKA_APPROVED`-ish (chờ Board); `false`→`REJECTED_BY_MANGAKA` |
-| `reason` | tuỳ | string | |
+| Field    | Bắt buộc | Kiểu    | Ghi chú                                                                  |
+| -------- | -------- | ------- | ------------------------------------------------------------------------ |
+| `accept` | ✅       | boolean | `true`→`MANGAKA_APPROVED`-ish (chờ Board); `false`→`REJECTED_BY_MANGAKA` |
+| `reason` | tuỳ      | string  |                                                                          |
 
 Lỗi: `Error.ReprintRequestNotFound` (404) · `Error.ReprintActionNotAllowed` (403 — vd request gốc `FULL_BUYOUT`) · `Error.InvalidReprintTransition` (409).
 
@@ -1271,30 +1279,30 @@ Bên khởi tạo (`requestedBy`) tạo `POST /deadline-requests`; bên kia (`re
 
 **Bảng unhappy case:**
 
-| Tình huống | Status/Error | Khi nào |
-|---|---|---|
-| Chapter đã có deadline-request đang mở | 409 `Error.OpenDeadlineRequestExists` | Mỗi chapter chỉ 1 request mở tại 1 thời điểm |
-| Không phải Mangaka/Editor của chapter | 403 `Error.DeadlineRequestAccessDenied` (thực chất `Error.DeadlineRequestAccessDenied`) | |
-| Phản hồi (`counter`/`agree`/`reject`) không phải bên đối ứng | 403 `Error.NotCounterparty` | |
-| Chuyển trạng thái sai bước | 409 `Error.InvalidDeadlineRequestTransition` | |
-| Tạo request khi điều kiện không cho phép | 409 `Error.DeadlineRequestNotAllowed` | vd chapter đã publish |
+| Tình huống                                                   | Status/Error                                                                            | Khi nào                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Chapter đã có deadline-request đang mở                       | 409 `Error.OpenDeadlineRequestExists`                                                   | Mỗi chapter chỉ 1 request mở tại 1 thời điểm |
+| Không phải Mangaka/Editor của chapter                        | 403 `Error.DeadlineRequestAccessDenied` (thực chất `Error.DeadlineRequestAccessDenied`) |                                              |
+| Phản hồi (`counter`/`agree`/`reject`) không phải bên đối ứng | 403 `Error.NotCounterparty`                                                             |                                              |
+| Chuyển trạng thái sai bước                                   | 409 `Error.InvalidDeadlineRequestTransition`                                            |                                              |
+| Tạo request khi điều kiện không cho phép                     | 409 `Error.DeadlineRequestNotAllowed`                                                   | vd chapter đã publish                        |
 
 #### `POST /deadline-requests` — tạo yêu cầu đổi deadline
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `chapterId` | ✅ | string | |
-| `requestedDeadline` | ✅ | ISO datetime (offset) | Phải ở tương lai |
-| `reason` | ✅ | string (1-1000) | |
+| Field               | Bắt buộc | Kiểu                  | Ghi chú          |
+| ------------------- | -------- | --------------------- | ---------------- |
+| `chapterId`         | ✅       | string                |                  |
+| `requestedDeadline` | ✅       | ISO datetime (offset) | Phải ở tương lai |
+| `reason`            | ✅       | string (1-1000)       |                  |
 
 Response 201 `DeadlineRequestRes`. Lỗi: `Error.DeadlineRequestNotFound` (404) · `Error.DeadlineRequestAccessDenied` (403) · `Error.OpenDeadlineRequestExists` (409) · `Error.DeadlineRequestNotAllowed` (409).
 
 #### `POST /deadline-requests/:id/counter` — đề xuất deadline khác
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `requestedDeadline` | ✅ | ISO datetime (tương lai) |
-| `reason` | ✅ | string (1-1000) |
+| Field               | Bắt buộc | Kiểu                     |
+| ------------------- | -------- | ------------------------ |
+| `requestedDeadline` | ✅       | ISO datetime (tương lai) |
+| `reason`            | ✅       | string (1-1000)          |
 
 → `COUNTER_PROPOSED`. Lỗi: `Error.DeadlineRequestNotFound` (404) · `Error.DeadlineRequestAccessDenied` (403) · `Error.NotCounterparty` (403) · `Error.InvalidDeadlineRequestTransition` (409).
 
@@ -1304,9 +1312,9 @@ Không body → `AGREED_BY_PARTIES`. Lỗi giống `counter`.
 
 #### `POST /deadline-requests/:id/reject` — từ chối (bất đồng)
 
-| Field | Bắt buộc | Kiểu |
-|---|---|---|
-| `reason` | ✅ | string (1-1000) |
+| Field    | Bắt buộc | Kiểu            |
+| -------- | -------- | --------------- |
+| `reason` | ✅       | string (1-1000) |
 
 → `ESCALATED` (leo Board). Lỗi giống `counter`.
 
@@ -1343,6 +1351,7 @@ Query `GetSeriesTrendQuery`: `seriesId` (✅), `periods` (tuỳ, 1-60, default 1
 Query `surveyPeriodId` (string, path qua `@Query`). Response cùng shape `BoardRankingListRes` ở trên nhưng liệt kê **mọi** series trong kỳ đó (không giới hạn series của mình — dùng để Mangaka so sánh vị trí mình với series khác). Lỗi: `Error.SurveyPeriodNotFound` (404).
 
 ✅ **Lấy `surveyPeriodId` ở đâu? (W1 — 2026-08-02: Mangaka NAY GỌI ĐƯỢC `GET /survey-periods`).** 3 đường:
+
 1. **`GET /survey-periods?magazine=&publicationType=&status=&limit=&offset=`** 🆕 — route nội bộ nay mở cho **MANGAKA** (+EDITOR/BOARD/SUPER_ADMIN). Có **filter** (magazine/publicationType/status) + **phân trang**; response nay là **`{ items, total, limit, offset }`** (⚠ trước là mảng thô — breaking). Mỗi item = `SurveyPeriodRes` (kèm `id`). Đây là cách chuẩn để Mangaka lấy `surveyPeriodId`.
 2. **`GET /vote/periods?magazine=&publicationType=&limit=`** — route public (kỳ đã `REFLECTED`), vẫn dùng được.
 3. `GET /dashboard/mangaka` chỉ có `recordedAt` (không có `surveyPeriodId`) — chỉ hiển thị hạng gần nhất.
@@ -1357,12 +1366,12 @@ Query `surveyPeriodId` (string, path qua `@Query`). Response cùng shape `BoardR
 
 Không tham số. Response `MangakaDashboardRes`:
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `studio` | `StudioOverviewItem[]` | Giống hệt `GET /studio/overview` §2.3 |
-| `rankings` | `DashboardRankingItem[]` | Ranking **kỳ gần nhất** của từng series thuộc Mangaka — `{seriesId, seriesTitle, seriesStatus: enum SeriesStatus, rankPosition, voteCount, previousRank, rankChange, riskLevel: enum RiskLevel, isAtRisk, recordedAt}` |
-| `unreadNotifications` | number | Badge chuông |
-| `openRevisionRequests` | number | Số vòng yêu cầu sửa còn mở mà Mangaka phải xử lý (dùng cùng nguồn `GET /revision-requests`) |
+| Field                  | Kiểu                     | Ghi chú                                                                                                                                                                                                                |
+| ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `studio`               | `StudioOverviewItem[]`   | Giống hệt `GET /studio/overview` §2.3                                                                                                                                                                                  |
+| `rankings`             | `DashboardRankingItem[]` | Ranking **kỳ gần nhất** của từng series thuộc Mangaka — `{seriesId, seriesTitle, seriesStatus: enum SeriesStatus, rankPosition, voteCount, previousRank, rankChange, riskLevel: enum RiskLevel, isAtRisk, recordedAt}` |
+| `unreadNotifications`  | number                   | Badge chuông                                                                                                                                                                                                           |
+| `openRevisionRequests` | number                   | Số vòng yêu cầu sửa còn mở mà Mangaka phải xử lý (dùng cùng nguồn `GET /revision-requests`)                                                                                                                            |
 
 #### `GET /dashboard/mangaka/earnings` — thu nhập tổng hợp từ `PaymentRecord`
 
@@ -1376,16 +1385,16 @@ Response `MangakaEarningsRes`: `{totalPaid, totalPending, totalMissed, byStatus:
 
 Query `ListRevisionRequestsQuery`: `targetType?` (`enum RevisionTargetType`), `targetId?`, `isResolved?` (`'true'|'false'`, omit = tất cả), `limit`/`offset`. Response `{ items: RevisionRequestRes[], total, limit, offset }` — **không có route detail riêng** (`GET /revision-requests/:id` không tồn tại) nên list trả **đầy đủ** field, không rút gọn:
 
-| Field | Kiểu | Ghi chú |
-|---|---|---|
-| `targetType` | `enum RevisionTargetType` | `PROPOSAL`\|`NAME`\|`MANUSCRIPT`\|`TASK` |
-| `targetId` | string | `seriesId`\|`storyboardId`\|`chapterId`\|`taskId` tuỳ `targetType` |
-| `round` | number | Lần yêu cầu sửa thứ mấy trên cùng target |
-| `reason` | string | Nội dung cần sửa — **bắt buộc đọc trước khi resolve** |
-| `recipientId` | string | Người phải sửa — chỉ người này resolve được |
-| `isResolved` / `resolvedAt` / `resolvedBy` | | |
-| `resolver` | `UserMini`\|null | Tên người đã resolve (bù cho việc Mangaka không có endpoint resolve id→tên Assistant) |
-| `series` | `SeriesMini`\|null | |
+| Field                                      | Kiểu                      | Ghi chú                                                                               |
+| ------------------------------------------ | ------------------------- | ------------------------------------------------------------------------------------- |
+| `targetType`                               | `enum RevisionTargetType` | `PROPOSAL`\|`NAME`\|`MANUSCRIPT`\|`TASK`                                              |
+| `targetId`                                 | string                    | `seriesId`\|`storyboardId`\|`chapterId`\|`taskId` tuỳ `targetType`                    |
+| `round`                                    | number                    | Lần yêu cầu sửa thứ mấy trên cùng target                                              |
+| `reason`                                   | string                    | Nội dung cần sửa — **bắt buộc đọc trước khi resolve**                                 |
+| `recipientId`                              | string                    | Người phải sửa — chỉ người này resolve được                                           |
+| `isResolved` / `resolvedAt` / `resolvedBy` |                           |                                                                                       |
+| `resolver`                                 | `UserMini`\|null          | Tên người đã resolve (bù cho việc Mangaka không có endpoint resolve id→tên Assistant) |
+| `series`                                   | `SeriesMini`\|null        |                                                                                       |
 
 #### `PATCH /revision-requests/:id/resolve` — đánh dấu đã sửa xong
 
@@ -1395,15 +1404,15 @@ Không body, idempotent (gọi lại khi đã `isResolved=true` không lỗi). C
 
 #### `POST /annotations` — tạo markup
 
-| Field | Bắt buộc | Kiểu | Ghi chú |
-|---|---|---|---|
-| `targetType` | ✅ | `enum AnnotationTargetType` | `PAGE`\|`REGION`\|`TASK`\|`MANUSCRIPT`\|`NAME` |
-| `targetId` | ✅ | string | |
-| `annotationType` | ✅ | `enum AnnotationType` | `TEXT`\|`HIGHLIGHT`\|`DRAWING` |
-| `coordinates` | tuỳ | object tự do (record) | Toạ độ vẽ tay/khoanh vùng — FE tự định nghĩa shape |
-| `content` | tuỳ | string (≤5000) | Nội dung ghi chú |
-| `reviewStage` | tuỳ | `enum ReviewStage` | `ASSISTANT`\|`MANGAKA`\|`EDITOR` — ngữ cảnh đang review ai |
-| `taskId` | tuỳ | string | Bắt buộc thực tế khi review task (Flow 3 — Mangaka annotate khi `request-revision` một task) |
+| Field            | Bắt buộc | Kiểu                        | Ghi chú                                                                                      |
+| ---------------- | -------- | --------------------------- | -------------------------------------------------------------------------------------------- |
+| `targetType`     | ✅       | `enum AnnotationTargetType` | `PAGE`\|`REGION`\|`TASK`\|`MANUSCRIPT`\|`NAME`                                               |
+| `targetId`       | ✅       | string                      |                                                                                              |
+| `annotationType` | ✅       | `enum AnnotationType`       | `TEXT`\|`HIGHLIGHT`\|`DRAWING`                                                               |
+| `coordinates`    | tuỳ      | object tự do (record)       | Toạ độ vẽ tay/khoanh vùng — FE tự định nghĩa shape                                           |
+| `content`        | tuỳ      | string (≤5000)              | Nội dung ghi chú                                                                             |
+| `reviewStage`    | tuỳ      | `enum ReviewStage`          | `ASSISTANT`\|`MANGAKA`\|`EDITOR` — ngữ cảnh đang review ai                                   |
+| `taskId`         | tuỳ      | string                      | Bắt buộc thực tế khi review task (Flow 3 — Mangaka annotate khi `request-revision` một task) |
 
 Response 201 `AnnotationRes`. Lỗi: `Error.AnnotationForbidden` (403) · `Error.AnnotationTargetNotFound` (422, path `targetId`) · `Error.AnnotationTaskBindingInvalid` (422, path `taskId` — `taskId` không khớp `targetId`/`targetType`).
 
@@ -1417,7 +1426,7 @@ Query `ListAnnotationQuery`: `targetType` (✅, `enum AnnotationTargetType`), `t
 
 ## 7. Xác nhận cuối cùng & phát hiện đáng chú ý
 
-**Đủ 124/124 route** (§87 + W1, 2026-08-02) — script parse `route-roles.ts` cho đúng **124** route có `RoleCode.MANGAKA` trong `allowed[]`. So với Spec 28 (123): contract Phase-2 §87 net **−1** (bỏ `PATCH /contracts/:id/status`, `request-changes`, `signatures/mangaka`; thêm `sign-mangaka`, `reject`) → 122; rồi **W1 +2** (mở `GET /survey-periods` cho Mangaka + thêm `GET /rankings/internal/aggregate`) → **124**. *(Số breakdown A–F theo nhóm chỉ mang tính điều hướng; nguồn chuẩn tuyệt đối là `route-roles.ts`.)*
+**Đủ 124/124 route** (§87 + W1, 2026-08-02) — script parse `route-roles.ts` cho đúng **124** route có `RoleCode.MANGAKA` trong `allowed[]`. So với Spec 28 (123): contract Phase-2 §87 net **−1** (bỏ `PATCH /contracts/:id/status`, `request-changes`, `signatures/mangaka`; thêm `sign-mangaka`, `reject`) → 122; rồi **W1 +2** (mở `GET /survey-periods` cho Mangaka + thêm `GET /rankings/internal/aggregate`) → **124**. _(Số breakdown A–F theo nhóm chỉ mang tính điều hướng; nguồn chuẩn tuyệt đối là `route-roles.ts`.)_
 
 **Phát hiện đáng chú ý so với 2 guide cũ (`FE-API-Guide-v3.md`/`FE-Mobile-RN-Guide.md` — chỉ liếc văn phong, không dùng làm nguồn):**
 

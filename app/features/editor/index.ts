@@ -7,7 +7,6 @@ export {
   EDITOR_PROPOSAL_INTENTS,
   EDITOR_PROPOSAL_ROUTES,
   EDITOR_PROPOSALS_PAGE_SIZE,
-  canEditSeriesMetadata,
   canRejectProposal,
   canReleaseSeries,
   canReopenReview,
@@ -25,6 +24,12 @@ export { EditorBoardPage } from './board/editor-board-page'
 export { EditorBoardSessionsPage } from './board/editor-board-sessions-page'
 export { EditorBoardMeetingRoomPage } from './board/editor-board-meeting-room-page'
 export { EditorBoardDecisionsPage } from './board/editor-board-decisions-page'
+export {
+  BOARD_SESSION_DECISION_TYPES,
+  hasBoardDecisionConflict,
+  isBoardSessionDecisionType,
+  type BoardSessionDecisionType
+} from './board/board-decision-flow'
 export {
   BOARD_DECISION_LIMITS,
   BOARD_ROSTER_LIMITS,

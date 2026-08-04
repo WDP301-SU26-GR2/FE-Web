@@ -2390,6 +2390,7 @@
       "description": "Chọn series và trình bày kế hoạch tiếp quản, phát triển tác phẩm.",
       "series": "Series",
       "seriesPlaceholder": "Chọn series",
+      "noEligibleSeries": "Hiện không có series SERIALIZED hoặc HIATUS đủ điều kiện. Series do bạn sở hữu sẽ không xuất hiện trong danh sách này.",
       "type": "Loại chuyển nhượng",
       "percentage": "Tỷ lệ sở hữu (1–99%)",
       "plan": "Kế hoạch tiếp quản",
@@ -2422,6 +2423,7 @@
       "progressTitle": "Tiến độ chữ ký ba bên",
       "pending": "Chưa ký",
       "waitYourTurn": "Chưa đến lượt ký của bạn. Hệ thống sẽ mở thao tác khi bên ký trước đã hoàn tất.",
+      "boardApprovalRequired": "Mangaka chuyển giao chỉ có thể ký sau khi Hội đồng thông qua quyết định CONTRACT cho hợp đồng này. Nếu quyết định chưa hoàn tất, hệ thống sẽ từ chối chữ ký và giữ nguyên hợp đồng.",
       "notSigner": "Tài khoản hiện tại không phải bên ký của hợp đồng này.",
       "roles": {
         "MANGAKA_A": "Mangaka chuyển giao",
@@ -2455,6 +2457,7 @@
       "requestNotFound": "Yêu cầu từ thông báo không còn khả dụng hoặc bạn không có quyền truy cập.",
       "noActiveContract": "Series chưa có hợp đồng hiệu lực để chuyển nhượng.",
       "activeRequestExists": "Series này đã có một yêu cầu chuyển nhượng đang được xử lý.",
+      "seriesNotEligible": "Chỉ series đang phát hành hoặc tạm ngưng mới có thể tạo yêu cầu chuyển nhượng.",
       "awaitingContractDecision": "Hợp đồng chuyển nhượng đang chờ Hội đồng biểu quyết và chưa thể ký.",
       "generic": "Không thể hoàn tất thao tác chuyển nhượng. Vui lòng thử lại.",
       "notYourTurn": "Bạn không phải bên ký hiện tại hoặc hợp đồng chưa đến lượt ký của bạn."

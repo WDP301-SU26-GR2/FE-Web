@@ -8,8 +8,7 @@ export const EDITOR_PROPOSAL_INTENTS = {
   reject: 'rejectSeries',
   reopen: 'reopenReview',
   release: 'releaseSeries',
-  pitch: 'pitchSeries',
-  updateMetadata: 'updateMetadata'
+  pitch: 'pitchSeries'
 } as const
 
 export const EDITOR_PROPOSAL_ROUTES = {
@@ -20,14 +19,6 @@ export const EDITOR_PROPOSAL_ROUTES = {
 } as const
 
 export const EDITOR_PROPOSALS_PAGE_SIZE = 20
-
-const METADATA_TERMINAL_STATUSES = new Set<SeriesResDtoOutput['status']>([
-  SeriesResDtoOutputStatus.COMPLETED,
-  SeriesResDtoOutputStatus.CANCELLED,
-  SeriesResDtoOutputStatus.ABANDONED,
-  SeriesResDtoOutputStatus.WITHDRAWN,
-  SeriesResDtoOutputStatus.REJECTED
-])
 
 const ERROR_KEY_BY_CODE = {
   'Error.SeriesAlreadyClaimed': 'alreadyClaimed',
@@ -63,10 +54,6 @@ export function canReleaseSeries(series: SeriesResDtoOutput, userId?: string): b
   return (
     isAssignedEditor(series, userId) && series.status === SeriesResDtoOutputStatus.IN_REVIEW && !series.reviewStartedAt
   )
-}
-
-export function canEditSeriesMetadata(series: SeriesResDtoOutput, userId?: string): boolean {
-  return isAssignedEditor(series, userId) && !METADATA_TERMINAL_STATUSES.has(series.status)
 }
 
 export function canRejectProposal(series: SeriesResDtoOutput, userId?: string): boolean {
