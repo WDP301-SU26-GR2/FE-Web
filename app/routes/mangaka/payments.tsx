@@ -1,54 +1,45 @@
 import { mangakaDashboardControllerEarnings } from '~/api/operations/dashboard/dashboard'
-import { contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import {
-  paymentControllerGetPaymentsByContract,
   paymentControllerGetPaymentsBySeries,
   paymentControllerGetPaymentsByUser
 } from '~/api/operations/payments/payments'
+import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { usersControllerGetMe } from '~/api/operations/users/users'
-import type { ContractListItemDtoOutput } from '~/api/model/contracts'
-import { MangakaFinancePage, mangakaRouteMeta } from '~/features/mangaka'
+import { MangakaFinancePage, mangakaRouteMeta, resolveSelectedPaymentSeriesId } from '~/features/mangaka'
 
 export function meta() {
   return mangakaRouteMeta('routeMeta.payments.title', 'routeMeta.payments.description')
 }
 
 export async function clientLoader({ request }: { request: Request }) {
-  const requestedView = new URL(request.url).searchParams.get('view') ?? 'user'
+  const requestedSeriesId = new URL(request.url).searchParams.get('series')
   try {
-    const [earningsResponse, meResponse] = await Promise.all([
+    const [earningsResponse, meResponse, seriesResponse] = await Promise.all([
       mangakaDashboardControllerEarnings(),
-      usersControllerGetMe()
+      usersControllerGetMe(),
+      seriesControllerListSeries({ limit: 100 })
     ])
     if (earningsResponse.status !== 200 || meResponse.status !== 200) {
       return failedLoaderData()
     }
 
-    let contracts: ContractListItemDtoOutput[] = []
-    let filtersLoadFailed = false
+    const series = seriesResponse.status === 200 ? seriesResponse.data.items : []
+    const filtersLoadFailed = seriesResponse.status !== 200
+    const selectedSeriesId = resolveSelectedPaymentSeriesId(
+      requestedSeriesId,
+      series.map((item) => item.id)
+    )
     try {
-      const contractsResponse = await contractControllerGetContracts()
-      contracts = contractsResponse.status === 200 ? contractsResponse.data : []
-      filtersLoadFailed = contractsResponse.status !== 200
-    } catch {
-      filtersLoadFailed = true
-    }
-
-    const paymentView = resolvePaymentView(requestedView, contracts)
-    try {
-      const paymentsResponse =
-        paymentView.scope === 'contract'
-          ? await paymentControllerGetPaymentsByContract({ id: paymentView.id })
-          : paymentView.scope === 'series'
-            ? await paymentControllerGetPaymentsBySeries({ id: paymentView.id })
-            : await paymentControllerGetPaymentsByUser({ id: meResponse.data.id })
+      const paymentsResponse = selectedSeriesId
+        ? await paymentControllerGetPaymentsBySeries({ id: selectedSeriesId })
+        : await paymentControllerGetPaymentsByUser({ id: meResponse.data.id })
       return {
         earnings: earningsResponse.data,
         payments: paymentsResponse.status === 200 ? paymentsResponse.data.data : [],
         earningsLoadFailed: false,
         paymentsLoadFailed: paymentsResponse.status !== 200,
-        contracts,
-        selectedView: paymentView.value,
+        series,
+        selectedSeriesId,
         filtersLoadFailed
       }
     } catch {
@@ -57,8 +48,8 @@ export async function clientLoader({ request }: { request: Request }) {
         payments: [],
         earningsLoadFailed: false,
         paymentsLoadFailed: true,
-        contracts,
-        selectedView: paymentView.value,
+        series,
+        selectedSeriesId,
         filtersLoadFailed
       }
     }
@@ -67,28 +58,14 @@ export async function clientLoader({ request }: { request: Request }) {
   }
 }
 
-function resolvePaymentView(requestedView: string, contracts: ContractListItemDtoOutput[]) {
-  const separator = requestedView.indexOf(':')
-  const scope = separator > 0 ? requestedView.slice(0, separator) : requestedView
-  const id = separator > 0 ? requestedView.slice(separator + 1) : ''
-
-  if (scope === 'contract' && contracts.some((contract) => contract.id === id)) {
-    return { scope: 'contract' as const, id, value: `contract:${id}` }
-  }
-  if (scope === 'series' && contracts.some((contract) => contract.seriesId === id)) {
-    return { scope: 'series' as const, id, value: `series:${id}` }
-  }
-  return { scope: 'user' as const, id: '', value: 'user' }
-}
-
 function failedLoaderData() {
   return {
     earnings: null,
     payments: [],
     earningsLoadFailed: true,
     paymentsLoadFailed: true,
-    contracts: [] as ContractListItemDtoOutput[],
-    selectedView: 'user',
+    series: [],
+    selectedSeriesId: undefined,
     filtersLoadFailed: true
   }
 }

@@ -35,8 +35,12 @@ export async function clientLoader({ params }: { params: { id: string } }) {
     amendments?.status === 200
       ? await Promise.all(
           amendments.data.map(async (amendment) => {
-            const detail = await contractAmendmentControllerGetAmendment({ contractId: params.id, id: amendment.id })
-            return detail.data
+            try {
+              const detail = await contractAmendmentControllerGetAmendment({ contractId: params.id, id: amendment.id })
+              return detail.status === 200 ? detail.data : null
+            } catch {
+              return null
+            }
           })
         )
       : []
@@ -46,7 +50,8 @@ export async function clientLoader({ params }: { params: { id: string } }) {
     progress: progress?.status === 200 ? progress.data : null,
     progressLoadFailed: progress == null,
     conditions: conditions?.status === 200 ? conditions.data.data : [],
-    amendments: amendmentDetails,
+    amendments: amendmentDetails.filter((amendment) => amendment != null),
+    amendmentsLoadFailed: amendments == null || amendmentDetails.some((amendment) => amendment == null),
     conditionsLoadFailed: conditions == null,
     versions: versions?.status === 200 ? versions.data : [],
     versionsLoadFailed: versions == null

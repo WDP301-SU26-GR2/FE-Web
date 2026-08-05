@@ -22,7 +22,9 @@ type UseProposalRevisionsResult = {
 export function useProposalRevisions(seriesId: string): UseProposalRevisionsResult {
   const { t } = useTranslation('mangaka')
   const [revisions, setRevisions] = useState<RevisionRequestListResDtoOutputItemsItem[]>([])
-  const [isLoadingRevisions, setIsLoadingRevisions] = useState(false)
+  // The first render must not expose resubmission before the unresolved
+  // revision list has been loaded.
+  const [isLoadingRevisions, setIsLoadingRevisions] = useState(true)
   const [reloadToken, setReloadToken] = useState(0)
   const [resolvingRevisionId, setResolvingRevisionId] = useState<string | null>(null)
 

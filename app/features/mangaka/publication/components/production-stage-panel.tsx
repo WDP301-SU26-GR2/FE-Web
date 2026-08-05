@@ -18,6 +18,7 @@ import { Dialog } from '~/shared/ui/dialog'
 import { cn } from '~/shared/lib/cn'
 
 import { ProductionStageManagementDialog } from './production-stage-management-dialog'
+import { translateProductionStageName } from '../lib/translate-publication-status'
 import { useProductionStageManagement } from '../hooks/use-production-stage-management'
 
 export interface ProductionStagePanelProps {
@@ -151,7 +152,7 @@ export function ProductionStagePanel({
         </div>
         {activeStage && (
           <span className='rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary'>
-            {t('seriesDetail.production.active', { name: activeStage.name })}
+            {t('seriesDetail.production.active', { name: translateProductionStageName(activeStage.name, t) })}
           </span>
         )}
       </header>
@@ -165,7 +166,7 @@ export function ProductionStagePanel({
               </span>
               <StageStatus status={stage.status} />
             </div>
-            <p className='mt-1 truncate text-sm font-semibold'>{stage.name}</p>
+            <p className='mt-1 truncate text-sm font-semibold'>{translateProductionStageName(stage.name, t)}</p>
             <div className='mt-1 flex flex-wrap gap-2 text-[11px] font-semibold'>
               {stage.status !== 'COMPLETED' && (
                 <button
@@ -422,7 +423,9 @@ function ConfirmOutputsDialog({
       title={
         confirmOpen
           ? t('seriesDetail.production.outputDialog.confirmTitle')
-          : t('seriesDetail.production.outputDialog.title', { name: stage.name })
+          : t('seriesDetail.production.outputDialog.title', {
+              name: translateProductionStageName(stage.name, t)
+            })
       }
       description={
         confirmOpen

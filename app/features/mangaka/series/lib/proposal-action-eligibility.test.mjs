@@ -1,7 +1,31 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { canEditSeriesMetadata } from './proposal-action-eligibility.ts'
+import { canEditSeriesMetadata, getProposalActionEligibility } from './proposal-action-eligibility.ts'
+
+test('keeps resubmission hidden while revision requests are still open', () => {
+  assert.equal(
+    getProposalActionEligibility({
+      isOwner: true,
+      seriesStatus: 'DRAFT',
+      proposalStatus: 'PROPOSAL_REVISION',
+      hasOpenRevisions: true
+    }).canResubmit,
+    false
+  )
+})
+
+test('allows resubmission only after all revision requests are addressed', () => {
+  assert.equal(
+    getProposalActionEligibility({
+      isOwner: true,
+      seriesStatus: 'DRAFT',
+      proposalStatus: 'PROPOSAL_REVISION',
+      hasOpenRevisions: false
+    }).canResubmit,
+    true
+  )
+})
 
 test('hides metadata editing while the editable proposal action is available', () => {
   assert.equal(

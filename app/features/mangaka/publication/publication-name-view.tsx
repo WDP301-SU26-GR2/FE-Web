@@ -10,6 +10,7 @@ import type { StoryboardListResDtoOutputItemsItem } from '~/api/model/storyboard
 import { usePublicationContext } from './publication-shell-context'
 import { NamePageCard } from './components/name-page-card'
 import { NameStatusBadge } from './lib/name-status-meta'
+import { translateStoryboardStatus } from './lib/translate-publication-status'
 import { CreateNameDialog } from './components/create-name-dialog'
 import { EditNameDialog } from './components/edit-name-dialog'
 import { ImageLightbox } from '~/features/mangaka/series/components/image-lightbox'
@@ -321,7 +322,7 @@ function DocumentHeader({
         />
         <MetaItem
           label={t('publication.name.status')}
-          value={name ? name.status : t('publication.name.notStarted')}
+          value={name ? translateStoryboardStatus(name.status, t) : t('publication.name.notStarted')}
           tone={name ? name.status : 'DRAFT'}
         />
         <MetaItem label={t('publication.name.deadline')} value={formatDate(deadline)} />
@@ -337,14 +338,7 @@ function MetaItem({ label, value, tone }: { label: string; value: string; tone?:
       <div className='min-w-0'>
         <dt className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>{label}</dt>
         <dd className='mt-0.5 truncate text-sm font-semibold text-foreground'>
-          {tone && tone !== value ? (
-            <span className='flex items-center gap-2'>
-              <span>{value}</span>
-              <NameStatusBadge status={tone} />
-            </span>
-          ) : (
-            value
-          )}
+          {tone ? <NameStatusBadge status={tone} /> : value}
         </dd>
       </div>
     </div>
@@ -472,7 +466,7 @@ function NameStatusExplainer({ status }: { status: NameStatusKey | null }) {
                   step.reached ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
-                {step.key}
+                {t(`publication.storyboardStatus.${step.key}`)}
               </p>
               <p className={cn('mt-1 text-xs', step.reached ? 'text-foreground/90' : 'text-muted-foreground')}>
                 {t(step.i18n)}

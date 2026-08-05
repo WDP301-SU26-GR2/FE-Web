@@ -40,7 +40,7 @@
     },
     "payments": {
       "title": "Tài chính",
-      "description": "Theo dõi thu nhập và thanh toán theo người dùng, series hoặc hợp đồng."
+      "description": "Theo dõi thu nhập và các khoản thanh toán theo series của bạn."
     },
     "proposeSeries": {
       "title": "Đề xuất series mới",
@@ -128,6 +128,8 @@
       "invite": "Mời cộng tác",
       "inviteAriaLabel": "Mời cộng tác với {{name}}",
       "portfolioCount": "{{count}} portfolio",
+      "email": "Email",
+      "phoneNumber": "Số điện thoại",
       "availableWindow": "Rảnh {{from}} – {{to}}",
       "availability": {
         "AVAILABLE": "Sẵn sàng",
@@ -242,6 +244,8 @@
       "rating": "{{average}} · {{count}} đánh giá",
       "reputation": "{{score}} uy tín",
       "bioEmpty": "Chưa công bố tiểu sử.",
+      "email": "Email",
+      "phoneNumber": "Số điện thoại",
       "portfolioCount_one": "{{count}} tác phẩm portfolio",
       "portfolioCount_other": "{{count}} tác phẩm portfolio"
     },
@@ -627,29 +631,29 @@
     "reviewStartedAt": "Bắt đầu review",
     "statusReason": "Lý do",
     "revisions": {
-      "title": "Yêu cầu chỉnh sửa từ Editor",
+      "title": "Yêu cầu chỉnh sửa từ Biên tập viên",
       "round": "Vòng {{round}}",
       "openDrawer": "Xem yêu cầu chỉnh sửa",
       "target": {
         "PROPOSAL": "Hồ sơ series",
         "STORYBOARD": "Bản phác thảo mẫu",
-        "MANUSCRIPT": "Manuscript",
-        "TASK": "Task"
+        "MANUSCRIPT": "Bản thảo",
+        "TASK": "Nhiệm vụ"
       },
       "resolve": "Đánh dấu đã chỉnh sửa",
       "resolving": "Đang cập nhật...",
       "confirmTitle": "Đánh dấu đã chỉnh sửa?",
-      "confirmDescription": "Chỉ xác nhận khi bạn đã xử lý đầy đủ yêu cầu của Editor.",
-      "confirmNotice": "Thao tác này sẽ đánh dấu vòng revision là đã xử lý.",
+      "confirmDescription": "Chỉ xác nhận khi bạn đã xử lý đầy đủ yêu cầu của Biên tập viên.",
+      "confirmNotice": "Thao tác này sẽ đánh dấu vòng yêu cầu chỉnh sửa là đã xử lý.",
       "confirmCta": "Đánh dấu đã sửa",
       "resolveSuccess": "Đã đánh dấu hoàn tất yêu cầu chỉnh sửa.",
       "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại.",
       "drawer": {
-        "subtitle": "Các vòng yêu cầu sửa hồ sơ series / bản phác khung truyện / bản thảo của series này",
+        "subtitle": "Các vòng yêu cầu chỉnh sửa hồ sơ series, bản phác thảo và bản thảo của series này",
         "close": "Đóng",
         "empty": {
           "title": "Chưa có yêu cầu chỉnh sửa nào",
-          "description": "Khi Editor gửi yêu cầu chỉnh sửa, danh sách sẽ hiển thị ở đây."
+          "description": "Khi Biên tập viên gửi yêu cầu chỉnh sửa, danh sách sẽ hiển thị ở đây."
         },
         "loading": "Đang tải...",
         "error": {
@@ -659,7 +663,7 @@
         "resolved": "Đã xử lý",
         "footerHint": "Bấm ESC hoặc click ra ngoài để đóng",
         "paginationInfo": "{{from}}-{{to}} trong {{total}}",
-        "requestedByEditorFallback": "Yêu cầu bởi Editor"
+        "requestedByEditorFallback": "Yêu cầu bởi Biên tập viên"
       }
     },
     "relationshipType": "Quan hệ với series gốc",
@@ -905,7 +909,7 @@
         "nameRequired": "Nhập tên giai đoạn.",
         "deadline": "Hạn chót (không bắt buộc)",
         "taskTypes": "Loại công việc",
-        "taskTypesHint": "Chọn ít nhất một loại công việc để có thể giao task cho giai đoạn này.",
+        "taskTypesHint": "Chọn ít nhất một loại công việc để có thể giao nhiệm vụ cho giai đoạn này.",
         "taskTypesRequired": "Chọn ít nhất một loại công việc.",
         "create": {
           "title": "Thêm giai đoạn sau {{name}}",
@@ -919,7 +923,7 @@
         },
         "remove": {
           "title": "Xoá {{name}}",
-          "description": "Chỉ có thể xoá giai đoạn đang khoá và chưa có task.",
+          "description": "Chỉ có thể xoá giai đoạn đang khoá và chưa có nhiệm vụ.",
           "action": "Xoá",
           "notice": "Thao tác này sẽ xoá giai đoạn đang khoá đã chọn khỏi tiến trình sản xuất.",
           "confirmTitle": "Xoá giai đoạn sản xuất này?",
@@ -928,32 +932,38 @@
         }
       },
       "label": "Các giai đoạn sản xuất",
-      "description": "Hoàn tất task, xác nhận output của từng trang rồi mới chuyển giai đoạn.",
+      "description": "Hoàn tất nhiệm vụ, xác nhận kết quả của từng trang rồi mới chuyển giai đoạn.",
       "loading": "Đang tải các giai đoạn sản xuất…",
       "error": "Không thể cập nhật giai đoạn sản xuất. Vui lòng thử lại.",
       "active": "Đang mở: {{name}}",
       "stageNumber": "Giai đoạn {{n}}",
       "taskCount": "{{approved}} đã duyệt · {{open}} đang mở",
-      "finalCheck": "FINAL_CHECK đang mở. Khi mọi giai đoạn sản xuất đã hoàn tất, bạn có thể nộp bản thảo.",
-      "confirmOutputs": "Xác nhận output",
+      "finalCheck": "Bước kiểm tra cuối đang mở. Khi mọi giai đoạn sản xuất đã hoàn tất, bạn có thể nộp bản thảo.",
+      "productionStage": {
+        "INKING": "Tô mực",
+        "DETAILING": "Thêm chi tiết",
+        "LETTERING": "Chèn chữ",
+        "FINAL_CHECK": "Kiểm tra cuối"
+      },
+      "confirmOutputs": "Xác nhận kết quả",
       "complete": "Hoàn tất giai đoạn",
       "completeSuccess": "Đã hoàn tất giai đoạn sản xuất.",
       "reopen": "Mở lại để sửa",
       "reopenSuccess": "Đã mở lại giai đoạn sản xuất để sửa.",
-      "outputsSuccess": "Đã xác nhận output của giai đoạn.",
-      "outputsLocked": "Output đã chốt",
-      "uploadFailed": "Không thể tải output của giai đoạn.",
+      "outputsSuccess": "Đã xác nhận kết quả của giai đoạn.",
+      "outputsLocked": "Kết quả đã chốt",
+      "uploadFailed": "Không thể tải kết quả của giai đoạn.",
       "status": { "LOCKED": "Đang khoá", "ACTIVE": "Đang mở", "COMPLETED": "Hoàn tất" },
       "outputDialog": {
-        "title": "Xác nhận output {{name}}",
-        "description": "Xác nhận một output cho mọi trang trước khi hoàn tất giai đoạn.",
-        "confirmTitle": "Xác nhận chốt output?",
-        "confirmDescription": "Output của tất cả trang trong giai đoạn này sẽ được chốt.",
-        "confirmNotice": "Sau khi xác nhận, bạn không thể chỉnh sửa output trong giai đoạn này. Hãy kiểm tra kỹ trước khi tiếp tục hoàn tất giai đoạn.",
-        "confirmCta": "Chốt output",
+        "title": "Xác nhận kết quả {{name}}",
+        "description": "Xác nhận một kết quả cho mọi trang trước khi hoàn tất giai đoạn.",
+        "confirmTitle": "Xác nhận chốt kết quả?",
+        "confirmDescription": "Kết quả của tất cả trang trong giai đoạn này sẽ được chốt.",
+        "confirmNotice": "Sau khi xác nhận, bạn không thể chỉnh sửa kết quả trong giai đoạn này. Hãy kiểm tra kỹ trước khi tiếp tục hoàn tất giai đoạn.",
+        "confirmCta": "Chốt kết quả",
         "page": "Trang …{{id}}",
-        "preserve": "Output hiện có sẽ được giữ lại trừ khi bạn tải file thay thế.",
-        "reuseInput": "Dùng lại input của giai đoạn"
+        "preserve": "Kết quả hiện có sẽ được giữ lại trừ khi bạn tải tệp thay thế.",
+        "reuseInput": "Dùng lại dữ liệu đầu vào của giai đoạn"
       }
     }
   },
@@ -968,7 +978,7 @@
     "stripGroupLabel": "Thư viện ảnh"
   },
   "publication": {
-    "loading": "Đang tải workbench...",
+    "loading": "Đang tải bàn làm việc xuất bản...",
     "preview": "Xem trước",
     "close": "Đóng",
     "cancel": "Huỷ",
@@ -978,95 +988,95 @@
       "retry": "Thử lại"
     },
     "notFound": {
-      "title": "Không tìm thấy chapter",
-      "description": "Chapter này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
+      "title": "Không tìm thấy chương",
+      "description": "Chương này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
       "back": "Về trang series"
     },
     "header": {
-      "brandSubtitle": "Workbench Xuất bản",
+      "brandSubtitle": "Bàn làm việc xuất bản",
       "backToSeries": "Về trang series",
       "chapterContext": "{{series}} · Chương {{n}}",
-      "workbenchLabel": "Workbench xuất bản",
-      "tabName": "Name",
-      "tabPages": "Pages",
-      "tabPagesDisabledHint": "Duyệt Name storyboard trước để mở khoá Pages."
+      "workbenchLabel": "Bàn làm việc xuất bản",
+      "tabName": "Bản phác khung truyện",
+      "tabPages": "Các trang",
+      "tabPagesDisabledHint": "Duyệt bản phác khung truyện trước để mở khoá các trang."
     },
     "workbenchTitle": "Chương {{n}} — Xuất bản",
-    "workbenchSubtitle": "Quản lý Name (storyboard) và các trang production của chapter này.",
+    "workbenchSubtitle": "Quản lý bản phác khung truyện và các trang sản xuất của chương này.",
     "nameSection": {
-      "title": "Name (Storyboard)",
-      "empty": "Chapter này chưa có Name.",
-      "emptyHint": "Bấm \"Tạo Name\" để bắt đầu storyboard.",
-      "noPages": "Name chưa có trang nào — hãy upload ít nhất 1 trang.",
-      "pageAlt": "Trang storyboard {{n}}",
+      "title": "Bản phác khung truyện",
+      "empty": "Chương này chưa có bản phác khung truyện.",
+      "emptyHint": "Bấm \"Tạo bản phác\" để bắt đầu.",
+      "noPages": "Bản phác chưa có trang nào — hãy tải lên ít nhất 1 trang.",
+      "pageAlt": "Trang bản phác khung truyện {{n}}",
       "pageNumber": "Trang {{n}}",
       "versionLabel": "Phiên bản {{n}}",
-      "createButton": "Tạo Name",
+      "createButton": "Tạo bản phác",
       "editButton": "Sửa trang",
-      "submitButton": "Nộp Name",
-      "resubmitButton": "Nộp lại Name",
-      "removeButton": "Xoá Name",
+      "submitButton": "Nộp bản phác",
+      "resubmitButton": "Nộp lại bản phác",
+      "removeButton": "Xoá bản phác",
       "create": {
-        "dialogTitle": "Tạo Name (storyboard)",
-        "dialogDescription": "Tải lên một hoặc nhiều trang storyboard. Name vẫn là bản nháp cho đến khi bạn chủ động nộp để review.",
+        "dialogTitle": "Tạo bản phác khung truyện",
+        "dialogDescription": "Tải lên một hoặc nhiều trang bản phác. Bản phác vẫn là bản nháp cho đến khi bạn chủ động nộp để xét duyệt.",
         "chooseFiles": "Chọn hình ảnh",
-        "allowedHint": "PNG, JPG hoặc WEBP. Tối đa 15MB mỗi file.",
+        "allowedHint": "PNG, JPG hoặc WEBP. Tối đa 15MB mỗi tệp.",
         "removeFile": "Bỏ hình ảnh này",
         "submitting": "Đang tải lên...",
-        "confirm": "Tạo Name",
-        "success": "Đã tạo bản nháp Name."
+        "confirm": "Tạo bản phác",
+        "success": "Đã tạo bản nháp bản phác khung truyện."
       },
       "edit": {
-        "dialogTitle": "Sửa các trang Name",
+        "dialogTitle": "Sửa các trang bản phác",
         "dialogDescription": "Hiện có {{count}} trang. Bỏ những trang không cần, sau đó thêm trang mới. Lưu sẽ gửi một yêu cầu cập nhật duy nhất.",
         "addMore": "Thêm hình ảnh",
-        "removeExisting": "Bỏ trang {{n}} khỏi Name này",
-        "empty": "Name không còn trang nào. Hãy thêm ít nhất 1 hình trước khi lưu.",
-        "errorEmpty": "Name phải có ít nhất 1 trang.",
+        "removeExisting": "Bỏ trang {{n}} khỏi bản phác này",
+        "empty": "Bản phác không còn trang nào. Hãy thêm ít nhất 1 hình trước khi lưu.",
+        "errorEmpty": "Bản phác phải có ít nhất 1 trang.",
         "submitting": "Đang lưu...",
         "confirm": "Lưu thay đổi",
-        "success": "Đã cập nhật các trang Name."
+        "success": "Đã cập nhật các trang bản phác."
       },
       "resubmit": {
-        "success": "Đã nộp lại Name cho Editor."
+        "success": "Đã nộp lại bản phác cho Editor."
       },
       "submit": {
-        "success": "Đã nộp Name cho Editor review.",
-        "error": "Không thể nộp Name. Hãy tải lại và thử lại."
+        "success": "Đã nộp bản phác cho Editor xét duyệt.",
+        "error": "Không thể nộp bản phác. Hãy tải lại và thử lại."
       },
       "remove": {
-        "confirm": "Xoá bản nháp Name này cùng toàn bộ trang storyboard?",
-        "success": "Đã xoá Name.",
-        "error": "Không thể xoá Name."
+        "confirm": "Xoá bản nháp này cùng toàn bộ trang bản phác?",
+        "success": "Đã xoá bản phác.",
+        "error": "Không thể xoá bản phác."
       }
     },
     "pagesSection": {
-      "title": "Pages (Sản xuất)",
-      "subtitle": "Các trang pencil/ink đã upload cho chapter.",
+      "title": "Các trang sản xuất",
+      "subtitle": "Các trang chì/mực đã tải lên cho chương.",
       "count": "{{count}} trang",
-      "gatedTitle": "Upload page đang bị khoá",
-      "gatedDesc": "Hãy duyệt Name trước — page chỉ upload được khi storyboard đã APPROVED.",
-      "uploadButton": "Upload trang",
-      "empty": "Chapter chưa có trang nào được upload.",
+      "gatedTitle": "Tải trang lên đang bị khoá",
+      "gatedDesc": "Hãy duyệt bản phác trước — chỉ có thể tải trang lên khi bản phác đã được duyệt.",
+      "uploadButton": "Tải trang lên",
+      "empty": "Chương chưa có trang nào được tải lên.",
       "card": {
         "page": "Trang {{n}}"
       },
       "pageAlt": "Trang {{n}}",
       "upload": {
-        "dialogTitle": "Upload trang",
-        "dialogDescription": "Chọn ảnh pencil/ink để upload làm trang. Trang đầu tiên sẽ đẩy manuscript sang IN_PRODUCTION.",
+        "dialogTitle": "Tải trang lên",
+        "dialogDescription": "Chọn ảnh chì/mực để tải lên làm trang. Trang đầu tiên sẽ chuyển bản thảo sang trạng thái đang sản xuất.",
         "pageNumberLabel": "Số trang",
-        "fileLabel": "File hình ảnh",
+        "fileLabel": "Tệp hình ảnh",
         "uploading": "Đang tải lên...",
-        "confirm": "Upload trang",
-        "success": "Đã upload trang.",
+        "confirm": "Tải trang lên",
+        "success": "Đã tải trang lên.",
         "errorInvalidNumber": "Số trang phải là số nguyên dương."
       },
       "update": {
         "success": "Đã cập nhật trạng thái trang."
       }
     },
-    "nameStatus": {
+    "storyboardStatus": {
       "DRAFT": "Bản nháp",
       "SUBMITTED": "Đã nộp",
       "IN_REVIEW": "Đang xét duyệt",
@@ -1079,51 +1089,51 @@
       "REVISING": "Cần sửa lại"
     },
     "statusPill": {
-      "label": "Storyboard"
+      "label": "Bản phác khung truyện"
     },
     "name": {
-      "titleWithChapter": "{{chapterTitle}} — Storyboard ch.{{n}}",
-      "subtitle": "Các trang storyboard để Editor duyệt trước khi đi vào sản xuất.",
-      "documentLabel": "Storyboard",
+      "titleWithChapter": "{{chapterTitle}} — Bản phác khung truyện, chương {{n}}",
+      "subtitle": "Các trang bản phác để Editor duyệt trước khi đi vào sản xuất.",
+      "documentLabel": "Bản phác khung truyện",
       "version": "Phiên bản",
       "versionValue": "v{{n}}",
       "status": "Trạng thái",
       "notStarted": "Chưa bắt đầu",
-      "deadline": "Deadline",
+      "deadline": "Hạn chót",
       "submittedAt": "Ngày nộp",
       "pagesCount": "{{n}} trang",
-      "lockedHint": "Tạo storyboard ở tab Name trước để mở khoá quy trình.",
+      "lockedHint": "Tạo bản phác ở tab Bản phác khung truyện trước để mở khoá quy trình.",
       "timeline": {
         "title": "Vòng duyệt",
         "draft": "Bản thảo đầu tiên",
         "submitted": "Đã nộp cho Editor",
         "inReview": "Editor đang xem",
         "revision": "Yêu cầu sửa",
-        "approved": "Đã duyệt — mở khoá upload trang",
-        "revisionCallout": "Editor đã yêu cầu chỉnh sửa. Bạn chỉnh sửa các trang phía trên rồi nhấn Resubmit."
+        "approved": "Đã duyệt — mở khoá tải trang lên",
+        "revisionCallout": "Editor đã yêu cầu chỉnh sửa. Bạn chỉnh sửa các trang phía trên rồi nhấn Nộp lại."
       }
     },
     "pagesLocked": {
-      "title": "Trang production đang khoá",
-      "description": "Sau khi Editor duyệt storyboard, bạn sẽ upload được trang pencil/ink và xem tại đây.",
-      "backToName": "Mở tab Name"
+      "title": "Trang sản xuất đang bị khoá",
+      "description": "Sau khi Editor duyệt bản phác, bạn sẽ tải được trang chì/mực lên và xem tại đây.",
+      "backToName": "Mở tab bản phác"
     },
     "pages": {
-      "title": "Pages",
-      "subtitle": "Trình đọc composite — mục lục trái, ảnh trang giữa, nhận xét của Editor phải."
+      "title": "Các trang",
+      "subtitle": "Trình đọc bản ghép — mục lục trái, ảnh trang giữa, nhận xét của Editor phải."
     },
     "pagesReader": {
       "addPage": "Thêm trang",
-      "compositeLabel": "Trang composite",
+      "compositeLabel": "Trang bản ghép",
       "title": "{{chapterTitle}} — Ch.{{n}}",
       "subtitle": "Cuộn dọc giữa các trang. Mục lục bên trái theo dõi trang đang xem; nhận xét Editor hiện bên phải.",
       "emptyTitle": "Chưa có trang nào",
-      "emptyDesc": "Upload trang pencil/ink đầu tiên để bắt đầu production.",
+      "emptyDesc": "Tải trang chì/mực đầu tiên lên để bắt đầu sản xuất.",
       "backToTop": "Về đầu trang",
       "done": "Hoàn tất",
-      "replaceCompositeHint": "Chọn file composite mới. Bản cũ sẽ được thay thế.",
-      "chooseFile": "Chọn file",
-      "uploadError": "Không thể upload ảnh.",
+      "replaceCompositeHint": "Chọn tệp bản ghép mới. Bản cũ sẽ được thay thế.",
+      "chooseFile": "Chọn tệp",
+      "uploadError": "Không thể tải ảnh lên.",
       "accessDeniedTitle": "Không thể mở các trang bản thảo",
       "accessDenied": "Bạn không có quyền xem các trang của chương này hoặc quan hệ cộng tác đã kết thúc.",
       "retry": "Thử lại",
@@ -1145,10 +1155,10 @@
         "error": "Không thể xóa trang. Trang đã hoàn tất hoặc có nhiệm vụ được duyệt sẽ được bảo vệ."
       },
       "composer": {
-        "title": "Upload trang {{n}}",
+        "title": "Tải trang {{n}} lên",
         "cancel": "Huỷ",
         "dropOrClick": "Thả ảnh vào đây hoặc bấm để chọn",
-        "submit": "Upload trang {{n}}",
+        "submit": "Tải trang {{n}} lên",
         "allowedTypes": "PNG, JPG, WEBP hoặc PDF (tối đa 15MB)",
         "chooseAnother": "Chọn ảnh khác"
       },
@@ -1238,7 +1248,7 @@
       "progress": "{{ready}}/{{total}} sẵn sàng · {{pending}} đang chờ · {{percent}}%",
       "completePagesHint": "Hoàn tất tất cả trang trước khi nộp bản thảo cho Editor.",
       "noPagesHint": "Tải lên ít nhất 1 trang trước khi nộp bản thảo.",
-      "tasksPendingHint": "Vui lòng hoàn thành tất cả task (được giao cho trợ lý) trước khi nộp bản thảo.",
+      "tasksPendingHint": "Vui lòng hoàn thành tất cả nhiệm vụ (được giao cho trợ lý) trước khi nộp bản thảo.",
       "resolveRevisionsHint": "Hãy đánh dấu hoàn tất mọi vòng sửa bản thảo đang mở trong khung phản hồi trước khi nộp lại.",
       "readyForPrintHint": "Bản thảo đã sẵn sàng. Đang chờ Editor xuất bản.",
       "coOwnerPending": "Đang chờ đồng sở hữu duyệt trước khi xuất bản.",
@@ -1247,7 +1257,7 @@
         "actions": {
           "approve": {
             "button": "Duyệt xuất bản",
-            "success": "Đã duyệt bản thảo và xuất bản chapter."
+            "success": "Đã duyệt bản thảo và xuất bản chương."
           },
           "reject": {
             "button": "Yêu cầu chỉnh sửa",
@@ -1270,15 +1280,15 @@
           "generic": "Không thể lưu quyết định của đồng sở hữu. Vui lòng thử lại."
         },
         "notification": {
-          "eyebrow": "Quy trình chapter",
-          "title": "Cập nhật chapter và bản thảo",
-          "description": "Xem trạng thái chapter và các trang bản thảo được tham chiếu trong thông báo này.",
+          "eyebrow": "Quy trình chương",
+          "title": "Cập nhật chương và bản thảo",
+          "description": "Xem trạng thái chương và các trang bản thảo được tham chiếu trong thông báo này.",
           "back": "Quay lại thông báo",
-          "loading": "Đang tải trạng thái chapter…",
-          "notFound": "Chapter này không còn khả dụng.",
+          "loading": "Đang tải trạng thái chương…",
+          "notFound": "Chương này không còn khả dụng.",
           "retry": "Thử lại",
-          "chapter": "Chapter",
-          "chapterValue": "Chapter {{number}}",
+          "chapter": "Chương",
+          "chapterValue": "Chương {{number}}",
           "status": "Trạng thái bản thảo",
           "pagesTitle": "Các trang bản thảo",
           "pagesLoading": "Đang tải các trang bản thảo…",
@@ -1656,10 +1666,6 @@
         "priorityInvalid": "Độ ưu tiên phải là số nguyên không âm.",
         "description": "Mô tả công việc (tuỳ chọn)",
         "groupTitle": "Tên nhóm công việc (tuỳ chọn)",
-        "batch": {
-          "title": "Tách thành {{count}} nhiệm vụ độc lập",
-          "description": "Mỗi vùng sẽ trở thành một nhiệm vụ riêng trong cùng một giao dịch. Nếu một mục không hợp lệ, toàn bộ lô sẽ không được tạo."
-        },
         "attachments": {
           "label": "Tài liệu tham khảo (tuỳ chọn)",
           "dropzoneLabel": "Kéo và thả hoặc bấm để chọn file",
@@ -1682,7 +1688,6 @@
           "assignFailed": "Không thể giao nhiệm vụ. Vui lòng thử lại.",
           "stageSnapshotError": "Không thể tải ảnh đầu vào bất biến của công đoạn sản xuất này.",
           "assignGroupFailed": "Không thể giao nhóm nhiệm vụ. Vui lòng thử lại.",
-          "assignBatchFailed": "Không thể giao lô nhiệm vụ theo vùng. Vui lòng kiểm tra lại và thử lại.",
           "incomplete": "Vui lòng điền đầy đủ thông tin bắt buộc.",
           "taskTypeNotAllowed": "Loại công việc này không được phép ở giai đoạn sản xuất đang hoạt động.",
           "loadAssignments": "Không thể tải các quan hệ cộng tác đang hoạt động.",
@@ -1707,8 +1712,6 @@
           "page": "Trang",
           "pages": "Các trang",
           "region": "Vùng",
-          "creationMode": "Cách tạo",
-          "batchMode": "{{count}} nhiệm vụ độc lập theo từng vùng",
           "deadline": "Deadline",
           "priority": "Độ ưu tiên",
           "attachments": "Tài liệu tham khảo",
@@ -2151,8 +2154,11 @@
       "missed": "Không đạt"
     },
     "breakdown": {
-      "byStatus": "Phân theo trạng thái",
-      "byType": "Phân theo loại khoản chi",
+      "statusTitle": "Tiền theo tiến độ xử lý",
+      "statusDescription": "Cho biết các khoản tiền đang ở bước nào trong quy trình duyệt và thanh toán.",
+      "typeTitle": "Tiền theo lý do phát sinh",
+      "typeDescription": "Cho biết khoản tiền được tạo từ điều kiện hoặc hoạt động nào của series.",
+      "recordCount": "{{count}} khoản",
       "empty": "Chưa có khoản tiền nào để hiển thị."
     },
     "records": {
@@ -2162,15 +2168,11 @@
       "empty": "Chưa có khoản thanh toán nào."
     },
     "filters": {
-      "label": "Chế độ xem thanh toán",
-      "all": "Tất cả khoản thanh toán của tôi",
-      "byContract": "Theo hợp đồng",
-      "bySeries": "Theo series",
-      "unknownContract": "Hợp đồng chưa đặt tên",
-      "apply": "Áp dụng",
+      "label": "Lọc theo series",
+      "all": "Tất cả series",
+      "apply": "Lọc",
       "loading": "Đang tải…",
-      "allDescription": "Hiển thị toàn bộ sổ cái thanh toán dành cho tài khoản của bạn.",
-      "contractDescription": "Hiển thị các khoản thanh toán trong hợp đồng đã chọn.",
+      "allDescription": "Hiển thị tất cả khoản thanh toán dành cho tài khoản của bạn.",
       "seriesDescription": "Hiển thị các khoản thanh toán qua các hợp đồng của series đã chọn."
     },
     "actions": {
@@ -2202,7 +2204,7 @@
       "earnings": "Không thể tải tổng hợp thu nhập. Vui lòng thử lại sau.",
       "records": "Không thể tải các khoản thanh toán. Vui lòng thử lại sau.",
       "detail": "Không thể tải khoản thanh toán này. Khoản này có thể không còn thuộc phạm vi tài khoản của bạn.",
-      "filters": "Không thể tải hợp đồng và series của bạn. Chế độ xem tất cả vẫn khả dụng."
+      "filters": "Không thể tải danh sách series của bạn. Chế độ xem tất cả vẫn khả dụng."
     },
     "status": {
       "TRIGGERED": "Đã kích hoạt",
@@ -2212,6 +2214,15 @@
       "MISSED": "Không đạt",
       "FAILED": "Thất bại",
       "CANCELLED": "Đã huỷ"
+    },
+    "statusDescription": {
+      "TRIGGERED": "Đã đạt điều kiện chi trả, đang chờ duyệt và giải ngân.",
+      "PENDING": "Đang chờ được xử lý.",
+      "APPROVED": "Đã được Hội đồng duyệt, chờ thanh toán.",
+      "PAID": "Tiền đã được thanh toán.",
+      "MISSED": "Không đạt điều kiện chi trả.",
+      "FAILED": "Thanh toán chưa thực hiện thành công.",
+      "CANCELLED": "Khoản thanh toán đã bị huỷ."
     },
     "type": {
       "CONDITION_PAYOUT": "Chi theo điều kiện",
@@ -2223,6 +2234,17 @@
       "TIME_BOUND": "Khoản theo thời hạn",
       "TRANSFER": "Chuyển nhượng"
     },
+    "typeDescription": {
+      "CONDITION_PAYOUT": "Khoản chi khi đạt một điều kiện trong hợp đồng.",
+      "REVENUE_SHARE": "Phần doanh thu được chia theo hợp đồng.",
+      "COMPENSATION": "Khoản bồi thường khi series hoặc hợp đồng bị chấm dứt.",
+      "CHAPTER_MILESTONE": "Khoản chi khi series đạt mốc chương đã cam kết.",
+      "RECURRING_CHAPTER": "Khoản chi lặp lại theo chu kỳ chương.",
+      "RANKING_MILESTONE": "Khoản chi khi series đạt mốc xếp hạng.",
+      "TIME_BOUND": "Khoản chi theo mốc thời hạn đã thỏa thuận.",
+      "TRANSFER": "Khoản chi liên quan đến chuyển nhượng series."
+    },
+    "explanationUnavailable": "Chưa có mô tả cho khoản này.",
     "source": {
       "CONTRACT": "Hợp đồng",
       "REPRINT": "Tái bản",
@@ -2510,6 +2532,7 @@
       "sections": {
         "terms": "Điều khoản hợp đồng",
         "actions": "Thao tác của Mangaka",
+        "signingProgress": "Tiến độ ký hợp đồng",
         "paymentConditions": "Điều kiện thanh toán",
         "amendments": "Phụ lục hợp đồng"
       },
@@ -2517,18 +2540,39 @@
       "signed": "Đã ký",
       "notSigned": "Chưa ký",
       "boardSignatureProgress": "Chữ ký đại diện Hội đồng",
+      "representativeUnclaimed": "Đang chờ Hội đồng chỉ định đại diện",
+      "representativePending": "Đại diện Hội đồng đang xem xét ký",
+      "currentStep": "Bước hiện tại",
+      "phases": {
+        "DRAFT": "Editor đang soạn điều khoản",
+        "BOARD_REVIEW": "Hội đồng đang xem xét",
+        "MANGAKA_REVIEW": "Bạn cần đọc và phản hồi hợp đồng",
+        "PENDING_ACTIVATION": "Đang chờ kích hoạt hợp đồng thay thế",
+        "COMPLETE": "Hợp đồng đã hoàn tất quy trình ký"
+      },
       "progressLoadFailed": "Không thể tải tiến độ chữ ký mới nhất. Hãy tải lại trang trước khi tiếp tục nếu cần đối chiếu chữ ký.",
       "signatureReady": "Đại diện Hội đồng đã ký. Hãy nhận OTP, sau đó chấp nhận và ký hợp đồng.",
       "signedAt": "Đã ký lúc {{date}}.",
       "signatureLocked": "Chỉ có thể ký sau khi đại diện Hội đồng ký hợp đồng.",
       "amendmentsEmpty": "Chưa có phụ lục.",
+      "amendmentsLoadFailed": "Một số phụ lục chưa thể tải đầy đủ. Hãy tải lại trang để xem chi tiết mới nhất.",
       "amendmentFallback": "Phụ lục hợp đồng",
+      "amendmentReasons": {
+        "COMPLETION": "Hoàn tất sớm — xem xét điều khoản hợp đồng",
+        "FORMAT_CHANGE": "Thay đổi hình thức — xem xét điều khoản hợp đồng"
+      },
       "statusHints": {
         "DRAFT": "Editor đang hoàn thiện điều khoản hợp đồng.",
         "BOARD_REVIEW": "Hội đồng đang xem xét hợp đồng và chọn một người đại diện.",
         "AWAITING_MANGAKA": "Hợp đồng đang chờ bạn chấp nhận hoặc từ chối.",
         "REJECTED_BY_MANGAKA": "Bạn đã từ chối hợp đồng này. Biên tập viên có thể soạn một bản mới.",
         "FULLY_EXECUTED": "Hợp đồng đã được ký đầy đủ và có hiệu lực.",
+        "ACTIVATION_PENDING": "Hợp đồng thay thế đã đủ chữ ký và đang chờ giao dịch chuyển nhượng kích hoạt.",
+        "FULFILLED": "Hợp đồng đã hoàn thành mọi nghĩa vụ.",
+        "TERMINATED": "Hợp đồng đã chấm dứt.",
+        "TERMINATED_BY_BREACH": "Hợp đồng đã chấm dứt do vi phạm.",
+        "EXPIRED": "Hợp đồng đã hết hạn.",
+        "VOIDED": "Hợp đồng đã bị vô hiệu.",
         "default": "Hợp đồng hiện không cần thao tác từ bạn."
       }
     },

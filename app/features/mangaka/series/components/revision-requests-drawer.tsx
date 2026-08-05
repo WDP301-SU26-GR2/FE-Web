@@ -12,6 +12,7 @@ type RevisionRequestsDrawerProps = {
   open: boolean
   onClose: () => void
   seriesId: string
+  onRevisionResolved: () => void
 }
 
 const PAGE_SIZE = 4
@@ -38,7 +39,7 @@ function formatDateTime(iso: string, locale: string): string {
  * - Pagination: PAGE_SIZE rounds per page.
  * - Items are intentionally rendered WITHOUT the backend id.
  */
-export function RevisionRequestsDrawer({ open, onClose, seriesId }: RevisionRequestsDrawerProps) {
+export function RevisionRequestsDrawer({ open, onClose, seriesId, onRevisionResolved }: RevisionRequestsDrawerProps) {
   const { t, i18n } = useTranslation('mangaka')
   const { session } = useAuth()
   const currentUserId = session?.user?.id ?? null
@@ -150,7 +151,7 @@ export function RevisionRequestsDrawer({ open, onClose, seriesId }: RevisionRequ
             <ul className='space-y-3'>
               {paginatedItems.map((item) => {
                 const targetKey = TARGET_LABEL_KEY[item.targetType]
-                const targetLabel = i18n.exists(targetKey) ? t(targetKey) : item.targetType
+                const targetLabel = t(targetKey)
                 const canResolve = !!currentUserId && item.recipientId === currentUserId && !item.isResolved
                 return (
                   <li key={item.id} className='rounded-lg border border-border bg-background/40 p-3 text-sm'>
@@ -259,8 +260,10 @@ export function RevisionRequestsDrawer({ open, onClose, seriesId }: RevisionRequ
                 type='button'
                 disabled={resolvingId !== null}
                 onClick={() => {
-                  void resolve(pendingResolution)
-                  setPendingResolution(null)
+                  void resolve(pendingResolution).then((resolved) => {
+                    if (resolved) onRevisionResolved()
+                    setPendingResolution(null)
+                  })
                 }}
                 className='rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
               >

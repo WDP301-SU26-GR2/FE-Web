@@ -1,4 +1,4 @@
-import { Award, BookOpen, Eye, Star } from 'lucide-react'
+import { Award, BookOpen, Eye, Mail, Phone, Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
@@ -76,6 +76,25 @@ export function MangakaPeerCard({ mangaka, onViewDetails }: MangakaPeerCardProps
       <p className='line-clamp-3 text-sm leading-relaxed text-muted-foreground'>
         {mangaka.bio || t('mangakaDirectory.card.bioEmpty')}
       </p>
+
+      <div className='space-y-1.5 rounded-lg bg-muted/40 px-3 py-2 text-xs'>
+        <a
+          href={`mailto:${mangaka.email}`}
+          className='flex min-w-0 items-center gap-2 text-muted-foreground hover:text-primary'
+        >
+          <Mail className='h-3.5 w-3.5 shrink-0' aria-hidden='true' />
+          <span className='shrink-0 font-medium'>{t('mangakaDirectory.card.email')}:</span>
+          <span className='truncate'>{mangaka.email}</span>
+        </a>
+        <a
+          href={`tel:${mangaka.phoneNumber}`}
+          className='flex min-w-0 items-center gap-2 text-muted-foreground hover:text-primary'
+        >
+          <Phone className='h-3.5 w-3.5 shrink-0' aria-hidden='true' />
+          <span className='shrink-0 font-medium'>{t('mangakaDirectory.card.phoneNumber')}:</span>
+          <span className='truncate'>{mangaka.phoneNumber}</span>
+        </a>
+      </div>
 
       <footer className='mt-auto flex items-center justify-between gap-3 border-t border-border pt-3'>
         <span className='inline-flex items-center gap-1.5 text-xs text-muted-foreground'>

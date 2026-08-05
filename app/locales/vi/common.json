@@ -206,7 +206,7 @@
       "missingConditions": "Chưa có điều kiện thanh toán hợp lệ nên chưa thể tạo PDF đầy đủ."
     },
     "paymentConditions": {
-      "loadFailed": "Không thể tải điều kiện thanh toán. Các thao tác duyệt và ký đã được khóa để bảo đảm an toàn.",
+      "loadFailed": "Không thể tải điều kiện thanh toán. Hãy tải lại trang để xem thông tin giải ngân mới nhất.",
       "empty": "Hợp đồng chưa có điều kiện thanh toán.",
       "invalidPayout": "Điều kiện này chưa có giá trị chi trả hợp lệ.",
       "types": {
