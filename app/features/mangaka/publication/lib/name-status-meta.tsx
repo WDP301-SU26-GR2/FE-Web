@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { cn } from '~/shared/lib/cn'
 
 export type NameStatusKey = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'REVISION' | 'APPROVED'
@@ -63,6 +65,8 @@ const PAGE_STATUS_META: Record<PageStatusKey, StatusMeta> = {
  * we receive string unions from the API and let TS keep this loose).
  */
 export function NameStatusBadge({ status, className }: { status: string; className?: string }) {
+  const { t } = useTranslation('mangaka')
+  const isKnownStatus = status in NAME_STATUS_META
   const meta = (NAME_STATUS_META as Record<string, StatusMeta>)[status] ?? NAME_STATUS_META.DRAFT
   return (
     <span
@@ -72,7 +76,7 @@ export function NameStatusBadge({ status, className }: { status: string; classNa
         className
       )}
     >
-      {status}
+      {isKnownStatus ? t(`publication.nameStatus.${meta.i18nKey}`) : t('state.unknown')}
     </span>
   )
 }
@@ -83,6 +87,8 @@ export function nameStatusClassName(status: string): string {
 }
 
 export function PageStatusBadge({ status, className }: { status: string; className?: string }) {
+  const { t } = useTranslation('mangaka')
+  const isKnownStatus = status in PAGE_STATUS_META
   const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT
   return (
     <span
@@ -92,7 +98,7 @@ export function PageStatusBadge({ status, className }: { status: string; classNa
         className
       )}
     >
-      {status}
+      {isKnownStatus ? t(`publication.pageStatus.${meta.i18nKey}`) : t('state.unknown')}
     </span>
   )
 }

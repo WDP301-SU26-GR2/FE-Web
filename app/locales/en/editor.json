@@ -27,16 +27,16 @@
     "seriesStatuses": {
       "DRAFT": "Draft",
       "IN_REVIEW": "Under editorial review",
-      "READY_TO_PITCH": "Ready to pitch",
-      "PITCHED": "Pitched to Board",
-      "SERIALIZED": "Serialized",
+      "READY_TO_PITCH": "Ready for Board presentation",
+      "PITCHED": "Presented to the Board",
+      "SERIALIZED": "In serialization",
       "HIATUS": "On hiatus",
       "COMPLETING": "Completing",
       "CANCELLING": "Cancelling",
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled",
-      "REJECTED": "Rejected by Board",
-      "ABANDONED": "Editorial review ended",
+      "REJECTED": "Rejected by the Board",
+      "ABANDONED": "Abandoned",
       "WITHDRAWN": "Withdrawn"
     },
     "nameStatuses": {
@@ -230,7 +230,9 @@
     "history": "Published",
     "emptyAwaiting": "No chapters are currently waiting for editorial action.",
     "emptyHistory": "No chapters have been published yet.",
-    "chapter": "Chapter {{number}}"
+    "chapter": "Chapter {{number}}",
+    "series": "Series",
+    "chapterCount": "chapters"
   },
   "chapterReview": {
     "reviewSections": "Chapter review sections",
@@ -384,9 +386,9 @@
     "readyDescription": "Submit editorially approved series to the Board.",
     "emptyReady": "No series is ready to pitch.",
     "sessionTitle": "Create a Board session",
-    "sessionDescription": "Set the meeting schedule and Board roster; series-specific content is added to each decision.",
+    "sessionDescription": "Set the meeting schedule; the system will automatically assign suitable Board members.",
     "sessionRulesTitle": "System recommendation",
-    "sessionSystemRosterNotice": "Automatic mode selects about {{count}} members using the series genres and current configuration. You can also provide a manual roster.",
+    "sessionSystemRosterNotice": "The system selects a series as context and automatically assigns suitable Board members based on its genres.",
     "noEligibleSeriesForSession": "No series is available to provide context for a Board session.",
     "rosterSourceSeries": "Series used for roster suggestions",
     "rosterSourceSeriesHint": "The series only provides genre context for roster selection and does not limit decisions added to the session.",
@@ -404,7 +406,7 @@
     "manualRosterIds": "Board member IDs",
     "manualRosterPlaceholder": "Enter ObjectIds separated by commas or new lines",
     "manualRosterValidation": "Provide 3–{{maximum}} unique valid IDs and keep the total odd.",
-    "noSeriesForAutomaticRoster": "No series is available for automatic suggestions. You can still create the session with a manual roster.",
+    "noSeriesForAutomaticRoster": "No series is available for automatic Board-member assignment.",
     "sessionName": "Session title",
     "sessionNote": "Agenda or editorial note",
     "startTime": "Start time",
@@ -435,7 +437,7 @@
       "HIATUS": "Place series on hiatus",
       "ENDING_ALLOWANCE": "Ending chapter allowance",
       "SERIES_CONTRACT_APPROVAL": "Series contract approval",
-      "CONTRACT": "Contract decision",
+      "CONTRACT": "Contract resource approval",
       "REPRINT": "Reprint approval",
       "TRANSFER": "Transfer approval"
     },

@@ -25,23 +25,20 @@ export { EditorBoardSessionsPage } from './board/editor-board-sessions-page'
 export { EditorBoardMeetingRoomPage } from './board/editor-board-meeting-room-page'
 export { EditorBoardDecisionsPage } from './board/editor-board-decisions-page'
 export {
+  BOARD_CONTRACT_DECISION_RESOURCE_TYPES,
   BOARD_SESSION_DECISION_TYPES,
   hasBoardDecisionConflict,
+  isBoardContractDecisionResourceType,
   isBoardSessionDecisionType,
+  type BoardContractDecisionResourceType,
   type BoardSessionDecisionType
 } from './board/board-decision-flow'
 export {
   BOARD_DECISION_LIMITS,
-  BOARD_ROSTER_LIMITS,
-  BOARD_ROSTER_MODES,
   BOARD_SESSION_FIELD_LIMITS,
   BOARD_SESSION_INTENTS,
-  getBoardMaximumMemberCount,
   isValidBoardSessionTimeRange,
-  isValidManualBoardRoster,
-  mapBoardSessionError,
-  normalizeBoardRosterSize,
-  parseManualBoardMemberIds
+  mapBoardSessionError
 } from './board/board-session-flow'
 
 export { EditorContractsPage } from './contracts/editor-contracts-page'

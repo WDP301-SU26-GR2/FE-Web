@@ -265,7 +265,14 @@ function DefenseEvidence({ defense }: { defense: DefenseDashboardResDtoOutput })
         <DecisionFact label={t('reports.chaptersPublished')} value={String(defense.serialization.chaptersPublished)} />
         <DecisionFact label={t('reports.unitsSold')} value={String(defense.tankobon.totalUnitsSold)} />
         <DecisionFact label={t('reports.latestRank')} value={latest?.rankPosition ? `#${latest.rankPosition}` : '—'} />
-        <DecisionFact label={t('reports.riskLevel')} value={latest?.riskLevel ?? '—'} />
+        <DecisionFact
+          label={t('reports.riskLevel')}
+          value={
+            latest?.riskLevel
+              ? t(`common:businessData.values.${latest.riskLevel}`, { defaultValue: latest.riskLevel })
+              : '—'
+          }
+        />
       </dl>
     </BoardPanel>
   )
@@ -280,7 +287,9 @@ function DecisionDetails({ details }: { details: Record<string, unknown> }) {
           <DecisionFact
             key={key}
             label={t(`decisions.detailFields.${key}`, { defaultValue: t('common.data') })}
-            value={formatDetailValue(value, t('common.yes'), t('common.no'))}
+            value={formatDetailValue(value, t('common.yes'), t('common.no'), (item) =>
+              t(`common:businessData.values.${item}`, { defaultValue: item })
+            )}
           />
         ))}
       </dl>
@@ -404,7 +413,7 @@ function CreateReportDialog({
       value: 'LIFECYCLE',
       label: t('reports.evidenceOptions.lifecycle'),
       description: t('reports.evidenceOptions.lifecycleDescription'),
-      summary: series?.status ?? '—',
+      summary: series?.status ? t(`common:businessData.values.${series.status}`, { defaultValue: series.status }) : '—',
       available: Boolean(series)
     },
     {
@@ -426,7 +435,10 @@ function CreateReportDialog({
       label: t('reports.evidenceOptions.ranking'),
       description: t('reports.evidenceOptions.rankingDescription'),
       summary: latestRanking
-        ? `${latestRanking.rankPosition ? `#${latestRanking.rankPosition}` : '—'} · ${latestRanking.riskLevel}`
+        ? `${latestRanking.rankPosition ? `#${latestRanking.rankPosition}` : '—'} · ${t(
+            `common:businessData.values.${latestRanking.riskLevel}`,
+            { defaultValue: latestRanking.riskLevel }
+          )}`
         : '—',
       available: Boolean(latestRanking)
     }
@@ -686,10 +698,15 @@ function formatDate(value: string, locale: string) {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
 }
 
-function formatDetailValue(value: unknown, yesLabel: string, noLabel: string) {
+function formatDetailValue(value: unknown, yesLabel: string, noLabel: string, valueLabel: (value: string) => string) {
   if (value == null || value === '') return '—'
   if (typeof value === 'boolean') return value ? yesLabel : noLabel
-  if (typeof value === 'object') return JSON.stringify(value)
+  if (typeof value === 'object') {
+    return JSON.stringify(value, (_key, item: unknown) =>
+      typeof item === 'string' && /^[A-Z][A-Z0-9_]*$/.test(item) ? valueLabel(item) : item
+    )
+  }
+  if (typeof value === 'string' && /^[A-Z][A-Z0-9_]*$/.test(value)) return valueLabel(value)
   return String(value)
 }
 

@@ -82,7 +82,7 @@ export function EditorProposalDetailPage({
                   key={genre}
                   className='rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground'
                 >
-                  {genre}
+                  {t(`common:businessData.values.${genre}`, { defaultValue: t('common.notAvailable') })}
                 </span>
               ))}
             </div>
@@ -111,8 +111,22 @@ export function EditorProposalDetailPage({
           status={series.proposal?.status ?? series.status}
           facts={[
             [t('proposalDetail.estimatedLength'), String(series.proposal?.estimatedLength ?? t('common.notAvailable'))],
-            [t('proposalDetail.publicationType'), series.publicationType ?? t('common.notAvailable')],
-            [t('proposalDetail.demographic'), series.demographic ?? t('common.notAvailable')]
+            [
+              t('proposalDetail.publicationType'),
+              series.publicationType
+                ? t(`common:businessData.values.${series.publicationType}`, {
+                    defaultValue: t('common.notAvailable')
+                  })
+                : t('common.notAvailable')
+            ],
+            [
+              t('proposalDetail.demographic'),
+              series.demographic
+                ? t(`common:businessData.values.${series.demographic}`, {
+                    defaultValue: t('common.notAvailable')
+                  })
+                : t('common.notAvailable')
+            ]
           ]}
         >
           <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>

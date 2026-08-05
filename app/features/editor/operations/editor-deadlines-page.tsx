@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertTriangle, CalendarRange, Clock3, Loader2, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
@@ -43,13 +43,20 @@ export function EditorDeadlinesPage({
 }) {
   const { t, i18n } = useTranslation('editor')
   const fetcher = useOperationFetcher()
+  const [activeSeriesId, setActiveSeriesId] = useState(focusSeriesId)
+  const [activeChapterId, setActiveChapterId] = useState(focusChapterId)
   const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId || items[0]?.id || '')
   const [action, setAction] = useState<DeadlineAction | null>(null)
+  useEffect(() => {
+    setActiveSeriesId(focusSeriesId)
+    setActiveChapterId(focusChapterId)
+    setSelectedRequestId(focusRequestId || items[0]?.id || '')
+  }, [focusSeriesId, focusChapterId, focusRequestId, items])
   const selectedRequest = items.find((item) => item.id === selectedRequestId) ?? null
-  const selectedChapter = chapters.find((item) => item.id === focusChapterId)
+  const selectedChapter = chapters.find((item) => item.id === activeChapterId)
   const hasOpenRequest = items.some((item) => !CLOSED_STATUSES.has(item.status))
   const chapterCanRequest = Boolean(selectedChapter?.schedule && selectedChapter.status !== 'PUBLISHED')
-  const canCreate = Boolean(focusChapterId && chapterCanRequest && !hasOpenRequest)
+  const canCreate = Boolean(activeChapterId && chapterCanRequest && !hasOpenRequest)
   const negotiable = Boolean(selectedRequest && NEGOTIABLE_STATUSES.has(selectedRequest.status))
   const editorHasTurn = selectedRequest?.lastProposedBy !== 'EDITOR'
   const canRespond = negotiable && editorHasTurn
@@ -63,8 +70,17 @@ export function EditorDeadlinesPage({
       hasError={hasError}
     >
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
-          <select name='seriesId' defaultValue={focusSeriesId} className={operationInput}>
+        <div className='grid gap-3 sm:grid-cols-[1fr_1fr]'>
+          <select
+            name='seriesId'
+            value={activeSeriesId}
+            onChange={(event) => {
+              setActiveSeriesId(event.target.value)
+              setActiveChapterId('')
+              setSelectedRequestId('')
+            }}
+            className={operationInput}
+          >
             <option value=''>{t('operations.selectSeries')}</option>
             {series.map((item) => (
               <option key={item.id} value={item.id}>
@@ -72,20 +88,28 @@ export function EditorDeadlinesPage({
               </option>
             ))}
           </select>
-          <select name='chapterId' defaultValue={focusChapterId} className={operationInput} disabled={!focusSeriesId}>
+          <select
+            name='chapterId'
+            value={activeChapterId}
+            onChange={(event) => {
+              setActiveChapterId(event.target.value)
+              setSelectedRequestId('')
+            }}
+            className={operationInput}
+            disabled={!activeSeriesId}
+          >
             <option value=''>{t('operations.selectChapter')}</option>
-            {chapters.map((item) => (
-              <option key={item.id} value={item.id}>
-                {t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
-              </option>
-            ))}
+            {chapters
+              .filter((item) => !activeSeriesId || item.seriesId === activeSeriesId)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
+                </option>
+              ))}
           </select>
-          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
-            {t('actions.load')}
-          </button>
-        </form>
+        </div>
 
-        {focusChapterId && (
+        {activeChapterId && (
           <div className='mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3'>
             <div className='text-xs'>
               <p className='font-bold text-foreground'>
@@ -144,7 +168,7 @@ export function EditorDeadlinesPage({
             </div>
           ) : (
             <p className='px-5 py-8 text-center text-xs text-muted-foreground'>
-              {focusChapterId ? t('operations.deadlineEmpty') : t('operations.deadlineSelectChapter')}
+              {activeChapterId ? t('operations.deadlineEmpty') : t('operations.deadlineSelectChapter')}
             </p>
           )}
         </div>
@@ -248,14 +272,14 @@ export function EditorDeadlinesPage({
       {action && (
         <DeadlineActionDialog
           action={action}
-          chapterId={focusChapterId}
+          chapterId={activeChapterId}
           request={selectedRequest}
           isSubmitting={fetcher.state !== 'idle'}
           onClose={() => setAction(null)}
         >
           <fetcher.Form method='post' className='grid gap-4'>
             <input type='hidden' name='intent' value={action} />
-            <input type='hidden' name='chapterId' value={focusChapterId} />
+            <input type='hidden' name='chapterId' value={activeChapterId} />
             <input type='hidden' name='requestId' value={selectedRequest?.id ?? ''} />
             {(action === 'createDeadline' || action === 'counterDeadline') && (
               <label className='grid gap-1.5 text-xs font-bold'>

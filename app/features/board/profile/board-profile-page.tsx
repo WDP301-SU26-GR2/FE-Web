@@ -21,11 +21,19 @@ export function BoardProfilePage({ profile }: { profile: StaffProfileResDtoOutpu
         <div className='grid gap-4 sm:grid-cols-2'>
           <ProfileValue
             label={t('profile.genres')}
-            value={profile.specialtyGenres.map((value) => t(`profile.genreValues.${value}`)).join(', ') || '—'}
+            value={
+              profile.specialtyGenres
+                .map((value) => t(`common:businessData.values.${value}`, { defaultValue: value }))
+                .join(', ') || '—'
+            }
           />
           <ProfileValue
             label={t('profile.demographics')}
-            value={profile.demographics.map((value) => t(`profile.demographicValues.${value}`)).join(', ') || '—'}
+            value={
+              profile.demographics
+                .map((value) => t(`common:businessData.values.${value}`, { defaultValue: value }))
+                .join(', ') || '—'
+            }
           />
           <ProfileValue label={t('profile.experience')} value={String(profile.yearsOfExperience ?? 0)} />
           <ProfileValue label={t('profile.bio')} value={profile.bio || '—'} />
@@ -66,7 +74,7 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
                   value={value}
                   defaultChecked={profile.specialtyGenres.includes(value)}
                 />
-                <span>{t(`profile.genreValues.${value}`)}</span>
+                <span>{t(`common:businessData.values.${value}`, { defaultValue: value })}</span>
               </label>
             ))}
           </div>
@@ -82,7 +90,7 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
                   value={value}
                   defaultChecked={profile.demographics.includes(value)}
                 />
-                <span>{t(`profile.demographicValues.${value}`)}</span>
+                <span>{t(`common:businessData.values.${value}`, { defaultValue: value })}</span>
               </label>
             ))}
           </div>

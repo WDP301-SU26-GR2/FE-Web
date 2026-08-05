@@ -1069,14 +1069,14 @@
     "nameStatus": {
       "DRAFT": "Bản nháp",
       "SUBMITTED": "Đã nộp",
-      "IN_REVIEW": "Đang xét duyệt",
+      "IN_REVIEW": "Đang duyệt",
       "REVISION": "Cần chỉnh sửa",
       "APPROVED": "Đã duyệt"
     },
     "pageStatus": {
-      "DRAFT": "Bản nháp",
-      "COMPLETED": "Hoàn thành",
-      "REVISING": "Cần sửa lại"
+      "DRAFT": "Đang thực hiện",
+      "COMPLETED": "Đã nộp cho biên tập viên",
+      "REVISING": "Đang chỉnh sửa"
     },
     "statusPill": {
       "label": "Storyboard"

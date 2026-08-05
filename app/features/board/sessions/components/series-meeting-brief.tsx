@@ -54,7 +54,13 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
         <BriefField
           icon={<Tags className='size-4' />}
           label={t('sessions.seriesBrief.genres')}
-          value={series.genres.join(', ') || t('sessions.seriesBrief.notAvailable')}
+          value={
+            series.genres
+              .map((genre) =>
+                t(`common:businessData.values.${genre}`, { defaultValue: t('sessions.seriesBrief.notAvailable') })
+              )
+              .join(', ') || t('sessions.seriesBrief.notAvailable')
+          }
         />
         <BriefField
           icon={<FileText className='size-4' />}
@@ -71,7 +77,9 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
           label={t('sessions.seriesBrief.demographic')}
           value={
             series.demographic
-              ? t(`sessions.seriesBrief.demographics.${series.demographic}`)
+              ? t(`common:businessData.values.${series.demographic}`, {
+                  defaultValue: t('sessions.seriesBrief.notAvailable')
+                })
               : t('sessions.seriesBrief.notAvailable')
           }
         />
@@ -79,7 +87,9 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
           label={t('sessions.seriesBrief.publicationType')}
           value={
             series.publicationType
-              ? t(`sessions.seriesBrief.publicationTypes.${series.publicationType}`)
+              ? t(`common:businessData.values.${series.publicationType}`, {
+                  defaultValue: t('sessions.seriesBrief.notAvailable')
+                })
               : t('sessions.seriesBrief.notAvailable')
           }
         />

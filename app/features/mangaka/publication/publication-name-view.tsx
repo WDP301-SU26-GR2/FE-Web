@@ -321,7 +321,11 @@ function DocumentHeader({
         />
         <MetaItem
           label={t('publication.name.status')}
-          value={name ? name.status : t('publication.name.notStarted')}
+          value={
+            name
+              ? t(`publication.nameStatus.${name.status}`, { defaultValue: t('state.unknown') })
+              : t('publication.name.notStarted')
+          }
           tone={name ? name.status : 'DRAFT'}
         />
         <MetaItem label={t('publication.name.deadline')} value={formatDate(deadline)} />

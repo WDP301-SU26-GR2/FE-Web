@@ -29,14 +29,14 @@
       "IN_REVIEW": "Đang biên tập",
       "READY_TO_PITCH": "Sẵn sàng trình Hội đồng",
       "PITCHED": "Đã trình Hội đồng",
-      "SERIALIZED": "Đã duyệt đăng dài kỳ",
+      "SERIALIZED": "Đang phát hành dài kỳ",
       "HIATUS": "Đang tạm ngưng",
       "COMPLETING": "Đang hoàn tất",
-      "CANCELLING": "Đang kết thúc do hủy",
+      "CANCELLING": "Đang hủy",
       "COMPLETED": "Đã hoàn thành",
       "CANCELLED": "Đã hủy",
       "REJECTED": "Hội đồng đã từ chối",
-      "ABANDONED": "Đã dừng biên tập",
+      "ABANDONED": "Đã dừng hồ sơ",
       "WITHDRAWN": "Đã rút hồ sơ"
     },
     "nameStatuses": {
@@ -230,7 +230,9 @@
     "history": "Đã xuất bản",
     "emptyAwaiting": "Không có chương nào đang chờ biên tập viên xử lý.",
     "emptyHistory": "Chưa có chương nào được xuất bản.",
-    "chapter": "Chương {{number}}"
+    "chapter": "Chương {{number}}",
+    "series": "Bộ truyện",
+    "chapterCount": "chương"
   },
   "chapterReview": {
     "reviewSections": "Các khu vực kiểm duyệt chương",
@@ -397,7 +399,7 @@
       "HIATUS": "Tạm ngưng phát hành",
       "ENDING_ALLOWANCE": "Duyệt số chương kết thúc",
       "SERIES_CONTRACT_APPROVAL": "Duyệt hợp đồng bộ truyện",
-      "CONTRACT": "Quyết định hợp đồng",
+      "CONTRACT": "Phê duyệt tài nguyên hợp đồng",
       "REPRINT": "Duyệt tái bản",
       "TRANSFER": "Duyệt chuyển nhượng"
     },
@@ -424,9 +426,9 @@
     "readyDescription": "Gửi bộ truyện đã được biên tập viên duyệt lên Hội đồng.",
     "emptyReady": "Không có bộ truyện nào sẵn sàng trình duyệt.",
     "sessionTitle": "Tạo phiên Hội đồng",
-    "sessionDescription": "Thiết lập lịch họp và danh sách thành viên Hội đồng; nội dung của từng bộ truyện được thêm trong mỗi quyết định.",
+    "sessionDescription": "Thiết lập lịch họp; hệ thống sẽ tự động phân công thành viên Hội đồng phù hợp.",
     "sessionRulesTitle": "Đề xuất của hệ thống",
-    "sessionSystemRosterNotice": "Chế độ tự động sẽ chọn khoảng {{count}} thành viên theo thể loại của bộ truyện và cấu hình hiện tại. Bạn cũng có thể nhập danh sách thành viên thủ công.",
+    "sessionSystemRosterNotice": "Hệ thống sẽ tự động phân công thành viên Hội đồng phù hợp.",
     "noEligibleSeriesForSession": "Chưa có bộ truyện phù hợp để làm ngữ cảnh cho phiên Hội đồng.",
     "rosterSourceSeries": "Bộ truyện dùng để gợi ý thành viên",
     "rosterSourceSeriesHint": "Bộ truyện chỉ cung cấp ngữ cảnh thể loại để chọn thành viên, không giới hạn các quyết định được thêm vào phiên.",
@@ -444,7 +446,7 @@
     "manualRosterIds": "Mã thành viên Hội đồng",
     "manualRosterPlaceholder": "Nhập các mã định danh, phân cách bằng dấu phẩy hoặc xuống dòng",
     "manualRosterValidation": "Nhập từ 3 đến {{maximum}} mã hợp lệ, không trùng nhau và tổng số phải là số lẻ.",
-    "noSeriesForAutomaticRoster": "Không có bộ truyện để gợi ý tự động. Bạn vẫn có thể tạo phiên bằng danh sách thành viên thủ công.",
+    "noSeriesForAutomaticRoster": "Không có bộ truyện để hệ thống tự động phân công thành viên Hội đồng.",
     "sessionName": "Tên phiên họp",
     "sessionNote": "Nội dung hoặc ghi chú biên tập",
     "startTime": "Thời gian bắt đầu",

@@ -10,6 +10,10 @@ export const BOARD_SESSION_DECISION_TYPES = [
 
 export type BoardSessionDecisionType = (typeof BOARD_SESSION_DECISION_TYPES)[number]
 
+export const BOARD_CONTRACT_DECISION_RESOURCE_TYPES = ['CONTRACT_AMENDMENT', 'TRANSFER_CONTRACT'] as const
+
+export type BoardContractDecisionResourceType = (typeof BOARD_CONTRACT_DECISION_RESOURCE_TYPES)[number]
+
 const ENDING_DECISION_TYPES = new Set<BoardSessionDecisionType>(['CANCELLATION', 'COMPLETION'])
 
 type DecisionForConflictCheck = {
@@ -32,6 +36,10 @@ export type BoardDecisionConflictTarget = {
 
 export function isBoardSessionDecisionType(value: string): value is BoardSessionDecisionType {
   return BOARD_SESSION_DECISION_TYPES.some((decisionType) => decisionType === value)
+}
+
+export function isBoardContractDecisionResourceType(value: string): value is BoardContractDecisionResourceType {
+  return BOARD_CONTRACT_DECISION_RESOURCE_TYPES.some((resourceType) => resourceType === value)
 }
 
 export function hasBoardDecisionConflict(

@@ -64,18 +64,23 @@ export function OperationsLayout({
 export function OperationPanel({
   icon: Icon,
   title,
-  children
+  children,
+  headerAction
 }: {
   icon: typeof Wrench
   title: string
   children: React.ReactNode
+  headerAction?: React.ReactNode
 }) {
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-      <h2 className='mb-4 flex items-center gap-2 text-base font-bold text-foreground'>
-        <Icon className='size-5 text-primary' />
-        {title}
-      </h2>
+      <div className='mb-4 flex items-center justify-between gap-3'>
+        <h2 className='flex items-center gap-2 text-base font-bold text-foreground'>
+          <Icon className='size-5 text-primary' />
+          {title}
+        </h2>
+        {headerAction}
+      </div>
       {children}
     </section>
   )

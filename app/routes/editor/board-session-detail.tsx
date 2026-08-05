@@ -24,6 +24,7 @@ import {
   BOARD_DECISION_LIMITS,
   EditorBoardMeetingRoomPage,
   hasBoardDecisionConflict,
+  isBoardContractDecisionResourceType,
   isBoardSessionDecisionType,
   mapBoardSessionError,
   type EditorActionResult
@@ -157,8 +158,7 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
         if (decisionType === 'TRANSFER') details.transferRequestId = required(form, 'transferRequestId')
         if (decisionType === 'CONTRACT') {
           const resourceType = required(form, 'resourceType')
-          if (!['TRANSFER_CONTRACT', 'CONTRACT_AMENDMENT'].includes(resourceType))
-            return { ok: false, intent, errorKey: 'invalidState' }
+          if (!isBoardContractDecisionResourceType(resourceType)) return { ok: false, intent, errorKey: 'invalidState' }
           Object.assign(details, {
             resourceType,
             resourceId: required(form, 'resourceId'),

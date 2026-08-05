@@ -187,9 +187,15 @@ function buildReportContent(
     blocks.push(
       [
         `## ${labels.lifecycle}`,
-        `- ${labels.currentStatus}: ${series.status}`,
+        `- ${labels.currentStatus}: ${t(`common:businessData.values.${series.status}`, {
+          defaultValue: series.status
+        })}`,
         `- ${labels.latestReason}: ${series.statusReason || labels.none}`,
-        `- ${labels.cadence}: ${series.publicationType || missing}`,
+        `- ${labels.cadence}: ${
+          series.publicationType
+            ? t(`common:businessData.values.${series.publicationType}`, { defaultValue: series.publicationType })
+            : missing
+        }`,
         `- ${labels.magazine}: ${series.magazine || missing}`,
         `- ${labels.startIssue}: ${series.startIssueNumber ?? missing}`
       ].join('\n')
@@ -231,7 +237,7 @@ function buildReportContent(
       .slice(-5)
       .map(
         (item) =>
-          `- ${item.recordedAt}: ${labels.rank} ${item.rankPosition ?? '—'}, ${item.voteCount} ${labels.votes}, ${labels.change} ${item.rankChange ?? '—'}, ${labels.risk} ${item.riskLevel}`
+          `- ${item.recordedAt}: ${labels.rank} ${item.rankPosition ?? '—'}, ${item.voteCount} ${labels.votes}, ${labels.change} ${item.rankChange ?? '—'}, ${labels.risk} ${t(`common:businessData.values.${item.riskLevel}`, { defaultValue: item.riskLevel })}`
       )
     blocks.push(
       rankingLines?.length ? [`## ${labels.ranking}`, ...rankingLines].join('\n') : `## ${labels.ranking}\n- ${missing}`

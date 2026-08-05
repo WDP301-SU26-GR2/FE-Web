@@ -152,7 +152,9 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
           </p>
         </div>
         <span className='rounded-lg bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
-          {item.demographic ?? t('common.notAvailable')}
+          {item.demographic
+            ? t(`common:businessData.values.${item.demographic}`, { defaultValue: t('common.notAvailable') })
+            : t('common.notAvailable')}
         </span>
       </div>
       <div className='mt-4 flex flex-wrap gap-2'>
@@ -161,7 +163,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
             key={genre}
             className='rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground'
           >
-            {genre}
+            {t(`common:businessData.values.${genre}`, { defaultValue: t('common.notAvailable') })}
           </span>
         ))}
       </div>

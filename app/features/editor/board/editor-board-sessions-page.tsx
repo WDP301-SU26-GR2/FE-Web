@@ -11,14 +11,7 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
 import { orderBoardDecisions, orderBoardSessions } from './board-order'
-import {
-  BOARD_SESSION_INTENTS,
-  BOARD_ROSTER_MODES,
-  BOARD_SESSION_FIELD_LIMITS,
-  isValidBoardSessionTimeRange,
-  isValidManualBoardRoster,
-  parseManualBoardMemberIds
-} from './board-session-flow'
+import { BOARD_SESSION_INTENTS, BOARD_SESSION_FIELD_LIMITS, isValidBoardSessionTimeRange } from './board-session-flow'
 import {
   boardInput,
   BoardFeedback,
@@ -34,8 +27,6 @@ export function EditorBoardSessionsPage({
   series,
   sessions,
   decisions,
-  suggestedMemberCount,
-  maximumMemberCount,
   hasError,
   manageAll = false,
   backPath = '/dashboard/editor/board',
@@ -44,8 +35,6 @@ export function EditorBoardSessionsPage({
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
-  suggestedMemberCount: number
-  maximumMemberCount: number
   hasError: boolean
   manageAll?: boolean
   backPath?: string
@@ -54,6 +43,7 @@ export function EditorBoardSessionsPage({
   const { t } = useTranslation('editor')
   const { session: authSession } = useAuth()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState('')
   const [sessionSearch, setSessionSearch] = useState('')
   const [sessionStatus, setSessionStatus] = useState('')
   useBoardAutoRefresh()
@@ -80,7 +70,11 @@ export function EditorBoardSessionsPage({
       <div className='flex justify-end'>
         <button
           type='button'
-          onClick={() => setCreateDialogOpen(true)}
+          onClick={() => {
+            const randomSeries = series[Math.floor(Math.random() * series.length)]
+            setRosterSourceSeriesId(randomSeries?.id ?? '')
+            setCreateDialogOpen(true)
+          }}
           className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
         >
           <Plus className='size-4' />
@@ -129,46 +123,18 @@ export function EditorBoardSessionsPage({
         </div>
       </BoardPanel>
       {createDialogOpen && (
-        <CreateSessionDialog
-          series={series}
-          suggestedMemberCount={suggestedMemberCount}
-          maximumMemberCount={maximumMemberCount}
-          onClose={() => setCreateDialogOpen(false)}
-        />
+        <CreateSessionDialog rosterSourceSeriesId={rosterSourceSeriesId} onClose={() => setCreateDialogOpen(false)} />
       )}
     </BoardPageLayout>
   )
 }
 
-function CreateSessionDialog({
-  series,
-  suggestedMemberCount,
-  maximumMemberCount,
-  onClose
-}: {
-  series: SeriesListResDtoOutputItemsItem[]
-  suggestedMemberCount: number
-  maximumMemberCount: number
-  onClose: () => void
-}) {
+function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSeriesId: string; onClose: () => void }) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
-  const suggestionFetcher = useBoardFetcher()
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [rosterMode, setRosterMode] = useState<(typeof BOARD_ROSTER_MODES)[keyof typeof BOARD_ROSTER_MODES]>(
-    series.length ? BOARD_ROSTER_MODES.automatic : BOARD_ROSTER_MODES.manual
-  )
-  const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState(series[0]?.id ?? '')
-  const [manualRosterIds, setManualRosterIds] = useState('')
-  const [suggestedForSeriesId, setSuggestedForSeriesId] = useState('')
   const timeRangeIsValid = isValidBoardSessionTimeRange(startTime, endTime || undefined)
-  const parsedManualRosterIds = parseManualBoardMemberIds(manualRosterIds)
-  const manualRosterIsValid = isValidManualBoardRoster(parsedManualRosterIds, maximumMemberCount)
-  const rosterIsValid =
-    rosterMode === BOARD_ROSTER_MODES.automatic ? Boolean(rosterSourceSeriesId) : manualRosterIsValid
-  const suggestedMembers =
-    suggestedForSeriesId === rosterSourceSeriesId ? suggestionFetcher.data?.suggestedMembers : undefined
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
@@ -187,134 +153,15 @@ function CreateSessionDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value={BOARD_SESSION_INTENTS.create} />
-        <input type='hidden' name='rosterSize' value={suggestedMemberCount} />
+        <input type='hidden' name='seriesId' value={rosterSourceSeriesId} />
         <aside className='rounded-lg border border-border bg-muted p-3 text-foreground'>
           <div className='flex items-center gap-2 text-xs font-bold'>
             <CircleAlert className='size-4 shrink-0' />
             {t('board.sessionRulesTitle')}
           </div>
-          <p className='mt-2 text-xs leading-5'>
-            {t('board.sessionSystemRosterNotice', { count: suggestedMemberCount })}
-          </p>
+          <p className='mt-2 text-xs leading-5'>{t('board.sessionSystemRosterNotice')}</p>
         </aside>
-        <fieldset className='grid gap-2'>
-          <legend className='text-xs font-semibold'>{t('board.rosterMode')}</legend>
-          <div className='grid gap-2 sm:grid-cols-2'>
-            <label className='flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-xs'>
-              <input
-                className='mt-0.5'
-                type='radio'
-                name='rosterMode'
-                value={BOARD_ROSTER_MODES.automatic}
-                checked={rosterMode === BOARD_ROSTER_MODES.automatic}
-                disabled={!series.length}
-                onChange={() => setRosterMode(BOARD_ROSTER_MODES.automatic)}
-              />
-              <span>
-                <strong className='block text-foreground'>{t('board.automaticRoster')}</strong>
-                <span className='mt-1 block text-muted-foreground'>{t('board.automaticRosterHint')}</span>
-              </span>
-            </label>
-            <label className='flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-xs'>
-              <input
-                className='mt-0.5'
-                type='radio'
-                name='rosterMode'
-                value={BOARD_ROSTER_MODES.manual}
-                checked={rosterMode === BOARD_ROSTER_MODES.manual}
-                onChange={() => setRosterMode(BOARD_ROSTER_MODES.manual)}
-              />
-              <span>
-                <strong className='block text-foreground'>{t('board.manualRosterMode')}</strong>
-                <span className='mt-1 block text-muted-foreground'>{t('board.manualRosterHint')}</span>
-              </span>
-            </label>
-          </div>
-        </fieldset>
-        {rosterMode === BOARD_ROSTER_MODES.automatic ? (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.rosterSourceSeries')}
-            <select
-              className={boardInput}
-              name='rosterSourceSeriesId'
-              required
-              value={rosterSourceSeriesId}
-              onChange={(event) => setRosterSourceSeriesId(event.target.value)}
-            >
-              <option value=''>{t('board.selectRosterSourceSeries')}</option>
-              {series.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.title} ·{' '}
-                  {t(`filters.seriesStatuses.${item.status}`, { defaultValue: t('common.notAvailable') })}
-                </option>
-              ))}
-            </select>
-            <span className='font-normal text-muted-foreground'>{t('board.rosterSourceSeriesHint')}</span>
-            <button
-              type='button'
-              disabled={!rosterSourceSeriesId || suggestionFetcher.state !== 'idle'}
-              onClick={() => {
-                setSuggestedForSeriesId(rosterSourceSeriesId)
-                void suggestionFetcher.submit(
-                  {
-                    intent: BOARD_SESSION_INTENTS.suggestMembers,
-                    seriesId: rosterSourceSeriesId,
-                    rosterSize: String(suggestedMemberCount)
-                  },
-                  { method: 'post' }
-                )
-              }}
-              className='mt-1 inline-flex h-9 w-fit items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
-            >
-              {suggestionFetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
-              {t('actions.previewSuggestedMembers')}
-            </button>
-            {suggestedMembers && (
-              <div className='mt-2 grid gap-2 rounded-lg border border-border bg-background p-3'>
-                <strong className='text-xs text-foreground'>
-                  {t('board.suggestedMembersTitle', {
-                    count: suggestionFetcher.data?.suggestedSize ?? suggestedMembers.length
-                  })}
-                </strong>
-                {suggestedMembers.map((member) => (
-                  <div key={member.userId} className='rounded-md bg-muted p-2 font-normal'>
-                    <span className='block font-semibold text-foreground'>
-                      {member.displayName || t('board.unnamedBoardMember')}
-                    </span>
-                    <span className='mt-1 block text-muted-foreground'>
-                      {t('board.suggestedMemberMatch', {
-                        genres: member.matchedGenres.join(', ') || t('board.noMatchedGenres'),
-                        score: member.score
-                      })}
-                    </span>
-                  </div>
-                ))}
-                {!suggestedMembers.length && (
-                  <span className='font-normal text-muted-foreground'>{t('board.emptySuggestedMembers')}</span>
-                )}
-              </div>
-            )}
-            <BoardFeedback data={suggestionFetcher.data} />
-          </label>
-        ) : (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.manualRosterIds')}
-            <textarea
-              className={`${boardInput} min-h-24 py-2`}
-              name='manualRosterIds'
-              required
-              value={manualRosterIds}
-              onChange={(event) => setManualRosterIds(event.target.value)}
-              placeholder={t('board.manualRosterPlaceholder')}
-            />
-            <span
-              className={`font-normal ${manualRosterIds && !manualRosterIsValid ? 'text-destructive' : 'text-muted-foreground'}`}
-            >
-              {t('board.manualRosterValidation', { maximum: maximumMemberCount })}
-            </span>
-          </label>
-        )}
-        {!series.length && (
+        {!rosterSourceSeriesId && (
           <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
             {t('board.noSeriesForAutomaticRoster')}
           </p>
@@ -375,7 +222,7 @@ function CreateSessionDialog({
             {t('actions.cancel')}
           </button>
           <button
-            disabled={fetcher.state !== 'idle' || !rosterIsValid || !timeRangeIsValid}
+            disabled={fetcher.state !== 'idle' || !rosterSourceSeriesId || !timeRangeIsValid}
             className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' ? (

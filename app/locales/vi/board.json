@@ -142,7 +142,7 @@
       "HIATUS": "Tạm ngưng",
       "ENDING_ALLOWANCE": "Duyệt số chương kết thúc",
       "SERIES_CONTRACT_APPROVAL": "Duyệt hợp đồng",
-      "CONTRACT": "Quyết định hợp đồng",
+      "CONTRACT": "Phê duyệt tài nguyên hợp đồng",
       "REPRINT": "Duyệt tái bản",
       "TRANSFER": "Duyệt chuyển nhượng"
     },
@@ -278,7 +278,7 @@
         "JOSEI": "Nữ trưởng thành",
         "KODOMO": "Thiếu nhi"
       },
-      "publicationTypes": { "WEEKLY": "Hàng tuần", "MONTHLY": "Hàng tháng", "IRREGULAR": "Không cố định" },
+      "publicationTypes": { "WEEKLY": "Hàng tuần", "MONTHLY": "Hàng tháng", "IRREGULAR": "Không định kỳ" },
       "proposalStatuses": {
         "DRAFT": "Bản nháp",
         "PROPOSAL_REVIEW": "Đang được biên tập duyệt",
@@ -298,18 +298,18 @@
       },
       "seriesStatuses": {
         "DRAFT": "Bản nháp",
-        "IN_REVIEW": "Đang được duyệt",
+        "IN_REVIEW": "Đang biên tập",
         "READY_TO_PITCH": "Sẵn sàng trình Hội đồng",
         "PITCHED": "Đã trình Hội đồng",
-        "SERIALIZED": "Đã đăng dài kỳ",
-        "HIATUS": "Tạm ngưng",
-        "COMPLETING": "Đang kết thúc",
+        "SERIALIZED": "Đang phát hành dài kỳ",
+        "HIATUS": "Đang tạm ngưng",
+        "COMPLETING": "Đang hoàn tất",
         "CANCELLING": "Đang hủy",
         "COMPLETED": "Đã hoàn thành",
         "CANCELLED": "Đã hủy",
-        "REJECTED": "Đã từ chối",
-        "ABANDONED": "Đã bỏ",
-        "WITHDRAWN": "Đã rút"
+        "REJECTED": "Hội đồng đã từ chối",
+        "ABANDONED": "Đã dừng hồ sơ",
+        "WITHDRAWN": "Đã rút hồ sơ"
       }
     },
     "chat": "Thảo luận phiên họp",
@@ -671,7 +671,7 @@
     "provisional": "Tạm tính",
     "aggregateEmpty": "Chưa có xếp hạng tổng hợp cho bộ lọc này.",
     "levels": { "MONTH": "Tháng", "YEAR": "Năm" },
-    "publicationTypes": { "WEEKLY": "Hằng tuần", "MONTHLY": "Hằng tháng", "IRREGULAR": "Không định kỳ" }
+    "publicationTypes": { "WEEKLY": "Hàng tuần", "MONTHLY": "Hàng tháng", "IRREGULAR": "Không định kỳ" }
   },
   "reprints": {
     "title": "Quy trình tái bản",

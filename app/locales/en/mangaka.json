@@ -1069,14 +1069,14 @@
     "nameStatus": {
       "DRAFT": "Draft",
       "SUBMITTED": "Submitted",
-      "IN_REVIEW": "In review",
-      "REVISION": "Needs revision",
+      "IN_REVIEW": "Under review",
+      "REVISION": "Revision required",
       "APPROVED": "Approved"
     },
     "pageStatus": {
-      "DRAFT": "Draft",
-      "COMPLETED": "Completed",
-      "REVISING": "Revision requested"
+      "DRAFT": "In progress",
+      "COMPLETED": "Submitted to Editor",
+      "REVISING": "Revision in progress"
     },
     "statusPill": {
       "label": "Storyboard"

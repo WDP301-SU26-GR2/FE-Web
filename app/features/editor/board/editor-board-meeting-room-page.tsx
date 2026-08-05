@@ -14,6 +14,7 @@ import { orderBoardDecisions } from './board-order'
 import {
   BOARD_SESSION_DECISION_TYPES,
   hasBoardDecisionConflict,
+  type BoardContractDecisionResourceType,
   type BoardSessionDecisionType
 } from './board-decision-flow'
 import { BOARD_DECISION_LIMITS, BOARD_SESSION_INTENTS } from './board-session-flow'
@@ -587,7 +588,7 @@ function AddSessionDecisionDialog({
 }
 
 interface BoardDecisionResourceOption {
-  resourceType: 'TRANSFER_CONTRACT' | 'CONTRACT_AMENDMENT'
+  resourceType: BoardContractDecisionResourceType
   resourceId: string
   versionId: string
   seriesId: string
