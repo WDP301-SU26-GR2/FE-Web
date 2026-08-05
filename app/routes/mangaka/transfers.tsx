@@ -10,8 +10,13 @@ import type {
   TransferSignatureListResDtoOutputSignaturesItem
 } from '~/api/model/transfer'
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
-import { publicControllerListSeries } from '~/api/operations/public/public'
-import { loadPublicSeriesCatalog } from '~/features/mangaka'
+import { publicControllerGetSeriesDetail, publicControllerListSeries } from '~/api/operations/public/public'
+import { seriesControllerListSeries } from '~/api/operations/series/series'
+import {
+  isTransferEligibleSeriesStatus,
+  loadPublicSeriesCatalog,
+  selectEligibleTransferSeries
+} from '~/features/mangaka'
 import {
   transferControllerCreateTransferRequest,
   transferControllerGetTransferRequestById,
@@ -24,6 +29,7 @@ import {
 } from '~/api/operations/transfer/transfer'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 import { cn } from '~/shared/lib/cn'
 import { Dialog } from '~/shared/ui/dialog'
 
@@ -44,9 +50,10 @@ export async function clientLoader({ request }: { request: Request }) {
   const focusRequestId = url.searchParams.get('requestId')?.trim() ?? ''
   const focusContractId = url.searchParams.get('contractId')?.trim() ?? ''
 
-  const [requestsResponse, publicSeries, meResponse] = await Promise.all([
+  const [requestsResponse, publicSeries, ownedSeries, meResponse] = await Promise.all([
     transferControllerGetTransferRequestsByMangaka(),
     loadPublicSeriesCatalog(publicControllerListSeries),
+    loadAllOffsetItems((pagination) => seriesControllerListSeries(pagination).then((response) => response.data)),
     usersControllerGetMe()
   ])
 
@@ -97,7 +104,7 @@ export async function clientLoader({ request }: { request: Request }) {
 
   return {
     requests,
-    series: publicSeries.filter((item) => ['SERIALIZED', 'HIATUS', 'COMPLETING', 'CANCELLING'].includes(item.status)),
+    series: selectEligibleTransferSeries(publicSeries, ownedSeries),
     currentUserId: meResponse.data.id,
     focusRequestId,
     focusRequestLoadFailed,
@@ -114,10 +121,15 @@ export async function clientAction({ request }: { request: Request }): Promise<A
   const intent = String(form.get('intent') ?? '')
   try {
     if (intent === 'create') {
+      const seriesId = required(form, 'seriesId')
+      const series = await publicControllerGetSeriesDetail({ id: seriesId })
+      if (!isTransferEligibleSeriesStatus(series.data.status)) {
+        return { ok: false, intent, errorKey: 'transfers.errors.seriesNotEligible' }
+      }
       const proposedType = required(form, 'proposedType') as 'FULL_TRANSFER' | 'PARTIAL_TRANSFER'
       const percentage = String(form.get('proposedPercentage') ?? '').trim()
       await transferControllerCreateTransferRequest({
-        seriesId: required(form, 'seriesId'),
+        seriesId,
         planDescription: required(form, 'planDescription'),
         proposedType,
         proposedPercentage: proposedType === 'PARTIAL_TRANSFER' && percentage ? Number(percentage) : undefined
@@ -494,6 +506,11 @@ function CreateRequestDialog({
               </option>
             ))}
           </select>
+          {!series.length && (
+            <span className='text-xs font-normal leading-5 text-muted-foreground'>
+              {t('transfers.create.noEligibleSeries')}
+            </span>
+          )}
         </label>
         <label className='grid gap-1 text-sm font-semibold text-foreground'>
           {t('transfers.create.type')}
@@ -535,7 +552,7 @@ function CreateRequestDialog({
           <button
             name='intent'
             value='create'
-            disabled={fetcher.state !== 'idle'}
+            disabled={fetcher.state !== 'idle' || !series.length}
             className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' && <Loader2 className='mr-2 inline size-4 animate-spin' aria-hidden='true' />}
@@ -649,6 +666,12 @@ function SignDialog({
             })}
           </div>
         </section>
+
+        {isMangakaA && contract.status === 'DRAFT' && (
+          <p className='rounded-lg border border-info/30 bg-info/5 p-3 text-xs font-semibold leading-5 text-info'>
+            {t('transfers.sign.boardApprovalRequired')}
+          </p>
+        )}
 
         {!isMyTurn && (
           <p className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs font-semibold text-warning-foreground'>

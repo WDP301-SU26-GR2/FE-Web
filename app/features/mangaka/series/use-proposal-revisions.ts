@@ -18,11 +18,13 @@ type UseProposalRevisionsResult = {
   refreshRevisions: () => void
 }
 
-/** Loads the unresolved Editor feedback rounds for proposal metadata and its sample Name. */
-export function useProposalRevisions(seriesId: string, nameId?: string | null): UseProposalRevisionsResult {
+/** Loads unresolved Editor feedback for the combined proposal payload. */
+export function useProposalRevisions(seriesId: string): UseProposalRevisionsResult {
   const { t } = useTranslation('mangaka')
   const [revisions, setRevisions] = useState<RevisionRequestListResDtoOutputItemsItem[]>([])
-  const [isLoadingRevisions, setIsLoadingRevisions] = useState(false)
+  // The first render must not expose resubmission before the unresolved
+  // revision list has been loaded.
+  const [isLoadingRevisions, setIsLoadingRevisions] = useState(true)
   const [reloadToken, setReloadToken] = useState(0)
   const [resolvingRevisionId, setResolvingRevisionId] = useState<string | null>(null)
 
@@ -33,7 +35,7 @@ export function useProposalRevisions(seriesId: string, nameId?: string | null): 
     ;(async () => {
       setIsLoadingRevisions(true)
       try {
-        const requests = [
+        const responses = await Promise.all([
           revisionControllerList(
             {
               targetType: RevisionControllerListTargetType.PROPOSAL,
@@ -44,22 +46,7 @@ export function useProposalRevisions(seriesId: string, nameId?: string | null): 
             },
             { signal: controller.signal }
           )
-        ]
-        if (nameId) {
-          requests.push(
-            revisionControllerList(
-              {
-                targetType: RevisionControllerListTargetType.NAME,
-                targetId: nameId,
-                isResolved: RevisionControllerListIsResolved.false,
-                limit: 100,
-                offset: 0
-              },
-              { signal: controller.signal }
-            )
-          )
-        }
-        const responses = await Promise.all(requests)
+        ])
         if (!controller.signal.aborted) {
           setRevisions(
             responses
@@ -77,7 +64,7 @@ export function useProposalRevisions(seriesId: string, nameId?: string | null): 
     })()
 
     return () => controller.abort()
-  }, [seriesId, nameId, reloadToken])
+  }, [seriesId, reloadToken])
 
   const refreshRevisions = useCallback(() => setReloadToken((value) => value + 1), [])
 

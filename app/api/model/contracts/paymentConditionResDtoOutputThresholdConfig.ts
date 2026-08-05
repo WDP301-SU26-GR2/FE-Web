@@ -22,9 +22,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
-import type { PaymentConditionResDtoOutputSchema0 } from './paymentConditionResDtoOutputSchema0';
+import type { PaymentConditionResDtoOutputSchema0Output } from './paymentConditionResDtoOutputSchema0Output';
 
 /**
  * @nullable
  */
-export type PaymentConditionResDtoOutputThresholdConfig = PaymentConditionResDtoOutputSchema0 | null;
+export type PaymentConditionResDtoOutputThresholdConfig = PaymentConditionResDtoOutputSchema0Output | null;

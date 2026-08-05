@@ -37,6 +37,8 @@ import type {
 
 import type {
   BoardRankingListResDtoOutput,
+  EligibleSeriesResDtoOutput,
+  InternalRankingAggregateResDtoOutput,
   LatestVoteResultsResDtoOutput,
   MessageResDtoOutput,
   OpenVotePeriodsResDtoOutput,
@@ -44,6 +46,7 @@ import type {
   RankingRecordListResDtoOutput,
   ReaderVoteListItemDtoOutput,
   SurveyDataResDtoOutput,
+  SurveyPeriodListResDtoOutput,
   SurveyPeriodResDtoOutput,
   VoteContextResDtoOutput,
   VotePeriodsResDtoOutput,
@@ -63,9 +66,11 @@ export const getSurveyControllerGetVoteLiveResponseMock = (overrideResponse: Par
 
 export const getSurveyControllerGetVoteContextResponseMock = (overrideResponse: Partial< VoteContextResDtoOutput > = {}): VoteContextResDtoOutput => ({period: {id: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.string.alpha({length: {min: 10, max: 20}}), publicationType: faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), issueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), reflectedIssueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), startDate: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), endDate: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])}, series: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), coverImage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), genres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), demographic: faker.helpers.arrayElement([faker.helpers.arrayElement(['SHONEN','SEINEN','SHOJO','JOSEI','KODOMO'] as const), null]), publicationType: faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const)})), maxSeriesPerVote: faker.number.int({min: -9007199254740991, max: 9007199254740991}), ...overrideResponse})
 
-export const getSurveyControllerGetSurveyPeriodsResponseMock = (): SurveyPeriodResDtoOutput[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), eligibleSeriesIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const)})))
+export const getSurveyControllerGetSurveyPeriodsResponseMock = (overrideResponse: Partial< SurveyPeriodListResDtoOutput > = {}): SurveyPeriodListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), eligibleSeriesIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const)})), total: faker.number.int({min: 0, max: 9007199254740991}), limit: faker.number.int({min: 0, max: 9007199254740991}), offset: faker.number.int({min: 0, max: 9007199254740991}), ...overrideResponse})
 
 export const getSurveyControllerCreateSurveyPeriodResponseMock = (overrideResponse: Partial< SurveyPeriodResDtoOutput > = {}): SurveyPeriodResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), eligibleSeriesIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const), ...overrideResponse})
+
+export const getSurveyControllerGetEligibleSeriesResponseMock = (overrideResponse: Partial< EligibleSeriesResDtoOutput > = {}): EligibleSeriesResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), coverImage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), status: faker.helpers.arrayElement(['DRAFT','IN_REVIEW','READY_TO_PITCH','PITCHED','SERIALIZED','HIATUS','COMPLETING','CANCELLING','COMPLETED','CANCELLED','REJECTED','ABANDONED','WITHDRAWN'] as const), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null])})), total: faker.number.int({min: 0, max: 9007199254740991}), ...overrideResponse})
 
 export const getSurveyControllerGetSurveyPeriodByIdResponseMock = (overrideResponse: Partial< SurveyPeriodResDtoOutput > = {}): SurveyPeriodResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), eligibleSeriesIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), issueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), reflectedIssueNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), startDate: `${faker.date.past().toISOString().split('.')[0]}Z`, endDate: `${faker.date.past().toISOString().split('.')[0]}Z`, status: faker.helpers.arrayElement(['DRAFT','OPEN','CLOSED','REFLECTED'] as const), ...overrideResponse})
 
@@ -84,6 +89,8 @@ export const getSurveyControllerGetRankingRecordsResponseMock = (overrideRespons
 export const getSurveyControllerGetBoardRankingResponseMock = (overrideResponse: Partial< BoardRankingListResDtoOutput > = {}): BoardRankingListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.string.alpha({length: {min: 10, max: 20}}), surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), issueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankPosition: faker.number.int({min: -9007199254740991, max: 9007199254740991}), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), normalizedScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), previousRank: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), isAtRisk: faker.datatype.boolean(), riskLevel: faker.helpers.arrayElement(['NONE','LOW','MEDIUM','SEVERE'] as const), isReliable: faker.datatype.boolean(), recordedAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
 
 export const getSurveyControllerGetSeriesTrendResponseMock = (overrideResponse: Partial< BoardRankingListResDtoOutput > = {}): BoardRankingListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({seriesId: faker.string.alpha({length: {min: 10, max: 20}}), surveyPeriodId: faker.string.alpha({length: {min: 10, max: 20}}), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), issueNumber: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankPosition: faker.number.int({min: -9007199254740991, max: 9007199254740991}), voteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), normalizedScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), previousRank: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), rankChange: faker.helpers.arrayElement([faker.number.int({min: -9007199254740991, max: 9007199254740991}), null]), isAtRisk: faker.datatype.boolean(), riskLevel: faker.helpers.arrayElement(['NONE','LOW','MEDIUM','SEVERE'] as const), isReliable: faker.datatype.boolean(), recordedAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
+
+export const getSurveyControllerGetInternalRankingAggregateResponseMock = (overrideResponse: Partial< InternalRankingAggregateResDtoOutput > = {}): InternalRankingAggregateResDtoOutput => ({magazine: faker.string.alpha({length: {min: 10, max: 20}}), publicationType: faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), level: faker.helpers.arrayElement(['MONTH','YEAR'] as const), year: faker.number.int({min: -9007199254740991, max: 9007199254740991}), month: faker.number.int({min: 1, max: 12}), reflectedIssueCount: faker.number.int({min: 0, max: 9007199254740991}), items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({rankPosition: faker.number.int({min: 0, max: 9007199254740991}), seriesId: faker.string.alpha({length: {min: 10, max: 20}}), seriesTitle: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), reflectedIssueCount: faker.number.int({min: 0, max: 9007199254740991}), totalWeightedVoteCount: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), participatedIssueCount: faker.number.int({min: 0, max: 9007199254740991}), participationCoverage: faker.number.float({min: 0, max: 1, fractionDigits: 2}), averageNormalizedScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), isProvisional: faker.datatype.boolean(), isAtRisk: faker.datatype.boolean(), riskLevel: faker.helpers.arrayElement(['NONE','LOW','MEDIUM','SEVERE'] as const), isReliable: faker.datatype.boolean()})), ...overrideResponse})
 
 export const getSurveyControllerGetVotingConfigResponseMock = (overrideResponse: Partial< VotingConfigResDtoOutput > = {}): VotingConfigResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), authMode: faker.helpers.arrayElement(['OTP','CAPTCHA','HYBRID'] as const), maxSeriesPerVote: faker.number.int({min: 1, max: 9007199254740991}), otpExpirySeconds: faker.number.int({min: 60, max: 9007199254740991}), otpMaxAttempts: faker.number.int({min: 1, max: 9007199254740991}), ipRateLimit: faker.number.int({min: 1, max: 9007199254740991}), phoneRateLimit: faker.number.int({min: 1, max: 9007199254740991}), otpCooldownSeconds: faker.number.int({min: 0, max: 9007199254740991}), ipVotesPerPeriod: faker.number.int({min: 1, max: 9007199254740991}), captchaThreshold: faker.number.float({min: 0, max: 1, fractionDigits: 2}), updatedAt: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
 
@@ -158,7 +165,7 @@ export const getSurveyControllerGetVoteContextMockHandler = (overrideResponse?: 
   }, options)
 }
 
-export const getSurveyControllerGetSurveyPeriodsMockHandler = (overrideResponse?: SurveyPeriodResDtoOutput[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<SurveyPeriodResDtoOutput[]> | SurveyPeriodResDtoOutput[]), options?: RequestHandlerOptions) => {
+export const getSurveyControllerGetSurveyPeriodsMockHandler = (overrideResponse?: SurveyPeriodListResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<SurveyPeriodListResDtoOutput> | SurveyPeriodListResDtoOutput), options?: RequestHandlerOptions) => {
   return http.get('*/survey-periods', async (info) => {await delay(1000);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
@@ -177,6 +184,18 @@ export const getSurveyControllerCreateSurveyPeriodMockHandler = (overrideRespons
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getSurveyControllerCreateSurveyPeriodResponseMock()),
       { status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getSurveyControllerGetEligibleSeriesMockHandler = (overrideResponse?: EligibleSeriesResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EligibleSeriesResDtoOutput> | EligibleSeriesResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/survey-periods/eligible-series', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSurveyControllerGetEligibleSeriesResponseMock()),
+      { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
   }, options)
@@ -290,6 +309,18 @@ export const getSurveyControllerGetSeriesTrendMockHandler = (overrideResponse?: 
   }, options)
 }
 
+export const getSurveyControllerGetInternalRankingAggregateMockHandler = (overrideResponse?: InternalRankingAggregateResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<InternalRankingAggregateResDtoOutput> | InternalRankingAggregateResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/rankings/internal/aggregate', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSurveyControllerGetInternalRankingAggregateResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getSurveyControllerGetVotingConfigMockHandler = (overrideResponse?: VotingConfigResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<VotingConfigResDtoOutput> | VotingConfigResDtoOutput), options?: RequestHandlerOptions) => {
   return http.get('*/voting-config', async (info) => {await delay(1000);
   
@@ -369,6 +400,7 @@ export const getSurveyMock = () => [
   getSurveyControllerGetVoteContextMockHandler(),
   getSurveyControllerGetSurveyPeriodsMockHandler(),
   getSurveyControllerCreateSurveyPeriodMockHandler(),
+  getSurveyControllerGetEligibleSeriesMockHandler(),
   getSurveyControllerGetSurveyPeriodByIdMockHandler(),
   getSurveyControllerGetSurveyPeriodVotesMockHandler(),
   getSurveyControllerGetSurveyPeriodSurveyDataMockHandler(),
@@ -378,6 +410,7 @@ export const getSurveyMock = () => [
   getSurveyControllerGetRankingRecordsMockHandler(),
   getSurveyControllerGetBoardRankingMockHandler(),
   getSurveyControllerGetSeriesTrendMockHandler(),
+  getSurveyControllerGetInternalRankingAggregateMockHandler(),
   getSurveyControllerGetVotingConfigMockHandler(),
   getSurveyControllerUpdateVotingConfigMockHandler(),
   getPublicRankingControllerGetLatestVoteResultsMockHandler(),

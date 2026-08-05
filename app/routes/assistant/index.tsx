@@ -3,7 +3,7 @@ import type { Route } from './+types/index'
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Assistant Dashboard - MangakaStudio Pro' },
+    { title: 'Bảng điều khiển Trợ lý - MangakaStudio Pro' },
     { name: 'description', content: 'Bảng điều khiển dành cho trợ lý' }
   ]
 }

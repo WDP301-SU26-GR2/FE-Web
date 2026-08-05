@@ -23,8 +23,22 @@ export function EditorProfilePage({ profile }: { profile: StaffProfileResDtoOutp
       </header>
       <section className='rounded-xl border border-border bg-card p-6 shadow-sm'>
         <div className='grid gap-4 sm:grid-cols-2'>
-          <ProfileValue label={t('profile.genres')} value={profile.specialtyGenres.join(', ') || '—'} />
-          <ProfileValue label={t('profile.demographics')} value={profile.demographics.join(', ') || '—'} />
+          <ProfileValue
+            label={t('profile.genres')}
+            value={
+              profile.specialtyGenres
+                .map((value) => t(`common:businessData.values.${value}`, { defaultValue: value }))
+                .join(', ') || '—'
+            }
+          />
+          <ProfileValue
+            label={t('profile.demographics')}
+            value={
+              profile.demographics
+                .map((value) => t(`common:businessData.values.${value}`, { defaultValue: value }))
+                .join(', ') || '—'
+            }
+          />
           <ProfileValue label={t('profile.experience')} value={String(profile.yearsOfExperience ?? 0)} />
           <ProfileValue label={t('profile.bio')} value={profile.bio || '—'} />
         </div>

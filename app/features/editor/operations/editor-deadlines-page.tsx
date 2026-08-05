@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertTriangle, CalendarRange, Clock3, Loader2, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
@@ -41,15 +41,22 @@ export function EditorDeadlinesPage({
   focusRequestId: string
   hasError: boolean
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useOperationFetcher()
+  const [activeSeriesId, setActiveSeriesId] = useState(focusSeriesId)
+  const [activeChapterId, setActiveChapterId] = useState(focusChapterId)
   const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId || items[0]?.id || '')
   const [action, setAction] = useState<DeadlineAction | null>(null)
+  useEffect(() => {
+    setActiveSeriesId(focusSeriesId)
+    setActiveChapterId(focusChapterId)
+    setSelectedRequestId(focusRequestId || items[0]?.id || '')
+  }, [focusSeriesId, focusChapterId, focusRequestId, items])
   const selectedRequest = items.find((item) => item.id === selectedRequestId) ?? null
-  const selectedChapter = chapters.find((item) => item.id === focusChapterId)
+  const selectedChapter = chapters.find((item) => item.id === activeChapterId)
   const hasOpenRequest = items.some((item) => !CLOSED_STATUSES.has(item.status))
   const chapterCanRequest = Boolean(selectedChapter?.schedule && selectedChapter.status !== 'PUBLISHED')
-  const canCreate = Boolean(focusChapterId && chapterCanRequest && !hasOpenRequest)
+  const canCreate = Boolean(activeChapterId && chapterCanRequest && !hasOpenRequest)
   const negotiable = Boolean(selectedRequest && NEGOTIABLE_STATUSES.has(selectedRequest.status))
   const editorHasTurn = selectedRequest?.lastProposedBy !== 'EDITOR'
   const canRespond = negotiable && editorHasTurn
@@ -63,8 +70,17 @@ export function EditorDeadlinesPage({
       hasError={hasError}
     >
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
-          <select name='seriesId' defaultValue={focusSeriesId} className={operationInput}>
+        <div className='grid gap-3 sm:grid-cols-[1fr_1fr]'>
+          <select
+            name='seriesId'
+            value={activeSeriesId}
+            onChange={(event) => {
+              setActiveSeriesId(event.target.value)
+              setActiveChapterId('')
+              setSelectedRequestId('')
+            }}
+            className={operationInput}
+          >
             <option value=''>{t('operations.selectSeries')}</option>
             {series.map((item) => (
               <option key={item.id} value={item.id}>
@@ -72,25 +88,33 @@ export function EditorDeadlinesPage({
               </option>
             ))}
           </select>
-          <select name='chapterId' defaultValue={focusChapterId} className={operationInput} disabled={!focusSeriesId}>
+          <select
+            name='chapterId'
+            value={activeChapterId}
+            onChange={(event) => {
+              setActiveChapterId(event.target.value)
+              setSelectedRequestId('')
+            }}
+            className={operationInput}
+            disabled={!activeSeriesId}
+          >
             <option value=''>{t('operations.selectChapter')}</option>
-            {chapters.map((item) => (
-              <option key={item.id} value={item.id}>
-                {t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
-              </option>
-            ))}
+            {chapters
+              .filter((item) => !activeSeriesId || item.seriesId === activeSeriesId)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {t('operations.chapterOption', { number: item.chapterNumber, title: item.title || '' })}
+                </option>
+              ))}
           </select>
-          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
-            {t('actions.load')}
-          </button>
-        </form>
+        </div>
 
-        {focusChapterId && (
+        {activeChapterId && (
           <div className='mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3'>
             <div className='text-xs'>
               <p className='font-bold text-foreground'>
                 {t('operations.deadlineCurrent')}:{' '}
-                {formatDate(selectedChapter?.schedule?.currentDeadline, t('operations.notAvailable'))}
+                {formatDate(selectedChapter?.schedule?.currentDeadline, t('operations.notAvailable'), i18n.language)}
               </p>
               <p className='mt-1 text-muted-foreground'>
                 {!chapterCanRequest
@@ -129,7 +153,8 @@ export function EditorDeadlinesPage({
                 >
                   <span className='min-w-0'>
                     <span className='block text-xs font-bold text-foreground'>
-                      {formatDate(item.currentDeadline, '—')} → {formatDate(item.requestedDeadline, '—')}
+                      {formatDate(item.currentDeadline, '—', i18n.language)} →{' '}
+                      {formatDate(item.requestedDeadline, '—', i18n.language)}
                     </span>
                     <span className='mt-1 block truncate text-xs text-muted-foreground'>
                       {t('operations.deadlineRequestedBy', {
@@ -143,7 +168,7 @@ export function EditorDeadlinesPage({
             </div>
           ) : (
             <p className='px-5 py-8 text-center text-xs text-muted-foreground'>
-              {focusChapterId ? t('operations.deadlineEmpty') : t('operations.deadlineSelectChapter')}
+              {activeChapterId ? t('operations.deadlineEmpty') : t('operations.deadlineSelectChapter')}
             </p>
           )}
         </div>
@@ -158,7 +183,7 @@ export function EditorDeadlinesPage({
                   label={t(`operations.deadlineStatuses.${selectedRequest.status}`)}
                 />
                 <span className='text-xs text-muted-foreground'>
-                  {formatDate(selectedRequest.createdAt, t('operations.notAvailable'))}
+                  {formatDate(selectedRequest.createdAt, t('operations.notAvailable'), i18n.language)}
                 </span>
               </div>
 
@@ -166,12 +191,12 @@ export function EditorDeadlinesPage({
                 <DeadlineDetail
                   icon={Clock3}
                   label={t('operations.deadlineCurrent')}
-                  value={formatDate(selectedRequest.currentDeadline, t('operations.notAvailable'))}
+                  value={formatDate(selectedRequest.currentDeadline, t('operations.notAvailable'), i18n.language)}
                 />
                 <DeadlineDetail
                   icon={CalendarRange}
                   label={t('operations.deadlineProposed')}
-                  value={formatDate(selectedRequest.requestedDeadline, t('operations.notAvailable'))}
+                  value={formatDate(selectedRequest.requestedDeadline, t('operations.notAvailable'), i18n.language)}
                 />
                 <DeadlineDetail
                   icon={UserRound}
@@ -195,8 +220,8 @@ export function EditorDeadlinesPage({
               <div
                 className={`rounded-lg border p-3 text-xs ${
                   selectedRequest.affectsSlot
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
-                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                    ? 'border-warning/30 bg-warning/10 text-warning'
+                    : 'border-success/30 bg-success/10 text-success'
                 }`}
               >
                 <p className='flex items-center gap-2 font-bold'>
@@ -247,14 +272,14 @@ export function EditorDeadlinesPage({
       {action && (
         <DeadlineActionDialog
           action={action}
-          chapterId={focusChapterId}
+          chapterId={activeChapterId}
           request={selectedRequest}
           isSubmitting={fetcher.state !== 'idle'}
           onClose={() => setAction(null)}
         >
           <fetcher.Form method='post' className='grid gap-4'>
             <input type='hidden' name='intent' value={action} />
-            <input type='hidden' name='chapterId' value={focusChapterId} />
+            <input type='hidden' name='chapterId' value={activeChapterId} />
             <input type='hidden' name='requestId' value={selectedRequest?.id ?? ''} />
             {(action === 'createDeadline' || action === 'counterDeadline') && (
               <label className='grid gap-1.5 text-xs font-bold'>
@@ -324,7 +349,7 @@ function DeadlineActionDialog({
       size='sm'
     >
       {(isFinalize || isEscalate) && (
-        <p className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300'>
+        <p className='mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning'>
           {isFinalize
             ? request?.affectsSlot
               ? t('operations.deadlineFinalizeBoardWarning')
@@ -373,10 +398,10 @@ function DeadlineDetail({ icon: Icon, label, value }: { icon: typeof Clock3; lab
   )
 }
 
-function formatDate(value: string | null | undefined, fallback: string) {
+function formatDate(value: string | null | undefined, fallback: string, locale: string) {
   if (!value) return fallback
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString(locale)
 }
 
 function localDateTimeMinimum() {

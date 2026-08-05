@@ -1,7 +1,12 @@
 import type { ChapterListResDtoOutputItemsItem, ChapterResDtoOutput } from '~/api/model/chapters'
 import type { ChapterProgressResDtoOutput } from '~/api/model/chapters'
 import type { AnnotationListResDtoOutputItemsItem } from '~/api/model/annotations'
-import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
+import type {
+  BoardDecisionResDtoOutput,
+  BoardSessionResDtoOutput,
+  SuggestBoardMembersResDtoOutputItemsItem
+} from '~/api/model/board'
+import type { ContractCommentListResDtoOutputDataItem } from '~/api/model/contracts'
 import type {
   ContractResDtoOutput,
   ContractStatusProgressResDtoOutput,
@@ -9,7 +14,7 @@ import type {
   AmendmentResDtoOutput,
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
+import type { StoryboardResDtoOutput } from '~/api/model/storyboards'
 import type { StageListResDtoOutput, StagePageListResDtoOutputItemsItem } from '~/api/model/production-stages'
 import type { RegionListResDtoOutputItemsItem } from '~/api/model/task'
 import type { SeriesListResDtoOutputItemsItem, SeriesResDtoOutput } from '~/api/model/series'
@@ -22,17 +27,18 @@ export type EditorActionResult = {
   message?: string
   phase?: 'PRESENTING' | 'QA' | 'VOTING'
   transferContractId?: string
+  contractId?: string
   decision?: BoardDecisionResDtoOutput
   downloadUrl?: string
+  suggestedMembers?: SuggestBoardMembersResDtoOutputItemsItem[]
+  suggestedSize?: number
 }
 
 export type EditorProposalDetailData = {
   series: SeriesResDtoOutput
-  name: NameListResDtoOutputItemsItem | null
   coverUrl: string | null
   characterDesigns: Array<{ key: string; url: string | null }>
-  namePageUrls: Array<{ pageNumber: number; url: string | null }>
-  nameAnnotations: AnnotationListResDtoOutputItemsItem[]
+  storyboardPages: Array<{ pageNumber: number; key: string; url: string | null }>
 }
 
 export type EditorChapterItem = {
@@ -57,11 +63,11 @@ export type EditorChapterReviewData = {
   chapter: ChapterResDtoOutput
   contract: ContractResDtoOutput | null
   pages: SignedPage[]
-  name: NameListResDtoOutputItemsItem | null
-  namePages: Array<{ pageNumber: number; url: string | null }>
+  storyboard: StoryboardResDtoOutput | null
+  storyboardPages: Array<{ pageNumber: number; url: string | null }>
   progress: ChapterProgressResDtoOutput | null
   annotations: AnnotationListResDtoOutputItemsItem[]
-  nameAnnotations: AnnotationListResDtoOutputItemsItem[]
+  storyboardAnnotations: AnnotationListResDtoOutputItemsItem[]
   stages: StageListResDtoOutput | null
   stagePages: StagePageListResDtoOutputItemsItem[]
   regionsByPage: Record<string, RegionListResDtoOutputItemsItem[]>
@@ -80,4 +86,5 @@ export type EditorContractDetailData = {
   conditions: PaymentConditionListResDtoOutputDataItem[]
   versions: ContractVersionResDtoOutput[]
   amendments: AmendmentResDtoOutput[]
+  comments: ContractCommentListResDtoOutputDataItem[]
 }

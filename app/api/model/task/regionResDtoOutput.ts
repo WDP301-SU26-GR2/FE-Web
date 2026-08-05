@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type { RegionResDtoOutputCoordinates } from './regionResDtoOutputCoordinates';
 import type { RegionResDtoOutputRegionType } from './regionResDtoOutputRegionType';
+import type { RegionResDtoOutputCreatedBy } from './regionResDtoOutputCreatedBy';
 
 export interface RegionResDtoOutput {
   id: string;
@@ -39,10 +40,10 @@ export interface RegionResDtoOutput {
    */
   regionType: RegionResDtoOutputRegionType;
   /**
-   * MANUAL | AI
+   * Nguồn tạo vùng: MANUAL hoặc AI. Values: MANUAL, AI
    * @nullable
    */
-  createdBy: string | null;
+  createdBy: RegionResDtoOutputCreatedBy;
   confirmedByMangaka: boolean;
   /**
    * null khi MANUAL

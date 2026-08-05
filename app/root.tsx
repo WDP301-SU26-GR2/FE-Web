@@ -58,10 +58,19 @@ export default function App() {
 
 function DocumentTitle() {
   const { pathname } = useLocation()
+  const { t, i18n } = useTranslation('common')
 
   useEffect(() => {
-    document.title = resolveDocumentTitle(pathname)
-  }, [pathname])
+    const roleTitle = pathname.startsWith('/dashboard/editor')
+      ? t('dashboard.editor')
+      : pathname.startsWith('/dashboard/board')
+        ? t('dashboard.board')
+        : pathname.startsWith('/dashboard/admin')
+          ? t('dashboard.admin')
+          : null
+
+    document.title = roleTitle ? `${roleTitle} | ${t('appName')}` : resolveDocumentTitle(pathname)
+  }, [i18n.resolvedLanguage, pathname, t])
 
   return null
 }

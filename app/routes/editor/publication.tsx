@@ -1,11 +1,13 @@
 import { chapterControllerListBySeries, chapterControllerListPages } from '~/api/operations/chapters/chapters'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
+import { chapterStoryboardControllerList } from '~/api/operations/storyboards/storyboards'
 import type { SeriesControllerListSeriesStatus, SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { EditorPublicationPage, type EditorChapterItem, type EditorPublicationData } from '~/features/editor'
 import type { Route } from './+types/publication'
+import { SITE } from '~/shared/config/site'
 
 export function meta() {
-  return [{ title: 'Publication Review - MangaStudio Pro' }]
+  return [{ title: SITE.name }]
 }
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
@@ -37,6 +39,18 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       focusChapterId =
         pageResponses.find(({ response }) => response?.data.items.some((page) => page.id === referenceId))?.chapterId ??
         null
+    }
+    if (referenceId && referenceType === 'STORYBOARD') {
+      const storyboardResponses = await Promise.all(
+        chapters.map(async ({ chapter }) => ({
+          chapterId: chapter.id,
+          response: await chapterStoryboardControllerList({ id: chapter.id }).catch(() => null)
+        }))
+      )
+      focusChapterId =
+        storyboardResponses.find(({ response }) =>
+          response?.data.items.some((storyboard) => storyboard.id === referenceId)
+        )?.chapterId ?? null
     }
     const data: EditorPublicationData = { series, chapters }
     return { data, referenceId: focusChapterId, hasError: false }

@@ -12,7 +12,7 @@ import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { Button } from '~/shared/ui'
 
 export function meta() {
-  return [{ title: 'Chapter Pages - MangakaStudio Pro' }]
+  return [{ title: 'Các trang chương - MangakaStudio Pro' }]
 }
 
 export default function AssistantChapterPagesRoute() {

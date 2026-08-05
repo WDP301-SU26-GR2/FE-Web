@@ -16,6 +16,7 @@ import {
   notificationsPathForRole,
   useUnreadNotifications
 } from '~/shared/hooks/use-unread-notifications'
+import { notificationTarget } from './role-notifications-page'
 
 const PREVIEW_LIMIT = 6
 
@@ -24,6 +25,8 @@ function notificationHref(item: NotificationListResDtoOutputItemsItem, role: str
 
   const id = encodeURIComponent(item.referenceId)
   const prefix = item.referenceType.split('_')[0] ?? ''
+
+  if (role === 'BOARD_MEMBER' || role === 'SUPER_ADMIN') return notificationTarget(item, role)
 
   if (role === 'MANGAKA') {
     if (prefix === 'FRANCHISE') return `/dashboard/mangaka/series/franchise-consent/${id}`
@@ -50,6 +53,24 @@ function notificationHref(item: NotificationListResDtoOutputItemsItem, role: str
   }
 
   if (role === 'ASSISTANT' && prefix === 'TASK') return `/dashboard/assistant/tasks?taskId=${id}`
+
+  if (role === 'EDITOR') {
+    if (item.referenceType === 'TRANSFER_REPLACEMENT_CONTRACT_DRAFTED') return `/dashboard/editor/contracts/${id}`
+    if (item.referenceType === 'BOARD_DECISION_CREATED') return `/dashboard/editor/board/decisions/${id}`
+    if (['PROPOSAL', 'SERIES', 'FRANCHISE'].includes(prefix)) return `/dashboard/editor/proposals/${id}`
+    if (prefix === 'STORYBOARD') return `/dashboard/editor/publication?referenceId=${id}&referenceType=STORYBOARD`
+    if (['CHAPTER', 'MANUSCRIPT', 'PAGE'].includes(prefix))
+      return `/dashboard/editor/publication?referenceId=${id}&referenceType=${prefix}`
+    if (prefix === 'CONTRACT') return `/dashboard/editor/contracts/${id}`
+    if (['AMENDMENT', 'PAYMENT'].includes(prefix)) return '/dashboard/editor/contracts'
+    if (prefix === 'DEADLINE') return `/dashboard/editor/operations/deadlines?requestId=${id}`
+    if (prefix === 'BOARD') return `/dashboard/editor/board/sessions/${id}`
+    if (prefix === 'DECISION') return `/dashboard/editor/board/decisions/${id}`
+    if (['SURVEY', 'RANKING'].includes(prefix)) return `/dashboard/editor/operations/surveys?referenceId=${id}`
+    if (prefix === 'REPRINT') return `/dashboard/editor/operations/reprints?requestId=${id}`
+    if (prefix === 'TRANSFER') return `/dashboard/editor/operations/transfers?requestId=${id}`
+    if (prefix === 'REVISION') return `/dashboard/editor/operations/insights?revisionId=${id}`
+  }
 
   return null
 }

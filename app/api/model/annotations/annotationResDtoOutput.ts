@@ -22,6 +22,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { AnnotationResDtoOutputAuthorRole } from './annotationResDtoOutputAuthorRole';
 import type { AnnotationResDtoOutputTargetType } from './annotationResDtoOutputTargetType';
 import type { AnnotationResDtoOutputAnnotationType } from './annotationResDtoOutputAnnotationType';
 import type { AnnotationResDtoOutputReviewStage } from './annotationResDtoOutputReviewStage';
@@ -35,12 +36,12 @@ export interface AnnotationResDtoOutput {
   /** @nullable */
   authorId: string | null;
   /**
-   * RoleCode của người tạo annotation: Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN
+   * Allowed role codes: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN. Values: MANGAKA, ASSISTANT, EDITOR, BOARD_MEMBER, SUPER_ADMIN
    * @nullable
    */
-  authorRole: string | null;
+  authorRole: AnnotationResDtoOutputAuthorRole;
   /**
-   * Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME. Values: PAGE, REGION, TASK, MANUSCRIPT, NAME
+   * Đối tượng chú thích: PAGE, REGION, TASK, MANUSCRIPT, STORYBOARD. Values: PAGE, REGION, TASK, MANUSCRIPT, STORYBOARD
    * @nullable
    */
   targetType: AnnotationResDtoOutputTargetType;

@@ -1,7 +1,8 @@
 import { EditorBoardPage } from '~/features/editor'
+import { SITE } from '~/shared/config/site'
 
 export function meta() {
-  return [{ title: 'Board Workflow - MangaStudio Pro' }]
+  return [{ title: SITE.name }]
 }
 
 export default function EditorBoardRoute() {

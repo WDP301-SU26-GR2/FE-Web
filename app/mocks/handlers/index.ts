@@ -18,20 +18,12 @@ import type { RequestHandler } from 'msw'
 import { exampleHandlers } from './example.handler'
 
 // Orval generated handlers — mỗi hàm trả về array of MSW handlers
-import {
-  getAuthMock,
-  getSeriesMock,
-  getNamesMock,
-  getReviewsMock,
-  getUploadsMock,
-  getUsersMock
-} from '~/api/operations/index.msw'
+import { getAuthMock, getSeriesMock, getReviewsMock, getUploadsMock, getUsersMock } from '~/api/operations/index.msw'
 
 export const handlers: RequestHandler[] = [
   // Orval generated (bật khi VITE_ENABLE_MOCK=true)
   ...getAuthMock(),
   ...getSeriesMock(),
-  ...getNamesMock(),
   ...getReviewsMock(),
   ...getUploadsMock(),
   ...getUsersMock(),

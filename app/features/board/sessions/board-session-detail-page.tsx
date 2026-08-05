@@ -19,7 +19,7 @@ export function BoardSessionDetailPage({
   phase: BoardSessionPhase
   messages: BoardMessage[]
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   useBoardPolling()
   const meeting = useSessionVoteProgress({
     sessionId: session.id,
@@ -56,7 +56,7 @@ export function BoardSessionDetailPage({
           </div>
           <div>
             <span className='text-muted-foreground'>{t('sessions.start')}</span>
-            <p className='mt-1 font-bold'>{new Date(session.startTime).toLocaleString()}</p>
+            <p className='mt-1 font-bold'>{new Date(session.startTime).toLocaleString(i18n.language)}</p>
           </div>
         </div>
       </BoardPanel>
@@ -106,7 +106,7 @@ function MeetingChat({
   connectionState: 'connecting' | 'connected' | 'disconnected'
   sendMessage: (content: string) => Promise<{ status: string; reason?: string }>
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -135,7 +135,7 @@ function MeetingChat({
           <article key={message.id} className='rounded-md bg-muted p-3 text-xs'>
             <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
               <strong className='text-foreground'>{message.sender.displayName ?? t('sessions.unknownMember')}</strong>
-              <time>{new Date(message.createdAt).toLocaleTimeString()}</time>
+              <time>{new Date(message.createdAt).toLocaleTimeString(i18n.language)}</time>
             </div>
             <p className='mt-1 whitespace-pre-wrap'>{message.content}</p>
           </article>

@@ -25,7 +25,10 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 
 export interface UpdatePaymentConditionBodyDto {
   thresholdConfig?: unknown;
-  /** @minimum 0 */
+  /**
+   * @minimum 0
+   * @maximum 100000000000
+   */
   payoutAmount?: number;
   /**
    * @minimum 0

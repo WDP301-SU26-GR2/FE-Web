@@ -292,15 +292,6 @@ function NotifItem({
         </p>
         <p className='text-[10px] text-muted-foreground'>
           {createdLabel}
-          {notif.referenceType && notif.referenceId && (
-            <>
-              {' · '}
-              {t('notifications.item.reference', {
-                type: notif.referenceType,
-                id: notif.referenceId.slice(0, 8)
-              })}
-            </>
-          )}
         </p>
         {deepLink && (
           <Link

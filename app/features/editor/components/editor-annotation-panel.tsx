@@ -18,7 +18,7 @@ export function EditorAnnotationPanel({
 }: {
   title: string
   annotations: AnnotationListResDtoOutputItemsItem[]
-  target: 'NAME' | 'MANUSCRIPT'
+  target: 'STORYBOARD' | 'MANUSCRIPT'
   targetId: string
   contextFields?: Record<string, string>
   createIntent?: string
@@ -28,7 +28,11 @@ export function EditorAnnotationPanel({
 }) {
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
-  const hiddenFields = { ...contextFields, annotationTarget: target, nameId: target === 'NAME' ? targetId : '' }
+  const hiddenFields = {
+    ...contextFields,
+    annotationTarget: target,
+    storyboardId: target === 'STORYBOARD' ? targetId : ''
+  }
 
   return (
     <section className={embedded ? '' : 'rounded-xl border border-border bg-card p-5 shadow-sm'}>
@@ -50,6 +54,18 @@ export function EditorAnnotationPanel({
           className='w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
           placeholder={t('chapterReview.annotationPlaceholder')}
         />
+        <label className='grid gap-1 text-xs font-semibold text-muted-foreground'>
+          {t('chapterReview.annotationType')}
+          <select
+            name='annotationType'
+            defaultValue='TEXT'
+            className='h-9 rounded-md border border-input bg-background px-2 text-foreground'
+          >
+            <option value='TEXT'>{t('chapterReview.annotationTypes.TEXT')}</option>
+            <option value='HIGHLIGHT'>{t('chapterReview.annotationTypes.HIGHLIGHT')}</option>
+            <option value='DRAWING'>{t('chapterReview.annotationTypes.DRAWING')}</option>
+          </select>
+        </label>
         <details className='rounded-md border border-border p-3'>
           <summary className='cursor-pointer text-xs font-bold text-muted-foreground'>
             {t('chapterReview.annotationCoordinates')}

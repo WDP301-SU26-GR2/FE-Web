@@ -47,8 +47,7 @@ async function resolveAmendmentContractId(
   details: Record<string, unknown> | null | undefined,
   seriesId: string | undefined
 ) {
-  if (details?.resourceType !== 'CONTRACT_AMENDMENT' || typeof details.resourceId !== 'string')
-    return null
+  if (details?.resourceType !== 'CONTRACT_AMENDMENT' || typeof details.resourceId !== 'string') return null
 
   const contracts = await contractControllerGetContracts().catch(() => null)
   if (contracts?.status !== 200) return null

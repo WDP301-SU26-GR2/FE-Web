@@ -10,12 +10,14 @@ import {
   transferControllerGetSignatures,
   transferControllerSignTransferContract
 } from '~/api/operations/transfer/transfer'
-import type { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
+import { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
+import { SendOtpBodyDtoPurpose } from '~/api/model/auth'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardTransfersPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/transfers'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import type { ShouldRevalidateFunction } from 'react-router'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
@@ -118,19 +120,28 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     } else if (intent === 'fullBuyout') {
       const conditionTypes = form.getAll('conditionType').map(String)
       const conditionValues = form.getAll('conditionValue').map(Number)
-      const conditionDescriptions = form.getAll('conditionDescription').map(String)
+      const conditionDescriptions = form.getAll('conditionDescription').map((value) => String(value).trim())
+      const valuationAmount = Number(required(form, 'valuationAmount'))
       if (
+        !Number.isFinite(valuationAmount) ||
+        valuationAmount <= 0 ||
         !conditionTypes.length ||
-        conditionTypes.some((_, index) => !conditionDescriptions[index] || !Number.isFinite(conditionValues[index]))
+        conditionTypes.some(
+          (type, index) =>
+            !isEnumValue(AssignFullBuyoutBodyDtoConditionsItemType, type) ||
+            !conditionDescriptions[index] ||
+            !Number.isFinite(conditionValues[index]) ||
+            conditionValues[index] <= 0
+        )
       ) {
         throw new Error('Điều kiện hợp đồng chưa đầy đủ.')
       }
       const response = await transferControllerBoardAssignFullBuyout(
         { id: required(form, 'requestId') },
         {
-          valuationAmount: Number(required(form, 'valuationAmount')),
+          valuationAmount,
           conditions: conditionTypes.map((type, index) => ({
-            type: type as AssignFullBuyoutBodyDtoConditionsItemType,
+            type: type as (typeof AssignFullBuyoutBodyDtoConditionsItemType)[keyof typeof AssignFullBuyoutBodyDtoConditionsItemType],
             value: conditionValues[index],
             description: conditionDescriptions[index]
           }))
@@ -150,7 +161,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       await requireApprovedTransferContractDecision(required(form, 'contractId'))
       const me = await usersControllerGetMe()
       if (me.status !== 200) throw new Error('Không thể đọc thông tin tài khoản.')
-      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
+      await authControllerSendOtp({ email: me.data.email, purpose: SendOtpBodyDtoPurpose.SIGNING_CONTRACT })
     } else if (intent === 'sign') {
       const contractId = required(form, 'contractId')
       await requireApprovedTransferContractDecision(contractId)
@@ -159,6 +170,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         transferControllerGetSignatures({ id: contractId })
       ])
       if (contract.status !== 200) throw new Error('Không thể tải điều khoản hợp đồng chuyển nhượng.')
+      if (contract.data.status !== 'B_SIGNED') throw new Error('Hợp đồng chưa đến lượt Hội đồng ký.')
       if (signatures.status !== 200) throw new Error('Không thể tải tiến độ chữ ký.')
       const signedRoles = new Set(signatures.data.signatures.map((signature) => signature.role))
       if (!signedRoles.has('MANGAKA_A') || !signedRoles.has('MANGAKA_B')) {
@@ -188,7 +200,12 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       request: updatedRequest
     }
   } catch (error) {
-    return { ok: false, intent, message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.') }
+    return {
+      ok: false,
+      intent,
+      errorCode: extractApiErrorCode(error),
+      message: extractApiErrorMessage(error, 'Không thể hoàn tất thao tác chuyển nhượng.')
+    }
   }
 }
 
@@ -222,8 +239,7 @@ async function requireApprovedTransferContractDecision(contractId: string) {
       )
   )
   const approved = details.some(
-    (decision) =>
-      decision?.details?.resourceType === 'TRANSFER_CONTRACT' && decision.details.resourceId === contractId
+    (decision) => decision?.details?.resourceType === 'TRANSFER_CONTRACT' && decision.details.resourceId === contractId
   )
   if (!approved) throw new Error('Hợp đồng chuyển nhượng chưa có quyết định CONTRACT được Hội đồng phê duyệt.')
 }

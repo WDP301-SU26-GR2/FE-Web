@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BoardMeetingSession } from '~/api/manual/board-meeting'
+import { BoardSessionResDtoOutputPhase, BoardSessionResDtoOutputStatus } from '~/api/model/board'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
 export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeetingSession[]; hasError: boolean }) {
@@ -28,7 +29,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
         />
         <select className={boardInput} value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value=''>{t('filters.allSessionStatuses')}</option>
-          {['UPCOMING', 'ACTIVE', 'CONCLUDED'].map((value) => (
+          {Object.values(BoardSessionResDtoOutputStatus).map((value) => (
             <option key={value} value={value}>
               {t(`filters.sessionStatuses.${value}`)}
             </option>
@@ -36,7 +37,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
         </select>
         <select className={boardInput} value={phase} onChange={(event) => setPhase(event.target.value)}>
           <option value=''>{t('filters.allPhases')}</option>
-          {['PRESENTING', 'QA', 'VOTING'].map((value) => (
+          {Object.values(BoardSessionResDtoOutputPhase).map((value) => (
             <option key={value} value={value}>
               {t(`filters.sessionPhases.${value}`)}
             </option>

@@ -1,4 +1,8 @@
 {
+  "common": {
+    "notAvailable": "Not available",
+    "data": "Data"
+  },
   "navigation": {
     "backDashboard": "Back to Admin dashboard"
   },
@@ -86,16 +90,16 @@
     },
     "seriesStatuses": {
       "DRAFT": "Draft",
-      "IN_REVIEW": "In review",
-      "READY_TO_PITCH": "Ready to pitch",
-      "PITCHED": "Pitched",
-      "SERIALIZED": "Serialized",
-      "HIATUS": "Hiatus",
+      "IN_REVIEW": "Under editorial review",
+      "READY_TO_PITCH": "Ready for Board presentation",
+      "PITCHED": "Presented to the Board",
+      "SERIALIZED": "In serialization",
+      "HIATUS": "On hiatus",
       "COMPLETING": "Completing",
       "CANCELLING": "Cancelling",
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled",
-      "REJECTED": "Rejected",
+      "REJECTED": "Rejected by the Board",
       "ABANDONED": "Abandoned",
       "WITHDRAWN": "Withdrawn"
     },
@@ -259,7 +263,8 @@
       "title": "Business parameters",
       "description": "Shared operational thresholds; server caches may take up to 30 seconds to refresh.",
       "coOwnerApprovalGraceDays": "Co-owner approval grace period",
-      "nameMaxReviewRounds": "Maximum storyboard review rounds",
+      "storyboardMaxReviewRounds": "Maximum storyboard review rounds",
+      "boardRepClaimGraceDays": "Representative claim grace period",
       "reputationRecommendThreshold": "Recommendation reputation threshold",
       "hiatusTooLongDays": "Long-hiatus threshold",
       "lowVoteReliabilityThreshold": "Low vote reliability threshold",
@@ -357,13 +362,13 @@
       },
       "seriesStatuses": {
         "DRAFT": "Draft",
-        "IN_REVIEW": "Under review",
+        "IN_REVIEW": "Under editorial review",
         "READY_TO_PITCH": "Ready for Board presentation",
         "PITCHED": "Presented to the Board",
-        "SERIALIZED": "Serialized",
+        "SERIALIZED": "In serialization",
         "HIATUS": "On hiatus",
         "COMPLETING": "Completing",
-        "CANCELLING": "Being cancelled",
+        "CANCELLING": "Cancelling",
         "COMPLETED": "Completed",
         "CANCELLED": "Cancelled",
         "REJECTED": "Rejected by the Board",

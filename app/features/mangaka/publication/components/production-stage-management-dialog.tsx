@@ -6,6 +6,7 @@ import { Button } from '~/shared/ui'
 import { Dialog } from '~/shared/ui/dialog'
 
 import type { ProductionStageManagement } from '../hooks/use-production-stage-management'
+import { translateProductionStageName } from '../lib/translate-publication-status'
 
 const TASK_TYPES: CreateStageBodyDtoTaskTypesItem[] = [
   'BACKGROUND',
@@ -38,7 +39,8 @@ export function ProductionStageManagementDialog({
 
   const isNameValid = name.trim().length > 0
   const isCreateValid = isNameValid && taskTypes.length > 0
-  const title = t(`seriesDetail.production.management.${mode}.title`, { name: stage.name })
+  const displayStageName = translateProductionStageName(stage.name, t)
+  const title = t(`seriesDetail.production.management.${mode}.title`, { name: displayStageName })
 
   const submit = async () => {
     if (mode === 'create') {
@@ -102,7 +104,7 @@ export function ProductionStageManagementDialog({
       title={showDeleteConfirmation ? t('seriesDetail.production.management.remove.confirmTitle') : title}
       description={
         showDeleteConfirmation
-          ? t('seriesDetail.production.management.remove.confirmDescription', { name: stage.name })
+          ? t('seriesDetail.production.management.remove.confirmDescription', { name: displayStageName })
           : t(`seriesDetail.production.management.${mode}.description`, { name: stage.name })
       }
       footer={footer}

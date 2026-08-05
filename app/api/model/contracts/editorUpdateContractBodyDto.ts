@@ -27,7 +27,11 @@ import type { EditorUpdateContractBodyDtoContractType } from './editorUpdateCont
 export interface EditorUpdateContractBodyDto {
   /** Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE */
   contractType?: EditorUpdateContractBodyDtoContractType;
-  /** @minimum 0 */
+  /**
+   * @minimum 0
+   * @maximum 100000000000
+   * @exclusiveMinimum
+   */
   valuationAmount?: number;
   /**
    * @minimum 0

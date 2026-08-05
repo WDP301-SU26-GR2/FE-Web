@@ -3,10 +3,10 @@ import { getStatusTone, type StatusTone } from '~/shared/components/status-badge
 import { cn } from '~/shared/lib/cn'
 
 const BAR_TONES: Record<StatusTone, string> = {
-  success: 'bg-emerald-500',
-  warning: 'bg-amber-500',
+  success: 'bg-success',
+  warning: 'bg-warning',
   danger: 'bg-destructive',
-  info: 'bg-sky-500',
+  info: 'bg-info',
   neutral: 'bg-primary'
 }
 

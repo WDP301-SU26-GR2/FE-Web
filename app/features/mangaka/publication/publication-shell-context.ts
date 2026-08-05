@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 
 import { isFetchError } from '~/api/mutator/custom-fetch'
 import type { ChapterResDtoOutput } from '~/api/model/chapters'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
+import type { StoryboardListResDtoOutputItemsItem } from '~/api/model/storyboards'
 import type { PageListResDtoOutputItemsItem } from '~/api/model/chapters'
 
 /**
@@ -22,7 +22,7 @@ export type PublicationContextValue = {
   chapterLoading: boolean
   chapterError: string | null
   chapterNotFound: boolean
-  name: NameListResDtoOutputItemsItem | null
+  name: StoryboardListResDtoOutputItemsItem | null
   nameLoading: boolean
   pages: PageListResDtoOutputItemsItem[]
   pagesLoading: boolean

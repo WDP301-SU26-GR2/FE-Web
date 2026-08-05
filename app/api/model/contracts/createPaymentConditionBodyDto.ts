@@ -28,7 +28,10 @@ export interface CreatePaymentConditionBodyDto {
   conditionType: CreatePaymentConditionBodyDtoConditionType;
   thresholdConfig: unknown;
   isRecurring?: boolean;
-  /** @minimum 0 */
+  /**
+   * @minimum 0
+   * @maximum 100000000000
+   */
   payoutAmount?: number;
   /**
    * @minimum 0

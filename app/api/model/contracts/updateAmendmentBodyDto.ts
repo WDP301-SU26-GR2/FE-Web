@@ -30,6 +30,7 @@ export interface UpdateAmendmentBodyDto {
   reason?: string;
   /**
    * @minimum 0
+   * @maximum 100000000000
    * @exclusiveMinimum
    */
   valuationAmount?: number;

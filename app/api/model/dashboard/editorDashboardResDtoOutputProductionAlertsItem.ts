@@ -33,7 +33,7 @@ export type EditorDashboardResDtoOutputProductionAlertsItem = {
   /** @nullable */
   title: string | null;
   /**
-   * DRAFT: Chapter mới tạo, chưa có trang (đang ở khâu Name). | IN_PRODUCTION: Đang sản xuất trang. | EDITOR_REVIEW: Đã nộp, Editor đang duyệt. | EDITOR_REVISION: Editor yêu cầu sửa. | READY_FOR_PRINT: Editor đã duyệt, sẵn sàng xuất bản. | AWAITING_CO_OWNER_APPROVAL: Chờ đồng sở hữu duyệt (PARTIAL_TRANSFER). | PUBLISHED: Đã xuất bản.. Values: DRAFT, IN_PRODUCTION, EDITOR_REVIEW, EDITOR_REVISION, READY_FOR_PRINT, AWAITING_CO_OWNER_APPROVAL, PUBLISHED
+   * DRAFT: Chapter mới tạo, chưa có trang; chờ duyệt Storyboard trước khi sản xuất. | IN_PRODUCTION: Đang sản xuất trang. | EDITOR_REVIEW: Đã nộp, Editor đang duyệt. | EDITOR_REVISION: Editor yêu cầu sửa. | READY_FOR_PRINT: Editor đã duyệt, sẵn sàng xuất bản. | AWAITING_CO_OWNER_APPROVAL: Chờ đồng sở hữu duyệt (PARTIAL_TRANSFER). | PUBLISHED: Đã xuất bản.. Values: DRAFT, IN_PRODUCTION, EDITOR_REVIEW, EDITOR_REVISION, READY_FOR_PRINT, AWAITING_CO_OWNER_APPROVAL, PUBLISHED
    * @nullable
    */
   manuscriptStatus: EditorDashboardResDtoOutputProductionAlertsItemManuscriptStatus;

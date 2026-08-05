@@ -24,7 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
- * Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME. Values: PAGE, REGION, TASK, MANUSCRIPT, NAME
+ * Đối tượng chú thích: PAGE, REGION, TASK, MANUSCRIPT, STORYBOARD. Values: PAGE, REGION, TASK, MANUSCRIPT, STORYBOARD
  * @nullable
  */
 export type AnnotationResDtoOutputTargetType = typeof AnnotationResDtoOutputTargetType[keyof typeof AnnotationResDtoOutputTargetType] | null;
@@ -36,5 +36,5 @@ export const AnnotationResDtoOutputTargetType = {
   REGION: 'REGION',
   TASK: 'TASK',
   MANUSCRIPT: 'MANUSCRIPT',
-  NAME: 'NAME',
+  STORYBOARD: 'STORYBOARD',
 } as const;

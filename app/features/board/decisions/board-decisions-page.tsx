@@ -2,9 +2,9 @@ import { Link } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BoardMeetingDecision } from '~/api/manual/board-meeting'
-import type { BoardSessionResDtoOutput } from '~/api/model/board'
+import { BoardDecisionResDtoOutputResult, type BoardSessionResDtoOutput } from '~/api/model/board'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
-import { useBoardSessionsRealtime } from '../sessions/use-board-sessions-realtime'
+import { useBoardSessionsRealtime } from '~/shared/hooks/use-board-sessions-realtime'
 
 export function BoardDecisionsPage({
   sessions,
@@ -57,13 +57,13 @@ export function BoardDecisionsPage({
           <option value=''>{t('filters.allDecisionTypes')}</option>
           {decisionTypes.map((value) => (
             <option key={value} value={value}>
-              {t(`filters.decisionTypes.${value}`, { defaultValue: value })}
+              {t(`filters.decisionTypes.${value}`, { defaultValue: t('common.notAvailable') })}
             </option>
           ))}
         </select>
         <select className={boardInput} value={result} onChange={(event) => setResult(event.target.value)}>
           <option value=''>{t('filters.allDecisionResults')}</option>
-          {['PENDING', 'PENDING_QUORUM', 'APPROVED', 'REJECTED', 'EXPIRED'].map((value) => (
+          {Object.values(BoardDecisionResDtoOutputResult).map((value) => (
             <option key={value} value={value}>
               {t(`filters.decisionResults.${value}`)}
             </option>
@@ -75,7 +75,7 @@ export function BoardDecisionsPage({
           const seriesTitle = decision.targetSeries?.title ?? t('decisions.unknownSeries')
           const session = sessions.find((item) => item.id === decision.boardSessionId)
           const typeLabel = decision.decisionType
-            ? t(`filters.decisionTypes.${decision.decisionType}`, { defaultValue: decision.decisionType })
+            ? t(`filters.decisionTypes.${decision.decisionType}`, { defaultValue: t('common.notAvailable') })
             : t('decisions.title')
           const displayTitle =
             decision.decisionType === 'SERIALIZATION'

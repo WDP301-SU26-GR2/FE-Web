@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
+ * Reprint revision mode: AS_IS (giữ nguyên) hoặc WITH_REVISION (được sửa). Values: AS_IS, WITH_REVISION
  * @nullable
  */
 export type ReprintRequestResDtoOutputRevisionMode = typeof ReprintRequestResDtoOutputRevisionMode[keyof typeof ReprintRequestResDtoOutputRevisionMode] | null;

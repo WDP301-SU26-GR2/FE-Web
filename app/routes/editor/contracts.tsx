@@ -2,18 +2,33 @@ import { boardControllerGetDecisions, boardControllerGetSessions } from '~/api/o
 import {
   contractControllerCreateDraft,
   contractControllerGetContractById,
-  contractControllerGetContracts
+  contractControllerGetContracts,
+  paymentConditionControllerCreatePaymentCondition
 } from '~/api/operations/contracts/contracts'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
-import { EditorContractsPage, type EditorActionResult, type EditorContractsData } from '~/features/editor'
-import { contractErrorKey, datesAreValid, ownershipIsValid, required } from './contract-route-utils'
+import { BoardDecisionResDtoOutputDecisionType, BoardDecisionResDtoOutputResult } from '~/api/model/board'
+import { SeriesListResDtoOutputItemsItemStatus } from '~/api/model/series'
+import {
+  EDITOR_CONTRACT_INTENTS,
+  EditorContractsPage,
+  contractDatesAreValid,
+  contractOwnershipIsValid,
+  contractValuationIsValid,
+  isContractType,
+  mapEditorContractError,
+  type EditorActionResult,
+  type EditorContractsData
+} from '~/features/editor'
+import { SITE } from '~/shared/config/site'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
+import { paymentPayout, paymentThreshold, required } from './contract-route-utils'
 import { hydrateBoardDecisions, hydrateBoardSessions } from './board-route-utils'
 
 import type { Route } from './+types/contracts'
 
 export function meta() {
-  return [{ title: 'Contracts - MangaStudio Pro' }]
+  return [{ title: SITE.name }]
 }
 
 export async function clientLoader(): Promise<EditorContractsData & { hasError: boolean }> {
@@ -34,7 +49,9 @@ export async function clientLoader(): Promise<EditorContractsData & { hasError: 
       contracts: contractDetails.filter((contract) => contract != null),
       series,
       decisions: (await hydrateBoardDecisions(decisions.data)).filter(
-        (item) => item.decisionType === 'SERIALIZATION' && item.result === 'APPROVED'
+        (item) =>
+          item.decisionType === BoardDecisionResDtoOutputDecisionType.SERIALIZATION &&
+          item.result === BoardDecisionResDtoOutputResult.APPROVED
       ),
       sessions: await hydrateBoardSessions(sessions.data),
       hasError: false
@@ -47,32 +64,52 @@ export async function clientLoader(): Promise<EditorContractsData & { hasError: 
 export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
   const formData = await request.formData()
   const intent = String(formData.get('intent') ?? '')
-  if (intent !== 'createContract') return { ok: false, intent, errorKey: 'invalidAction' }
+  if (intent !== EDITOR_CONTRACT_INTENTS.create) return { ok: false, intent, errorKey: 'invalidAction' }
   try {
     const seriesId = required(formData, 'seriesId')
-    const contractType = required(formData, 'contractType') as 'FULL_BUYOUT' | 'REVENUE_SHARE'
+    const contractType = required(formData, 'contractType')
+    const valuationAmount = Number(required(formData, 'valuationAmount'))
     const publisherOwnershipPct = Number(required(formData, 'publisherOwnershipPct'))
     const mangakaOwnershipPct = Number(required(formData, 'mangakaOwnershipPct'))
     const contractStart = required(formData, 'contractStart')
     const contractEnd = required(formData, 'contractEnd')
-    if (!ownershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct))
+    if (!isContractType(contractType)) return { ok: false, intent, errorKey: 'invalidAction' }
+    if (!contractValuationIsValid(valuationAmount)) return { ok: false, intent, errorKey: 'invalidContractMoney' }
+    if (!contractOwnershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct))
       return { ok: false, intent, errorKey: 'ownershipMismatch' }
-    if (!datesAreValid(contractStart, contractEnd)) return { ok: false, intent, errorKey: 'invalidContractDates' }
-    await contractControllerCreateDraft({
+    if (!contractDatesAreValid(contractStart, contractEnd))
+      return { ok: false, intent, errorKey: 'invalidContractDates' }
+    const conditionType = required(formData, 'conditionType') as
+      | 'CHAPTER_MILESTONE'
+      | 'RECURRING_CHAPTER'
+      | 'RANKING_MILESTONE'
+      | 'TIME_BOUND'
+    const thresholdConfig = paymentThreshold(formData)
+    const payout = paymentPayout(formData)
+    const createdContract = await contractControllerCreateDraft({
       seriesId,
       mangakaId: required(formData, 'mangakaId'),
       boardDecisionId: required(formData, 'boardDecisionId'),
       contractType,
-      valuationAmount: Number(required(formData, 'valuationAmount')),
+      valuationAmount,
       publisherOwnershipPct,
       mangakaOwnershipPct,
       terminationClause: required(formData, 'terminationClause'),
       contractStart: new Date(contractStart).toISOString(),
       contractEnd: new Date(contractEnd).toISOString()
     })
-    return { ok: true, intent, messageKey: 'createContract' }
+    await paymentConditionControllerCreatePaymentCondition(
+      { contractId: createdContract.data.id },
+      {
+        conditionType,
+        thresholdConfig,
+        isRecurring: conditionType === 'RECURRING_CHAPTER',
+        ...payout
+      }
+    )
+    return { ok: true, intent, messageKey: 'createContract', contractId: createdContract.data.id }
   } catch (error) {
-    return { ok: false, intent, errorKey: contractErrorKey(error) }
+    return { ok: false, intent, errorKey: mapEditorContractError(error) }
   }
 }
 
@@ -81,13 +118,10 @@ export default function EditorContractsRoute({ loaderData }: Route.ComponentProp
 }
 
 async function listSerializedSeries() {
-  const items: SeriesListResDtoOutputItemsItem[] = []
-  const limit = 100
-  let offset = 0
-  while (true) {
-    const response = await seriesControllerListSeries({ status: 'SERIALIZED', limit, offset })
-    items.push(...response.data.items)
-    offset += response.data.items.length
-    if (response.data.items.length < limit || offset >= response.data.total) return items
-  }
+  return loadAllOffsetItems((pagination) =>
+    seriesControllerListSeries({
+      status: SeriesListResDtoOutputItemsItemStatus.SERIALIZED,
+      ...pagination
+    }).then((response) => response.data)
+  ) satisfies Promise<SeriesListResDtoOutputItemsItem[]>
 }

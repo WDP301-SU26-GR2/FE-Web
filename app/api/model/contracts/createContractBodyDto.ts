@@ -25,15 +25,28 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { CreateContractBodyDtoContractType } from './createContractBodyDtoContractType';
 
 export interface CreateContractBodyDto {
-  /** @minLength 1 */
+  /**
+   * MongoDB ObjectId (24 hexadecimal characters)
+   * @pattern ^[0-9a-fA-F]{24}$
+   */
   seriesId: string;
-  /** @minLength 1 */
+  /**
+   * MongoDB ObjectId (24 hexadecimal characters)
+   * @pattern ^[0-9a-fA-F]{24}$
+   */
   mangakaId: string;
-  /** @minLength 1 */
+  /**
+   * MongoDB ObjectId (24 hexadecimal characters)
+   * @pattern ^[0-9a-fA-F]{24}$
+   */
   boardDecisionId: string;
   /** Loại hợp đồng: FULL_BUYOUT (NXB mua đứt 100%, toàn quyền) | REVENUE_SHARE (ăn chia %, quyết định lớn cần Mangaka đồng ý) — BR-CONTRACT-03. Values: FULL_BUYOUT, REVENUE_SHARE */
   contractType: CreateContractBodyDtoContractType;
-  /** @minimum 0 */
+  /**
+   * @minimum 0
+   * @maximum 100000000000
+   * @exclusiveMinimum
+   */
   valuationAmount: number;
   /**
    * @minimum 0

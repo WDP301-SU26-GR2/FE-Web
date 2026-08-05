@@ -22,13 +22,12 @@ type UseRevisionRequestsDrawerResult = {
   setPage: (n: number) => void
   paginatedItems: RevisionRequestListResDtoOutputItemsItem[]
   resolvingId: string | null
-  resolve: (item: RevisionRequestListResDtoOutputItemsItem) => Promise<void>
+  resolve: (item: RevisionRequestListResDtoOutputItemsItem) => Promise<boolean>
   refresh: () => void
 }
 
 async function fetchAllForScope(
   seriesId: string,
-  nameId: string | null | undefined,
   signal: AbortSignal
 ): Promise<RevisionRequestListResDtoOutputItemsItem[]> {
   const baseParams: RevisionControllerListParams = { limit: 100, offset: 0 }
@@ -38,14 +37,6 @@ async function fetchAllForScope(
       { signal }
     )
   ]
-  if (nameId) {
-    requests.push(
-      revisionControllerList(
-        { ...baseParams, targetType: RevisionControllerListTargetType.NAME, targetId: nameId },
-        { signal }
-      )
-    )
-  }
   const responses = await Promise.all(requests)
   const items = responses.flatMap((res) => (res.data as RevisionRequestListResDtoOutput).items ?? [])
   return items.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
@@ -57,11 +48,7 @@ async function fetchAllForScope(
  * per page). `open === false` skips fetching but keeps the previously loaded
  * data so reopening the drawer is instant.
  */
-export function useRevisionRequestsDrawer(
-  open: boolean,
-  seriesId: string,
-  nameId: string | null | undefined
-): UseRevisionRequestsDrawerResult {
+export function useRevisionRequestsDrawer(open: boolean, seriesId: string): UseRevisionRequestsDrawerResult {
   const { t } = useTranslation('mangaka')
   const [items, setItems] = useState<RevisionRequestListResDtoOutputItemsItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -82,7 +69,7 @@ export function useRevisionRequestsDrawer(
       setIsLoading(true)
       setError(null)
       try {
-        const result = await fetchAllForScope(seriesId, nameId, controller.signal)
+        const result = await fetchAllForScope(seriesId, controller.signal)
         if (!controller.signal.aborted) setItems(result)
       } catch (err) {
         if (controller.signal.aborted) return
@@ -94,7 +81,7 @@ export function useRevisionRequestsDrawer(
       }
     })()
     return () => controller.abort()
-  }, [open, seriesId, nameId, reloadToken, t])
+  }, [open, seriesId, reloadToken, t])
 
   const refresh = useCallback(() => setReloadToken((v) => v + 1), [])
 
@@ -112,8 +99,10 @@ export function useRevisionRequestsDrawer(
         setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, isResolved: true } : it)))
         toast.success(t('seriesDetail.revisions.resolveSuccess'))
         setTimeout(() => setReloadToken((v) => v + 1), 50)
+        return true
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('seriesDetail.revisions.resolveError')))
+        return false
       } finally {
         setResolvingId(null)
       }

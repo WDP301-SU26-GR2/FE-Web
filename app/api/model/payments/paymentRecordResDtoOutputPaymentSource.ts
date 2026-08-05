@@ -23,6 +23,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Nguồn phát sinh khoản chi: CONTRACT (hợp đồng gốc) | REPRINT (tái bản) | TRANSFER (chuyển nhượng) | TERMINATION (huỷ/kết thúc hợp đồng) | MANUAL (tạo thủ công). Values: CONTRACT, REPRINT, TRANSFER, TERMINATION, MANUAL
+ */
 export type PaymentRecordResDtoOutputPaymentSource = typeof PaymentRecordResDtoOutputPaymentSource[keyof typeof PaymentRecordResDtoOutputPaymentSource];
 
 

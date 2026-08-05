@@ -25,7 +25,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { CreateProposalBodyDtoGenresItem } from './createProposalBodyDtoGenresItem';
 import type { CreateProposalBodyDtoDemographic } from './createProposalBodyDtoDemographic';
 import type { CreateProposalBodyDtoPublicationType } from './createProposalBodyDtoPublicationType';
-import type { CreateProposalBodyDtoNamePagesItem } from './createProposalBodyDtoNamePagesItem';
+import type { CreateProposalBodyDtoStoryboardPagesItem } from './createProposalBodyDtoStoryboardPagesItem';
 import type { CreateProposalBodyDtoRelationshipType } from './createProposalBodyDtoRelationshipType';
 
 export interface CreateProposalBodyDto {
@@ -49,7 +49,7 @@ export interface CreateProposalBodyDto {
    * @maximum 9007199254740991
    */
   estimatedLength?: number;
-  namePages?: CreateProposalBodyDtoNamePagesItem[];
+  storyboardPages?: CreateProposalBodyDtoStoryboardPagesItem[];
   parentSeriesId?: string;
   /** Relationship to parent series: SEQUEL, SPINOFF, SIDE_STORY, REBOOT. Values: SEQUEL, SPINOFF, SIDE_STORY, REBOOT */
   relationshipType?: CreateProposalBodyDtoRelationshipType;

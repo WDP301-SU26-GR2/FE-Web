@@ -73,10 +73,17 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
                 unit={t('settings.units.days')}
               />
               <NumberField
-                name='nameMaxReviewRounds'
-                value={config.nameMaxReviewRounds}
+                name='storyboardMaxReviewRounds'
+                value={config.storyboardMaxReviewRounds}
                 min={1}
-                label={t('settings.app.nameMaxReviewRounds')}
+                label={t('settings.app.storyboardMaxReviewRounds')}
+              />
+              <NumberField
+                name='boardRepClaimGraceDays'
+                value={config.boardRepClaimGraceDays}
+                min={0}
+                label={t('settings.app.boardRepClaimGraceDays')}
+                unit={t('settings.units.days')}
               />
               <NumberField
                 name='reputationRecommendThreshold'
@@ -386,9 +393,9 @@ function FormFooter({
     const data = fetcher.data
     if (!data || lastData.current === data) return
     lastData.current = data
-    const message =
-      data.message ||
-      (data.ok ? t(`settings.messages.${data.messageKey}`) : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`))
+    const message = data.ok
+      ? t(`settings.messages.${data.messageKey}`, { defaultValue: t('settings.messages.appUpdated') })
+      : t(`settings.errors.${data.errorKey ?? 'actionFailed'}`)
     if (data.ok) {
       toast.success(message, { id: `admin-settings-${data.intent}-success` })
       closeDialog?.()

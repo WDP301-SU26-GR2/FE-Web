@@ -5,6 +5,7 @@ export type BoardActionResult = {
   intent: string
   messageKey?: string
   message?: string
+  errorCode?: string
   requestId?: string
   request?: TransferRequestResDtoOutput
   replacementContractId?: string

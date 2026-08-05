@@ -23,14 +23,18 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { MangakaProfileResDtoOutputGenresItem } from './mangakaProfileResDtoOutputGenresItem';
+import type { MangakaProfileResDtoOutputExperienceLevel } from './mangakaProfileResDtoOutputExperienceLevel';
 
 export interface MangakaProfileResDtoOutput {
   userId: string;
   /** @nullable */
   penName: string | null;
   genres: MangakaProfileResDtoOutputGenresItem[];
-  /** @nullable */
-  experienceLevel: string | null;
+  /**
+   * Mức kinh nghiệm hồ sơ: JUNIOR, MID, SENIOR. Values: JUNIOR, MID, SENIOR
+   * @nullable
+   */
+  experienceLevel: MangakaProfileResDtoOutputExperienceLevel;
   /** @nullable */
   bio: string | null;
   portfolioFiles: string[];
@@ -42,6 +46,10 @@ export interface MangakaProfileResDtoOutput {
   displayName?: string | null;
   /** @nullable */
   avatar?: string | null;
+  /** Email liên hệ (danh bạ nội bộ hiển thị contact) */
+  email: string;
+  /** Số điện thoại liên hệ */
+  phoneNumber: string;
   /** false = user chưa build hồ sơ; field profile = default rỗng */
   hasProfile: boolean;
 }

@@ -25,6 +25,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 import type { TransferContractResDtoOutputSeries } from './transferContractResDtoOutputSeries';
 import type { TransferContractResDtoOutputFromMangaka } from './transferContractResDtoOutputFromMangaka';
 import type { TransferContractResDtoOutputToMangaka } from './transferContractResDtoOutputToMangaka';
+import type { TransferContractResDtoOutputTransferType } from './transferContractResDtoOutputTransferType';
 import type { TransferContractResDtoOutputNewOwnershipSplit } from './transferContractResDtoOutputNewOwnershipSplit';
 import type { TransferContractResDtoOutputStatus } from './transferContractResDtoOutputStatus';
 import type { TransferContractResDtoOutputSignaturesItem } from './transferContractResDtoOutputSignaturesItem';
@@ -45,8 +46,11 @@ export interface TransferContractResDtoOutput {
   fromMangaka?: TransferContractResDtoOutputFromMangaka;
   /** @nullable */
   toMangaka?: TransferContractResDtoOutputToMangaka;
-  /** @nullable */
-  transferType?: string | null;
+  /**
+   * Kiểu chuyển nhượng (chỉ có nghĩa khi HĐ gốc REVENUE_SHARE): FULL_TRANSFER (B mua trọn phần của A, A ra đi) | PARTIAL_TRANSFER (A giữ lại một phần → A thành co-owner, duyệt mỗi chapter mới — BR-TRANSFER-03). Values: FULL_TRANSFER, PARTIAL_TRANSFER
+   * @nullable
+   */
+  transferType?: TransferContractResDtoOutputTransferType;
   /** @nullable */
   transferAmount?: number | null;
   /**

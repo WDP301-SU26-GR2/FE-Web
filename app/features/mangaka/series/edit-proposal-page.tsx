@@ -6,7 +6,6 @@ import { Link, useNavigate } from 'react-router'
 import { cn } from '~/shared/lib/cn'
 import { useSeriesDetail } from './use-series-detail'
 import { useUpdateProposal } from './use-update-proposal'
-import { useUpdateProposalName } from './use-update-proposal-name'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
@@ -36,8 +35,6 @@ type EditableSnapshot = {
   synopsis: string
   characterDesigns: string[]
   estimatedLength: number | null
-  nameId: string | null
-  nameStatus: string | null
   namePages: ExistingNamePage[]
 }
 
@@ -54,8 +51,6 @@ const EMPTY_SNAPSHOT: EditableSnapshot = {
   synopsis: '',
   characterDesigns: [],
   estimatedLength: null,
-  nameId: null,
-  nameStatus: null,
   namePages: []
 }
 
@@ -77,7 +72,6 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
   const { session } = useAuth()
   const { series, names, isLoading, error, notFound, refresh } = useSeriesDetail(seriesId)
   const { update, isUpdating } = useUpdateProposal()
-  const { updatePages, addPage, isUpdatingName } = useUpdateProposalName()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null)
 
@@ -96,10 +90,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
   useEffect(() => {
     if (!series || isLoading || hydrated) return
 
-    const proposalName =
-      names.find((name) => name.id === series.proposal?.nameId) ??
-      names.find((name) => name.kind === 'PROPOSAL') ??
-      null
+    const proposalName = names.find((name) => name.kind === 'PROPOSAL') ?? null
 
     const snap: EditableSnapshot = {
       title: series.title ?? '',
@@ -110,8 +101,6 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
       synopsis: series.proposal?.synopsis ?? '',
       characterDesigns: [...(series.proposal?.characterDesigns ?? [])],
       estimatedLength: series.proposal?.estimatedLength ?? null,
-      nameId: proposalName?.id ?? series.proposal?.nameId ?? null,
-      nameStatus: proposalName?.status ?? null,
       namePages:
         proposalName?.pages.map((page) => ({
           pageNumber: page.pageNumber,
@@ -152,8 +141,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
   // ── Editability gate (BE also enforces via 409) ────────────────────────────
   const proposalEditable =
     series?.status === SeriesStatusEnum.DRAFT || series?.proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION
-  const nameEditable = initial.nameStatus === 'DRAFT' || initial.nameStatus === 'REVISION'
-  const editable = proposalEditable || nameEditable
+  const editable = proposalEditable
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
 
   // ── Diff the live form against the initial snapshot ────────────────────────
@@ -174,8 +162,8 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
   }, [form, initial, hydrated, existingKeysRemoved, existingCoverRemoved])
 
   const nameDirty = hydrated && (form.namePages.length > 0 || removedNamePageKeys.length > 0)
-  const dirty = (proposalEditable && proposalDirty) || (nameEditable && nameDirty)
-  const isSaving = isUpdating || isUpdatingName
+  const dirty = proposalEditable && (proposalDirty || nameDirty)
+  const isSaving = isUpdating
 
   // ── Submit handler ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -262,18 +250,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
         body.characterDesigns = finalCharacterDesigns
       }
 
-      let proposalSaved = true
-      if (proposalEditable && proposalDirty) {
-        proposalSaved = !!(await update(series.id, body as UpdateProposalBodyDto))
-      }
-      if (!proposalSaved) return
-
-      let nameSaved = true
-      if (nameEditable && nameDirty) {
-        if (!initial.nameId) {
-          setSubmitError(t('seriesDetail.editProposal.nameMissing'))
-          return
-        }
+      if (nameDirty) {
         const keptPages = [...initial.namePages]
           .sort((a, b) => a.pageNumber - b.pageNumber)
           .filter((page) => !removedNamePageKeys.includes(`${page.pageNumber}:${page.fileUrl}`))
@@ -282,12 +259,11 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
           pageNumber: index + 1,
           fileUrl: page.fileUrl
         }))
-        nameSaved = !!(newNamePageKeys.length === 1 && removedNamePageKeys.length === 0
-          ? await addPage(series.id, initial.nameId, pages.at(-1)!)
-          : await updatePages(series.id, initial.nameId, pages))
+        body.storyboardPages = pages
       }
 
-      if (proposalSaved && nameSaved) {
+      const proposalSaved = !!(await update(series.id, body as UpdateProposalBodyDto))
+      if (proposalSaved) {
         // Refresh the detail page so it sees the new state, then go back.
         refresh()
         navigate(`/dashboard/mangaka/series/${series.id}`)
@@ -456,7 +432,7 @@ export function EditProposalPage({ seriesId }: EditProposalPageProps) {
         </div>
       )}
 
-      {nameEditable && (
+      {proposalEditable && (
         <div className='rounded-xl border border-border bg-card p-6 shadow-sm'>
           <div className='mb-4 flex items-center gap-2'>
             <span className='rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary'>

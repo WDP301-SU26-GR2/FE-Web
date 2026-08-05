@@ -1,11 +1,15 @@
 {
+  "common": {
+    "notAvailable": "Chưa có dữ liệu",
+    "data": "Dữ liệu"
+  },
   "navigation": {
     "backDashboard": "Quay lại tổng quan quản trị"
   },
   "dashboard": {
     "eyebrow": "Bảng điều hành quản trị",
-    "title": "Tổng quan nền tảng",
-    "subtitle": "Ảnh chụp hiện tại về tài khoản, bộ truyện, chương phát hành và khối lượng sản xuất trên toàn nền tảng.",
+    "title": "Tổng quan hệ thống",
+    "subtitle": "Ảnh chụp hiện tại về tài khoản, bộ truyện, chương phát hành và khối lượng sản xuất trên toàn hệ thống.",
     "overview": "Các chỉ số tổng quan",
     "refresh": "Làm mới dữ liệu",
     "refreshing": "Đang làm mới...",
@@ -72,7 +76,7 @@
       }
     },
     "roles": {
-      "MANGAKA": "Mangaka",
+      "MANGAKA": "Tác giả",
       "ASSISTANT": "Trợ lý",
       "EDITOR": "Biên tập viên",
       "BOARD_MEMBER": "Thành viên Hội đồng",
@@ -86,18 +90,18 @@
     },
     "seriesStatuses": {
       "DRAFT": "Bản nháp",
-      "IN_REVIEW": "Đang duyệt",
+      "IN_REVIEW": "Đang biên tập",
       "READY_TO_PITCH": "Sẵn sàng trình Hội đồng",
       "PITCHED": "Đã trình Hội đồng",
-      "SERIALIZED": "Đang phát hành",
-      "HIATUS": "Tạm ngưng",
+      "SERIALIZED": "Đang phát hành dài kỳ",
+      "HIATUS": "Đang tạm ngưng",
       "COMPLETING": "Đang hoàn tất",
-      "CANCELLING": "Đang huỷ",
+      "CANCELLING": "Đang hủy",
       "COMPLETED": "Đã hoàn thành",
-      "CANCELLED": "Đã huỷ",
-      "REJECTED": "Bị từ chối",
-      "ABANDONED": "Đã từ bỏ",
-      "WITHDRAWN": "Đã rút"
+      "CANCELLED": "Đã hủy",
+      "REJECTED": "Hội đồng đã từ chối",
+      "ABANDONED": "Đã dừng hồ sơ",
+      "WITHDRAWN": "Đã rút hồ sơ"
     },
     "taskStatuses": {
       "ASSIGNED": "Đã giao",
@@ -125,7 +129,7 @@
     },
     "fields": {
       "name": "Họ và tên",
-      "email": "Email",
+      "email": "Thư điện tử",
       "phoneNumber": "Số điện thoại kèm mã quốc gia",
       "role": "Vai trò",
       "status": "Trạng thái mới",
@@ -134,7 +138,7 @@
     },
     "filters": {
       "search": "Tìm kiếm",
-      "searchPlaceholder": "Tìm theo tên hoặc email...",
+      "searchPlaceholder": "Tìm theo tên hoặc thư điện tử...",
       "role": "Tất cả vai trò",
       "status": "Tất cả trạng thái",
       "apply": "Áp dụng",
@@ -150,8 +154,8 @@
       "actions": "Thao tác"
     },
     "security": {
-      "verified": "Email đã xác thực",
-      "unverified": "Email chưa xác thực",
+      "verified": "Thư điện tử đã xác thực",
+      "unverified": "Thư điện tử chưa xác thực",
       "mustChangePassword": "Phải đổi mật khẩu"
     },
     "registrationTypes": {
@@ -171,12 +175,12 @@
     "dialogs": {
       "status": {
         "title": "Thay đổi trạng thái tài khoản",
-        "description": "Khoá hoặc cấm sẽ thu hồi các refresh token hiện tại và thông báo cho người dùng.",
+        "description": "Khoá hoặc cấm sẽ thu hồi các mã làm mới phiên đăng nhập hiện tại và thông báo cho người dùng.",
         "submit": "Cập nhật trạng thái"
       },
       "delete": {
         "title": "Xoá mềm tài khoản",
-        "description": "Tài khoản sẽ bị ẩn khỏi danh sách mặc định và toàn bộ refresh token bị thu hồi.",
+        "description": "Tài khoản sẽ bị ẩn khỏi danh sách mặc định và toàn bộ mã làm mới phiên đăng nhập bị thu hồi.",
         "submit": "Xác nhận xoá"
       },
       "restore": {
@@ -191,7 +195,7 @@
       }
     },
     "temporaryPassword": {
-      "label": "Mật khẩu tạm cho {{email}}",
+      "label": "Mật khẩu tạm cho địa chỉ {{email}}",
       "notice": "Hãy sao chép ngay. Mật khẩu này không thể xem lại sau khi tải lại trang."
     },
     "messages": {
@@ -205,7 +209,7 @@
       "validation": "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
       "actionFailed": "Không thể hoàn tất thao tác. Vui lòng thử lại.",
       "invalidAction": "Thao tác không được hỗ trợ.",
-      "emailExists": "Email này đã được sử dụng.",
+      "emailExists": "Địa chỉ thư điện tử này đã được sử dụng.",
       "cannotModifyAdmin": "Không thể thay đổi tài khoản Quản trị viên cấp cao.",
       "alreadyDeleted": "Tài khoản này đã bị xoá.",
       "notDeleted": "Tài khoản này chưa bị xoá nên không thể khôi phục.",
@@ -237,7 +241,7 @@
       "securityDescription": "Trạng thái xác thực và chính sách mật khẩu.",
       "createdAt": "Thời điểm tạo",
       "userId": "Mã người dùng",
-      "emailVerification": "Xác thực email",
+      "emailVerification": "Xác thực thư điện tử",
       "passwordPolicy": "Chính sách mật khẩu",
       "passwordReady": "Mật khẩu đã sẵn sàng",
       "registrationType": "Nguồn đăng ký"
@@ -259,7 +263,8 @@
       "title": "Tham số nghiệp vụ",
       "description": "Các ngưỡng vận hành dùng chung; thay đổi có thể cần tối đa 30 giây để bộ nhớ đệm máy chủ làm mới.",
       "coOwnerApprovalGraceDays": "Thời gian chờ đồng sở hữu duyệt chương",
-      "nameMaxReviewRounds": "Số vòng duyệt bản phân cảnh tối đa",
+      "storyboardMaxReviewRounds": "Số vòng duyệt bản phân cảnh tối đa",
+      "boardRepClaimGraceDays": "Thời hạn nhận làm đại diện",
       "reputationRecommendThreshold": "Ngưỡng uy tín để được đề xuất",
       "hiatusTooLongDays": "Số ngày tạm ngưng được xem là kéo dài",
       "lowVoteReliabilityThreshold": "Số phiếu tối thiểu để dữ liệu đáng tin cậy",
@@ -273,25 +278,25 @@
       "boardTotalMembers": "Tổng số thành viên",
       "quorumMin": "Số thành viên được mời mặc định",
       "approveMajorityRatio": "Tỷ lệ phiếu thuận",
-      "lockNotice": "Không thể thay đổi cấu hình khi có phiên họp ACTIVE hoặc UPCOMING."
+      "lockNotice": "Không thể thay đổi cấu hình khi có phiên họp đang hoạt động hoặc sắp diễn ra."
     },
     "voting": {
       "title": "Cấu hình bình chọn độc giả",
-      "description": "Kiểm soát xác thực OTP/CAPTCHA, giới hạn tần suất và điều kiện kích hoạt chống gian lận.",
+      "description": "Kiểm soát mã xác thực dùng một lần, phép xác minh chống tự động, giới hạn tần suất và điều kiện kích hoạt chống gian lận.",
       "authMode": "Phương thức xác thực",
       "authModes": {
-        "OTP": "Mã xác thực OTP",
-        "CAPTCHA": "Xác minh CAPTCHA",
-        "HYBRID": "Kết hợp OTP và CAPTCHA"
+        "OTP": "Mã xác thực dùng một lần",
+        "CAPTCHA": "Xác minh chống tự động",
+        "HYBRID": "Kết hợp mã xác thực và xác minh chống tự động"
       },
       "maxSeriesPerVote": "Số bộ truyện tối đa trong mỗi phiếu",
-      "otpExpirySeconds": "Thời gian OTP hết hạn",
-      "otpMaxAttempts": "Số lần nhập OTP tối đa",
-      "ipRateLimit": "Giới hạn yêu cầu theo địa chỉ IP",
+      "otpExpirySeconds": "Thời gian mã xác thực hết hạn",
+      "otpMaxAttempts": "Số lần nhập mã xác thực tối đa",
+      "ipRateLimit": "Giới hạn yêu cầu theo địa chỉ mạng",
       "phoneRateLimit": "Giới hạn yêu cầu theo số điện thoại",
-      "otpCooldownSeconds": "Thời gian chờ gửi lại OTP",
-      "ipVotesPerPeriod": "Số phiếu mỗi IP trong một kỳ",
-      "captchaThreshold": "Ngưỡng kích hoạt CAPTCHA"
+      "otpCooldownSeconds": "Thời gian chờ gửi lại mã xác thực",
+      "ipVotesPerPeriod": "Số phiếu mỗi địa chỉ mạng trong một kỳ",
+      "captchaThreshold": "Ngưỡng kích hoạt xác minh chống tự động"
     },
     "messages": {
       "appUpdated": "Đã cập nhật tham số nghiệp vụ.",
@@ -357,16 +362,16 @@
       },
       "seriesStatuses": {
         "DRAFT": "Bản nháp",
-        "IN_REVIEW": "Đang được duyệt",
+        "IN_REVIEW": "Đang biên tập",
         "READY_TO_PITCH": "Sẵn sàng trình Hội đồng",
         "PITCHED": "Đã trình Hội đồng",
-        "SERIALIZED": "Đã được duyệt đăng dài kỳ",
+        "SERIALIZED": "Đang phát hành dài kỳ",
         "HIATUS": "Đang tạm ngưng",
         "COMPLETING": "Đang hoàn tất",
         "CANCELLING": "Đang hủy",
         "COMPLETED": "Đã hoàn thành",
         "CANCELLED": "Đã hủy",
-        "REJECTED": "Bị Hội đồng từ chối",
+        "REJECTED": "Hội đồng đã từ chối",
         "ABANDONED": "Đã dừng hồ sơ",
         "WITHDRAWN": "Đã rút hồ sơ"
       },

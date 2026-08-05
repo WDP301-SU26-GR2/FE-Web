@@ -34,7 +34,7 @@ export interface CreateTankobonSalesBodyDto {
   volumeNumber: number;
   /**
    * @minimum 0
-   * @maximum 9007199254740991
+   * @maximum 1000000000
    */
   unitsSold: number;
   /**

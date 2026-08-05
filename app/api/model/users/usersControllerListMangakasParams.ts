@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { UsersControllerListMangakasGenre } from './usersControllerListMangakasGenre';
+import type { UsersControllerListMangakasLevel } from './usersControllerListMangakasLevel';
 
 export type UsersControllerListMangakasParams = {
 /**
@@ -36,10 +37,9 @@ q?: string;
  */
 genre?: UsersControllerListMangakasGenre;
 /**
- * @minLength 1
- * @maxLength 100
+ * Mức kinh nghiệm hồ sơ: JUNIOR, MID, SENIOR. Values: JUNIOR, MID, SENIOR
  */
-level?: string;
+level?: UsersControllerListMangakasLevel;
 /**
  * @minimum 0
  * @maximum 100

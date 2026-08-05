@@ -22,14 +22,15 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { SeriesResDtoOutputCompletionProposalProposedByRole } from './seriesResDtoOutputCompletionProposalProposedByRole';
 
 /**
  * Đề xuất kết thúc tự nhiên (PB-06); null nếu chưa đề xuất
  * @nullable
  */
 export type SeriesResDtoOutputCompletionProposal = {
-  /** Vai trò người đề xuất (MANGAKA|EDITOR) */
-  proposedByRole: string;
+  /** Allowed values: MANGAKA, EDITOR. Values: MANGAKA, EDITOR */
+  proposedByRole: SeriesResDtoOutputCompletionProposalProposedByRole;
   /** UserId người đề xuất */
   proposedById: string;
   /** Lý do đề xuất */

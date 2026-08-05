@@ -5,9 +5,10 @@ import {
 import { EditorContractPaymentsPage } from '~/features/editor'
 import { loadContractBase } from './contract-route-utils'
 import type { Route } from './+types/contract-payments'
+import { SITE } from '~/shared/config/site'
 
 export function meta() {
-  return [{ title: 'Lịch sử thanh toán hợp đồng - Mangaka Studio' }]
+  return [{ title: SITE.name }]
 }
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {

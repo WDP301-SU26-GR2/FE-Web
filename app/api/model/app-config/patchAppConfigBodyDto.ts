@@ -32,13 +32,13 @@ export interface PatchAppConfigBodyDto {
    */
   coOwnerApprovalGraceDays?: number | null;
   /**
-   * Maximum name review rounds before loop warning
+   * Maximum storyboard review rounds before loop warning
    * @minimum 0
    * @maximum 9007199254740991
    * @exclusiveMinimum
    * @nullable
    */
-  nameMaxReviewRounds?: number | null;
+  storyboardMaxReviewRounds?: number | null;
   /**
    * Minimum reputation score for recommendations
    * @minimum 1
@@ -84,4 +84,18 @@ export interface PatchAppConfigBodyDto {
    * @nullable
    */
   assignmentGraceDays?: number | null;
+  /**
+   * Grace days before unclaimed contract review escalates
+   * @minimum 0
+   * @maximum 9007199254740991
+   * @nullable
+   */
+  boardRepClaimGraceDays?: number | null;
+  /**
+   * Số giờ ân hạn trước khi công việc quá hạn bị tự huỷ; tối đa 168 giờ (7 ngày)
+   * @minimum 0
+   * @maximum 168
+   * @nullable
+   */
+  taskOverdueGraceHours?: number | null;
 }

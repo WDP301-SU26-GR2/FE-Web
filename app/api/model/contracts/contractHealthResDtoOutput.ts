@@ -22,8 +22,10 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { ContractHealthResDtoOutputStatus } from './contractHealthResDtoOutputStatus';
 
 export interface ContractHealthResDtoOutput {
-  status: string;
+  /** Allowed values: OK. Values: OK */
+  status: ContractHealthResDtoOutputStatus;
   module: string;
 }

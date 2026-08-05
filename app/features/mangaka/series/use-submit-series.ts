@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { seriesControllerSubmit } from '~/api/operations/series/series'
-import type { CreateProposalResDtoOutput, SeriesResDtoOutput } from '~/api/model/series'
+import type { SeriesResDtoOutput } from '~/api/model/series'
 import { isFetchError } from '~/api/mutator/custom-fetch'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
@@ -31,11 +31,9 @@ export function useSubmitSeries(): UseSubmitSeriesResult {
       setIsSubmitting(true)
       try {
         const response = await seriesControllerSubmit({ id: seriesId })
-        // orval returns a status-discriminated union; on success the payload is
-        // CreateProposalResDtoOutput which carries { series, proposal, name }.
-        const payload = response.data as CreateProposalResDtoOutput
+        const payload = response.data as SeriesResDtoOutput
         toast.success(t('seriesDetail.submit.success'))
-        return payload.series
+        return payload
       } catch (err) {
         if (extractApiErrorCode(err) === 'Error.FranchiseConsentRequired') {
           toast.error(t('seriesDetail.submit.errorFranchiseConsent'))

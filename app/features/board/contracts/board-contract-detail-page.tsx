@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Loader2, PenLine, ShieldAlert } from 'lucide-react'
+import { PenLine, ShieldAlert } from 'lucide-react'
 import type {
   AmendmentResDtoOutput,
   ContractResDtoOutput,
   ContractStatusProgressResDtoOutput,
   ContractVersionResDtoOutput,
+  ContractCommentListResDtoOutputDataItem,
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
@@ -18,59 +19,50 @@ import { useAuth } from '~/features/auth/context/auth-context'
 
 export function BoardContractDetailPage({
   contract,
-  contractDecisions = [],
   approvedAmendmentDecisions = [],
+  isContractRosterMember = false,
   progress,
   amendments,
   conditions,
   versions,
+  comments,
   conditionsLoadFailed = false,
   hasSupplementaryDataError = false
 }: {
   contract: ContractResDtoOutput
-  contractDecisions?: BoardDecisionResDtoOutput[]
   approvedAmendmentDecisions?: BoardDecisionResDtoOutput[]
+  isContractRosterMember?: boolean
   progress: ContractStatusProgressResDtoOutput | null
   amendments: AmendmentResDtoOutput[]
   conditions: PaymentConditionListResDtoOutputDataItem[]
   versions: ContractVersionResDtoOutput[]
+  comments: ContractCommentListResDtoOutputDataItem[]
   conditionsLoadFailed?: boolean
   hasSupplementaryDataError?: boolean
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const { session: authSession } = useAuth()
   const fetcher = useFetcher<BoardActionResult>()
   const [signOpen, setSignOpen] = useState(false)
-  const [changesOpen, setChangesOpen] = useState(false)
-  const approvedDecision = contractDecisions.find((decision) => decision.result === 'APPROVED')
-  const rejectedDecision = contractDecisions.find((decision) => decision.result === 'REJECTED')
-  const actionDecision = approvedDecision ?? rejectedDecision
-  const isRosterMember = actionDecision?.allowedEditorIds?.includes(authSession?.user.id ?? '') ?? false
-  const canAttemptBoardAction = Boolean(actionDecision && isRosterMember)
-  const currentBoardSignature = progress?.boardProgress.signedEditors.find(
-    (editor) => editor.id === authSession?.user.id
-  )
-  const hasCurrentMemberSigned = Boolean(currentBoardSignature)
+  const currentUserId = authSession?.user.id ?? ''
+  const isRepresentative = Boolean(currentUserId && contract.representativeId === currentUserId)
   const validConditionCount = conditions.filter(
     (condition) =>
       condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
   ).length
   const conditionsReady = !conditionsLoadFailed && validConditionCount > 0
-  const canSignContract =
-    conditionsReady && (contract.status === 'BOARD_APPROVED' || contract.status === 'MANGAKA_SIGNED')
+  const canClaim = isContractRosterMember && contract.status === 'BOARD_REVIEW' && !contract.representativeId
+  const canRelease = contract.status === 'BOARD_REVIEW' && isRepresentative && !contract.representativeSignedAt
+  const canSignContract = conditionsReady && contract.status === 'BOARD_REVIEW' && isRepresentative
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
         title={`${t('contracts.detail')} — ${contract.series?.title ?? t('contracts.unknownSeries')}`}
-        description={t(`filters.contractTypes.${contract.contractType}`, { defaultValue: contract.contractType })}
+        description={t(`filters.contractTypes.${contract.contractType}`, { defaultValue: t('common.notAvailable') })}
         backHref='/dashboard/board/contracts'
       />
       <div className='flex justify-end'>
-        <ContractPdfButton
-          contract={contract}
-          conditionsCount={validConditionCount}
-          conditionsLoadFailed={conditionsLoadFailed}
-        />
+        <ContractPdfButton contract={contract} />
       </div>
       <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
       {hasSupplementaryDataError && (
@@ -88,7 +80,9 @@ export function BoardContractDetailPage({
           </div>
           <div>
             <span className='text-muted-foreground'>{t('contracts.valuation')}</span>
-            <p className='mt-1 font-bold'>{new Intl.NumberFormat().format(contract.valuationAmount ?? 0)}</p>
+            <p className='mt-1 font-bold'>
+              {new Intl.NumberFormat(i18n.language).format(contract.valuationAmount ?? 0)}
+            </p>
           </div>
           <div>
             <span className='text-muted-foreground'>{t('contracts.contractType')}</span>
@@ -102,11 +96,11 @@ export function BoardContractDetailPage({
           </div>
           <div>
             <span className='text-muted-foreground'>{t('contracts.startDate')}</span>
-            <p className='mt-1 font-bold'>{formatDate(contract.contractStart)}</p>
+            <p className='mt-1 font-bold'>{formatDate(contract.contractStart, i18n.language)}</p>
           </div>
           <div>
             <span className='text-muted-foreground'>{t('contracts.endDate')}</span>
-            <p className='mt-1 font-bold'>{formatDate(contract.contractEnd)}</p>
+            <p className='mt-1 font-bold'>{formatDate(contract.contractEnd, i18n.language)}</p>
           </div>
         </div>
         <p className='mt-4 text-xs text-muted-foreground'>{contract.terminationClause}</p>
@@ -125,7 +119,7 @@ export function BoardContractDetailPage({
               <div key={version.id} className='rounded-lg border border-border p-3 text-xs'>
                 <strong>v{version.versionNumber}</strong>
                 <p className='mt-1 text-xs text-muted-foreground'>
-                  {new Date(version.createdAt).toLocaleString()} · {version.note || '—'}
+                  {new Date(version.createdAt).toLocaleString(i18n.language)} · {version.note || '—'}
                 </p>
               </div>
             ))}
@@ -134,7 +128,7 @@ export function BoardContractDetailPage({
         </BoardPanel>
       </div>
       <BoardPanel title={t('contracts.paymentWorkflow')}>
-        <div className='flex flex-wrap items-center justify-between gap-3'>
+        <div className='grid gap-4'>
           <div>
             <p className='text-xs text-muted-foreground'>{t('contracts.paymentWorkflowDescription')}</p>
             <Link
@@ -144,16 +138,42 @@ export function BoardContractDetailPage({
               {t('contracts.openPayments')}
             </Link>
           </div>
+          {contract.contractType === 'REVENUE_SHARE' && contract.status === 'FULLY_EXECUTED' && (
+            <fetcher.Form method='post' className='grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2'>
+              <input
+                className={boardInput}
+                name='period'
+                minLength={1}
+                placeholder={t('contracts.revenuePeriod')}
+                required
+              />
+              <input
+                className={boardInput}
+                name='revenue'
+                type='number'
+                min='0.01'
+                step='0.01'
+                placeholder={t('contracts.revenueAmount')}
+                required
+              />
+              <button
+                name='intent'
+                value='reportRevenue'
+                disabled={fetcher.state !== 'idle'}
+                className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60 sm:col-span-2'
+              >
+                {t('contracts.reportRevenue')}
+              </button>
+            </fetcher.Form>
+          )}
+          <BoardFeedback data={fetcher.data?.intent === 'reportRevenue' ? fetcher.data : undefined} />
         </div>
       </BoardPanel>
       <BoardPanel title={t('contracts.actions')}>
-        {contract.status === 'MANGAKA_APPROVED' && !approvedDecision && !rejectedDecision && (
-          <div className='mb-4 rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning-foreground'>
-            <p>{t('contracts.decisionRequired')}</p>
-            <Link to='/dashboard/board/decisions' className='mt-2 inline-flex font-bold text-primary underline'>
-              {t('contracts.openDecisions')}
-            </Link>
-          </div>
+        {contract.status === 'BOARD_REVIEW' && !isContractRosterMember && !isRepresentative && (
+          <p className='mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning-foreground'>
+            {t('contracts.notInDecisionRoster')}
+          </p>
         )}
         {!conditionsReady && (
           <div className='mb-4 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive'>
@@ -165,126 +185,95 @@ export function BoardContractDetailPage({
             </p>
           </div>
         )}
-        {actionDecision && !canAttemptBoardAction && (
-          <div className='mb-4 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-foreground'>
-            <ShieldAlert className='mt-0.5 size-4 shrink-0' />
-            <p>{t('contracts.notInDecisionRoster')}</p>
+        <div className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4'>
+          <div>
+            <h3 className='text-xs font-bold text-foreground'>{t('contracts.representative')}</h3>
+            <p className='mt-1 text-xs text-muted-foreground'>
+              {contract.representative?.displayName ?? t('contracts.representativeUnassigned')}
+              {contract.representativeSignedAt
+                ? ` · ${t('contracts.signed')}: ${new Date(contract.representativeSignedAt).toLocaleString(i18n.language)}`
+                : ''}
+            </p>
           </div>
-        )}
-        <fetcher.Form method='post' className='grid gap-3'>
-          <div className='flex flex-wrap gap-2'>
-            {canAttemptBoardAction && contract.status === 'MANGAKA_APPROVED' && (
-              <>
-                {approvedDecision && (
-                  <>
-                    <input type='hidden' name='boardDecisionId' value={approvedDecision.id} />
-                    <button
-                      name='intent'
-                      value='approve'
-                      disabled={fetcher.state !== 'idle' || !conditionsReady}
-                      className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
-                    >
-                      {t('contracts.applyApproval')}
-                    </button>
-                  </>
-                )}
-                {rejectedDecision && (
-                  <button
-                    type='button'
-                    onClick={() => setChangesOpen(true)}
-                    className='h-9 rounded-md border border-border px-3 text-xs font-bold'
-                  >
-                    {t('contracts.applyChanges')}
-                  </button>
-                )}
-              </>
+          <fetcher.Form method='post' className='flex flex-wrap gap-2'>
+            {canClaim && (
+              <button
+                name='intent'
+                value='claim'
+                disabled={fetcher.state !== 'idle'}
+                className='h-9 rounded-md border border-border px-3 text-xs font-bold disabled:opacity-50'
+              >
+                {t('contracts.claimRepresentative')}
+              </button>
             )}
-            <div className='flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4'>
-              <div>
-                <h3 className='text-xs font-bold text-foreground'>{t('contracts.boardSignature')}</h3>
-                <p className='mt-1 text-xs text-muted-foreground'>
-                  {hasCurrentMemberSigned
-                    ? `${t('contracts.signed')}: ${new Date(currentBoardSignature!.actionAt).toLocaleString()}`
-                    : canSignContract
-                      ? t('contracts.readyToSign')
-                      : contract.boardSignedAt
-                        ? `${t('contracts.signed')}: ${new Date(contract.boardSignedAt).toLocaleString()}`
-                        : t('contracts.waitingMangakaSignature')}
-                </p>
-              </div>
-              {canAttemptBoardAction && !hasCurrentMemberSigned && canSignContract && (
-                <button
-                  type='button'
-                  onClick={() => setSignOpen(true)}
-                  className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  <PenLine className='h-4 w-4' />
-                  {t('contracts.sign')}
-                </button>
-              )}
-            </div>
-          </div>
-        </fetcher.Form>
+            {canRelease && (
+              <button
+                name='intent'
+                value='release'
+                disabled={fetcher.state !== 'idle'}
+                className='h-9 rounded-md border border-border px-3 text-xs font-bold disabled:opacity-50'
+              >
+                {t('contracts.releaseRepresentative')}
+              </button>
+            )}
+            {canSignContract && (
+              <button
+                type='button'
+                onClick={() => setSignOpen(true)}
+                className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+              >
+                <PenLine className='h-4 w-4' />
+                {t('contracts.signRepresentative')}
+              </button>
+            )}
+          </fetcher.Form>
+        </div>
         <BoardFeedback data={fetcher.data} />
-        {progress && (
+        {progress?.representative.claimed && (
           <p className='mt-3 text-xs text-muted-foreground'>
-            {t('contracts.signatures', {
-              signed: progress.boardProgress.totalSigned,
-              required: progress.boardProgress.totalRequired
-            })}
+            {progress.representative.signed
+              ? t('contracts.representativeSigned')
+              : t('contracts.representativePending')}
           </p>
         )}
       </BoardPanel>
-      <Dialog
-        compact
-        open={canAttemptBoardAction && changesOpen && contract.status === 'MANGAKA_APPROVED'}
-        onClose={() => {
-          if (fetcher.state === 'idle') setChangesOpen(false)
-        }}
-        titleId='board-contract-request-changes-title'
-        title={t('contracts.changes')}
-        description={t('contracts.changeReasonDescription')}
-        size='md'
-      >
-        <fetcher.Form method='post' className='grid gap-3'>
-          {rejectedDecision && <input type='hidden' name='boardDecisionId' value={rejectedDecision.id} />}
-          <label htmlFor='board-contract-change-reason' className='text-xs font-semibold text-foreground'>
-            {t('contracts.changeReason')} <span className='text-destructive'>*</span>
-          </label>
-          <textarea
-            id='board-contract-change-reason'
-            name='reason'
-            required
-            minLength={1}
-            maxLength={1000}
-            rows={6}
-            autoFocus
-            placeholder={t('contracts.changeReasonPlaceholder')}
-            className='w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-primary'
-          />
-          <p className='text-xs text-muted-foreground'>{t('contracts.changeReasonLimit')}</p>
-          <div className='flex justify-end gap-2'>
-            <button
-              type='button'
-              disabled={fetcher.state !== 'idle'}
-              onClick={() => setChangesOpen(false)}
-              className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-50'
-            >
-              {t('common.cancel')}
-            </button>
+      <BoardPanel title={t('contracts.comments')}>
+        {contract.status === 'BOARD_REVIEW' && isContractRosterMember && (
+          <fetcher.Form method='post' className='mb-4 grid gap-2'>
+            <textarea
+              name='content'
+              required
+              minLength={1}
+              maxLength={2000}
+              rows={3}
+              placeholder={t('contracts.commentPlaceholder')}
+              className='w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
+            />
             <button
               name='intent'
-              value='changes'
+              value='addComment'
               disabled={fetcher.state !== 'idle'}
-              className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+              className='h-9 justify-self-end rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
             >
-              {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
-              {t('contracts.sendChangeRequest')}
+              {t('contracts.addComment')}
             </button>
-          </div>
-        </fetcher.Form>
-        <BoardFeedback data={fetcher.data?.intent === 'changes' ? fetcher.data : undefined} />
-      </Dialog>
+          </fetcher.Form>
+        )}
+        <div className='space-y-2'>
+          {comments.map((comment) => (
+            <article key={comment.id} className='rounded-lg border border-border p-3 text-xs'>
+              <div className='flex justify-between gap-3'>
+                <strong>{comment.author?.displayName ?? t('contracts.boardMember')}</strong>
+                <time className='text-muted-foreground'>
+                  {new Date(comment.createdAt).toLocaleString(i18n.language)}
+                </time>
+              </div>
+              <p className='mt-2 whitespace-pre-wrap text-muted-foreground'>{comment.content}</p>
+            </article>
+          ))}
+          {!comments.length && <p className='text-xs text-muted-foreground'>{t('contracts.emptyComments')}</p>}
+        </div>
+      </BoardPanel>
       {signOpen && <ContractSignDialog onClose={() => setSignOpen(false)} />}
       <BoardPanel title={t('contracts.amendments')}>
         <div className='space-y-3'>
@@ -408,10 +397,10 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return '—'
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN')
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(locale)
 }
 
 function canSignAmendment(
@@ -499,7 +488,7 @@ function OtpRequestFeedback({ data }: { data?: BoardActionResult }) {
   if (!data) return null
   return (
     <p className={`mt-3 text-xs ${data.ok ? 'text-primary' : 'text-destructive'}`}>
-      {data.ok ? t('messages.otpSent') : data.message || t('common.failure')}
+      {data.ok ? t('messages.otpSent') : t('common.failure')}
     </p>
   )
 }

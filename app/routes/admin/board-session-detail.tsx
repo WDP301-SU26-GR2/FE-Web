@@ -3,7 +3,7 @@ import { runBoardSessionAction, clientLoader as editorBoardSessionLoader } from 
 import type { Route } from './+types/board-session-detail'
 
 export const clientLoader = editorBoardSessionLoader
-export const clientAction = (args: Route.ClientActionArgs) => runBoardSessionAction(args, { allowPitch: false })
+export const clientAction = (args: Route.ClientActionArgs) => runBoardSessionAction(args)
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {
   return (

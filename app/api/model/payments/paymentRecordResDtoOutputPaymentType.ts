@@ -23,6 +23,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Loại khoản chi cho Mangaka: CONDITION_PAYOUT (đạt điều kiện) | REVENUE_SHARE (chia lợi nhuận định kỳ) | COMPENSATION (đền bù khi huỷ series) | CHAPTER_MILESTONE | RECURRING_CHAPTER | RANKING_MILESTONE | TIME_BOUND (các payout theo điều kiện) | TRANSFER (liên quan chuyển nhượng). Values: CONDITION_PAYOUT, REVENUE_SHARE, COMPENSATION, CHAPTER_MILESTONE, RECURRING_CHAPTER, RANKING_MILESTONE, TIME_BOUND, TRANSFER
+ */
 export type PaymentRecordResDtoOutputPaymentType = typeof PaymentRecordResDtoOutputPaymentType[keyof typeof PaymentRecordResDtoOutputPaymentType];
 
 

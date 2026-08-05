@@ -39,16 +39,16 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
   const isRefreshing = revalidator.state !== 'idle'
 
   const roleItems = toDistributionItems(stats?.users.byRole, (key) =>
-    t(`dashboard.roles.${key}`, { defaultValue: humanizeKey(key) })
+    t(`dashboard.roles.${key}`, { defaultValue: t('common.notAvailable') })
   )
   const userStatusItems = toDistributionItems(stats?.users.byStatus, (key) =>
-    t(`dashboard.userStatuses.${key}`, { defaultValue: humanizeKey(key) })
+    t(`dashboard.userStatuses.${key}`, { defaultValue: t('common.notAvailable') })
   )
   const seriesStatusItems = toDistributionItems(stats?.series.byStatus, (key) =>
-    t(`dashboard.seriesStatuses.${key}`, { defaultValue: humanizeKey(key) })
+    t(`dashboard.seriesStatuses.${key}`, { defaultValue: t('common.notAvailable') })
   )
   const taskStatusItems = toDistributionItems(stats?.tasks.byStatus, (key) =>
-    t(`dashboard.taskStatuses.${key}`, { defaultValue: humanizeKey(key) })
+    t(`dashboard.taskStatuses.${key}`, { defaultValue: t('common.notAvailable') })
   )
 
   const format = (value: number | undefined) => (value === undefined ? '—' : numberFormatter.format(value))
@@ -306,12 +306,4 @@ function toDistributionItems(
   return Object.entries(source ?? {})
     .map(([key, value]) => ({ key, label: translateLabel(key), value }))
     .sort((left, right) => right.value - left.value)
-}
-
-function humanizeKey(value: string): string {
-  return value
-    .toLowerCase()
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
 }

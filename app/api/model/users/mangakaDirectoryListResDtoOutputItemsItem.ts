@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { MangakaDirectoryListResDtoOutputItemsItemGenresItem } from './mangakaDirectoryListResDtoOutputItemsItemGenresItem';
+import type { MangakaDirectoryListResDtoOutputItemsItemExperienceLevel } from './mangakaDirectoryListResDtoOutputItemsItemExperienceLevel';
 
 export type MangakaDirectoryListResDtoOutputItemsItem = {
   userId: string;
@@ -32,8 +33,11 @@ export type MangakaDirectoryListResDtoOutputItemsItem = {
   avatar: string | null;
   penName: string;
   genres: MangakaDirectoryListResDtoOutputItemsItemGenresItem[];
-  /** @nullable */
-  experienceLevel: string | null;
+  /**
+   * Mức kinh nghiệm hồ sơ: JUNIOR, MID, SENIOR. Values: JUNIOR, MID, SENIOR
+   * @nullable
+   */
+  experienceLevel: MangakaDirectoryListResDtoOutputItemsItemExperienceLevel;
   /** @nullable */
   bio: string | null;
   portfolioFiles: string[];
@@ -41,4 +45,8 @@ export type MangakaDirectoryListResDtoOutputItemsItem = {
   ratingAvg: number;
   ratingCount: number;
   isRecommended: boolean;
+  /** Email liên hệ (danh bạ nội bộ hiển thị contact) */
+  email: string;
+  /** Số điện thoại liên hệ */
+  phoneNumber: string;
 };

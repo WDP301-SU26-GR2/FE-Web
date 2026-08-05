@@ -24,7 +24,6 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type {
   CreateProposalBodyDto,
-  CreateProposalResDtoOutput,
   FranchiseConsentBodyDto,
   HiatusBodyDto,
   MessageResDtoOutput,
@@ -175,10 +174,10 @@ export const seriesControllerUpdateSeriesMetadata = async ({ id }: SeriesControl
 
 
 /**
- * @summary Mangaka tạo proposal mới (Series DRAFT + SeriesProposal + Name chương mẫu)
+ * @summary Mangaka tạo proposal mới (Series DRAFT + SeriesProposal + trang phác thảo nhúng trong proposal)
  */
 export type seriesControllerCreateProposalResponse201 = {
-  data: CreateProposalResDtoOutput
+  data: SeriesResDtoOutput
   status: 201
 }
     
@@ -211,7 +210,7 @@ export const seriesControllerCreateProposal = async (createProposalBodyDto: Crea
 
 
 /**
- * @summary Mangaka sửa proposal (partial-update; chỉ DRAFT/PROPOSAL_REVISION; KHÔNG nhận namePages)
+ * @summary Mangaka sửa proposal (partial-update; chỉ DRAFT/PROPOSAL_REVISION; nhận storyboardPages)
  */
 export type seriesControllerUpdateProposalResponse200 = {
   data: SeriesResDtoOutput
@@ -283,10 +282,10 @@ export const seriesControllerDeleteProposal = async ({ id }: SeriesControllerDel
 
 
 /**
- * @summary Mangaka submit → mở 2 vòng review (proposal+Name), Series DRAFT→IN_REVIEW
+ * @summary Mangaka submit → mở 1 vòng review duy nhất (proposal gộp phác thảo), Series DRAFT→IN_REVIEW (Spec 28)
  */
 export type seriesControllerSubmitResponse201 = {
-  data: CreateProposalResDtoOutput
+  data: SeriesResDtoOutput
   status: 201
 }
     
@@ -390,7 +389,7 @@ export const seriesControllerResubmitProposal = async ({ id }: SeriesControllerR
 
 
 /**
- * @summary Editor duyệt proposal (→ PROPOSAL_APPROVED; nếu Name cũng APPROVED → READY_TO_PITCH)
+ * @summary Editor duyệt proposal → PROPOSAL_APPROVED và READY_TO_PITCH ngay trong cùng action
  */
 export type seriesControllerApproveProposalResponse201 = {
   data: SeriesResDtoOutput
@@ -820,7 +819,7 @@ export const seriesControllerFinalizeEnding = async ({ id }: SeriesControllerFin
 
 
 /**
- * @summary Đề xuất kết thúc series tự nhiên (Mangaka/Editor) — PB-06
+ * @summary Biên tập viên đề xuất kết thúc bộ truyện tự nhiên (PB-06). Tác giả dùng POST /series-requests.
  */
 export type seriesControllerProposeCompletionResponse200 = {
   data: SeriesResDtoOutput

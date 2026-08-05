@@ -41,7 +41,7 @@ export function EditorContractPaymentsPage({
             <option value=''>{t('contractDetail.payments.allTypes')}</option>
             {types.map((value) => (
               <option key={value} value={value}>
-                {t(`contractDetail.payments.types.${value}`, { defaultValue: value })}
+                {t(`contractDetail.payments.types.${value}`, { defaultValue: t('common.notAvailable') })}
               </option>
             ))}
           </select>
@@ -61,12 +61,17 @@ export function EditorContractPaymentsPage({
               <div>
                 <h3 className='font-bold text-foreground'>
                   {payment.series?.title ??
-                    t(`contractDetail.payments.types.${payment.paymentType}`, { defaultValue: payment.paymentType })}
+                    t(`contractDetail.payments.types.${payment.paymentType}`, {
+                      defaultValue: t('common.notAvailable')
+                    })}
                 </h3>
                 <p className='mt-1 text-xs text-muted-foreground'>
-                  {t(`contractDetail.payments.types.${payment.paymentType}`, { defaultValue: payment.paymentType })} ·{' '}
+                  {t(`contractDetail.payments.types.${payment.paymentType}`, {
+                    defaultValue: t('common.notAvailable')
+                  })}{' '}
+                  ·{' '}
                   {t(`contractDetail.payments.sources.${payment.paymentSource}`, {
-                    defaultValue: payment.paymentSource
+                    defaultValue: t('common.notAvailable')
                   })}
                   {payment.period ? ` · ${payment.period}` : ''}
                 </p>

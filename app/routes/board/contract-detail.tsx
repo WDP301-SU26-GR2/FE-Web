@@ -1,35 +1,40 @@
-import {
-  boardControllerGetDecisionDetails,
-  boardControllerGetDecisions
-} from '~/api/operations/board/board'
+import { boardControllerGetDecisionDetails, boardControllerGetDecisions } from '~/api/operations/board/board'
 import { authControllerSendOtp } from '~/api/operations/auth/auth'
 import {
   contractAmendmentControllerGetAmendment,
   contractAmendmentControllerListAmendments,
   contractAmendmentControllerSignAmendmentBoard,
-  contractControllerBoardApprove,
-  contractControllerBoardRequestChanges,
+  contractControllerAddComment,
   contractControllerCheckStatus,
+  contractControllerClaim,
   contractControllerGetContractById,
   contractControllerGetContractVersionById,
   contractControllerGetContractVersions,
-  contractControllerSignBoard,
+  contractControllerListComments,
+  contractControllerReportRevenue,
+  contractControllerRelease,
+  contractControllerSignRepresentative,
   paymentConditionControllerGetPaymentConditions
 } from '~/api/operations/contracts/contracts'
 import { usersControllerGetMe } from '~/api/operations/users/users'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
+import { SendOtpBodyDtoPurpose } from '~/api/model/auth'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
-import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 import type { Route } from './+types/contract-detail'
+import i18n from '~/shared/lib/i18n'
+
+const tBoard = i18n.getFixedT(null, 'board')
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [contract, progress, amendments, conditions, versions] = await Promise.all([
+  const [contract, progress, amendments, conditions, versions, comments] = await Promise.all([
     contractControllerGetContractById({ id: params.id }),
     contractControllerCheckStatus({ id: params.id }).catch(() => null),
     contractAmendmentControllerListAmendments({ contractId: params.id }).catch(() => null),
     paymentConditionControllerGetPaymentConditions({ contractId: params.id }).catch(() => null),
-    contractControllerGetContractVersions({ id: params.id }).catch(() => null)
+    contractControllerGetContractVersions({ id: params.id }).catch(() => null),
+    contractControllerListComments({ id: params.id }).catch(() => null)
   ])
   const detailedVersions = await Promise.all(
     (versions?.status === 200 ? versions.data : []).map((version) =>
@@ -46,28 +51,18 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     )
   )
   if (contract.status !== 200) throw new Response('Not found', { status: 404 })
-  const currentVersion = detailedVersions.filter((version) => version !== null).at(-1) ?? null
   const decisionList = await boardControllerGetDecisions({
     mine: 'true',
     targetSeriesId: contract.data.seriesId
   }).catch(() => null)
   const decisionDetails = await Promise.all(
     (decisionList?.data ?? [])
-      .filter((decision) => decision.decisionType === 'CONTRACT')
+      .filter((decision) => decision.decisionType === 'CONTRACT' || decision.decisionType === 'SERIALIZATION')
       .map((decision) =>
         boardControllerGetDecisionDetails({ id: decision.id })
           .then((response) => response.data)
           .catch(() => null)
       )
-  )
-  const expectedResourceType = contract.data.sourceTransferRequestId ? 'REPLACEMENT_CONTRACT' : 'PUBLICATION_CONTRACT'
-  const contractDecisions = decisionDetails.filter(
-    (decision): decision is BoardDecisionResDtoOutput =>
-      decision !== null &&
-      decision.targetSeriesId === contract.data.seriesId &&
-      decision.details?.resourceType === expectedResourceType &&
-      decision.details?.resourceId === contract.data.id &&
-      decision.details?.versionId === currentVersion?.id
   )
   const approvedAmendmentDecisions = decisionDetails.filter(
     (decision): decision is BoardDecisionResDtoOutput =>
@@ -78,15 +73,19 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       decision.details?.resourceType === 'CONTRACT_AMENDMENT' &&
       typeof decision.details.resourceId === 'string'
   )
+  const isContractRosterMember = decisionDetails.some(
+    (decision) => decision?.decisionType === 'SERIALIZATION' && decision.result === 'APPROVED'
+  )
   return {
     contract: contract.data,
-    contractDecisions,
     approvedAmendmentDecisions,
+    isContractRosterMember,
     progress: progress?.status === 200 ? progress.data : null,
     amendments: detailedAmendments.filter((amendment) => amendment !== null),
     conditions: conditions?.status === 200 ? conditions.data.data : [],
     conditionsLoadFailed: conditions == null,
     versions: detailedVersions.filter((version) => version !== null),
+    comments: comments?.status === 200 ? comments.data.data : [],
     hasSupplementaryDataError: [progress, amendments, conditions, versions].some((response) => response == null)
   }
 }
@@ -95,32 +94,30 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const form = await request.formData()
   const intent = String(form.get('intent') ?? '')
   try {
-    if (intent === 'approve' || intent === 'sign') {
+    if (intent === 'sign') {
       const conditions = await paymentConditionControllerGetPaymentConditions({ contractId: params.id })
       if (conditions.status !== 200 || !hasValidPaymentCondition(conditions.data.data))
         return {
           ok: false,
           intent,
-          message: 'Hợp đồng phải có ít nhất một điều kiện thanh toán hợp lệ trước khi duyệt hoặc ký.'
+          message: tBoard('contracts.paymentConditionsRequired')
         }
     }
-    if (intent === 'approve')
-      await contractControllerBoardApprove({ id: params.id }, { boardDecisionId: required(form, 'boardDecisionId') })
-    else if (intent === 'changes')
-      await contractControllerBoardRequestChanges(
-        { id: params.id },
-        {
-          boardDecisionId: required(form, 'boardDecisionId'),
-          reason: required(form, 'reason')
-        }
-      )
+    if (intent === 'claim') await contractControllerClaim({ id: params.id })
+    else if (intent === 'release') await contractControllerRelease({ id: params.id })
+    else if (intent === 'addComment')
+      await contractControllerAddComment({ id: params.id }, { content: required(form, 'content') })
     else if (intent === 'sendOtp') {
       const me = await usersControllerGetMe()
       if (me.status !== 200) throw new Error('Không thể đọc thông tin tài khoản.')
-      await authControllerSendOtp({ email: me.data.email, purpose: 'SIGNING_CONTRACT' })
+      await authControllerSendOtp({ email: me.data.email, purpose: SendOtpBodyDtoPurpose.SIGNING_CONTRACT })
     } else if (intent === 'sign')
-      await contractControllerSignBoard({ id: params.id }, { otpCode: required(form, 'otpCode') })
-    else if (intent === 'signAmendment')
+      await contractControllerSignRepresentative({ id: params.id }, { otpCode: required(form, 'otpCode') })
+    else if (intent === 'reportRevenue') {
+      const revenue = Number(required(form, 'revenue'))
+      if (!Number.isFinite(revenue) || revenue <= 0) return { ok: false, intent }
+      await contractControllerReportRevenue({ id: params.id }, { revenue, period: required(form, 'period') })
+    } else if (intent === 'signAmendment')
       await contractAmendmentControllerSignAmendmentBoard(
         { contractId: params.id, id: required(form, 'amendmentId') },
         { otpCode: required(form, 'otpCode') }
@@ -130,21 +127,26 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
       ok: true,
       intent,
       messageKey:
-        intent === 'approve'
-          ? 'contractApproved'
-          : intent === 'changes'
-            ? 'contractChangesRequested'
-            : intent === 'sendOtp'
-              ? 'otpSent'
-              : intent === 'sign'
-                ? 'contractSigned'
-                : 'amendmentSigned'
+        intent === 'claim'
+          ? 'contractRepresentativeClaimed'
+          : intent === 'release'
+            ? 'contractRepresentativeReleased'
+            : intent === 'addComment'
+              ? 'contractCommentAdded'
+              : intent === 'sendOtp'
+                ? 'otpSent'
+                : intent === 'sign'
+                  ? 'contractSigned'
+                  : intent === 'reportRevenue'
+                    ? 'revenueReported'
+                    : 'amendmentSigned'
     }
   } catch (error) {
     return {
       ok: false,
       intent,
-      message: extractApiErrorMessage(error, 'Không thể thực hiện thao tác. Vui lòng thử lại.')
+      errorCode: extractApiErrorCode(error),
+      message: extractApiErrorMessage(error, tBoard('common.failure'))
     }
   }
 }

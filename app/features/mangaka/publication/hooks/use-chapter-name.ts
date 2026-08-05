@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { chapterNameControllerGetOne, chapterNameControllerList } from '~/api/operations/names/names'
-import type { NameListResDtoOutput, NameListResDtoOutputItemsItem } from '~/api/model/names'
+import type { StoryboardListResDtoOutput, StoryboardListResDtoOutputItemsItem } from '~/api/model/storyboards'
+import {
+  chapterStoryboardControllerGetOne,
+  chapterStoryboardControllerList
+} from '~/api/operations/storyboards/storyboards'
 import { isFetchError } from '~/api/mutator/custom-fetch'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseChapterNameResult = {
-  name: NameListResDtoOutputItemsItem | null
+  name: StoryboardListResDtoOutputItemsItem | null
   isLoading: boolean
   error: string | null
   refresh: () => void
@@ -31,7 +34,7 @@ type UseChapterNameResult = {
  */
 export function useChapterName(chapterId: string | null | undefined): UseChapterNameResult {
   const { t } = useTranslation('mangaka')
-  const [name, setName] = useState<NameListResDtoOutputItemsItem | null>(null)
+  const [name, setName] = useState<StoryboardListResDtoOutputItemsItem | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -49,9 +52,9 @@ export function useChapterName(chapterId: string | null | undefined): UseChapter
       setError(null)
 
       try {
-        const res = await chapterNameControllerList({ id: cid }, { signal })
+        const res = await chapterStoryboardControllerList({ id: cid }, { signal })
         if (signal.aborted) return
-        const items = (res.data as NameListResDtoOutput).items ?? []
+        const items = (res.data as StoryboardListResDtoOutput).items ?? []
         // Per chapter-first model: at most one Name per chapter. If for some
         // reason multiple are returned, prefer the most recent (latest
         // submittedAt, then largest version).
@@ -65,9 +68,9 @@ export function useChapterName(chapterId: string | null | undefined): UseChapter
         if (!selected) {
           setName(null)
         } else {
-          const detail = await chapterNameControllerGetOne({ id: cid, nameId: selected.id }, { signal })
+          const detail = await chapterStoryboardControllerGetOne({ id: cid, storyboardId: selected.id }, { signal })
           if (!signal.aborted) {
-            setName(detail.data as unknown as NameListResDtoOutputItemsItem)
+            setName(detail.data as unknown as StoryboardListResDtoOutputItemsItem)
           }
         }
       } catch (err: unknown) {

@@ -107,7 +107,7 @@ export default function AdminOperationsMonitoringRoute({ loaderData }: { loaderD
   const [reprintSearch, setReprintSearch] = useState('')
   const [reprintStatus, setReprintStatus] = useState('')
   const localize = (group: string, value: string) =>
-    t(`operations.monitoring.${group}.${value}`, { defaultValue: value })
+    t(`operations.monitoring.${group}.${value}`, { defaultValue: t('common.notAvailable') })
   const filteredSeries = series.filter(
     (item) =>
       (!seriesStatus || item.status === seriesStatus) &&

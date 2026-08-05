@@ -1,62 +1,54 @@
 import {
   seriesControllerApproveProposal,
   seriesControllerGetSeries,
+  seriesControllerRelease,
   seriesControllerReopenReview,
   seriesControllerReject,
   seriesControllerRequestProposalRevision,
-  seriesControllerUpdateSeriesMetadata
+  seriesControllerPitch
 } from '~/api/operations/series/series'
-import {
-  nameControllerApprove,
-  nameControllerGetOne,
-  nameControllerList,
-  nameControllerRequestRevision
-} from '~/api/operations/names/names'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
+import { SITE } from '~/shared/config/site'
 import {
-  annotationControllerCreate,
-  annotationControllerList,
-  annotationControllerRemove,
-  annotationControllerResolve
-} from '~/api/operations/annotations/annotations'
-import { EditorProposalDetailPage, type EditorActionResult, type EditorProposalDetailData } from '~/features/editor'
+  EDITOR_PROPOSAL_INTENTS,
+  EditorProposalDetailPage,
+  isEditorProposalIntent,
+  mapEditorProposalError,
+  type EditorActionResult,
+  type EditorProposalDetailData
+} from '~/features/editor'
 
 import type { Route } from './+types/proposal-detail'
 
 export function meta({ data }: Route.MetaArgs) {
-  return [{ title: data?.data?.series.title ? `${data.data.series.title} - Editorial Review` : 'Editorial Review' }]
+  return [{ title: data?.data?.series.title ? `${data.data.series.title} | ${SITE.shortName}` : SITE.shortName }]
 }
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   if (!params.id) return { data: null, hasError: true }
   try {
-    const [seriesResponse, namesResponse] = await Promise.all([
-      seriesControllerGetSeries({ id: params.id }),
-      nameControllerList({ id: params.id })
-    ])
-    if (seriesResponse.status !== 200 || namesResponse.status !== 200) {
-      return { data: null, hasError: true }
-    }
+    const seriesResponse = await seriesControllerGetSeries({ id: params.id })
+    if (seriesResponse.status !== 200) return { data: null, hasError: true }
+
     const series = seriesResponse.data
-    const nameListItem = namesResponse.data.items[0] ?? null
-    const nameResponse = nameListItem
-      ? await nameControllerGetOne({ id: params.id, nameId: nameListItem.id }).catch(() => null)
-      : null
-    const name = nameResponse?.status === 200 ? nameResponse.data : nameListItem
-    const annotationsResponse = name
-      ? await annotationControllerList({ targetType: 'NAME', targetId: name.id }).catch(() => null)
-      : null
+    const [coverUrl, characterDesigns, storyboardPages] = await Promise.all([
+      signKey(series.coverImage),
+      Promise.all((series.proposal?.characterDesigns ?? []).map(async (key) => ({ key, url: await signKey(key) }))),
+      Promise.all(
+        [...(series.proposal?.storyboardPages ?? [])]
+          .sort((left, right) => left.pageNumber - right.pageNumber)
+          .map(async (page) => ({
+            pageNumber: page.pageNumber,
+            key: page.fileUrl,
+            url: await signKey(page.fileUrl)
+          }))
+      )
+    ])
     const data: EditorProposalDetailData = {
       series,
-      name,
-      coverUrl: await signKey(series.coverImage),
-      characterDesigns: await Promise.all(
-        (series.proposal?.characterDesigns ?? []).map(async (key) => ({ key, url: await signKey(key) }))
-      ),
-      namePageUrls: await Promise.all(
-        (name?.pages ?? []).map(async (page) => ({ pageNumber: page.pageNumber, url: await signKey(page.fileUrl) }))
-      ),
-      nameAnnotations: annotationsResponse?.status === 200 ? annotationsResponse.data.items : []
+      coverUrl,
+      characterDesigns,
+      storyboardPages
     }
     return { data, hasError: false }
   } catch {
@@ -67,95 +59,40 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
   const formData = await request.formData()
   const intent = String(formData.get('intent') ?? '')
-  const seriesId = String(formData.get('seriesId') ?? '')
-  const nameId = String(formData.get('nameId') ?? '')
+  const seriesId = String(formData.get('seriesId') ?? '').trim()
   const reason = String(formData.get('reason') ?? '').trim() || undefined
+  if (!seriesId || !isEditorProposalIntent(intent) || intent === EDITOR_PROPOSAL_INTENTS.claim)
+    return { ok: false, intent, errorKey: 'invalidAction' }
+
   try {
-    if (intent === 'approveProposal') await seriesControllerApproveProposal({ id: seriesId })
-    else if (intent === 'reviseProposal') {
+    if (intent === EDITOR_PROPOSAL_INTENTS.approve) await seriesControllerApproveProposal({ id: seriesId })
+    else if (intent === EDITOR_PROPOSAL_INTENTS.requestRevision) {
       if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
       await seriesControllerRequestProposalRevision({ id: seriesId }, { reason })
-    } else if (intent === 'approveName') await nameControllerApprove({ id: seriesId, nameId })
-    else if (intent === 'reviseName') {
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.reject) {
+      if (!reason) return { ok: false, intent, errorKey: 'rejectionReasonRequired' }
+      await seriesControllerReject({ id: seriesId }, { reason })
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.reopen) {
       if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
-      await nameControllerRequestRevision({ id: seriesId, nameId }, { reason })
-    } else if (intent === 'createNameAnnotation')
-      await annotationControllerCreate({
-        targetType: 'NAME',
-        targetId: nameId,
-        annotationType: 'TEXT',
-        reviewStage: 'EDITOR',
-        content: required(formData, 'content'),
-        coordinates: readCoordinates(formData)
-      })
-    else if (intent === 'resolveNameAnnotation')
-      await annotationControllerResolve({ id: required(formData, 'annotationId') })
-    else if (intent === 'removeNameAnnotation')
-      await annotationControllerRemove({ id: required(formData, 'annotationId') })
-    else if (intent === 'rejectSeries')
-      await seriesControllerReject({ id: seriesId }, { reason: reason ?? 'Rejected by Editor' })
-    else if (intent === 'reopenReview')
-      await seriesControllerReopenReview({ id: seriesId }, { reason: required(formData, 'reason') })
-    else if (intent === 'updateMetadata') {
-      const currentSeries = await seriesControllerGetSeries({ id: seriesId })
-      if (currentSeries.status !== 200 || currentSeries.data.status !== 'IN_REVIEW') {
-        return { ok: false, intent, errorKey: 'metadataLocked' }
-      }
-      await seriesControllerUpdateSeriesMetadata(
-        { id: seriesId },
-        {
-          title: required(formData, 'title'),
-          synopsis: String(formData.get('synopsis') ?? '').trim(),
-          coverImage: String(formData.get('coverImage') ?? '').trim(),
-          characterDesigns: String(formData.get('characterDesigns') ?? '')
-            .split(/[\n,]/)
-            .map((key) => key.trim())
-            .filter(Boolean)
-        }
-      )
-    } else return { ok: false, intent, errorKey: 'invalidAction' }
+      await seriesControllerReopenReview({ id: seriesId }, { reason })
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.release) await seriesControllerRelease({ id: seriesId })
+    else if (intent === EDITOR_PROPOSAL_INTENTS.pitch) await seriesControllerPitch({ id: seriesId })
+    else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
-      : intent === 'rejectSeries'
+      : intent === EDITOR_PROPOSAL_INTENTS.reject
         ? 'rejected'
-        : intent === 'reopenReview'
+        : intent === EDITOR_PROPOSAL_INTENTS.reopen
           ? 'reviewReopened'
-          : intent === 'updateMetadata'
-            ? 'updated'
-            : intent.includes('Annotation')
-              ? 'annotationUpdated'
+          : intent === EDITOR_PROPOSAL_INTENTS.release
+            ? 'released'
+            : intent === EDITOR_PROPOSAL_INTENTS.pitch
+              ? 'pitch'
               : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
-    const code =
-      error && typeof error === 'object' && 'data' in error
-        ? (error as { data?: { code?: string } }).data?.code
-        : undefined
-    const errorKey =
-      code === 'Error.NotAssignedEditor'
-        ? 'notAssigned'
-        : code === 'Error.InvalidProposalState' ||
-            code === 'Error.InvalidNameState' ||
-            code === 'Error.InvalidSeriesTransition'
-          ? 'invalidState'
-          : 'actionFailed'
-    return { ok: false, intent, errorKey }
+    return { ok: false, intent, errorKey: mapEditorProposalError(error) }
   }
-}
-
-function required(formData: FormData, key: string) {
-  const value = String(formData.get(key) ?? '').trim()
-  if (!value) throw new Error(`Missing ${key}`)
-  return value
-}
-
-function readCoordinates(formData: FormData) {
-  const rawValues = ['x', 'y', 'width', 'height'].map((key) => String(formData.get(key) ?? '').trim())
-  if (rawValues.some((value) => !value)) return undefined
-  const values = rawValues.map(Number)
-  if (values.some((value) => !Number.isFinite(value))) return undefined
-  const [x, y, width, height] = values
-  return { x, y, width, height }
 }
 
 export default function EditorProposalDetailRoute({ loaderData }: Route.ComponentProps) {

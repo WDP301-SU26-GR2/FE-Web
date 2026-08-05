@@ -1,9 +1,10 @@
 import { EditorDashboardPage } from '~/features/editor'
 import { editorDashboardControllerEditor } from '~/api/operations/dashboard/dashboard'
 import type { Route } from './+types/index'
+import { SITE } from '~/shared/config/site'
 
 export function meta() {
-  return [{ title: 'Editor Dashboard - MangaStudio Pro' }]
+  return [{ title: SITE.name }]
 }
 
 export async function clientLoader() {

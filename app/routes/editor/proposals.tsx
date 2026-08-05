@@ -1,26 +1,40 @@
-import {
-  seriesControllerClaim,
-  seriesControllerListSeries,
-  seriesControllerRelease
-} from '~/api/operations/series/series'
+import { seriesControllerClaim, seriesControllerListSeries } from '~/api/operations/series/series'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
-import { EditorProposalsPage, type EditorActionResult } from '~/features/editor'
+import { SITE } from '~/shared/config/site'
+import {
+  EDITOR_PROPOSAL_INTENTS,
+  EDITOR_PROPOSALS_PAGE_SIZE,
+  EditorProposalsPage,
+  mapEditorProposalError,
+  type EditorActionResult
+} from '~/features/editor'
 
 import type { Route } from './+types/proposals'
 
 export function meta() {
-  return [{ title: 'Series Submissions - MangaStudio Pro' }]
+  return [{ title: SITE.shortName }]
 }
 
-export async function clientLoader() {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const requestedOffset = Number(new URL(request.url).searchParams.get('offset') ?? 0)
+  const offset = Number.isInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0
   try {
-    const response = await seriesControllerListSeries({ limit: 100, offset: 0 })
+    const response = await seriesControllerListSeries({ limit: EDITOR_PROPOSALS_PAGE_SIZE, offset })
     return {
       items: response.data.items as SeriesListResDtoOutputItemsItem[],
+      total: response.data.total,
+      limit: response.data.limit,
+      offset: response.data.offset,
       hasError: false
     }
   } catch {
-    return { items: [] as SeriesListResDtoOutputItemsItem[], hasError: true }
+    return {
+      items: [] as SeriesListResDtoOutputItemsItem[],
+      total: 0,
+      limit: EDITOR_PROPOSALS_PAGE_SIZE,
+      offset,
+      hasError: true
+    }
   }
 }
 
@@ -28,30 +42,23 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const formData = await request.formData()
   const intent = String(formData.get('intent') ?? '')
   const seriesId = String(formData.get('seriesId') ?? '')
-  if (!seriesId || !['claim', 'release'].includes(intent)) return { ok: false, intent, errorKey: 'invalidAction' }
+  if (!seriesId || intent !== EDITOR_PROPOSAL_INTENTS.claim) return { ok: false, intent, errorKey: 'invalidAction' }
   try {
-    if (intent === 'claim') await seriesControllerClaim({ id: seriesId })
-    else await seriesControllerRelease({ id: seriesId })
-    return { ok: true, intent, messageKey: intent === 'claim' ? 'claimed' : 'released' }
+    await seriesControllerClaim({ id: seriesId })
+    return { ok: true, intent, messageKey: 'claimed' }
   } catch (error) {
-    return { ok: false, intent, errorKey: mapError(error) }
+    return { ok: false, intent, errorKey: mapEditorProposalError(error) }
   }
 }
 
 export default function EditorProposalsRoute({ loaderData }: Route.ComponentProps) {
-  return <EditorProposalsPage items={loaderData.items} hasError={loaderData.hasError} />
-}
-
-function mapError(error: unknown): string {
-  const code = getErrorCode(error)
-  if (code === 'Error.SeriesAlreadyClaimed') return 'alreadyClaimed'
-  if (code === 'Error.ReviewAlreadyStarted') return 'reviewStarted'
-  if (code === 'Error.NotAssignedEditor') return 'notAssigned'
-  return 'actionFailed'
-}
-
-function getErrorCode(error: unknown) {
-  return error && typeof error === 'object' && 'data' in error
-    ? (error as { data?: { code?: string } }).data?.code
-    : undefined
+  return (
+    <EditorProposalsPage
+      items={loaderData.items}
+      total={loaderData.total}
+      limit={loaderData.limit}
+      offset={loaderData.offset}
+      hasError={loaderData.hasError}
+    />
+  )
 }

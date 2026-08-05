@@ -23,6 +23,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { ReprintRequestListItemDtoOutputRevisionMode } from './reprintRequestListItemDtoOutputRevisionMode';
+import type { ReprintRequestListItemDtoOutputStatus } from './reprintRequestListItemDtoOutputStatus';
 import type { ReprintRequestListItemDtoOutputSeries } from './reprintRequestListItemDtoOutputSeries';
 import type { ReprintRequestListItemDtoOutputRequester } from './reprintRequestListItemDtoOutputRequester';
 
@@ -31,7 +32,10 @@ export interface ReprintRequestListItemDtoOutput {
   seriesId: string;
   /** @nullable */
   requestedBy: string | null;
-  /** @nullable */
+  /**
+   * Reprint revision mode: AS_IS (giữ nguyên) hoặc WITH_REVISION (được sửa). Values: AS_IS, WITH_REVISION
+   * @nullable
+   */
   revisionMode: ReprintRequestListItemDtoOutputRevisionMode;
   /**
    * @minimum -9007199254740991
@@ -45,7 +49,8 @@ export interface ReprintRequestListItemDtoOutput {
    * @nullable
    */
   chapterRangeEnd: number | null;
-  status: string;
+  /** Reprint request lifecycle: PENDING, PROPOSED, MANGAKA_REVIEW, MANGAKA_APPROVED, BOARD_APPROVED, APPROVED, PUBLISHED, REJECTED, REJECTED_BY_MANGAKA. Values: PENDING, MANGAKA_APPROVED, BOARD_APPROVED, PROPOSED, MANGAKA_REVIEW, IN_PRODUCTION, APPROVED, PUBLISHED, REJECTED, REJECTED_BY_MANGAKA */
+  status: ReprintRequestListItemDtoOutputStatus;
   /**
    * ISO 8601 date-time (UTC)
    * @nullable

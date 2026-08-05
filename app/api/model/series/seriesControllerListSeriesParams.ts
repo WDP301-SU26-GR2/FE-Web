@@ -23,12 +23,22 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { SeriesControllerListSeriesStatus } from './seriesControllerListSeriesStatus';
+import type { SeriesControllerListSeriesPublicationType } from './seriesControllerListSeriesPublicationType';
 
 export type SeriesControllerListSeriesParams = {
 /**
  * Series state machine status. Values: DRAFT, IN_REVIEW, READY_TO_PITCH, PITCHED, SERIALIZED, HIATUS, COMPLETING, CANCELLING, COMPLETED, CANCELLED, REJECTED, ABANDONED, WITHDRAWN
  */
 status?: SeriesControllerListSeriesStatus;
+/**
+ * Lọc theo tạp chí (khớp tuyệt đối). Dùng để chọn series mở kỳ bình chọn.
+ * @minLength 1
+ */
+magazine?: string;
+/**
+ * Lọc theo nhịp phát hành. Kỳ bình chọn chỉ so sánh series cùng tạp chí + cùng nhịp.
+ */
+publicationType?: SeriesControllerListSeriesPublicationType;
 /**
  * @minimum 0
  * @maximum 100

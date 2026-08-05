@@ -23,6 +23,9 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 
+/**
+ * Trạng thái khoản chi: TRIGGERED (điều kiện đạt) | PENDING (chờ xử lý) → APPROVED (Board duyệt) → PAID (đã trả); MISSED/FAILED/CANCELLED = không chi trả. Values: TRIGGERED, MISSED, PENDING, APPROVED, PAID, FAILED, CANCELLED
+ */
 export type PaymentRecordResDtoOutputStatus = typeof PaymentRecordResDtoOutputStatus[keyof typeof PaymentRecordResDtoOutputStatus];
 
 

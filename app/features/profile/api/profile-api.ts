@@ -8,8 +8,10 @@ import {
 } from '~/api/operations/users/users'
 import {
   AssistantProfileBodyDtoAvailabilityStatus,
+  AssistantProfileBodyDtoExperienceLevel,
   AssistantProfileBodyDtoSpecializationsItem,
   MangakaProfileBodyDtoGenresItem,
+  MangakaProfileBodyDtoExperienceLevel,
   type AssistantProfileResDtoOutput,
   type MangakaProfileResDtoOutput,
   type MeResDtoOutput,
@@ -33,14 +35,14 @@ export type MyProfileData = {
 export type MangakaProfileSubmit = {
   penName: string
   genres: MangakaProfileBodyDtoGenresItem[]
-  experienceLevel?: string
+  experienceLevel?: MangakaProfileBodyDtoExperienceLevel
   bio?: string
   portfolioFiles?: string[]
 }
 
 export type AssistantProfileSubmit = {
   specializations: AssistantProfileBodyDtoSpecializationsItem[]
-  experienceLevel?: string
+  experienceLevel?: AssistantProfileBodyDtoExperienceLevel
   portfolioFiles?: string[]
   availabilityStatus?: AssistantProfileBodyDtoAvailabilityStatus
   availabilityFrom?: string

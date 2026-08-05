@@ -68,8 +68,18 @@ export function ContractHeader({
             value={progress.mangaka.isSigned ? t('contractDetail.yes') : t('contractDetail.no')}
           />
           <Metric
-            label={t('contractDetail.boardSigned')}
-            value={`${progress.boardProgress.totalSigned}/${progress.boardProgress.totalRequired}`}
+            label={t('contractDetail.representative')}
+            value={
+              !progress.representative.claimed
+                ? t('contractDetail.representativeUnassigned')
+                : progress.representative.signed
+                  ? t('contractDetail.representativeSigned', {
+                      name: contract.representative?.displayName ?? t('contractDetail.boardMember')
+                    })
+                  : t('contractDetail.representativePending', {
+                      name: contract.representative?.displayName ?? t('contractDetail.boardMember')
+                    })
+            }
           />
           <Metric label={t('contractDetail.currentStatus')} value={t(`filters.contractStatuses.${progress.status}`)} />
         </div>
@@ -87,8 +97,8 @@ export function ContractActionMessage({ data }: { data?: EditorActionResult }) {
     if (!data || lastData.current === data) return
     lastData.current = data
     const message = data.ok
-      ? data.message || t(`messages.${data.messageKey}`, { defaultValue: t('messages.operationCompleted') })
-      : data.message || t(`errors.${data.errorKey ?? 'actionFailed'}`)
+      ? t(`messages.${data.messageKey}`, { defaultValue: t('messages.operationCompleted') })
+      : t(`errors.${data.errorKey ?? 'actionFailed'}`)
     const id = `editor-contract-${data.intent}-${data.ok ? 'success' : 'error'}-${data.messageKey ?? data.errorKey ?? ''}`
     if (data.ok) {
       toast.success(message, { id })

@@ -1,12 +1,6 @@
 import { useLoaderData, type ClientActionFunctionArgs, type ClientLoaderFunctionArgs } from 'react-router'
 import { chapterControllerListPages, chapterControllerProgress } from '~/api/operations/chapters/chapters'
 import { deadlineControllerGetOne } from '~/api/operations/deadline-requests/deadline-requests'
-import {
-  chapterNameControllerGetOne,
-  chapterNameControllerList,
-  nameControllerGetOne,
-  nameControllerList
-} from '~/api/operations/names/names'
 import { productionStageControllerList } from '~/api/operations/production-stages/production-stages'
 import {
   reprintRequestControllerFindById,
@@ -59,25 +53,21 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
     loadAllOffsetItems((pagination) => usersControllerListMangakas(pagination).then((response) => response.data))
   ])
 
-  const [seriesDetail, defense, seriesNames, seriesName, trend] = seriesId
+  const [seriesDetail, defense, trend] = seriesId
     ? await Promise.all([
         settle(seriesControllerGetSeries({ id: seriesId })),
         settle(tankobonControllerDashboard({ id: seriesId })),
-        settle(nameControllerList({ id: seriesId })),
-        seriesNameId ? settle(nameControllerGetOne({ id: seriesId, nameId: seriesNameId })) : null,
         settle(surveyControllerGetSeriesTrend({ seriesId, periods: 12 }))
       ])
-    : [null, null, null, null, null]
+    : [null, null, null]
 
-  const [chapterNames, chapterName, pages, progress, stages] = chapterId
+  const [pages, progress, stages] = chapterId
     ? await Promise.all([
-        settle(chapterNameControllerList({ id: chapterId })),
-        chapterNameId ? settle(chapterNameControllerGetOne({ id: chapterId, nameId: chapterNameId })) : null,
         settle(chapterControllerListPages({ id: chapterId })),
         settle(chapterControllerProgress({ id: chapterId })),
         settle(productionStageControllerList({ id: chapterId }))
       ])
-    : [null, null, null, null, null]
+    : [null, null, null]
 
   const boardRanking = surveyPeriodId ? await settle(surveyControllerGetBoardRanking({ surveyPeriodId })) : null
   const reprint = reprintId ? await settle(reprintRequestControllerFindById({ id: reprintId })) : null
@@ -100,7 +90,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 
   return {
     series: seriesResponse,
-    periods: periods ?? [],
+    periods: periods?.items ?? [],
     selected: {
       seriesId,
       seriesNameId,
@@ -114,8 +104,8 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
       transferContractId: discoveredTransferContractId
     },
     directories: { assistants, mangakas },
-    seriesData: { detail: seriesDetail, defense, names: seriesNames, selectedName: seriesName, rankingTrend: trend },
-    chapterData: { names: chapterNames, selectedName: chapterName, pages, progress, stages },
+    seriesData: { detail: seriesDetail, defense, rankingTrend: trend },
+    chapterData: { pages, progress, stages },
     rankingData: { boardRanking },
     workflowData: {
       reprint,

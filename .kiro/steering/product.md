@@ -6,7 +6,7 @@ inclusion: always
 
 ## What it is
 
-**Mangaka** là nền tảng web cho **tác giả/hoạ sĩ truyện tranh** đăng và xuất bản manga, kèm tính năng cho độc giả đọc. Dự án FPT University, semester 8, môn **WDP**.
+**Mangaka** là hệ thống web cho **tác giả/hoạ sĩ truyện tranh** đăng và xuất bản manga, kèm tính năng cho độc giả đọc. Dự án FPT University, semester 8, môn **WDP**.
 
 ## Repo này
 

@@ -8,6 +8,7 @@
 export * from './createTankobonSalesBodyDto'
 export * from './defenseDashboardResDtoOutput'
 export * from './defenseDashboardResDtoOutputRankingTrendItem'
+export * from './defenseDashboardResDtoOutputRankingTrendItemRiskLevel'
 export * from './defenseDashboardResDtoOutputSerialization'
 export * from './defenseDashboardResDtoOutputSeriesReportsItem'
 export * from './defenseDashboardResDtoOutputTankobon'

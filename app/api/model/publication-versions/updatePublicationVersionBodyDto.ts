@@ -37,7 +37,10 @@ export interface UpdatePublicationVersionBodyDto {
    * @nullable
    */
   readingDirection?: UpdatePublicationVersionBodyDtoReadingDirection;
-  /** @nullable */
+  /**
+   * Loại phiên bản phát hành: ORIGINAL, DIGITAL hoặc FLIPPED. Values: ORIGINAL, DIGITAL, FLIPPED
+   * @nullable
+   */
   versionType?: UpdatePublicationVersionBodyDtoVersionType;
   /**
    * @maxLength 2000

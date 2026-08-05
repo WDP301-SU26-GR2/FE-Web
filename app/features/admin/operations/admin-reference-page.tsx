@@ -94,7 +94,7 @@ export function AdminReferencePage({
                   {item.issueNumber ?? t('common.notAvailable')} ·{' '}
                   {item.status
                     ? t(`operations.surveyStatuses.${item.status}`, {
-                        defaultValue: item.status.replaceAll('_', ' ')
+                        defaultValue: t('common.notAvailable')
                       })
                     : t('common.notAvailable')}
                 </option>
@@ -185,9 +185,7 @@ function TaskDownloadPanel() {
         </div>
       )}
       {fetcher.data && !fetcher.data.ok && (
-        <p className='mt-4 text-xs font-semibold text-destructive'>
-          {fetcher.data.message ?? t('operations.reference.downloadFailed')}
-        </p>
+        <p className='mt-4 text-xs font-semibold text-destructive'>{t('operations.reference.downloadFailed')}</p>
       )}
     </Panel>
   )
@@ -215,15 +213,11 @@ function DatasetGrid({ data }: { data: Record<string, unknown> }) {
       {entries.map(([key, value]) => (
         <section key={key} className='min-w-0 rounded-lg border border-border p-4'>
           <h3 className='mb-3 text-xs font-bold text-foreground'>
-            {t(`operations.reference.datasets.${key}`, { defaultValue: humanize(key) })}
+            {t(`operations.reference.datasets.${key}`, { defaultValue: t('common.data') })}
           </h3>
           <BusinessDataView value={value} />
         </section>
       ))}
     </div>
   )
-}
-
-function humanize(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ')
 }

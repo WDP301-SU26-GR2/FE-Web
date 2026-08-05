@@ -43,6 +43,8 @@ export function EditorTransfersPage({
   const [transferType, setTransferType] = useState<'FULL_TRANSFER' | 'PARTIAL_TRANSFER'>('FULL_TRANSFER')
   const isRevenueShare = request?.originalContractType === 'REVENUE_SHARE'
   const canStartNegotiation = Boolean(request && isRevenueShare && request.status === 'UNDER_REVIEW')
+  // ACCEPTED is the explicit proof that Mangaka A consented. UNDER_REVIEW is only the
+  // earlier Board-screened state and must never unlock contract creation.
   const canCreateContract = Boolean(
     request && isRevenueShare && request.status === 'ACCEPTED' && !request.transferContractId && !contract
   )
@@ -157,9 +159,11 @@ export function EditorTransfersPage({
             {signatures.map((signature) => (
               <div key={signature.id} className='flex justify-between rounded-md bg-muted p-3 text-xs'>
                 <strong>
-                  {t(`operations.transferSignatureRoles.${signature.role}`, { defaultValue: signature.role })}
+                  {t(`operations.transferSignatureRoles.${signature.role}`, {
+                    defaultValue: t('common.notAvailable')
+                  })}
                 </strong>
-                <span>{new Date(signature.signedAt).toLocaleString()}</span>
+                <span>{new Date(signature.signedAt).toLocaleString(i18n.language)}</span>
               </div>
             ))}
             {!signatures.length && <p className='text-xs text-muted-foreground'>{t('operations.noSignatures')}</p>}

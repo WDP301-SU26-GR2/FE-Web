@@ -32,5 +32,5 @@ export const AnnotationControllerListTargetType = {
   REGION: 'REGION',
   TASK: 'TASK',
   MANUSCRIPT: 'MANUSCRIPT',
-  NAME: 'NAME',
+  STORYBOARD: 'STORYBOARD',
 } as const;

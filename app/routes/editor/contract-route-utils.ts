@@ -4,6 +4,8 @@ import {
   contractControllerGetContractById
 } from '~/api/operations/contracts/contracts'
 import type { AmendmentListItemDtoOutput, AmendmentResDtoOutput } from '~/api/model/contracts'
+import { CONTRACT_FIELD_LIMITS } from '~/features/editor'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 
 export async function loadContractBase(id: string) {
   const [contract, progress] = await Promise.all([
@@ -32,9 +34,12 @@ export function required(form: FormData, key: string) {
 
 export function paymentThreshold(form: FormData) {
   const type = required(form, 'conditionType')
-  if (type === 'CHAPTER_MILESTONE') return { chapter: Number(required(form, 'chapter')) }
-  if (type === 'RECURRING_CHAPTER') return { every: Number(required(form, 'every')) }
-  if (type === 'RANKING_MILESTONE') return { topRank: Number(required(form, 'topRank')) }
+  if (type === 'CHAPTER_MILESTONE')
+    return { chapter: boundedInteger(form, 'chapter', 1, CONTRACT_FIELD_LIMITS.chapterMaximum) }
+  if (type === 'RECURRING_CHAPTER')
+    return { every: boundedInteger(form, 'every', 1, CONTRACT_FIELD_LIMITS.chapterMaximum) }
+  if (type === 'RANKING_MILESTONE')
+    return { topRank: boundedInteger(form, 'topRank', 1, CONTRACT_FIELD_LIMITS.rankingMaximum) }
   if (type === 'TIME_BOUND') return { deadline: required(form, 'deadline') }
   throw new Error('Invalid condition type')
 }
@@ -42,8 +47,14 @@ export function paymentThreshold(form: FormData) {
 export function paymentPayout(form: FormData) {
   const payoutAmount = optionalNumber(form, 'payoutAmount')
   const payoutPct = optionalNumber(form, 'payoutPct')
-  if ((payoutAmount ?? 0) <= 0 && (payoutPct ?? 0) <= 0) throw new Error('PAYOUT_VALUE_REQUIRED')
-  if ((payoutAmount != null && payoutAmount < 0) || (payoutPct != null && (payoutPct < 0 || payoutPct > 100)))
+  if ((payoutAmount == null) === (payoutPct == null)) throw new Error('PAYOUT_VALUE_REQUIRED')
+  if (
+    (payoutAmount != null &&
+      (!Number.isSafeInteger(payoutAmount) ||
+        payoutAmount < CONTRACT_FIELD_LIMITS.moneyMinimum ||
+        payoutAmount > CONTRACT_FIELD_LIMITS.moneyMaximum)) ||
+    (payoutPct != null && (!Number.isInteger(payoutPct) || payoutPct < 1 || payoutPct > 100))
+  )
     throw new Error('PAYOUT_VALUE_REQUIRED')
   return {
     ...(payoutAmount != null ? { payoutAmount } : {}),
@@ -86,33 +97,35 @@ export function datesAreValid(start: string, end: string) {
 }
 
 export function ownershipIsValid(contractType: string, publisher: number, mangaka: number) {
-  if (!Number.isFinite(publisher) || !Number.isFinite(mangaka) || publisher + mangaka !== 100) return false
-  return contractType !== 'FULL_BUYOUT' || (publisher === 100 && mangaka === 0)
+  if (!Number.isInteger(publisher) || !Number.isInteger(mangaka) || publisher + mangaka !== 100) return false
+  if (contractType === 'FULL_BUYOUT') return publisher === 100 && mangaka === 0
+  return publisher > 0 && publisher < 100 && mangaka > 0 && mangaka < 100
+}
+
+function boundedInteger(form: FormData, key: string, minimum: number, maximum: number) {
+  const value = Number(required(form, key))
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) throw new Error('PAYOUT_VALUE_REQUIRED')
+  return value
 }
 
 export function contractErrorKey(error: unknown) {
-  const payload =
-    error && typeof error === 'object' && 'data' in error
-      ? (error as { data?: { code?: string; message?: string } }).data
-      : undefined
-  const code = payload?.code
-  const message = payload?.message ?? (error instanceof Error ? error.message : '')
+  const code = extractApiErrorCode(error)
+  const localCode = error instanceof Error ? error.message : ''
 
   if (code === 'Error.SeriesNotSerialized') return 'seriesNotSerialized'
+  if (code === 'Error.ContractNotFound') return 'contractNotFound'
+  if (code === 'Error.ContractAccessDenied') return 'contractAccessDenied'
+  if (code === 'Error.NotAssignedContractEditor') return 'notAssignedContractEditor'
+  if (code === 'Error.InvalidContractMoney') return 'invalidContractMoney'
   if (code === 'Error.InvalidContractTransition') return 'invalidContractTransition'
-  if (message.includes('INVALID_CONTRACT_STATUS_FOR_THIS_ACTION')) return 'invalidContractTransition'
-  if (message.includes('Trạng thái hợp đồng không phù hợp')) return 'invalidContractTransition'
   if (code === 'Error.ContractNotAmendable') return 'contractNotAmendable'
   if (code === 'Error.OpenAmendmentExists') return 'openAmendmentExists'
   if (code === 'Error.OwnershipMismatch') return 'ownershipMismatch'
   if (code === 'Error.AmendmentNoChanges') return 'amendmentNoChanges'
-  if (code?.includes('PAYMENT_CONDITION_NOT_EDITABLE')) return 'invalidState'
   if (code?.startsWith('Error.AmendmentNot')) return 'invalidState'
-  if (code?.includes('REVENUE_NOT_APPLICABLE')) return 'revenueNotApplicable'
-  if (code?.includes('ONLY_ASSIGNED_EDITOR')) return 'notAssigned'
-  if (message.includes('PAYOUT_VALUE_REQUIRED')) return 'payoutRequired'
-  if (message.includes('PAYMENT_CONDITION_REQUIRED')) return 'paymentConditionRequired'
-  if (message.includes('PAYMENT_CONDITION_LOCKED')) return 'paymentConditionLocked'
+  if (code === 'Error.RevenueNotApplicable') return 'revenueNotApplicable'
+  if (localCode === 'PAYOUT_VALUE_REQUIRED') return 'payoutRequired'
+  if (localCode === 'PAYMENT_CONDITION_LOCKED') return 'paymentConditionLocked'
   return 'actionFailed'
 }
 

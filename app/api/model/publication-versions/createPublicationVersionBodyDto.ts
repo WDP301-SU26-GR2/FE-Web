@@ -35,7 +35,7 @@ export interface CreatePublicationVersionBodyDto {
   /** Reading direction: RTL (right-to-left, manga gốc) | LTR (left-to-right, bản dịch phương Tây). Values: RTL, LTR */
   readingDirection?: CreatePublicationVersionBodyDtoReadingDirection;
   /**
-   * ORIGINAL | DIGITAL | FLIPPED
+   * Loại phiên bản phát hành: ORIGINAL, DIGITAL hoặc FLIPPED. Values: ORIGINAL, DIGITAL, FLIPPED
    * @nullable
    */
   versionType?: CreatePublicationVersionBodyDtoVersionType;

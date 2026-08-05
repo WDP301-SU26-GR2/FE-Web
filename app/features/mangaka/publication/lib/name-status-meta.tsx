@@ -1,4 +1,7 @@
 import { cn } from '~/shared/lib/cn'
+import { useTranslation } from 'react-i18next'
+
+import { translatePageStatus, translateStoryboardStatus } from './translate-publication-status'
 
 export type NameStatusKey = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'REVISION' | 'APPROVED'
 
@@ -6,7 +9,7 @@ export type PageStatusKey = 'DRAFT' | 'COMPLETED' | 'REVISING'
 
 type StatusMeta = {
   className: string
-  /** i18n key under `publication.nameStatus.<key>`. */
+  /** i18n key under `publication.storyboardStatus.<key>`. */
   i18nKey: string
 }
 
@@ -63,6 +66,7 @@ const PAGE_STATUS_META: Record<PageStatusKey, StatusMeta> = {
  * we receive string unions from the API and let TS keep this loose).
  */
 export function NameStatusBadge({ status, className }: { status: string; className?: string }) {
+  const { t } = useTranslation('mangaka')
   const meta = (NAME_STATUS_META as Record<string, StatusMeta>)[status] ?? NAME_STATUS_META.DRAFT
   return (
     <span
@@ -72,7 +76,7 @@ export function NameStatusBadge({ status, className }: { status: string; classNa
         className
       )}
     >
-      {status}
+      {translateStoryboardStatus(status, t)}
     </span>
   )
 }
@@ -83,6 +87,7 @@ export function nameStatusClassName(status: string): string {
 }
 
 export function PageStatusBadge({ status, className }: { status: string; className?: string }) {
+  const { t } = useTranslation('mangaka')
   const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT
   return (
     <span
@@ -92,7 +97,7 @@ export function PageStatusBadge({ status, className }: { status: string; classNa
         className
       )}
     >
-      {status}
+      {translatePageStatus(status, t)}
     </span>
   )
 }

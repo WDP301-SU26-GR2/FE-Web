@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { EditorPublicationData } from '../types'
 import { cn } from '~/shared/lib/cn'
+import { getPublicationGroupForStatus, groupPublicationItemsBySeries } from './publication-grouping'
 
 const REVIEW_STATUSES = new Set(['EDITOR_REVIEW'])
 const APPROVED_STATUSES = new Set(['READY_FOR_PRINT', 'AWAITING_CO_OWNER_APPROVAL'])
@@ -13,28 +14,28 @@ const APPROVED_STATUSES = new Set(['READY_FOR_PRINT', 'AWAITING_CO_OWNER_APPROVA
 const STATUS_META: Record<string, { className: string; dotClassName: string }> = {
   DRAFT: { className: 'border-border bg-muted text-muted-foreground', dotClassName: 'bg-muted-foreground' },
   IN_PRODUCTION: {
-    className: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
-    dotClassName: 'bg-amber-500'
+    className: 'border-warning/30 bg-warning/10 text-warning',
+    dotClassName: 'bg-warning'
   },
   EDITOR_REVIEW: {
     className: 'border-primary/30 bg-primary/10 text-primary',
     dotClassName: 'bg-primary'
   },
   EDITOR_REVISION: {
-    className: 'border-orange-500/30 bg-orange-500/10 text-orange-700',
-    dotClassName: 'bg-orange-500'
+    className: 'border-warning/30 bg-warning/10 text-warning',
+    dotClassName: 'bg-warning'
   },
   READY_FOR_PRINT: {
-    className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700',
-    dotClassName: 'bg-emerald-500'
+    className: 'border-success/30 bg-success/10 text-success',
+    dotClassName: 'bg-success'
   },
   AWAITING_CO_OWNER_APPROVAL: {
-    className: 'border-violet-500/30 bg-violet-500/10 text-violet-700',
-    dotClassName: 'bg-violet-500'
+    className: 'border-info/30 bg-info/10 text-info',
+    dotClassName: 'bg-info'
   },
   PUBLISHED: {
-    className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700',
-    dotClassName: 'bg-emerald-500'
+    className: 'border-success/30 bg-success/10 text-success',
+    dotClassName: 'bg-success'
   }
 }
 
@@ -49,9 +50,7 @@ export function EditorPublicationPage({
 }) {
   const { t } = useTranslation('editor')
   const [search, setSearch] = useState('')
-  const [activeGroup, setActiveGroup] = useState<'review' | 'approved' | 'progress' | 'history'>(() =>
-    groupForReference(data?.chapters ?? [], focusReferenceId)
-  )
+  const [activeGroup, setActiveGroup] = useState<'review' | 'approved' | 'progress' | 'history'>(() => 'progress')
   const chapters = (data?.chapters ?? []).filter(
     ({ series, chapter }) =>
       !search ||
@@ -72,6 +71,10 @@ export function EditorPublicationPage({
       !APPROVED_STATUSES.has(chapter.manuscriptStatus ?? '')
   )
   const published = chapters.filter(({ chapter }) => chapter.manuscriptStatus === 'PUBLISHED')
+  const reviewGroups = groupPublicationItemsBySeries(awaitingReview)
+  const approvedGroups = groupPublicationItemsBySeries(approved)
+  const progressGroups = groupPublicationItemsBySeries(inProgress)
+  const historyGroups = groupPublicationItemsBySeries(published)
   useEffect(() => {
     if (!focusReferenceId) return
     const frame = window.requestAnimationFrame(() => {
@@ -104,6 +107,14 @@ export function EditorPublicationPage({
       {!hasError && (
         <section className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4' aria-label={t('publicationUx.summary')}>
           <SummaryCard
+            icon={<Clock3 className='size-5' />}
+            label={t('publicationUx.inProgress')}
+            value={inProgress.length}
+            className='border-warning/25 bg-warning/5 text-warning'
+            active={activeGroup === 'progress'}
+            onClick={() => setActiveGroup('progress')}
+          />
+          <SummaryCard
             icon={<AlertCircle className='size-5' />}
             label={t('publicationUx.needsAction')}
             value={awaitingReview.length}
@@ -115,23 +126,15 @@ export function EditorPublicationPage({
             icon={<FileCheck2 className='size-5' />}
             label={t('publicationUx.approved')}
             value={approved.length}
-            className='border-emerald-500/25 bg-emerald-500/5 text-emerald-700'
+            className='border-success/25 bg-success/5 text-success'
             active={activeGroup === 'approved'}
             onClick={() => setActiveGroup('approved')}
-          />
-          <SummaryCard
-            icon={<Clock3 className='size-5' />}
-            label={t('publicationUx.inProgress')}
-            value={inProgress.length}
-            className='border-amber-500/25 bg-amber-500/5 text-amber-700'
-            active={activeGroup === 'progress'}
-            onClick={() => setActiveGroup('progress')}
           />
           <SummaryCard
             icon={<CheckCircle2 className='size-5' />}
             label={t('publication.history')}
             value={published.length}
-            className='border-emerald-500/25 bg-emerald-500/5 text-emerald-700'
+            className='border-success/25 bg-success/5 text-success'
             active={activeGroup === 'history'}
             onClick={() => setActiveGroup('history')}
           />
@@ -141,7 +144,7 @@ export function EditorPublicationPage({
         <ChapterSection
           title={t('publicationUx.needsAction')}
           description={t('publicationUx.needsActionDescription')}
-          items={awaitingReview}
+          items={reviewGroups}
           empty={t('publication.emptyAwaiting')}
           focusReferenceId={focusReferenceId}
         />
@@ -150,7 +153,7 @@ export function EditorPublicationPage({
         <ChapterSection
           title={t('publicationUx.approved')}
           description={t('publicationUx.approvedDescription')}
-          items={approved}
+          items={approvedGroups}
           empty={t('publicationUx.emptyApproved')}
           focusReferenceId={focusReferenceId}
         />
@@ -159,7 +162,7 @@ export function EditorPublicationPage({
         <ChapterSection
           title={t('publicationUx.inProgress')}
           description={t('publicationUx.inProgressDescription')}
-          items={inProgress}
+          items={progressGroups}
           empty={t('publicationUx.emptyInProgress')}
           focusReferenceId={focusReferenceId}
         />
@@ -168,7 +171,7 @@ export function EditorPublicationPage({
         <ChapterSection
           title={t('publication.history')}
           description={t('publicationUx.historyDescription')}
-          items={published}
+          items={historyGroups}
           empty={t('publication.emptyHistory')}
           focusReferenceId={focusReferenceId}
         />
@@ -183,10 +186,7 @@ function groupForReference(
 ): 'review' | 'approved' | 'progress' | 'history' {
   const focused = items.find(({ chapter }) => chapter.id === focusReferenceId)?.chapter
   if (!focused) return 'review'
-  if (REVIEW_STATUSES.has(focused.manuscriptStatus ?? '')) return 'review'
-  if (APPROVED_STATUSES.has(focused.manuscriptStatus ?? '')) return 'approved'
-  if (focused.manuscriptStatus === 'PUBLISHED') return 'history'
-  return 'progress'
+  return getPublicationGroupForStatus(focused.manuscriptStatus)
 }
 
 function prioritizeFocused(items: EditorPublicationData['chapters'], focusReferenceId: string | null) {
@@ -206,11 +206,13 @@ function ChapterSection({
 }: {
   title: string
   description: string
-  items: EditorPublicationData['chapters']
+  items: ReturnType<typeof groupPublicationItemsBySeries>
   empty: string
   focusReferenceId: string | null
 }) {
   const { t, i18n } = useTranslation('editor')
+  const itemCount = items.reduce((total, group) => total + group.chapters.length, 0)
+
   return (
     <section className='space-y-3'>
       <div className='flex items-start justify-between gap-4'>
@@ -218,54 +220,70 @@ function ChapterSection({
           <h2 className='text-base font-bold text-foreground'>{title}</h2>
           <p className='mt-1 text-xs text-muted-foreground'>{description}</p>
         </div>
-        <span className='rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground'>{items.length}</span>
+        <span className='rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground'>{itemCount}</span>
       </div>
-      {items.length === 0 ? (
+      {itemCount === 0 ? (
         <div className='rounded-xl border border-dashed border-border bg-card p-8 text-center text-xs text-muted-foreground'>
           {empty}
         </div>
       ) : (
-        <div className='divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
-          {items.map(({ series, chapter }) => (
-            <article
-              key={chapter.id}
-              id={`publication-chapter-${chapter.id}`}
-              className={cn(
-                'flex flex-col gap-4 p-4 transition-colors hover:bg-muted/30 md:flex-row md:items-center md:justify-between',
-                chapter.id === focusReferenceId && 'bg-primary/10 ring-2 ring-inset ring-primary'
-              )}
-            >
-              <div className='flex items-start gap-3'>
-                <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-                  <BookCheck className='size-5' />
-                </div>
-                <div>
-                  <p className='text-xs font-bold text-primary'>{series.title}</p>
-                  <h3 className='mt-1 font-bold text-foreground'>
-                    {t('publication.chapter', { number: chapter.chapterNumber })}
-                    {chapter.title ? ` · ${chapter.title}` : ''}
-                  </h3>
-                  <div className='mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
-                    <StatusBadge status={chapter.manuscriptStatus ?? chapter.status} />
-                    {chapter.schedule?.currentDeadline && (
-                      <span className='inline-flex items-center gap-1'>
-                        <CalendarClock className='size-3.5' />
-                        {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(
-                          new Date(chapter.schedule.currentDeadline)
-                        )}
-                      </span>
-                    )}
+        <div className='space-y-4'>
+          {items.map(({ series, chapters }) => (
+            <div key={series.id} className='overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
+              <div className='border-b border-border bg-muted/30 px-4 py-3'>
+                <div className='flex items-center justify-between gap-3'>
+                  <div>
+                    <p className='text-xs font-bold uppercase tracking-[0.18em] text-primary'>{t('publication.series')}</p>
+                    <h3 className='mt-1 text-sm font-bold text-foreground'>{series.title}</h3>
                   </div>
+                  <span className='rounded-full bg-background px-3 py-1 text-xs font-bold text-muted-foreground'>
+                    {chapters.length} {t('publication.chapterCount')}
+                  </span>
                 </div>
               </div>
-              <Link
-                to={`/dashboard/editor/publication/${series.id}/${chapter.id}`}
-                className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
-              >
-                <Eye className='size-4' />
-                {t('actions.review')}
-              </Link>
-            </article>
+              <div className='divide-y divide-border'>
+                {chapters.map(({ chapter }) => (
+                  <article
+                    key={chapter.id}
+                    id={`publication-chapter-${chapter.id}`}
+                    className={cn(
+                      'flex flex-col gap-4 p-4 transition-colors hover:bg-muted/30 md:flex-row md:items-center md:justify-between',
+                      chapter.id === focusReferenceId && 'bg-primary/10 ring-2 ring-inset ring-primary'
+                    )}
+                  >
+                    <div className='flex items-start gap-3'>
+                      <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                        <BookCheck className='size-5' />
+                      </div>
+                      <div>
+                        <h4 className='font-bold text-foreground'>
+                          {t('publication.chapter', { number: chapter.chapterNumber })}
+                          {chapter.title ? ` · ${chapter.title}` : ''}
+                        </h4>
+                        <div className='mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
+                          <StatusBadge status={chapter.manuscriptStatus ?? chapter.status} />
+                          {chapter.schedule?.currentDeadline && (
+                            <span className='inline-flex items-center gap-1'>
+                              <CalendarClock className='size-3.5' />
+                              {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(
+                                new Date(chapter.schedule.currentDeadline)
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Link
+                      to={`/dashboard/editor/publication/${series.id}/${chapter.id}`}
+                      className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                    >
+                      <Eye className='size-4' />
+                      {t('actions.review')}
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

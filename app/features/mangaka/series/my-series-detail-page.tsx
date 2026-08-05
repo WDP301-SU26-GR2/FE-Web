@@ -20,15 +20,11 @@ import { Link, useNavigate } from 'react-router'
 import { cn } from '~/shared/lib/cn'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { useAuth } from '~/features/auth/context/auth-context'
-import {
-  SeriesResDtoOutputProposalStatus as ProposalStatusEnum,
-  SeriesResDtoOutputStatus as SeriesStatusEnum
-} from '~/api/model/series'
+import { SeriesResDtoOutputStatus as SeriesStatusEnum } from '~/api/model/series'
 import type { SeriesResDtoOutput } from '~/api/model/series'
-import type { NameListResDtoOutputItemsItem } from '~/api/model/names'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 
-import { useSeriesDetail } from './use-series-detail'
+import { useSeriesDetail, type ProposalStoryboardView } from './use-series-detail'
 import { useSubmitSeries } from './use-submit-series'
 import { useProposalActions } from './use-proposal-actions'
 import { useProposalRevisions } from './use-proposal-revisions'
@@ -51,8 +47,9 @@ import { DeleteChapterDialog } from '~/features/mangaka/chapters/delete-chapter-
 import { CompletionProposalDialog } from './components/completion-proposal-dialog'
 import { FranchiseConsentDialog } from './components/franchise-consent-dialog'
 import { SeriesMetadataDialog } from './components/series-metadata-dialog'
-import { translateNameStatus, translateProposalStatus, translateSeriesStatus } from './lib/translate-series-state'
+import { translateNameStatus, translateSeriesStatus } from './lib/translate-series-state'
 import { translateDemographic, translateGenre, translatePublicationType } from './lib/translate-series-metadata'
+import { canEditSeriesMetadata, getProposalActionEligibility } from './lib/proposal-action-eligibility'
 
 /** Status values that mark the series as being in the publication phase.
  *  Per FE-API-Guide-v3.md §1.2, SERIALIZED begins serialization and the
@@ -75,14 +72,6 @@ const CHAPTER_CREATABLE_SERIES_STATUSES: ReadonlyArray<SeriesResDtoOutput['statu
   'CANCELLING',
   'COMPLETING'
 ] as const
-
-const SERIES_METADATA_TERMINAL_STATUSES = new Set<SeriesResDtoOutput['status']>([
-  SeriesStatusEnum.COMPLETED,
-  SeriesStatusEnum.CANCELLED,
-  SeriesStatusEnum.REJECTED,
-  SeriesStatusEnum.ABANDONED,
-  SeriesStatusEnum.WITHDRAWN
-])
 
 type MySeriesDetailPageProps = {
   seriesId: string
@@ -142,17 +131,6 @@ const SERIES_STATUS_META: Record<string, { className: string }> = {
   WITHDRAWN: { className: 'bg-muted text-muted-foreground border-border' }
 }
 
-const PROPOSAL_STATUS_META: Record<string, { className: string }> = {
-  DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
-  PROPOSAL_REVIEW: { className: 'bg-warning/10 text-warning border-warning/20' },
-  PROPOSAL_REVISION: { className: 'bg-warning/10 text-warning border-warning/20' },
-  PROPOSAL_APPROVED: { className: 'bg-success/10 text-success border-success/20' },
-  PITCHED: { className: 'bg-primary/10 text-primary border-primary/20' },
-  APPROVED: { className: 'bg-success/10 text-success border-success/20' },
-  REJECTED: { className: 'bg-destructive/10 text-destructive border-destructive/20' },
-  WITHDRAWN: { className: 'bg-muted text-muted-foreground border-border' }
-}
-
 const NAME_STATUS_META: Record<string, { className: string }> = {
   DRAFT: { className: 'bg-muted text-muted-foreground border-border' },
   SUBMITTED: { className: 'bg-info/10 text-info border-info/20' },
@@ -169,7 +147,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const { series, names, isLoading, error, notFound, refresh } = useSeriesDetail(seriesId)
   const { session } = useAuth()
   const { submit, isSubmitting } = useSubmitSeries()
-  const { activeAction, deleteDraft, withdraw, resubmitProposal, resubmitName, reopen } = useProposalActions()
+  const { activeAction, deleteDraft, withdraw, resubmitProposal, reopen } = useProposalActions()
   const {
     activeAction: activeLifecycleAction,
     updateMetadata,
@@ -207,31 +185,29 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   // Submit is only available to the series owner while it is still DRAFT.
   // BE also enforces both rules (403 / 409), this is just a UI gate so we
   // don't render a misleading button.
-  const canPrepareSubmit =
-    series?.status === SeriesStatusEnum.DRAFT && !!session?.user?.id && session.user.id === series.mangakaId
+  const { revisions, isLoadingRevisions, refreshRevisions } = useProposalRevisions(seriesId)
+  const proposalActions = getProposalActionEligibility({
+    isOwner: !!session?.user?.id && session.user.id === series?.mangakaId,
+    seriesStatus,
+    proposalStatus: proposal?.status,
+    hasOpenRevisions: revisions.length > 0
+  })
+  const canPrepareSubmit = proposalActions.canSubmit
 
   // Edit is available to the owner while the proposal is editable per §6.1:
   // series DRAFT, OR proposal PROPOSAL_REVISION. BE also enforces (409).
-  const proposalName = useMemo(
-    () => names.find((name) => name.id === proposal?.nameId) ?? names.find((name) => name.kind === 'PROPOSAL') ?? null,
-    [names, proposal?.nameId]
-  )
-  const { revisions, refreshRevisions } = useProposalRevisions(seriesId, proposalName?.id)
-  const canSubmit = canPrepareSubmit && !!proposalName && proposalName.pages.length > 0
-
-  const canEdit =
-    !!session?.user?.id &&
-    session.user.id === series?.mangakaId &&
-    (series?.status === SeriesStatusEnum.DRAFT ||
-      proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION ||
-      proposalName?.status === 'REVISION')
+  const canEdit = proposalActions.canEdit
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
   const { isOriginalMangaka, isLoading: isFranchiseEligibilityLoading } = useFranchiseConsentEligibility(
     series?.parentSeriesId,
     session?.user?.id
   )
-  const canEditMetadata = isOwner && !!seriesStatus && !SERIES_METADATA_TERMINAL_STATUSES.has(seriesStatus)
+  const canEditMetadata = canEditSeriesMetadata({
+    isOwner,
+    seriesStatus,
+    canEditProposal: canEdit
+  })
   const canProposeCompletion =
     isOwner &&
     (seriesStatus === SeriesStatusEnum.SERIALIZED || seriesStatus === SeriesStatusEnum.HIATUS) &&
@@ -241,15 +217,14 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   // eligibility hook resolves the parent record before showing this action.
   const canGiveFranchiseConsent =
     series?.franchiseConsentStatus === 'PENDING' && !isFranchiseEligibilityLoading && isOriginalMangaka
-  const canDeleteDraft = isOwner && series?.status === SeriesStatusEnum.DRAFT
+  const canDeleteDraft = proposalActions.canDelete
   // The series state machine rejects withdrawal from PITCHED onward. A Board
   // rejection is the only post-pitch state that can still be withdrawn.
   // Spec 22 (2026-07-18): ABANDONED/WITHDRAWN have their own reopen action instead.
-  const canWithdraw = isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'REJECTED'].includes(series?.status ?? '')
+  const canWithdraw = proposalActions.canWithdraw
   // Per Spec 22: at ABANDONED/WITHDRAWN Mangaka can "Nộp lại" (reopen → DRAFT, back to queue).
-  const canReopen = isOwner && ['ABANDONED', 'WITHDRAWN'].includes(series?.status ?? '')
-  const canResubmitProposal = isOwner && proposal?.status === ProposalStatusEnum.PROPOSAL_REVISION
-  const canResubmitName = isOwner && proposalName?.status === 'REVISION'
+  const canReopen = proposalActions.canReopen
+  const canResubmitProposal = proposalActions.canResubmit && !isLoadingRevisions
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
   const nextChapterNumber = useMemo(() => {
     if (chapters.length === 0) return 1
@@ -289,10 +264,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   }
 
   const seriesMeta = SERIES_STATUS_META[seriesStatus ?? ''] ?? SERIES_STATUS_META[SeriesStatusEnum.DRAFT]
-  const proposalMetaClassName = proposal
-    ? (PROPOSAL_STATUS_META[proposal.status] ?? PROPOSAL_STATUS_META.DRAFT).className
-    : null
-
   const translate = (key: string, fallback: string): string => (i18n.exists(key) ? t(key) : fallback)
 
   const currentLocale = i18n.language
@@ -356,10 +327,8 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                 {canPrepareSubmit && (
                   <button
                     type='button'
-                    disabled={!canSubmit}
-                    title={!canSubmit ? t('seriesDetail.submit.missingNamePages') : undefined}
                     onClick={() => setSubmitDialogOpen(true)}
-                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90'
                   >
                     <Send className='h-3.5 w-3.5' />
                     <span>{t('seriesDetail.submit.button')}</span>
@@ -398,7 +367,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     <span>{t('seriesDetail.lifecycle.completion.button')}</span>
                   </button>
                 )}
-                {canResubmitProposal && (
+                {canResubmitProposal && revisions.length === 0 && (
                   <button
                     type='button'
                     disabled={activeAction !== null}
@@ -412,22 +381,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                   >
                     <RefreshCw className={cn('h-3.5 w-3.5', activeAction === 'resubmitProposal' && 'animate-spin')} />
                     {t('seriesDetail.actions.resubmitProposal.button')}
-                  </button>
-                )}
-                {canResubmitName && proposalName && (
-                  <button
-                    type='button'
-                    disabled={activeAction !== null}
-                    onClick={async () => {
-                      if (await resubmitName(series.id, proposalName.id)) {
-                        refresh()
-                        refreshRevisions()
-                      }
-                    }}
-                    className='flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
-                  >
-                    <RefreshCw className={cn('h-3.5 w-3.5', activeAction === 'resubmitName' && 'animate-spin')} />
-                    {t('seriesDetail.actions.resubmitName.button')}
                   </button>
                 )}
                 {isOwner && revisions.length > 0 && (
@@ -504,19 +457,11 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             <div className='grid grid-cols-1 gap-3 rounded-lg border border-border bg-background/40 p-3 text-sm sm:grid-cols-2 lg:grid-cols-3'>
               <MetaItem
                 label={t('seriesDetail.demographic')}
-                value={
-                  series.demographic
-                    ? translateDemographic(series.demographic, t)
-                    : '—'
-                }
+                value={series.demographic ? translateDemographic(series.demographic, t) : '—'}
               />
               <MetaItem
                 label={t('seriesDetail.publicationType')}
-                value={
-                  series.publicationType
-                    ? translatePublicationType(series.publicationType, t)
-                    : '—'
-                }
+                value={series.publicationType ? translatePublicationType(series.publicationType, t) : '—'}
               />
               <MetaItem
                 label={t('seriesDetail.editor')}
@@ -601,22 +546,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       )}
 
       {/* PROPOSAL section */}
-      <CollapsibleCard
-        title={t('seriesDetail.proposal.title')}
-        rightSlot={
-          proposal && proposalMetaClassName ? (
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-                proposalMetaClassName
-              )}
-            >
-              {translateProposalStatus(proposal.status, t)}
-            </span>
-          ) : null
-        }
-        defaultCollapsed={isLegacyCollapsed}
-      >
+      <CollapsibleCard title={t('seriesDetail.proposal.title')} defaultCollapsed={isLegacyCollapsed}>
         <ProposalBody
           proposal={proposal}
           locale={currentLocale}
@@ -625,15 +555,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
       </CollapsibleCard>
 
       {/* NAMES section */}
-      <CollapsibleCard
-        title={t('seriesDetail.names.title')}
-        rightSlot={
-          <span className='text-xs text-muted-foreground'>
-            {t('seriesDetail.names.count', { count: sortedNames.length })}
-          </span>
-        }
-        defaultCollapsed={isLegacyCollapsed}
-      >
+      <CollapsibleCard title={t('seriesDetail.names.title')} defaultCollapsed={isLegacyCollapsed}>
         <NamesBody
           names={sortedNames}
           locale={currentLocale}
@@ -833,7 +755,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         open={revisionDrawerOpen}
         onClose={() => setRevisionDrawerOpen(false)}
         seriesId={series.id}
-        nameId={proposalName?.id ?? null}
+        onRevisionResolved={refreshRevisions}
       />
     </div>
   )
@@ -963,7 +885,7 @@ function ProposalBody({ proposal, locale, onOpenStrip }: ProposalBodyProps) {
 }
 
 type NamesBodyProps = {
-  names: NameListResDtoOutputItemsItem[]
+  names: ProposalStoryboardView[]
   locale: string
   /** Open the carousel viewer for a given Name's pages at a given page index. */
   onOpen: (items: ImageCarouselItem[], startIndex: number) => void
@@ -989,7 +911,7 @@ function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
   return (
     <div className='flex flex-col gap-6 p-5'>
       {/* Sample / proposal name — full-width horizontal strip */}
-      {sampleName && <SampleNameRow name={sampleName} locale={locale} onOpen={(items, idx) => onOpen(items, idx)} />}
+      {sampleName && <SampleNameRow name={sampleName} onOpen={(items, idx) => onOpen(items, idx)} />}
 
       {/* Chapter names — grid cards */}
       {chapterNames.length > 0 && (
@@ -1054,15 +976,12 @@ function NamesBody({ names, locale, onOpen }: NamesBodyProps) {
  */
 function SampleNameRow({
   name,
-  locale,
   onOpen
 }: {
-  name: NameListResDtoOutputItemsItem
-  locale: string
+  name: ProposalStoryboardView
   onOpen: (items: ImageCarouselItem[], startIndex: number) => void
 }) {
   const { t } = useTranslation('mangaka')
-  const meta = NAME_STATUS_META[name.status] ?? NAME_STATUS_META.DRAFT
   const label = t('seriesDetail.names.sampleLabel')
 
   const carouselItems: ImageCarouselItem[] = name.pages.map((page) => ({
@@ -1080,32 +999,10 @@ function SampleNameRow({
 
   return (
     <div className='space-y-3'>
-      {/* Header row */}
-      <div className='flex items-center justify-between gap-3'>
-        <div className='min-w-0 flex-1'>
-          <p className='truncate text-sm font-semibold text-foreground'>{label}</p>
-          <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-            {t('seriesDetail.names.versionLabel', { n: name.version })} · {name.pages.length}{' '}
-            {t('seriesDetail.names.pagesCount', { count: name.pages.length })}
-          </p>
-        </div>
-        <span
-          className={cn(
-            'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-            meta.className
-          )}
-        >
-          {translateNameStatus(name.status, t)}
-        </span>
-      </div>
+      <p className='truncate text-sm font-semibold text-foreground'>{label}</p>
 
       {/* Horizontal strip — single row, "+N" chip on overflow */}
       {stripItems.length > 0 && <ImageOverflowStrip items={stripItems} onOpen={(idx) => onOpen(carouselItems, idx)} />}
-
-      {/* Footer timestamp */}
-      {name.submittedAt && (
-        <p className='text-[10px] text-muted-foreground'>{formatDateTime(name.submittedAt, locale)}</p>
-      )}
     </div>
   )
 }

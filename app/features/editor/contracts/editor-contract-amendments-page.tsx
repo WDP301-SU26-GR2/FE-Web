@@ -12,6 +12,7 @@ import {
   ContractPageLayout,
   contractInput
 } from './components/contract-shared'
+import { CONTRACT_FIELD_LIMITS } from './contract-flow'
 
 export function EditorContractAmendmentsPage({
   contract,
@@ -133,7 +134,9 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
       <input
         name='valuationAmount'
         type='number'
-        min={0}
+        min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+        max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+        step={1}
         defaultValue={numberValue(amendment?.valuationAmount)}
         className={contractInput}
         placeholder={t('contracts.valuation')}
@@ -143,6 +146,7 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
         type='number'
         min={0}
         max={100}
+        step={1}
         defaultValue={numberValue(amendment?.publisherOwnershipPct)}
         className={contractInput}
         placeholder={t('contracts.publisherPct')}
@@ -152,6 +156,7 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
         type='number'
         min={0}
         max={100}
+        step={1}
         defaultValue={numberValue(amendment?.mangakaOwnershipPct)}
         className={contractInput}
         placeholder={t('contracts.mangakaPct')}

@@ -17,7 +17,7 @@
 
 ## 1. Bối cảnh dự án (Project Context)
 
-- **Tên:** Mangaka — nền tảng đăng & xuất bản truyện tranh (manga creator/publisher platform).
+- **Tên:** Mangaka — hệ thống đăng & xuất bản truyện tranh (manga creator/publisher platform).
 - **Repo:** Frontend web (`mangaka-web`), FPT University — WDP semester 8.
 - **Người dùng cuối:** Mangaka (tác giả), Assistant (trợ lý vẽ), Editor, Board Member, Super Admin. UI cần **đa ngôn ngữ** (mặc định **tiếng Việt**, hỗ trợ EN) và **dark/light mode**.
 - **Nguyên tắc cốt lõi:** _dễ bảo trì, dễ mở rộng, đa ngôn ngữ, đa theme._

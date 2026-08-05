@@ -45,7 +45,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (eligibleSeriesIds.some((seriesId) => !candidates.has(seriesId)))
         return invalid(intent, 'surveySeriesScopeMismatch')
       if (
-        periods.data.some(
+        periods.data.items.some(
           (period) =>
             period.magazine === magazine &&
             period.publicationType === publicationType &&

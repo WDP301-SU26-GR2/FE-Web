@@ -24,7 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
- * Đối tượng của vòng yêu cầu sửa: PROPOSAL, NAME, MANUSCRIPT, TASK. Values: PROPOSAL, NAME, MANUSCRIPT, TASK
+ * Đối tượng của vòng yêu cầu sửa: PROPOSAL, STORYBOARD, MANUSCRIPT, TASK. Values: PROPOSAL, STORYBOARD, MANUSCRIPT, TASK
  */
 export type RevisionRequestResDtoOutputTargetType = typeof RevisionRequestResDtoOutputTargetType[keyof typeof RevisionRequestResDtoOutputTargetType];
 
@@ -32,7 +32,7 @@ export type RevisionRequestResDtoOutputTargetType = typeof RevisionRequestResDto
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RevisionRequestResDtoOutputTargetType = {
   PROPOSAL: 'PROPOSAL',
-  NAME: 'NAME',
+  STORYBOARD: 'STORYBOARD',
   MANUSCRIPT: 'MANUSCRIPT',
   TASK: 'TASK',
 } as const;

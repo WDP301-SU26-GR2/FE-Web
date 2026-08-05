@@ -24,6 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 import type { TaskBatchListResDtoOutputItemsItemRegionsItemCoordinates } from './taskBatchListResDtoOutputItemsItemRegionsItemCoordinates';
 import type { TaskBatchListResDtoOutputItemsItemRegionsItemRegionType } from './taskBatchListResDtoOutputItemsItemRegionsItemRegionType';
+import type { TaskBatchListResDtoOutputItemsItemRegionsItemCreatedBy } from './taskBatchListResDtoOutputItemsItemRegionsItemCreatedBy';
 
 export type TaskBatchListResDtoOutputItemsItemRegionsItem = {
   id: string;
@@ -39,10 +40,10 @@ export type TaskBatchListResDtoOutputItemsItemRegionsItem = {
    */
   regionType: TaskBatchListResDtoOutputItemsItemRegionsItemRegionType;
   /**
-   * MANUAL | AI
+   * Nguồn tạo vùng: MANUAL hoặc AI. Values: MANUAL, AI
    * @nullable
    */
-  createdBy: string | null;
+  createdBy: TaskBatchListResDtoOutputItemsItemRegionsItemCreatedBy;
   confirmedByMangaka: boolean;
   /**
    * null khi MANUAL

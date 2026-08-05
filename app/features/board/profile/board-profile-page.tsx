@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { StaffProfileResDtoOutput } from '~/api/model/users'
+import {
+  StaffProfileBodyDtoDemographicsItem,
+  StaffProfileBodyDtoSpecialtyGenresItem,
+  type StaffProfileResDtoOutput
+} from '~/api/model/users'
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
@@ -15,8 +19,22 @@ export function BoardProfilePage({ profile }: { profile: StaffProfileResDtoOutpu
       <BoardHeader title={t('profile.title')} description={t('profile.description')} backHref='/dashboard/board' />
       <BoardPanel title={t('profile.form')}>
         <div className='grid gap-4 sm:grid-cols-2'>
-          <ProfileValue label={t('profile.genres')} value={profile.specialtyGenres.join(', ') || '—'} />
-          <ProfileValue label={t('profile.demographics')} value={profile.demographics.join(', ') || '—'} />
+          <ProfileValue
+            label={t('profile.genres')}
+            value={
+              profile.specialtyGenres
+                .map((value) => t(`common:businessData.values.${value}`, { defaultValue: value }))
+                .join(', ') || '—'
+            }
+          />
+          <ProfileValue
+            label={t('profile.demographics')}
+            value={
+              profile.demographics
+                .map((value) => t(`common:businessData.values.${value}`, { defaultValue: value }))
+                .join(', ') || '—'
+            }
+          />
           <ProfileValue label={t('profile.experience')} value={String(profile.yearsOfExperience ?? 0)} />
           <ProfileValue label={t('profile.bio')} value={profile.bio || '—'} />
         </div>
@@ -45,14 +63,38 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
   return (
     <Dialog compact open onClose={onClose} titleId='edit-board-profile' title={t('profile.edit')} size='lg'>
       <fetcher.Form method='post' className='grid gap-4'>
-        <label className='grid gap-2 text-xs font-bold'>
-          {t('profile.genres')}
-          <input className={boardInput} name='specialtyGenres' defaultValue={profile.specialtyGenres.join(', ')} />
-        </label>
-        <label className='grid gap-2 text-xs font-bold'>
-          {t('profile.demographics')}
-          <input className={boardInput} name='demographics' defaultValue={profile.demographics.join(', ')} />
-        </label>
+        <fieldset className='grid gap-2 text-xs'>
+          <legend className='font-bold'>{t('profile.genres')}</legend>
+          <div className='grid gap-2 sm:grid-cols-2'>
+            {Object.values(StaffProfileBodyDtoSpecialtyGenresItem).map((value) => (
+              <label key={value} className='flex items-center gap-2 rounded-md border border-border p-2'>
+                <input
+                  type='checkbox'
+                  name='specialtyGenres'
+                  value={value}
+                  defaultChecked={profile.specialtyGenres.includes(value)}
+                />
+                <span>{t(`common:businessData.values.${value}`, { defaultValue: value })}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className='grid gap-2 text-xs'>
+          <legend className='font-bold'>{t('profile.demographics')}</legend>
+          <div className='grid gap-2 sm:grid-cols-2'>
+            {Object.values(StaffProfileBodyDtoDemographicsItem).map((value) => (
+              <label key={value} className='flex items-center gap-2 rounded-md border border-border p-2'>
+                <input
+                  type='checkbox'
+                  name='demographics'
+                  value={value}
+                  defaultChecked={profile.demographics.includes(value)}
+                />
+                <span>{t(`common:businessData.values.${value}`, { defaultValue: value })}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <label className='grid gap-2 text-xs font-bold'>
           {t('profile.experience')}
           <input
@@ -66,7 +108,12 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
         </label>
         <label className='grid gap-2 text-xs font-bold'>
           {t('profile.bio')}
-          <textarea className={`${boardInput} min-h-32 py-2`} name='bio' defaultValue={profile.bio ?? ''} />
+          <textarea
+            className={`${boardInput} min-h-32 py-2`}
+            name='bio'
+            maxLength={2000}
+            defaultValue={profile.bio ?? ''}
+          />
         </label>
         <div className='flex justify-end gap-2 border-t border-border pt-4'>
           <button

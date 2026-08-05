@@ -1,7 +1,7 @@
 import { AssistantNotificationsPage } from '~/features/assistant'
 
 export function meta() {
-  return [{ title: 'Notifications - MangakaStudio Pro' }]
+  return [{ title: 'Thông báo - MangakaStudio Pro' }]
 }
 
 export default function AssistantNotificationsRoute() {

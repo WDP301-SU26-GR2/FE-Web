@@ -22,6 +22,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { DeadlineRequestListResDtoOutputItemsItemRequestedBy } from './deadlineRequestListResDtoOutputItemsItemRequestedBy';
+import type { DeadlineRequestListResDtoOutputItemsItemLastProposedBy } from './deadlineRequestListResDtoOutputItemsItemLastProposedBy';
 import type { DeadlineRequestListResDtoOutputItemsItemStatus } from './deadlineRequestListResDtoOutputItemsItemStatus';
 import type { DeadlineRequestListResDtoOutputItemsItemSeries } from './deadlineRequestListResDtoOutputItemsItemSeries';
 import type { DeadlineRequestListResDtoOutputItemsItemChapter } from './deadlineRequestListResDtoOutputItemsItemChapter';
@@ -33,15 +35,15 @@ export type DeadlineRequestListResDtoOutputItemsItem = {
   /** @nullable */
   seriesId: string | null;
   /**
-   * Phe khởi tạo: 'MANGAKA' | 'EDITOR'
+   * Phe thương lượng hạn nộp: MANGAKA hoặc EDITOR. Values: MANGAKA, EDITOR
    * @nullable
    */
-  requestedBy: string | null;
+  requestedBy: DeadlineRequestListResDtoOutputItemsItemRequestedBy;
   /**
-   * Phe đề xuất gần nhất
+   * Phe thương lượng hạn nộp: MANGAKA hoặc EDITOR. Values: MANGAKA, EDITOR
    * @nullable
    */
-  lastProposedBy: string | null;
+  lastProposedBy: DeadlineRequestListResDtoOutputItemsItemLastProposedBy;
   /** @nullable */
   currentDeadline: string | null;
   /** @nullable */

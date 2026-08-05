@@ -23,11 +23,13 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  * OpenAPI spec version: 1.0
  */
 import type { AssistantProfileBodyDtoSpecializationsItem } from './assistantProfileBodyDtoSpecializationsItem';
+import type { AssistantProfileBodyDtoExperienceLevel } from './assistantProfileBodyDtoExperienceLevel';
 import type { AssistantProfileBodyDtoAvailabilityStatus } from './assistantProfileBodyDtoAvailabilityStatus';
 
 export interface AssistantProfileBodyDto {
   specializations?: AssistantProfileBodyDtoSpecializationsItem[];
-  experienceLevel?: string;
+  /** Mức kinh nghiệm hồ sơ: JUNIOR, MID, SENIOR. Values: JUNIOR, MID, SENIOR */
+  experienceLevel?: AssistantProfileBodyDtoExperienceLevel;
   portfolioFiles?: string[];
   /** Assistant availability: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE. Values: AVAILABLE, BUSY, ON_LEAVE, UNAVAILABLE */
   availabilityStatus?: AssistantProfileBodyDtoAvailabilityStatus;

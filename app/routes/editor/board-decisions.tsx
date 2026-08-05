@@ -6,18 +6,14 @@ import {
   boardControllerGetSessions
 } from '~/api/operations/board/board'
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
-import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { EditorBoardDecisionsPage, type EditorActionResult } from '~/features/editor'
-import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
-import { hydrateBoardDecisions, hydrateBoardSessions, required } from './board-route-utils'
+import { hydrateBoardDecisions, hydrateBoardSessions, loadBoardSessionSeries, required } from './board-route-utils'
 import type { Route } from './+types/board-decisions'
 
 export async function clientLoader() {
   try {
     const [series, sessions, decisions] = await Promise.all([
-      loadAllOffsetItems((pagination) =>
-        seriesControllerListSeries({ status: 'PITCHED', ...pagination }).then((response) => response.data)
-      ),
+      loadBoardSessionSeries(),
       boardControllerGetSessions(),
       boardControllerGetDecisions()
     ])

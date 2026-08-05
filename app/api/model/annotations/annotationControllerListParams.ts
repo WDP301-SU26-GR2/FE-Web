@@ -26,7 +26,7 @@ import type { AnnotationControllerListTargetType } from './annotationControllerL
 
 export type AnnotationControllerListParams = {
 /**
- * Annotation target: PAGE, REGION, TASK, MANUSCRIPT, NAME. Values: PAGE, REGION, TASK, MANUSCRIPT, NAME
+ * Đối tượng chú thích: PAGE, REGION, TASK, MANUSCRIPT, STORYBOARD. Values: PAGE, REGION, TASK, MANUSCRIPT, STORYBOARD
  */
 targetType: AnnotationControllerListTargetType;
 /**

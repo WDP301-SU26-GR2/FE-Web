@@ -22,6 +22,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { SeriesResDtoOutputProposalStoryboardPagesItem } from './seriesResDtoOutputProposalStoryboardPagesItem';
 import type { SeriesResDtoOutputProposalStatus } from './seriesResDtoOutputProposalStatus';
 
 /**
@@ -29,15 +30,12 @@ import type { SeriesResDtoOutputProposalStatus } from './seriesResDtoOutputPropo
  * @nullable
  */
 export type SeriesResDtoOutputProposal = {
-  /**
-   * Id Name chương mẫu gắn proposal
-   * @nullable
-   */
-  nameId: string | null;
   /** @nullable */
   synopsis: string | null;
   /** Mảng object key ảnh thiết kế nhân vật (R2) */
   characterDesigns: string[];
+  /** Trang phác thảo chương mẫu nộp kèm hồ sơ; fileUrl là object key R2 */
+  storyboardPages: SeriesResDtoOutputProposalStoryboardPagesItem[];
   /**
    * Số chương ước tính
    * @nullable

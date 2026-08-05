@@ -30,6 +30,7 @@ export interface CreateTransferContractBodyDto {
   transferRequestId: string;
   /**
    * @minimum 0
+   * @maximum 100000000000
    * @exclusiveMinimum
    */
   transferAmount: number;

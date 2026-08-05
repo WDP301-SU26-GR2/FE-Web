@@ -588,7 +588,7 @@ export const usersControllerGetMyAssistantProfile = async ( options?: RequestIni
 
 
 /**
- * @summary Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level; ưu tiên isRecommended/reputation (ẩn email/phone)
+ * @summary Danh bạ Mangaka: tìm theo tên/penName, lọc genre/level; ưu tiên isRecommended/reputation (kèm email/phone để liên hệ)
  */
 export type usersControllerListMangakasResponse200 = {
   data: MangakaDirectoryListResDtoOutput
@@ -665,7 +665,7 @@ export const usersControllerGetMangakaProfile = async ({ userId }: UsersControll
 
 
 /**
- * @summary Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (ẩn email/phone)
+ * @summary Danh bạ trợ lý: tìm theo tên, lọc specialization/level/availability, ưu tiên isRecommended/reputation (kèm email/phone để liên hệ)
  */
 export type usersControllerListAssistantsResponse200 = {
   data: AssistantDirectoryListResDtoOutput

@@ -203,7 +203,9 @@ export function PageRegionPopup({
           <div className='flex items-center justify-between border-b border-info/30 bg-info/10 px-5 py-2 text-xs text-info'>
             <span>
               {t('studio.popup.ai.status', {
-                status: segment.status,
+                status: t(`studio.popup.ai.history.status.${segment.status}`, {
+                  defaultValue: t('state.unknown')
+                }),
                 count: segment.proposedRegions.length,
                 duration: segment.durationMs ? Math.round(segment.durationMs / 1000) : '—'
               })}

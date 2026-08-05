@@ -1,7 +1,12 @@
 import { Form } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import type { BoardRankingListResDtoOutputItemsItem } from '~/api/model/survey'
-import type { SurveyPeriodResDtoOutput } from '~/api/model/survey'
+import {
+  SurveyControllerGetInternalRankingAggregateLevel,
+  SurveyControllerGetInternalRankingAggregatePublicationType,
+  type BoardRankingListResDtoOutputItemsItem,
+  type InternalRankingAggregateResDtoOutput,
+  type SurveyPeriodResDtoOutput
+} from '~/api/model/survey'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
 export function BoardRankingsPage({
@@ -9,15 +14,27 @@ export function BoardRankingsPage({
   periods,
   seriesTitles,
   surveyPeriodId,
+  aggregate,
+  aggregateQuery,
+  aggregateOptions,
   hasError
 }: {
   rankings: BoardRankingListResDtoOutputItemsItem[]
   periods: SurveyPeriodResDtoOutput[]
   seriesTitles: Record<string, string>
   surveyPeriodId: string
+  aggregate: InternalRankingAggregateResDtoOutput | null
+  aggregateQuery: {
+    magazine: string
+    publicationType: keyof typeof SurveyControllerGetInternalRankingAggregatePublicationType
+    level: keyof typeof SurveyControllerGetInternalRankingAggregateLevel
+    year: number
+    month: number
+  }
+  aggregateOptions: Array<{ magazine: string; publicationType: string }>
   hasError: boolean
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -65,6 +82,109 @@ export function BoardRankingsPage({
         ))}
       </div>
       {surveyPeriodId && !rankings.length && <EmptyState text={t('rankings.empty')} />}
+      <section className='space-y-4 border-t border-border pt-6'>
+        <div>
+          <h2 className='text-lg font-bold text-foreground'>{t('rankings.aggregateTitle')}</h2>
+          <p className='mt-1 text-xs text-muted-foreground'>{t('rankings.aggregateDescription')}</p>
+        </div>
+        <Form
+          method='get'
+          replace
+          preventScrollReset
+          className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-5'
+        >
+          <input type='hidden' name='surveyPeriodId' value={surveyPeriodId} />
+          <select className={boardInput} name='magazine' defaultValue={aggregateQuery.magazine} required>
+            <option value=''>{t('rankings.selectMagazine')}</option>
+            {aggregateOptions.map((option) => (
+              <option key={`${option.magazine}:${option.publicationType}`} value={option.magazine}>
+                {option.magazine}
+              </option>
+            ))}
+          </select>
+          <select className={boardInput} name='publicationType' defaultValue={aggregateQuery.publicationType} required>
+            {Object.values(SurveyControllerGetInternalRankingAggregatePublicationType).map((value) => (
+              <option key={value} value={value}>
+                {t(`rankings.publicationTypes.${value}`)}
+              </option>
+            ))}
+          </select>
+          <select className={boardInput} name='level' defaultValue={aggregateQuery.level} required>
+            {Object.values(SurveyControllerGetInternalRankingAggregateLevel).map((value) => (
+              <option key={value} value={value}>
+                {t(`rankings.levels.${value}`)}
+              </option>
+            ))}
+          </select>
+          <input
+            className={boardInput}
+            name='year'
+            type='number'
+            min={1970}
+            max={9999}
+            defaultValue={aggregateQuery.year}
+            required
+          />
+          <div className='flex gap-2'>
+            <input
+              className={boardInput}
+              name='month'
+              type='number'
+              min={1}
+              max={12}
+              defaultValue={aggregateQuery.month}
+              disabled={aggregateQuery.level === SurveyControllerGetInternalRankingAggregateLevel.YEAR}
+              aria-label={t('rankings.month')}
+            />
+            <button className='shrink-0 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+              {t('common.load')}
+            </button>
+          </div>
+        </Form>
+        {aggregate ? (
+          <div className='overflow-x-auto rounded-xl border border-border bg-card'>
+            <div className='grid min-w-[820px] grid-cols-[70px_1fr_110px_110px_120px_110px] gap-3 border-b border-border p-3 text-xs font-bold uppercase text-muted-foreground'>
+              <span>#</span>
+              <span>{t('rankings.series')}</span>
+              <span>{t('rankings.averageScore')}</span>
+              <span>{t('rankings.participation')}</span>
+              <span>{t('rankings.reliability')}</span>
+              <span>{t('rankings.risk')}</span>
+            </div>
+            {aggregate.items.map((item) => (
+              <div
+                key={item.seriesId}
+                className='grid min-w-[820px] grid-cols-[70px_1fr_110px_110px_120px_110px] items-center gap-3 border-b border-border p-3 text-xs last:border-0'
+              >
+                <strong>{item.rankPosition}</strong>
+                <span className='truncate'>
+                  {item.seriesTitle ?? seriesTitles[item.seriesId] ?? t('rankings.unknownSeries')}
+                </span>
+                <span>
+                  {new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 2 }).format(
+                    item.averageNormalizedScore
+                  )}
+                </span>
+                <span>
+                  {new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 0 }).format(
+                    item.participationCoverage
+                  )}
+                </span>
+                <span>
+                  {item.isProvisional
+                    ? t('rankings.provisional')
+                    : item.isReliable
+                      ? t('rankings.reliable')
+                      : t('rankings.unreliable')}
+                </span>
+                <StatusBadge value={item.riskLevel} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState text={t('rankings.aggregateEmpty')} />
+        )}
+      </section>
     </div>
   )
 }

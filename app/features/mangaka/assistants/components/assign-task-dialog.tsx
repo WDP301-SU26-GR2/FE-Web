@@ -242,24 +242,6 @@ function AssignTaskDialogBody({
                 onPriorityChange={(v) => handleWorkChange({ priority: v })}
                 allowedTaskTypes={form.allowedTaskTypes}
               />
-              {form.state.regionIds.length > 1 && form.state.pageIds.length === 1 && (
-                <label className='flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4'>
-                  <input
-                    type='checkbox'
-                    checked={Boolean(form.state.splitRegionsIntoTasks)}
-                    onChange={(event) => handleWorkChange({ splitRegionsIntoTasks: event.target.checked })}
-                    className='mt-0.5 size-4 rounded border-input'
-                  />
-                  <span>
-                    <span className='block text-sm font-bold text-foreground'>
-                      {t('studio.tasks.composer.batch.title', { count: form.state.regionIds.length })}
-                    </span>
-                    <span className='mt-1 block text-xs leading-5 text-muted-foreground'>
-                      {t('studio.tasks.composer.batch.description')}
-                    </span>
-                  </span>
-                </label>
-              )}
               <div className='space-y-1.5'>
                 <label htmlFor='task-description' className='block text-sm font-medium text-foreground'>
                   {t('studio.tasks.composer.description')}
@@ -335,14 +317,6 @@ function AssignTaskDialogBody({
                       <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.region')}</dt>
                       <dd className='text-foreground'>
                         {selectedRegionLabels.join(', ') || t('studio.tasks.composer.regionSelected')}
-                      </dd>
-                    </>
-                  )}
-                  {form.state.splitRegionsIntoTasks && form.state.regionIds.length > 1 && (
-                    <>
-                      <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.creationMode')}</dt>
-                      <dd className='text-foreground'>
-                        {t('studio.tasks.composer.confirm.batchMode', { count: form.state.regionIds.length })}
                       </dd>
                     </>
                   )}

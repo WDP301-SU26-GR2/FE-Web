@@ -41,6 +41,8 @@ export interface NotificationResDtoOutput {
    * @nullable
    */
   referenceType: string | null;
+  /** Tiêu đề ngắn suy từ referenceType; luôn có giá trị */
+  title: string;
   /**
    * Nội dung hiển thị; notification mới luôn có content
    * @nullable

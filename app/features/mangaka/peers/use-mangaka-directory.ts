@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type {
   MangakaDirectoryListResDtoOutputItemsItem,
   UsersControllerListMangakasGenre,
+  UsersControllerListMangakasLevel,
   UsersControllerListMangakasParams
 } from '~/api/model/users'
 import { usersControllerListMangakas } from '~/api/operations/users/users'
@@ -20,13 +21,13 @@ export type UseMangakaDirectoryResult = {
   pageSize: number
   genre: UsersControllerListMangakasGenre | undefined
   query: string | undefined
-  level: string | undefined
+  level: UsersControllerListMangakasLevel | undefined
   isLoading: boolean
   error: string | null
   setPage: (page: number) => void
   setGenre: (genre: UsersControllerListMangakasGenre | undefined) => void
   setQuery: (query: string | undefined) => void
-  setLevel: (level: string | undefined) => void
+  setLevel: (level: UsersControllerListMangakasLevel | undefined) => void
   refresh: () => void
 }
 
@@ -37,7 +38,7 @@ export function useMangakaDirectory(): UseMangakaDirectoryResult {
   const [page, setPageState] = useState(1)
   const [genre, setGenreState] = useState<UsersControllerListMangakasGenre | undefined>()
   const [query, setQueryState] = useState<string | undefined>()
-  const [level, setLevelState] = useState<string | undefined>()
+  const [level, setLevelState] = useState<UsersControllerListMangakasLevel | undefined>()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -48,7 +49,7 @@ export function useMangakaDirectory(): UseMangakaDirectoryResult {
       targetPage: number,
       targetQuery: string | undefined,
       targetGenre: UsersControllerListMangakasGenre | undefined,
-      targetLevel: string | undefined
+      targetLevel: UsersControllerListMangakasLevel | undefined
     ) => {
       abortRef.current?.abort()
       const controller = new AbortController()
@@ -100,7 +101,7 @@ export function useMangakaDirectory(): UseMangakaDirectoryResult {
     setPageState(1)
     setQueryState(nextQuery)
   }, [])
-  const setLevel = useCallback((nextLevel: string | undefined) => {
+  const setLevel = useCallback((nextLevel: UsersControllerListMangakasLevel | undefined) => {
     setPageState(1)
     setLevelState(nextLevel)
   }, [])

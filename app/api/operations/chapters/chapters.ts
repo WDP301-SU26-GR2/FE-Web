@@ -67,7 +67,7 @@ import type {
 import { customFetch } from '../../mutator/custom-fetch';
 
 /**
- * @summary Mangaka tạo Chapter (chapter-first): chapterNumber + title → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule. Name tạo sau.
+ * @summary Mangaka tạo Chapter (chapter-first): chapterNumber + title → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule. Storyboard tạo sau qua POST /chapters/:id/storyboards. Chặn nếu series chưa có Contract FULLY_EXECUTED (BR-CONTRACT-05).
  */
 export type chapterControllerCreateResponse201 = {
   data: ChapterResDtoOutput
@@ -182,7 +182,7 @@ export const chapterControllerUpdate = async ({ id }: ChapterControllerUpdatePat
 
 
 /**
- * @summary Mangaka xóa chapter DRAFT (cascade Name/Manuscript/Schedule/Pages) — chapter-first
+ * @summary Mangaka xóa chapter DRAFT (cascade Storyboard/Manuscript/Schedule/Pages) — chapter-first
  */
 export type chapterControllerRemoveResponse200 = {
   data: MessageResDtoOutput

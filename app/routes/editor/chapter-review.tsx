@@ -11,11 +11,11 @@ import {
   chapterControllerSetSchedule
 } from '~/api/operations/chapters/chapters'
 import {
-  chapterNameControllerApprove,
-  chapterNameControllerGetOne,
-  chapterNameControllerList,
-  chapterNameControllerRequestRevision
-} from '~/api/operations/names/names'
+  chapterStoryboardControllerApprove,
+  chapterStoryboardControllerGetOne,
+  chapterStoryboardControllerList,
+  chapterStoryboardControllerRequestRevision
+} from '~/api/operations/storyboards/storyboards'
 import {
   annotationControllerCreate,
   annotationControllerList,
@@ -38,9 +38,12 @@ import {
 } from '~/features/editor'
 
 import type { Route } from './+types/chapter-review'
+import { SITE } from '~/shared/config/site'
+import { CreateAnnotationBodyDtoAnnotationType } from '~/api/model/annotations'
+import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export function meta() {
-  return [{ title: 'Chapter Review - MangaStudio Pro' }]
+  return [{ title: SITE.name }]
 }
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -50,7 +53,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       seriesResponse,
       chapterResponse,
       pagesResponse,
-      namesResponse,
+      storyboardsResponse,
       progressResponse,
       annotationsResponse,
       contractsResponse
@@ -58,7 +61,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       seriesControllerGetSeries({ id: params.seriesId }),
       chapterControllerGetOne({ id: params.chapterId }),
       chapterControllerListPages({ id: params.chapterId }),
-      chapterNameControllerList({ id: params.chapterId }),
+      chapterStoryboardControllerList({ id: params.chapterId }),
       chapterControllerProgress({ id: params.chapterId }).catch(() => null),
       annotationControllerList({ targetType: 'MANUSCRIPT', targetId: params.chapterId }).catch(() => null),
       contractControllerGetContracts().catch(() => null)
@@ -77,16 +80,16 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
           url: await signKey(page.compositeFile ?? page.originalFile)
         }))
     )
-    const name = namesResponse.status === 200 ? (namesResponse.data.items[0] ?? null) : null
-    const nameDetailResponse = name
-      ? await chapterNameControllerGetOne({ id: params.chapterId, nameId: name.id }).catch(() => null)
+    const storyboard = storyboardsResponse.status === 200 ? (storyboardsResponse.data.items[0] ?? null) : null
+    const storyboardDetailResponse = storyboard
+      ? await chapterStoryboardControllerGetOne({ id: params.chapterId, storyboardId: storyboard.id }).catch(() => null)
       : null
-    const detailedName = nameDetailResponse?.status === 200 ? nameDetailResponse.data : name
-    const nameAnnotationsResponse = name
-      ? await annotationControllerList({ targetType: 'NAME', targetId: name.id }).catch(() => null)
+    const detailedStoryboard = storyboardDetailResponse?.status === 200 ? storyboardDetailResponse.data : storyboard
+    const storyboardAnnotationsResponse = storyboard
+      ? await annotationControllerList({ targetType: 'STORYBOARD', targetId: storyboard.id }).catch(() => null)
       : null
-    const namePages = await Promise.all(
-      (detailedName?.pages ?? []).map(async (page) => ({
+    const storyboardPages = await Promise.all(
+      (detailedStoryboard?.pages ?? []).map(async (page) => ({
         pageNumber: page.pageNumber,
         url: await signKey(page.fileUrl)
       }))
@@ -119,11 +122,12 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       chapter: chapterResponse.data,
       contract: contractResponse?.status === 200 ? contractResponse.data : null,
       pages,
-      name: detailedName,
-      namePages,
+      storyboard: detailedStoryboard,
+      storyboardPages,
       progress: progressResponse?.status === 200 ? progressResponse.data : null,
       annotations: annotationsResponse?.status === 200 ? annotationsResponse.data.items : [],
-      nameAnnotations: nameAnnotationsResponse?.status === 200 ? nameAnnotationsResponse.data.items : [],
+      storyboardAnnotations:
+        storyboardAnnotationsResponse?.status === 200 ? storyboardAnnotationsResponse.data.items : [],
       stages: stagesResponse?.status === 200 ? stagesResponse.data : null,
       stagePages,
       regionsByPage: Object.fromEntries(regionEntries)
@@ -149,11 +153,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const response = await chapterControllerPublish({ id: chapterId })
       publishAwaitingCoOwner =
         response.status === 201 && response.data.manuscriptStatus === 'AWAITING_CO_OWNER_APPROVAL'
-    } else if (intent === 'approveChapterName')
-      await chapterNameControllerApprove({ id: chapterId, nameId: required(formData, 'nameId') })
-    else if (intent === 'reviseChapterName') {
+    } else if (intent === 'approveStoryboard')
+      await chapterStoryboardControllerApprove({
+        id: chapterId,
+        storyboardId: required(formData, 'storyboardId')
+      })
+    else if (intent === 'reviseStoryboard') {
       if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
-      await chapterNameControllerRequestRevision({ id: chapterId, nameId: required(formData, 'nameId') }, { reason })
+      await chapterStoryboardControllerRequestRevision(
+        { id: chapterId, storyboardId: required(formData, 'storyboardId') },
+        { reason }
+      )
     } else if (intent === 'setSchedule') {
       const deadline = new Date(required(formData, 'deadline')).toISOString()
       await chapterControllerSetSchedule({ id: chapterId }, { originalDeadline: deadline, currentDeadline: deadline })
@@ -166,23 +176,26 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       await chapterControllerHold(
         { id: chapterId },
         {
-          reason: reason ?? 'Editorial hold',
+          reason: required(formData, 'reason'),
           ...(formData.get('expectedReturnDate')
             ? { expectedReturnDate: new Date(String(formData.get('expectedReturnDate'))).toISOString() }
             : {})
         }
       )
     else if (intent === 'resumeChapter') await chapterControllerResume({ id: chapterId })
-    else if (intent === 'createAnnotation')
+    else if (intent === 'createAnnotation') {
+      const annotationType = required(formData, 'annotationType')
+      if (!isEnumValue(CreateAnnotationBodyDtoAnnotationType, annotationType))
+        return { ok: false, intent, errorKey: 'invalidAction' }
       await annotationControllerCreate({
-        targetType: formData.get('annotationTarget') === 'NAME' ? 'NAME' : 'MANUSCRIPT',
-        targetId: formData.get('annotationTarget') === 'NAME' ? required(formData, 'nameId') : chapterId,
-        annotationType: 'TEXT',
+        targetType: formData.get('annotationTarget') === 'STORYBOARD' ? 'STORYBOARD' : 'MANUSCRIPT',
+        targetId: formData.get('annotationTarget') === 'STORYBOARD' ? required(formData, 'storyboardId') : chapterId,
+        annotationType,
         reviewStage: 'EDITOR',
         content: required(formData, 'content'),
         coordinates: readCoordinates(formData)
       })
-    else if (intent === 'resolveAnnotation')
+    } else if (intent === 'resolveAnnotation')
       await annotationControllerResolve({ id: required(formData, 'annotationId') })
     else if (intent === 'removeAnnotation') await annotationControllerRemove({ id: required(formData, 'annotationId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
@@ -192,7 +205,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       messageKey:
         intent === 'approveManuscript'
           ? 'manuscriptApproved'
-          : intent === 'approveChapterName'
+          : intent === 'approveStoryboard'
             ? 'approved'
             : intent === 'publishChapter'
               ? publishAwaitingCoOwner
@@ -200,7 +213,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
                 : 'published'
               : intent.toLowerCase().includes('annotation')
                 ? 'annotationUpdated'
-                : intent === 'reviseManuscript' || intent === 'reviseChapterName'
+                : intent === 'reviseManuscript' || intent === 'reviseStoryboard'
                   ? 'revisionRequested'
                   : intent
     }
@@ -216,9 +229,11 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
           ? 'contractRequired'
           : code === 'Error.PagesNotReadyForPublish'
             ? 'pagesNotReadyForPublish'
-            : ['Error.InvalidManuscriptState', 'Error.InvalidManuscriptTransition', 'Error.InvalidNameState'].includes(
-                  code ?? ''
-                )
+            : [
+                  'Error.InvalidManuscriptState',
+                  'Error.InvalidManuscriptTransition',
+                  'Error.InvalidStoryboardState'
+                ].includes(code ?? '')
               ? 'invalidState'
               : 'actionFailed'
     return { ok: false, intent, errorKey }

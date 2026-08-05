@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
   Check,
@@ -29,10 +29,11 @@ const RESEND_COOLDOWN = 60 // seconds between OTP resends
 
 export function RegisterPage() {
   const { t } = useTranslation('auth')
+  const [searchParams] = useSearchParams()
   const { register, sendOtp, verifyEmail, isRegistering, isSendingOtp, isVerifying } = useRegister()
 
   // ── Stepper ──────────────────────────────────────────────────────────────
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(() => (searchParams.get('step') === 'verify' ? 3 : 1))
 
   // ── Step 1 fields ────────────────────────────────────────────────────────
   const [role, setRole] = useState<'mangaka' | 'assistant'>('mangaka')

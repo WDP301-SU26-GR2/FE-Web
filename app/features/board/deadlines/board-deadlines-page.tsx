@@ -92,7 +92,7 @@ export function BoardDeadlinesPage({
 }
 
 function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
   const canResolve = item.status === 'BOARD_REVIEW' || item.status === 'ESCALATED'
   const isSubmitting = fetcher.state !== 'idle'
@@ -111,18 +111,22 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
               : t('deadlines.unknownChapter')}
           </p>
           <p className='mt-1 text-xs text-muted-foreground'>
-            {t('deadlines.createdAt', { date: formatDate(item.createdAt) })}
+            {t('deadlines.createdAt', { date: formatDate(item.createdAt, i18n.language) })}
           </p>
         </div>
         <StatusBadge value={item.status} />
       </div>
 
       <dl className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-        <DeadlineDetail icon={Clock3} label={t('deadlines.currentDeadline')} value={formatDate(item.currentDeadline)} />
+        <DeadlineDetail
+          icon={Clock3}
+          label={t('deadlines.currentDeadline')}
+          value={formatDate(item.currentDeadline, i18n.language)}
+        />
         <DeadlineDetail
           icon={CalendarRange}
           label={t('deadlines.requestedDeadline')}
-          value={formatDate(item.requestedDeadline)}
+          value={formatDate(item.requestedDeadline, i18n.language)}
         />
         <DeadlineDetail
           icon={UserRound}
@@ -143,9 +147,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
 
       <p
         className={`mt-3 flex items-center gap-2 rounded-lg border p-3 text-xs font-medium ${
-          item.affectsSlot
-            ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
-            : 'border-sky-500/30 bg-sky-500/10 text-sky-800 dark:text-sky-300'
+          item.affectsSlot ? 'border-warning/30 bg-warning/10 text-warning' : 'border-info/30 bg-info/10 text-info'
         }`}
       >
         <AlertTriangle className='size-4 shrink-0' aria-hidden='true' />
@@ -155,7 +157,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
       {canResolve && (
         <div className='mt-4 flex justify-end'>
           <BoardActionDialog title={t('deadlines.resolve')}>
-            <p className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300'>
+            <p className='mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning'>
               {t('deadlines.resolveWarning')}
             </p>
             <fetcher.Form method='post' className='grid gap-3'>
@@ -174,7 +176,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
                   name='intent'
                   value='approve'
                   disabled={isSubmitting}
-                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50'
+                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-success px-3 text-xs font-bold text-success-foreground hover:opacity-90 disabled:opacity-50'
                 >
                   {isSubmitting ? (
                     <Loader2 className='size-4 animate-spin' aria-hidden='true' />
@@ -218,8 +220,8 @@ function DeadlineDetail({ icon: Icon, label, value }: { icon: typeof Clock3; lab
   )
 }
 
-function formatDate(value: string | null | undefined) {
+function formatDate(value: string | null | undefined, locale: string) {
   if (!value) return '—'
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
 }
