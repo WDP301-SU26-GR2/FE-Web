@@ -7169,6 +7169,30 @@
             }
           },
           {
+            "name": "magazine",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo tạp chí (khớp tuyệt đối). Dùng để chọn series mở kỳ bình chọn.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "publicationType",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo nhịp phát hành. Kỳ bình chọn chỉ so sánh series cùng tạp chí + cùng nhịp.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WEEKLY",
+                "MONTHLY",
+                "IRREGULAR"
+              ]
+            }
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",
@@ -7625,7 +7649,7 @@
             }
           },
           "409": {
-            "description": "Error.InvalidProposalState - proposal state does not allow this action | Error.FranchiseConsentRequired - derivative needs original mangaka consent (APPROVED) before submit",
+            "description": "Error.InvalidProposalState - proposal state does not allow this action | Error.FranchiseConsentRequired - derivative needs original mangaka consent (APPROVED) before submit | Error.MangakaProfileRequired - author must build their mangaka profile before submitting a proposal for review",
             "content": {
               "application/json": {
                 "example": {
@@ -8944,7 +8968,7 @@
             }
           },
           "409": {
-            "description": "Error.DuplicateChapterNumber - chapter number already exists in this series | Error.SeriesNotSerialized - Series phải ở SERIALIZED (hoặc CANCELLING/COMPLETING cho chương kết thúc) mới tạo được chapter | Error.EndingAllowanceExceeded (seriesId) - Series CANCELLING đã tạo đủ số chương kết thúc Board cấp (endingChapterAllowance)",
+            "description": "Error.DuplicateChapterNumber - chapter number already exists in this series | Error.SeriesNotSerialized - Series phải ở SERIALIZED (hoặc CANCELLING/COMPLETING cho chương kết thúc) mới tạo được chapter | Error.ContractNotExecuted - series has no FULLY_EXECUTED contract; cannot open a chapter nor publish (BR-CONTRACT-05). Ending phase (CANCELLING/COMPLETING) only requires a contract that was executed at some point. | Error.EndingAllowanceExceeded (seriesId) - Series CANCELLING đã tạo đủ số chương kết thúc Board cấp (endingChapterAllowance)",
             "content": {
               "application/json": {
                 "example": {
@@ -8962,7 +8986,7 @@
             "bearer": []
           }
         ],
-        "summary": "Mangaka tạo Chapter (chapter-first): chapterNumber + title → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule. Storyboard tạo sau qua POST /chapters/:id/storyboards.",
+        "summary": "Mangaka tạo Chapter (chapter-first): chapterNumber + title → Chapter(DRAFT) + Manuscript(DRAFT) + Schedule. Storyboard tạo sau qua POST /chapters/:id/storyboards. Chặn nếu series chưa có Contract FULLY_EXECUTED (BR-CONTRACT-05).",
         "tags": [
           "chapters"
         ]
@@ -10354,7 +10378,7 @@
             }
           },
           "409": {
-            "description": "Error.InvalidManuscriptTransition - manuscript state transition is not allowed | Error.ContractNotExecuted - series has no FULLY_EXECUTED contract; cannot publish (BR-CONTRACT-05) | Error.ChapterOnHold (id) - chapter is on hold; resume before production mutations | Error.PagesNotReadyForPublish (chapterId) - chapter still has non-COMPLETED (unreviewed) page(s); cannot publish",
+            "description": "Error.InvalidManuscriptTransition - manuscript state transition is not allowed | Error.ContractNotExecuted - series has no FULLY_EXECUTED contract; cannot open a chapter nor publish (BR-CONTRACT-05). Ending phase (CANCELLING/COMPLETING) only requires a contract that was executed at some point. | Error.ChapterOnHold (id) - chapter is on hold; resume before production mutations | Error.PagesNotReadyForPublish (chapterId) - chapter still has non-COMPLETED (unreviewed) page(s); cannot publish",
             "content": {
               "application/json": {
                 "example": {
@@ -13256,6 +13280,57 @@
           }
         ],
         "summary": "Super Admin tạo kỳ bình chọn mới → DRAFT/OPEN/CLOSED. Kỳ bình chọn là đơn vị theo KỲ PHÁT HÀNH (toàn tạp chí) nên thuộc thẩm quyền vận hành toà soạn; Editor/Tantou chỉ phụ trách series nên KHÔNG mở được kỳ (vẫn đọc được mọi route GET).",
+        "tags": [
+          "survey"
+        ]
+      }
+    },
+    "/survey-periods/eligible-series": {
+      "get": {
+        "operationId": "SurveyController_getEligibleSeries",
+        "parameters": [
+          {
+            "name": "magazine",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "publicationType",
+            "required": true,
+            "in": "query",
+            "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WEEKLY",
+                "MONTHLY",
+                "IRREGULAR"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EligibleSeriesResDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "BR-VOTE-05: series đủ điều kiện đưa vào eligibleSeriesIds của kỳ bình chọn (đúng tạp chí + nhịp phát hành). Chỉ trả SERIALIZED/CANCELLING/COMPLETING — dùng chung luật với validate ở POST /survey-periods.",
         "tags": [
           "survey"
         ]
@@ -29214,6 +29289,82 @@
           "total",
           "limit",
           "offset"
+        ],
+        "additionalProperties": false
+      },
+      "EligibleSeriesResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "coverImage": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "DRAFT",
+                    "IN_REVIEW",
+                    "READY_TO_PITCH",
+                    "PITCHED",
+                    "SERIALIZED",
+                    "HIATUS",
+                    "COMPLETING",
+                    "CANCELLING",
+                    "COMPLETED",
+                    "CANCELLED",
+                    "REJECTED",
+                    "ABANDONED",
+                    "WITHDRAWN"
+                  ],
+                  "description": "Chỉ SERIALIZED / CANCELLING / COMPLETING mới lọt vào đây"
+                },
+                "magazine": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "publicationType": {
+                  "type": "string",
+                  "enum": [
+                    "WEEKLY",
+                    "MONTHLY",
+                    "IRREGULAR",
+                    null
+                  ],
+                  "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "coverImage",
+                "status",
+                "magazine",
+                "publicationType"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "items",
+          "total"
         ],
         "additionalProperties": false
       },
