@@ -2,6 +2,7 @@ export interface ProposalActionEligibilityInput {
   isOwner: boolean
   seriesStatus: string | null | undefined
   proposalStatus: string | null | undefined
+  hasOpenRevisions: boolean
 }
 
 export interface ProposalActionEligibility {
@@ -37,7 +38,7 @@ export function getProposalActionEligibility(input: ProposalActionEligibilityInp
     canSubmit: input.isOwner && isDraft,
     canEdit: input.isOwner && (isDraft || input.proposalStatus === 'PROPOSAL_REVISION'),
     canDelete: input.isOwner && isDraft,
-    canResubmit: input.isOwner && input.proposalStatus === 'PROPOSAL_REVISION',
+    canResubmit: input.isOwner && input.proposalStatus === 'PROPOSAL_REVISION' && !input.hasOpenRevisions,
     canWithdraw: input.isOwner && ['IN_REVIEW', 'READY_TO_PITCH', 'REJECTED'].includes(input.seriesStatus ?? ''),
     canReopen: input.isOwner && ['ABANDONED', 'WITHDRAWN'].includes(input.seriesStatus ?? '')
   }

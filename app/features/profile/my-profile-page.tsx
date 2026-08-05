@@ -39,6 +39,8 @@ const EMPTY_MANGAKA: MyProfileData = {
     isRecommended: false,
     displayName: null,
     avatar: null,
+    email: '',
+    phoneNumber: '',
     hasProfile: false
   }
 }
@@ -59,6 +61,8 @@ const EMPTY_ASSISTANT: MyProfileData = {
     isRecommended: false,
     displayName: null,
     avatar: null,
+    email: '',
+    phoneNumber: '',
     hasProfile: false
   }
 }

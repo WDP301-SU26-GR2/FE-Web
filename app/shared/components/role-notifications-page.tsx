@@ -196,15 +196,6 @@ function NotificationItem({
         </p>
         <p className='text-[10px] text-muted-foreground'>
           {formatDate(notification.createdAt, i18n.language)}
-          {notification.referenceType && notification.referenceId && (
-            <>
-              {' · '}
-              {t('notificationsPage.item.reference', {
-                type: notification.referenceType,
-                id: notification.referenceId.slice(0, 8)
-              })}
-            </>
-          )}
         </p>
       </div>
       <div className='flex shrink-0 items-center gap-2 self-start'>

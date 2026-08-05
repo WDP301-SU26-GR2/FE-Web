@@ -12,8 +12,10 @@ import type {
 } from '~/api/model/contracts'
 import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
 import { Dialog } from '~/shared/ui/dialog'
-import { canRespondToAmendment, canRespondToContract } from './contract-action-eligibility'
+import { canRespondToAmendment } from './contract-action-eligibility'
 import { ContractVersionHistoryPanel } from './contract-version-history-panel'
+import { getContractDisplayFlow, isAmendmentHistoryAvailable } from './lib/contract-display-flow'
+import { getAmendmentReason } from './lib/contract-version-display'
 
 export type MangakaContractActionResult = {
   ok: boolean
@@ -88,6 +90,7 @@ export function MangakaContractDetailPage({
   progressLoadFailed = false,
   conditions,
   amendments,
+  amendmentsLoadFailed = false,
   conditionsLoadFailed = false,
   versions,
   versionsLoadFailed = false
@@ -97,6 +100,7 @@ export function MangakaContractDetailPage({
   progressLoadFailed?: boolean
   conditions: PaymentConditionResDtoOutput[]
   amendments: AmendmentResDtoOutput[]
+  amendmentsLoadFailed?: boolean
   conditionsLoadFailed?: boolean
   versions: ContractVersionResDtoOutput[]
   versionsLoadFailed?: boolean
@@ -106,7 +110,9 @@ export function MangakaContractDetailPage({
   const revalidator = useRevalidator()
   const isWorking = fetcher.state !== 'idle'
   const [rejectOpen, setRejectOpen] = useState(false)
-  const canRespond = canRespondToContract({ status: contract.status })
+  const displayFlow = getContractDisplayFlow(contract.status)
+  const canRespond = displayFlow.canRespond
+  const hasAmendmentHistory = isAmendmentHistoryAvailable(contract.status)
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) revalidator.revalidate()
@@ -135,20 +141,15 @@ export function MangakaContractDetailPage({
             </p>
           </div>
           <div className='flex flex-wrap items-center justify-end gap-2'>
-            <ContractPdfButton
-              contract={contract}
-              conditionsLoadFailed={conditionsLoadFailed}
-              conditionsCount={
-                conditions.filter(
-                  (condition) =>
-                    condition.status !== 'DISABLED' &&
-                    ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
-                ).length
-              }
-            />
+            <ContractPdfButton contract={contract} />
             <StatusBadge value={contract.status} />
           </div>
         </div>
+        <p className='mt-3 max-w-3xl text-sm text-muted-foreground'>
+          {t(`contracts.detail.statusHints.${contract.status}`, {
+            defaultValue: t('contracts.detail.statusHints.default')
+          })}
+        </p>
       </header>
 
       <ContractDecisionBasis contract={contract} />
@@ -175,16 +176,32 @@ export function MangakaContractDetailPage({
         </div>
       </Panel>
 
-      <Panel title={t('contracts.detail.sections.actions')} className='order-4'>
-        {progress && (
-          <div className='mb-5 grid gap-3 rounded-lg border border-border p-4 text-sm sm:grid-cols-2'>
-            <Metric
-              label={t('contracts.detail.mangakaSignature')}
-              value={t(progress.mangaka.isSigned ? 'contracts.detail.signed' : 'contracts.detail.notSigned')}
-            />
+      <Panel title={t('contracts.detail.sections.signingProgress')}>
+        {displayFlow.showSigningStatus && (
+          <div className='mb-5 grid gap-3 rounded-lg border border-border p-4 text-sm sm:grid-cols-3'>
             <Metric
               label={t('contracts.detail.boardSignatureProgress')}
-              value={t(progress.representative.signed ? 'contracts.detail.signed' : 'contracts.detail.notSigned')}
+              value={
+                !progress
+                  ? t('contracts.notAvailable')
+                  : !progress.representative.claimed
+                    ? t('contracts.detail.representativeUnclaimed')
+                    : progress.representative.signed
+                      ? t('contracts.detail.signed')
+                      : t('contracts.detail.representativePending')
+              }
+            />
+            <Metric
+              label={t('contracts.detail.mangakaSignature')}
+              value={
+                !progress
+                  ? t('contracts.notAvailable')
+                  : t(progress.mangaka.isSigned ? 'contracts.detail.signed' : 'contracts.detail.notSigned')
+              }
+            />
+            <Metric
+              label={t('contracts.detail.currentStep')}
+              value={t(`contracts.detail.phases.${displayFlow.phase}`)}
             />
           </div>
         )}
@@ -205,60 +222,47 @@ export function MangakaContractDetailPage({
             </button>
           </div>
         )}
-        <div className={canRespond ? 'mt-5 border-t border-border pt-5' : ''}>
-          <h3 className='text-sm font-bold text-foreground'>{t('contracts.detail.mangakaSignature')}</h3>
-          <p className='mt-1 text-xs text-muted-foreground'>
-            {canRespond
-              ? t('contracts.detail.signatureReady')
-              : contract.mangakaSignedAt
-                ? t('contracts.detail.signedAt', {
-                    date: new Date(contract.mangakaSignedAt).toLocaleString(i18n.language)
-                  })
-                : t('contracts.detail.signatureLocked')}
-          </p>
-          <fetcher.Form method='post' className='mt-3 flex flex-wrap items-center gap-3'>
-            <button
-              type='submit'
-              name='intent'
-              value='sendOtp'
-              disabled={isWorking || !canRespond}
-              formNoValidate
-              className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
-            >
-              <KeyRound className='size-4' /> {t('contracts.actions.sendOtp')}
-            </button>
-            <input
-              name='otpCode'
-              inputMode='numeric'
-              pattern='[0-9]{6}'
-              minLength={6}
-              maxLength={6}
-              placeholder={t('contracts.fields.otpPlaceholder')}
-              required
-              disabled={!canRespond}
-              className={`${inputClass} w-40`}
-            />
-            <button
-              name='intent'
-              value='signContract'
-              disabled={isWorking || !canRespond}
-              className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
-            >
-              {t('contracts.actions.signContract')}
-            </button>
-          </fetcher.Form>
-        </div>
-        {!canRespond && !contract.mangakaSignedAt && (
-          <p className='text-sm text-muted-foreground'>
-            {t(`contracts.detail.statusHints.${contract.status}`, {
-              defaultValue: t('contracts.detail.statusHints.default')
-            })}
-          </p>
+        {canRespond && (
+          <div className='rounded-lg bg-secondary p-4'>
+            <h3 className='text-sm font-bold text-foreground'>{t('contracts.detail.mangakaSignature')}</h3>
+            <p className='mt-1 text-xs text-muted-foreground'>{t('contracts.detail.signatureReady')}</p>
+            <fetcher.Form method='post' className='mt-3 flex flex-wrap items-center gap-3'>
+              <button
+                type='submit'
+                name='intent'
+                value='sendOtp'
+                disabled={isWorking}
+                formNoValidate
+                className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
+              >
+                <KeyRound className='size-4' /> {t('contracts.actions.sendOtp')}
+              </button>
+              <input
+                name='otpCode'
+                inputMode='numeric'
+                pattern='[0-9]{6}'
+                minLength={6}
+                maxLength={6}
+                placeholder={t('contracts.fields.otpPlaceholder')}
+                required
+                disabled={isWorking}
+                className={`${inputClass} w-40`}
+              />
+              <button
+                name='intent'
+                value='signContract'
+                disabled={isWorking}
+                className='h-10 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50'
+              >
+                {t('contracts.actions.signContract')}
+              </button>
+            </fetcher.Form>
+          </div>
         )}
         <ActionFeedback fetcher={fetcher} />
       </Panel>
 
-      <Panel title={t('contracts.detail.sections.paymentConditions')} className='order-3'>
+      <Panel title={t('contracts.detail.sections.paymentConditions')}>
         <PaymentConditionsSummary conditions={conditions} loadFailed={conditionsLoadFailed} />
       </Panel>
 
@@ -269,16 +273,23 @@ export function MangakaContractDetailPage({
         className='order-5'
       />
 
-      <Panel title={t('contracts.detail.sections.amendments')} className='order-6'>
-        <div className='space-y-3'>
-          {amendments.map((amendment) => (
-            <MangakaAmendmentRow key={amendment.id} contract={contract} amendment={amendment} />
-          ))}
-          {!amendments.length && (
-            <p className='text-sm text-muted-foreground'>{t('contracts.detail.amendmentsEmpty')}</p>
-          )}
-        </div>
-      </Panel>
+      {hasAmendmentHistory && (
+        <Panel title={t('contracts.detail.sections.amendments')}>
+          <div className='space-y-3'>
+            {amendmentsLoadFailed && (
+              <p role='status' className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning'>
+                {t('contracts.detail.amendmentsLoadFailed')}
+              </p>
+            )}
+            {amendments.map((amendment) => (
+              <MangakaAmendmentRow key={amendment.id} contract={contract} amendment={amendment} />
+            ))}
+            {!amendments.length && (
+              <p className='text-sm text-muted-foreground'>{t('contracts.detail.amendmentsEmpty')}</p>
+            )}
+          </div>
+        </Panel>
+      )}
 
       <Dialog
         open={rejectOpen && canRespond}
@@ -345,18 +356,34 @@ function MangakaAmendmentRow({
   contract: ContractResDtoOutput
   amendment: AmendmentResDtoOutput
 }) {
-  const { t } = useTranslation('mangaka')
+  const { t, i18n } = useTranslation('mangaka')
   const fetcher = useFetcher<MangakaContractActionResult>()
   const canRespond = canRespondToAmendment({ contractType: contract.contractType, amendmentStatus: amendment.status })
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <strong className='text-sm'>{amendment.reason || t('contracts.detail.amendmentFallback')}</strong>
+          <strong className='text-sm'>{getAmendmentReason(amendment.triggerSource, amendment.reason, t)}</strong>
           <p className='mt-1 text-xs text-muted-foreground'>{amendment.changedClauses.join(', ')}</p>
         </div>
         <StatusBadge value={amendment.status} />
       </div>
+      <div className='mt-4 grid gap-3 rounded-lg bg-muted/50 p-3 text-sm sm:grid-cols-2'>
+        <Metric label={t('contracts.fields.value')} value={formatMoney(amendment.valuationAmount, i18n.language)} />
+        <Metric
+          label={t('contracts.fields.publisherOwnership')}
+          value={formatPercent(amendment.publisherOwnershipPct, i18n.language)}
+        />
+        <Metric
+          label={t('contracts.fields.mangakaOwnership')}
+          value={formatPercent(amendment.mangakaOwnershipPct, i18n.language)}
+        />
+        <Metric label={t('contracts.fields.start')} value={formatDate(amendment.contractStart, i18n.language)} />
+        <Metric label={t('contracts.fields.end')} value={formatDate(amendment.contractEnd, i18n.language)} />
+      </div>
+      {amendment.terminationClause && (
+        <p className='mt-3 whitespace-pre-wrap text-sm text-muted-foreground'>{amendment.terminationClause}</p>
+      )}
       {canRespond && (
         <div className='mt-4 grid gap-3 lg:grid-cols-2'>
           <fetcher.Form method='post' className='flex flex-wrap items-center gap-2'>
@@ -467,4 +494,8 @@ function formatDate(value: string | null, locale: string) {
   if (!value) return '—'
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(locale)
+}
+
+function formatPercent(value: number | null, locale: string) {
+  return value == null ? '—' : `${new Intl.NumberFormat(locale).format(value)}%`
 }

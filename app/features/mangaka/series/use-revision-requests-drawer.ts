@@ -22,7 +22,7 @@ type UseRevisionRequestsDrawerResult = {
   setPage: (n: number) => void
   paginatedItems: RevisionRequestListResDtoOutputItemsItem[]
   resolvingId: string | null
-  resolve: (item: RevisionRequestListResDtoOutputItemsItem) => Promise<void>
+  resolve: (item: RevisionRequestListResDtoOutputItemsItem) => Promise<boolean>
   refresh: () => void
 }
 
@@ -99,8 +99,10 @@ export function useRevisionRequestsDrawer(open: boolean, seriesId: string): UseR
         setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, isResolved: true } : it)))
         toast.success(t('seriesDetail.revisions.resolveSuccess'))
         setTimeout(() => setReloadToken((v) => v + 1), 50)
+        return true
       } catch (err) {
         toast.error(extractApiErrorMessage(err, t('seriesDetail.revisions.resolveError')))
+        return false
       } finally {
         setResolvingId(null)
       }

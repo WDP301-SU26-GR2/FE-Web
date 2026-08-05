@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type {
-  BatchCreateTaskBodyDto,
   CreateTaskBodyDto,
   CreateTaskBodyDtoTaskType,
   CreateTaskGroupBodyDto
@@ -57,8 +56,6 @@ export interface AssignTaskFormState {
   deadline?: string
   priority?: number
   assetIds?: string[]
-  /** Create one atomic task per selected region through POST /tasks/batch. */
-  splitRegionsIntoTasks?: boolean
 }
 
 export interface UseAssignTaskFormOptions {
@@ -97,14 +94,14 @@ export interface UseAssignTaskFormResult {
     work: Partial<
       Pick<
         AssignTaskFormState,
-        'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds' | 'splitRegionsIntoTasks'
+        'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds'
       >
     >
   ) => void
   /** Submit the form. Returns `{success:true, data}` on success. */
   submit: () => Promise<{
     success: boolean
-    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto | BatchCreateTaskBodyDto
+    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto
     error?: string
   }>
   reset: () => void
@@ -125,7 +122,7 @@ const STEP_ORDER: ComposerStep[] = ['context', 'work', 'confirm']
  */
 export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAssignTaskFormResult {
   const { preset, assignments = [], stageTaskTypes, stages = [], requireStage = false } = options
-  const { assignTask, assignTaskGroup, assignTaskBatch, isSubmitting } = useAssignTask()
+  const { assignTask, assignTaskGroup, isSubmitting } = useAssignTask()
   const { t } = useTranslation('mangaka')
 
   const initial: AssignTaskFormState = useMemo(
@@ -218,7 +215,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
       work: Partial<
         Pick<
           AssignTaskFormState,
-          'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds' | 'splitRegionsIntoTasks'
+          'taskType' | 'description' | 'groupTitle' | 'deadline' | 'priority' | 'assetIds'
         >
       >
     ) => {
@@ -240,7 +237,7 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
 
   const submit = useCallback(async (): Promise<{
     success: boolean
-    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto | BatchCreateTaskBodyDto
+    data?: CreateTaskBodyDto | CreateTaskGroupBodyDto
     error?: string
   }> => {
     if (!resolvedAssistantId || state.pageIds.length === 0 || !state.taskType || (requiresStage && !state.stageId)) {
@@ -269,25 +266,6 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
         ? { success: true, data: payload }
         : { success: false, error: result.error ?? t('studio.tasks.composer.errors.assignGroupFailed') }
     }
-    if (state.splitRegionsIntoTasks && state.regionIds.length > 1) {
-      const shared = {
-        pageId: state.pageIds[0],
-        assistantId: resolvedAssistantId,
-        taskType: state.taskType,
-        ...(state.stageId ? { stageId: state.stageId } : {}),
-        ...(state.description?.trim() ? { description: state.description.trim() } : {}),
-        ...(state.deadline ? { deadline: new Date(state.deadline).toISOString() } : {}),
-        ...(state.priority !== undefined ? { priority: state.priority } : {}),
-        ...(state.assetIds && state.assetIds.length > 0 ? { assetIds: state.assetIds } : {})
-      }
-      const payload: BatchCreateTaskBodyDto = {
-        items: state.regionIds.map((regionId) => ({ ...shared, regionId }))
-      }
-      const result = await assignTaskBatch(payload)
-      return result.success
-        ? { success: true, data: payload }
-        : { success: false, error: result.error ?? t('studio.tasks.composer.errors.assignBatchFailed') }
-    }
     const payload: CreateTaskBodyDto = {
       assistantId: resolvedAssistantId,
       pageId: state.pageIds[0],
@@ -312,7 +290,6 @@ export function useAssignTaskForm(options: UseAssignTaskFormOptions = {}): UseAs
     effectiveStageTaskTypes,
     assignTask,
     assignTaskGroup,
-    assignTaskBatch,
     t
   ])
 

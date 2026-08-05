@@ -62,11 +62,7 @@ export function BoardContractDetailPage({
         backHref='/dashboard/board/contracts'
       />
       <div className='flex justify-end'>
-        <ContractPdfButton
-          contract={contract}
-          conditionsCount={validConditionCount}
-          conditionsLoadFailed={conditionsLoadFailed}
-        />
+        <ContractPdfButton contract={contract} />
       </div>
       <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
       {hasSupplementaryDataError && (

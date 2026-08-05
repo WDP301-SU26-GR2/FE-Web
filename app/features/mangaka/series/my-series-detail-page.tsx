@@ -185,16 +185,17 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   // Submit is only available to the series owner while it is still DRAFT.
   // BE also enforces both rules (403 / 409), this is just a UI gate so we
   // don't render a misleading button.
+  const { revisions, isLoadingRevisions, refreshRevisions } = useProposalRevisions(seriesId)
   const proposalActions = getProposalActionEligibility({
     isOwner: !!session?.user?.id && session.user.id === series?.mangakaId,
     seriesStatus,
-    proposalStatus: proposal?.status
+    proposalStatus: proposal?.status,
+    hasOpenRevisions: revisions.length > 0
   })
   const canPrepareSubmit = proposalActions.canSubmit
 
   // Edit is available to the owner while the proposal is editable per §6.1:
   // series DRAFT, OR proposal PROPOSAL_REVISION. BE also enforces (409).
-  const { revisions, refreshRevisions } = useProposalRevisions(seriesId)
   const canEdit = proposalActions.canEdit
 
   const isOwner = !!session?.user?.id && session.user.id === series?.mangakaId
@@ -223,7 +224,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const canWithdraw = proposalActions.canWithdraw
   // Per Spec 22: at ABANDONED/WITHDRAWN Mangaka can "Nộp lại" (reopen → DRAFT, back to queue).
   const canReopen = proposalActions.canReopen
-  const canResubmitProposal = proposalActions.canResubmit
+  const canResubmitProposal = proposalActions.canResubmit && !isLoadingRevisions
   const isPublicationPhase = !!seriesStatus && PUBLICATION_PHASE_STATUSES.includes(seriesStatus)
   const nextChapterNumber = useMemo(() => {
     if (chapters.length === 0) return 1
@@ -366,7 +367,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     <span>{t('seriesDetail.lifecycle.completion.button')}</span>
                   </button>
                 )}
-                {canResubmitProposal && (
+                {canResubmitProposal && revisions.length === 0 && (
                   <button
                     type='button'
                     disabled={activeAction !== null}
@@ -754,6 +755,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         open={revisionDrawerOpen}
         onClose={() => setRevisionDrawerOpen(false)}
         seriesId={series.id}
+        onRevisionResolved={refreshRevisions}
       />
     </div>
   )
@@ -1001,7 +1003,6 @@ function SampleNameRow({
 
       {/* Horizontal strip — single row, "+N" chip on overflow */}
       {stripItems.length > 0 && <ImageOverflowStrip items={stripItems} onOpen={(idx) => onOpen(carouselItems, idx)} />}
-
     </div>
   )
 }

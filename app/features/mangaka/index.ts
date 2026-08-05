@@ -50,7 +50,7 @@ export { MangakaRankingsPage, useMangakaRankings, PUBLICATION_TYPE_OPTIONS } fro
 export type { RankingPublicationType } from './rankings'
 
 // Finance (read-only earnings and payment records)
-export { MangakaFinancePage, MangakaPaymentDetailPage } from './finance'
+export { MangakaFinancePage, MangakaPaymentDetailPage, resolveSelectedPaymentSeriesId } from './finance'
 
 // Transfers
 export { loadPublicSeriesCatalog } from './transfers/load-public-series-catalog'

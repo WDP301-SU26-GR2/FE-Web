@@ -54,7 +54,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
       </Link>
       <ContractHeader contract={data.contract} progress={data.progress} />
       <div className='flex justify-end'>
-        <ContractPdfButton contract={data.contract} conditionsCount={validConditionCount} />
+        <ContractPdfButton contract={data.contract} />
       </div>
       <ContractDecisionBasis contract={data.contract} decisionPath='/dashboard/editor/board/decisions' />
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>

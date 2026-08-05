@@ -40,7 +40,7 @@
     },
     "payments": {
       "title": "Finance",
-      "description": "Track earnings and payments by user, series, or contract."
+      "description": "Track earnings and payment records for your series."
     },
     "proposeSeries": {
       "title": "Propose a new series",
@@ -128,6 +128,8 @@
       "invite": "Invite to collaborate",
       "inviteAriaLabel": "Invite {{name}} to collaborate",
       "portfolioCount": "{{count}} portfolio",
+      "email": "Email",
+      "phoneNumber": "Phone",
       "availableWindow": "Available {{from}} – {{to}}",
       "availability": {
         "AVAILABLE": "Available",
@@ -242,6 +244,8 @@
       "rating": "{{average}} · {{count}} reviews",
       "reputation": "{{score}} reputation",
       "bioEmpty": "No biography has been published.",
+      "email": "Email",
+      "phoneNumber": "Phone",
       "portfolioCount_one": "{{count}} portfolio item",
       "portfolioCount_other": "{{count}} portfolio items"
     },
@@ -935,6 +939,12 @@
       "stageNumber": "Stage {{n}}",
       "taskCount": "{{approved}} approved · {{open}} open",
       "finalCheck": "Final check is active. When every production stage is complete, submit the manuscript.",
+      "productionStage": {
+        "INKING": "Inking",
+        "DETAILING": "Detailing",
+        "LETTERING": "Lettering",
+        "FINAL_CHECK": "Final check"
+      },
       "confirmOutputs": "Confirm outputs",
       "complete": "Complete stage",
       "completeSuccess": "Production stage completed.",
@@ -1066,7 +1076,7 @@
         "success": "Page status updated."
       }
     },
-    "nameStatus": {
+    "storyboardStatus": {
       "DRAFT": "Draft",
       "SUBMITTED": "Submitted",
       "IN_REVIEW": "Under review",
@@ -1656,10 +1666,6 @@
         "priorityInvalid": "Priority must be a non-negative integer.",
         "description": "Work description (optional)",
         "groupTitle": "Task group title (optional)",
-        "batch": {
-          "title": "Split into {{count}} independent tasks",
-          "description": "Each region becomes its own task in one atomic request. If any item is invalid, the entire batch is rejected."
-        },
         "attachments": {
           "label": "Reference Files (optional)",
           "dropzoneLabel": "Drag and drop or click to select files",
@@ -1682,7 +1688,6 @@
           "assignFailed": "Could not assign task. Please try again.",
           "stageSnapshotError": "Could not load the immutable input snapshot for this production stage.",
           "assignGroupFailed": "Could not assign the task group. Please try again.",
-          "assignBatchFailed": "Could not assign the region task batch. Check the details and try again.",
           "incomplete": "Complete the required task information.",
           "taskTypeNotAllowed": "This task type is not allowed in the active production stage.",
           "loadAssignments": "Could not load active assistant assignments.",
@@ -1707,8 +1712,6 @@
           "page": "Page",
           "pages": "Pages",
           "region": "Region",
-          "creationMode": "Creation mode",
-          "batchMode": "{{count}} independent region tasks",
           "deadline": "Deadline",
           "priority": "Priority",
           "attachments": "Reference files",
@@ -2151,8 +2154,12 @@
       "missed": "Missed"
     },
     "breakdown": {
-      "byStatus": "Breakdown by status",
-      "byType": "Breakdown by type",
+      "statusTitle": "Money by processing stage",
+      "statusDescription": "Shows where each payment is in the approval and settlement process.",
+      "typeTitle": "Money by reason",
+      "typeDescription": "Shows which series activity or contract condition created each payment.",
+      "recordCount_one": "{{count}} record",
+      "recordCount_other": "{{count}} records",
       "empty": "There are no amounts to show yet."
     },
     "records": {
@@ -2162,15 +2169,11 @@
       "empty": "No payment records are available yet."
     },
     "filters": {
-      "label": "Payment view",
-      "all": "All payments to me",
-      "byContract": "By contract",
-      "bySeries": "By series",
-      "unknownContract": "Untitled contract",
-      "apply": "Apply view",
+      "label": "Filter by series",
+      "all": "All series",
+      "apply": "Filter",
       "loading": "Loading…",
-      "allDescription": "Showing the full payment ledger payable to your account.",
-      "contractDescription": "Showing payments within the selected contract.",
+      "allDescription": "Showing every payment payable to your account.",
       "seriesDescription": "Showing payments across contracts for the selected series."
     },
     "actions": {
@@ -2202,7 +2205,7 @@
       "earnings": "We could not load your earnings summary. Please try again later.",
       "records": "We could not load your payment records. Please try again later.",
       "detail": "We could not load this payment record. It may no longer be available to your account.",
-      "filters": "We could not load your contracts and series. The all-payments view remains available."
+      "filters": "We could not load your series list. The all-payments view remains available."
     },
     "status": {
       "TRIGGERED": "Triggered",
@@ -2212,6 +2215,15 @@
       "MISSED": "Missed",
       "FAILED": "Failed",
       "CANCELLED": "Cancelled"
+    },
+    "statusDescription": {
+      "TRIGGERED": "The payout condition was met and is awaiting approval and settlement.",
+      "PENDING": "Awaiting processing.",
+      "APPROVED": "Approved by the Board and awaiting payment.",
+      "PAID": "The money has been paid.",
+      "MISSED": "The payout condition was not met.",
+      "FAILED": "Payment was not completed successfully.",
+      "CANCELLED": "The payment was cancelled."
     },
     "type": {
       "CONDITION_PAYOUT": "Condition payout",
@@ -2223,6 +2235,17 @@
       "TIME_BOUND": "Time-bound payment",
       "TRANSFER": "Transfer"
     },
+    "typeDescription": {
+      "CONDITION_PAYOUT": "A payment created when a contract condition is met.",
+      "REVENUE_SHARE": "Revenue shared under the contract.",
+      "COMPENSATION": "Compensation for a terminated series or contract.",
+      "CHAPTER_MILESTONE": "A payment when the series reaches a contracted chapter milestone.",
+      "RECURRING_CHAPTER": "A recurring payment based on a chapter cycle.",
+      "RANKING_MILESTONE": "A payment when the series reaches a ranking milestone.",
+      "TIME_BOUND": "A payment tied to an agreed time milestone.",
+      "TRANSFER": "A payment related to a series transfer."
+    },
+    "explanationUnavailable": "No explanation is available for this payment.",
     "source": {
       "CONTRACT": "Contract",
       "REPRINT": "Reprint",
@@ -2510,6 +2533,7 @@
       "sections": {
         "terms": "Contract terms",
         "actions": "Mangaka actions",
+        "signingProgress": "Contract signing progress",
         "paymentConditions": "Payment conditions",
         "amendments": "Contract amendments"
       },
@@ -2517,18 +2541,39 @@
       "signed": "Signed",
       "notSigned": "Not signed",
       "boardSignatureProgress": "Board representative signature",
+      "representativeUnclaimed": "Waiting for the Board to appoint a representative",
+      "representativePending": "The Board representative is reviewing the contract",
+      "currentStep": "Current step",
+      "phases": {
+        "DRAFT": "The Editor is drafting the terms",
+        "BOARD_REVIEW": "The Board is reviewing the contract",
+        "MANGAKA_REVIEW": "You need to review and respond to the contract",
+        "PENDING_ACTIVATION": "Waiting for the replacement contract to be activated",
+        "COMPLETE": "The contract signing flow is complete"
+      },
       "progressLoadFailed": "We could not load the latest signature progress. Reload the page before continuing if you need to verify signatures.",
       "signatureReady": "The Board representative has signed. Request an OTP, then accept and sign the contract.",
       "signedAt": "Signed at {{date}}.",
       "signatureLocked": "Signing becomes available after the Board representative signs the contract.",
       "amendmentsEmpty": "No amendments are available.",
+      "amendmentsLoadFailed": "Some amendments could not be fully loaded. Reload the page to view the latest details.",
       "amendmentFallback": "Contract amendment",
+      "amendmentReasons": {
+        "COMPLETION": "Early completion — review contract terms",
+        "FORMAT_CHANGE": "Format change — review contract terms"
+      },
       "statusHints": {
         "DRAFT": "The Editor is preparing the contract terms.",
         "BOARD_REVIEW": "The Board is reviewing the contract and selecting a representative.",
         "AWAITING_MANGAKA": "The contract is waiting for your acceptance or rejection.",
         "REJECTED_BY_MANGAKA": "You rejected this contract. The Editor may prepare a new draft.",
         "FULLY_EXECUTED": "The contract has all required signatures and is now effective.",
+        "ACTIVATION_PENDING": "The replacement contract has all signatures and is waiting for the transfer to activate it.",
+        "FULFILLED": "The contract has fulfilled all obligations.",
+        "TERMINATED": "The contract has been terminated.",
+        "TERMINATED_BY_BREACH": "The contract was terminated for breach.",
+        "EXPIRED": "The contract has expired.",
+        "VOIDED": "The contract has been voided.",
         "default": "This contract currently requires no action from you."
       }
     },

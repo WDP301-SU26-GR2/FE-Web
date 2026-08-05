@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Star, Sparkles, CheckCircle2, Eye, UserPlus } from 'lucide-react'
+import { Star, Sparkles, CheckCircle2, Eye, Mail, Phone, UserPlus } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { SignedImage } from '~/shared/components/signed-image'
@@ -165,6 +165,25 @@ export function AssistantCard({ assistant, hasActiveAssignment, onInvite, onView
           </span>
         </div>
       )}
+
+      <div className='space-y-1.5 rounded-lg bg-muted/40 px-3 py-2 text-xs'>
+        <a
+          href={`mailto:${assistant.email}`}
+          className='flex min-w-0 items-center gap-2 text-muted-foreground hover:text-primary'
+        >
+          <Mail className='h-3.5 w-3.5 shrink-0' aria-hidden='true' />
+          <span className='shrink-0 font-medium'>{t('assistantDirectory.card.email')}:</span>
+          <span className='truncate'>{assistant.email}</span>
+        </a>
+        <a
+          href={`tel:${assistant.phoneNumber}`}
+          className='flex min-w-0 items-center gap-2 text-muted-foreground hover:text-primary'
+        >
+          <Phone className='h-3.5 w-3.5 shrink-0' aria-hidden='true' />
+          <span className='shrink-0 font-medium'>{t('assistantDirectory.card.phoneNumber')}:</span>
+          <span className='truncate'>{assistant.phoneNumber}</span>
+        </a>
+      </div>
 
       <footer className='mt-auto space-y-3 border-t border-border pt-3'>
         <div className='flex items-center justify-between gap-2'>

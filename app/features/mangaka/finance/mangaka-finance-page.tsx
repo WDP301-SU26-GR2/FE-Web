@@ -4,17 +4,18 @@ import { useTranslation } from 'react-i18next'
 
 import type { MangakaEarningsResDtoOutput } from '~/api/model/dashboard'
 import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
-import type { ContractListItemDtoOutput } from '~/api/model/contracts'
-import { paymentStatusClass } from './payment-status'
+import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { formatPaymentAmount, formatPaymentDate } from './payment-formatters'
+import { getPaymentExplanationKey } from './payment-explanation'
+import { paymentStatusClass } from './payment-status'
 
 interface MangakaFinancePageProps {
   earnings: MangakaEarningsResDtoOutput | null
   payments: PaymentRecordListResDtoOutputDataItem[]
   earningsLoadFailed: boolean
   paymentsLoadFailed: boolean
-  contracts: ContractListItemDtoOutput[]
-  selectedView: string
+  series: SeriesListResDtoOutputItemsItem[]
+  selectedSeriesId?: string
   filtersLoadFailed: boolean
 }
 
@@ -23,15 +24,14 @@ export function MangakaFinancePage({
   payments,
   earningsLoadFailed,
   paymentsLoadFailed,
-  contracts,
-  selectedView,
+  series,
+  selectedSeriesId,
   filtersLoadFailed
 }: MangakaFinancePageProps) {
   const { t, i18n } = useTranslation('mangaka')
   const language = i18n.resolvedLanguage ?? i18n.language
   const navigation = useNavigation()
   const isFiltering = navigation.state !== 'idle'
-  const seriesOptions = uniqueSeries(contracts)
 
   return (
     <div className='mx-auto max-w-6xl space-y-6 pb-12'>
@@ -62,17 +62,23 @@ export function MangakaFinancePage({
 
           <section className='grid gap-6 lg:grid-cols-2'>
             <Breakdown
-              title={t('finance.breakdown.byStatus')}
+              title={t('finance.breakdown.statusTitle')}
+              description={t('finance.breakdown.statusDescription')}
               entries={earnings.byStatus}
               empty={t('finance.breakdown.empty')}
               label={(key) => paymentStatusLabel(t, key)}
+              explanation={(key) => t(getPaymentExplanationKey('status', key))}
+              countLabel={(count) => t('finance.breakdown.recordCount', { count })}
               language={language}
             />
             <Breakdown
-              title={t('finance.breakdown.byType')}
+              title={t('finance.breakdown.typeTitle')}
+              description={t('finance.breakdown.typeDescription')}
               entries={earnings.byType}
               empty={t('finance.breakdown.empty')}
               label={(key) => paymentTypeLabel(t, key)}
+              explanation={(key) => t(getPaymentExplanationKey('type', key))}
+              countLabel={(count) => t('finance.breakdown.recordCount', { count })}
               language={language}
             />
           </section>
@@ -89,35 +95,26 @@ export function MangakaFinancePage({
             {t('finance.records.count', { count: payments.length })}
           </span>
         </div>
-        <Form method='get' className='grid gap-3 border-b border-border bg-muted/40 px-5 py-4 sm:grid-cols-[1fr_auto]'>
+
+        <Form
+          method='get'
+          className='grid gap-3 border-b border-border bg-muted/40 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto]'
+        >
           <label className='grid gap-1.5 text-sm font-semibold text-foreground'>
             {t('finance.filters.label')}
             <select
-              key={selectedView}
-              name='view'
-              defaultValue={selectedView}
+              key={selectedSeriesId}
+              name='series'
+              defaultValue={selectedSeriesId ?? ''}
               disabled={filtersLoadFailed || isFiltering}
               className='h-10 rounded-md border border-input bg-background px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring'
             >
-              <option value='user'>{t('finance.filters.all')}</option>
-              {contracts.length ? (
-                <optgroup label={t('finance.filters.byContract')}>
-                  {contracts.map((contract) => (
-                    <option key={contract.id} value={`contract:${contract.id}`}>
-                      {contract.series?.title ?? t('finance.filters.unknownContract')} · {shortId(contract.id)}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
-              {seriesOptions.length ? (
-                <optgroup label={t('finance.filters.bySeries')}>
-                  {seriesOptions.map((series) => (
-                    <option key={series.id} value={`series:${series.id}`}>
-                      {series.title}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
+              <option value=''>{t('finance.filters.all')}</option>
+              {series.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
             </select>
           </label>
           <button
@@ -132,9 +129,12 @@ export function MangakaFinancePage({
               {t('finance.errors.filters')}
             </p>
           ) : (
-            <p className='text-xs text-muted-foreground sm:col-span-2'>{filterDescription(t, selectedView)}</p>
+            <p className='text-xs text-muted-foreground sm:col-span-2'>
+              {selectedSeriesId ? t('finance.filters.seriesDescription') : t('finance.filters.allDescription')}
+            </p>
           )}
         </Form>
+
         {paymentsLoadFailed ? (
           <LoadError message={t('finance.errors.records')} />
         ) : payments.length ? (
@@ -178,29 +178,6 @@ export function MangakaFinancePage({
   )
 }
 
-function uniqueSeries(contracts: ContractListItemDtoOutput[]) {
-  const series = new Map<string, { id: string; title: string }>()
-  for (const contract of contracts) {
-    if (!series.has(contract.seriesId)) {
-      series.set(contract.seriesId, {
-        id: contract.seriesId,
-        title: contract.series?.title ?? contract.seriesId
-      })
-    }
-  }
-  return [...series.values()]
-}
-
-function shortId(value: string): string {
-  return value.length > 8 ? value.slice(-8) : value
-}
-
-function filterDescription(t: (key: string) => string, selectedView: string): string {
-  if (selectedView.startsWith('contract:')) return t('finance.filters.contractDescription')
-  if (selectedView.startsWith('series:')) return t('finance.filters.seriesDescription')
-  return t('finance.filters.allDescription')
-}
-
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <article className='rounded-xl border border-border bg-card p-5 shadow-sm'>
@@ -212,29 +189,39 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
 
 function Breakdown({
   title,
+  description,
   entries,
   empty,
   label,
+  explanation,
+  countLabel,
   language
 }: {
   title: string
+  description: string
   entries: Record<string, { count: number; amount: number }>
   empty: string
   label: (key: string) => string
+  explanation: (key: string) => string
+  countLabel: (count: number) => string
   language: string
 }) {
   const values = Object.entries(entries).filter(([, value]) => value.count > 0 || value.amount > 0)
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <h2 className='font-semibold text-foreground'>{title}</h2>
+      <p className='mt-1 text-sm text-muted-foreground'>{description}</p>
       {values.length ? (
         <dl className='mt-4 divide-y divide-border'>
           {values.map(([key, value]) => (
             <div key={key} className='flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0'>
-              <dt className='text-sm text-muted-foreground'>{label(key)}</dt>
+              <dt className='min-w-0'>
+                <p className='text-sm font-semibold text-foreground'>{label(key)}</p>
+                <p className='mt-1 text-xs text-muted-foreground'>{explanation(key)}</p>
+              </dt>
               <dd className='text-right text-sm font-semibold text-foreground'>
                 <span className='block'>{formatPaymentAmount(value.amount, language)}</span>
-                <span className='text-xs font-normal text-muted-foreground'>{value.count}</span>
+                <span className='text-xs font-normal text-muted-foreground'>{countLabel(value.count)}</span>
               </dd>
             </div>
           ))}

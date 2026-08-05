@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
 import type { ContractVersionResDtoOutput } from '~/api/model/contracts'
+import { getContractVersionDisplay } from './lib/contract-version-display'
 
 interface MangakaContractVersionDetailPageProps {
   contractId: string
@@ -18,6 +19,7 @@ export function MangakaContractVersionDetailPage({
   const { t, i18n } = useTranslation('mangaka')
   const language = i18n.resolvedLanguage ?? i18n.language
   const backToHistory = `/dashboard/mangaka/contracts/${contractId}`
+  const display = version ? getContractVersionDisplay(version) : null
 
   if (loadFailed || !version) {
     return (
@@ -42,17 +44,17 @@ export function MangakaContractVersionDetailPage({
           {t('contracts.versionDetail.eyebrow')}
         </p>
         <h1 className='mt-2 text-2xl font-bold tracking-tight text-foreground'>
-          {t('contracts.versions.version', { number: version.versionNumber })}
+          {t('contracts.versions.version', { number: display?.versionNumber })}
         </h1>
         <p className='mt-1 text-sm text-muted-foreground'>
-          {t('contracts.versionDetail.createdAtValue', { date: formatDateTime(version.createdAt, language) })}
+          {t('contracts.versionDetail.createdAtValue', { date: formatDateTime(display?.createdAt ?? '', language) })}
         </p>
       </header>
 
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <h2 className='font-semibold text-foreground'>{t('contracts.versionDetail.terms')}</h2>
         <dl className='mt-4 grid gap-4 sm:grid-cols-2'>
-          <Fact label={t('contracts.versionDetail.versionNumber')} value={String(version.versionNumber)} />
+          <Fact label={t('contracts.versionDetail.versionNumber')} value={String(display?.versionNumber)} />
           <Fact
             label={t('contracts.versionDetail.valuationAmount')}
             value={formatMoney(version.valuationAmount, language)}
@@ -67,16 +69,6 @@ export function MangakaContractVersionDetailPage({
           />
           <Fact label={t('contracts.versionDetail.terminationClause')} value={version.terminationClause} fullWidth />
           <Fact label={t('contracts.versionDetail.note')} value={version.note} fullWidth />
-        </dl>
-      </section>
-
-      <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <h2 className='font-semibold text-foreground'>{t('contracts.versionDetail.audit')}</h2>
-        <dl className='mt-4 grid gap-4 sm:grid-cols-2'>
-          <Fact label={t('contracts.versionDetail.versionId')} value={version.id} />
-          <Fact label={t('contracts.versionDetail.contractId')} value={version.contractId} />
-          <Fact label={t('contracts.versionDetail.editedById')} value={version.editedById} />
-          <Fact label={t('contracts.versionDetail.createdAt')} value={formatDateTime(version.createdAt, language)} />
         </dl>
       </section>
     </div>

@@ -330,7 +330,7 @@
       "missingConditions": "A complete PDF cannot be created until a valid payment condition is available."
     },
     "paymentConditions": {
-      "loadFailed": "Payment conditions could not be loaded. Approval and signing actions are locked for safety.",
+      "loadFailed": "Payment conditions could not be loaded. Reload the page to view the latest payout information.",
       "empty": "This contract has no payment conditions.",
       "invalidPayout": "This condition does not have a valid payout value.",
       "types": {

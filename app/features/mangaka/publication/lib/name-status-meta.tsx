@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '~/shared/lib/cn'
+import { useTranslation } from 'react-i18next'
+
+import { translatePageStatus, translateStoryboardStatus } from './translate-publication-status'
 
 export type NameStatusKey = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'REVISION' | 'APPROVED'
 
@@ -8,7 +11,7 @@ export type PageStatusKey = 'DRAFT' | 'COMPLETED' | 'REVISING'
 
 type StatusMeta = {
   className: string
-  /** i18n key under `publication.nameStatus.<key>`. */
+  /** i18n key under `publication.storyboardStatus.<key>`. */
   i18nKey: string
 }
 
@@ -66,7 +69,6 @@ const PAGE_STATUS_META: Record<PageStatusKey, StatusMeta> = {
  */
 export function NameStatusBadge({ status, className }: { status: string; className?: string }) {
   const { t } = useTranslation('mangaka')
-  const isKnownStatus = status in NAME_STATUS_META
   const meta = (NAME_STATUS_META as Record<string, StatusMeta>)[status] ?? NAME_STATUS_META.DRAFT
   return (
     <span
@@ -76,7 +78,7 @@ export function NameStatusBadge({ status, className }: { status: string; classNa
         className
       )}
     >
-      {isKnownStatus ? t(`publication.nameStatus.${meta.i18nKey}`) : t('state.unknown')}
+      {translateStoryboardStatus(status, t)}
     </span>
   )
 }
@@ -88,7 +90,6 @@ export function nameStatusClassName(status: string): string {
 
 export function PageStatusBadge({ status, className }: { status: string; className?: string }) {
   const { t } = useTranslation('mangaka')
-  const isKnownStatus = status in PAGE_STATUS_META
   const meta = (PAGE_STATUS_META as Record<string, StatusMeta>)[status] ?? PAGE_STATUS_META.DRAFT
   return (
     <span
@@ -98,7 +99,7 @@ export function PageStatusBadge({ status, className }: { status: string; classNa
         className
       )}
     >
-      {isKnownStatus ? t(`publication.pageStatus.${meta.i18nKey}`) : t('state.unknown')}
+      {translatePageStatus(status, t)}
     </span>
   )
 }
