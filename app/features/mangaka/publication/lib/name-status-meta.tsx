@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next'
-
 import { cn } from '~/shared/lib/cn'
 import { useTranslation } from 'react-i18next'
 
