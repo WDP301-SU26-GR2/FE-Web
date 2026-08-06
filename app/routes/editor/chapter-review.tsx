@@ -33,6 +33,9 @@ import {
 
 import type { Route } from './+types/chapter-review'
 import { SITE } from '~/shared/config/site'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export function meta() {
   return [{ title: SITE.name }]
@@ -41,61 +44,57 @@ export function meta() {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   if (!params.seriesId || !params.chapterId) return { data: null, hasError: true }
   try {
-    const [
-      seriesResponse,
-      chapterResponse,
-      pagesResponse,
-      storyboardsResponse,
-      progressResponse,
-      contractsResponse
-    ] = await Promise.all([
-      seriesControllerGetSeries({ id: params.seriesId }),
-      chapterControllerGetOne({ id: params.chapterId }),
-      chapterControllerListPages({ id: params.chapterId }),
-      chapterStoryboardControllerList({ id: params.chapterId }),
-      chapterControllerProgress({ id: params.chapterId }).catch(() => null),
-      contractControllerGetContracts().catch(() => null)
-    ])
+    const [seriesResponse, chapterResponse, pagesResponse, storyboardsResponse, progressResponse, contractsResponse] =
+      await Promise.all([
+        seriesControllerGetSeries({ id: params.seriesId }),
+        chapterControllerGetOne({ id: params.chapterId }),
+        chapterControllerListPages({ id: params.chapterId }),
+        chapterStoryboardControllerList({ id: params.chapterId }),
+        chapterControllerProgress({ id: params.chapterId }).catch(() => null),
+        contractControllerGetContracts().catch(() => null)
+      ])
     if (seriesResponse.status !== 200 || chapterResponse.status !== 200 || pagesResponse.status !== 200) {
       return { data: null, hasError: true }
     }
     if (chapterResponse.data.seriesId !== params.seriesId) return { data: null, hasError: true }
-    const pages: SignedPage[] = await Promise.all(
-      pagesResponse.data.items
-        .sort((a, b) => a.pageNumber - b.pageNumber)
-        .map(async (page) => ({
-          id: page.id,
-          pageNumber: page.pageNumber,
-          status: page.status,
-          url: await signKey(page.compositeFile ?? page.originalFile)
-        }))
+    const pages: SignedPage[] = await mapWithConcurrency(
+      [...pagesResponse.data.items].sort((a, b) => a.pageNumber - b.pageNumber),
+      DETAIL_REQUEST_CONCURRENCY,
+      async (page) => ({
+        id: page.id,
+        pageNumber: page.pageNumber,
+        status: page.status,
+        url: await signKey(page.compositeFile ?? page.originalFile)
+      })
     )
     const storyboard = storyboardsResponse.status === 200 ? (storyboardsResponse.data.items[0] ?? null) : null
     const storyboardDetailResponse = storyboard
       ? await chapterStoryboardControllerGetOne({ id: params.chapterId, storyboardId: storyboard.id }).catch(() => null)
       : null
     const detailedStoryboard = storyboardDetailResponse?.status === 200 ? storyboardDetailResponse.data : storyboard
-    const storyboardPages = await Promise.all(
-      (detailedStoryboard?.pages ?? []).map(async (page) => ({
+    const storyboardPages = await mapWithConcurrency(
+      detailedStoryboard?.pages ?? [],
+      DETAIL_REQUEST_CONCURRENCY,
+      async (page) => ({
         pageNumber: page.pageNumber,
         url: await signKey(page.fileUrl)
-      }))
+      })
     )
     const stagesResponse = await productionStageControllerList({ id: params.chapterId }).catch(() => null)
     const stagePageResponses =
       stagesResponse?.status === 200
-        ? await Promise.all(
-            stagesResponse.data.stages.map((stage) =>
-              productionStageControllerListPages({ id: params.chapterId, stageId: stage.id }).catch(() => null)
-            )
+        ? await mapWithConcurrency(stagesResponse.data.stages, DETAIL_REQUEST_CONCURRENCY, (stage) =>
+            productionStageControllerListPages({ id: params.chapterId, stageId: stage.id }).catch(() => null)
           )
         : []
     const stagePages = stagePageResponses.flatMap((response) => (response?.status === 200 ? response.data.items : []))
-    const regionEntries = await Promise.all(
-      pagesResponse.data.items.map(async (page) => {
+    const regionEntries = await mapWithConcurrency(
+      pagesResponse.data.items,
+      DETAIL_REQUEST_CONCURRENCY,
+      async (page) => {
         const response = await taskControllerListRegions({ id: page.id }).catch(() => null)
         return [page.id, response?.status === 200 ? response.data.items : []] as const
-      })
+      }
     )
     const contractListItem =
       contractsResponse?.data.find(

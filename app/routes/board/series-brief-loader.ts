@@ -1,15 +1,16 @@
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
 import type { BoardMeetingSeriesBrief } from '~/features/board'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function createSeriesBrief(series: BoardMeetingSeriesBrief['series']): Promise<BoardMeetingSeriesBrief> {
   const [characterDesigns, proposalStoryboardPages] = await Promise.all([
-    Promise.all((series.proposal?.characterDesigns ?? []).map(signImage)).then(compact),
-    Promise.all(
-      (series.proposal?.storyboardPages ?? []).map(async (page) => {
-        const image = await signImage(page.fileUrl)
-        return image ? { ...image, pageNumber: page.pageNumber } : null
-      })
-    ).then(compact)
+    mapWithConcurrency(series.proposal?.characterDesigns ?? [], DETAIL_REQUEST_CONCURRENCY, signImage).then(compact),
+    mapWithConcurrency(series.proposal?.storyboardPages ?? [], DETAIL_REQUEST_CONCURRENCY, async (page) => {
+      const image = await signImage(page.fileUrl)
+      return image ? { ...image, pageNumber: page.pageNumber } : null
+    }).then(compact)
   ])
 
   return { series, characterDesigns, proposalStoryboardPages }

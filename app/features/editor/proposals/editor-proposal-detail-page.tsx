@@ -7,6 +7,7 @@ import { SeriesResDtoOutputProposalStatus, SeriesResDtoOutputStatus, type Series
 import type { EditorActionResult, EditorProposalDetailData } from '../types'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { ImagePreview } from '~/shared/components'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
 import { Dialog } from '~/shared/ui/dialog'
 import {
@@ -64,7 +65,16 @@ export function EditorProposalDetailPage({
         <div className='grid md:grid-cols-[220px_1fr]'>
           <div className='flex min-h-56 items-center justify-center bg-muted'>
             {data.coverUrl ? (
-              <img src={data.coverUrl} alt={series.title} className='h-full max-h-80 w-full object-cover' />
+              <ImagePreview
+                src={data.coverUrl}
+                alt={series.title}
+                title={series.title}
+                description={t(`filters.seriesStatuses.${series.status}`)}
+                openOriginalLabel={t('chapterReview.openOriginalImage')}
+                imageClassName='h-full max-h-80 w-full object-cover'
+                triggerClassName='h-full w-full'
+                loading='eager'
+              />
             ) : (
               <Image className='size-12 text-muted-foreground' />
             )}
@@ -135,11 +145,15 @@ export function EditorProposalDetailPage({
             <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
               {data.characterDesigns.map((design, index) =>
                 design.url ? (
-                  <img
+                  <ImagePreview
                     key={design.key}
                     src={design.url}
                     alt={t('proposalDetail.characterAlt', { number: index + 1 })}
-                    className='aspect-square rounded-lg border border-border object-cover'
+                    title={t('proposalDetail.characterAlt', { number: index + 1 })}
+                    description={t('proposalDetail.characterDesigns')}
+                    openOriginalLabel={t('chapterReview.openOriginalImage')}
+                    imageClassName='aspect-square w-full object-cover'
+                    triggerClassName='rounded-lg border border-border'
                   />
                 ) : null
               )}
@@ -157,10 +171,14 @@ export function EditorProposalDetailPage({
                 {data.storyboardPages.map((page) => (
                   <figure key={`${page.pageNumber}-${page.key}`}>
                     {page.url ? (
-                      <img
+                      <ImagePreview
                         src={page.url}
                         alt={t('proposalDetail.storyboardPageAlt', { number: page.pageNumber })}
-                        className='aspect-[3/4] w-full rounded-lg border border-border object-cover'
+                        title={t('proposalDetail.storyboardPage', { number: page.pageNumber })}
+                        description={t('proposalDetail.storyboardTitle')}
+                        openOriginalLabel={t('chapterReview.openOriginalImage')}
+                        imageClassName='aspect-[3/4] w-full object-cover'
+                        triggerClassName='w-full rounded-lg border border-border'
                       />
                     ) : (
                       <div className='grid aspect-[3/4] place-items-center rounded-lg border border-dashed border-border bg-muted p-3 text-center text-xs text-muted-foreground'>

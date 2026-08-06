@@ -7,7 +7,10 @@ import { chapterControllerListBySeries } from '~/api/operations/chapters/chapter
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { BoardDeadlinesPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import type { Route } from './+types/deadlines'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const searchParams = new URL(request.url).searchParams
@@ -25,17 +28,17 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       chapterId ? deadlineControllerList({ chapterId, status: 'BOARD_REVIEW' }) : null,
       chapterId ? deadlineControllerList({ chapterId, status: 'ESCALATED' }) : null
     ])
+    const deadlineItems = [
+      ...(review?.status === 200 ? review.data.items : []),
+      ...(escalated?.status === 200 ? escalated.data.items : [])
+    ]
+    const requests = await mapWithConcurrency(deadlineItems, DETAIL_REQUEST_CONCURRENCY, (item) =>
+      deadlineControllerGetOne({ id: item.id })
+        .then((detail) => detail.data)
+        .catch(() => null)
+    )
     return {
-      requests: await Promise.all(
-        [
-          ...(review?.status === 200 ? review.data.items : []),
-          ...(escalated?.status === 200 ? escalated.data.items : [])
-        ].map((item) =>
-          deadlineControllerGetOne({ id: item.id })
-            .then((detail) => detail.data)
-            .catch(() => null)
-        )
-      ).then((items) => items.filter((item) => item !== null)),
+      requests: requests.filter((item) => item !== null),
       series: seriesResponse.data.items,
       chapters: chaptersResponse?.status === 200 ? chaptersResponse.data.items : [],
       seriesId,

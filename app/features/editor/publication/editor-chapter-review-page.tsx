@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { EditorActionToast } from '../components/editor-action-toast'
 
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
+import { ImagePreview } from '~/shared/components'
 import { ratioToPercent } from '~/shared/lib/progress'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
@@ -41,12 +42,22 @@ export function EditorChapterReviewPage({
   const [activeSection, setActiveSection] = useState<'manuscript' | 'storyboard' | 'production'>('manuscript')
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const revalidateWhenIdle = () => {
       if (document.visibilityState === 'visible' && fetcher.state === 'idle' && revalidator.state === 'idle') {
         void revalidator.revalidate()
       }
-    }, 15_000)
-    return () => window.clearInterval(timer)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') revalidateWhenIdle()
+    }
+
+    window.addEventListener('focus', revalidateWhenIdle)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', revalidateWhenIdle)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [fetcher.state, revalidator])
 
   if (hasError || !data) {
@@ -159,13 +170,17 @@ export function EditorChapterReviewPage({
             {pages.map((page) => (
               <figure key={page.id} className='overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
                 {page.url ? (
-                  <a href={page.url} target='_blank' rel='noreferrer'>
-                    <img
-                      src={page.url}
-                      alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
-                      className='aspect-[3/4] w-full object-cover'
-                    />
-                  </a>
+                  <ImagePreview
+                    src={page.url}
+                    alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
+                    title={t('proposalDetail.page', { number: page.pageNumber })}
+                    description={t(`chapterReview.pageStatuses.${page.status}`, {
+                      defaultValue: t('common.notAvailable')
+                    })}
+                    openOriginalLabel={t('chapterReview.openOriginalImage')}
+                    imageClassName='aspect-[3/4] w-full object-cover'
+                    triggerClassName='w-full'
+                  />
                 ) : (
                   <div className='flex aspect-[3/4] items-center justify-center bg-muted text-xs text-muted-foreground'>
                     {t('chapterReview.imageUnavailable')}
@@ -203,11 +218,18 @@ export function EditorChapterReviewPage({
             {data.storyboardPages.map(
               (page) =>
                 page.url && (
-                  <img
+                  <ImagePreview
                     key={page.pageNumber}
                     src={page.url}
                     alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
-                    className='aspect-[3/4] rounded-lg border border-border object-cover'
+                    title={t('proposalDetail.page', { number: page.pageNumber })}
+                    description={t(`filters.storyboardStatuses.${data.storyboard?.status}`, {
+                      defaultValue: t('common.notAvailable')
+                    })}
+                    openOriginalLabel={t('chapterReview.openOriginalImage')}
+                    imageClassName='aspect-[3/4] w-full object-cover'
+                    triggerClassName='rounded-lg border border-border'
+                    iconClassName='size-9'
                   />
                 )
             )}

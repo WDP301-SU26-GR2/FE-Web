@@ -13,6 +13,9 @@ import { paymentQuery } from '~/shared/lib/payments/payment-query'
 import type { Route } from './+types/payments'
 import { PayPaymentBodyDtoPaymentMethod } from '~/api/model/payments'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusPaymentId = new URL(request.url).searchParams.get('paymentId')?.trim() ?? ''
@@ -25,12 +28,10 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
         : query.receiverId
           ? await paymentControllerGetPaymentsByUser({ id: query.receiverId })
           : await paymentControllerGetPayments(query)
-    const payments = await Promise.all(
-      response.data.data.map((payment) =>
-        paymentControllerGetPaymentById({ id: payment.id })
-          .then((detail) => detail.data)
-          .catch(() => null)
-      )
+    const payments = await mapWithConcurrency(response.data.data, DETAIL_REQUEST_CONCURRENCY, (payment) =>
+      paymentControllerGetPaymentById({ id: payment.id })
+        .then((detail) => detail.data)
+        .catch(() => null)
     )
     return {
       payments: payments.filter((payment) => payment !== null),

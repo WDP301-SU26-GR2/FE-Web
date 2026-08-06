@@ -2,6 +2,7 @@ import { BookOpenText, FileText, Images, Tags, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SeriesResDtoOutput } from '~/api/model/series'
+import { ImagePreview } from '~/shared/components'
 import { StatusBadge } from '../../components/board-ui'
 
 export interface BoardMeetingSeriesBrief {
@@ -139,20 +140,16 @@ function ImageGallery({ images, title, type }: { images: SignedImage[]; title: s
       </h4>
       <div className='mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
         {images.map((image, index) => (
-          <a
+          <ImagePreview
             key={image.key}
-            href={image.url}
-            target='_blank'
-            rel='noreferrer'
-            className='overflow-hidden rounded-lg border border-border bg-muted focus-visible:outline-2 focus-visible:outline-ring'
-          >
-            <img
-              src={image.url}
-              alt={t(`sessions.seriesBrief.${type}ImageAlt`, { number: index + 1 })}
-              className='aspect-square w-full object-cover'
-              loading='lazy'
-            />
-          </a>
+            src={image.url}
+            alt={t(`sessions.seriesBrief.${type}ImageAlt`, { number: index + 1 })}
+            title={t(`sessions.seriesBrief.${type}ImageAlt`, { number: index + 1 })}
+            description={title}
+            openOriginalLabel={t('sessions.seriesBrief.openOriginalImage')}
+            imageClassName='aspect-square w-full object-cover'
+            triggerClassName='rounded-lg border border-border bg-muted'
+          />
         ))}
       </div>
     </section>

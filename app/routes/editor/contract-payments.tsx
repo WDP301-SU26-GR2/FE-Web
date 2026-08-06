@@ -6,10 +6,13 @@ import { EditorContractPaymentsPage } from '~/features/editor'
 import { loadContractBase } from './contract-route-utils'
 import type { Route } from './+types/contract-payments'
 import { SITE } from '~/shared/config/site'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 
 export function meta() {
   return [{ title: SITE.name }]
 }
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [base, response] = await Promise.all([
@@ -17,12 +20,10 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     paymentControllerGetPaymentsByContract({ id: params.id }).catch(() => null)
   ])
   const paymentItems = response?.status === 200 ? response.data.data : []
-  const paymentDetails = await Promise.all(
-    paymentItems.map(async (payment) => {
-      const detail = await paymentControllerGetPaymentById({ id: payment.id }).catch(() => null)
-      return detail?.status === 200 ? detail.data : null
-    })
-  )
+  const paymentDetails = await mapWithConcurrency(paymentItems, DETAIL_REQUEST_CONCURRENCY, async (payment) => {
+    const detail = await paymentControllerGetPaymentById({ id: payment.id }).catch(() => null)
+    return detail?.status === 200 ? detail.data : null
+  })
   return {
     ...base,
     payments: paymentDetails.filter((payment) => payment != null),

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import type { BoardActionResult } from '../types'
 import { boardInput, BoardFeedback, BoardHeader, BoardPanel, EmptyState } from '../components/board-ui'
 import { BusinessDataView } from '~/shared/components/business-data-view'
-import { ProtectedTaskFilePanel } from '~/shared/components/protected-task-file-panel'
 import { SignedImage } from '~/shared/components/signed-image'
 
 type SelectItem = { id: string; title?: string; issueNumber?: string | number | null; status?: string }
@@ -120,19 +119,6 @@ export function BoardReferencePage({
       </BoardPanel>
 
       <div className='space-y-6'>
-        <ProtectedTaskFilePanel
-          inputClassName={boardInput}
-          labels={{
-            title: t('reference.taskFileTitle'),
-            description: t('reference.taskFileHelp'),
-            taskId: t('reference.taskId'),
-            fileKey: t('reference.fileKey'),
-            createLink: t('reference.signDownload'),
-            openDownload: t('reference.openDownload'),
-            loading: t('reference.signingDownload'),
-            expiresAt: t('reference.downloadExpiresAt')
-          }}
-        />
         <BoardPanel title={t('reference.directoriesTitle')}>
           <DatasetGrid data={directories} emptyText={t('common.loadError')} />
         </BoardPanel>

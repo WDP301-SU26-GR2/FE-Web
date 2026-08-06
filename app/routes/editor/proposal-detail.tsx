@@ -20,8 +20,11 @@ import {
   type EditorActionResult,
   type EditorProposalDetailData
 } from '~/features/editor'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 
 import type { Route } from './+types/proposal-detail'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export function meta({ data }: Route.MetaArgs) {
   return [{ title: data?.data?.series.title ? `${data.data.series.title} | ${SITE.shortName}` : SITE.shortName }]
@@ -36,15 +39,18 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     const series = seriesResponse.data
     const [coverUrl, characterDesigns, storyboardPages] = await Promise.all([
       signKey(series.coverImage),
-      Promise.all((series.proposal?.characterDesigns ?? []).map(async (key) => ({ key, url: await signKey(key) }))),
-      Promise.all(
-        [...(series.proposal?.storyboardPages ?? [])]
-          .sort((left, right) => left.pageNumber - right.pageNumber)
-          .map(async (page) => ({
-            pageNumber: page.pageNumber,
-            key: page.fileUrl,
-            url: await signKey(page.fileUrl)
-          }))
+      mapWithConcurrency(series.proposal?.characterDesigns ?? [], DETAIL_REQUEST_CONCURRENCY, async (key) => ({
+        key,
+        url: await signKey(key)
+      })),
+      mapWithConcurrency(
+        [...(series.proposal?.storyboardPages ?? [])].sort((left, right) => left.pageNumber - right.pageNumber),
+        DETAIL_REQUEST_CONCURRENCY,
+        async (page) => ({
+          pageNumber: page.pageNumber,
+          key: page.fileUrl,
+          url: await signKey(page.fileUrl)
+        })
       )
     ])
     const data: EditorProposalDetailData = {

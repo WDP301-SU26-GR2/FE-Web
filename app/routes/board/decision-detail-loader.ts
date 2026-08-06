@@ -11,7 +11,10 @@ import {
   contractAmendmentControllerListAmendments,
   contractControllerGetContracts
 } from '~/api/operations/contracts/contracts'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import { createSeriesBrief } from './series-brief-loader'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function loadBoardDecisionDetail(id: string) {
   const decision = await boardControllerGetDecisionDetails({ id })
@@ -52,13 +55,11 @@ async function resolveAmendmentContractId(
   const contracts = await contractControllerGetContracts().catch(() => null)
   if (contracts?.status !== 200) return null
   const candidates = seriesId ? contracts.data.filter((contract) => contract.seriesId === seriesId) : contracts.data
-  const matches = await Promise.all(
-    candidates.map(async (contract) => {
-      const amendments = await contractAmendmentControllerListAmendments({ contractId: contract.id }).catch(() => null)
-      return amendments?.status === 200 && amendments.data.some((amendment) => amendment.id === details.resourceId)
-        ? contract.id
-        : null
-    })
-  )
+  const matches = await mapWithConcurrency(candidates, DETAIL_REQUEST_CONCURRENCY, async (contract) => {
+    const amendments = await contractAmendmentControllerListAmendments({ contractId: contract.id }).catch(() => null)
+    return amendments?.status === 200 && amendments.data.some((amendment) => amendment.id === details.resourceId)
+      ? contract.id
+      : null
+  })
   return matches.find((contractId): contractId is string => contractId !== null) ?? null
 }

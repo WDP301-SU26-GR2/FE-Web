@@ -74,7 +74,7 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
 
   // Polling badge: drives the dot on the Notifications nav item.
   // Enabled for any authenticated user; silently fails if no role surface.
-  const { unreadCount } = useUnreadNotifications({
+  const { unreadCount, refresh: refreshUnreadNotifications } = useUnreadNotifications({
     enabled: Boolean(session),
     pollIntervalMs: 25_000
   })
@@ -247,7 +247,7 @@ export function DashboardLayout({ children, navItems, profileFallback, headerAct
 
           {/* Right Actions */}
           <div className='flex items-center gap-4'>
-            <NotificationBell />
+            <NotificationBell unreadCount={unreadCount} refreshUnread={refreshUnreadNotifications} />
             <button
               className='rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors animate-spin-hover'
               aria-label={t('layout.settings')}

@@ -16,7 +16,10 @@ import {
 } from '~/api/model/publication-versions'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
 import { optional, required } from './operations-route-utils'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import type { Route } from './+types/operations-versions'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusSeriesId = new URL(request.url).searchParams.get('seriesId') ?? ''
@@ -26,12 +29,10 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       focusSeriesId ? publicationControllerList({ seriesId: focusSeriesId }).catch(() => null) : null
     ])
     const listItems = response?.status === 200 ? response.data.items : []
-    const versions = await Promise.all(
-      listItems.map(async (item) => {
-        const detail = await publicationControllerGetOne({ id: item.id }).catch(() => null)
-        return detail?.status === 200 ? detail.data : item
-      })
-    )
+    const versions = await mapWithConcurrency(listItems, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+      const detail = await publicationControllerGetOne({ id: item.id }).catch(() => null)
+      return detail?.status === 200 ? detail.data : item
+    })
     return { series, focusSeriesId, versions, hasError: false }
   } catch {
     return { series: [], focusSeriesId, versions: [], hasError: true }

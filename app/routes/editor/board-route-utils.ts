@@ -7,6 +7,9 @@ import type {
   BoardSessionResDtoOutput
 } from '~/api/model/board'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export function required(form: FormData, key: string) {
   const value = String(form.get(key) ?? '').trim()
@@ -36,21 +39,17 @@ export async function loadBoardSessionSeries() {
 }
 
 export async function hydrateBoardSessions(items: BoardSessionListItemDtoOutput[]) {
-  const details = await Promise.all(
-    items.map(async (item) => {
-      const response = await boardControllerGetSessionById({ id: item.id }).catch(() => null)
-      return response?.status === 200 ? response.data : null
-    })
-  )
+  const details = await mapWithConcurrency(items, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+    const response = await boardControllerGetSessionById({ id: item.id }).catch(() => null)
+    return response?.status === 200 ? response.data : null
+  })
   return details.filter((item): item is BoardSessionResDtoOutput => item != null)
 }
 
 export async function hydrateBoardDecisions(items: BoardDecisionListItemDtoOutput[]) {
-  const details = await Promise.all(
-    items.map(async (item) => {
-      const response = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
-      return response?.status === 200 ? response.data : null
-    })
-  )
+  const details = await mapWithConcurrency(items, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+    const response = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
+    return response?.status === 200 ? response.data : null
+  })
   return details.filter((item): item is BoardDecisionResDtoOutput => item != null)
 }

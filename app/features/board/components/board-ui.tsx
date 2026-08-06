@@ -148,12 +148,23 @@ export function EmptyState({ text }: { text: string }) {
   )
 }
 
-export function useBoardPolling(interval = 10_000) {
+export function useBoardPolling() {
   const revalidator = useRevalidator()
+
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const revalidateWhenIdle = () => {
       if (revalidator.state === 'idle') revalidator.revalidate()
-    }, interval)
-    return () => window.clearInterval(timer)
-  }, [interval, revalidator])
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') revalidateWhenIdle()
+    }
+
+    window.addEventListener('focus', revalidateWhenIdle)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', revalidateWhenIdle)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [revalidator])
 }
