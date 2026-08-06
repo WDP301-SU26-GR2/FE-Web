@@ -246,6 +246,11 @@
     "compositePages": "Composite pages",
     "imageUnavailable": "Image unavailable",
     "regionCount": "{{count}} regions",
+    "pageStatuses": {
+      "DRAFT": "In progress",
+      "COMPLETED": "Submitted to Editor",
+      "REVISING": "Revision in progress"
+    },
     "productionStages": "Production stages",
     "currentRevisionRound": "Stage timing reflects the current revision round.",
     "openTasks": "{{count}} open tasks",

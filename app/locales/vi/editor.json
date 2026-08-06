@@ -246,6 +246,11 @@
     "compositePages": "Bản ghép hoàn chỉnh",
     "imageUnavailable": "Không tải được ảnh",
     "regionCount": "{{count}} vùng",
+    "pageStatuses": {
+      "DRAFT": "Đang thực hiện",
+      "COMPLETED": "Đã nộp cho biên tập viên",
+      "REVISING": "Đang chỉnh sửa"
+    },
     "productionStages": "Các giai đoạn sản xuất",
     "currentRevisionRound": "Thời gian của từng giai đoạn phản ánh vòng chỉnh sửa hiện tại.",
     "openTasks": "{{count}} công việc đang mở",
