@@ -4,7 +4,6 @@ import {
   taskControllerListTasks,
   taskControllerApproveTask,
   taskControllerApproveTaskGroup,
-  taskControllerReassignTask,
   taskControllerRequestRevision,
   taskControllerCancelTask,
   taskControllerUpdateTask
@@ -47,7 +46,6 @@ export interface UseMangakaTasksResult {
   requestRevision: (taskId: string, reviewerNote: string) => Promise<{ success: boolean; error?: string }>
   cancelTask: (taskId: string, reason?: string) => Promise<{ success: boolean; error?: string }>
   updateTask: (taskId: string, update: UpdateTaskBodyDto) => Promise<TaskMutationResult>
-  reassignTask: (taskId: string, assistantId: string) => Promise<TaskMutationResult>
 }
 
 export type TaskMutationResult = { success: true } | { success: false; error: string }
@@ -190,19 +188,6 @@ export function useMangakaTasks(options: UseMangakaTasksOptions): UseMangakaTask
     [t]
   )
 
-  const reassignTask = useCallback(
-    async (taskId: string, assistantId: string): Promise<TaskMutationResult> => {
-      try {
-        await taskControllerReassignTask({ id: taskId }, { assistantId })
-        setReloadToken((n) => n + 1)
-        return { success: true }
-      } catch (err) {
-        return { success: false, error: extractApiErrorMessage(err, t('tasks.errors.reassignFailed')) }
-      }
-    },
-    [t]
-  )
-
   return {
     tasks,
     total,
@@ -216,7 +201,6 @@ export function useMangakaTasks(options: UseMangakaTasksOptions): UseMangakaTask
     approveTaskGroup,
     requestRevision,
     cancelTask,
-    updateTask,
-    reassignTask
+    updateTask
   }
 }

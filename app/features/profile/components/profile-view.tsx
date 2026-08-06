@@ -155,7 +155,7 @@ function MangakaDetail({ data }: { data: MangakaProfileResDtoOutput }) {
 }
 
 function AssistantDetail({ data }: { data: AssistantProfileResDtoOutput }) {
-  const { t } = useTranslation('profile')
+  const { t, i18n } = useTranslation('profile')
   return (
     <div className='space-y-6 rounded-lg border border-border bg-card p-6'>
       <Section title={t('sections.specializations')}>
@@ -190,7 +190,24 @@ function AssistantDetail({ data }: { data: AssistantProfileResDtoOutput }) {
             )}
           </div>
           {(data.availabilityFrom || data.availabilityTo) && (
-            <div className='text-muted-foreground'>{formatRange(data.availabilityFrom, data.availabilityTo)}</div>
+            <div className='space-y-1 text-muted-foreground'>
+              {data.availabilityFrom && (
+                <div>
+                  <span>{t('fields.availabilityFrom')}: </span>
+                  <span className='font-medium text-foreground'>
+                    {formatDateTime(data.availabilityFrom, i18n.language)}
+                  </span>
+                </div>
+              )}
+              {data.availabilityTo && (
+                <div>
+                  <span>{t('fields.availabilityTo')}: </span>
+                  <span className='font-medium text-foreground'>
+                    {formatDateTime(data.availabilityTo, i18n.language)}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </Section>
@@ -231,8 +248,8 @@ function EmptyValue({ label }: { label: string }) {
   return <span className={cn('text-sm italic text-muted-foreground/70')}>— {label} —</span>
 }
 
-function formatRange(from: string | null, to: string | null): string {
-  const fmt = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'
-  return `${fmt(from)}  →  ${fmt(to)}`
+function formatDateTime(iso: string, locale: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
 }
