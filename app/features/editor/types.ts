@@ -1,6 +1,5 @@
 import type { ChapterListResDtoOutputItemsItem, ChapterResDtoOutput } from '~/api/model/chapters'
 import type { ChapterProgressResDtoOutput } from '~/api/model/chapters'
-import type { AnnotationListResDtoOutputItemsItem } from '~/api/model/annotations'
 import type {
   BoardDecisionResDtoOutput,
   BoardSessionResDtoOutput,
@@ -66,8 +65,6 @@ export type EditorChapterReviewData = {
   storyboard: StoryboardResDtoOutput | null
   storyboardPages: Array<{ pageNumber: number; url: string | null }>
   progress: ChapterProgressResDtoOutput | null
-  annotations: AnnotationListResDtoOutputItemsItem[]
-  storyboardAnnotations: AnnotationListResDtoOutputItemsItem[]
   stages: StageListResDtoOutput | null
   stagePages: StagePageListResDtoOutputItemsItem[]
   regionsByPage: Record<string, RegionListResDtoOutputItemsItem[]>

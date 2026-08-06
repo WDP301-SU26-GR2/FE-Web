@@ -16,8 +16,13 @@ import { usersControllerGetMe } from '~/api/operations/users/users'
 import { BoardTransfersPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/transfers'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import type { ShouldRevalidateFunction } from 'react-router'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
+
+const TRANSFER_MONEY_MINIMUM = 1
+const TRANSFER_MONEY_MAXIMUM = 100_000_000_000
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
@@ -35,29 +40,26 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       contractId ? transferControllerGetTransferContractById({ id: contractId }).catch(() => null) : null,
       contractId ? transferControllerGetSignatures({ id: contractId }).catch(() => null) : null
     ])
-    const requestItems = await Promise.all(
-      requests.data.data.map((item) =>
-        transferControllerGetTransferRequestById({ id: item.id })
-          .then((response) => response.data)
-          .catch(() => null)
-      )
+    const requestItems = await mapWithConcurrency(requests.data.data, DETAIL_REQUEST_CONCURRENCY, (item) =>
+      transferControllerGetTransferRequestById({ id: item.id })
+        .then((response) => response.data)
+        .catch(() => null)
     )
     const availableRequests = requestItems.filter((item) => item !== null)
     if (focusedRequest?.status === 200 && !availableRequests.some((item) => item.id === focusedRequest.data.id)) {
       availableRequests.unshift(focusedRequest.data)
     }
-    const decisionDetails = await Promise.all(
-      decisionResponse.data
-        .filter(
-          (decision) =>
-            (decision.decisionType === 'TRANSFER' && ['APPROVED', 'REJECTED'].includes(decision.result ?? '')) ||
-            (decision.decisionType === 'CONTRACT' && decision.result === 'APPROVED')
-        )
-        .map((decision) =>
-          boardControllerGetDecisionDetails({ id: decision.id })
-            .then((response) => response.data)
-            .catch(() => null)
-        )
+    const decisionDetails = await mapWithConcurrency(
+      decisionResponse.data.filter(
+        (decision) =>
+          (decision.decisionType === 'TRANSFER' && ['APPROVED', 'REJECTED'].includes(decision.result ?? '')) ||
+          (decision.decisionType === 'CONTRACT' && decision.result === 'APPROVED')
+      ),
+      DETAIL_REQUEST_CONCURRENCY,
+      (decision) =>
+        boardControllerGetDecisionDetails({ id: decision.id })
+          .then((response) => response.data)
+          .catch(() => null)
     )
     const transferDecisions = [
       ...new Map(
@@ -123,8 +125,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const conditionDescriptions = form.getAll('conditionDescription').map((value) => String(value).trim())
       const valuationAmount = Number(required(form, 'valuationAmount'))
       if (
-        !Number.isFinite(valuationAmount) ||
-        valuationAmount <= 0 ||
+        !Number.isSafeInteger(valuationAmount) ||
+        valuationAmount < TRANSFER_MONEY_MINIMUM ||
+        valuationAmount > TRANSFER_MONEY_MAXIMUM ||
         !conditionTypes.length ||
         conditionTypes.some(
           (type, index) =>
@@ -229,14 +232,13 @@ async function requireApprovedTransferContractDecision(contractId: string) {
     mine: 'true',
     targetSeriesId: contract.data.seriesId
   })
-  const details = await Promise.all(
-    decisions.data
-      .filter((decision) => decision.decisionType === 'CONTRACT' && decision.result === 'APPROVED')
-      .map((decision) =>
-        boardControllerGetDecisionDetails({ id: decision.id })
-          .then((response) => response.data)
-          .catch(() => null)
-      )
+  const details = await mapWithConcurrency(
+    decisions.data.filter((decision) => decision.decisionType === 'CONTRACT' && decision.result === 'APPROVED'),
+    DETAIL_REQUEST_CONCURRENCY,
+    (decision) =>
+      boardControllerGetDecisionDetails({ id: decision.id })
+        .then((response) => response.data)
+        .catch(() => null)
   )
   const approved = details.some(
     (decision) => decision?.details?.resourceType === 'TRANSFER_CONTRACT' && decision.details.resourceId === contractId

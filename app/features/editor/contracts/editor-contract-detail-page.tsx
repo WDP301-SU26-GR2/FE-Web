@@ -10,6 +10,7 @@ import {
   MessageSquareText,
   RotateCcw,
   ScrollText,
+  Trash2,
   WalletCards
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -18,7 +19,7 @@ import type { EditorContractDetailData } from '../types'
 import type { EditorActionResult } from '../types'
 import { ContractHeader } from './components/contract-shared'
 import { ContractActionMessage } from './components/contract-shared'
-import { EDITOR_CONTRACT_INTENTS, canRedraftContract } from './contract-flow'
+import { EDITOR_CONTRACT_INTENTS, canRedraftContract, canSubmitContractForReview, canVoidContract } from './contract-flow'
 import { ContractTermsForm } from './editor-contract-terms-page'
 import { ContractConditionsManager } from './editor-contract-conditions-page'
 import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
@@ -29,7 +30,10 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
   const fetcher = useFetcher<EditorActionResult>()
   const navigate = useNavigate()
   const [openDetail, setOpenDetail] = useState<'terms' | 'conditions' | null>(null)
+  const [voidOpen, setVoidOpen] = useState(false)
   const basePath = `/dashboard/editor/contracts/${data.contract.id}`
+  const canSubmitReview = canSubmitContractForReview(data.contract)
+  const canVoid = canVoidContract(data.contract)
   const validConditionCount = data.conditions.filter(
     (condition) =>
       condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
@@ -158,6 +162,18 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
           </button>
         </fetcher.Form>
       )}
+      {canVoid && (
+        <div className='flex justify-end'>
+          <button
+            type='button'
+            onClick={() => setVoidOpen(true)}
+            className='inline-flex h-10 items-center gap-2 rounded-md border border-destructive/40 px-4 text-xs font-bold text-destructive'
+          >
+            <Trash2 className='size-4' />
+            {t('actions.voidContract')}
+          </button>
+        </div>
+      )}
       <ContractActionMessage data={fetcher.data} />
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <h2 className='flex items-center gap-2 font-bold text-foreground'>
@@ -186,6 +202,18 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
           )}
         </div>
       </section>
+      {canSubmitReview && (
+        <fetcher.Form method='post' className='flex justify-end'>
+          <button
+            name='intent'
+            value={EDITOR_CONTRACT_INTENTS.submitReview}
+            disabled={fetcher.state !== 'idle'}
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+          >
+            {t('actions.submitContractReview')}
+          </button>
+        </fetcher.Form>
+      )}
       <div className='grid gap-4 md:grid-cols-2'>
         {sections.map(([key, Icon]) => (
           <Link
@@ -226,6 +254,41 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
         size='xl'
       >
         <ContractConditionsManager contract={data.contract} conditions={data.conditions} action={basePath} />
+      </Dialog>
+      <Dialog
+        compact
+        open={voidOpen}
+        onClose={() => setVoidOpen(false)}
+        titleId='editor-contract-void-title'
+        title={t('contractDetail.voidContractTitle')}
+        description={t('contractDetail.voidContractDescription')}
+        size='md'
+      >
+        <fetcher.Form method='post' className='grid gap-4' onSubmit={() => setVoidOpen(false)}>
+          <input type='hidden' name='intent' value={EDITOR_CONTRACT_INTENTS.void} />
+          <label className='grid gap-1.5 text-xs font-semibold'>
+            {t('contractDetail.voidContractReason')}
+            <textarea
+              name='reason'
+              required
+              maxLength={1000}
+              className='min-h-28 rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-primary'
+            />
+          </label>
+          <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
+            <button
+              type='button'
+              onClick={() => setVoidOpen(false)}
+              className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            >
+              {t('actions.cancel')}
+            </button>
+            <button className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-xs font-bold text-destructive-foreground'>
+              <Trash2 className='size-4' />
+              {t('actions.voidContract')}
+            </button>
+          </div>
+        </fetcher.Form>
       </Dialog>
     </div>
   )

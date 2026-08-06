@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { BoardSessionResDtoOutputStatus, type BoardDecisionResDtoOutput } from '~/api/model/board'
 import type { BoardMeetingSession, BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
+import type { MagazineListResDtoOutputItemsItem } from '~/api/model/magazines'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { TransferRequestListResDtoOutputDataItem } from '~/api/model/transfer'
 import { useAuth } from '~/features/auth/context/auth-context'
@@ -27,6 +28,7 @@ export function EditorBoardMeetingRoomPage({
   messages: initialMessages,
   decisions: initialDecisions,
   series,
+  magazines = [],
   contractResources = [],
   transferRequests = [],
   manageAll = false,
@@ -39,6 +41,7 @@ export function EditorBoardMeetingRoomPage({
   messages: BoardMessage[]
   decisions: BoardDecisionResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
+  magazines?: MagazineListResDtoOutputItemsItem[]
   contractResources?: BoardDecisionResourceOption[]
   transferRequests?: TransferRequestListResDtoOutputDataItem[]
   manageAll?: boolean
@@ -285,6 +288,7 @@ export function EditorBoardMeetingRoomPage({
       {addDecisionOpen && (
         <AddSessionDecisionDialog
           series={series}
+          magazines={magazines}
           decisions={meeting.decisions}
           contractResources={contractResources}
           transferRequests={transferRequests}
@@ -299,6 +303,7 @@ export function EditorBoardMeetingRoomPage({
 
 function AddSessionDecisionDialog({
   series,
+  magazines,
   decisions,
   contractResources,
   transferRequests,
@@ -307,6 +312,7 @@ function AddSessionDecisionDialog({
   onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
+  magazines: MagazineListResDtoOutputItemsItem[]
   decisions: BoardDecisionResDtoOutput[]
   contractResources: BoardDecisionResourceOption[]
   transferRequests: TransferRequestListResDtoOutputDataItem[]
@@ -320,8 +326,12 @@ function AddSessionDecisionDialog({
   const [seriesId, setSeriesId] = useState('')
   const [resourceId, setResourceId] = useState('')
   const [transferRequestId, setTransferRequestId] = useState('')
+  const [magazine, setMagazine] = useState('')
+  const [publicationType, setPublicationType] = useState('')
   const isResourceDecision = decisionType === 'CONTRACT' || decisionType === 'TRANSFER'
   const eligibleStatuses = decisionType === 'SERIALIZATION' ? ['PITCHED'] : ['SERIALIZED', 'HIATUS']
+  const selectedMagazine = magazines.find((item) => item.name === magazine)
+  const publicationTypeOptions = selectedMagazine?.publicationTypes ?? []
   const eligibleSeries = isResourceDecision
     ? []
     : series.filter(
@@ -386,6 +396,8 @@ function AddSessionDecisionDialog({
               setSeriesId('')
               setResourceId('')
               setTransferRequestId('')
+              setMagazine('')
+              setPublicationType('')
             }}
           >
             {BOARD_SESSION_DECISION_TYPES.map((value) => (
@@ -505,7 +517,28 @@ function AddSessionDecisionDialog({
           <>
             <label className='grid gap-1.5 text-xs font-semibold'>
               {t('board.magazine')}
-              <input className={boardInput} name='magazine' required disabled={!selectedSeries} />
+              <select
+                className={boardInput}
+                name='magazine'
+                required
+                value={magazine}
+                disabled={!selectedSeries}
+                onChange={(event) => {
+                  const nextMagazine = event.target.value
+                  const nextTypes = magazines.find((item) => item.name === nextMagazine)?.publicationTypes ?? []
+                  setMagazine(nextMagazine)
+                  setPublicationType(nextTypes[0] ?? '')
+                }}
+              >
+                <option value='' disabled>
+                  {t('board.selectMagazine')}
+                </option>
+                {magazines.map((item) => (
+                  <option key={item.name} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className='grid gap-3 sm:grid-cols-2'>
               <label className='grid gap-1.5 text-xs font-semibold'>
@@ -521,7 +554,12 @@ function AddSessionDecisionDialog({
                   disabled={!selectedSeries}
                 />
               </label>
-              <PublicationTypeField selectedSeries={selectedSeries} />
+              <PublicationTypeField
+                selectedSeries={selectedSeries}
+                value={publicationType}
+                options={publicationTypeOptions}
+                onChange={setPublicationType}
+              />
             </div>
           </>
         )}
@@ -573,6 +611,7 @@ function AddSessionDecisionDialog({
               !selectedSeries ||
               (decisionType === 'CONTRACT' && !resourceId) ||
               (decisionType === 'TRANSFER' && !transferRequestId) ||
+              (decisionType === 'SERIALIZATION' && (!magazine || !publicationType)) ||
               fetcher.state !== 'idle'
             }
             className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
@@ -595,8 +634,19 @@ interface BoardDecisionResourceOption {
   label: string
 }
 
-function PublicationTypeField({ selectedSeries }: { selectedSeries?: SeriesListResDtoOutputItemsItem }) {
+function PublicationTypeField({
+  selectedSeries,
+  value,
+  options,
+  onChange
+}: {
+  selectedSeries?: SeriesListResDtoOutputItemsItem
+  value?: string
+  options?: string[]
+  onChange?: (value: string) => void
+}) {
   const { t } = useTranslation('editor')
+  const optionValues = options?.length ? options : ['WEEKLY', 'MONTHLY', 'IRREGULAR']
   return (
     <label className='grid gap-1.5 text-xs font-semibold'>
       {t('proposalDetail.publicationType')}
@@ -605,12 +655,20 @@ function PublicationTypeField({ selectedSeries }: { selectedSeries?: SeriesListR
         className={boardInput}
         name='publicationType'
         required
-        defaultValue={selectedSeries?.publicationType ?? 'WEEKLY'}
-        disabled={!selectedSeries}
+        value={value ?? selectedSeries?.publicationType ?? 'WEEKLY'}
+        onChange={(event) => onChange?.(event.target.value)}
+        disabled={!selectedSeries || !options?.length}
       >
-        <option value='WEEKLY'>{t('board.publicationTypes.weekly')}</option>
-        <option value='MONTHLY'>{t('board.publicationTypes.monthly')}</option>
-        <option value='IRREGULAR'>{t('board.publicationTypes.irregular')}</option>
+        {!value && (
+          <option value='' disabled>
+            {t('board.selectPublicationType')}
+          </option>
+        )}
+        {optionValues.map((item) => (
+          <option key={item} value={item}>
+            {t(`board.publicationTypes.${item.toLowerCase()}`, { defaultValue: item })}
+          </option>
+        ))}
       </select>
     </label>
   )

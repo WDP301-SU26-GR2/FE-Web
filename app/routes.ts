@@ -139,6 +139,10 @@ export default [
       route('operations/surveys', 'routes/admin/operations-surveys.tsx'),
       route('operations/publication-versions', 'routes/admin/operations-versions.tsx'),
       route('operations/reference', 'routes/admin/operations-reference.tsx'),
+      route('operations/reference/series', 'routes/admin/operations-reference-series.tsx'),
+      route('operations/reference/chapter', 'routes/admin/operations-reference-chapter.tsx'),
+      route('operations/reference/ranking', 'routes/admin/operations-reference-ranking.tsx'),
+      route('operations/reference/directories', 'routes/admin/operations-reference-directories.tsx'),
       route('notifications', 'routes/admin/notifications.tsx'),
       route('profile', 'routes/admin/profile.tsx'),
       route('settings', 'routes/admin/settings.tsx')

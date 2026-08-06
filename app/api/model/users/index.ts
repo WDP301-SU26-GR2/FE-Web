@@ -83,5 +83,5 @@ export * from './usersControllerListUsersStatus'
 export * from './usersControllerResetUserPasswordPathParameters'
 export * from './usersControllerRestoreUserPathParameters'
 export * from './usersControllerUpdateUserStatusPathParameters'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

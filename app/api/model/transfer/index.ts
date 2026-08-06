@@ -56,5 +56,5 @@ export * from './transferRequestResDtoOutputStatus'
 export * from './transferSignatureListResDtoOutput'
 export * from './transferSignatureListResDtoOutputSignaturesItem'
 export * from './transferSignatureListResDtoOutputSignaturesItemRole'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

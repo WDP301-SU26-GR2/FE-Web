@@ -5,6 +5,9 @@ import type { SeriesControllerListSeriesStatus, SeriesListResDtoOutputItemsItem 
 import { EditorPublicationPage, type EditorChapterItem, type EditorPublicationData } from '~/features/editor'
 import type { Route } from './+types/publication'
 import { SITE } from '~/shared/config/site'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export function meta() {
   return [{ title: SITE.name }]
@@ -19,33 +22,31 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       (['SERIALIZED', 'HIATUS', 'COMPLETING', 'CANCELLING'] as const).map(listAllSeriesByStatus)
     )
     const series = responses.flat().filter((item) => Boolean(item.editorId))
-    const chapterResponses = await Promise.all(
-      series.map(async (item) => ({
-        series: item,
-        response: await chapterControllerListBySeries({ seriesId: item.id })
-      }))
-    )
+    const chapterResponses = await mapWithConcurrency(series, DETAIL_REQUEST_CONCURRENCY, async (item) => ({
+      series: item,
+      response: await chapterControllerListBySeries({ seriesId: item.id })
+    }))
     const chapters: EditorChapterItem[] = chapterResponses.flatMap(({ series: item, response }) =>
       response.data.items.map((chapter) => ({ series: item, chapter }))
     )
     let focusChapterId = referenceId
     if (referenceId && referenceType === 'PAGE' && !chapters.some(({ chapter }) => chapter.id === referenceId)) {
-      const pageResponses = await Promise.all(
-        chapters.map(async ({ chapter }) => ({
-          chapterId: chapter.id,
-          response: await chapterControllerListPages({ id: chapter.id }).catch(() => null)
-        }))
-      )
+      const pageResponses = await mapWithConcurrency(chapters, DETAIL_REQUEST_CONCURRENCY, async ({ chapter }) => ({
+        chapterId: chapter.id,
+        response: await chapterControllerListPages({ id: chapter.id }).catch(() => null)
+      }))
       focusChapterId =
         pageResponses.find(({ response }) => response?.data.items.some((page) => page.id === referenceId))?.chapterId ??
         null
     }
     if (referenceId && referenceType === 'STORYBOARD') {
-      const storyboardResponses = await Promise.all(
-        chapters.map(async ({ chapter }) => ({
+      const storyboardResponses = await mapWithConcurrency(
+        chapters,
+        DETAIL_REQUEST_CONCURRENCY,
+        async ({ chapter }) => ({
           chapterId: chapter.id,
           response: await chapterStoryboardControllerList({ id: chapter.id }).catch(() => null)
-        }))
+        })
       )
       focusChapterId =
         storyboardResponses.find(({ response }) =>

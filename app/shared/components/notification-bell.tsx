@@ -13,8 +13,7 @@ import { useAuth } from '~/features/auth/context/auth-context'
 import { cn } from '~/shared/lib/cn'
 import {
   emitNotificationsRefresh,
-  notificationsPathForRole,
-  useUnreadNotifications
+  notificationsPathForRole
 } from '~/shared/hooks/use-unread-notifications'
 import { notificationTarget } from './role-notifications-page'
 
@@ -79,7 +78,12 @@ function notificationHref(item: NotificationListResDtoOutputItemsItem, role: str
  * Header notification inbox. The bell opens a compact list of unread items;
  * the role-specific notifications page remains available through "View all".
  */
-export function NotificationBell() {
+export interface NotificationBellProps {
+  unreadCount: number
+  refreshUnread: () => void
+}
+
+export function NotificationBell({ unreadCount, refreshUnread }: NotificationBellProps) {
   const { t, i18n } = useTranslation('common')
   const { session } = useAuth()
   const navigate = useNavigate()
@@ -91,10 +95,6 @@ export function NotificationBell() {
 
   const role = session?.user?.role
   const target = notificationsPathForRole(role)
-  const { unreadCount, refresh } = useUnreadNotifications({
-    enabled: Boolean(session),
-    pollIntervalMs: 25_000
-  })
   const hasUnread = unreadCount > 0
   const label = hasUnread ? t('layout.notificationsWithCount', { count: unreadCount }) : t('layout.notifications')
 
@@ -139,7 +139,7 @@ export function NotificationBell() {
       try {
         await notificationControllerMarkRead({ id: item.id })
         setItems((current) => current.filter((currentItem) => currentItem.id !== item.id))
-        refresh()
+        refreshUnread()
         emitNotificationsRefresh()
       } catch {
         // Navigation should still work if marking read fails.
@@ -155,7 +155,7 @@ export function NotificationBell() {
     try {
       await notificationControllerMarkAllRead()
       setItems([])
-      refresh()
+      refreshUnread()
       emitNotificationsRefresh()
     } catch {
       // Keep the inbox open and preserve its items if the update cannot be saved.

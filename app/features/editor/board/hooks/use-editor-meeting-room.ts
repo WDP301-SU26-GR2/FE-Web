@@ -51,6 +51,12 @@ export function useEditorMeetingRoom({
     readStorage(STORAGE_KEYS.accessToken) ? 'connecting' : 'disconnected'
   )
   const socketRef = useRef<Socket | null>(null)
+  const resyncInFlightRef = useRef(false)
+  const resyncTimerRef = useRef<number | null>(null)
+  const flushTimerRef = useRef<number | null>(null)
+  const pendingMessagesRef = useRef<BoardMessage[]>([])
+  const pendingPhaseRef = useRef<BoardSessionPhase | null>(null)
+  const pendingVoteUpdatesRef = useRef<Record<string, VoteProgress>>({})
 
   useEffect(() => {
     const token = readStorage(STORAGE_KEYS.accessToken)
@@ -59,22 +65,60 @@ export function useEditorMeetingRoom({
     const socket = io(namespaceUrl, { auth: { token }, transports: ['polling', 'websocket'] })
     socketRef.current = socket
     const resync = async () => {
-      const [session, messageResponse, decisionResponse] = await Promise.all([
-        boardControllerGetSessionById({ id: sessionId }).catch(() => null),
-        boardControllerGetSessionMessages({ id: sessionId }, { limit: 200, offset: 0 }).catch(() => null),
-        boardControllerGetDecisions({ boardSessionId: sessionId }).catch(() => null)
-      ])
-      if (session?.status === 200) setPhase(readBoardSessionPhase(session.data))
-      if (messageResponse?.status === 200) setMessages(messageResponse.data.items)
-      if (decisionResponse?.status === 200) {
-        const details = await Promise.all(
-          decisionResponse.data.map(async (item) => {
-            const response = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
-            return response?.status === 200 ? response.data : null
-          })
-        )
-        setBaseDecisions(details.filter((item): item is BoardDecisionResDtoOutput => item != null))
+      if (resyncInFlightRef.current) return
+      resyncInFlightRef.current = true
+      try {
+        const [session, messageResponse, decisionResponse] = await Promise.all([
+          boardControllerGetSessionById({ id: sessionId }).catch(() => null),
+          boardControllerGetSessionMessages({ id: sessionId }, { limit: 200, offset: 0 }).catch(() => null),
+          boardControllerGetDecisions({ boardSessionId: sessionId }).catch(() => null)
+        ])
+        if (session?.status === 200) setPhase(readBoardSessionPhase(session.data))
+        if (messageResponse?.status === 200) setMessages(messageResponse.data.items)
+        if (decisionResponse?.status === 200) {
+          const details = await Promise.all(
+            decisionResponse.data.map(async (item) => {
+              const response = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
+              return response?.status === 200 ? response.data : null
+            })
+          )
+          setBaseDecisions(details.filter((item): item is BoardDecisionResDtoOutput => item != null))
+        }
+      } finally {
+        resyncInFlightRef.current = false
       }
+    }
+    const requestResync = () => {
+      if (resyncTimerRef.current != null) return
+      resyncTimerRef.current = window.setTimeout(() => {
+        resyncTimerRef.current = null
+        void resync()
+      }, 300)
+    }
+    const flushRealtimeUpdates = () => {
+      flushTimerRef.current = null
+      const nextMessages = pendingMessagesRef.current
+      const nextPhase = pendingPhaseRef.current
+      const nextVotes = pendingVoteUpdatesRef.current
+      pendingMessagesRef.current = []
+      pendingPhaseRef.current = null
+      pendingVoteUpdatesRef.current = {}
+      if (nextPhase) setPhase(nextPhase)
+      if (nextMessages.length > 0) {
+        setMessages((current) => {
+          const seen = new Set(current.map((item) => item.id))
+          const additions = nextMessages.filter((item) => !seen.has(item.id))
+          return additions.length > 0 ? [...current, ...additions] : current
+        })
+      }
+      if (Object.keys(nextVotes).length > 0) setUpdates((current) => ({ ...current, ...nextVotes }))
+    }
+    const scheduleRealtimeFlush = () => {
+      if (flushTimerRef.current != null) return
+      flushTimerRef.current = window.setTimeout(flushRealtimeUpdates, 300)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void resync()
     }
     socket.on('connect', () => {
       setConnectionState('connected')
@@ -85,33 +129,43 @@ export function useEditorMeetingRoom({
     socket.on('connect_error', () => setConnectionState('disconnected'))
     socket.on('messageReceived', (message: BoardMessage) => {
       if (message.sessionId !== sessionId) return
-      setMessages((current) => (current.some((item) => item.id === message.id) ? current : [...current, message]))
+      pendingMessagesRef.current.push(message)
+      scheduleRealtimeFlush()
     })
     socket.on('phaseChanged', (payload: { sessionId: string; phase: BoardSessionPhase }) => {
-      if (payload.sessionId === sessionId) setPhase(payload.phase)
+      if (payload.sessionId === sessionId) {
+        pendingPhaseRef.current = payload.phase
+        scheduleRealtimeFlush()
+      }
     })
     socket.on('voteProgressUpdated', (progress: VoteProgressPayload) => {
       const decisionId = progress?.decisionId ?? progress?.id
       if (!decisionId) {
-        void resync()
+        requestResync()
         return
       }
-      setUpdates((current) => ({
-        ...current,
-        [decisionId]: {
-          decisionId,
-          approveCount: progress.approveCount,
-          rejectCount: progress.rejectCount,
-          totalVotes: progress.totalVotes,
-          quorumMet: progress.quorumMet,
-          result: progress.result
-        }
-      }))
+      pendingVoteUpdatesRef.current[decisionId] = {
+        decisionId,
+        approveCount: progress.approveCount,
+        rejectCount: progress.rejectCount,
+        totalVotes: progress.totalVotes,
+        quorumMet: progress.quorumMet,
+        result: progress.result
+      }
+      scheduleRealtimeFlush()
     })
-    void resync()
-    const resyncTimer = window.setInterval(() => void resync(), 15_000)
+    window.addEventListener('focus', resync)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
-      window.clearInterval(resyncTimer)
+      if (resyncTimerRef.current != null) window.clearTimeout(resyncTimerRef.current)
+      if (flushTimerRef.current != null) window.clearTimeout(flushTimerRef.current)
+      resyncTimerRef.current = null
+      flushTimerRef.current = null
+      pendingMessagesRef.current = []
+      pendingPhaseRef.current = null
+      pendingVoteUpdatesRef.current = {}
+      window.removeEventListener('focus', resync)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       socketRef.current = null
       socket.disconnect()
     }

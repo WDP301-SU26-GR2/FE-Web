@@ -52,7 +52,8 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         rankingAggregateMinCoverageRatio: number(formData, 'rankingAggregateMinCoveragePercent') / 100,
         maxUploadBytes: integer(formData, 'maxUploadMb') * 1024 * 1024,
         assignmentGraceDays: integer(formData, 'assignmentGraceDays'),
-        boardRepClaimGraceDays: integer(formData, 'boardRepClaimGraceDays')
+        boardRepClaimGraceDays: integer(formData, 'boardRepClaimGraceDays'),
+        taskOverdueGraceHours: boundedInteger(formData, 'taskOverdueGraceHours', 0, 168)
       })
       if (response.status !== 200) return failure(intent, 'validation')
       return success(intent, 'appUpdated', extractApiSuccessMessage(response, 'Đã cập nhật cấu hình hệ thống.'))
@@ -121,6 +122,12 @@ function number(formData: FormData, key: string) {
 function integer(formData: FormData, key: string) {
   const value = number(formData, key)
   if (!Number.isInteger(value)) throw new Error(`Invalid ${key}`)
+  return value
+}
+
+function boundedInteger(formData: FormData, key: string, minimum: number, maximum: number) {
+  const value = integer(formData, key)
+  if (value < minimum || value > maximum) throw new Error(`Invalid ${key}`)
   return value
 }
 

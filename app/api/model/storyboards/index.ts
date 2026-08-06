@@ -28,5 +28,5 @@ export * from './storyboardResDtoOutputPagesItem'
 export * from './storyboardResDtoOutputStatus'
 export * from './updateStoryboardPagesBodyDto'
 export * from './updateStoryboardPagesBodyDtoPagesItem'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

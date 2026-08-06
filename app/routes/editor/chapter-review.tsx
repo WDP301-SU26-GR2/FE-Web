@@ -16,12 +16,6 @@ import {
   chapterStoryboardControllerList,
   chapterStoryboardControllerRequestRevision
 } from '~/api/operations/storyboards/storyboards'
-import {
-  annotationControllerCreate,
-  annotationControllerList,
-  annotationControllerRemove,
-  annotationControllerResolve
-} from '~/api/operations/annotations/annotations'
 import { seriesControllerGetSeries } from '~/api/operations/series/series'
 import { contractControllerGetContractById, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
@@ -39,8 +33,9 @@ import {
 
 import type { Route } from './+types/chapter-review'
 import { SITE } from '~/shared/config/site'
-import { CreateAnnotationBodyDtoAnnotationType } from '~/api/model/annotations'
-import { isEnumValue } from '~/shared/lib/is-enum-value'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export function meta() {
   return [{ title: SITE.name }]
@@ -49,66 +44,57 @@ export function meta() {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   if (!params.seriesId || !params.chapterId) return { data: null, hasError: true }
   try {
-    const [
-      seriesResponse,
-      chapterResponse,
-      pagesResponse,
-      storyboardsResponse,
-      progressResponse,
-      annotationsResponse,
-      contractsResponse
-    ] = await Promise.all([
-      seriesControllerGetSeries({ id: params.seriesId }),
-      chapterControllerGetOne({ id: params.chapterId }),
-      chapterControllerListPages({ id: params.chapterId }),
-      chapterStoryboardControllerList({ id: params.chapterId }),
-      chapterControllerProgress({ id: params.chapterId }).catch(() => null),
-      annotationControllerList({ targetType: 'MANUSCRIPT', targetId: params.chapterId }).catch(() => null),
-      contractControllerGetContracts().catch(() => null)
-    ])
+    const [seriesResponse, chapterResponse, pagesResponse, storyboardsResponse, progressResponse, contractsResponse] =
+      await Promise.all([
+        seriesControllerGetSeries({ id: params.seriesId }),
+        chapterControllerGetOne({ id: params.chapterId }),
+        chapterControllerListPages({ id: params.chapterId }),
+        chapterStoryboardControllerList({ id: params.chapterId }),
+        chapterControllerProgress({ id: params.chapterId }).catch(() => null),
+        contractControllerGetContracts().catch(() => null)
+      ])
     if (seriesResponse.status !== 200 || chapterResponse.status !== 200 || pagesResponse.status !== 200) {
       return { data: null, hasError: true }
     }
     if (chapterResponse.data.seriesId !== params.seriesId) return { data: null, hasError: true }
-    const pages: SignedPage[] = await Promise.all(
-      pagesResponse.data.items
-        .sort((a, b) => a.pageNumber - b.pageNumber)
-        .map(async (page) => ({
-          id: page.id,
-          pageNumber: page.pageNumber,
-          status: page.status,
-          url: await signKey(page.compositeFile ?? page.originalFile)
-        }))
+    const pages: SignedPage[] = await mapWithConcurrency(
+      [...pagesResponse.data.items].sort((a, b) => a.pageNumber - b.pageNumber),
+      DETAIL_REQUEST_CONCURRENCY,
+      async (page) => ({
+        id: page.id,
+        pageNumber: page.pageNumber,
+        status: page.status,
+        url: await signKey(page.compositeFile ?? page.originalFile)
+      })
     )
     const storyboard = storyboardsResponse.status === 200 ? (storyboardsResponse.data.items[0] ?? null) : null
     const storyboardDetailResponse = storyboard
       ? await chapterStoryboardControllerGetOne({ id: params.chapterId, storyboardId: storyboard.id }).catch(() => null)
       : null
     const detailedStoryboard = storyboardDetailResponse?.status === 200 ? storyboardDetailResponse.data : storyboard
-    const storyboardAnnotationsResponse = storyboard
-      ? await annotationControllerList({ targetType: 'STORYBOARD', targetId: storyboard.id }).catch(() => null)
-      : null
-    const storyboardPages = await Promise.all(
-      (detailedStoryboard?.pages ?? []).map(async (page) => ({
+    const storyboardPages = await mapWithConcurrency(
+      detailedStoryboard?.pages ?? [],
+      DETAIL_REQUEST_CONCURRENCY,
+      async (page) => ({
         pageNumber: page.pageNumber,
         url: await signKey(page.fileUrl)
-      }))
+      })
     )
     const stagesResponse = await productionStageControllerList({ id: params.chapterId }).catch(() => null)
     const stagePageResponses =
       stagesResponse?.status === 200
-        ? await Promise.all(
-            stagesResponse.data.stages.map((stage) =>
-              productionStageControllerListPages({ id: params.chapterId, stageId: stage.id }).catch(() => null)
-            )
+        ? await mapWithConcurrency(stagesResponse.data.stages, DETAIL_REQUEST_CONCURRENCY, (stage) =>
+            productionStageControllerListPages({ id: params.chapterId, stageId: stage.id }).catch(() => null)
           )
         : []
     const stagePages = stagePageResponses.flatMap((response) => (response?.status === 200 ? response.data.items : []))
-    const regionEntries = await Promise.all(
-      pagesResponse.data.items.map(async (page) => {
+    const regionEntries = await mapWithConcurrency(
+      pagesResponse.data.items,
+      DETAIL_REQUEST_CONCURRENCY,
+      async (page) => {
         const response = await taskControllerListRegions({ id: page.id }).catch(() => null)
         return [page.id, response?.status === 200 ? response.data.items : []] as const
-      })
+      }
     )
     const contractListItem =
       contractsResponse?.data.find(
@@ -125,9 +111,6 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       storyboard: detailedStoryboard,
       storyboardPages,
       progress: progressResponse?.status === 200 ? progressResponse.data : null,
-      annotations: annotationsResponse?.status === 200 ? annotationsResponse.data.items : [],
-      storyboardAnnotations:
-        storyboardAnnotationsResponse?.status === 200 ? storyboardAnnotationsResponse.data.items : [],
       stages: stagesResponse?.status === 200 ? stagesResponse.data : null,
       stagePages,
       regionsByPage: Object.fromEntries(regionEntries)
@@ -183,21 +166,6 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         }
       )
     else if (intent === 'resumeChapter') await chapterControllerResume({ id: chapterId })
-    else if (intent === 'createAnnotation') {
-      const annotationType = required(formData, 'annotationType')
-      if (!isEnumValue(CreateAnnotationBodyDtoAnnotationType, annotationType))
-        return { ok: false, intent, errorKey: 'invalidAction' }
-      await annotationControllerCreate({
-        targetType: formData.get('annotationTarget') === 'STORYBOARD' ? 'STORYBOARD' : 'MANUSCRIPT',
-        targetId: formData.get('annotationTarget') === 'STORYBOARD' ? required(formData, 'storyboardId') : chapterId,
-        annotationType,
-        reviewStage: 'EDITOR',
-        content: required(formData, 'content'),
-        coordinates: readCoordinates(formData)
-      })
-    } else if (intent === 'resolveAnnotation')
-      await annotationControllerResolve({ id: required(formData, 'annotationId') })
-    else if (intent === 'removeAnnotation') await annotationControllerRemove({ id: required(formData, 'annotationId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
     return {
       ok: true,
@@ -211,11 +179,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
               ? publishAwaitingCoOwner
                 ? 'awaitingCoOwnerApproval'
                 : 'published'
-              : intent.toLowerCase().includes('annotation')
-                ? 'annotationUpdated'
-                : intent === 'reviseManuscript' || intent === 'reviseStoryboard'
-                  ? 'revisionRequested'
-                  : intent
+              : intent === 'reviseManuscript' || intent === 'reviseStoryboard'
+                ? 'revisionRequested'
+                : intent
     }
   } catch (error) {
     const code =
@@ -238,15 +204,6 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
               : 'actionFailed'
     return { ok: false, intent, errorKey }
   }
-}
-
-function readCoordinates(formData: FormData) {
-  const rawValues = ['x', 'y', 'width', 'height'].map((key) => String(formData.get(key) ?? '').trim())
-  if (rawValues.some((value) => !value)) return undefined
-  const values = rawValues.map(Number)
-  if (values.some((value) => !Number.isFinite(value))) return undefined
-  const [x, y, width, height] = values
-  return { x, y, width, height }
 }
 
 function required(formData: FormData, key: string) {

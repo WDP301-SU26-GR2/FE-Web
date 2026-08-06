@@ -67,5 +67,5 @@ export * from './updateProposalBodyDtoGenresItem'
 export * from './updateProposalBodyDtoPublicationType'
 export * from './updateProposalBodyDtoStoryboardPagesItem'
 export * from './updateSeriesMetadataBodyDto'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

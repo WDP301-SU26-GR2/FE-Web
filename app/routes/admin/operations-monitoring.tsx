@@ -17,6 +17,9 @@ import {
 import { revisionControllerList } from '~/api/operations/revision/revision'
 import { seriesControllerListSeries } from '~/api/operations/series/series'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 interface MonitoringData {
   series: SeriesListResDtoOutputItemsItem[]
@@ -57,22 +60,18 @@ export async function clientLoader({ request }: { request: Request }): Promise<M
     (deadlineResult.status === 'fulfilled' && deadlineResult.value !== null && deadlineResult.value.status === 200)
 
   const detailedReprints = reprintOk
-    ? await Promise.all(
-        reprintResult.value.data.map((item) =>
-          reprintRequestControllerFindById({ id: item.id })
-            .then((detail) => detail.data)
-            .catch(() => null)
-        )
+    ? await mapWithConcurrency(reprintResult.value.data, DETAIL_REQUEST_CONCURRENCY, (item) =>
+        reprintRequestControllerFindById({ id: item.id })
+          .then((detail) => detail.data)
+          .catch(() => null)
       )
     : []
   const detailedDeadlines =
     chapterId && deadlineResult.status === 'fulfilled' && deadlineResult.value?.status === 200
-      ? await Promise.all(
-          deadlineResult.value.data.items.map((item) =>
-            deadlineControllerGetOne({ id: item.id })
-              .then((detail) => detail.data)
-              .catch(() => null)
-          )
+      ? await mapWithConcurrency(deadlineResult.value.data.items, DETAIL_REQUEST_CONCURRENCY, (item) =>
+          deadlineControllerGetOne({ id: item.id })
+            .then((detail) => detail.data)
+            .catch(() => null)
         )
       : []
 

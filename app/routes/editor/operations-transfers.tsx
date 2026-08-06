@@ -6,7 +6,7 @@ import {
   transferControllerGetTransferRequestById,
   transferControllerStartNegotiation
 } from '~/api/operations/transfer/transfer'
-import { EditorTransfersPage, type EditorActionResult } from '~/features/editor'
+import { CONTRACT_FIELD_LIMITS, EditorTransfersPage, type EditorActionResult } from '~/features/editor'
 import { required } from './operations-route-utils'
 import type { Route } from './+types/operations-transfers'
 import {
@@ -90,8 +90,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (!isEnumValue(CreateTransferContractBodyDtoTransferType, transferType))
         return { ok: false, intent, errorKey: 'invalidAction' }
       if (
-        !Number.isFinite(transferAmount) ||
-        transferAmount <= 0 ||
+        !Number.isSafeInteger(transferAmount) ||
+        transferAmount < CONTRACT_FIELD_LIMITS.moneyMinimum ||
+        transferAmount > CONTRACT_FIELD_LIMITS.moneyMaximum ||
         Object.values(newOwnershipSplit).some((value) => !Number.isFinite(value) || value < 0)
       )
         return { ok: false, intent, errorKey: 'invalidContractMoney' }

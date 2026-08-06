@@ -22,6 +22,7 @@ import {
 } from '~/features/editor'
 import { SITE } from '~/shared/config/site'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import { paymentPayout, paymentThreshold, required } from './contract-route-utils'
 import { hydrateBoardDecisions, hydrateBoardSessions } from './board-route-utils'
 
@@ -31,6 +32,8 @@ export function meta() {
   return [{ title: SITE.name }]
 }
 
+const DETAIL_REQUEST_CONCURRENCY = 6
+
 export async function clientLoader(): Promise<EditorContractsData & { hasError: boolean }> {
   try {
     const [contracts, series, decisions, sessions] = await Promise.all([
@@ -39,12 +42,10 @@ export async function clientLoader(): Promise<EditorContractsData & { hasError: 
       boardControllerGetDecisions(),
       boardControllerGetSessions()
     ])
-    const contractDetails = await Promise.all(
-      contracts.data.map(async (contract) => {
-        const response = await contractControllerGetContractById({ id: contract.id }).catch(() => null)
-        return response?.status === 200 ? response.data : null
-      })
-    )
+    const contractDetails = await mapWithConcurrency(contracts.data, DETAIL_REQUEST_CONCURRENCY, async (contract) => {
+      const response = await contractControllerGetContractById({ id: contract.id }).catch(() => null)
+      return response?.status === 200 ? response.data : null
+    })
     return {
       contracts: contractDetails.filter((contract) => contract != null),
       series,

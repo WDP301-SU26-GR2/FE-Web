@@ -12,6 +12,9 @@ import { BoardReprintsPage, type BoardActionResult } from '~/features/board'
 import type { Route } from './+types/reprints'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const searchParams = new URL(request.url).searchParams
@@ -50,12 +53,10 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       contractControllerGetContracts(),
       usersControllerListMangakas({ limit: 100, offset: 0 })
     ])
-    const requests = await Promise.all(
-      (response?.data ?? []).map((item) =>
-        reprintRequestControllerFindById({ id: item.id })
-          .then((detail) => detail.data)
-          .catch(() => null)
-      )
+    const requests = await mapWithConcurrency(response?.data ?? [], DETAIL_REQUEST_CONCURRENCY, (item) =>
+      reprintRequestControllerFindById({ id: item.id })
+        .then((detail) => detail.data)
+        .catch(() => null)
     )
     return {
       requests: requests.filter((item) => item !== null),

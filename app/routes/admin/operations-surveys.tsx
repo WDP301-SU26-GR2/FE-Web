@@ -1,20 +1,92 @@
 import {
   surveyControllerCreateSurveyPeriod,
   surveyControllerFinalizeRanking,
+  surveyControllerGetEligibleSeries,
   surveyControllerGetSurveyPeriodById,
   surveyControllerGetSurveyPeriods,
+  surveyControllerGetSurveyPeriodSurveyData,
+  surveyControllerGetSurveyPeriodVotes,
   surveyControllerImportSurveyData,
+  surveyControllerGetRankingRecords,
   surveyControllerUpdateSurveyPeriodStatus
 } from '~/api/operations/survey/survey'
 import { EditorSurveysPage, type EditorActionResult } from '~/features/editor'
+import { magazineControllerGetMagazines } from '~/api/operations/magazines/magazines'
+import type { SurveyControllerGetEligibleSeriesPublicationType } from '~/api/model/survey'
 import { extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
-import { clientLoader as surveyWorkspaceLoader, loadPublicSeriesCatalog } from '../editor/operations-surveys'
+import { loadPublicSeriesCatalog } from '../editor/operations-surveys'
+import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 import { date, required } from '../editor/operations-route-utils'
 import type { Route } from './+types/operations-surveys'
 
 const PUBLICATION_TYPES = ['WEEKLY', 'MONTHLY', 'IRREGULAR'] as const
 
-export const clientLoader = surveyWorkspaceLoader
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const searchParams = new URL(request.url).searchParams
+  const focusSurveyId = (searchParams.get('surveyId') || searchParams.get('referenceId') || '').trim()
+  try {
+    const [series, surveys, eligibleSeriesCandidates] = await Promise.all([
+      loadPublicSeriesCatalog(),
+      loadSurveyPeriods(),
+      loadEligibleSeriesCandidates()
+    ])
+    const uniqueSurveys = [...new Map(surveys.map((survey) => [survey.id, survey])).values()]
+    const orderedSurveys = uniqueSurveys.sort(
+      (left, right) => new Date(right.startDate).getTime() - new Date(left.startDate).getTime()
+    )
+    const selectedSurveyId = orderedSurveys.some((survey) => survey.id === focusSurveyId)
+      ? focusSurveyId
+      : (orderedSurveys.find((survey) => survey.status === 'OPEN')?.id ??
+        orderedSurveys.find((survey) => survey.status === 'CLOSED')?.id ??
+        orderedSurveys[0]?.id ??
+        '')
+    if (!selectedSurveyId) {
+      return {
+        series,
+        eligibleSeriesCandidates,
+        surveys: orderedSurveys,
+        selectedSurvey: null,
+        votes: [],
+        surveyData: [],
+        rankings: [],
+        selectedSurveyId: '',
+        hasError: false
+      }
+    }
+    const selected = orderedSurveys.find((survey) => survey.id === selectedSurveyId)
+    const [detail, votes, surveyData, rankings] = await Promise.all([
+      surveyControllerGetSurveyPeriodById({ id: selectedSurveyId }),
+      surveyControllerGetSurveyPeriodVotes({ id: selectedSurveyId }).catch(() => null),
+      surveyControllerGetSurveyPeriodSurveyData({ id: selectedSurveyId }).catch(() => null),
+      selected?.status === 'REFLECTED'
+        ? surveyControllerGetRankingRecords({ id: selectedSurveyId }).catch(() => null)
+        : Promise.resolve(null)
+    ])
+    return {
+      series,
+      eligibleSeriesCandidates,
+      surveys: orderedSurveys,
+      selectedSurvey: detail.data,
+      votes: votes?.data ?? [],
+      surveyData: surveyData?.data ?? [],
+      rankings: rankings?.data.items ?? [],
+      selectedSurveyId,
+      hasError: false
+    }
+  } catch {
+    return {
+      series: [],
+      eligibleSeriesCandidates: [],
+      surveys: [],
+      selectedSurvey: null,
+      votes: [],
+      surveyData: [],
+      rankings: [],
+      selectedSurveyId: '',
+      hasError: true
+    }
+  }
+}
 
 export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
   const form = await request.formData()
@@ -33,15 +105,11 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (new Date(endDate) <= new Date(startDate)) return invalid(intent, 'surveyInvalidDates')
       if (eligibleSeriesIds.length === 0) return invalid(intent, 'surveySeriesRequired')
 
-      const [serializedSeries, periods] = await Promise.all([
-        loadPublicSeriesCatalog('SERIALIZED'),
+      const [eligibleSeries, periods] = await Promise.all([
+        surveyControllerGetEligibleSeries({ magazine, publicationType }),
         surveyControllerGetSurveyPeriods()
       ])
-      const candidates = new Map(
-        serializedSeries
-          .filter((series) => series.magazine === magazine && series.publicationType === publicationType)
-          .map((series) => [series.id, series])
-      )
+      const candidates = new Map(eligibleSeries.data.items.map((series) => [series.id, series]))
       if (eligibleSeriesIds.some((seriesId) => !candidates.has(seriesId)))
         return invalid(intent, 'surveySeriesScopeMismatch')
       if (
@@ -131,6 +199,25 @@ function positiveInteger(form: FormData, key: string) {
 
 function invalid(intent: string, errorKey: string): EditorActionResult {
   return { ok: false, intent, errorKey }
+}
+
+async function loadSurveyPeriods() {
+  return loadAllOffsetItems((pagination) =>
+    surveyControllerGetSurveyPeriods(pagination).then((response) => response.data)
+  )
+}
+
+async function loadEligibleSeriesCandidates() {
+  const magazinesResponse = await magazineControllerGetMagazines()
+  const scopes = magazinesResponse.data.items.flatMap((magazine) =>
+    magazine.publicationTypes.map((publicationType) => ({
+      magazine: magazine.name,
+      publicationType: publicationType as SurveyControllerGetEligibleSeriesPublicationType
+    }))
+  )
+  const responses = await Promise.all(scopes.map((scope) => surveyControllerGetEligibleSeries(scope).catch(() => null)))
+  const items = responses.flatMap((response) => response?.data.items ?? [])
+  return [...new Map(items.map((item) => [item.id, item])).values()]
 }
 
 export default function RouteComponent({ loaderData }: Route.ComponentProps) {

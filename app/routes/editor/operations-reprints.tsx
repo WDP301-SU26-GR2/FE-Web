@@ -13,6 +13,9 @@ import { loadOperationalSeries, required } from './operations-route-utils'
 import type { Route } from './+types/operations-reprints'
 import { AssignReviserBodyDtoReviserType, CreateReprintRequestBodyDtoRevisionMode } from '~/api/model/reprint-requests'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusRequestId = new URL(request.url).searchParams.get('requestId') ?? ''
@@ -24,14 +27,12 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     ])
     const reprintResponse = await listAllReprints()
     const reprintList = reprintResponse.data
-    const reprints = await Promise.all(
-      reprintList.map(async (item) => {
-        const detail = await reprintRequestControllerFindById({ id: item.id }).catch(() => null)
-        return detail?.status === 200 ? detail.data : null
-      })
-    )
-    const chapterResponses = await Promise.all(
-      series.map((item) => chapterControllerListBySeries({ seriesId: item.id }))
+    const reprints = await mapWithConcurrency(reprintList, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+      const detail = await reprintRequestControllerFindById({ id: item.id }).catch(() => null)
+      return detail?.status === 200 ? detail.data : null
+    })
+    const chapterResponses = await mapWithConcurrency(series, DETAIL_REQUEST_CONCURRENCY, (item) =>
+      chapterControllerListBySeries({ seriesId: item.id })
     )
     return {
       series,

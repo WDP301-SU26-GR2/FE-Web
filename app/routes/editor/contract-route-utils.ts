@@ -6,6 +6,9 @@ import {
 import type { AmendmentListItemDtoOutput, AmendmentResDtoOutput } from '~/api/model/contracts'
 import { CONTRACT_FIELD_LIMITS } from '~/features/editor'
 import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function loadContractBase(id: string) {
   const [contract, progress] = await Promise.all([
@@ -17,12 +20,10 @@ export async function loadContractBase(id: string) {
 }
 
 export async function hydrateAmendments(contractId: string, items: AmendmentListItemDtoOutput[]) {
-  const details = await Promise.all(
-    items.map(async (item) => {
-      const response = await contractAmendmentControllerGetAmendment({ contractId, id: item.id }).catch(() => null)
-      return response?.status === 200 ? response.data : null
-    })
-  )
+  const details = await mapWithConcurrency(items, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+    const response = await contractAmendmentControllerGetAmendment({ contractId, id: item.id }).catch(() => null)
+    return response?.status === 200 ? response.data : null
+  })
   return details.filter((item): item is AmendmentResDtoOutput => item != null)
 }
 

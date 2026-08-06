@@ -34,7 +34,6 @@ export interface TaskBoardProps {
   onRequestRevision: (taskId: string) => void
   onCancel: (taskId: string) => void
   onEdit: (task: TaskListResDtoOutputItemsItem) => void
-  onReassign: (task: TaskListResDtoOutputItemsItem) => void
   page: number
   totalPages: number
   total: number
@@ -63,7 +62,6 @@ export function TaskBoard({
   onRequestRevision,
   onCancel,
   onEdit,
-  onReassign,
   page,
   totalPages,
   total,
@@ -119,7 +117,6 @@ export function TaskBoard({
                 onRequestRevision={onRequestRevision}
                 onCancel={onCancel}
                 onEdit={onEdit}
-                onReassign={onReassign}
               />
             ))}
           </div>
@@ -167,7 +164,6 @@ interface TaskCardProps {
   onRequestRevision: (taskId: string) => void
   onCancel: (taskId: string) => void
   onEdit: (task: TaskListResDtoOutputItemsItem) => void
-  onReassign: (task: TaskListResDtoOutputItemsItem) => void
 }
 
 function TaskCard({
@@ -177,8 +173,7 @@ function TaskCard({
   approvingGroupIds,
   onRequestRevision,
   onCancel,
-  onEdit,
-  onReassign
+  onEdit
 }: TaskCardProps) {
   const { t, i18n } = useTranslation('mangaka')
   const [detail, setDetail] = useState<TaskResDtoOutput | null>(null)
@@ -540,18 +535,6 @@ function TaskCard({
                 className='rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors'
               >
                 {t('studio.tasks.board.edit')}
-              </button>
-            )}
-            {(task.status === 'ASSIGNED' ||
-              task.status === 'IN_PROGRESS' ||
-              task.status === 'REVISION_REQUESTED' ||
-              task.status === 'ON_HOLD') && (
-              <button
-                type='button'
-                onClick={() => onReassign(task)}
-                className='rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors'
-              >
-                {t('studio.tasks.board.reassign')}
               </button>
             )}
             {(task.status === 'SUBMITTED' || task.status === 'UNDER_REVIEW') && (

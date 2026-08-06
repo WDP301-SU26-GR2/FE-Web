@@ -21,11 +21,13 @@ import type { BoardDecisionResDtoOutput } from '~/api/model/board'
 import { SendOtpBodyDtoPurpose } from '~/api/model/auth'
 import { BoardContractDetailPage, type BoardActionResult } from '~/features/board'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import { hasValidPaymentCondition } from '~/shared/lib/contracts/payment-conditions'
 import type { Route } from './+types/contract-detail'
 import i18n from '~/shared/lib/i18n'
 
 const tBoard = i18n.getFixedT(null, 'board')
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [contract, progress, amendments, conditions, versions, comments] = await Promise.all([
@@ -36,33 +38,36 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     contractControllerGetContractVersions({ id: params.id }).catch(() => null),
     contractControllerListComments({ id: params.id }).catch(() => null)
   ])
-  const detailedVersions = await Promise.all(
-    (versions?.status === 200 ? versions.data : []).map((version) =>
+  const detailedVersions = await mapWithConcurrency(
+    versions?.status === 200 ? versions.data : [],
+    DETAIL_REQUEST_CONCURRENCY,
+    (version) =>
       contractControllerGetContractVersionById({ id: params.id, versionId: version.id })
         .then((response) => response.data)
         .catch(() => null)
-    )
   )
-  const detailedAmendments = await Promise.all(
-    (amendments?.status === 200 ? amendments.data : []).map((amendment) =>
+  const detailedAmendments = await mapWithConcurrency(
+    amendments?.status === 200 ? amendments.data : [],
+    DETAIL_REQUEST_CONCURRENCY,
+    (amendment) =>
       contractAmendmentControllerGetAmendment({ contractId: params.id, id: amendment.id })
         .then((response) => response.data)
         .catch(() => null)
-    )
   )
   if (contract.status !== 200) throw new Response('Not found', { status: 404 })
   const decisionList = await boardControllerGetDecisions({
     mine: 'true',
     targetSeriesId: contract.data.seriesId
   }).catch(() => null)
-  const decisionDetails = await Promise.all(
-    (decisionList?.data ?? [])
-      .filter((decision) => decision.decisionType === 'CONTRACT' || decision.decisionType === 'SERIALIZATION')
-      .map((decision) =>
-        boardControllerGetDecisionDetails({ id: decision.id })
-          .then((response) => response.data)
-          .catch(() => null)
-      )
+  const decisionDetails = await mapWithConcurrency(
+    (decisionList?.data ?? []).filter(
+      (decision) => decision.decisionType === 'CONTRACT' || decision.decisionType === 'SERIALIZATION'
+    ),
+    DETAIL_REQUEST_CONCURRENCY,
+    (decision) =>
+      boardControllerGetDecisionDetails({ id: decision.id })
+        .then((response) => response.data)
+        .catch(() => null)
   )
   const approvedAmendmentDecisions = decisionDetails.filter(
     (decision): decision is BoardDecisionResDtoOutput =>

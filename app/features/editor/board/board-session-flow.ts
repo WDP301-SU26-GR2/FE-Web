@@ -26,7 +26,11 @@ const ERROR_KEY_BY_CODE = {
   'Error.BoardSessionNotFound': 'sessionNotFound',
   'Error.BoardSessionNotOpen': 'sessionNotOpen',
   'Error.InvalidBoardSessionTransition': 'invalidSessionTransition',
-  'Error.NotSessionCreator': 'notSessionCreator'
+  'Error.NotSessionCreator': 'notSessionCreator',
+  'Error.DecisionTypeNotAllowedForSeriesStatus': 'decisionTypeNotAllowedForSeriesStatus',
+  'Error.OpenBoardDecisionExists': 'openBoardDecisionExists',
+  'Error.MagazineNotRegistered': 'magazineNotRegistered',
+  'Error.PublicationTypeNotSupportedByMagazine': 'publicationTypeNotSupportedByMagazine'
 } as const satisfies Record<string, string>
 
 export function isValidBoardSessionTimeRange(startTime: string, endTime?: string): boolean {

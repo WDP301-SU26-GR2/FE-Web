@@ -11,17 +11,16 @@ import {
   FileCheck2,
   Loader2,
   LockKeyhole,
-  MessageSquareText,
   Pause,
   Play,
   Printer,
   RotateCcw
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { EditorAnnotationPanel } from '../components/editor-annotation-panel'
 import { EditorActionToast } from '../components/editor-action-toast'
 
 import type { EditorActionResult, EditorChapterReviewData } from '../types'
+import { ImagePreview } from '~/shared/components'
 import { ratioToPercent } from '~/shared/lib/progress'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
@@ -40,17 +39,25 @@ export function EditorChapterReviewPage({
   const [storyboardReviewOpen, setStoryboardReviewOpen] = useState(false)
   const [deadlineOpen, setDeadlineOpen] = useState(false)
   const [holdOpen, setHoldOpen] = useState(false)
-  const [storyboardAnnotationsOpen, setStoryboardAnnotationsOpen] = useState(false)
-  const [manuscriptAnnotationsOpen, setManuscriptAnnotationsOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<'manuscript' | 'storyboard' | 'production'>('manuscript')
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const revalidateWhenIdle = () => {
       if (document.visibilityState === 'visible' && fetcher.state === 'idle' && revalidator.state === 'idle') {
         void revalidator.revalidate()
       }
-    }, 15_000)
-    return () => window.clearInterval(timer)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') revalidateWhenIdle()
+    }
+
+    window.addEventListener('focus', revalidateWhenIdle)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', revalidateWhenIdle)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [fetcher.state, revalidator])
 
   if (hasError || !data) {
@@ -163,13 +170,17 @@ export function EditorChapterReviewPage({
             {pages.map((page) => (
               <figure key={page.id} className='overflow-hidden rounded-xl border border-border bg-card shadow-sm'>
                 {page.url ? (
-                  <a href={page.url} target='_blank' rel='noreferrer'>
-                    <img
-                      src={page.url}
-                      alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
-                      className='aspect-[3/4] w-full object-cover'
-                    />
-                  </a>
+                  <ImagePreview
+                    src={page.url}
+                    alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
+                    title={t('proposalDetail.page', { number: page.pageNumber })}
+                    description={t(`chapterReview.pageStatuses.${page.status}`, {
+                      defaultValue: t('common.notAvailable')
+                    })}
+                    openOriginalLabel={t('chapterReview.openOriginalImage')}
+                    imageClassName='aspect-[3/4] w-full object-cover'
+                    triggerClassName='w-full'
+                  />
                 ) : (
                   <div className='flex aspect-[3/4] items-center justify-center bg-muted text-xs text-muted-foreground'>
                     {t('chapterReview.imageUnavailable')}
@@ -189,17 +200,6 @@ export function EditorChapterReviewPage({
               </figure>
             ))}
           </div>
-          <div className='mt-4 flex justify-end'>
-            <button
-              type='button'
-              onClick={() => setManuscriptAnnotationsOpen(true)}
-              className='inline-flex h-10 items-center gap-2 rounded-md border border-border bg-card px-4 text-xs font-bold text-foreground hover:bg-muted'
-            >
-              <MessageSquareText className='size-4' />
-              {t('chapterReview.annotations')}
-              <span className='rounded-full bg-muted px-2 py-0.5 text-xs'>{data.annotations.length}</span>
-            </button>
-          </div>
         </section>
       )}
       {activeSection === 'storyboard' && data.storyboard && (
@@ -218,25 +218,23 @@ export function EditorChapterReviewPage({
             {data.storyboardPages.map(
               (page) =>
                 page.url && (
-                  <img
+                  <ImagePreview
                     key={page.pageNumber}
                     src={page.url}
                     alt={t('proposalDetail.pageAlt', { number: page.pageNumber })}
-                    className='aspect-[3/4] rounded-lg border border-border object-cover'
+                    title={t('proposalDetail.page', { number: page.pageNumber })}
+                    description={t(`filters.storyboardStatuses.${data.storyboard?.status}`, {
+                      defaultValue: t('common.notAvailable')
+                    })}
+                    openOriginalLabel={t('chapterReview.openOriginalImage')}
+                    imageClassName='aspect-[3/4] w-full object-cover'
+                    triggerClassName='rounded-lg border border-border'
+                    iconClassName='size-9'
                   />
                 )
             )}
           </div>
           <div className='mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-4'>
-            <button
-              type='button'
-              onClick={() => setStoryboardAnnotationsOpen(true)}
-              className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-xs font-bold text-foreground hover:bg-muted'
-            >
-              <MessageSquareText className='size-4' />
-              {t('chapterReview.storyboardAnnotations')}
-              <span className='rounded-full bg-muted px-2 py-0.5 text-xs'>{data.storyboardAnnotations.length}</span>
-            </button>
             <button
               type='button'
               onClick={() => setStoryboardReviewOpen(true)}
@@ -257,15 +255,6 @@ export function EditorChapterReviewPage({
                 <CalendarClock className='size-5 text-primary' />
                 {t('chapterReview.production')}
               </h2>
-              <button
-                type='button'
-                onClick={() => setManuscriptAnnotationsOpen(true)}
-                className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted'
-              >
-                <MessageSquareText className='size-4' />
-                {t('chapterReview.annotations')}
-                <span className='rounded-full bg-muted px-2 py-0.5 text-xs'>{data.annotations.length}</span>
-              </button>
             </div>
             {chapter.schedule?.currentDeadline ? (
               <div className='mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4'>
@@ -399,42 +388,6 @@ export function EditorChapterReviewPage({
             </fetcher.Form>
           </div>
         </section>
-      )}
-      <Dialog
-        compact
-        open={manuscriptAnnotationsOpen}
-        onClose={() => setManuscriptAnnotationsOpen(false)}
-        titleId='manuscript-annotations-title'
-        title={t('chapterReview.annotations')}
-        size='lg'
-      >
-        <EditorAnnotationPanel
-          embedded
-          title={t('chapterReview.annotations')}
-          annotations={data.annotations}
-          target='MANUSCRIPT'
-          targetId={chapter.id}
-          contextFields={{ chapterId: chapter.id }}
-        />
-      </Dialog>
-      {data.storyboard && (
-        <Dialog
-          compact
-          open={storyboardAnnotationsOpen}
-          onClose={() => setStoryboardAnnotationsOpen(false)}
-          titleId='storyboard-annotations-title'
-          title={t('chapterReview.storyboardAnnotations')}
-          size='lg'
-        >
-          <EditorAnnotationPanel
-            embedded
-            title={t('chapterReview.storyboardAnnotations')}
-            annotations={data.storyboardAnnotations}
-            target='STORYBOARD'
-            targetId={data.storyboard.id}
-            contextFields={{ chapterId: chapter.id, storyboardId: data.storyboard.id }}
-          />
-        </Dialog>
       )}
       {data.storyboard && (
         <Dialog
@@ -706,8 +659,8 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
       >
         <CloseDialogOnSuccess data={fetcher.data} state={fetcher.state} />
         {canReview ? (
-          <div className='grid gap-5 sm:grid-cols-2'>
-            <fetcher.Form method='post' className='space-y-3'>
+          <div className='space-y-4'>
+            <fetcher.Form method='post' className='space-y-4'>
               <input type='hidden' name='chapterId' value={chapter.id} />
               <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
                 {t('actions.revisionReason')}
@@ -722,31 +675,31 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
                   className='w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
                 />
               </label>
-              <button
-                name='intent'
-                value='reviseManuscript'
-                disabled={busy || isOnHold}
-                className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:opacity-50'
-              >
-                <RotateCcw className='size-4' />
-                {t('actions.requestRevision')}
-              </button>
-            </fetcher.Form>
-            <div className='flex flex-col justify-between rounded-xl border border-primary/20 bg-primary/5 p-4'>
-              <p className='text-xs leading-6 text-muted-foreground'>{t('publicationReviewUx.approveDescription')}</p>
-              <fetcher.Form method='post' className='mt-5'>
-                <input type='hidden' name='chapterId' value={chapter.id} />
+              <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs leading-6 text-muted-foreground'>
+                {t('publicationReviewUx.approveDescription')}
+              </p>
+              <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
+                <button
+                  name='intent'
+                  value='reviseManuscript'
+                  disabled={busy || isOnHold}
+                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:opacity-50'
+                >
+                  <RotateCcw className='size-4' />
+                  {t('actions.requestRevision')}
+                </button>
                 <button
                   name='intent'
                   value='approveManuscript'
+                  formNoValidate
                   disabled={busy || isOnHold}
-                  className='inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
                 >
                   {busy ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
                   {t('actions.approveManuscript')}
                 </button>
-              </fetcher.Form>
-            </div>
+              </div>
+            </fetcher.Form>
           </div>
         ) : (
           <fetcher.Form method='post' className='space-y-4'>

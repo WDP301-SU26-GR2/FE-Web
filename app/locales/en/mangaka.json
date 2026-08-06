@@ -795,7 +795,9 @@
         "InvalidProposalState": "The series dossier is not waiting for resubmission.",
         "InvalidNameState": "The sample storyboard is not waiting for resubmission.",
         "InvalidSeriesTransition": "The series is not in a state that allows this action.",
-        "SeriesNotFound": "The series no longer exists."
+        "SeriesNotFound": "The series no longer exists.",
+        "FranchiseConsentRequired": "The original Mangaka must approve this franchise series before it can be submitted.",
+        "MangakaProfileRequired": "You must complete your Mangaka profile before submitting a series dossier."
       }
     },
     "error": {
@@ -818,9 +820,6 @@
       "confirm": "Submit series",
       "submitting": "Submitting series...",
       "success": "Series submitted for editorial review.",
-      "errorPermission": "Only the series owner can submit this series dossier.",
-      "errorConflict": "The series can no longer be submitted in its current state.",
-      "errorFranchiseConsent": "The original Mangaka must approve this franchise series dossier before it can be submitted.",
       "errorGeneric": "Failed to submit series. Please try again."
     },
     "publication": {
@@ -858,7 +857,6 @@
       "manuscriptStatusTitle": "Manuscript status",
       "create": {
         "dialogTitle": "Create new chapter",
-        "dialogDescription": "A new chapter will be created for this series. The latest Editor-approved Name (Storyboard) will be auto-matched to seed the Manuscript and Schedule.",
         "seriesLabel": "Series",
         "chapterNumberLabel": "Chapter number",
         "titleLabel": "Title (optional)",
@@ -1110,7 +1108,12 @@
         "inReview": "Editor reviewing",
         "revision": "Revision requested",
         "approved": "Approved — page upload unlocked",
-        "revisionCallout": "The Editor has requested changes. Resubmit when you're done editing pages above."
+        "revisionCallout": "The Editor has requested changes. Open the notice, mark each request as addressed, then resubmit."
+      },
+      "revisions": {
+        "drawerSubtitle": "Editor revision requests for this chapter storyboard.",
+        "emptyDescription": "There are no revision requests for this storyboard.",
+        "drawerFooter": "Mark every request as addressed before resubmitting."
       }
     },
     "pagesLocked": {
@@ -1500,7 +1503,6 @@
       "pageNotFound": "Page not found or has been deleted.",
       "assetNotFound": "A reference file no longer exists. Please re-upload.",
       "invalidTransition": "Task has changed status. Please reload before proceeding.",
-      "notReassignable": "Task in its current status cannot be reassigned.",
       "notCancellable": "Task is already completed or cancelled.",
       "notFound": "Task not found.",
       "generic": "Could not assign task. Please try again.",
@@ -1510,7 +1512,6 @@
       "cancelFailed": "Could not cancel the task.",
       "loadDetailFailed": "Could not load task details. Please try again.",
       "updateFailed": "Could not update this task. Please try again.",
-      "reassignFailed": "Could not reassign this task. Please try again.",
       "groupApproveFailed": "Could not approve this task group. Please try again."
     },
     "filters": {
@@ -1737,7 +1738,6 @@
         "pageNotFound": "Page not found or has been deleted.",
         "assetNotFound": "A reference file no longer exists. Please re-upload.",
         "invalidTransition": "Task has changed status. Please reload before proceeding.",
-        "notReassignable": "Task in its current status cannot be reassigned.",
         "notCancellable": "Task is already completed or cancelled.",
         "notFound": "Task not found.",
         "generic": "Could not assign task. Please try again."
@@ -1752,7 +1752,6 @@
         "priority": "Priority: {{value}}",
         "regions": "Regions: {{count}}",
         "edit": "Edit",
-        "reassign": "Reassign",
         "approve": "Approve",
         "approveGroup": "Approve group",
         "revision": "Request revision",
@@ -1760,7 +1759,6 @@
       },
       "edit": {
         "title": "Edit task",
-        "description": "Only changed fields are sent. Clear references only when you explicitly choose to remove all of them.",
         "deadline": "Deadline",
         "priority": "Priority",
         "priorityInvalid": "Priority must be a whole number of zero or more.",
@@ -1770,19 +1768,6 @@
         "cancel": "Cancel",
         "save": "Save changes",
         "saving": "Saving..."
-      },
-      "reassign": {
-        "title": "Reassign task",
-        "description": "Choose an active assistant with the required specialization.",
-        "assistantLabel": "New assistant",
-        "assistantPlaceholder": "— Choose an assistant —",
-        "unnamedAssistant": "Unnamed assistant",
-        "noEligibleAssistant": "No other active assistant is eligible for this task type.",
-        "notEligible": "This task cannot be reassigned in its current status.",
-        "confirmation": "I understand that the current assistant will lose access to this task after reassignment.",
-        "cancel": "Cancel",
-        "submit": "Reassign task",
-        "submitting": "Reassigning..."
       },
       "pagination": {
         "prev": "Previous",
@@ -1837,7 +1822,6 @@
         "approved": "Task approved.",
         "approveFailed": "Couldn't approve.",
         "updated": "Task updated.",
-        "reassigned": "Task reassigned.",
         "groupApproved": "Approved {{count}} task(s) in this group.",
         "groupSkipped": "{{count}} task(s) were skipped because they are not ready for approval.",
         "revisionRequested": "Revision requested.",

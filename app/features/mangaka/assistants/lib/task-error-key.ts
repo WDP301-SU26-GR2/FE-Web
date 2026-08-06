@@ -25,10 +25,6 @@ const TASK_ERROR_MAP: Record<string, { key: string; fallback: string }> = {
     key: 'studio.tasks.errors.invalidTransition',
     fallback: 'Task đã đổi trạng thái. Hãy tải lại trước khi thao tác.'
   },
-  'Error.TaskNotReassignable': {
-    key: 'studio.tasks.errors.notReassignable',
-    fallback: 'Task ở trạng thái hiện tại không thể giao lại.'
-  },
   'Error.TaskNotCancellable': {
     key: 'studio.tasks.errors.notCancellable',
     fallback: 'Task đã hoàn tất hoặc đã huỷ nên không thể huỷ lại.'

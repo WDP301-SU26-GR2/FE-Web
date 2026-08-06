@@ -5,6 +5,7 @@ import { cn } from '~/shared/lib/cn'
 import { SignedImage } from '~/shared/components/signed-image'
 import type { AssignmentListResDtoOutputItemsItem } from '~/api/model/studio'
 import type { AssignmentListResDtoOutputItemsItemStatus } from '~/api/model/studio/assignmentListResDtoOutputItemsItemStatus'
+import { hasLoadedTerminationReason } from '~/features/mangaka/studio/lib/termination-reason-visibility'
 
 export type AssignmentCardProps = {
   assignment: AssignmentListResDtoOutputItemsItem
@@ -193,7 +194,7 @@ export function AssignmentCard({
 
       {detailError && <p className='text-xs text-destructive'>{detailError}</p>}
 
-      {assignment.status === 'TERMINATED' && (
+      {assignment.status === 'TERMINATED' && hasLoadedTerminationReason(terminatedReason) && (
         <div className='flex items-start gap-1.5 rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-[11px] text-destructive'>
           <XCircle className='mt-0.5 h-3 w-3 shrink-0' />
           <span>

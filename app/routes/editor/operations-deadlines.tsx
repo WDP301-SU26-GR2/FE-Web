@@ -11,8 +11,11 @@ import {
 import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
 import { EditorDeadlinesPage, type EditorActionResult } from '~/features/editor'
 import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import { date, loadOperationalSeries, required } from './operations-route-utils'
 import type { Route } from './+types/operations-deadlines'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const focusChapterId = new URL(request.url).searchParams.get('chapterId') ?? ''
@@ -29,12 +32,10 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
       resolvedChapterId ? deadlineControllerList({ chapterId: resolvedChapterId }) : null
     ])
     const listItems = response?.status === 200 ? response.data.items : []
-    const items = await Promise.all(
-      listItems.map(async (item) => {
-        const detail = await deadlineControllerGetOne({ id: item.id }).catch(() => null)
-        return detail?.status === 200 ? detail.data : null
-      })
-    )
+    const items = await mapWithConcurrency(listItems, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+      const detail = await deadlineControllerGetOne({ id: item.id }).catch(() => null)
+      return detail?.status === 200 ? detail.data : null
+    })
     return {
       items: items.filter((item) => item != null),
       series,

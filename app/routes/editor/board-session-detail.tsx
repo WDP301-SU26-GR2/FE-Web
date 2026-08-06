@@ -14,6 +14,7 @@ import {
   contractControllerGetContractById,
   contractControllerGetContracts
 } from '~/api/operations/contracts/contracts'
+import { magazineControllerGetMagazines } from '~/api/operations/magazines/magazines'
 import {
   transferControllerGetAssignedEditorRequests,
   transferControllerGetTransferContractById
@@ -33,13 +34,14 @@ import { hydrateBoardDecisions, loadBoardSessionSeries, required } from './board
 import type { Route } from './+types/board-session-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [session, decisions, messages, series, contracts, transferRequests] = await Promise.all([
+  const [session, decisions, messages, series, contracts, transferRequests, magazines] = await Promise.all([
     boardControllerGetSessionById({ id: params.id }),
     boardControllerGetDecisions({ boardSessionId: params.id }),
     boardControllerGetSessionMessages({ id: params.id }, { limit: 200, offset: 0 }).catch(() => null),
     loadBoardSessionSeries(),
     contractControllerGetContracts().catch(() => null),
-    transferControllerGetAssignedEditorRequests().catch(() => null)
+    transferControllerGetAssignedEditorRequests().catch(() => null),
+    magazineControllerGetMagazines().catch(() => null)
   ])
   if (session.status !== 200) throw new Response('Not found', { status: 404 })
   const assignedTransferRequests = transferRequests?.data.data ?? []
@@ -50,6 +52,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     decisions: await hydrateBoardDecisions(decisions.data),
     messages: messages?.status === 200 ? messages.data.items : [],
     series,
+    magazines: magazines?.status === 200 ? magazines.data.items : [],
     contractResources,
     transferRequests: assignedTransferRequests
   }
@@ -131,13 +134,24 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
         const publicationType = required(form, 'publicationType')
         if (!['WEEKLY', 'MONTHLY', 'IRREGULAR'].includes(publicationType))
           return { ok: false, intent, errorKey: 'invalidState' }
+        const magazine = required(form, 'magazine')
+        const magazines = await magazineControllerGetMagazines().catch(() => null)
+        const selectedMagazine = magazines?.status === 200 ? magazines.data.items.find((item) => item.name === magazine) : null
+        if (
+          selectedMagazine &&
+          !selectedMagazine.publicationTypes.some((supportedType) => supportedType === publicationType)
+        )
+          return { ok: false, intent, errorKey: 'publicationTypeNotSupportedByMagazine' }
         Object.assign(details, {
-          magazine: required(form, 'magazine'),
+          magazine,
           startIssueNumber,
           publicationType
         })
       } else {
-        if (decisionType !== 'CONTRACT' && !['SERIALIZED', 'HIATUS'].includes(series.data.status))
+        if (
+          (decisionType === 'CANCELLATION' || decisionType === 'FORMAT_CHANGE' || decisionType === 'COMPLETION') &&
+          !['SERIALIZED', 'HIATUS'].includes(series.data.status)
+        )
           return { ok: false, intent, errorKey: 'invalidState' }
         details.note = String(form.get('decisionNote') ?? '').trim() || null
         if (decisionType === 'CANCELLATION') {

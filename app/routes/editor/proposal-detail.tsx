@@ -1,3 +1,5 @@
+import { redirect } from 'react-router'
+
 import {
   seriesControllerApproveProposal,
   seriesControllerGetSeries,
@@ -11,14 +13,18 @@ import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
 import { SITE } from '~/shared/config/site'
 import {
   EDITOR_PROPOSAL_INTENTS,
+  EDITOR_PROPOSAL_ROUTES,
   EditorProposalDetailPage,
   isEditorProposalIntent,
   mapEditorProposalError,
   type EditorActionResult,
   type EditorProposalDetailData
 } from '~/features/editor'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 
 import type { Route } from './+types/proposal-detail'
+
+const DETAIL_REQUEST_CONCURRENCY = 6
 
 export function meta({ data }: Route.MetaArgs) {
   return [{ title: data?.data?.series.title ? `${data.data.series.title} | ${SITE.shortName}` : SITE.shortName }]
@@ -33,15 +39,18 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     const series = seriesResponse.data
     const [coverUrl, characterDesigns, storyboardPages] = await Promise.all([
       signKey(series.coverImage),
-      Promise.all((series.proposal?.characterDesigns ?? []).map(async (key) => ({ key, url: await signKey(key) }))),
-      Promise.all(
-        [...(series.proposal?.storyboardPages ?? [])]
-          .sort((left, right) => left.pageNumber - right.pageNumber)
-          .map(async (page) => ({
-            pageNumber: page.pageNumber,
-            key: page.fileUrl,
-            url: await signKey(page.fileUrl)
-          }))
+      mapWithConcurrency(series.proposal?.characterDesigns ?? [], DETAIL_REQUEST_CONCURRENCY, async (key) => ({
+        key,
+        url: await signKey(key)
+      })),
+      mapWithConcurrency(
+        [...(series.proposal?.storyboardPages ?? [])].sort((left, right) => left.pageNumber - right.pageNumber),
+        DETAIL_REQUEST_CONCURRENCY,
+        async (page) => ({
+          pageNumber: page.pageNumber,
+          key: page.fileUrl,
+          url: await signKey(page.fileUrl)
+        })
       )
     ])
     const data: EditorProposalDetailData = {
@@ -56,7 +65,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   }
 }
 
-export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
+export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult | Response> {
   const formData = await request.formData()
   const intent = String(formData.get('intent') ?? '')
   const seriesId = String(formData.get('seriesId') ?? '').trim()
@@ -75,8 +84,10 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     } else if (intent === EDITOR_PROPOSAL_INTENTS.reopen) {
       if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
       await seriesControllerReopenReview({ id: seriesId }, { reason })
-    } else if (intent === EDITOR_PROPOSAL_INTENTS.release) await seriesControllerRelease({ id: seriesId })
-    else if (intent === EDITOR_PROPOSAL_INTENTS.pitch) await seriesControllerPitch({ id: seriesId })
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.release) {
+      await seriesControllerRelease({ id: seriesId })
+      return redirect(EDITOR_PROPOSAL_ROUTES.list)
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.pitch) await seriesControllerPitch({ id: seriesId })
     else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
@@ -84,11 +95,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ? 'rejected'
         : intent === EDITOR_PROPOSAL_INTENTS.reopen
           ? 'reviewReopened'
-          : intent === EDITOR_PROPOSAL_INTENTS.release
-            ? 'released'
-            : intent === EDITOR_PROPOSAL_INTENTS.pitch
-              ? 'pitch'
-              : 'revisionRequested'
+          : intent === EDITOR_PROPOSAL_INTENTS.pitch
+            ? 'pitch'
+            : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
     return { ok: false, intent, errorKey: mapEditorProposalError(error) }

@@ -64,36 +64,37 @@ export function useUnreadNotifications(options: UseUnreadNotificationsOptions = 
       return
     }
 
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-    const signal = controller.signal
+    const requestUnread = () => {
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+      void fetchUnread(controller.signal)
+    }
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch, setState happens inside the awaited function
-    void fetchUnread(signal)
+    requestUnread()
 
     const timer = window.setInterval(() => {
-      // Re-arm a fresh signal so the previous timer-triggered fetch can still
-      // be aborted if it's somehow still in-flight (e.g. extremely slow network).
-      abortRef.current?.abort()
-      const c = new AbortController()
-      abortRef.current = c
-      void fetchUnread(c.signal)
+      if (document.visibilityState !== 'visible') return
+      requestUnread()
     }, pollIntervalMs)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') requestUnread()
+    }
+    const onFocus = () => requestUnread()
 
     // External invalidation hook: any other screen can dispatch
     // NOTIFICATIONS_REFRESH_EVENT after a markRead/markAllRead to make the
     // bell dot update instantly without waiting for the next poll tick.
-    const onExternalRefresh = () => {
-      abortRef.current?.abort()
-      const c = new AbortController()
-      abortRef.current = c
-      void fetchUnread(c.signal)
-    }
+    const onExternalRefresh = () => requestUnread()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('focus', onFocus)
     window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, onExternalRefresh)
 
     return () => {
       window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('focus', onFocus)
       window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, onExternalRefresh)
       abortRef.current?.abort()
     }

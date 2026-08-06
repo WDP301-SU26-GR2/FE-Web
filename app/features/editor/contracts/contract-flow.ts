@@ -10,14 +10,14 @@ export const EDITOR_CONTRACT_INTENTS = {
   create: 'createContract',
   update: 'updateContract',
   submitReview: 'submitContractReview',
-  saveAndSubmitReview: 'saveAndSubmitContractReview',
-  redraft: 'redraftContract'
+  redraft: 'redraftContract',
+  void: 'voidContract'
 } as const
 
 export const CONTRACT_FIELD_LIMITS = {
   versionNoteMaxLength: 500,
   moneyMinimum: 1,
-  moneyMaximum: 1_000_000_000_000,
+  moneyMaximum: 100_000_000_000,
   percentageMinimum: 0,
   percentageMaximum: 100,
   chapterMaximum: 10_000,
@@ -59,6 +59,10 @@ export function canEditContract(contract: Pick<ContractResDtoOutput, 'status'>):
 
 export function canSubmitContractForReview(contract: Pick<ContractResDtoOutput, 'status'>): boolean {
   return contract.status === ContractResDtoOutputStatus.DRAFT
+}
+
+export function canVoidContract(contract: Pick<ContractResDtoOutput, 'status'>): boolean {
+  return EDITABLE_STATUSES.has(contract.status)
 }
 
 export function canRedraftContract(contract: Pick<ContractResDtoOutput, 'status'>): boolean {

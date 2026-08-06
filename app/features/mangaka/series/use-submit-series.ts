@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 
 import { seriesControllerSubmit } from '~/api/operations/series/series'
 import type { SeriesResDtoOutput } from '~/api/model/series'
-import { isFetchError } from '~/api/mutator/custom-fetch'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 type UseSubmitSeriesResult = {
@@ -18,8 +17,9 @@ type UseSubmitSeriesResult = {
  *
  * Calls POST /series/:id/submit (orval-generated `seriesControllerSubmit`).
  * On success the series transitions DRAFT → IN_REVIEW and the Name moves to
- * SUBMITTED. On failure surfaces a translated error toast using the message
- * returned by the BE.
+ * SUBMITTED. On failure surfaces a translated error toast by mapping the BE
+ * error code to `seriesDetail.actions.errors.<Code>` (same pattern as
+ * `useProposalActions`). Falls back to `extractApiErrorMessage` → generic i18n.
  */
 export function useSubmitSeries(): UseSubmitSeriesResult {
   const { t } = useTranslation('mangaka')
@@ -35,14 +35,14 @@ export function useSubmitSeries(): UseSubmitSeriesResult {
         toast.success(t('seriesDetail.submit.success'))
         return payload
       } catch (err) {
-        if (extractApiErrorCode(err) === 'Error.FranchiseConsentRequired') {
-          toast.error(t('seriesDetail.submit.errorFranchiseConsent'))
-        } else if (isFetchError(err) && err.status === 403) {
-          toast.error(t('seriesDetail.submit.errorPermission'))
-        } else if (isFetchError(err) && err.status === 409) {
-          toast.error(t('seriesDetail.submit.errorConflict'))
-        } else if (isFetchError(err) && err.status === 404) {
-          toast.error(t('seriesDetail.editProposal.errorNotFound'))
+        const code = extractApiErrorCode(err)
+        if (code) {
+          // Strip "Error." prefix and look up the shared error-code i18n map
+          const shortCode = code.startsWith('Error.') ? code.slice('Error.'.length) : code
+          const mapped = t(`seriesDetail.actions.errors.${shortCode}`, {
+            defaultValue: ''
+          })
+          toast.error(mapped || extractApiErrorMessage(err, t('seriesDetail.submit.errorGeneric')))
         } else {
           toast.error(extractApiErrorMessage(err, t('seriesDetail.submit.errorGeneric')))
         }

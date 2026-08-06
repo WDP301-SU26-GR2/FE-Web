@@ -24,7 +24,7 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
  */
 
 /**
- * Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT
+ * Loại quyết định Hội đồng: SERIALIZATION (duyệt serial hoá — chỉ khi series PITCHED) | CANCELLATION (huỷ bộ truyện) | COMPLETION (duyệt kết thúc) | FORMAT_CHANGE (đổi hình thức xuất bản) | REPRINT (tái bản) | TRANSFER (chuyển nhượng) | CONTRACT (duyệt hợp đồng/phụ lục) | SERIES_CONTRACT_APPROVAL (nội bộ, không tạo qua API). Ghi nhận "giữ nguyên bộ truyện" = mở CANCELLATION rồi Hội đồng bỏ phiếu REJECT.. Values: SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT
  * @nullable
  */
 export type BoardDecisionResDtoOutputDecisionType = typeof BoardDecisionResDtoOutputDecisionType[keyof typeof BoardDecisionResDtoOutputDecisionType] | null;
@@ -32,10 +32,6 @@ export type BoardDecisionResDtoOutputDecisionType = typeof BoardDecisionResDtoOu
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BoardDecisionResDtoOutputDecisionType = {
-  CONTINUE: 'CONTINUE',
-  CANCEL: 'CANCEL',
-  HIATUS: 'HIATUS',
-  ENDING_ALLOWANCE: 'ENDING_ALLOWANCE',
   SERIES_CONTRACT_APPROVAL: 'SERIES_CONTRACT_APPROVAL',
   SERIALIZATION: 'SERIALIZATION',
   CANCELLATION: 'CANCELLATION',

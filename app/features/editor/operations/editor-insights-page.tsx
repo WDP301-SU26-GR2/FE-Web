@@ -12,7 +12,6 @@ import type {
 } from '~/api/model/survey'
 import { useTranslation } from 'react-i18next'
 import { OperationsLayout, operationInput } from './components/operations-shared'
-import { ProtectedTaskFilePanel } from '~/shared/components/protected-task-file-panel'
 
 export function EditorInsightsPage({
   series,
@@ -127,19 +126,6 @@ export function EditorInsightsPage({
             { defaultValue: t('common.notAvailable') }
           )}`
         }))}
-      />
-      <ProtectedTaskFilePanel
-        inputClassName={operationInput}
-        labels={{
-          title: t('operations.taskFileTitle'),
-          description: t('operations.taskFileHelp'),
-          taskId: t('operations.taskId'),
-          fileKey: t('operations.taskFileKey'),
-          createLink: t('operations.signTaskDownload'),
-          openDownload: t('operations.openTaskDownload'),
-          loading: t('operations.signingTaskDownload'),
-          expiresAt: t('operations.taskDownloadExpiresAt')
-        }}
       />
       <DataPanel
         title={t('operations.boardRanking')}

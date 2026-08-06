@@ -41,4 +41,6 @@ export type StoryboardListResDtoOutputItemsItem = {
    * @nullable
    */
   submittedAt: string | null;
+  /** Mô tả hành động vừa thực hiện — chỉ có ở response mutation */
+  message?: string;
 };

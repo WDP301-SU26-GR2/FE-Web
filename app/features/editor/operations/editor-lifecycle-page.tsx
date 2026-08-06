@@ -62,10 +62,6 @@ export function EditorLifecyclePage({
   )
   const lifecycleDecisionTypes = new Set([
     'SERIALIZATION',
-    'CONTINUE',
-    'CANCEL',
-    'HIATUS',
-    'ENDING_ALLOWANCE',
     'CANCELLATION',
     'FORMAT_CHANGE',
     'COMPLETION'
@@ -287,12 +283,8 @@ function getPreferredLifecycleAction(
   actions: LifecycleAction[]
 ): LifecycleAction {
   const preferredByDecision: Partial<Record<string, LifecycleAction>> = {
-    CONTINUE: 'resumeSeries',
-    HIATUS: 'hiatus',
     COMPLETION: 'finalizeEnding',
-    CANCELLATION: 'finalizeEnding',
-    CANCEL: 'forceCancel',
-    ENDING_ALLOWANCE: 'finalizeEnding'
+    CANCELLATION: 'finalizeEnding'
   }
   const preferred = decisionType ? preferredByDecision[decisionType] : undefined
   return preferred && actions.includes(preferred) ? preferred : actions[0]

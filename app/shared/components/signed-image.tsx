@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ImageIcon } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
@@ -12,6 +12,8 @@ export type SignedImageProps = {
   imgClassName?: string
   /** Force-fit container to this aspect (Tailwind class, e.g. 'aspect-[3/4]'). */
   aspectClassName?: string
+  /** Resolve the signed URL immediately instead of waiting for viewport proximity. */
+  eager?: boolean
 }
 
 /**
@@ -29,17 +31,47 @@ export function SignedImage({
   alt,
   className,
   imgClassName,
-  aspectClassName = 'aspect-[3/4]'
+  aspectClassName = 'aspect-[3/4]',
+  eager = false
 }: SignedImageProps) {
-  const signed = useSignedImageUrl(r2Key ?? null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [shouldSign, setShouldSign] = useState(eager)
+  const signed = useSignedImageUrl(shouldSign ? (r2Key ?? null) : null)
   const [imgErrored, setImgErrored] = useState(false)
 
   const containerCls = cn('relative overflow-hidden rounded-md bg-muted/40', aspectClassName, className)
 
+  useEffect(() => {
+    setImgErrored(false)
+    setShouldSign(eager)
+  }, [eager, r2Key])
+
+  useEffect(() => {
+    if (!r2Key || shouldSign) return
+    const element = containerRef.current
+    if (!element) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setShouldSign(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldSign(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '320px 0px' }
+    )
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [r2Key, shouldSign])
+
   // No key at all — render empty muted placeholder.
   if (!r2Key) {
     return (
-      <div className={containerCls} aria-label={alt}>
+      <div ref={containerRef} className={containerCls} aria-label={alt}>
         <div className='absolute inset-0 flex items-center justify-center'>
           <ImageIcon className='h-6 w-6 text-muted-foreground/40' />
         </div>
@@ -50,7 +82,7 @@ export function SignedImage({
   // Signing in progress.
   if (signed.status === 'loading' || signed.status === 'idle') {
     return (
-      <div className={containerCls} aria-label={alt} aria-busy='true'>
+      <div ref={containerRef} className={containerCls} aria-label={alt} aria-busy='true'>
         <div className='absolute inset-0 animate-pulse bg-muted/60' />
       </div>
     )
@@ -59,7 +91,7 @@ export function SignedImage({
   // Sign failed.
   if (signed.status === 'error' || (signed.status === 'ready' && imgErrored)) {
     return (
-      <div className={containerCls} aria-label={alt}>
+      <div ref={containerRef} className={containerCls} aria-label={alt}>
         <div className='absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground/60'>
           <ImageIcon className='h-6 w-6' />
         </div>
@@ -69,7 +101,7 @@ export function SignedImage({
 
   // Signed and ready.
   return (
-    <div className={containerCls} aria-label={alt}>
+    <div ref={containerRef} className={containerCls} aria-label={alt}>
       <img
         src={signed.url}
         alt={alt}

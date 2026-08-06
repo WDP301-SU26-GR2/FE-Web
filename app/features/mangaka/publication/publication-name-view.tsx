@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookPlus, FileCheck2, Loader2, Pencil, Send, Trash2 } from 'lucide-react'
+import { BookPlus, FileCheck2, Loader2, MessageSquareWarning, Pencil, Send, Trash2 } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { Button } from '~/shared/ui'
@@ -19,6 +19,9 @@ import { useUpdateNamePages } from './hooks/use-update-name-pages'
 import { useResubmitName } from './hooks/use-resubmit-name'
 import { useNameActions } from './hooks/use-name-actions'
 import { NAME_EDITABLE_STATUSES, type NameStatusKey } from './lib/name-status-meta'
+import { getStoryboardRevisionEligibility } from './lib/storyboard-revision-eligibility'
+import { useStoryboardRevisions } from './hooks/use-storyboard-revisions'
+import { StoryboardRevisionRequestsDrawer } from './components/storyboard-revision-requests-drawer'
 
 /**
  * Name (storyboard) view for the publication workbench.
@@ -42,12 +45,14 @@ export function PublicationNameView() {
   const [editOpen, setEditOpen] = useState(false)
   const [lightbox, setLightbox] = useState<{ key: string; alt: string } | null>(null)
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
+  const [revisionDrawerOpen, setRevisionDrawerOpen] = useState(false)
 
   // Reuse the legacy action hooks (already wire to the BE).
   const { createName, isCreating } = useCreateName()
   const { updatePages, addPage, isUpdating } = useUpdateNamePages()
   const { resubmit, isResubmitting } = useResubmitName()
   const { submit, remove, activeAction } = useNameActions()
+  const storyboardRevisions = useStoryboardRevisions(name?.id)
 
   if (!chapter) return null
 
@@ -59,7 +64,14 @@ export function PublicationNameView() {
   const canCreate = !name && chapter.status === 'DRAFT'
   const canEdit = !!name && status !== null && NAME_EDITABLE_STATUSES.includes(status)
   const canSubmit = !!name && status === 'DRAFT'
-  const canResubmit = !!name && status === 'REVISION'
+  const revisionEligibility = getStoryboardRevisionEligibility({
+    hasStoryboard: !!name,
+    status,
+    isLoading: storyboardRevisions.isLoading,
+    hasError: !!storyboardRevisions.error,
+    revisions: storyboardRevisions.revisions
+  })
+  const canResubmit = revisionEligibility.canResubmit
   const canRemove = !!name && chapter.status === 'DRAFT' && status !== 'APPROVED'
 
   // Mutation success handlers — refresh everything (chapter + name + pages)
@@ -131,6 +143,9 @@ export function PublicationNameView() {
         canEdit={canEdit}
         canSubmit={canSubmit}
         canResubmit={canResubmit}
+        showRevisionNotice={revisionEligibility.showRevisionNotice}
+        openRevisionCount={storyboardRevisions.revisions.filter((revision) => !revision.isResolved).length}
+        onOpenRevisions={() => setRevisionDrawerOpen(true)}
         canRemove={canRemove}
       />
 
@@ -144,6 +159,18 @@ export function PublicationNameView() {
       )}
 
       <NameStatusExplainer status={status} />
+
+      <StoryboardRevisionRequestsDrawer
+        open={revisionDrawerOpen}
+        onClose={() => setRevisionDrawerOpen(false)}
+        onRevisionResolved={refreshAll}
+        revisions={storyboardRevisions.revisions}
+        isLoading={storyboardRevisions.isLoading}
+        error={storyboardRevisions.error}
+        resolvingRevisionId={storyboardRevisions.resolvingRevisionId}
+        resolveRevision={storyboardRevisions.resolveRevision}
+        refreshRevisions={storyboardRevisions.refreshRevisions}
+      />
 
       <CreateNameDialog
         open={createOpen}
@@ -199,11 +226,14 @@ type DocumentHeaderProps = {
   canEdit: boolean
   canSubmit: boolean
   canResubmit: boolean
+  showRevisionNotice: boolean
+  openRevisionCount: number
   canRemove: boolean
   onCreate: () => void
   onEdit: () => void
   onSubmit: () => Promise<void>
   onResubmit: () => Promise<void>
+  onOpenRevisions: () => void
   onRemove: () => Promise<void>
   activeAction: 'submit' | 'remove' | null
   isResubmitting: boolean
@@ -220,11 +250,14 @@ function DocumentHeader({
   canEdit,
   canSubmit,
   canResubmit,
+  showRevisionNotice,
+  openRevisionCount,
   canRemove,
   onCreate,
   onEdit,
   onSubmit,
   onResubmit,
+  onOpenRevisions,
   onRemove,
   activeAction,
   isResubmitting
@@ -283,6 +316,21 @@ function DocumentHeader({
                 <FileCheck2 className='h-3.5 w-3.5' />
               )}
               {t('publication.nameSection.submitButton')}
+            </button>
+          )}
+          {showRevisionNotice && (
+            <button
+              type='button'
+              onClick={onOpenRevisions}
+              className='flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning shadow-sm transition-colors hover:bg-warning/20'
+            >
+              <MessageSquareWarning className='h-3.5 w-3.5' />
+              <span>{t('seriesDetail.revisions.openDrawer')}</span>
+              {openRevisionCount > 0 && (
+                <span className='inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-warning px-1.5 text-[10px] font-bold text-warning-foreground'>
+                  {openRevisionCount}
+                </span>
+              )}
             </button>
           )}
           {canResubmit && (
