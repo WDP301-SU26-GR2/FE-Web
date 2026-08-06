@@ -160,7 +160,7 @@
     "publicationType": "Nhịp xuất bản",
     "demographic": "Độc giả",
     "characterAlt": "Thiết kế nhân vật {{number}}",
-    "storyboardTitle": "Bản phác thảo mẫu",
+    "storyboardTitle": "Bản phác thảo",
     "storyboardPageCount": "{{count}} trang",
     "storyboardPage": "Trang {{number}}",
     "storyboardPageAlt": "Trang phác thảo số {{number}} của series",
