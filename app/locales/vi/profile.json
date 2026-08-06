@@ -1,6 +1,6 @@
 {
   "role": {
-    "mangaka": "Mangaka",
+    "mangaka": "Tác giả",
     "assistant": "Trợ lý"
   },
   "edit": "Chỉnh sửa",
@@ -50,7 +50,7 @@
       "saveGeneric": "Không thể lưu thông tin tài khoản. Vui lòng thử lại."
     },
     "roleEnum": {
-      "MANGAKA": "Mangaka",
+      "MANGAKA": "Tác giả",
       "ASSISTANT": "Trợ lý",
       "EDITOR": "Biên tập viên",
       "BOARD_MEMBER": "Thành viên Hội đồng",
@@ -82,7 +82,7 @@
     "availabilityStatus": "Trạng thái",
     "experienceLevel": "Kinh nghiệm",
     "bio": "Giới thiệu",
-    "portfolio": "Portfolio"
+    "portfolio": "Danh mục dự án"
   },
   "fields": {
     "penName": "Bút danh",
@@ -90,10 +90,10 @@
     "specializations": "Chuyên môn",
     "experienceLevel": "Kinh nghiệm",
     "bio": "Giới thiệu",
-    "portfolio": "Portfolio",
+    "portfolio": "Danh mục dự án",
     "availabilityStatus": "Trạng thái rảnh",
-    "availabilityFrom": "Rảnh từ",
-    "availabilityTo": "Rảnh đến"
+    "availabilityFrom": "Làm việc từ",
+    "availabilityTo": "Làm việc đến"
   },
   "hints": {
     "experienceLevel": "vd \"5 năm\", \"10+ năm\"",
@@ -106,13 +106,13 @@
   "portfolioHint": "PNG, JPEG, WebP hoặc PDF — tối đa 15MB mỗi ảnh.",
   "portfolioSlotsLeft_one": "còn {{count}} ô",
   "portfolioSlotsLeft_other": "còn {{count}} ô",
-  "portfolioAlt": "Ảnh portfolio",
+  "portfolioAlt": "Ảnh Danh mục dự án",
   "removePortfolio": "Xoá",
   "uploading": "Đang tải lên...",
   "errors": {
     "penNameRequired": "Vui lòng nhập bút danh.",
     "penNameTooLong": "Bút danh tối đa 100 ký tự.",
-    "availabilityRangeInvalid": "Thời điểm \"Rảnh đến\" phải sau \"Rảnh từ\".",
+    "availabilityRangeInvalid": "Thời điểm \"Làm việc đến\" phải sau \"Làm việc từ\".",
     "saveGeneric": "Không thể lưu hồ sơ. Vui lòng thử lại.",
     "loadGeneric": "Không tải được hồ sơ.",
     "portfolioLimit": "Bạn chỉ được upload tối đa {{max}} ảnh.",

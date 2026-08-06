@@ -119,7 +119,6 @@ function TaskEditDialogBody({ task, isSubmitting, onClose, onSubmit }: TaskEditD
       onClose={onClose}
       titleId='task-edit-title'
       title={t('studio.tasks.edit.title')}
-      description={t('studio.tasks.edit.description')}
       footer={
         <div className='flex justify-end gap-2'>
           <Button variant='outline' onClick={onClose} disabled={isSubmitting}>

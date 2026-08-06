@@ -14,7 +14,7 @@ type AccountInfoSectionProps = {
 }
 
 export function AccountInfoSection({ data, onEdit }: AccountInfoSectionProps) {
-  const { t } = useTranslation('profile')
+  const { t, i18n } = useTranslation('profile')
 
   return (
     <div className='space-y-6 rounded-lg border border-border bg-card p-6'>
@@ -84,13 +84,13 @@ export function AccountInfoSection({ data, onEdit }: AccountInfoSectionProps) {
         <AccountField
           icon={<Shield className='h-4 w-4 text-muted-foreground' />}
           label={t('accountInfo.role')}
-          value={t(`accountInfo.role.${data.role}`, { defaultValue: data.role })}
+          value={t(`accountInfo.roleEnum.${data.role}`, { defaultValue: data.role })}
         />
 
         <AccountField
           icon={<Clock className='h-4 w-4 text-muted-foreground' />}
           label={t('accountInfo.memberSince')}
-          value={formatDate(data.createdAt)}
+          value={formatDate(data.createdAt, i18n.language)}
         />
       </div>
 
@@ -161,8 +161,8 @@ function RoleBadge({ role, t }: { role: AccountInfo['role']; t: TFunction<'profi
   return <span className={cn('inline-flex items-center rounded px-2 py-0.5 text-xs font-medium', cls)}>{label}</span>
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric'

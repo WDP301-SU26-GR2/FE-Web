@@ -14,7 +14,6 @@ import { useMangakaTasks } from '~/features/mangaka/assistants/use-mangaka-tasks
 import type { TaskControllerListTasksStatus } from '~/api/model/task/taskControllerListTasksStatus'
 import { TaskBoard } from '~/features/mangaka/assistants/components/task-board'
 import { TaskEditDialog } from '~/features/mangaka/assistants/components/task-edit-dialog'
-import { TaskReassignDialog } from '~/features/mangaka/assistants/components/task-reassign-dialog'
 import type { TaskListResDtoOutputItemsItem } from '~/api/model/task/taskListResDtoOutputItemsItem'
 
 const STATUS_OPTIONS: TaskControllerListTasksStatus[] = [
@@ -51,7 +50,6 @@ export function StudioTasksTab() {
   const [taskAction, setTaskAction] = useState<{ taskId: string; type: 'revision' | 'cancel' } | null>(null)
   const [actionNote, setActionNote] = useState('')
   const [editingTask, setEditingTask] = useState<TaskListResDtoOutputItemsItem | null>(null)
-  const [reassigningTask, setReassigningTask] = useState<TaskListResDtoOutputItemsItem | null>(null)
   const [isTaskMutationPending, setIsTaskMutationPending] = useState(false)
   const [approvingGroupIds, setApprovingGroupIds] = useState<ReadonlySet<string>>(() => new Set())
   const approvingGroupIdsRef = useRef<Set<string>>(new Set())
@@ -152,18 +150,6 @@ export function StudioTasksTab() {
     try {
       const result = await taskQuery.updateTask(taskId, update)
       if (result.success) toast.success(t('studio.tasksTab.toast.updated'))
-      else toast.error(result.error)
-      return result
-    } finally {
-      setIsTaskMutationPending(false)
-    }
-  }
-
-  const reassignTask = async (taskId: string, assistantId: string) => {
-    setIsTaskMutationPending(true)
-    try {
-      const result = await taskQuery.reassignTask(taskId, assistantId)
-      if (result.success) toast.success(t('studio.tasksTab.toast.reassigned'))
       else toast.error(result.error)
       return result
     } finally {
@@ -375,7 +361,6 @@ export function StudioTasksTab() {
                 setTaskAction({ taskId: id, type: 'cancel' })
               }}
               onEdit={setEditingTask}
-              onReassign={setReassigningTask}
               page={currentPage}
               totalPages={taskQuery.totalPages}
               total={taskQuery.total}
@@ -447,13 +432,6 @@ export function StudioTasksTab() {
         isSubmitting={isTaskMutationPending}
         onClose={() => setEditingTask(null)}
         onSubmit={updateTask}
-      />
-      <TaskReassignDialog
-        open={reassigningTask !== null}
-        task={reassigningTask}
-        isSubmitting={isTaskMutationPending}
-        onClose={() => setReassigningTask(null)}
-        onSubmit={reassignTask}
       />
     </>
   )

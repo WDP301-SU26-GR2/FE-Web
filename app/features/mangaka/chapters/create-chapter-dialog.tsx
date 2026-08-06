@@ -31,7 +31,6 @@ export type CreateChapterDialogProps = {
  *   must be a positive integer ≥ 1.
  */
 export function CreateChapterDialog({
-  seriesId,
   nextChapterNumber,
   isSubmitting,
   open,
@@ -101,7 +100,6 @@ export function CreateChapterDialog({
       role='dialog'
       aria-modal='true'
       aria-labelledby='create-chapter-dialog-title'
-      aria-describedby='create-chapter-dialog-desc'
       className='fixed inset-0 z-50 flex items-center justify-center bg-muted-foreground/60 p-4'
       onClick={() => {
         if (!isSubmitting) onCancel()
@@ -121,19 +119,6 @@ export function CreateChapterDialog({
               <h2 id='create-chapter-dialog-title' className='text-base font-semibold text-foreground'>
                 {t('seriesDetail.publication.create.dialogTitle')}
               </h2>
-              <p id='create-chapter-dialog-desc' className='mt-1 text-sm text-muted-foreground'>
-                {t('seriesDetail.publication.create.dialogDescription')}
-              </p>
-            </div>
-          </div>
-
-          {/* Series (read-only) */}
-          <div>
-            <label className='mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground'>
-              {t('seriesDetail.publication.create.seriesLabel')}
-            </label>
-            <div className='rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-mono text-muted-foreground'>
-              {seriesId}
             </div>
           </div>
 

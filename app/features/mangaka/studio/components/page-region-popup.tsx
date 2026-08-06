@@ -12,6 +12,7 @@ import type { AiJobListResDtoOutputItemsItem } from '~/api/model/ai'
 
 import { usePageRegions } from '../hooks/use-page-regions'
 import { usePageSegment, type ProposedRegion } from '../hooks/use-page-segment'
+import { formatRegionListLabel } from '../lib/region-list-label'
 import {
   PageRegionCanvas,
   type CanvasMode,
@@ -257,8 +258,9 @@ export function PageRegionPopup({
               <p className='text-xs text-muted-foreground'>{t('studio.popup.list.empty')}</p>
             ) : (
               <ul className='space-y-1'>
-                {regions.regions.map((r) => {
+                {regions.regions.map((r, index) => {
                   const aiUnconfirmed = r.createdBy === 'AI' && !r.confirmedByMangaka
+                  const regionTypeLabel = t(`studio.popup.regionTypes.${r.regionType ?? 'PANEL'}`)
                   return (
                     <li key={r.id}>
                       <button
@@ -271,7 +273,10 @@ export function PageRegionPopup({
                       >
                         <div className='flex items-center justify-between'>
                           <span className='font-medium text-foreground'>
-                            {t(`studio.popup.regionTypes.${r.regionType ?? 'PANEL'}`)}
+                            {formatRegionListLabel(
+                              t('studio.tasks.composer.regionOption', { number: index + 1 }),
+                              regionTypeLabel
+                            )}
                           </span>
                           {aiUnconfirmed && (
                             <span className='rounded bg-warning/20 px-1 text-[10px] font-medium text-warning'>AI</span>
