@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import type { PublicSeriesListResDtoOutputItemsItem } from '~/api/model/public'
 import type {
   RankingRecordListResDtoOutputItemsItem,
   ReaderVoteListItemDtoOutput,
@@ -34,6 +33,13 @@ import {
 } from './components/operations-shared'
 
 type SurveyDataTab = 'online' | 'offline' | 'ranking'
+export type SurveySeriesCandidate = {
+  id: string
+  title: string
+  status: string
+  magazine: string | null
+  publicationType: string | null
+}
 type SurveyRankingDisplayItem = {
   seriesId: string
   rankPosition: number | null
@@ -56,8 +62,8 @@ export function EditorSurveysPage({
   configPath,
   adminMode = false
 }: {
-  series: PublicSeriesListResDtoOutputItemsItem[]
-  eligibleSeriesCandidates: PublicSeriesListResDtoOutputItemsItem[]
+  series: SurveySeriesCandidate[]
+  eligibleSeriesCandidates: SurveySeriesCandidate[]
   surveys: SurveyPeriodListResDtoOutputItemsItem[]
   selectedSurvey: SurveyPeriodResDtoOutput | null
   selectedSurveyId: string
@@ -365,7 +371,7 @@ function CreateSurveyForm({
   surveys
 }: {
   fetcher: ReturnType<typeof useOperationFetcher>
-  series: PublicSeriesListResDtoOutputItemsItem[]
+  series: SurveySeriesCandidate[]
   surveys: SurveyPeriodResDtoOutput[]
 }) {
   const { t } = useTranslation('editor')

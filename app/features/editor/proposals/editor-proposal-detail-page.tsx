@@ -3,6 +3,7 @@ import { Link, useFetcher } from 'react-router'
 import { ArrowLeft, Ban, Check, FileText, Image, Loader2, Presentation, RotateCcw, Unlock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { SeriesResDtoOutputProposalStatus, SeriesResDtoOutputStatus, type SeriesResDtoOutput } from '~/api/model/series'
 import type { EditorActionResult, EditorProposalDetailData } from '../types'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { useAuth } from '~/features/auth/context/auth-context'
@@ -129,17 +130,20 @@ export function EditorProposalDetailPage({
             ]
           ]}
         >
-          <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
-            {data.characterDesigns.map((design, index) =>
-              design.url ? (
-                <img
-                  key={design.key}
-                  src={design.url}
-                  alt={t('proposalDetail.characterAlt', { number: index + 1 })}
-                  className='aspect-square rounded-lg border border-border object-cover'
-                />
-              ) : null
-            )}
+          <div>
+            <h3 className='mb-3 text-sm font-bold text-foreground'>{t('proposalDetail.characterDesigns')}</h3>
+            <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
+              {data.characterDesigns.map((design, index) =>
+                design.url ? (
+                  <img
+                    key={design.key}
+                    src={design.url}
+                    alt={t('proposalDetail.characterAlt', { number: index + 1 })}
+                    className='aspect-square rounded-lg border border-border object-cover'
+                  />
+                ) : null
+              )}
+            </div>
           </div>
           <div className='mt-6 border-t border-border pt-5'>
             <div className='mb-3 flex items-center justify-between gap-3'>
@@ -180,6 +184,8 @@ export function EditorProposalDetailPage({
             seriesId={series.id}
             approveIntent={EDITOR_PROPOSAL_INTENTS.approve}
             reviseIntent={EDITOR_PROPOSAL_INTENTS.requestRevision}
+            rejectIntent={EDITOR_PROPOSAL_INTENTS.reject}
+            rejectable={rejectable}
             disabled={!assigned || !proposalReviewable}
           />
         </ReviewPanel>
@@ -207,21 +213,6 @@ export function EditorProposalDetailPage({
             </fetcher.Form>
           </div>
         </section>
-      )}
-      {rejectable && (
-        <ProposalDecisionDialog
-          fetcher={fetcher}
-          seriesId={series.id}
-          intent={EDITOR_PROPOSAL_INTENTS.reject}
-          title={t('proposalDetail.rejectTitle')}
-          description={t('proposalDetail.rejectDescription')}
-          triggerLabel={t('actions.rejectSeries')}
-          reasonLabel={t('proposalDetail.rejectReason')}
-          reasonPlaceholder={t('proposalDetail.rejectPlaceholder')}
-          icon={Ban}
-          destructive
-          reasonRequired
-        />
       )}
       {reopenable && (
         <ProposalDecisionDialog
@@ -255,6 +246,7 @@ function ProposalContext({ data }: { data: EditorProposalDetailData }) {
         new Date(series.reviewStartedAt)
       )
     : t('proposalDetail.reviewNotStarted')
+  const statusReasonLabel = getProposalStatusReasonLabel(series)
 
   return (
     <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
@@ -273,14 +265,38 @@ function ProposalContext({ data }: { data: EditorProposalDetailData }) {
           {t('proposalDetail.parentSeriesReference', { id: series.parentSeriesId })}
         </p>
       )}
-      {series.statusReason && (
+      {series.statusReason && statusReasonLabel && (
         <div className='mt-4 rounded-lg border border-border bg-muted p-3'>
-          <p className='text-xs font-bold text-foreground'>{t('proposalDetail.statusReason')}</p>
+          <p className='text-xs font-bold text-foreground'>{t(statusReasonLabel)}</p>
           <p className='mt-1 whitespace-pre-wrap text-xs leading-5 text-muted-foreground'>{series.statusReason}</p>
         </div>
       )}
     </section>
   )
+}
+
+function getProposalStatusReasonLabel(series: SeriesResDtoOutput): string | null {
+  if (series.proposal?.status === SeriesResDtoOutputProposalStatus.PROPOSAL_REVISION) {
+    return 'proposalDetail.revisionReason'
+  }
+
+  if (series.proposal?.status === SeriesResDtoOutputProposalStatus.REJECTED) {
+    return 'proposalDetail.rejectReason'
+  }
+
+  if (series.proposal?.status === SeriesResDtoOutputProposalStatus.WITHDRAWN) {
+    return 'proposalDetail.withdrawalReason'
+  }
+
+  if (series.status === SeriesResDtoOutputStatus.REJECTED) {
+    return 'proposalDetail.rejectReason'
+  }
+
+  if (series.status === SeriesResDtoOutputStatus.WITHDRAWN) {
+    return 'proposalDetail.withdrawalReason'
+  }
+
+  return null
 }
 
 function ContextFact({ label, value }: { label: string; value: string }) {
@@ -335,38 +351,64 @@ function ReviewForm({
   seriesId,
   approveIntent,
   reviseIntent,
+  rejectIntent,
+  rejectable,
   disabled
 }: {
   fetcher: ReturnType<typeof useFetcher<EditorActionResult>>
   seriesId: string
   approveIntent: string
   reviseIntent: string
+  rejectIntent: string
+  rejectable: boolean
   disabled: boolean
 }) {
+  const { t } = useTranslation('editor')
+
   return (
-    <div className='mt-5 flex justify-end border-t border-border pt-4'>
-      <ProposalReviewDialog
+    <div className='mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4'>
+      <ProposalDecisionDialog
         fetcher={fetcher}
         seriesId={seriesId}
-        approveIntent={approveIntent}
-        reviseIntent={reviseIntent}
+        intent={reviseIntent}
+        title={t('proposalDetail.revisionTitle')}
+        description={t('proposalDetail.revisionDescription')}
+        triggerLabel={t('actions.requestRevision')}
+        reasonLabel={t('actions.revisionReason')}
+        reasonPlaceholder={t('actions.revisionPlaceholder')}
+        icon={RotateCcw}
         disabled={disabled}
+        reasonRequired
       />
+      {rejectable && (
+        <ProposalDecisionDialog
+          fetcher={fetcher}
+          seriesId={seriesId}
+          intent={rejectIntent}
+          title={t('proposalDetail.rejectTitle')}
+          description={t('proposalDetail.rejectDescription')}
+          triggerLabel={t('actions.rejectSeries')}
+          reasonLabel={t('proposalDetail.rejectReason')}
+          reasonPlaceholder={t('proposalDetail.rejectPlaceholder')}
+          icon={Ban}
+          destructive
+          reasonRequired
+        />
+      )}
+      <ProposalApprovalDialog fetcher={fetcher} seriesId={seriesId} approveIntent={approveIntent} disabled={disabled} />
     </div>
   )
 }
 
-function ProposalReviewDialog({
+function ProposalApprovalDialog({
   fetcher,
   seriesId,
   approveIntent,
-  reviseIntent,
   disabled
 }: {
   fetcher: ReturnType<typeof useFetcher<EditorActionResult>>
   seriesId: string
   approveIntent: string
-  reviseIntent: string
   disabled: boolean
 }) {
   const { t } = useTranslation('editor')
@@ -387,43 +429,30 @@ function ProposalReviewDialog({
         type='button'
         onClick={() => setOpen(true)}
         disabled={disabled || busy}
-        className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+        className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-success px-4 text-xs font-bold text-success-foreground disabled:opacity-50'
       >
         <Check className='size-4' />
-        {t('proposalDetail.reviewAction')}
+        {t('actions.approve')}
       </button>
       <Dialog
         compact
         open={open}
         onClose={() => setOpen(false)}
-        titleId='proposal-review-decision-title'
-        title={t('proposalDetail.reviewAction')}
-        description={t('proposalDetail.reviewActionDescription')}
-        descriptionId='proposal-review-decision-description'
+        titleId='proposal-approval-title'
+        title={t('proposalDetail.approveTitle')}
+        description={t('proposalDetail.approveDescription')}
+        descriptionId='proposal-approval-description'
         size='sm'
       >
-        <fetcher.Form method='post' className='space-y-4' onSubmit={() => (submitted.current = true)}>
+        <fetcher.Form method='post' onSubmit={() => (submitted.current = true)}>
           <input type='hidden' name='seriesId' value={seriesId} />
-          <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-            {t('actions.revisionReason')}
-            <textarea
-              name='reason'
-              maxLength={1000}
-              rows={4}
-              placeholder={t('actions.revisionPlaceholder')}
-              className='w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs font-normal text-foreground outline-none focus:border-primary'
-            />
-          </label>
-          <p className='text-xs leading-5 text-muted-foreground'>{t('proposalDetail.revisionReasonHint')}</p>
           <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
             <button
-              name='intent'
-              value={reviseIntent}
-              disabled={busy}
-              className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-4 text-xs font-bold text-warning disabled:opacity-50'
+              type='button'
+              onClick={() => setOpen(false)}
+              className='h-10 rounded-md border border-border px-4 text-xs font-bold text-foreground'
             >
-              <RotateCcw className='size-4' />
-              {t('actions.requestRevision')}
+              {t('actions.cancel')}
             </button>
             <button
               name='intent'
@@ -451,6 +480,7 @@ function ProposalDecisionDialog({
   reasonLabel,
   reasonPlaceholder,
   icon: Icon,
+  disabled = false,
   destructive = false,
   reasonRequired = false
 }: {
@@ -463,6 +493,7 @@ function ProposalDecisionDialog({
   reasonLabel: string
   reasonPlaceholder: string
   icon: typeof Ban
+  disabled?: boolean
   destructive?: boolean
   reasonRequired?: boolean
 }) {
@@ -484,7 +515,7 @@ function ProposalDecisionDialog({
       <button
         type='button'
         onClick={() => setOpen(true)}
-        disabled={busy}
+        disabled={disabled || busy}
         className={
           destructive
             ? 'inline-flex h-10 items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 text-xs font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50'
@@ -528,7 +559,7 @@ function ProposalDecisionDialog({
             <button
               name='intent'
               value={intent}
-              disabled={busy}
+              disabled={disabled || busy}
               className={
                 destructive
                   ? 'inline-flex h-10 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-xs font-bold text-destructive-foreground disabled:opacity-50'

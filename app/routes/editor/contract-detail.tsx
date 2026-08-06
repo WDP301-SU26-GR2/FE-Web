@@ -6,6 +6,7 @@ import {
   contractControllerGetContractVersions,
   contractControllerSubmitReview,
   contractControllerUpdateContract,
+  contractControllerVoidContract,
   paymentConditionControllerCreatePaymentCondition,
   paymentConditionControllerDisablePaymentCondition,
   paymentConditionControllerGetPaymentConditions,
@@ -60,7 +61,9 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
     }
     if (intent === EDITOR_CONTRACT_INTENTS.submitReview) {
       await contractControllerSubmitReview({ id: params.id })
-    } else if (intent === EDITOR_CONTRACT_INTENTS.update || intent === EDITOR_CONTRACT_INTENTS.saveAndSubmitReview) {
+    } else if (intent === EDITOR_CONTRACT_INTENTS.void) {
+      await contractControllerVoidContract({ id: params.id }, { reason: required(form, 'reason') })
+    } else if (intent === EDITOR_CONTRACT_INTENTS.update) {
       const contractType = required(form, 'contractType') as EditorUpdateContractBodyDtoContractType
       const valuationAmount = Number(required(form, 'valuationAmount'))
       const publisherOwnershipPct = Number(required(form, 'publisherOwnershipPct'))
@@ -85,9 +88,6 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
           note: optionalText(form, 'note')
         }
       )
-      if (intent === EDITOR_CONTRACT_INTENTS.saveAndSubmitReview) {
-        await contractControllerSubmitReview({ id: params.id })
-      }
     } else if (isPaymentConditionIntent(intent)) {
       const contract = await contractControllerGetContractById({ id: params.id })
       if (contract.status !== 200) throw new Error('CONTRACT_NOT_FOUND')

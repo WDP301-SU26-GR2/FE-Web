@@ -9,6 +9,7 @@ import type {
   TransferSignatureListResDtoOutputSignaturesItem
 } from '~/api/model/transfer'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
+import { CONTRACT_FIELD_LIMITS } from '../contracts/contract-flow'
 import {
   OperationAction,
   OperationFeedback,
@@ -200,7 +201,9 @@ export function EditorTransfersPage({
             <input
               name='transferAmount'
               type='number'
-              min={1}
+              min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+              max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+              step={1}
               required
               className={operationInput}
               placeholder={t('operations.transferAmount')}

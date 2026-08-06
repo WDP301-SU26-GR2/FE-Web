@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AlertCircle, BookCheck, CalendarClock, CheckCircle2, Clock3, Eye, FileCheck2, Printer } from 'lucide-react'
@@ -51,30 +51,54 @@ export function EditorPublicationPage({
   const { t } = useTranslation('editor')
   const [search, setSearch] = useState('')
   const [activeGroup, setActiveGroup] = useState<'review' | 'approved' | 'progress' | 'history'>(() => 'progress')
-  const chapters = (data?.chapters ?? []).filter(
-    ({ series, chapter }) =>
-      !search ||
-      `${series.title} ${chapter.title ?? ''} ${chapter.chapterNumber}`.toLowerCase().includes(search.toLowerCase())
-  )
-  const awaitingReview = prioritizeFocused(
-    chapters.filter(({ chapter }) => REVIEW_STATUSES.has(chapter.manuscriptStatus ?? '')),
-    focusReferenceId
-  )
-  const approved = prioritizeFocused(
-    chapters.filter(({ chapter }) => APPROVED_STATUSES.has(chapter.manuscriptStatus ?? '')),
-    focusReferenceId
-  )
-  const inProgress = chapters.filter(
-    ({ chapter }) =>
-      chapter.manuscriptStatus !== 'PUBLISHED' &&
-      !REVIEW_STATUSES.has(chapter.manuscriptStatus ?? '') &&
-      !APPROVED_STATUSES.has(chapter.manuscriptStatus ?? '')
-  )
-  const published = chapters.filter(({ chapter }) => chapter.manuscriptStatus === 'PUBLISHED')
-  const reviewGroups = groupPublicationItemsBySeries(awaitingReview)
-  const approvedGroups = groupPublicationItemsBySeries(approved)
-  const progressGroups = groupPublicationItemsBySeries(inProgress)
-  const historyGroups = groupPublicationItemsBySeries(published)
+  const {
+    awaitingReview,
+    approved,
+    inProgress,
+    published,
+    reviewGroups,
+    approvedGroups,
+    progressGroups,
+    historyGroups
+  } = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    const chapters = (data?.chapters ?? []).filter(
+      ({ series, chapter }) =>
+        !normalizedSearch ||
+        `${series.title} ${chapter.title ?? ''} ${chapter.chapterNumber}`.toLowerCase().includes(normalizedSearch)
+    )
+    const awaitingReview = prioritizeFocused(
+      chapters.filter(({ chapter }) => REVIEW_STATUSES.has(chapter.manuscriptStatus ?? '')),
+      focusReferenceId
+    )
+    const approved = prioritizeFocused(
+      chapters.filter(({ chapter }) => APPROVED_STATUSES.has(chapter.manuscriptStatus ?? '')),
+      focusReferenceId
+    )
+    const inProgress = chapters.filter(
+      ({ chapter }) =>
+        chapter.manuscriptStatus !== 'PUBLISHED' &&
+        !REVIEW_STATUSES.has(chapter.manuscriptStatus ?? '') &&
+        !APPROVED_STATUSES.has(chapter.manuscriptStatus ?? '')
+    )
+    const published = chapters.filter(({ chapter }) => chapter.manuscriptStatus === 'PUBLISHED')
+    return {
+      awaitingReview,
+      approved,
+      inProgress,
+      published,
+      reviewGroups: groupPublicationItemsBySeries(awaitingReview),
+      approvedGroups: groupPublicationItemsBySeries(approved),
+      progressGroups: groupPublicationItemsBySeries(inProgress),
+      historyGroups: groupPublicationItemsBySeries(published)
+    }
+  }, [data?.chapters, focusReferenceId, search])
+
+  useEffect(() => {
+    if (!focusReferenceId) return
+    setActiveGroup(groupForReference(data?.chapters ?? [], focusReferenceId))
+  }, [data?.chapters, focusReferenceId])
+
   useEffect(() => {
     if (!focusReferenceId) return
     const frame = window.requestAnimationFrame(() => {
@@ -197,7 +221,7 @@ function prioritizeFocused(items: EditorPublicationData['chapters'], focusRefere
   })
 }
 
-function ChapterSection({
+const ChapterSection = memo(function ChapterSection({
   title,
   description,
   items,
@@ -289,9 +313,9 @@ function ChapterSection({
       )}
     </section>
   )
-}
+})
 
-function SummaryCard({
+const SummaryCard = memo(function SummaryCard({
   icon,
   label,
   value,
@@ -324,9 +348,9 @@ function SummaryCard({
       </div>
     </button>
   )
-}
+})
 
-function StatusBadge({ status }: { status: string }) {
+const StatusBadge = memo(function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation('editor')
   const meta = STATUS_META[status] ?? STATUS_META.DRAFT
   return (
@@ -340,4 +364,4 @@ function StatusBadge({ status }: { status: string }) {
       {t(`publicationReviewUx.workflow.${status}`)}
     </span>
   )
-}
+})

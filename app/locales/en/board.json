@@ -56,6 +56,7 @@
     "ContractNotSignableYet": "The contract is not ready for the representative signature.",
     "InvalidReprintTransition": "The reprint request cannot move from its current state.",
     "InvalidTransferState": "The transfer cannot perform this action in its current state.",
+    "BoardReportAlreadyExists": "This decision already has a report.",
     "TransferContractApprovalDecisionRequired": "An approved contract decision is required before the Board can sign."
   },
   "nav": {
@@ -405,6 +406,7 @@
   "reports": {
     "title": "Board reports",
     "description": "Read evidence and editorial analysis attached to decisions.",
+    "snapshot": "Report information",
     "empty": "No reports are available.",
     "add": "Add report",
     "createTitle": "Add a decision report",

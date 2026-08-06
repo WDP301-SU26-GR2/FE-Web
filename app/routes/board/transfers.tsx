@@ -19,6 +19,9 @@ import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/ex
 import type { ShouldRevalidateFunction } from 'react-router'
 import { isEnumValue } from '~/shared/lib/is-enum-value'
 
+const TRANSFER_MONEY_MINIMUM = 1
+const TRANSFER_MONEY_MAXIMUM = 100_000_000_000
+
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const url = new URL(request.url)
   const requestedContractId = url.searchParams.get('contractId')?.trim() ?? ''
@@ -123,8 +126,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       const conditionDescriptions = form.getAll('conditionDescription').map((value) => String(value).trim())
       const valuationAmount = Number(required(form, 'valuationAmount'))
       if (
-        !Number.isFinite(valuationAmount) ||
-        valuationAmount <= 0 ||
+        !Number.isSafeInteger(valuationAmount) ||
+        valuationAmount < TRANSFER_MONEY_MINIMUM ||
+        valuationAmount > TRANSFER_MONEY_MAXIMUM ||
         !conditionTypes.length ||
         conditionTypes.some(
           (type, index) =>

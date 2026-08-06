@@ -62,5 +62,5 @@ export * from './revisionReasonBodyDto'
 export * from './setScheduleBodyDto'
 export * from './updateChapterBodyDto'
 export * from './updatePageBodyDto'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

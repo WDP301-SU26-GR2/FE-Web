@@ -11,6 +11,7 @@ import type { DefenseDashboardResDtoOutput } from '~/api/model/tankobon'
 import { readBoardSessionPhase } from '~/api/manual/board-meeting'
 import { BoardDecisionDetailPage, type BoardActionResult } from '~/features/board'
 import { loadBoardDecisionDetail } from '../board/decision-detail-loader'
+import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 import type { ClientActionFunctionArgs, ClientLoaderFunctionArgs } from 'react-router'
 import i18n from '~/shared/lib/i18n'
 
@@ -82,8 +83,8 @@ export async function clientAction({ request, params }: ClientActionFunctionArgs
       }
     )
     return { ok: true, intent, messageKey: 'voteSubmitted' }
-  } catch {
-    return { ok: false, intent }
+  } catch (error) {
+    return { ok: false, intent, errorCode: extractApiErrorCode(error) }
   }
 }
 

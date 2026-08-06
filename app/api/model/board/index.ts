@@ -65,5 +65,5 @@ export * from './suggestBoardMembersResDtoOutputItemsItem'
 export * from './suggestBoardMembersResDtoOutputItemsItemMatchedGenresItem'
 export * from './suggestBoardMembersResDtoOutputItemsItemSpecialtyGenresItem'
 export * from './updateBoardConfigBodyDto'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

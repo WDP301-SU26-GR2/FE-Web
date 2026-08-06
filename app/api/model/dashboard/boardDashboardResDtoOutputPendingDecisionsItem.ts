@@ -32,7 +32,7 @@ export type BoardDashboardResDtoOutputPendingDecisionsItem = {
   decisionId: string;
   /** BoardSession ObjectId đang ACTIVE */
   boardSessionId: string;
-  /** Board decision type: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT, OTHER. Values: CONTINUE, CANCEL, HIATUS, ENDING_ALLOWANCE, SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT */
+  /** Loại quyết định Hội đồng: SERIALIZATION (duyệt serial hoá — chỉ khi series PITCHED) | CANCELLATION (huỷ bộ truyện) | COMPLETION (duyệt kết thúc) | FORMAT_CHANGE (đổi hình thức xuất bản) | REPRINT (tái bản) | TRANSFER (chuyển nhượng) | CONTRACT (duyệt hợp đồng/phụ lục) | SERIES_CONTRACT_APPROVAL (nội bộ, không tạo qua API). Ghi nhận "giữ nguyên bộ truyện" = mở CANCELLATION rồi Hội đồng bỏ phiếu REJECT.. Values: SERIES_CONTRACT_APPROVAL, SERIALIZATION, CANCELLATION, FORMAT_CHANGE, COMPLETION, REPRINT, TRANSFER, CONTRACT */
   decisionType: BoardDashboardResDtoOutputPendingDecisionsItemDecisionType;
   /**
    * Series được đưa ra quyết định; null nếu quyết định không nhắm tới một series

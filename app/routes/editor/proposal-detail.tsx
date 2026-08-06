@@ -1,3 +1,5 @@
+import { redirect } from 'react-router'
+
 import {
   seriesControllerApproveProposal,
   seriesControllerGetSeries,
@@ -11,6 +13,7 @@ import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
 import { SITE } from '~/shared/config/site'
 import {
   EDITOR_PROPOSAL_INTENTS,
+  EDITOR_PROPOSAL_ROUTES,
   EditorProposalDetailPage,
   isEditorProposalIntent,
   mapEditorProposalError,
@@ -56,7 +59,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   }
 }
 
-export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult> {
+export async function clientAction({ request }: Route.ClientActionArgs): Promise<EditorActionResult | Response> {
   const formData = await request.formData()
   const intent = String(formData.get('intent') ?? '')
   const seriesId = String(formData.get('seriesId') ?? '').trim()
@@ -75,8 +78,10 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
     } else if (intent === EDITOR_PROPOSAL_INTENTS.reopen) {
       if (!reason) return { ok: false, intent, errorKey: 'revisionReasonRequired' }
       await seriesControllerReopenReview({ id: seriesId }, { reason })
-    } else if (intent === EDITOR_PROPOSAL_INTENTS.release) await seriesControllerRelease({ id: seriesId })
-    else if (intent === EDITOR_PROPOSAL_INTENTS.pitch) await seriesControllerPitch({ id: seriesId })
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.release) {
+      await seriesControllerRelease({ id: seriesId })
+      return redirect(EDITOR_PROPOSAL_ROUTES.list)
+    } else if (intent === EDITOR_PROPOSAL_INTENTS.pitch) await seriesControllerPitch({ id: seriesId })
     else return { ok: false, intent, errorKey: 'invalidAction' }
     const messageKey = intent.startsWith('approve')
       ? 'approved'
@@ -84,11 +89,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         ? 'rejected'
         : intent === EDITOR_PROPOSAL_INTENTS.reopen
           ? 'reviewReopened'
-          : intent === EDITOR_PROPOSAL_INTENTS.release
-            ? 'released'
-            : intent === EDITOR_PROPOSAL_INTENTS.pitch
-              ? 'pitch'
-              : 'revisionRequested'
+          : intent === EDITOR_PROPOSAL_INTENTS.pitch
+            ? 'pitch'
+            : 'revisionRequested'
     return { ok: true, intent, messageKey }
   } catch (error) {
     return { ok: false, intent, errorKey: mapEditorProposalError(error) }

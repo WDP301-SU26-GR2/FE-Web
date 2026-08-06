@@ -54,6 +54,7 @@ import type {
   ContractControllerSignRepresentativePathParameters,
   ContractControllerSubmitReviewPathParameters,
   ContractControllerUpdateContractPathParameters,
+  ContractControllerVoidContractPathParameters,
   ContractHealthResDtoOutput,
   ContractListItemDtoOutput,
   ContractPdfResDtoOutput,
@@ -79,7 +80,8 @@ import type {
   SignContractWithOtpBodyDto,
   UpdateAmendmentBodyDto,
   UpdatePaymentConditionBodyDto,
-  VoidAmendmentBodyDto
+  VoidAmendmentBodyDto,
+  VoidContractBodyDto
 } from '../../model/contracts';
 
 import { customFetch } from '../../mutator/custom-fetch';
@@ -795,6 +797,43 @@ export const contractControllerReportRevenue = async ({ id }: ContractController
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       reportRevenueBodyDto,)
+  }
+);}
+
+
+/**
+ * @summary Editor huỷ hợp đồng nháp → VOIDED
+ */
+export type contractControllerVoidContractResponse201 = {
+  data: ContractResDtoOutput
+  status: 201
+}
+    
+export type contractControllerVoidContractResponseSuccess = (contractControllerVoidContractResponse201) & {
+  headers: Headers;
+};
+;
+
+export type contractControllerVoidContractResponse = (contractControllerVoidContractResponseSuccess)
+
+export const getContractControllerVoidContractUrl = ({ id }: ContractControllerVoidContractPathParameters,) => {
+
+
+  
+
+  return `/contracts/${id}/void`
+}
+
+export const contractControllerVoidContract = async ({ id }: ContractControllerVoidContractPathParameters,
+    voidContractBodyDto: VoidContractBodyDto, options?: RequestInit): Promise<contractControllerVoidContractResponse> => {
+  
+  return customFetch<contractControllerVoidContractResponse>(getContractControllerVoidContractUrl({ id }),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      voidContractBodyDto,)
   }
 );}
 

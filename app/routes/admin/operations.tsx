@@ -48,7 +48,7 @@ export default function AdminOperationsRoute() {
       mode: 'write'
     },
     {
-      href: '/dashboard/admin/operations/reference',
+      href: '/dashboard/admin/operations/reference?returnTo=/dashboard/admin/operations',
       icon: Telescope,
       title: t('operations.reference.title'),
       description: t('operations.reference.description'),

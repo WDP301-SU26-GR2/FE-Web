@@ -13,7 +13,6 @@ export * from './loginResDtoOutput'
 export * from './loginResDtoOutputUser'
 export * from './loginResDtoOutputUserRole'
 export * from './logoutBodyDto'
-export * from './messageResDtoOutput'
 export * from './refreshTokenBodyDto'
 export * from './refreshTokenResDtoOutput'
 export * from './refreshTokenResDtoOutputUser'
@@ -23,4 +22,5 @@ export * from './registerBodyDtoType'
 export * from './sendOtpBodyDto'
 export * from './sendOtpBodyDtoPurpose'
 export * from './verifyEmailBodyDto'
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

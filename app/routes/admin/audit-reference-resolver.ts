@@ -63,7 +63,7 @@ async function resolveEntity(entityType: string, id: string): Promise<AuditRefer
         (data) => ({
           title: stringValue(data, 'title'),
           subtitle: stringValue(data, 'magazine'),
-          href: `/dashboard/admin/operations/reference?seriesId=${encodeURIComponent(id)}`
+          href: adminReferenceHref('series', `seriesId=${encodeURIComponent(id)}`)
         })
       )
     case 'CHAPTER':
@@ -75,7 +75,7 @@ async function resolveEntity(entityType: string, id: string): Promise<AuditRefer
           return {
             title: [number === null ? null : `#${number}`, title].filter(Boolean).join(' · '),
             subtitle: stringValue(data, 'status'),
-            href: `/dashboard/admin/operations/reference?chapterId=${encodeURIComponent(id)}`
+            href: adminReferenceHref('chapter', `chapterId=${encodeURIComponent(id)}`)
           }
         }
       )
@@ -92,8 +92,7 @@ async function resolveEntity(entityType: string, id: string): Promise<AuditRefer
         () => deadlineControllerGetOne({ id }),
         (data) => ({
           title: nestedString(data, 'series', 'title') || nestedChapterLabel(data),
-          subtitle: stringValue(data, 'status'),
-          href: `/dashboard/admin/operations/reference?deadlineId=${encodeURIComponent(id)}`
+          subtitle: stringValue(data, 'status')
         })
       )
     case 'CONTRACT':
@@ -127,8 +126,7 @@ async function resolveEntity(entityType: string, id: string): Promise<AuditRefer
         () => reprintRequestControllerFindById({ id }),
         (data) => ({
           title: nestedString(data, 'series', 'title'),
-          subtitle: stringValue(data, 'status'),
-          href: `/dashboard/admin/operations/reference?reprintId=${encodeURIComponent(id)}`
+          subtitle: stringValue(data, 'status')
         })
       )
     case 'TRANSFER_REQUEST':
@@ -136,8 +134,7 @@ async function resolveEntity(entityType: string, id: string): Promise<AuditRefer
         () => transferControllerGetTransferRequestById({ id }),
         (data) => ({
           title: nestedString(data, 'series', 'title'),
-          subtitle: stringValue(data, 'status'),
-          href: `/dashboard/admin/operations/reference?transferRequestId=${encodeURIComponent(id)}`
+          subtitle: stringValue(data, 'status')
         })
       )
     case 'PAYMENT_RECORD':
@@ -219,6 +216,10 @@ function numberValue(record: UnknownRecord, key: string) {
 function nestedString(record: UnknownRecord, parentKey: string, childKey: string) {
   const parent = asRecord(record[parentKey])
   return parent ? stringValue(parent, childKey) : undefined
+}
+
+function adminReferenceHref(page: 'series' | 'chapter' | 'ranking' | 'directories', query: string) {
+  return `/dashboard/admin/operations/reference/${page}?${query}&returnTo=${encodeURIComponent('/dashboard/admin/audit')}`
 }
 
 function nestedChapterLabel(record: UnknownRecord) {

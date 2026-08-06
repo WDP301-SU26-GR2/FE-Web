@@ -1,4 +1,4 @@
-import { BookOpenText, FileText, Images, PanelsTopLeft, Tags, UserRound } from 'lucide-react'
+import { BookOpenText, FileText, Images, Tags, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SeriesResDtoOutput } from '~/api/model/series'
@@ -113,7 +113,11 @@ export function SeriesMeetingBrief({ brief }: SeriesMeetingBriefProps) {
         title={t('sessions.seriesBrief.characterDesignsTitle')}
         type='character'
       />
-      <ProposalStoryboard pages={proposalStoryboardPages} />
+      <ImageGallery
+        images={proposalStoryboardPages.map((page) => ({ key: page.key, url: page.url }))}
+        title={t('sessions.seriesBrief.storyPages')}
+        type='story'
+      />
     </article>
   )
 }
@@ -151,25 +155,6 @@ function ImageGallery({ images, title, type }: { images: SignedImage[]; title: s
           </a>
         ))}
       </div>
-    </section>
-  )
-}
-
-function ProposalStoryboard({ pages }: { pages: BoardMeetingSeriesBrief['proposalStoryboardPages'] }) {
-  const { t } = useTranslation('board')
-  if (!pages.length) return <p className='mt-4 text-xs text-muted-foreground'>{t('sessions.seriesBrief.noStory')}</p>
-
-  return (
-    <section className='mt-5 border-t border-border pt-5'>
-      <h4 className='flex items-center gap-2 text-xs font-bold text-foreground'>
-        <PanelsTopLeft className='size-4 text-primary' />
-        {t('sessions.seriesBrief.storyTitle')}
-      </h4>
-      <ImageGallery
-        images={pages.map((page) => ({ key: page.key, url: page.url }))}
-        title={t('sessions.seriesBrief.storyPages')}
-        type='story'
-      />
     </section>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 
 import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
@@ -34,6 +34,9 @@ export function useBoardSessionsRealtime(sessions: BoardSessionResDtoOutput[], d
   const [connectionState, setConnectionState] = useState<BoardRealtimeConnectionState>(() =>
     readStorage(STORAGE_KEYS.accessToken) ? 'connecting' : 'disconnected'
   )
+  const flushTimerRef = useRef<number | null>(null)
+  const pendingVoteUpdatesRef = useRef<Record<string, VoteProgress>>({})
+  const pendingPhaseUpdatesRef = useRef<Record<string, BoardSessionPhase>>({})
   const sessionIds = useMemo(
     () => sessions.filter((session) => session.status === 'ACTIVE').map((session) => session.id),
     [sessions]
@@ -45,6 +48,20 @@ export function useBoardSessionsRealtime(sessions: BoardSessionResDtoOutput[], d
     const namespaceUrl = getBoardNamespaceUrl()
     if (!token || !namespaceUrl || !sessionKey) return
 
+    const flushRealtimeUpdates = () => {
+      flushTimerRef.current = null
+      const voteUpdates = pendingVoteUpdatesRef.current
+      const phaseUpdates = pendingPhaseUpdatesRef.current
+      pendingVoteUpdatesRef.current = {}
+      pendingPhaseUpdatesRef.current = {}
+      if (Object.keys(voteUpdates).length > 0) setUpdates((current) => ({ ...current, ...voteUpdates }))
+      if (Object.keys(phaseUpdates).length > 0) setPhaseUpdates((current) => ({ ...current, ...phaseUpdates }))
+    }
+    const scheduleRealtimeFlush = () => {
+      if (flushTimerRef.current != null) return
+      flushTimerRef.current = window.setTimeout(flushRealtimeUpdates, 300)
+    }
+
     const socket = io(namespaceUrl, { auth: { token }, transports: ['polling', 'websocket'] })
     socket.on('connect', () => {
       setConnectionState('connected')
@@ -54,26 +71,29 @@ export function useBoardSessionsRealtime(sessions: BoardSessionResDtoOutput[], d
     socket.on('connect_error', () => setConnectionState('disconnected'))
     socket.on('phaseChanged', (payload: { sessionId: string; phase: BoardSessionPhase }) => {
       if (sessionIds.includes(payload.sessionId)) {
-        setPhaseUpdates((current) => ({ ...current, [payload.sessionId]: payload.phase }))
+        pendingPhaseUpdatesRef.current[payload.sessionId] = payload.phase
+        scheduleRealtimeFlush()
       }
     })
     socket.on('voteProgressUpdated', (progress: VoteProgressPayload) => {
       const decisionId = progress?.decisionId ?? progress?.id
       if (!decisionId) return
-      setUpdates((current) => ({
-        ...current,
-        [decisionId]: {
-          decisionId,
-          approveCount: progress.approveCount,
-          rejectCount: progress.rejectCount,
-          totalVotes: progress.totalVotes,
-          quorumMet: progress.quorumMet,
-          result: progress.result
-        }
-      }))
+      pendingVoteUpdatesRef.current[decisionId] = {
+        decisionId,
+        approveCount: progress.approveCount,
+        rejectCount: progress.rejectCount,
+        totalVotes: progress.totalVotes,
+        quorumMet: progress.quorumMet,
+        result: progress.result
+      }
+      scheduleRealtimeFlush()
     })
 
     return () => {
+      if (flushTimerRef.current != null) window.clearTimeout(flushTimerRef.current)
+      flushTimerRef.current = null
+      pendingVoteUpdatesRef.current = {}
+      pendingPhaseUpdatesRef.current = {}
       socket.disconnect()
     }
   }, [sessionIds, sessionKey])

@@ -47,6 +47,7 @@ export * from './contractControllerSignMangakaPathParameters'
 export * from './contractControllerSignRepresentativePathParameters'
 export * from './contractControllerSubmitReviewPathParameters'
 export * from './contractControllerUpdateContractPathParameters'
+export * from './contractControllerVoidContractPathParameters'
 export * from './contractHealthResDtoOutput'
 export * from './contractHealthResDtoOutputStatus'
 export * from './contractListItemDtoOutput'
@@ -106,5 +107,6 @@ export * from './signContractWithOtpBodyDto'
 export * from './updateAmendmentBodyDto'
 export * from './updatePaymentConditionBodyDto'
 export * from './voidAmendmentBodyDto'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export * from './voidContractBodyDto'
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

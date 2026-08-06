@@ -104,10 +104,19 @@ export function useBoardAutoRefresh() {
   const revalidator = useRevalidator()
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const revalidateWhenIdle = () => {
       if (revalidator.state === 'idle') revalidator.revalidate()
-    }, 15_000)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') revalidateWhenIdle()
+    }
 
-    return () => window.clearInterval(timer)
+    window.addEventListener('focus', revalidateWhenIdle)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', revalidateWhenIdle)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [revalidator])
 }

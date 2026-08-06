@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useFetcher } from 'react-router'
-import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ContractResDtoOutput } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
@@ -8,7 +7,6 @@ import {
   CONTRACT_FIELD_LIMITS,
   EDITOR_CONTRACT_INTENTS,
   canEditContract,
-  canSubmitContractForReview,
   contractDatesAreValid,
   contractValuationIsValid,
   ownershipIsValid
@@ -19,7 +17,6 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
   const { t } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const editable = canEditContract(contract)
-  const canSubmitReview = canSubmitContractForReview(contract)
   const [contractType, setContractType] = useState(contract.contractType)
   const [valuationAmount, setValuationAmount] = useState(contract.valuationAmount ?? 0)
   const [publisherOwnershipPct, setPublisherOwnershipPct] = useState(contract.publisherOwnershipPct ?? 0)
@@ -151,26 +148,15 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
             />
           </label>
           {editable && (
-            <div className='grid gap-3 md:col-span-2 sm:grid-cols-2'>
+            <div className='flex justify-end md:col-span-2'>
               <button
                 name='intent'
                 value={EDITOR_CONTRACT_INTENTS.update}
                 disabled={fetcher.state !== 'idle' || !valuationValid || !ownershipValid || !datesValid}
-                className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-50'
+                className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
               >
                 {t('actions.saveContract')}
               </button>
-              {canSubmitReview && (
-                <button
-                  name='intent'
-                  value={EDITOR_CONTRACT_INTENTS.saveAndSubmitReview}
-                  disabled={fetcher.state !== 'idle' || !valuationValid || !ownershipValid || !datesValid}
-                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
-                >
-                  {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
-                  {t('actions.saveAndSubmitContractReview')}
-                </button>
-              )}
             </div>
           )}
         </fetcher.Form>

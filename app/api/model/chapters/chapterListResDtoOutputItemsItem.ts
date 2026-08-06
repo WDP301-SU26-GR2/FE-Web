@@ -56,4 +56,6 @@ export type ChapterListResDtoOutputItemsItem = {
   manuscriptStatus: ChapterListResDtoOutputItemsItemManuscriptStatus;
   /** @nullable */
   schedule: ChapterListResDtoOutputItemsItemSchedule;
+  /** Mô tả hành động vừa thực hiện — chỉ có ở response mutation */
+  message?: string;
 };

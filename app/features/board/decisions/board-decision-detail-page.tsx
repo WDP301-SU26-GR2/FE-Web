@@ -5,10 +5,13 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  CalendarClock,
   CheckCircle2,
   Download,
+  FileText,
   FilePlus2,
   Loader2,
+  Paperclip,
   Upload,
   Vote,
   X
@@ -299,30 +302,120 @@ function DecisionDetails({ details }: { details: Record<string, unknown> }) {
 
 function ReportCard({ report }: { report: SeriesReportResDtoOutput }) {
   const { t, i18n } = useTranslation('board')
+  const reportTitle = report.reportType
+    ? t(`reports.types.${report.reportType}`, {
+        defaultValue: t('common.notAvailable')
+      })
+    : t('reports.title')
+  const parsedContent = parseReportContent(report.content ?? '')
   return (
-    <article className='rounded-lg border border-border p-3'>
-      <div className='flex flex-wrap items-start justify-between gap-3'>
-        <strong>
-          {report.reportType
-            ? t(`reports.types.${report.reportType}`, {
-                defaultValue: t('common.notAvailable')
-              })
-            : t('reports.title')}
-        </strong>
-        <time className='text-xs text-muted-foreground'>{formatDate(report.createdAt, i18n.language)}</time>
+    <article className='overflow-hidden rounded-lg border border-border bg-background shadow-sm'>
+      <header className='flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between'>
+        <div className='flex min-w-0 items-start gap-3'>
+          <span className='mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary'>
+            <FileText className='size-4' />
+          </span>
+          <div className='min-w-0'>
+            <strong className='block text-sm font-bold text-foreground'>{reportTitle}</strong>
+            <p className='mt-1 text-xs leading-5 text-muted-foreground'>{t('reports.description')}</p>
+          </div>
+        </div>
+        <time className='inline-flex h-8 shrink-0 items-center gap-2 rounded-md bg-muted px-3 text-xs font-semibold text-muted-foreground'>
+          <CalendarClock className='size-3.5 text-primary' />
+          {formatDate(report.createdAt, i18n.language)}
+        </time>
+      </header>
+
+      <div className='grid gap-4 p-4'>
+        {parsedContent.preface.length > 0 && (
+          <ReportSectionBlock title={t('reports.snapshot')} lines={parsedContent.preface} />
+        )}
+        {parsedContent.sections.map((section) => (
+          <ReportSectionBlock key={`${report.id}-${section.title}`} title={section.title} lines={section.lines} />
+        ))}
+        {!parsedContent.preface.length && !parsedContent.sections.length && report.content && (
+          <ReportSectionBlock title={t('reports.content')} lines={[report.content]} />
+        )}
+        {report.attachments.length > 0 && (
+          <section className='rounded-lg border border-border bg-muted/30 p-4'>
+            <div className='mb-3 flex items-center gap-2'>
+              <Paperclip className='size-4 text-primary' />
+              <h3 className='text-xs font-bold uppercase text-foreground'>{t('reports.attachments')}</h3>
+            </div>
+            <ul className='grid gap-2 text-xs'>
+              {report.attachments.map((attachment) => (
+                <li key={attachment} className='rounded-md border border-border bg-background px-3 py-2'>
+                  <ReportAttachmentLink attachment={attachment} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
-      {report.content && <p className='mt-2 whitespace-pre-wrap text-xs text-muted-foreground'>{report.content}</p>}
-      {report.attachments.length > 0 && (
-        <ul className='mt-3 space-y-1 border-t border-border pt-3 text-xs'>
-          {report.attachments.map((attachment) => (
-            <li key={attachment}>
-              <ReportAttachmentLink attachment={attachment} />
-            </li>
-          ))}
-        </ul>
-      )}
     </article>
   )
+}
+
+function ReportSectionBlock({ title, lines }: { title: string; lines: string[] }) {
+  const fields = lines.map(parseReportLine)
+  return (
+    <section className='rounded-lg border border-border bg-muted/30 p-4'>
+      <div className='mb-3 flex items-center gap-2'>
+        <span className='h-4 w-1 rounded-full bg-primary' />
+        <h3 className='text-xs font-bold uppercase text-foreground'>{title}</h3>
+      </div>
+      <dl className='grid gap-3 sm:grid-cols-2'>
+        {fields.map((field, index) => (
+          <div key={`${field.label}-${index}`} className={field.value ? '' : 'sm:col-span-2'}>
+            {field.value ? (
+              <>
+                <dt className='text-[11px] font-semibold text-muted-foreground'>{field.label}</dt>
+                <dd className='mt-1 min-h-9 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold leading-5 text-foreground'>
+                  {field.value}
+                </dd>
+              </>
+            ) : (
+              <p className='whitespace-pre-wrap rounded-md border border-border bg-background px-3 py-2 text-xs leading-5 text-foreground'>
+                {field.label}
+              </p>
+            )}
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
+
+function parseReportContent(content: string) {
+  const lines = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const preface: string[] = []
+  const sections: Array<{ title: string; lines: string[] }> = []
+  let current: { title: string; lines: string[] } | null = null
+
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      current = { title: line.replace(/^##\s+/, '').trim(), lines: [] }
+      sections.push(current)
+      continue
+    }
+    if (current) current.lines.push(line)
+    else preface.push(line)
+  }
+
+  return { preface, sections: sections.filter((section) => section.lines.length > 0) }
+}
+
+function parseReportLine(line: string) {
+  const normalized = line.replace(/^-\s*/, '').trim()
+  const separator = normalized.indexOf(':')
+  if (separator <= 0) return { label: normalized, value: '' }
+  return {
+    label: normalized.slice(0, separator).trim(),
+    value: normalized.slice(separator + 1).trim()
+  }
 }
 
 function ReportAttachmentLink({ attachment }: { attachment: string }) {
@@ -456,7 +549,7 @@ function CreateReportDialog({
       titleId='create-decision-report-title'
       title={t('reports.createTitle')}
       description={t('reports.createDescription')}
-      size='lg'
+      size='md'
     >
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createReport' />
@@ -472,11 +565,11 @@ function CreateReportDialog({
         <fieldset className='grid gap-2'>
           <legend className='text-xs font-semibold'>{t('reports.selectEvidence')}</legend>
           <p className='text-xs font-normal text-muted-foreground'>{t('reports.selectEvidenceHint')}</p>
-          <div className='grid gap-2 sm:grid-cols-2'>
+          <div className='grid gap-2'>
             {evidenceOptions.map((option) => (
               <label
                 key={option.value}
-                className={`flex gap-3 rounded-lg border p-3 text-xs ${
+                className={`flex min-w-0 gap-3 rounded-lg border p-3 text-xs ${
                   option.available
                     ? 'cursor-pointer border-border bg-background hover:border-primary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5'
                     : 'cursor-not-allowed border-border/60 bg-muted/40 opacity-60'
@@ -490,9 +583,9 @@ function CreateReportDialog({
                   className='mt-0.5 size-4 accent-primary'
                 />
                 <span className='min-w-0'>
-                  <span className='flex items-center justify-between gap-2 font-bold'>
-                    <span>{option.label}</span>
-                    <span className='shrink-0 text-primary'>{option.summary}</span>
+                  <span className='flex min-w-0 flex-wrap items-center justify-between gap-2 font-bold'>
+                    <span className='min-w-0 text-pretty'>{option.label}</span>
+                    <span className='min-w-0 text-pretty text-primary'>{option.summary}</span>
                   </span>
                   <span className='mt-1 block font-normal leading-5 text-muted-foreground'>{option.description}</span>
                 </span>
@@ -514,7 +607,7 @@ function CreateReportDialog({
           <ReportAttachmentUploader onKeysChange={setAttachments} onUploadingChange={setAttachmentsUploading} />
           <input type='hidden' name='attachments' value={attachments.join('\n')} />
         </div>
-        <div className='flex justify-end gap-2 border-t border-border pt-4'>
+        <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
           <button
             type='button'
             onClick={onClose}
@@ -524,7 +617,7 @@ function CreateReportDialog({
           </button>
           <button
             disabled={fetcher.state !== 'idle' || attachmentsUploading}
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
           >
             {fetcher.state !== 'idle' || attachmentsUploading ? (
               <Loader2 className='size-4 animate-spin' />
@@ -730,13 +823,8 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
     >
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='vote' />
-        <select name='voteValue' className={boardInput} defaultValue='APPROVE'>
-          <option value='APPROVE'>{t('decisions.approve')}</option>
-          <option value='REJECT'>{t('decisions.reject')}</option>
-          <option value='ABSTAIN'>{t('decisions.abstain')}</option>
-        </select>
         <textarea name='note' className={`${boardInput} min-h-24 py-2`} placeholder={t('decisions.note')} />
-        <div className='flex justify-end gap-2'>
+        <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
           <button
             type='button'
             onClick={onClose}
@@ -744,12 +832,23 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
           >
             {t('common.cancel')}
           </button>
-          <button
-            disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
-          >
-            {t('decisions.submitVote')}
-          </button>
+          {(['APPROVE', 'REJECT', 'ABSTAIN'] as const).map((voteValue) => (
+            <button
+              key={voteValue}
+              name='voteValue'
+              value={voteValue}
+              disabled={fetcher.state !== 'idle'}
+              className={
+                voteValue === 'REJECT'
+                  ? 'h-10 rounded-md border border-destructive/40 bg-destructive/10 px-4 text-xs font-bold text-destructive disabled:opacity-60'
+                  : voteValue === 'APPROVE'
+                    ? 'h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+                    : 'h-10 rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:opacity-60'
+              }
+            >
+              {t(`decisions.voteValues.${voteValue}`)}
+            </button>
+          ))}
         </div>
       </fetcher.Form>
       <BoardFeedback data={fetcher.data} />

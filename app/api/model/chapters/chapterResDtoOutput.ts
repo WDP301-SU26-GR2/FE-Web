@@ -56,4 +56,6 @@ export interface ChapterResDtoOutput {
   manuscriptStatus: ChapterResDtoOutputManuscriptStatus;
   /** @nullable */
   schedule: ChapterResDtoOutputSchedule;
+  /** Mô tả hành động vừa thực hiện — chỉ có ở response mutation */
+  message?: string;
 }

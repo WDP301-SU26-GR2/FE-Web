@@ -16,12 +16,6 @@ import {
   chapterStoryboardControllerList,
   chapterStoryboardControllerRequestRevision
 } from '~/api/operations/storyboards/storyboards'
-import {
-  annotationControllerCreate,
-  annotationControllerList,
-  annotationControllerRemove,
-  annotationControllerResolve
-} from '~/api/operations/annotations/annotations'
 import { seriesControllerGetSeries } from '~/api/operations/series/series'
 import { contractControllerGetContractById, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
@@ -39,8 +33,6 @@ import {
 
 import type { Route } from './+types/chapter-review'
 import { SITE } from '~/shared/config/site'
-import { CreateAnnotationBodyDtoAnnotationType } from '~/api/model/annotations'
-import { isEnumValue } from '~/shared/lib/is-enum-value'
 
 export function meta() {
   return [{ title: SITE.name }]
@@ -55,7 +47,6 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       pagesResponse,
       storyboardsResponse,
       progressResponse,
-      annotationsResponse,
       contractsResponse
     ] = await Promise.all([
       seriesControllerGetSeries({ id: params.seriesId }),
@@ -63,7 +54,6 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       chapterControllerListPages({ id: params.chapterId }),
       chapterStoryboardControllerList({ id: params.chapterId }),
       chapterControllerProgress({ id: params.chapterId }).catch(() => null),
-      annotationControllerList({ targetType: 'MANUSCRIPT', targetId: params.chapterId }).catch(() => null),
       contractControllerGetContracts().catch(() => null)
     ])
     if (seriesResponse.status !== 200 || chapterResponse.status !== 200 || pagesResponse.status !== 200) {
@@ -85,9 +75,6 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       ? await chapterStoryboardControllerGetOne({ id: params.chapterId, storyboardId: storyboard.id }).catch(() => null)
       : null
     const detailedStoryboard = storyboardDetailResponse?.status === 200 ? storyboardDetailResponse.data : storyboard
-    const storyboardAnnotationsResponse = storyboard
-      ? await annotationControllerList({ targetType: 'STORYBOARD', targetId: storyboard.id }).catch(() => null)
-      : null
     const storyboardPages = await Promise.all(
       (detailedStoryboard?.pages ?? []).map(async (page) => ({
         pageNumber: page.pageNumber,
@@ -125,9 +112,6 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
       storyboard: detailedStoryboard,
       storyboardPages,
       progress: progressResponse?.status === 200 ? progressResponse.data : null,
-      annotations: annotationsResponse?.status === 200 ? annotationsResponse.data.items : [],
-      storyboardAnnotations:
-        storyboardAnnotationsResponse?.status === 200 ? storyboardAnnotationsResponse.data.items : [],
       stages: stagesResponse?.status === 200 ? stagesResponse.data : null,
       stagePages,
       regionsByPage: Object.fromEntries(regionEntries)
@@ -183,21 +167,6 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
         }
       )
     else if (intent === 'resumeChapter') await chapterControllerResume({ id: chapterId })
-    else if (intent === 'createAnnotation') {
-      const annotationType = required(formData, 'annotationType')
-      if (!isEnumValue(CreateAnnotationBodyDtoAnnotationType, annotationType))
-        return { ok: false, intent, errorKey: 'invalidAction' }
-      await annotationControllerCreate({
-        targetType: formData.get('annotationTarget') === 'STORYBOARD' ? 'STORYBOARD' : 'MANUSCRIPT',
-        targetId: formData.get('annotationTarget') === 'STORYBOARD' ? required(formData, 'storyboardId') : chapterId,
-        annotationType,
-        reviewStage: 'EDITOR',
-        content: required(formData, 'content'),
-        coordinates: readCoordinates(formData)
-      })
-    } else if (intent === 'resolveAnnotation')
-      await annotationControllerResolve({ id: required(formData, 'annotationId') })
-    else if (intent === 'removeAnnotation') await annotationControllerRemove({ id: required(formData, 'annotationId') })
     else return { ok: false, intent, errorKey: 'invalidAction' }
     return {
       ok: true,
@@ -211,11 +180,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
               ? publishAwaitingCoOwner
                 ? 'awaitingCoOwnerApproval'
                 : 'published'
-              : intent.toLowerCase().includes('annotation')
-                ? 'annotationUpdated'
-                : intent === 'reviseManuscript' || intent === 'reviseStoryboard'
-                  ? 'revisionRequested'
-                  : intent
+              : intent === 'reviseManuscript' || intent === 'reviseStoryboard'
+                ? 'revisionRequested'
+                : intent
     }
   } catch (error) {
     const code =
@@ -238,15 +205,6 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
               : 'actionFailed'
     return { ok: false, intent, errorKey }
   }
-}
-
-function readCoordinates(formData: FormData) {
-  const rawValues = ['x', 'y', 'width', 'height'].map((key) => String(formData.get(key) ?? '').trim())
-  if (rawValues.some((value) => !value)) return undefined
-  const values = rawValues.map(Number)
-  if (values.some((value) => !Number.isFinite(value))) return undefined
-  const [x, y, width, height] = values
-  return { x, y, width, height }
 }
 
 function required(formData: FormData, key: string) {

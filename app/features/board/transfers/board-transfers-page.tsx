@@ -23,6 +23,9 @@ import { Dialog } from '~/shared/ui/dialog'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
 import { useAuth } from '~/features/auth/context/auth-context'
 
+const TRANSFER_MONEY_MINIMUM = 1
+const TRANSFER_MONEY_MAXIMUM = 100_000_000_000
+
 export function BoardTransfersPage({
   requests,
   decisions,
@@ -408,7 +411,9 @@ function FullBuyoutForm({
           className={boardInput}
           name='valuationAmount'
           type='number'
-          min={1}
+          min={TRANSFER_MONEY_MINIMUM}
+          max={TRANSFER_MONEY_MAXIMUM}
+          step={1}
           placeholder={t('contracts.valuation')}
           required
         />

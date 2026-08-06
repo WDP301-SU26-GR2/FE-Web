@@ -38,5 +38,5 @@ export * from './stagePageListResDtoOutputItemsItemInputSourceType'
 export * from './stagePageListResDtoOutputItemsItemOutputSourceType'
 export * from './stageReopenResDtoOutput'
 export * from './updateStageBodyDto'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

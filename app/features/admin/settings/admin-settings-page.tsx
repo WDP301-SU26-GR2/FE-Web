@@ -86,6 +86,14 @@ function AppConfigForm({ data }: { data: AdminSettingsData }) {
                 unit={t('settings.units.days')}
               />
               <NumberField
+                name='taskOverdueGraceHours'
+                value={config.taskOverdueGraceHours}
+                min={0}
+                max={168}
+                label={t('settings.app.taskOverdueGraceHours')}
+                unit={t('settings.units.hours')}
+              />
+              <NumberField
                 name='reputationRecommendThreshold'
                 value={config.reputationRecommendThreshold}
                 min={1}

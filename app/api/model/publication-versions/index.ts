@@ -23,5 +23,5 @@ export * from './publicationVersionResDtoOutputVersionType'
 export * from './updatePublicationVersionBodyDto'
 export * from './updatePublicationVersionBodyDtoReadingDirection'
 export * from './updatePublicationVersionBodyDtoVersionType'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

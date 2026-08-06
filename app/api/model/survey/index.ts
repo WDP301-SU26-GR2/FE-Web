@@ -101,5 +101,5 @@ export * from './votingConfigBodyDto'
 export * from './votingConfigBodyDtoAuthMode'
 export * from './votingConfigResDtoOutput'
 export * from './votingConfigResDtoOutputAuthMode'
-export type { MessageResDtoOutput } from '../auth/messageResDtoOutput';
+export type { MessageResDtoOutput } from '../admin-series/messageResDtoOutput';
 

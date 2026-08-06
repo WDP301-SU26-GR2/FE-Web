@@ -5,6 +5,7 @@
  * Prefer importing from the specific tag folder:
  *   import type { LoginBodyDto } from '~/api/model/auth'
  */
+export * from './admin-series'
 export * from './ai'
 export * from './annotations'
 export * from './app-config'
@@ -16,6 +17,7 @@ export * from './contracts'
 export * from './dashboard'
 export * from './deadline-requests'
 export * from './health'
+export * from './magazines'
 export * from './notifications'
 export * from './payments'
 export * from './production-stages'
