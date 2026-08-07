@@ -7,7 +7,10 @@ import type { EditorActionResult } from '../types'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { Dialog } from '~/shared/ui/dialog'
 
-const input = 'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
+const input = 'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
+const dialogButton = 'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
+const profileDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-2 text-xs font-bold text-foreground'
+const profileDialogFieldLabelClass = 'flex min-h-10 items-end leading-5'
 export function EditorProfilePage({ profile }: { profile: StaffProfileResDtoOutput }) {
   const { t } = useTranslation('editor')
   const [editOpen, setEditOpen] = useState(false)
@@ -63,42 +66,42 @@ function EditorProfileDialog({ profile, onClose }: { profile: StaffProfileResDto
   return (
     <Dialog compact open onClose={onClose} titleId='edit-editor-profile' title={t('profile.edit')} size='lg'>
       <fetcher.Form method='post' className='grid gap-4'>
-        <label className='text-xs font-bold text-foreground'>
-          {t('profile.genres')}
-          <input name='specialtyGenres' defaultValue={profile.specialtyGenres.join(', ')} className={`${input} mt-2`} />
+        <label className={profileDialogFieldClass}>
+          <span className={profileDialogFieldLabelClass}>{t('profile.genres')}</span>
+          <input name='specialtyGenres' defaultValue={profile.specialtyGenres.join(', ')} className={input} />
         </label>
-        <label className='text-xs font-bold text-foreground'>
-          {t('profile.demographics')}
-          <input name='demographics' defaultValue={profile.demographics.join(', ')} className={`${input} mt-2`} />
+        <label className={profileDialogFieldClass}>
+          <span className={profileDialogFieldLabelClass}>{t('profile.demographics')}</span>
+          <input name='demographics' defaultValue={profile.demographics.join(', ')} className={input} />
         </label>
-        <label className='text-xs font-bold text-foreground'>
-          {t('profile.experience')}
+        <label className={profileDialogFieldClass}>
+          <span className={profileDialogFieldLabelClass}>{t('profile.experience')}</span>
           <input
             name='yearsOfExperience'
             type='number'
             min={0}
             max={80}
             defaultValue={profile.yearsOfExperience ?? 0}
-            className={`${input} mt-2`}
+            className={input}
           />
         </label>
-        <label className='text-xs font-bold text-foreground'>
-          {t('profile.bio')}
+        <label className={profileDialogFieldClass}>
+          <span className={profileDialogFieldLabelClass}>{t('profile.bio')}</span>
           <textarea
             name='bio'
             defaultValue={profile.bio ?? ''}
-            className='mt-2 min-h-32 w-full rounded-md border border-input bg-background p-3 text-xs text-foreground'
+            className='min-h-32 min-w-0 w-full rounded-md border border-input bg-background p-3 text-xs text-foreground'
           />
         </label>
-        <div className='flex justify-end gap-2 border-t border-border pt-4'>
+        <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${dialogButton} border border-border`}
           >
             {t('actions.cancel')}
           </button>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${dialogButton} bg-primary text-primary-foreground`}>
             {t('actions.saveProfile')}
           </button>
         </div>

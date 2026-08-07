@@ -10,6 +10,7 @@ import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-pr
 import { orderBoardDecisions } from './board-order'
 import {
   boardInput,
+  boardDialogButton,
   BoardFeedback,
   BoardPageLayout,
   BoardPanel,
@@ -17,6 +18,9 @@ import {
   useBoardAutoRefresh,
   useBoardFetcher
 } from './components/board-shared'
+
+const voteFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold text-foreground'
+const voteFieldLabelClass = 'flex min-h-10 items-end leading-5'
 
 export function EditorBoardDecisionsPage({
   series,
@@ -205,7 +209,7 @@ function DecisionCard({
           <button
             type='button'
             onClick={() => setVoteOpen(true)}
-            className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+            className={`${boardDialogButton} bg-primary text-primary-foreground`}
           >
             {t('board.castVote')}
           </button>
@@ -224,8 +228,8 @@ function DecisionCard({
         <fetcher.Form method='post' className='grid gap-3'>
           <input type='hidden' name='intent' value='castVote' />
           <input type='hidden' name='decisionId' value={decision.id} />
-          <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-            {t('board.voteNote')}
+          <label className={voteFieldClass}>
+            <span className={voteFieldLabelClass}>{t('board.voteNote')}</span>
             <textarea
               name='note'
               maxLength={300}
@@ -234,7 +238,7 @@ function DecisionCard({
               placeholder={t('board.voteNote')}
             />
           </label>
-          <div className='grid grid-cols-3 gap-2'>
+          <div className='grid gap-2 sm:grid-cols-3'>
             {(['APPROVE', 'REJECT', 'ABSTAIN'] as const).map((voteValue) => (
               <button
                 key={voteValue}
@@ -243,8 +247,8 @@ function DecisionCard({
                 disabled={fetcher.state !== 'idle'}
                 className={
                   voteValue === 'REJECT'
-                    ? 'rounded-md border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs font-bold text-destructive disabled:opacity-50'
-                    : 'rounded-md border border-border px-2 py-2 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+                    ? `${boardDialogButton} border border-destructive/40 bg-destructive/10 text-destructive disabled:opacity-50 sm:w-full`
+                    : `${boardDialogButton} border border-border text-foreground hover:bg-muted disabled:opacity-50 sm:w-full`
                 }
               >
                 {t(`board.voteValues.${voteValue}`)}

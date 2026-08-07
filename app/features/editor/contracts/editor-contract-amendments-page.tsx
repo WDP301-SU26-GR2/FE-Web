@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -10,9 +11,11 @@ import {
   ContractActionMessage,
   ContractDialogPanel,
   ContractPageLayout,
+  contractDialogButton,
   contractInput
 } from './components/contract-shared'
 import { CONTRACT_FIELD_LIMITS } from './contract-flow'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 
 export function EditorContractAmendmentsPage({
   contract,
@@ -44,7 +47,7 @@ export function EditorContractAmendmentsPage({
             <button
               name='intent'
               value='createAmendment'
-              className='rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground sm:col-span-2'
+              className={`${contractDialogButton} bg-primary text-primary-foreground sm:col-span-2`}
             >
               {t('actions.createAmendment')}
             </button>
@@ -82,24 +85,24 @@ export function EditorContractAmendmentsPage({
                     />
                     <input name='reason' defaultValue={amendment.reason ?? ''} className={contractInput} />
                     <AmendmentTermFields amendment={amendment} />
-                    <div className='flex gap-2 sm:col-span-2'>
+                    <div className='grid gap-2 sm:col-span-2 sm:grid-cols-2'>
                       <button
                         name='intent'
                         value='updateAmendment'
-                        className='flex-1 rounded-md border border-border px-2 text-xs font-bold'
+                        className={`${contractDialogButton} border border-border`}
                       >
                         {t('actions.update')}
                       </button>
                       <button
                         name='intent'
                         value='submitAmendment'
-                        className='flex-1 rounded-md bg-primary px-2 text-xs font-bold text-primary-foreground'
+                        className={`${contractDialogButton} bg-primary text-primary-foreground`}
                       >
                         {t('actions.submit')}
                       </button>
                     </div>
                   </fetcher.Form>
-                  <fetcher.Form method='post' className='flex gap-2'>
+                  <fetcher.Form method='post' className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'>
                     <input type='hidden' name='amendmentId' value={amendment.id} />
                     <input
                       name='voidReason'
@@ -110,7 +113,7 @@ export function EditorContractAmendmentsPage({
                     <button
                       name='intent'
                       value='voidAmendment'
-                      className='rounded-md bg-destructive px-3 text-xs font-bold text-destructive-foreground'
+                      className={`${contractDialogButton} bg-destructive text-destructive-foreground`}
                     >
                       {t('actions.void')}
                     </button>
@@ -128,19 +131,24 @@ export function EditorContractAmendmentsPage({
 }
 
 function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
+  const [valuationAmount, setValuationAmount] = useState<number | null>(amendment?.valuationAmount ?? null)
   return (
     <>
-      <input
-        name='valuationAmount'
-        type='number'
-        min={CONTRACT_FIELD_LIMITS.moneyMinimum}
-        max={CONTRACT_FIELD_LIMITS.moneyMaximum}
-        step={1}
-        defaultValue={numberValue(amendment?.valuationAmount)}
-        className={contractInput}
-        placeholder={t('contracts.valuation')}
-      />
+      <label className='grid min-w-0 gap-1.5'>
+        <input
+          name='valuationAmount'
+          type='number'
+          min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+          max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+          step={1}
+          defaultValue={numberValue(amendment?.valuationAmount)}
+          onChange={(event) => setValuationAmount(event.target.value ? Number(event.target.value) : null)}
+          className={contractInput}
+          placeholder={t('contracts.valuation')}
+        />
+        <MoneyInWords amount={valuationAmount} locale={i18n.language} />
+      </label>
       <input
         name='publisherOwnershipPct'
         type='number'

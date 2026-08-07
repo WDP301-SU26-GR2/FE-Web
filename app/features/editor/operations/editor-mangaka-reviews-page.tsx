@@ -13,6 +13,9 @@ import {
   useOperationFetcher
 } from './components/operations-shared'
 
+const reviewDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold text-foreground'
+const reviewDialogFieldLabelClass = 'flex min-h-10 items-end leading-5'
+
 export function EditorMangakaReviewsPage({
   series,
   mangakas,
@@ -35,8 +38,8 @@ export function EditorMangakaReviewsPage({
     >
       <OperationDialogPanel icon={Star} title={t('operations.reviews')}>
         <fetcher.Form method='post' className='grid gap-3'>
-          <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-            {t('operations.selectMangaka')}
+          <label className={reviewDialogFieldClass}>
+            <span className={reviewDialogFieldLabelClass}>{t('operations.selectMangaka')}</span>
             <select
               required
               name='mangakaId'
@@ -55,8 +58,8 @@ export function EditorMangakaReviewsPage({
               ))}
             </select>
           </label>
-          <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-            {t('operations.reviewSeriesOwner')}
+          <label className={reviewDialogFieldClass}>
+            <span className={reviewDialogFieldLabelClass}>{t('operations.reviewSeriesOwner')}</span>
             <SeriesSelect
               series={mangakaSeries}
               value={seriesId}

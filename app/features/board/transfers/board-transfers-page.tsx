@@ -12,6 +12,8 @@ import type {
 import { AssignFullBuyoutBodyDtoConditionsItemType } from '~/api/model/transfer'
 import {
   BoardActionDialog,
+  boardDialogButton,
+  boardDialogInlineActions,
   boardInput,
   BoardFeedback,
   BoardHeader,
@@ -20,8 +22,10 @@ import {
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { useOtpCooldown } from '~/shared/hooks'
 
 const TRANSFER_MONEY_MINIMUM = 1
 const TRANSFER_MONEY_MAXIMUM = 100_000_000_000
@@ -106,7 +110,7 @@ export function BoardTransfersPage({
           <button
             type='button'
             onClick={() => setSignOpen(true)}
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+            className={`${boardDialogButton} bg-primary text-primary-foreground`}
           >
             <PenLine className='h-4 w-4' />
             {t('transfers.sign')}
@@ -177,10 +181,15 @@ export function BoardTransfersPage({
 function TransferSignDialog({ contractId, onClose }: { contractId: string; onClose: () => void }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
+  const { isCoolingDown, remainingSeconds, start } = useOtpCooldown()
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sign') onClose()
   }, [fetcher.data, fetcher.state, onClose])
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sendOtp') start()
+  }, [fetcher.data, fetcher.state, start])
 
   return (
     <Dialog
@@ -202,20 +211,20 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
           placeholder={t('contracts.otp')}
           required
         />
-        <div className='flex justify-end gap-2'>
+        <div className={boardDialogInlineActions}>
           <button
             name='intent'
             value='sendOtp'
             formNoValidate
-            disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-60'
+            disabled={fetcher.state !== 'idle' || isCoolingDown}
+            className={`${boardDialogButton} border border-border disabled:opacity-60`}
           >
-            {t('contracts.sendOtp')}
+            {isCoolingDown ? `${t('contracts.sendOtp')} (${remainingSeconds}s)` : t('contracts.sendOtp')}
           </button>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('common.cancel')}
           </button>
@@ -223,7 +232,7 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
             name='intent'
             value='sign'
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+            className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-60`}
           >
             {t('transfers.sign')}
           </button>
@@ -328,7 +337,7 @@ function TransferCard({
                 name='intent'
                 value='approve'
                 disabled={selectedDecision?.result !== 'APPROVED'}
-                className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-50 sm:w-full`}
               >
                 {t('transfers.approve')}
               </button>
@@ -336,7 +345,7 @@ function TransferCard({
                 name='intent'
                 value='reject'
                 disabled={selectedDecision?.result !== 'REJECTED'}
-                className='h-10 rounded-md border border-destructive px-3 text-xs font-bold text-destructive disabled:opacity-50'
+                className={`${boardDialogButton} border border-destructive text-destructive disabled:opacity-50 sm:w-full`}
               >
                 {t('transfers.reject')}
               </button>
@@ -397,8 +406,9 @@ function FullBuyoutForm({
   boardDecisionId?: string | null
   fetcher: ReturnType<typeof useFetcher<BoardActionResult>>
 }) {
-  const { t } = useTranslation('board')
+  const { t, i18n } = useTranslation('board')
   const [conditionCount, setConditionCount] = useState(1)
+  const [valuationAmount, setValuationAmount] = useState<number | null>(null)
 
   return (
     <>
@@ -407,16 +417,20 @@ function FullBuyoutForm({
         <p className='rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground'>
           {t('transfers.fullBuyoutHelp')}
         </p>
-        <input
-          className={boardInput}
-          name='valuationAmount'
-          type='number'
-          min={TRANSFER_MONEY_MINIMUM}
-          max={TRANSFER_MONEY_MAXIMUM}
-          step={1}
-          placeholder={t('contracts.valuation')}
-          required
-        />
+        <label className='grid min-w-0 gap-1.5'>
+          <input
+            className={boardInput}
+            name='valuationAmount'
+            type='number'
+            min={TRANSFER_MONEY_MINIMUM}
+            max={TRANSFER_MONEY_MAXIMUM}
+            step={1}
+            placeholder={t('contracts.valuation')}
+            onChange={(event) => setValuationAmount(event.target.value ? Number(event.target.value) : null)}
+            required
+          />
+          <MoneyInWords amount={valuationAmount} locale={i18n.language} />
+        </label>
         <div className='space-y-3 rounded-lg border border-border p-3'>
           <div className='flex flex-wrap items-center justify-between gap-2'>
             <strong className='min-w-0 text-pretty text-xs'>{t('transfers.newContractConditions')}</strong>
@@ -474,7 +488,7 @@ function FullBuyoutForm({
           name='intent'
           value='fullBuyout'
           disabled={!boardDecisionId}
-          className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
+          className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
         >
           {t('transfers.fullBuyout')}
         </button>

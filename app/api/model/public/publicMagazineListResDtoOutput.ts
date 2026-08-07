@@ -22,27 +22,8 @@ Mọi response **lỗi** (chuẩn hoá bởi 1 filter duy nhất):
 `message` luôn là tiếng Việt để hiển thị; FE phân nhánh theo `code` ổn định. Validation fail = **422** (không phải 400).
  * OpenAPI spec version: 1.0
  */
+import type { PublicMagazineListResDtoOutputItemsItem } from './publicMagazineListResDtoOutputItemsItem';
 
-export interface UpdateBoardConfigBodyDto {
-  /**
-   * Sĩ số tổng Hội đồng — số nguyên lẻ, tối thiểu 3
-   * @minimum 3
-   * @maximum 9007199254740991
-   */
-  boardTotalMembers: number;
-  /**
-   * Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu
-   * @minimum 3
-   * @maximum 9007199254740991
-   */
-  quorumMin: number;
-  /**
-   * Tỷ lệ phiếu thuận để duyệt — trong khoảng (0, 1)
-   * @minimum 0
-   * @maximum 1
-   * @exclusiveMinimum
-   * @exclusiveMaximum
-   */
-  approveMajorityRatio: number;
-  updatedBy: string;
+export interface PublicMagazineListResDtoOutput {
+  items: PublicMagazineListResDtoOutputItemsItem[];
 }

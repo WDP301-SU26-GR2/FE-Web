@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { History, RefreshCcw } from 'lucide-react'
+import { RefreshCcw } from 'lucide-react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
@@ -18,6 +18,9 @@ import {
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
+
+const lifecycleDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const lifecycleDialogFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function EditorLifecyclePage({
   series,
@@ -43,6 +46,8 @@ export function EditorLifecyclePage({
   const [requestedAction, setRequestedAction] = useState<LifecycleAction | ''>('')
   const [activeSeriesId, setActiveSeriesId] = useState(focusSeriesId)
   useEffect(() => {
+    // Keep the visible selection in sync when the loader focus changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSeriesId(focusSeriesId)
   }, [focusSeriesId])
   const selectedSeries = series.find((item) => item.id === activeSeriesId)
@@ -118,7 +123,7 @@ export function EditorLifecyclePage({
             {(visibleSourceDecision?.id ?? sourceDecisionId) && (
               <div className='mb-4 rounded-lg border border-primary/20 bg-primary/5 p-3'>
                 <div className='flex flex-wrap items-center justify-between gap-3'>
-                  <div>
+                  <div className='min-w-0'>
                     <p className='text-xs leading-5 text-muted-foreground'>{t('operations.lifecycleApprovedHint')}</p>
                     {visibleSourceDecision?.decisionType && (
                       <p className='mt-1 text-xs font-bold text-foreground'>
@@ -140,8 +145,8 @@ export function EditorLifecyclePage({
             <div className='grid gap-4'>
               {availableActions.length > 0 && selectedAction ? (
                 <>
-                  <label className='grid gap-1.5 text-xs font-semibold'>
-                    {t('operations.selectLifecycleAction')}
+                  <label className={lifecycleDialogFieldClass}>
+                    <span className={lifecycleDialogFieldLabelClass}>{t('operations.selectLifecycleAction')}</span>
                     <select
                       className={operationInput}
                       value={selectedAction}
@@ -166,8 +171,8 @@ export function EditorLifecyclePage({
                       />
                     )}
                     {selectedAction === 'hiatus' && (
-                      <label className='grid gap-1.5 text-xs font-semibold'>
-                        {t('operations.expectedReturnDate')}
+                      <label className={lifecycleDialogFieldClass}>
+                        <span className={lifecycleDialogFieldLabelClass}>{t('operations.expectedReturnDate')}</span>
                         <input name='expectedReturnDate' type='datetime-local' className={operationInput} />
                       </label>
                     )}

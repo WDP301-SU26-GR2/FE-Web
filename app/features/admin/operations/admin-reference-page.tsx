@@ -29,7 +29,10 @@ type AdminReferenceActionResult = {
 }
 
 const inputClass =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+const modalButtonClass = 'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
+const referenceFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const referenceFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 const PUBLICATION_TYPES = ['WEEKLY', 'MONTHLY', 'IRREGULAR'] as const
 
 export function AdminReferencePage({
@@ -316,6 +319,8 @@ function SummaryItem({
   )
 }
 
+// Kept for the older reference layout while the current page uses the tabbed panels above.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ReferenceLookup({
   series,
   periods,
@@ -324,8 +329,7 @@ function ReferenceLookup({
   directories,
   seriesData,
   chapterData,
-  rankingData,
-  workflowData
+  rankingData
 }: {
   series: SelectItem[]
   periods: SelectItem[]
@@ -335,7 +339,6 @@ function ReferenceLookup({
   seriesData: Record<string, unknown>
   chapterData: Record<string, unknown>
   rankingData: Record<string, unknown>
-  workflowData: Record<string, unknown>
 }) {
   const { t } = useTranslation('admin')
   return (
@@ -423,7 +426,7 @@ function MagazineAdminPanel({
   return (
     <section className='overflow-hidden rounded-lg border border-border bg-card shadow-sm'>
       <header className='flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4'>
-        <div>
+        <div className='min-w-0'>
           <h2 className='text-sm font-bold text-foreground'>{t('operations.reference.registeredMagazines')}</h2>
           <p className='mt-1 text-xs text-muted-foreground'>{t('operations.reference.directoryHint')}</p>
         </div>
@@ -467,11 +470,11 @@ function MagazineDirectoryRow({
           ))}
         </div>
       </div>
-      <div className='flex shrink-0 flex-wrap gap-2'>
+      <div className='grid shrink-0 gap-2 sm:flex sm:flex-wrap'>
         <button
           type='button'
           onClick={onEdit}
-          className='inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold text-foreground hover:bg-muted'
+          className={`${modalButtonClass} gap-2 border border-border bg-card text-foreground hover:bg-muted`}
         >
           <Pencil className='size-4 text-primary' />
           {t('operations.reference.editMagazine')}
@@ -481,7 +484,7 @@ function MagazineDirectoryRow({
           <input type='hidden' name='name' value={magazine.name} />
           <button
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-9 items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 text-xs font-bold text-destructive disabled:opacity-50'
+            className={`${modalButtonClass} gap-2 border border-destructive/30 bg-destructive/10 text-destructive disabled:opacity-50`}
           >
             <Trash2 className='size-4' />
             {t('operations.reference.deleteMagazine')}
@@ -513,8 +516,8 @@ function AddMagazineDialog({ onClose }: { onClose: () => void }) {
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='createMagazine' />
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('operations.reference.magazineName')}
+        <label className={referenceFieldClass}>
+          <span className={referenceFieldLabelClass}>{t('operations.reference.magazineName')}</span>
           <input className={inputClass} name='name' required />
         </label>
         <FieldGroup label={t('operations.reference.publicationTypes')}>
@@ -606,8 +609,8 @@ function UpdateSeriesSlotDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='updateSeriesSlot' />
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('operations.reference.selectSeries')}
+        <label className={referenceFieldClass}>
+          <span className={referenceFieldLabelClass}>{t('operations.reference.selectSeries')}</span>
           <select className={inputClass} name='seriesId' required>
             <option value=''>{t('operations.reference.selectSeries')}</option>
             {series.map((item) => (
@@ -617,8 +620,8 @@ function UpdateSeriesSlotDialog({
             ))}
           </select>
         </label>
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('operations.reference.selectMagazine')}
+        <label className={referenceFieldClass}>
+          <span className={referenceFieldLabelClass}>{t('operations.reference.selectMagazine')}</span>
           <select
             className={inputClass}
             name='magazine'
@@ -642,12 +645,12 @@ function UpdateSeriesSlotDialog({
           </select>
         </label>
         <div className='grid gap-3 sm:grid-cols-2'>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('operations.reference.startIssueNumber')}
+          <label className={referenceFieldClass}>
+            <span className={referenceFieldLabelClass}>{t('operations.reference.startIssueNumber')}</span>
             <input className={inputClass} name='startIssueNumber' type='number' min={1} required />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('operations.reference.selectPublicationType')}
+          <label className={referenceFieldClass}>
+            <span className={referenceFieldLabelClass}>{t('operations.reference.selectPublicationType')}</span>
             <select
               className={inputClass}
               name='publicationType'
@@ -703,16 +706,17 @@ function ModalActions({
 }) {
   return (
     <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
-      <button type='button' onClick={onCancel} className='h-10 rounded-md border border-border px-4 text-xs font-bold'>
+      <button type='button' onClick={onCancel} className={`${modalButtonClass} border border-border`}>
         {cancelLabel}
       </button>
-      <button disabled={busy} className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'>
+      <button disabled={busy} className={`${modalButtonClass} bg-primary text-primary-foreground disabled:opacity-50`}>
         {submitLabel}
       </button>
     </div>
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function LegacyMagazineAdminPanel({
   magazines,
   series
@@ -860,7 +864,7 @@ function MagazineRow({ magazine }: { magazine: MagazineListResDtoOutputItemsItem
           <input type='hidden' name='name' value={magazine.name} />
           <button
             disabled={fetcher.state !== 'idle'}
-            className='h-9 rounded-md border border-destructive/40 px-3 text-xs font-bold text-destructive disabled:opacity-50'
+            className={`${modalButtonClass} border border-destructive/40 text-destructive disabled:opacity-50`}
           >
             {t('operations.reference.deleteMagazine')}
           </button>
@@ -905,7 +909,7 @@ function PublicationTypeChecks({
 
 function SubmitButton({ label, busy }: { label: string; busy: boolean }) {
   return (
-    <button disabled={busy} className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'>
+    <button disabled={busy} className={`${modalButtonClass} bg-primary text-primary-foreground disabled:opacity-50`}>
       {label}
     </button>
   )
@@ -953,7 +957,7 @@ function Panel({
 }
 
 function LoadButton({ label }: { label: string }) {
-  return <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>{label}</button>
+  return <button className={`${modalButtonClass} bg-primary text-primary-foreground`}>{label}</button>
 }
 
 function DatasetGrid({ data }: { data: Record<string, unknown> }) {

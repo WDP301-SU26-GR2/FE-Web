@@ -8,7 +8,12 @@ import { useDialogClose } from '~/shared/ui/dialog'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
 
 export const boardInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+
+export const boardDialogInlineActions = 'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'
+export const boardDialogActions = `${boardDialogInlineActions} border-t border-border pt-4`
+export const boardDialogButton =
+  'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
 
 export function BoardPageLayout({
   titleKey,

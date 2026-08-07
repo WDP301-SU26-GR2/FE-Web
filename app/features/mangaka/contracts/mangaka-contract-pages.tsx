@@ -11,7 +11,9 @@ import type {
   PaymentConditionResDtoOutput
 } from '~/api/model/contracts'
 import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { Dialog } from '~/shared/ui/dialog'
+import { useOtpCooldown } from '~/shared/hooks'
 import { canRespondToAmendment } from './contract-action-eligibility'
 import { ContractVersionHistoryPanel } from './contract-version-history-panel'
 import { getContractDisplayFlow, isAmendmentHistoryAvailable } from './lib/contract-display-flow'
@@ -70,6 +72,8 @@ export function MangakaContractsPage({ contracts }: { contracts: ContractListIte
               <Metric
                 label={t('contracts.fields.value')}
                 value={formatMoney(contract.valuationAmount, i18n.language)}
+                amount={contract.valuationAmount}
+                locale={i18n.language}
               />
             </div>
           </Link>
@@ -110,6 +114,7 @@ export function MangakaContractDetailPage({
   const revalidator = useRevalidator()
   const isWorking = fetcher.state !== 'idle'
   const [rejectOpen, setRejectOpen] = useState(false)
+  const { isCoolingDown, remainingSeconds, start } = useOtpCooldown()
   const displayFlow = getContractDisplayFlow(contract.status)
   const canRespond = displayFlow.canRespond
   const hasAmendmentHistory = isAmendmentHistoryAvailable(contract.status)
@@ -117,6 +122,10 @@ export function MangakaContractDetailPage({
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) revalidator.revalidate()
   }, [fetcher.data, fetcher.state, revalidator])
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sendOtp') start()
+  }, [fetcher.data, fetcher.state, start])
 
   return (
     <div className='flex flex-col gap-6 pb-12'>
@@ -160,7 +169,12 @@ export function MangakaContractDetailPage({
             label={t('contracts.fields.type')}
             value={t(`contracts.types.${contract.contractType}`, { defaultValue: contract.contractType })}
           />
-          <Metric label={t('contracts.fields.value')} value={formatMoney(contract.valuationAmount, i18n.language)} />
+          <Metric
+            label={t('contracts.fields.value')}
+            value={formatMoney(contract.valuationAmount, i18n.language)}
+            amount={contract.valuationAmount}
+            locale={i18n.language}
+          />
           <Metric label={t('contracts.fields.publisherOwnership')} value={`${contract.publisherOwnershipPct ?? 0}%`} />
           <Metric label={t('contracts.fields.mangakaOwnership')} value={`${contract.mangakaOwnershipPct ?? 0}%`} />
           <Metric label={t('contracts.fields.start')} value={formatDate(contract.contractStart, i18n.language)} />
@@ -211,32 +225,10 @@ export function MangakaContractDetailPage({
           </p>
         )}
         {canRespond && (
-          <div className='flex flex-wrap gap-3'>
-            <button
-              type='button'
-              disabled={isWorking}
-              onClick={() => setRejectOpen(true)}
-              className='h-10 rounded-md border border-destructive px-4 text-sm font-bold text-destructive disabled:opacity-50'
-            >
-              {t('contracts.actions.rejectContract')}
-            </button>
-          </div>
-        )}
-        {canRespond && (
           <div className='rounded-lg bg-secondary p-4'>
             <h3 className='text-sm font-bold text-foreground'>{t('contracts.detail.mangakaSignature')}</h3>
             <p className='mt-1 text-xs text-muted-foreground'>{t('contracts.detail.signatureReady')}</p>
             <fetcher.Form method='post' className='mt-3 flex flex-wrap items-center gap-3'>
-              <button
-                type='submit'
-                name='intent'
-                value='sendOtp'
-                disabled={isWorking}
-                formNoValidate
-                className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
-              >
-                <KeyRound className='size-4' /> {t('contracts.actions.sendOtp')}
-              </button>
               <input
                 name='otpCode'
                 inputMode='numeric'
@@ -249,6 +241,19 @@ export function MangakaContractDetailPage({
                 className={`${inputClass} w-40`}
               />
               <button
+                type='submit'
+                name='intent'
+                value='sendOtp'
+                disabled={isWorking || isCoolingDown}
+                formNoValidate
+                className='inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-bold disabled:opacity-50'
+              >
+                <KeyRound className='size-4' />{' '}
+                {isCoolingDown
+                  ? `${t('contracts.actions.sendOtp')} (${remainingSeconds}s)`
+                  : t('contracts.actions.sendOtp')}
+              </button>
+              <button
                 name='intent'
                 value='signContract'
                 disabled={isWorking}
@@ -257,6 +262,18 @@ export function MangakaContractDetailPage({
                 {t('contracts.actions.signContract')}
               </button>
             </fetcher.Form>
+            {canRespond && (
+              <div className='flex flex-wrap gap-3'>
+                <button
+                  type='button'
+                  disabled={isWorking}
+                  onClick={() => setRejectOpen(true)}
+                  className='h-10 rounded-md border border-destructive px-4 text-sm font-bold text-destructive disabled:opacity-50'
+                >
+                  {t('contracts.actions.rejectContract')}
+                </button>
+              </div>
+            )}
           </div>
         )}
         <ActionFeedback fetcher={fetcher} />
@@ -358,7 +375,12 @@ function MangakaAmendmentRow({
 }) {
   const { t, i18n } = useTranslation('mangaka')
   const fetcher = useFetcher<MangakaContractActionResult>()
+  const { isCoolingDown, remainingSeconds, start } = useOtpCooldown()
   const canRespond = canRespondToAmendment({ contractType: contract.contractType, amendmentStatus: amendment.status })
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sendOtp') start()
+  }, [fetcher.data, fetcher.state, start])
   return (
     <article className='rounded-lg border border-border p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
@@ -369,7 +391,12 @@ function MangakaAmendmentRow({
         <StatusBadge value={amendment.status} />
       </div>
       <div className='mt-4 grid gap-3 rounded-lg bg-muted/50 p-3 text-sm sm:grid-cols-2'>
-        <Metric label={t('contracts.fields.value')} value={formatMoney(amendment.valuationAmount, i18n.language)} />
+        <Metric
+          label={t('contracts.fields.value')}
+          value={formatMoney(amendment.valuationAmount, i18n.language)}
+          amount={amendment.valuationAmount}
+          locale={i18n.language}
+        />
         <Metric
           label={t('contracts.fields.publisherOwnership')}
           value={formatPercent(amendment.publisherOwnershipPct, i18n.language)}
@@ -392,9 +419,12 @@ function MangakaAmendmentRow({
               name='intent'
               value='sendOtp'
               formNoValidate
-              className='h-10 rounded-md border border-border px-3 text-sm font-bold'
+              disabled={fetcher.state !== 'idle' || isCoolingDown}
+              className='h-10 rounded-md border border-border px-3 text-sm font-bold disabled:opacity-50'
             >
-              {t('contracts.actions.sendOtpShort')}
+              {isCoolingDown
+                ? `${t('contracts.actions.sendOtpShort')} (${remainingSeconds}s)`
+                : t('contracts.actions.sendOtpShort')}
             </button>
             <input
               name='otpCode'
@@ -467,11 +497,22 @@ function Panel({ title, children, className = '' }: { title: string; children: R
   )
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  amount,
+  locale
+}: {
+  label: string
+  value: string
+  amount?: number | null
+  locale?: string
+}) {
   return (
     <div>
       <p className='text-xs font-semibold text-muted-foreground'>{label}</p>
       <p className='mt-1 font-bold text-foreground'>{value}</p>
+      <MoneyInWords amount={amount} locale={locale ?? 'vi'} />
     </div>
   )
 }

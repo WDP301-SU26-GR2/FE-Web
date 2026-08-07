@@ -37,6 +37,7 @@ import type {
 
 import type {
   PublicChapterPagesResDtoOutput,
+  PublicMagazineListResDtoOutput,
   PublicSeriesDetailResDtoOutput,
   PublicSeriesListResDtoOutput
 } from '../../model/public';
@@ -47,6 +48,8 @@ export const getPublicControllerListSeriesResponseMock = (overrideResponse: Part
 export const getPublicControllerGetSeriesDetailResponseMock = (overrideResponse: Partial< PublicSeriesDetailResDtoOutput > = {}): PublicSeriesDetailResDtoOutput => ({id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), synopsis: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), coverImageUrl: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), genres: faker.helpers.arrayElements(['ACTION','ADVENTURE','COMEDY','DRAMA','FANTASY','HORROR','MYSTERY','ROMANCE','SCI_FI','SLICE_OF_LIFE','SPORTS','SUPERNATURAL','THRILLER','HISTORICAL','ISEKAI','MECHA','PSYCHOLOGICAL'] as const), demographic: faker.helpers.arrayElement([faker.helpers.arrayElement(['SHONEN','SEINEN','SHOJO','JOSEI','KODOMO'] as const), null]), status: faker.helpers.arrayElement(['DRAFT','IN_REVIEW','READY_TO_PITCH','PITCHED','SERIALIZED','HIATUS','COMPLETING','CANCELLING','COMPLETED','CANCELLED','REJECTED','ABANDONED','WITHDRAWN'] as const), publicationType: faker.helpers.arrayElement([faker.helpers.arrayElement(['WEEKLY','MONTHLY','IRREGULAR'] as const), null]), magazine: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), author: {displayName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null])}, publishedChapterCount: faker.number.int({min: -9007199254740991, max: 9007199254740991}), chapters: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), chapterNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), title: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publishedAt: faker.string.alpha({length: {min: 10, max: 20}})})), ...overrideResponse})
 
 export const getPublicControllerGetChapterPagesResponseMock = (overrideResponse: Partial< PublicChapterPagesResDtoOutput > = {}): PublicChapterPagesResDtoOutput => ({series: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}})}, chapter: {id: faker.string.alpha({length: {min: 10, max: 20}}), chapterNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), title: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), publishedAt: faker.string.alpha({length: {min: 10, max: 20}})}, pages: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({pageNumber: faker.number.int({min: -9007199254740991, max: 9007199254740991}), imageUrl: faker.string.alpha({length: {min: 10, max: 20}})})), prevChapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), nextChapterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), ...overrideResponse})
+
+export const getPublicControllerListMagazinesResponseMock = (overrideResponse: Partial< PublicMagazineListResDtoOutput > = {}): PublicMagazineListResDtoOutput => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({name: faker.string.alpha({length: {min: 10, max: 20}}), publicationTypes: faker.helpers.arrayElements(['WEEKLY','MONTHLY','IRREGULAR'] as const)})), ...overrideResponse})
 
 
 export const getPublicControllerListSeriesMockHandler = (overrideResponse?: PublicSeriesListResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PublicSeriesListResDtoOutput> | PublicSeriesListResDtoOutput), options?: RequestHandlerOptions) => {
@@ -84,8 +87,21 @@ export const getPublicControllerGetChapterPagesMockHandler = (overrideResponse?:
       })
   }, options)
 }
+
+export const getPublicControllerListMagazinesMockHandler = (overrideResponse?: PublicMagazineListResDtoOutput | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PublicMagazineListResDtoOutput> | PublicMagazineListResDtoOutput), options?: RequestHandlerOptions) => {
+  return http.get('*/public/magazines', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getPublicControllerListMagazinesResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
 export const getPublicMock = () => [
   getPublicControllerListSeriesMockHandler(),
   getPublicControllerGetSeriesDetailMockHandler(),
-  getPublicControllerGetChapterPagesMockHandler()
+  getPublicControllerGetChapterPagesMockHandler(),
+  getPublicControllerListMagazinesMockHandler()
 ]

@@ -4,6 +4,7 @@ import type {
   ContractStatusProgressResDtoOutput,
   ContractVersionResDtoOutput
 } from '~/api/model/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { ContractPageLayout } from './components/contract-shared'
 
 export function EditorContractHistoryPage({
@@ -29,8 +30,9 @@ export function EditorContractHistoryPage({
                 </span>
               </div>
               <p className='mt-2 text-xs text-muted-foreground'>
-                {version.note ?? '—'} · {version.valuationAmount ?? '—'}
+                {version.note ?? '—'} · {formatAmount(version.valuationAmount, i18n.language)}
               </p>
+              <MoneyInWords amount={version.valuationAmount} locale={i18n.language} />
             </article>
           ))}
           {!versions.length && <p className='text-xs text-muted-foreground'>{t('contractDetail.emptyVersions')}</p>}
@@ -38,4 +40,8 @@ export function EditorContractHistoryPage({
       </section>
     </ContractPageLayout>
   )
+}
+
+function formatAmount(value: number | null, locale: string) {
+  return value == null ? '—' : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
 }

@@ -88,7 +88,7 @@ export function Dialog({
         aria-describedby={descriptionId}
         onClick={stopProp}
         className={cn(
-          'relative z-10 flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl',
+          'relative z-10 flex min-w-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl',
           SIZE_CLASS[size],
           'max-h-[calc(100vh-3rem)]',
           compact && 'text-xs',
@@ -115,7 +115,7 @@ export function Dialog({
             <X className='h-5 w-5' />
           </button>
         </header>
-        <div className='flex-1 overflow-y-auto px-5 py-4'>
+        <div className='min-w-0 flex-1 overflow-y-auto px-5 py-4'>
           <DialogCloseContext.Provider value={onClose}>{children}</DialogCloseContext.Provider>
         </div>
         {footer && <footer className='shrink-0 border-t border-border px-5 py-3'>{footer}</footer>}

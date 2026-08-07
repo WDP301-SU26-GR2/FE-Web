@@ -11,7 +11,7 @@ import type {
   SurveyPeriodListResDtoOutputItemsItem
 } from '~/api/model/survey'
 import { useTranslation } from 'react-i18next'
-import { OperationsLayout, operationInput } from './components/operations-shared'
+import { OperationsLayout, operationDialogButton, operationInput } from './components/operations-shared'
 
 export function EditorInsightsPage({
   series,
@@ -57,7 +57,7 @@ export function EditorInsightsPage({
     >
       <form
         method='get'
-        className='grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2 lg:grid-cols-6'
+        className='grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]'
       >
         <select name='seriesId' defaultValue={seriesId} className={operationInput}>
           <option value=''>{t('operations.selectSeries')}</option>
@@ -98,7 +98,7 @@ export function EditorInsightsPage({
           aria-label={t('operations.aggregateMonth')}
           className={operationInput}
         />
-        <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+        <button className={`${operationDialogButton} bg-primary text-primary-foreground`}>
           {t('actions.load')}
         </button>
       </form>
@@ -224,7 +224,7 @@ function DataPanel({
               item.id === focusId ? 'border-primary bg-primary/5 ring-2 ring-primary/15' : 'border-transparent bg-muted'
             }`}
           >
-            <strong className='text-foreground'>{item.title}</strong>
+            <strong className='block min-w-0 text-pretty text-foreground'>{item.title}</strong>
             <p className='mt-1 text-xs text-muted-foreground'>{item.detail}</p>
           </article>
         ))}

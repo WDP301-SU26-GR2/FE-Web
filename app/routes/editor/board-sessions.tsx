@@ -1,4 +1,5 @@
 import {
+  boardControllerGetConfig,
   boardControllerConcludeSession,
   boardControllerCreateSession,
   boardControllerGetDecisions,
@@ -16,10 +17,11 @@ import { hydrateBoardDecisions, hydrateBoardSessions, loadBoardSessionSeries, re
 import type { Route } from './+types/board-sessions'
 
 export async function loadBoardSessionsPage(manageAll = false) {
-  const [seriesResult, sessionsResult, decisionsResult] = await Promise.allSettled([
+  const [seriesResult, sessionsResult, decisionsResult, boardConfigResult] = await Promise.allSettled([
     loadBoardSessionSeries(),
     boardControllerGetSessions(manageAll ? undefined : { mine: 'true' }),
-    boardControllerGetDecisions()
+    boardControllerGetDecisions(),
+    boardControllerGetConfig()
   ])
   const [sessions, decisions] = await Promise.all([
     sessionsResult.status === 'fulfilled' ? hydrateBoardSessions(sessionsResult.value.data) : [],
@@ -30,7 +32,10 @@ export async function loadBoardSessionsPage(manageAll = false) {
     series: seriesResult.status === 'fulfilled' ? seriesResult.value : [],
     sessions,
     decisions,
-    hasError: [seriesResult, sessionsResult, decisionsResult].some((result) => result.status === 'rejected')
+    boardConfig: boardConfigResult.status === 'fulfilled' ? boardConfigResult.value.data : null,
+    hasError: [seriesResult, sessionsResult, decisionsResult, boardConfigResult].some(
+      (result) => result.status === 'rejected'
+    )
   }
 }
 
@@ -48,12 +53,17 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (!isValidBoardSessionTimeRange(startTime, endTime)) {
         return { ok: false, intent, errorKey: 'invalidSessionTime' }
       }
+      const allowedEditorIds = form
+        .getAll('allowedEditorIds')
+        .map((value) => String(value).trim())
+        .filter(Boolean)
       await boardControllerCreateSession({
         title: required(form, 'title'),
         description: String(form.get('description') ?? '') || null,
         startTime: new Date(startTime).toISOString(),
         ...(endTime ? { endTime: new Date(endTime).toISOString() } : {}),
-        seriesId: required(form, 'seriesId')
+        seriesId: required(form, 'seriesId'),
+        allowedEditorIds
       })
     } else if (intent === BOARD_SESSION_INTENTS.start) {
       await boardControllerStartSession({ id: required(form, 'sessionId') })

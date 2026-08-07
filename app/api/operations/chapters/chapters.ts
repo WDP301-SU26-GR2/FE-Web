@@ -103,7 +103,7 @@ export const chapterControllerCreate = async (createChapterBodyDto: CreateChapte
 
 
 /**
- * @summary List chapter theo seriesId (query)
+ * @summary List chapter theo seriesId (scoped: chủ sở hữu / editor phụ trách / trợ lý đang cộng tác)
  */
 export type chapterControllerListBySeriesResponse200 = {
   data: ChapterListResDtoOutput
@@ -217,7 +217,7 @@ export const chapterControllerRemove = async ({ id }: ChapterControllerRemovePat
 
 
 /**
- * @summary Chi tiết 1 chapter (kèm manuscript/schedule)
+ * @summary Chi tiết 1 chapter (kèm manuscript/schedule) — scoped: chủ sở hữu / editor phụ trách / trợ lý đang cộng tác
  */
 export type chapterControllerGetOneResponse200 = {
   data: ChapterResDtoOutput

@@ -10,6 +10,9 @@
   "splashLoading": "Starting up...",
   "login": "Login",
   "register": "Register",
+  "money": {
+    "amountInWords": "Amount in words"
+  },
   "businessData": {
     "empty": "No data available",
     "yes": "Yes",

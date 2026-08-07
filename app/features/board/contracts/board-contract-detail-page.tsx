@@ -11,11 +11,21 @@ import type {
   PaymentConditionListResDtoOutputDataItem
 } from '~/api/model/contracts'
 import type { BoardDecisionResDtoOutput } from '~/api/model/board'
-import { boardInput, BoardFeedback, BoardHeader, BoardPanel, StatusBadge } from '../components/board-ui'
+import {
+  boardDialogButton,
+  boardDialogInlineActions,
+  boardInput,
+  BoardFeedback,
+  BoardHeader,
+  BoardPanel,
+  StatusBadge
+} from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
 import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { useAuth } from '~/features/auth/context/auth-context'
+import { useOtpCooldown } from '~/shared/hooks'
 
 export function BoardContractDetailPage({
   contract,
@@ -84,6 +94,7 @@ export function BoardContractDetailPage({
             <p className='mt-1 font-bold'>
               {new Intl.NumberFormat(i18n.language).format(contract.valuationAmount ?? 0)}
             </p>
+            <MoneyInWords amount={contract.valuationAmount} locale={i18n.language} />
           </div>
           <div>
             <span className='text-muted-foreground'>{t('contracts.contractType')}</span>
@@ -161,7 +172,7 @@ export function BoardContractDetailPage({
                 name='intent'
                 value='reportRevenue'
                 disabled={fetcher.state !== 'idle'}
-                className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60 sm:col-span-2'
+                className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-60 sm:col-span-2 sm:w-full`}
               >
                 {t('contracts.reportRevenue')}
               </button>
@@ -202,7 +213,7 @@ export function BoardContractDetailPage({
                 type='button'
                 onClick={() => setRepresentativeAction('claim')}
                 disabled={fetcher.state !== 'idle'}
-                className='h-9 rounded-md border border-border px-3 text-xs font-bold disabled:opacity-50'
+                className={`${boardDialogButton} border border-border disabled:opacity-50`}
               >
                 {t('contracts.claimRepresentative')}
               </button>
@@ -212,7 +223,7 @@ export function BoardContractDetailPage({
                 type='button'
                 onClick={() => setRepresentativeAction('release')}
                 disabled={fetcher.state !== 'idle'}
-                className='h-9 rounded-md border border-border px-3 text-xs font-bold disabled:opacity-50'
+                className={`${boardDialogButton} border border-border disabled:opacity-50`}
               >
                 {t('contracts.releaseRepresentative')}
               </button>
@@ -221,7 +232,7 @@ export function BoardContractDetailPage({
               <button
                 type='button'
                 onClick={() => setSignOpen(true)}
-                className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+              className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
               >
                 <PenLine className='h-4 w-4' />
                 {t('contracts.signRepresentative')}
@@ -248,13 +259,13 @@ export function BoardContractDetailPage({
               maxLength={2000}
               rows={3}
               placeholder={t('contracts.commentPlaceholder')}
-              className='w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
+              className='min-w-0 w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
             />
             <button
               name='intent'
               value='addComment'
               disabled={fetcher.state !== 'idle'}
-              className='h-9 justify-self-end rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
+              className={`${boardDialogButton} justify-self-end bg-primary text-primary-foreground disabled:opacity-50`}
             >
               {t('contracts.addComment')}
             </button>
@@ -321,11 +332,11 @@ function RepresentativeConfirmDialog({ action, onClose }: { action: 'claim' | 'r
       size='sm'
     >
       <fetcher.Form method='post' className='grid gap-4'>
-        <div className='flex justify-end gap-2'>
+        <div className={boardDialogInlineActions}>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('common.cancel')}
           </button>
@@ -333,7 +344,7 @@ function RepresentativeConfirmDialog({ action, onClose }: { action: 'claim' | 'r
             name='intent'
             value={action}
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+            className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-60`}
           >
             {t(action === 'claim' ? 'contracts.confirmClaimRepresentative' : 'contracts.confirmReleaseRepresentative')}
           </button>
@@ -367,7 +378,7 @@ function AmendmentRow({
         <button
           type='button'
           onClick={() => setSignOpen(true)}
-          className='mt-3 inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+          className={`${boardDialogButton} mt-3 gap-2 bg-primary text-primary-foreground`}
         >
           <PenLine className='h-4 w-4' />
           {t('contracts.signAmendment')}
@@ -388,10 +399,15 @@ function AmendmentRow({
 function ContractSignDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
+  const { isCoolingDown, remainingSeconds, start } = useOtpCooldown()
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sign') onClose()
   }, [fetcher.data, fetcher.state, onClose])
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sendOtp') start()
+  }, [fetcher.data, fetcher.state, start])
 
   return (
     <Dialog
@@ -412,20 +428,20 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
           placeholder={t('contracts.otp')}
           required
         />
-        <div className='flex justify-end gap-2'>
+        <div className={boardDialogInlineActions}>
           <button
             name='intent'
             value='sendOtp'
             formNoValidate
-            disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-60'
+            disabled={fetcher.state !== 'idle' || isCoolingDown}
+            className={`${boardDialogButton} border border-border disabled:opacity-60`}
           >
-            {t('contracts.sendOtp')}
+            {isCoolingDown ? `${t('contracts.sendOtp')} (${remainingSeconds}s)` : t('contracts.sendOtp')}
           </button>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('common.cancel')}
           </button>
@@ -433,7 +449,7 @@ function ContractSignDialog({ onClose }: { onClose: () => void }) {
             name='intent'
             value='sign'
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+            className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-60`}
           >
             {t('contracts.sign')}
           </button>
@@ -472,10 +488,15 @@ function AmendmentSignDialog({
 }) {
   const { t } = useTranslation('board')
   const fetcher = useFetcher<BoardActionResult>()
+  const { isCoolingDown, remainingSeconds, start } = useOtpCooldown()
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'signAmendment') onClose()
   }, [fetcher.data, fetcher.state, onClose])
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sendOtp') start()
+  }, [fetcher.data, fetcher.state, start])
 
   return (
     <Dialog
@@ -498,20 +519,20 @@ function AmendmentSignDialog({
           placeholder={t('contracts.otp')}
           required
         />
-        <div className='flex justify-end gap-2'>
+        <div className={boardDialogInlineActions}>
           <button
             name='intent'
             value='sendOtp'
             formNoValidate
-            disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold disabled:opacity-60'
+            disabled={fetcher.state !== 'idle' || isCoolingDown}
+            className={`${boardDialogButton} border border-border disabled:opacity-60`}
           >
-            {t('contracts.sendOtp')}
+            {isCoolingDown ? `${t('contracts.sendOtp')} (${remainingSeconds}s)` : t('contracts.sendOtp')}
           </button>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('common.cancel')}
           </button>
@@ -519,7 +540,7 @@ function AmendmentSignDialog({
             name='intent'
             value='signAmendment'
             disabled={fetcher.state !== 'idle'}
-            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+            className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-60`}
           >
             {t('contracts.signAmendment')}
           </button>

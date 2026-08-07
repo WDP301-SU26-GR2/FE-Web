@@ -5,6 +5,13 @@ import type { FetcherWithComponents } from 'react-router'
 
 import type { AdminUserActionResult, SelectedUserAction } from '../types'
 
+const modalPanelClass = 'flex max-h-[calc(100vh-3rem)] min-w-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl'
+const modalBodyClass = 'min-w-0 flex-1 overflow-y-auto space-y-4 p-5'
+const modalFooterClass = 'flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'
+const modalButtonClass = 'inline-flex h-10 w-full items-center justify-center rounded-lg px-4 text-xs font-bold sm:w-auto'
+const fieldClass =
+  'min-w-0 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+
 export interface UserActionDialogProps {
   selection: SelectedUserAction
   fetcher: FetcherWithComponents<AdminUserActionResult>
@@ -33,17 +40,17 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
   return (
     <div className='fixed inset-0 z-[70] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm'>
       <div
-        className='w-full max-w-md rounded-xl border border-border bg-card shadow-xl'
+        className={`${modalPanelClass} max-w-md`}
         role='dialog'
         aria-modal='true'
         aria-labelledby='user-action-title'
       >
         <div className='flex items-start justify-between gap-4 border-b border-border p-5'>
-          <div className='flex items-start gap-3'>
+          <div className='flex min-w-0 items-start gap-3'>
             <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>
               <Icon className='size-5' aria-hidden='true' />
             </div>
-            <div>
+            <div className='min-w-0'>
               <h2 id='user-action-title' className='text-sm font-bold text-foreground'>
                 {t(`users.dialogs.${action}.title`)}
               </h2>
@@ -60,7 +67,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
           </button>
         </div>
 
-        <fetcher.Form method='post' className='space-y-4 p-5'>
+        <fetcher.Form method='post' className={modalBodyClass}>
           <input type='hidden' name='intent' value={action} />
           <input type='hidden' name='userId' value={user.id} />
           <input type='hidden' name='userEmail' value={user.email} />
@@ -75,7 +82,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
                   name='status'
                   required
                   defaultValue={user.status === 'INACTIVE' ? 'ACTIVE' : user.status}
-                  className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+                  className={fieldClass}
                 >
                   <option value='ACTIVE'>{t('dashboard.userStatuses.ACTIVE')}</option>
                   <option value='BLOCKED'>{t('dashboard.userStatuses.BLOCKED')}</option>
@@ -88,24 +95,24 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
                   name='reason'
                   rows={3}
                   placeholder={t('users.fields.reasonPlaceholder')}
-                  className='w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+                  className={`${fieldClass} resize-none`}
                 />
               </label>
             </>
           )}
 
-          <div className='flex justify-end gap-3 border-t border-border pt-4'>
+          <div className={modalFooterClass}>
             <button
               type='button'
               onClick={onClose}
-              className='rounded-lg border border-border px-4 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted'
+              className={`${modalButtonClass} border border-border text-foreground transition-colors hover:bg-muted`}
             >
               {t('users.actions.cancel')}
             </button>
             <button
               type='submit'
               disabled={isSubmitting}
-              className='rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+              className={`${modalButtonClass} bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {isSubmitting ? t('users.actions.processing') : t(`users.dialogs.${action}.submit`)}
             </button>

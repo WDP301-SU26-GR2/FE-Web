@@ -155,7 +155,6 @@ function buildReportContent(
 ) {
   const t = i18n.getFixedT(locale, 'editor')
   const labels = {
-    snapshot: t('board.reportSnapshot.snapshot'),
     series: t('board.reportSnapshot.series'),
     lifecycle: t('board.reportSnapshot.lifecycle'),
     currentStatus: t('board.reportSnapshot.currentStatus'),
@@ -182,7 +181,7 @@ function buildReportContent(
     editorialAnalysis: t('board.reportSnapshot.editorialAnalysis')
   }
   const missing = labels.notAvailable
-  const blocks = [`[${labels.snapshot} · ${new Date().toISOString()}]`, `${labels.series}: ${series.title}`]
+  const blocks = [`${labels.series}: ${series.title}`]
 
   if (sections.includes('LIFECYCLE')) {
     blocks.push(

@@ -1,6 +1,7 @@
 import {
   CreateContractBodyDtoContractType,
   ContractResDtoOutputStatus,
+  type ContractListItemDtoOutput,
   type ContractResDtoOutput,
   type ContractResDtoOutputContractType
 } from '~/api/model/contracts'
@@ -65,8 +66,30 @@ export function canVoidContract(contract: Pick<ContractResDtoOutput, 'status'>):
   return EDITABLE_STATUSES.has(contract.status)
 }
 
-export function canRedraftContract(contract: Pick<ContractResDtoOutput, 'status'>): boolean {
-  return contract.status === ContractResDtoOutputStatus.REJECTED_BY_MANGAKA
+type ContractRedraftCandidate = Pick<
+  ContractResDtoOutput | ContractListItemDtoOutput,
+  'id' | 'seriesId' | 'status' | 'supersedesContractId'
+>
+
+export function canRedraftContract(
+  contract: ContractRedraftCandidate,
+  contracts: ContractRedraftCandidate[] = []
+): boolean {
+  return contract.status === ContractResDtoOutputStatus.REJECTED_BY_MANGAKA && !hasRedraftBlockingContract(contract, contracts)
+}
+
+export function hasRedraftBlockingContract(
+  contract: ContractRedraftCandidate,
+  contracts: ContractRedraftCandidate[]
+): boolean {
+  return contracts.some(
+    (candidate) =>
+      candidate.id !== contract.id &&
+      (candidate.supersedesContractId === contract.id ||
+        (candidate.seriesId === contract.seriesId &&
+          candidate.status !== ContractResDtoOutputStatus.REJECTED_BY_MANGAKA &&
+          blocksNewContractCreation(candidate)))
+  )
 }
 
 export function blocksNewContractCreation(contract: Pick<ContractResDtoOutput, 'status'>): boolean {

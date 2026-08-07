@@ -7290,6 +7290,115 @@
         ]
       }
     },
+    "/audit": {
+      "get": {
+        "operationId": "AuditController_list",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION, BOARD_SESSION",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SERIES",
+                "MANUSCRIPT",
+                "PAGE",
+                "CHAPTER",
+                "TASK",
+                "DEADLINE_REQUEST",
+                "USER",
+                "REGION",
+                "APP_CONFIG",
+                "CONTRACT",
+                "BOARD_DECISION",
+                "REPRINT_REQUEST",
+                "TRANSFER_REQUEST",
+                "PAYMENT_RECORD",
+                "SURVEY_PERIOD",
+                "PUBLICATION_VERSION",
+                "BOARD_SESSION"
+              ]
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "description": "Id entity bị tác động",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "description": "Id user thao tác",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "TRANSITION | HOLD | RESUME | BAN | ... (string chuẩn hóa)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "exclusiveMinimum": true,
+              "default": 20,
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResDto_Output"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation fail"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List audit logs for privileged audit viewers",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/magazines": {
       "get": {
         "operationId": "MagazineController_getMagazines",
@@ -7498,115 +7607,6 @@
         "summary": "Super Admin xoá tạp chí khỏi danh mục (chặn nếu đang có series/kỳ bình chọn dùng)",
         "tags": [
           "magazines"
-        ]
-      }
-    },
-    "/audit": {
-      "get": {
-        "operationId": "AuditController_list",
-        "parameters": [
-          {
-            "name": "entityType",
-            "required": false,
-            "in": "query",
-            "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION, BOARD_SESSION",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "SERIES",
-                "MANUSCRIPT",
-                "PAGE",
-                "CHAPTER",
-                "TASK",
-                "DEADLINE_REQUEST",
-                "USER",
-                "REGION",
-                "APP_CONFIG",
-                "CONTRACT",
-                "BOARD_DECISION",
-                "REPRINT_REQUEST",
-                "TRANSFER_REQUEST",
-                "PAYMENT_RECORD",
-                "SURVEY_PERIOD",
-                "PUBLICATION_VERSION",
-                "BOARD_SESSION"
-              ]
-            }
-          },
-          {
-            "name": "entityId",
-            "required": false,
-            "in": "query",
-            "description": "Id entity bị tác động",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "actorId",
-            "required": false,
-            "in": "query",
-            "description": "Id user thao tác",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "action",
-            "required": false,
-            "in": "query",
-            "description": "TRANSITION | HOLD | RESUME | BAN | ... (string chuẩn hóa)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maximum": 100,
-              "exclusiveMinimum": true,
-              "default": 20,
-              "type": "integer",
-              "minimum": 0
-            }
-          },
-          {
-            "name": "offset",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "maximum": 9007199254740991,
-              "default": 0,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuditLogListResDto_Output"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation fail"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List audit logs for privileged audit viewers",
-        "tags": [
-          "audit"
         ]
       }
     },
@@ -9568,6 +9568,32 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Error.ChapterAccessDenied (id) - caller is outside the chapter scope (owner mangaka / assigned editor / board / admin)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.ChapterAccessDenied",
+                  "message": "Bạn không có quyền truy cập chương này"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error.ChapterNotFound - chapter does not exist (or id is not a valid ObjectId)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 404,
+                  "code": "Error.ChapterNotFound",
+                  "message": "Không tìm thấy chương"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -9575,7 +9601,7 @@
             "bearer": []
           }
         ],
-        "summary": "List chapter theo seriesId (query)",
+        "summary": "List chapter theo seriesId (scoped: chủ sở hữu / editor phụ trách / trợ lý đang cộng tác)",
         "tags": [
           "chapters"
         ]
@@ -9764,6 +9790,19 @@
               }
             }
           },
+          "403": {
+            "description": "Error.ChapterAccessDenied (id) - caller is outside the chapter scope (owner mangaka / assigned editor / board / admin)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 403,
+                  "code": "Error.ChapterAccessDenied",
+                  "message": "Bạn không có quyền truy cập chương này"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Error.ChapterNotFound - chapter does not exist (or id is not a valid ObjectId)",
             "content": {
@@ -9783,7 +9822,7 @@
             "bearer": []
           }
         ],
-        "summary": "Chi tiết 1 chapter (kèm manuscript/schedule)",
+        "summary": "Chi tiết 1 chapter (kèm manuscript/schedule) — scoped: chủ sở hữu / editor phụ trách / trợ lý đang cộng tác",
         "tags": [
           "chapters"
         ]
@@ -20142,6 +20181,41 @@
         ]
       }
     },
+    "/public/magazines": {
+      "get": {
+        "operationId": "PublicController_listMagazines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMagazineListResDto_Output"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error.PublicRateLimited - IP exceeded the public route quota; retry after the response retryAfter duration",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "statusCode": 429,
+                  "code": "Error.PublicRateLimited",
+                  "message": "Bạn thao tác quá nhanh — vui lòng thử lại sau"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Public danh mục tạp chí — cho Landing (GUEST) chọn tạp chí trước khi xem ranking tổng hợp",
+        "tags": [
+          "public"
+        ]
+      }
+    },
     "/health/live": {
       "get": {
         "operationId": "HealthController_live",
@@ -23299,14 +23373,24 @@
         "type": "object",
         "properties": {
           "boardTotalMembers": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 9007199254740991,
+            "description": "Sĩ số tổng Hội đồng — số nguyên lẻ, tối thiểu 3"
           },
           "quorumMin": {
-            "type": "number",
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 9007199254740991,
             "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
           },
           "approveMajorityRatio": {
-            "type": "number"
+            "type": "number",
+            "exclusiveMinimum": true,
+            "exclusiveMaximum": true,
+            "description": "Tỷ lệ phiếu thuận để duyệt — trong khoảng (0, 1)",
+            "minimum": 0,
+            "maximum": 1
           },
           "updatedBy": {
             "type": "string"
@@ -26193,6 +26277,99 @@
         },
         "additionalProperties": false
       },
+      "AuditLogListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "actorId": {
+                  "type": "string",
+                  "description": "null = hành động hệ thống (cron/listener)",
+                  "nullable": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "enum": [
+                    "SERIES",
+                    "MANUSCRIPT",
+                    "PAGE",
+                    "CHAPTER",
+                    "TASK",
+                    "DEADLINE_REQUEST",
+                    "USER",
+                    "REGION",
+                    "APP_CONFIG",
+                    "CONTRACT",
+                    "BOARD_DECISION",
+                    "REPRINT_REQUEST",
+                    "TRANSFER_REQUEST",
+                    "PAYMENT_RECORD",
+                    "SURVEY_PERIOD",
+                    "PUBLICATION_VERSION",
+                    "BOARD_SESSION"
+                  ],
+                  "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION, BOARD_SESSION"
+                },
+                "entityId": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                },
+                "fromState": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "toState": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "reason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "actorId",
+                "entityType",
+                "entityId",
+                "action",
+                "fromState",
+                "toState",
+                "reason",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
       "MagazineListResDto_Output": {
         "type": "object",
         "properties": {
@@ -26302,99 +26479,6 @@
         },
         "required": [
           "publicationTypes"
-        ],
-        "additionalProperties": false
-      },
-      "AuditLogListResDto_Output": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "actorId": {
-                  "type": "string",
-                  "description": "null = hành động hệ thống (cron/listener)",
-                  "nullable": true
-                },
-                "entityType": {
-                  "type": "string",
-                  "enum": [
-                    "SERIES",
-                    "MANUSCRIPT",
-                    "PAGE",
-                    "CHAPTER",
-                    "TASK",
-                    "DEADLINE_REQUEST",
-                    "USER",
-                    "REGION",
-                    "APP_CONFIG",
-                    "CONTRACT",
-                    "BOARD_DECISION",
-                    "REPRINT_REQUEST",
-                    "TRANSFER_REQUEST",
-                    "PAYMENT_RECORD",
-                    "SURVEY_PERIOD",
-                    "PUBLICATION_VERSION",
-                    "BOARD_SESSION"
-                  ],
-                  "description": "Audited entity type: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST. Values: SERIES, MANUSCRIPT, PAGE, CHAPTER, TASK, DEADLINE_REQUEST, USER, REGION, APP_CONFIG, CONTRACT, BOARD_DECISION, REPRINT_REQUEST, TRANSFER_REQUEST, PAYMENT_RECORD, SURVEY_PERIOD, PUBLICATION_VERSION, BOARD_SESSION"
-                },
-                "entityId": {
-                  "type": "string"
-                },
-                "action": {
-                  "type": "string"
-                },
-                "fromState": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "toState": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "reason": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "createdAt": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "actorId",
-                "entityType",
-                "entityId",
-                "action",
-                "fromState",
-                "toState",
-                "reason",
-                "createdAt"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "total": {
-            "type": "number"
-          },
-          "limit": {
-            "type": "number"
-          },
-          "offset": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset"
         ],
         "additionalProperties": false
       },
@@ -37499,6 +37583,43 @@
           "pages",
           "prevChapterId",
           "nextChapterId"
+        ],
+        "additionalProperties": false
+      },
+      "PublicMagazineListResDto_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "publicationTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "WEEKLY",
+                      "MONTHLY",
+                      "IRREGULAR"
+                    ],
+                    "description": "Publication cadence: WEEKLY, MONTHLY, IRREGULAR. Values: WEEKLY, MONTHLY, IRREGULAR"
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "publicationTypes"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items"
         ],
         "additionalProperties": false
       },

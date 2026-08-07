@@ -1,7 +1,7 @@
 import { Form, useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { BoardActionResult } from '../types'
-import { boardInput, BoardFeedback, BoardHeader, BoardPanel, EmptyState } from '../components/board-ui'
+import { boardDialogButton, boardInput, BoardFeedback, BoardHeader, BoardPanel, EmptyState } from '../components/board-ui'
 import { BusinessDataView } from '~/shared/components/business-data-view'
 import { SignedImage } from '~/shared/components/signed-image'
 
@@ -62,7 +62,7 @@ export function BoardReferencePage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground lg:col-span-3'>
+          <button className={`${boardDialogButton} bg-primary text-primary-foreground lg:col-span-2 lg:w-full`}>
             {t('common.load')}
           </button>
         </Form>
@@ -92,7 +92,7 @@ export function BoardReferencePage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
             {t('common.load')}
           </button>
         </Form>
@@ -101,7 +101,7 @@ export function BoardReferencePage({
       </BoardPanel>
 
       <BoardPanel title={t('reference.surveyTitle')}>
-        <Form method='get' replace preventScrollReset className='flex flex-col gap-3 sm:flex-row'>
+        <Form method='get' replace preventScrollReset className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'>
           <select className={boardInput} name='surveyPeriodId' defaultValue={selected.surveyPeriodId} required>
             <option value=''>{t('reference.selectSurvey')}</option>
             {periods.map((item) => (
@@ -111,7 +111,7 @@ export function BoardReferencePage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
             {t('common.load')}
           </button>
         </Form>
@@ -158,7 +158,7 @@ export function BoardReferencePage({
             <button
               name='intent'
               value='recordTankobonSales'
-              className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground sm:col-span-2'
+              className={`${boardDialogButton} bg-primary text-primary-foreground sm:col-span-2 sm:w-full`}
             >
               {t('reference.recordSales')}
             </button>

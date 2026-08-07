@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Form, Link } from 'react-router'
 import { AuditControllerListEntityType, type AuditLogListResDtoOutput } from '~/api/model/audit'
-import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
+import { boardDialogButton, boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
 export function BoardAuditPage({
   data,
@@ -44,7 +44,7 @@ export function BoardAuditPage({
         />
         <input className={boardInput} name='actorId' defaultValue={filters.actorId} placeholder={t('audit.actorId')} />
         <input className={boardInput} name='action' defaultValue={filters.action} placeholder={t('audit.action')} />
-        <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+        <button className={`${boardDialogButton} bg-primary text-primary-foreground xl:w-full`}>
           {t('audit.filter')}
         </button>
       </Form>

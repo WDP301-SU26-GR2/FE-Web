@@ -5,6 +5,9 @@ import type { BoardMeetingDecision } from '~/api/manual/board-meeting'
 import { BoardDecisionResDtoOutputResult, type BoardSessionResDtoOutput } from '~/api/model/board'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 import { useBoardSessionsRealtime } from '~/shared/hooks/use-board-sessions-realtime'
+import { Pagination } from '~/shared/components'
+
+const BOARD_LIST_PAGE_SIZE = 8
 
 export function BoardDecisionsPage({
   sessions,
@@ -20,6 +23,7 @@ export function BoardDecisionsPage({
   const [sessionId, setSessionId] = useState('')
   const [decisionType, setDecisionType] = useState('')
   const [result, setResult] = useState('')
+  const [page, setPage] = useState(1)
   const realtime = useBoardSessionsRealtime(sessions, decisions)
   const decisionTypes = [
     ...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))
@@ -34,6 +38,12 @@ export function BoardDecisionsPage({
       (!decisionType || decision.decisionType === decisionType) &&
       (!result || decision.result === result)
   )
+  const totalPages = Math.max(1, Math.ceil(filteredDecisions.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredDecisions.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, filteredDecisions.length)
+  const paginatedDecisions = filteredDecisions.slice(from > 0 ? from - 1 : 0, to)
+
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('decisions.title')} description={t('decisions.description')} backHref='/dashboard/board' />
@@ -42,10 +52,20 @@ export function BoardDecisionsPage({
         <input
           className={boardInput}
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            setSearch(event.target.value)
+            setPage(1)
+          }}
           placeholder={t('filters.searchDecisions')}
         />
-        <select className={boardInput} value={sessionId} onChange={(event) => setSessionId(event.target.value)}>
+        <select
+          className={boardInput}
+          value={sessionId}
+          onChange={(event) => {
+            setSessionId(event.target.value)
+            setPage(1)
+          }}
+        >
           <option value=''>{t('filters.allSessions')}</option>
           {sessions.map((session) => (
             <option key={session.id} value={session.id}>
@@ -53,7 +73,14 @@ export function BoardDecisionsPage({
             </option>
           ))}
         </select>
-        <select className={boardInput} value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
+        <select
+          className={boardInput}
+          value={decisionType}
+          onChange={(event) => {
+            setDecisionType(event.target.value)
+            setPage(1)
+          }}
+        >
           <option value=''>{t('filters.allDecisionTypes')}</option>
           {decisionTypes.map((value) => (
             <option key={value} value={value}>
@@ -61,7 +88,14 @@ export function BoardDecisionsPage({
             </option>
           ))}
         </select>
-        <select className={boardInput} value={result} onChange={(event) => setResult(event.target.value)}>
+        <select
+          className={boardInput}
+          value={result}
+          onChange={(event) => {
+            setResult(event.target.value)
+            setPage(1)
+          }}
+        >
           <option value=''>{t('filters.allDecisionResults')}</option>
           {Object.values(BoardDecisionResDtoOutputResult).map((value) => (
             <option key={value} value={value}>
@@ -71,7 +105,7 @@ export function BoardDecisionsPage({
         </select>
       </div>
       <div className='grid gap-4 md:grid-cols-2'>
-        {filteredDecisions.map((decision) => {
+        {paginatedDecisions.map((decision) => {
           const seriesTitle = decision.targetSeries?.title ?? t('decisions.unknownSeries')
           const session = sessions.find((item) => item.id === decision.boardSessionId)
           const typeLabel = decision.decisionType
@@ -109,6 +143,18 @@ export function BoardDecisionsPage({
           )
         })}
       </div>
+      {filteredDecisions.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={filteredDecisions.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!filteredDecisions.length && <EmptyState text={t('decisions.empty')} />}
     </div>
   )

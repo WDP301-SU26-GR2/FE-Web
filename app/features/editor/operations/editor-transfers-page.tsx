@@ -8,6 +8,7 @@ import type {
   TransferRequestResDtoOutput,
   TransferSignatureListResDtoOutputSignaturesItem
 } from '~/api/model/transfer'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
 import { CONTRACT_FIELD_LIMITS } from '../contracts/contract-flow'
 import {
@@ -15,6 +16,7 @@ import {
   OperationFeedback,
   OperationDialogPanel,
   OperationsLayout,
+  operationDialogButton,
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
@@ -42,6 +44,7 @@ export function EditorTransfersPage({
   const fetcher = useOperationFetcher()
   const displayRequest = request as TransferRequestWithRelations | null
   const [transferType, setTransferType] = useState<'FULL_TRANSFER' | 'PARTIAL_TRANSFER'>('FULL_TRANSFER')
+  const [transferAmount, setTransferAmount] = useState<number | null>(null)
   const isRevenueShare = request?.originalContractType === 'REVENUE_SHARE'
   const canStartNegotiation = Boolean(request && isRevenueShare && request.status === 'UNDER_REVIEW')
   // ACCEPTED is the explicit proof that Mangaka A consented. UNDER_REVIEW is only the
@@ -59,7 +62,7 @@ export function EditorTransfersPage({
         method='get'
         replace
         preventScrollReset
-        className='grid gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[1fr_auto]'
+        className='grid gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'
       >
         <select name='status' defaultValue={status} className={operationInput}>
           <option value=''>{t('operations.allTransferStatuses')}</option>
@@ -87,10 +90,10 @@ export function EditorTransfersPage({
           className={operationInput}
           placeholder={t('operations.transferRequestIdPlaceholder')}
         />
-        <button type='submit' className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+        <button type='submit' className={`${operationDialogButton} bg-primary text-primary-foreground`}>
           {t('actions.openTransferRequest')}
         </button>
-        <p className='text-xs leading-5 text-muted-foreground sm:col-span-2'>{t('operations.transferRequestIdHint')}</p>
+        <p className='text-xs leading-5 text-muted-foreground sm:col-span-3'>{t('operations.transferRequestIdHint')}</p>
       </Form>
       <section className='rounded-xl border border-border bg-card p-4 shadow-sm'>
         <h2 className='text-sm font-bold text-foreground'>{t('operations.assignedTransferRequests')}</h2>
@@ -198,16 +201,20 @@ export function EditorTransfersPage({
               <Info className='mt-0.5 size-4 shrink-0' />
               {t('operations.transferAcceptedHint')}
             </div>
-            <input
-              name='transferAmount'
-              type='number'
-              min={CONTRACT_FIELD_LIMITS.moneyMinimum}
-              max={CONTRACT_FIELD_LIMITS.moneyMaximum}
-              step={1}
-              required
-              className={operationInput}
-              placeholder={t('operations.transferAmount')}
-            />
+            <label className='grid min-w-0 gap-1.5'>
+              <input
+                name='transferAmount'
+                type='number'
+                min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+                max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+                step={1}
+                required
+                className={operationInput}
+                placeholder={t('operations.transferAmount')}
+                onChange={(event) => setTransferAmount(event.target.value ? Number(event.target.value) : null)}
+              />
+              <MoneyInWords amount={transferAmount} locale={i18n.language} />
+            </label>
             <select
               name='transferType'
               value={transferType}
@@ -265,8 +272,8 @@ type TransferRequestWithRelations = TransferRequestResDtoOutput & {
 
 function Share({ name, label, value }: { name: string; label: string; value: number }) {
   return (
-    <label className='text-xs text-muted-foreground'>
-      {label}
+    <label className='grid min-w-0 grid-rows-[2.5rem_auto] gap-1 text-xs text-muted-foreground'>
+      <span className='flex min-h-10 items-end leading-5'>{label}</span>
       <input
         name={name}
         type='number'
@@ -274,7 +281,7 @@ function Share({ name, label, value }: { name: string; label: string; value: num
         max={100}
         required
         defaultValue={value}
-        className={`${operationInput} mt-1`}
+        className={operationInput}
       />
     </label>
   )

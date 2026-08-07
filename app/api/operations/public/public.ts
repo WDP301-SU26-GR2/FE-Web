@@ -27,6 +27,7 @@ import type {
   PublicControllerGetChapterPagesPathParameters,
   PublicControllerGetSeriesDetailPathParameters,
   PublicControllerListSeriesParams,
+  PublicMagazineListResDtoOutput,
   PublicSeriesDetailResDtoOutput,
   PublicSeriesListResDtoOutput
 } from '../../model/public';
@@ -136,6 +137,41 @@ export const getPublicControllerGetChapterPagesUrl = ({ id }: PublicControllerGe
 export const publicControllerGetChapterPages = async ({ id }: PublicControllerGetChapterPagesPathParameters, options?: RequestInit): Promise<publicControllerGetChapterPagesResponse> => {
   
   return customFetch<publicControllerGetChapterPagesResponse>(getPublicControllerGetChapterPagesUrl({ id }),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * @summary Public danh mục tạp chí — cho Landing (GUEST) chọn tạp chí trước khi xem ranking tổng hợp
+ */
+export type publicControllerListMagazinesResponse200 = {
+  data: PublicMagazineListResDtoOutput
+  status: 200
+}
+    
+export type publicControllerListMagazinesResponseSuccess = (publicControllerListMagazinesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type publicControllerListMagazinesResponse = (publicControllerListMagazinesResponseSuccess)
+
+export const getPublicControllerListMagazinesUrl = () => {
+
+
+  
+
+  return `/public/magazines`
+}
+
+export const publicControllerListMagazines = async ( options?: RequestInit): Promise<publicControllerListMagazinesResponse> => {
+  
+  return customFetch<publicControllerListMagazinesResponse>(getPublicControllerListMagazinesUrl(),
   {      
     ...options,
     method: 'GET'

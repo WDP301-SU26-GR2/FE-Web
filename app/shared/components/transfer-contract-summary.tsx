@@ -85,7 +85,15 @@ export function TransferContractSummary({
   )
 }
 
-function SummaryFact({ icon: Icon, label, value }: { icon: typeof ShieldCheck; label: string; value: string }) {
+function SummaryFact({
+  icon: Icon,
+  label,
+  value
+}: {
+  icon: typeof ShieldCheck
+  label: string
+  value: string
+}) {
   return (
     <div className='rounded-xl border border-border p-4'>
       <div className='flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground'>

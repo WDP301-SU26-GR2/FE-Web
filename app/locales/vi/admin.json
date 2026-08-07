@@ -277,8 +277,8 @@
     "board": {
       "title": "Quy tắc Hội đồng",
       "description": "Thiết lập tổng số thành viên, số người được mời mặc định và tỷ lệ phiếu thuận. Số người tối thiểu để phiên hợp lệ được tính tự động bằng 2/3 danh sách được mời.",
-      "boardTotalMembers": "Tổng số thành viên",
-      "quorumMin": "Số thành viên được mời mặc định",
+      "boardTotalMembers": "Tổng số thành viên hội đồng trong hệ thống",
+      "quorumMin": "Số thành viên được mời trong phiên họp",
       "approveMajorityRatio": "Tỷ lệ phiếu thuận",
       "lockNotice": "Không thể thay đổi cấu hình khi có phiên họp đang hoạt động hoặc sắp diễn ra."
     },

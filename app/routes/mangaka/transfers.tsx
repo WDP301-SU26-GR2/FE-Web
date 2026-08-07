@@ -31,6 +31,7 @@ import { usersControllerGetMe } from '~/api/operations/users/users'
 import { extractApiErrorCode } from '~/shared/lib/api/extract-api-error'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 import { cn } from '~/shared/lib/cn'
+import { useOtpCooldown } from '~/shared/hooks'
 import { Dialog } from '~/shared/ui/dialog'
 
 type ActionResult = { ok: boolean; intent: string; errorKey?: string }
@@ -580,10 +581,16 @@ function SignDialog({
 }) {
   const { t, i18n } = useTranslation('mangaka')
   const fetcher = useFetcher<ActionResult>()
+  const { isCoolingDown, remainingSeconds, start } = useOtpCooldown()
   const isMangakaA = contract.fromMangakaId === currentUserId
   const isMangakaB = contract.toMangakaId === currentUserId
   const isMyTurn = (isMangakaA && contract.status === 'DRAFT') || (isMangakaB && contract.status === 'A_SIGNED')
   const ownershipEntries = Object.entries(contract.newOwnershipSplit ?? {})
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'sendOtp') start()
+  }, [fetcher.data, fetcher.state, start])
+
   return (
     <Dialog
       open
@@ -685,10 +692,12 @@ function SignDialog({
             name='intent'
             value='sendOtp'
             formNoValidate
-            disabled={!isMyTurn || fetcher.state !== 'idle'}
+            disabled={!isMyTurn || fetcher.state !== 'idle' || isCoolingDown}
             className='h-10 rounded-md border border-border px-3 text-sm font-bold text-foreground disabled:opacity-50'
           >
-            {t('transfers.actions.sendOtp')}
+            {isCoolingDown
+              ? `${t('transfers.actions.sendOtp')} (${remainingSeconds}s)`
+              : t('transfers.actions.sendOtp')}
           </button>
           <label className='grid gap-1 text-sm font-semibold text-foreground'>
             {t('transfers.sign.otp')}

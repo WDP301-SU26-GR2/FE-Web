@@ -8,7 +8,9 @@ import type { EditorActionResult } from '../../types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 export const contractInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+export const contractDialogButton =
+  'inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-bold sm:w-auto'
 
 export function ContractPageLayout({
   contract,
@@ -134,7 +136,7 @@ export function ContractDialogPanel({
           type='button'
           disabled={disabled}
           onClick={() => setOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+          className={`${contractDialogButton} bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
         >
           <Plus className='size-4' />
           {title}

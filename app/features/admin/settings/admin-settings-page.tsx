@@ -7,6 +7,11 @@ import { toast } from 'sonner'
 import type { AdminSettingsActionResult, AdminSettingsData } from './types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
+const adminDialogButton =
+  'inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold sm:w-auto'
+const settingsFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5'
+const settingsFieldLabelClass = 'flex min-h-10 items-end text-xs font-bold leading-5 text-foreground'
+
 export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData | null; hasError: boolean }) {
   const { t } = useTranslation('admin')
 
@@ -190,11 +195,12 @@ function BoardConfigForm({ data }: { data: AdminSettingsData }) {
                 step={2}
                 label={t('settings.board.boardTotalMembers')}
               />
-              <NumberField name='quorumMin' value={config.quorumMin} min={1} label={t('settings.board.quorumMin')} />
+              <NumberField name='quorumMin' value={config.quorumMin} min={3} step={2} label={t('settings.board.quorumMin')} />
               <NumberField
                 name='approveMajorityPercent'
                 value={Math.round(config.approveMajorityRatio * 100)}
-                min={1}
+                min={3}
+                step={2}
                 max={100}
                 label={t('settings.board.approveMajorityRatio')}
                 unit='%'
@@ -233,8 +239,8 @@ function VotingConfigForm({ data }: { data: AdminSettingsData }) {
           <fetcher.Form method='post'>
             <input type='hidden' name='intent' value='votingConfig' />
             <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-              <label className='space-y-1.5'>
-                <span className='text-xs font-bold text-foreground'>{t('settings.voting.authMode')}</span>
+              <label className={settingsFieldClass}>
+                <span className={settingsFieldLabelClass}>{t('settings.voting.authMode')}</span>
                 <select name='authMode' defaultValue={config.authMode} className={inputClassName}>
                   {(['OTP', 'CAPTCHA', 'HYBRID'] as const).map((mode) => (
                     <option key={mode} value={mode}>
@@ -309,7 +315,7 @@ function EditConfigButton({ onClick, label }: { onClick: () => void; label: stri
     <button
       type='button'
       onClick={onClick}
-      className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground'
+      className={`${adminDialogButton} bg-primary text-primary-foreground`}
     >
       <Pencil className='size-4' />
       {label}
@@ -330,16 +336,16 @@ function ConfigCard({
 }) {
   return (
     <section className='rounded-2xl border border-border bg-card p-5 shadow-sm md:p-6'>
-      <div className='flex items-start gap-3'>
+      <div className='flex min-w-0 items-start gap-3'>
         <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
           <Icon className='size-5' />
         </div>
-        <div>
+        <div className='min-w-0'>
           <h2 className='text-base font-bold text-foreground'>{title}</h2>
           <p className='mt-1 text-xs leading-6 text-muted-foreground'>{description}</p>
         </div>
       </div>
-      <div className='mt-5'>{children}</div>
+      <div className='mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end'>{children}</div>
     </section>
   )
 }
@@ -362,9 +368,9 @@ function NumberField({
   unit?: string
 }) {
   return (
-    <label className='space-y-1.5'>
-      <span className='text-xs font-bold text-foreground'>{label}</span>
-      <div className='relative'>
+    <label className={settingsFieldClass}>
+      <span className={settingsFieldLabelClass}>{label}</span>
+      <div className='relative min-w-0'>
         <input
           name={name}
           type='number'
@@ -411,8 +417,8 @@ function FormFooter({
   }, [closeDialog, fetcher.data, t])
 
   return (
-    <div className='mt-5 flex flex-col justify-between gap-3 border-t border-border pt-4 sm:flex-row sm:items-center'>
-      <div>
+    <div className='mt-5 flex flex-col-reverse justify-between gap-3 border-t border-border pt-4 sm:flex-row sm:items-center'>
+      <div className='min-w-0'>
         <p className='text-xs text-muted-foreground'>
           {t('settings.lastUpdated', {
             date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
@@ -424,7 +430,7 @@ function FormFooter({
       <button
         type='submit'
         disabled={busy}
-        className='inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+        className={`${adminDialogButton} bg-primary text-primary-foreground disabled:opacity-60`}
       >
         {busy ? <Loader2 className='size-4 animate-spin' /> : <Save className='size-4' />}
         {busy ? t('settings.saving') : t('settings.save')}
@@ -434,7 +440,7 @@ function FormFooter({
 }
 
 const inputClassName =
-  'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
+  'h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
 
 function bytesToMb(bytes: number) {
   return Math.round(bytes / 1024 / 1024)

@@ -9,6 +9,7 @@ import { Dialog } from '~/shared/ui/dialog'
 import {
   OperationFeedback,
   OperationsLayout,
+  operationDialogButton,
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
@@ -23,6 +24,8 @@ type DeadlineAction =
 
 const CLOSED_STATUSES = new Set(['APPROVED', 'REJECTED'])
 const NEGOTIABLE_STATUSES = new Set(['PROPOSED', 'COUNTER_PROPOSED'])
+const deadlineDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold'
+const deadlineDialogFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function EditorDeadlinesPage({
   items,
@@ -48,6 +51,8 @@ export function EditorDeadlinesPage({
   const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId || items[0]?.id || '')
   const [action, setAction] = useState<DeadlineAction | null>(null)
   useEffect(() => {
+    // Sync URL-driven focus after loader data changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSeriesId(focusSeriesId)
     setActiveChapterId(focusChapterId)
     setSelectedRequestId(focusRequestId || items[0]?.id || '')
@@ -128,7 +133,7 @@ export function EditorDeadlinesPage({
               type='button'
               onClick={() => setAction('createDeadline')}
               disabled={!canCreate}
-              className='h-9 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+              className={`${operationDialogButton} bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {t('actions.createRequest')}
             </button>
@@ -282,8 +287,8 @@ export function EditorDeadlinesPage({
             <input type='hidden' name='chapterId' value={activeChapterId} />
             <input type='hidden' name='requestId' value={selectedRequest?.id ?? ''} />
             {(action === 'createDeadline' || action === 'counterDeadline') && (
-              <label className='grid gap-1.5 text-xs font-bold'>
-                {t('operations.deadlineProposed')}
+              <label className={deadlineDialogFieldClass}>
+                <span className={deadlineDialogFieldLabelClass}>{t('operations.deadlineProposed')}</span>
                 <input
                   name='deadline'
                   type='datetime-local'
@@ -294,13 +299,13 @@ export function EditorDeadlinesPage({
               </label>
             )}
             {(action === 'createDeadline' || action === 'counterDeadline' || action === 'rejectDeadline') && (
-              <label className='grid gap-1.5 text-xs font-bold'>
-                {t('operations.reason')}
+              <label className={deadlineDialogFieldClass}>
+                <span className={deadlineDialogFieldLabelClass}>{t('operations.reason')}</span>
                 <textarea
                   name='reason'
                   rows={4}
                   maxLength={1000}
-                  className='w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
+                  className='min-w-0 w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
                   required
                 />
               </label>
@@ -308,7 +313,7 @@ export function EditorDeadlinesPage({
             <button
               type='submit'
               disabled={fetcher.state !== 'idle'}
-              className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+              className={`${operationDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
             >
               {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' aria-hidden='true' />}
               {t(`actions.${action}`)}

@@ -11,6 +11,7 @@ import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/user
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import {
   BoardActionDialog,
+  boardDialogButton,
   boardInput,
   BoardFeedback,
   BoardHeader,
@@ -46,7 +47,7 @@ export function BoardReprintsPage({
         backHref='/dashboard/board/operations'
       />
       <BoardPanel title={t('reprints.lookup')}>
-        <Form method='get' replace preventScrollReset className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
+        <Form method='get' replace preventScrollReset className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId} required>
             <option value=''>{t('reprints.selectSeries')}</option>
             {series.map((item) => (
@@ -62,7 +63,7 @@ export function BoardReprintsPage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
             {t('common.load')}
           </button>
         </Form>
@@ -120,14 +121,18 @@ function ReprintCard({
       {canReview && (
         <div className='mt-4'>
           <BoardActionDialog title={t('reprints.review')}>
-            <fetcher.Form method='post' className='mt-4 flex flex-wrap gap-2'>
+            <fetcher.Form method='post' className='mt-4 grid gap-2 sm:grid-cols-2'>
               <input type='hidden' name='requestId' value={item.id} />
-              <input className={`${boardInput} max-w-sm`} name='reason' placeholder={t('reprints.reviewReason')} />
+              <input
+                className={`${boardInput} sm:col-span-2`}
+                name='reason'
+                placeholder={t('reprints.reviewReason')}
+              />
               <button
                 name='intent'
                 value='approve'
                 disabled={isSubmitting}
-                className='h-10 rounded-md bg-success px-3 text-xs font-bold text-success-foreground hover:opacity-90 disabled:opacity-50'
+                className={`${boardDialogButton} bg-success text-success-foreground hover:opacity-90 disabled:opacity-50 sm:w-full`}
               >
                 {isSubmitting ? (
                   <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />
@@ -141,7 +146,7 @@ function ReprintCard({
                   name='intent'
                   value='reject'
                   disabled={isSubmitting}
-                  className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50'
+                  className={`${boardDialogButton} border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 disabled:opacity-50 sm:w-full`}
                 >
                   {isSubmitting ? (
                     <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />
@@ -225,7 +230,7 @@ function AssignReviserDialog({
             (reviserType === AssignReviserBodyDtoReviserType.OTHER_MANGAKA && !mangakas.length) ||
             fetcher.state !== 'idle'
           }
-          className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+          className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
         >
           {fetcher.state !== 'idle' && <Loader2 className='mr-1.5 inline size-4 animate-spin' aria-hidden='true' />}
           {t('reprints.assignReviser')}

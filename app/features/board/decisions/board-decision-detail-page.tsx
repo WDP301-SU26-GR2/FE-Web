@@ -21,6 +21,7 @@ import type { BoardMeetingDecision, BoardSessionPhase } from '~/api/manual/board
 import type { DefenseDashboardResDtoOutput } from '~/api/model/tankobon'
 import { useAuth } from '~/features/auth/context/auth-context'
 import {
+  boardDialogButton,
   boardInput,
   BoardFeedback,
   BoardHeader,
@@ -35,6 +36,9 @@ import { Dialog } from '~/shared/ui/dialog'
 import { cn } from '~/shared/lib/cn'
 import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
 import { storageControllerSignDownload } from '~/api/operations/uploads/uploads'
+
+const boardDecisionDetailFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const boardDecisionDetailFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function BoardDecisionDetailPage({
   decision,
@@ -162,7 +166,7 @@ export function BoardDecisionDetailPage({
             </p>
             <Link
               to={lifecycleHref}
-              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+              className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
             >
               {t('decisions.lifecycleFollowUp.action')}
               <ArrowRight className='size-4' />
@@ -178,7 +182,7 @@ export function BoardDecisionDetailPage({
             </p>
             <Link
               to={resourceHref}
-              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+              className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
             >
               {t(
                 ['APPROVED', 'REJECTED'].includes(liveDecision.result ?? '')
@@ -194,7 +198,7 @@ export function BoardDecisionDetailPage({
         <button
           type='button'
           onClick={() => setVoteOpen(true)}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+          className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
         >
           <Vote className='h-4 w-4' />
           {t('decisions.castVote')}
@@ -219,7 +223,7 @@ export function BoardDecisionDetailPage({
               <button
                 type='button'
                 onClick={() => setReportOpen(true)}
-                className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+                className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
               >
                 <FilePlus2 className='size-4' />
                 {t('reports.add')}
@@ -359,7 +363,7 @@ function ReportCard({ report }: { report: SeriesReportResDtoOutput }) {
 function ReportSectionBlock({ title, lines }: { title: string; lines: string[] }) {
   const fields = lines.map(parseReportLine)
   return (
-    <section className='rounded-lg border border-border bg-muted/30 p-4'>
+    <section className='p-1'>
       <div className='mb-3 flex items-center gap-2'>
         <span className='h-4 w-1 rounded-full bg-primary' />
         <h3 className='text-xs font-bold uppercase text-foreground'>{title}</h3>
@@ -375,7 +379,7 @@ function ReportSectionBlock({ title, lines }: { title: string; lines: string[] }
                 </dd>
               </>
             ) : (
-              <p className='whitespace-pre-wrap rounded-md border border-border bg-background px-3 py-2 text-xs leading-5 text-foreground'>
+              <p className='whitespace-pre-wrap px-1 py-1 text-xs leading-5 text-foreground'>
                 {field.label}
               </p>
             )}
@@ -396,6 +400,7 @@ function parseReportContent(content: string) {
   let current: { title: string; lines: string[] } | null = null
 
   for (const line of lines) {
+    if (isReportSnapshotLine(line)) continue
     if (line.startsWith('## ')) {
       current = { title: line.replace(/^##\s+/, '').trim(), lines: [] }
       sections.push(current)
@@ -409,13 +414,25 @@ function parseReportContent(content: string) {
 }
 
 function parseReportLine(line: string) {
-  const normalized = line.replace(/^-\s*/, '').trim()
+  const normalized = stripReportDecoration(line.replace(/^-\s*/, '').trim())
   const separator = normalized.indexOf(':')
   if (separator <= 0) return { label: normalized, value: '' }
   return {
     label: normalized.slice(0, separator).trim(),
     value: normalized.slice(separator + 1).trim()
   }
+}
+
+function stripReportDecoration(value: string) {
+  return value
+    .replace(/^\*\*(.*)\*\*$/, '$1')
+    .replace(/^\[(.*)\]$/, '$1')
+    .trim()
+}
+
+function isReportSnapshotLine(line: string) {
+  const normalized = stripReportDecoration(line)
+  return normalized.startsWith('Ảnh chụp dữ liệu hệ thống') || normalized.startsWith('System data snapshot')
 }
 
 function ReportAttachmentLink({ attachment }: { attachment: string }) {
@@ -554,8 +571,8 @@ function CreateReportDialog({
       <fetcher.Form method='post' className='grid gap-3'>
         <input type='hidden' name='intent' value='createReport' />
         <input type='hidden' name='reportLocale' value={i18n.language === 'en' ? 'en' : 'vi'} />
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('reports.reportType')}
+        <label className={boardDecisionDetailFieldClass}>
+          <span className={boardDecisionDetailFieldLabelClass}>{t('reports.reportType')}</span>
           <select className={boardInput} name='reportType' required defaultValue='DEFENSE'>
             <option value='DEFENSE'>{t('reports.types.DEFENSE')}</option>
             <option value='PERFORMANCE'>{t('reports.types.PERFORMANCE')}</option>
@@ -593,8 +610,8 @@ function CreateReportDialog({
             ))}
           </div>
         </fieldset>
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('reports.optionalAnalysis')}
+        <label className={boardDecisionDetailFieldClass}>
+          <span className={boardDecisionDetailFieldLabelClass}>{t('reports.optionalAnalysis')}</span>
           <textarea
             className={`${boardInput} min-h-28 py-2`}
             name='content'
@@ -602,8 +619,8 @@ function CreateReportDialog({
             placeholder={t('reports.optionalAnalysisHint')}
           />
         </label>
-        <div className='grid gap-1.5 text-xs font-semibold'>
-          <span>{t('reports.attachments')}</span>
+        <div className={boardDecisionDetailFieldClass}>
+          <span className={boardDecisionDetailFieldLabelClass}>{t('reports.attachments')}</span>
           <ReportAttachmentUploader onKeysChange={setAttachments} onUploadingChange={setAttachmentsUploading} />
           <input type='hidden' name='attachments' value={attachments.join('\n')} />
         </div>
@@ -611,13 +628,13 @@ function CreateReportDialog({
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('common.cancel')}
           </button>
           <button
             disabled={fetcher.state !== 'idle' || attachmentsUploading}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground disabled:opacity-50`}
           >
             {fetcher.state !== 'idle' || attachmentsUploading ? (
               <Loader2 className='size-4 animate-spin' />
@@ -828,7 +845,7 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('common.cancel')}
           </button>
@@ -840,10 +857,10 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
               disabled={fetcher.state !== 'idle'}
               className={
                 voteValue === 'REJECT'
-                  ? 'h-10 rounded-md border border-destructive/40 bg-destructive/10 px-4 text-xs font-bold text-destructive disabled:opacity-60'
+                  ? `${boardDialogButton} border border-destructive/40 bg-destructive/10 text-destructive disabled:opacity-60`
                   : voteValue === 'APPROVE'
-                    ? 'h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
-                    : 'h-10 rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:opacity-60'
+                    ? `${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-60`
+                    : `${boardDialogButton} border border-border text-foreground disabled:opacity-60`
               }
             >
               {t(`decisions.voteValues.${voteValue}`)}

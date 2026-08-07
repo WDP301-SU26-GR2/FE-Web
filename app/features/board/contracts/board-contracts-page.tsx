@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ContractListItemDtoOutputContractType, type ContractListItemDtoOutput } from '~/api/model/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
 export function BoardContractsPage({
@@ -58,8 +59,8 @@ export function BoardContractsPage({
             to={`/dashboard/board/contracts/${contract.id}`}
             className='rounded-xl border border-border bg-card p-5 shadow-sm hover:border-primary'
           >
-            <div className='flex justify-between gap-3'>
-              <strong>{contract.series?.title ?? t('contracts.unknownSeries')}</strong>
+            <div className='flex flex-wrap justify-between gap-3'>
+              <strong className='min-w-0 text-pretty'>{contract.series?.title ?? t('contracts.unknownSeries')}</strong>
               <StatusBadge value={contract.status} />
             </div>
             <p className='mt-2 text-xs text-muted-foreground'>
@@ -68,6 +69,7 @@ export function BoardContractsPage({
             <p className='mt-3 text-xs font-bold'>
               {new Intl.NumberFormat(i18n.language).format(contract.valuationAmount ?? 0)}
             </p>
+            <MoneyInWords amount={contract.valuationAmount} locale={i18n.language} />
           </Link>
         ))}
       </div>

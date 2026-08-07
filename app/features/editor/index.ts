@@ -53,6 +53,7 @@ export {
   canEditContract,
   blocksNewContractCreation,
   canRedraftContract,
+  hasRedraftBlockingContract,
   canSubmitContractForReview,
   contractDatesAreValid,
   contractValuationIsValid,

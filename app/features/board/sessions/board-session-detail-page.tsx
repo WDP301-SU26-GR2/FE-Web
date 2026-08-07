@@ -142,7 +142,7 @@ function MeetingChat({
         ))}
         {!messages.length && <EmptyState text={t('sessions.emptyChat')} />}
       </div>
-      <form onSubmit={submit} className='mt-3 flex gap-2'>
+      <form onSubmit={submit} className='mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2'>
         <input
           value={content}
           onChange={(event) => setContent(event.target.value)}

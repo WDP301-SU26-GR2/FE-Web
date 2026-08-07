@@ -312,7 +312,7 @@ function PageLink({
 }
 
 const inputClassName =
-  'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
+  'h-10 min-w-0 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20'
 
 const AUDIT_ACTIONS = [
   'TRANSITION',

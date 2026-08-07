@@ -14,6 +14,11 @@
     "back": "Quay lại",
     "cancel": "Hủy"
   },
+  "pagination": {
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau",
+    "showingRange": "Hiển thị {{from}}-{{to}} trong {{total}}"
+  },
   "messages": {
     "deadlineApproved": "Đã duyệt yêu cầu thay đổi thời hạn thành công.",
     "deadlineRejected": "Đã từ chối yêu cầu thay đổi thời hạn.",
@@ -496,7 +501,7 @@
     "representative": "Đại diện Hội đồng",
     "representativeUnassigned": "Chưa có thành viên nhận làm đại diện hợp đồng",
     "claimRepresentative": "Nhận làm đại diện",
-    "releaseRepresentative": "Nhả vai trò đại diện",
+    "releaseRepresentative": "Bỏ vai trò đại diện",
     "claimRepresentativeConfirm": "Bạn sẽ nhận trách nhiệm đại diện Hội đồng cho hợp đồng này. Sau khi nhận, bạn là người thực hiện chữ ký đại diện khi hợp đồng sẵn sàng.",
     "releaseRepresentativeConfirm": "Bạn sẽ nhả vai trò đại diện hiện tại để thành viên Hội đồng khác có thể nhận xử lý hợp đồng này.",
     "confirmClaimRepresentative": "Xác nhận nhận đại diện",

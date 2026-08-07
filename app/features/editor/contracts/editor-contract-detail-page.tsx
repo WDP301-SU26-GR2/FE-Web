@@ -19,11 +19,16 @@ import type { EditorContractDetailData } from '../types'
 import type { EditorActionResult } from '../types'
 import { ContractHeader } from './components/contract-shared'
 import { ContractActionMessage } from './components/contract-shared'
-import { EDITOR_CONTRACT_INTENTS, canRedraftContract, canSubmitContractForReview, canVoidContract } from './contract-flow'
+import { EDITOR_CONTRACT_INTENTS, canRedraftContract, canSubmitContractForReview } from './contract-flow'
 import { ContractTermsForm } from './editor-contract-terms-page'
 import { ContractConditionsManager } from './editor-contract-conditions-page'
 import { ContractDecisionBasis, ContractPdfButton, PaymentConditionsSummary } from '~/shared/components/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { Dialog } from '~/shared/ui/dialog'
+
+const dialogButton = 'inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-bold sm:w-auto'
+const contractDetailDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const contractDetailDialogFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function EditorContractDetailPage({ data }: { data: EditorContractDetailData }) {
   const { t, i18n } = useTranslation('editor')
@@ -33,7 +38,6 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
   const [voidOpen, setVoidOpen] = useState(false)
   const basePath = `/dashboard/editor/contracts/${data.contract.id}`
   const canSubmitReview = canSubmitContractForReview(data.contract)
-  const canVoid = canVoidContract(data.contract)
   const validConditionCount = data.conditions.filter(
     (condition) =>
       condition.status !== 'DISABLED' && ((condition.payoutAmount ?? 0) > 0 || (condition.payoutPct ?? 0) > 0)
@@ -44,6 +48,18 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
     ['revenue', Landmark],
     ['amendments', ScrollText]
   ] as const
+  const termFacts = [
+    { label: t('contracts.contractType'), value: t(`filters.contractTypes.${data.contract.contractType}`) },
+    {
+      label: t('contracts.valuation'),
+      value: formatMoney(data.contract.valuationAmount, i18n.language),
+      amount: data.contract.valuationAmount
+    },
+    { label: t('contracts.publisherPct'), value: formatPercent(data.contract.publisherOwnershipPct, i18n.language) },
+    { label: t('contracts.mangakaPct'), value: formatPercent(data.contract.mangakaOwnershipPct, i18n.language) },
+    { label: t('contracts.contractStart'), value: formatDate(data.contract.contractStart, i18n.language) },
+    { label: t('contracts.contractEnd'), value: formatDate(data.contract.contractEnd, i18n.language) }
+  ]
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.contractId) {
@@ -80,17 +96,11 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
           </button>
         </div>
         <dl className='mt-5 grid gap-4 text-xs sm:grid-cols-2 lg:grid-cols-3'>
-          {[
-            [t('contracts.contractType'), t(`filters.contractTypes.${data.contract.contractType}`)],
-            [t('contracts.valuation'), formatMoney(data.contract.valuationAmount, i18n.language)],
-            [t('contracts.publisherPct'), formatPercent(data.contract.publisherOwnershipPct, i18n.language)],
-            [t('contracts.mangakaPct'), formatPercent(data.contract.mangakaOwnershipPct, i18n.language)],
-            [t('contracts.contractStart'), formatDate(data.contract.contractStart, i18n.language)],
-            [t('contracts.contractEnd'), formatDate(data.contract.contractEnd, i18n.language)]
-          ].map(([label, value]) => (
-            <div key={label}>
-              <dt className='text-muted-foreground'>{label}</dt>
-              <dd className='mt-1 font-semibold text-foreground'>{value}</dd>
+          {termFacts.map((fact) => (
+            <div key={fact.label}>
+              <dt className='text-muted-foreground'>{fact.label}</dt>
+              <dd className='mt-1 font-semibold text-foreground'>{fact.value}</dd>
+              <MoneyInWords amount={fact.amount} locale={i18n.language} />
             </div>
           ))}
         </dl>
@@ -149,20 +159,20 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
           )}
         </section>
       )}
-      {canRedraftContract(data.contract) && (
+      {canRedraftContract(data.contract, data.contracts) && (
         <fetcher.Form method='post' className='flex justify-end'>
           <button
             name='intent'
             value={EDITOR_CONTRACT_INTENTS.redraft}
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            className={`${dialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
           >
             <RotateCcw className='size-4' />
             {t('actions.redraftContract')}
           </button>
         </fetcher.Form>
       )}
-      {canVoid && (
+      {/* {canVoid && (
         <div className='flex justify-end'>
           <button
             type='button'
@@ -173,7 +183,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
             {t('actions.voidContract')}
           </button>
         </div>
-      )}
+      )} */}
       <ContractActionMessage data={fetcher.data} />
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <h2 className='flex items-center gap-2 font-bold text-foreground'>
@@ -208,7 +218,7 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
             name='intent'
             value={EDITOR_CONTRACT_INTENTS.submitReview}
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            className={`${dialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
           >
             {t('actions.submitContractReview')}
           </button>
@@ -266,24 +276,24 @@ export function EditorContractDetailPage({ data }: { data: EditorContractDetailD
       >
         <fetcher.Form method='post' className='grid gap-4' onSubmit={() => setVoidOpen(false)}>
           <input type='hidden' name='intent' value={EDITOR_CONTRACT_INTENTS.void} />
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contractDetail.voidContractReason')}
+          <label className={contractDetailDialogFieldClass}>
+            <span className={contractDetailDialogFieldLabelClass}>{t('contractDetail.voidContractReason')}</span>
             <textarea
               name='reason'
               required
               maxLength={1000}
-              className='min-h-28 rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-primary'
+              className='min-h-28 min-w-0 rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-primary'
             />
           </label>
           <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
             <button
               type='button'
               onClick={() => setVoidOpen(false)}
-              className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+              className={`${dialogButton} border border-border`}
             >
               {t('actions.cancel')}
             </button>
-            <button className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-xs font-bold text-destructive-foreground'>
+            <button className={`${dialogButton} bg-destructive text-destructive-foreground`}>
               <Trash2 className='size-4' />
               {t('actions.voidContract')}
             </button>

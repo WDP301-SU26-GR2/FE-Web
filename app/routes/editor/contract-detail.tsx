@@ -1,6 +1,7 @@
 import {
   contractAmendmentControllerListAmendments,
   contractControllerGetContractById,
+  contractControllerGetContracts,
   contractControllerListComments,
   contractControllerRedraft,
   contractControllerGetContractVersions,
@@ -17,6 +18,7 @@ import {
   EDITOR_CONTRACT_INTENTS,
   EditorContractDetailPage,
   canEditContract,
+  canRedraftContract,
   contractDatesAreValid,
   contractOwnershipIsValid,
   contractValuationIsValid,
@@ -35,8 +37,9 @@ import {
 import type { Route } from './+types/contract-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [base, conditions, versions, amendments, comments] = await Promise.all([
+  const [base, contracts, conditions, versions, amendments, comments] = await Promise.all([
     loadContractBase(params.id),
+    contractControllerGetContracts().catch(() => null),
     paymentConditionControllerGetPaymentConditions({ contractId: params.id }).catch(() => null),
     contractControllerGetContractVersions({ id: params.id }).catch(() => null),
     contractAmendmentControllerListAmendments({ contractId: params.id }).catch(() => null),
@@ -44,6 +47,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   ])
   return {
     ...base,
+    contracts: contracts?.status === 200 ? contracts.data : [],
     conditions: conditions?.status === 200 ? conditions.data.data : [],
     versions: versions?.status === 200 ? versions.data : [],
     amendments: amendments?.status === 200 ? await hydrateAmendments(params.id, amendments.data) : [],
@@ -56,6 +60,14 @@ export async function clientAction({ request, params }: Route.ClientActionArgs):
   const intent = String(form.get('intent') ?? '')
   try {
     if (intent === EDITOR_CONTRACT_INTENTS.redraft) {
+      const [contract, contracts] = await Promise.all([
+        contractControllerGetContractById({ id: params.id }),
+        contractControllerGetContracts().catch(() => null)
+      ])
+      if (contract.status !== 200) throw new Error('CONTRACT_NOT_FOUND')
+      if (!canRedraftContract(contract.data, contracts?.status === 200 ? contracts.data : [])) {
+        return { ok: false, intent, errorKey: 'openContractExists' }
+      }
       const response = await contractControllerRedraft({ id: params.id })
       return { ok: true, intent, messageKey: intent, contractId: response.data.id }
     }
