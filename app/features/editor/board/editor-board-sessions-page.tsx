@@ -78,6 +78,20 @@ export function EditorBoardSessionsPage({
       hasError={hasError}
       backPath={backPath}
     >
+      <div className='flex justify-end'>
+        <button
+          type='button'
+          onClick={() => {
+            const randomSeries = series[Math.floor(Math.random() * series.length)]
+            setRosterSourceSeriesId(randomSeries?.id ?? '')
+            setCreateDialogOpen(true)
+          }}
+          className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
+        >
+          <Plus className='size-4' />
+          {t('actions.createSession')}
+        </button>
+      </div>
       {!hideCreateButton && (
         <div className='flex justify-end'>
           <button

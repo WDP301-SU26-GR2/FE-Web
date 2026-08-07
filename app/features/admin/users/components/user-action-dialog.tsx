@@ -123,7 +123,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
               type='submit'
               disabled={isSubmitting || isTargetAdmin}
               title={isTargetAdmin ? t('users.cannotModifyAdminNotice') : undefined}
-              className='rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+              className={`${modalButtonClass} bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {isSubmitting ? t('users.actions.processing') : t(`users.dialogs.${action}.submit`)}
             </button>
