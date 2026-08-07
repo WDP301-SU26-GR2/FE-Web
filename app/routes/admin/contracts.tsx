@@ -3,8 +3,7 @@ import { ArrowLeft, FileText, MessageSquareText, UserCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useFetcher } from 'react-router'
 import type { AssignRepresentativeBodyDto, ContractListItemDtoOutput } from '~/api/model/contracts'
-import { contractControllerAssignRepresentative } from '~/api/operations/contracts/contracts'
-import { customFetch } from '~/api/mutator/custom-fetch'
+import { contractControllerAssignRepresentative, contractControllerGetContracts } from '~/api/operations/contracts/contracts'
 import type { AdminUserListResDtoOutputItemsItem } from '~/api/model/users'
 import { usersControllerListUsers } from '~/api/operations/users/users'
 import { extractApiErrorCode, extractApiErrorMessage, extractApiSuccessMessage } from '~/shared/lib/api/extract-api-error'
@@ -15,10 +14,12 @@ export function meta() {
 }
 
 async function loadContractsByStatus(status: string): Promise<ContractListItemDtoOutput[]> {
-  const res = await customFetch<{ success: boolean; data: ContractListItemDtoOutput[] }>(
-    `/contracts?status=${encodeURIComponent(status)}`
-  )
-  return res.data
+  const response = await contractControllerGetContracts()
+  const all = response.data
+  if (Array.isArray(all)) return all.filter((c) => c.status === status)
+  if (Array.isArray((all as { items?: ContractListItemDtoOutput[] }).items))
+    return (all as { items: ContractListItemDtoOutput[] }).items.filter((c) => c.status === status)
+  return []
 }
 
 export async function clientLoader() {

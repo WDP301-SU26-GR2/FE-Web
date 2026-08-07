@@ -173,6 +173,7 @@ function buildAdminConfig(t: ReturnType<typeof useTranslation>['t']): DashboardN
       { label: t('nav.boardOversight'), href: '/dashboard/admin/board', icon: Gavel },
       { label: t('nav.boardContracts'), href: '/dashboard/admin/contracts', icon: FileText },
       { label: t('nav.systemOperations'), href: '/dashboard/admin/operations', icon: Wrench },
+      { label: t('nav.magazine'), href: '/dashboard/admin/operations/reference?returnTo=/dashboard/admin&selected=magazine', icon: BookOpen },
       { label: t('nav.audit'), href: '/dashboard/admin/audit', icon: ScrollText },
       { label: t('nav.systemSettings'), href: '/dashboard/admin/settings', icon: Settings2 },
       { label: t('nav.notifications'), href: '/dashboard/admin/notifications', icon: Bell, badge: true }
