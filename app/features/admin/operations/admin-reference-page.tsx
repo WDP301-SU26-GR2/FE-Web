@@ -4,51 +4,43 @@ import { useEffect, useState, type ReactNode } from 'react'
 import {
   ArrowLeft,
   BookOpen,
-  Database,
-  FileSearch,
+  GraduationCap,
   Library,
   Link2,
-  Pencil,
-  Plus,
   Search,
-  SlidersHorizontal,
-  Trash2,
+  Star,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  AlertTriangle,
+  FileText,
+  BarChart3,
+  CalendarDays,
+  ShoppingBag,
+  Award,
+  X,
+  Mail,
+  Phone,
+  Briefcase,
   type LucideIcon
 } from 'lucide-react'
-import type { MagazineListResDtoOutputItemsItem } from '~/api/model/magazines'
-import { BusinessDataView } from '~/shared/components/business-data-view'
+import type { DefenseDashboardResDtoOutput } from '~/api/model/tankobon'
+import type { SeriesResDtoOutput } from '~/api/model/series'
+import type { AssistantProfileResDtoOutput, MangakaProfileResDtoOutput } from '~/api/model/users'
+import { usersControllerGetAssistantProfile, usersControllerGetMangakaProfile } from '~/api/operations/users/users'
+import { getSeriesStatusTranslationKey } from './admin-reference-display'
+
 import { Dialog } from '~/shared/ui/dialog'
 
 type SelectItem = { id: string; title?: string; issueNumber?: string | number | null; status?: string }
-type AdminReferenceActionResult = {
-  ok: boolean
-  intent: string
-  downloadUrl?: string
-  expiresAt?: string
-  message?: string
-}
 
 const inputClass =
-  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
-const modalButtonClass = 'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
-const referenceFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
-const referenceFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
-const PUBLICATION_TYPES = ['WEEKLY', 'MONTHLY', 'IRREGULAR'] as const
-
-export function AdminReferencePage({
-  series,
-  magazines,
-  periods,
-  selected
-}: {
-  series: SelectItem[]
-  magazines: MagazineListResDtoOutputItemsItem[]
-  periods: SelectItem[]
-  selected: Record<string, string>
-}) {
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+const modalButtonClass =
+  'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
+export function AdminReferencePage({ selected }: { selected: Record<string, string> }) {
   const { t } = useTranslation('admin')
-  const [actionModal, setActionModal] = useState<'addMagazine' | 'updateSlot' | null>(null)
-  const [editingMagazine, setEditingMagazine] = useState<MagazineListResDtoOutputItemsItem | null>(null)
   const returnTo = selected.returnTo || '/dashboard/admin/operations'
   return (
     <div className='space-y-5 pb-12'>
@@ -61,39 +53,13 @@ export function AdminReferencePage({
           <p className='text-xs font-bold uppercase tracking-[0.18em] text-primary'>{t('operations.eyebrow')}</p>
           <h1 className='mt-1 text-2xl font-bold text-foreground'>{t('operations.reference.title')}</h1>
         </div>
-        <ReferenceSummary magazines={magazines.length} series={series.length} periods={periods.length} />
       </header>
 
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>{t('operations.reference.description')}</p>
-        <div className='flex flex-col gap-2 sm:flex-row'>
-          <button
-            type='button'
-            onClick={() => setActionModal('updateSlot')}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-xs font-bold text-foreground shadow-sm hover:bg-muted disabled:opacity-50'
-            disabled={!magazines.length || !series.length}
-          >
-            <SlidersHorizontal className='size-4 text-primary' />
-            {t('operations.reference.updateSeriesSlot')}
-          </button>
-          <button
-            type='button'
-            onClick={() => setActionModal('addMagazine')}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm'
-          >
-            <Plus className='size-4' />
-            {t('operations.reference.addMagazine')}
-          </button>
-        </div>
       </div>
 
       <LookupPageDirectory returnTo={returnTo} />
-      <MagazineAdminPanel magazines={magazines} onEdit={setEditingMagazine} />
-      {actionModal === 'addMagazine' && <AddMagazineDialog onClose={() => setActionModal(null)} />}
-      {actionModal === 'updateSlot' && (
-        <UpdateSeriesSlotDialog magazines={magazines} series={series} onClose={() => setActionModal(null)} />
-      )}
-      {editingMagazine && <EditMagazineDialog magazine={editingMagazine} onClose={() => setEditingMagazine(null)} />}
     </div>
   )
 }
@@ -105,12 +71,25 @@ export function AdminReferenceSeriesPage({
 }: {
   series: SelectItem[]
   selected: Record<string, string>
-  seriesData: Record<string, unknown>
+  seriesData: {
+    detail: SeriesResDtoOutput | null
+    defense: DefenseDashboardResDtoOutput | null
+  }
 }) {
   const { t } = useTranslation('admin')
+  const { detail, defense } = seriesData
+
   return (
-    <ReferenceShell title={t('operations.reference.series')} description={t('operations.reference.seriesHelp')} returnTo={selected.returnTo}>
-      <Panel icon={BookOpen} title={t('operations.reference.series')} description={t('operations.reference.seriesHelp')}>
+    <ReferenceShell
+      title={t('operations.reference.series')}
+      description={t('operations.reference.seriesHelp')}
+      returnTo={selected.returnTo}
+    >
+      <Panel
+        icon={BookOpen}
+        title={t('operations.reference.series')}
+        description={t('operations.reference.seriesHelp')}
+      >
         <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
           <input type='hidden' name='returnTo' value={selected.returnTo} />
           <select className={inputClass} name='seriesId' defaultValue={selected.seriesId} required>
@@ -121,85 +100,170 @@ export function AdminReferenceSeriesPage({
               </option>
             ))}
           </select>
-          <input
-            className={inputClass}
-            name='seriesNameId'
-            defaultValue={selected.seriesNameId}
-            placeholder={t('operations.reference.seriesNameId')}
-          />
           <LoadButton label={t('operations.reference.load')} />
         </Form>
-        <DatasetGrid data={seriesData} />
-      </Panel>
-    </ReferenceShell>
-  )
-}
 
-export function AdminReferenceChapterPage({
-  selected,
-  chapterData
-}: {
-  selected: Record<string, string>
-  chapterData: Record<string, unknown>
-}) {
-  const { t } = useTranslation('admin')
-  return (
-    <ReferenceShell title={t('operations.reference.chapter')} description={t('operations.reference.chapterHelp')} returnTo={selected.returnTo}>
-      <Panel icon={FileSearch} title={t('operations.reference.chapter')} description={t('operations.reference.chapterHelp')}>
-        <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
-          <input type='hidden' name='returnTo' value={selected.returnTo} />
-          <input
-            className={inputClass}
-            name='chapterId'
-            defaultValue={selected.chapterId}
-            placeholder={t('operations.reference.chapterId')}
-            required
-          />
-          <input
-            className={inputClass}
-            name='chapterNameId'
-            defaultValue={selected.chapterNameId}
-            placeholder={t('operations.reference.chapterNameId')}
-          />
-          <LoadButton label={t('operations.reference.load')} />
-        </Form>
-        <DatasetGrid data={chapterData} />
-      </Panel>
-    </ReferenceShell>
-  )
-}
+        {defense && detail && (
+          <div className='mt-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+              <div className='rounded-2xl border border-border bg-card p-5 shadow-sm'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                    <BookOpen className='size-5' />
+                  </div>
+                  <div>
+                    <p className='text-xs font-bold text-muted-foreground'>{t('operations.reference.seriesStatus')}</p>
+                    <p className='mt-0.5 font-bold text-foreground'>
+                      {t(getSeriesStatusTranslationKey(detail.status), { defaultValue: t('common.notAvailable') })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className='rounded-2xl border border-border bg-card p-5 shadow-sm'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500'>
+                    <ShoppingBag className='size-5' />
+                  </div>
+                  <div>
+                    <p className='text-xs font-bold text-muted-foreground'>Tổng doanh số Tankobon</p>
+                    <p className='mt-0.5 font-bold text-foreground'>
+                      {new Intl.NumberFormat('vi-VN').format(defense.tankobon.totalUnitsSold)} bản
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className='rounded-2xl border border-border bg-card p-5 shadow-sm'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500'>
+                    <FileText className='size-5' />
+                  </div>
+                  <div>
+                    <p className='text-xs font-bold text-muted-foreground'>Số chương đã phát hành</p>
+                    <p className='mt-0.5 font-bold text-foreground'>{defense.serialization.chaptersPublished} chương</p>
+                  </div>
+                </div>
+              </div>
+              <div className='rounded-2xl border border-border bg-card p-5 shadow-sm'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500'>
+                    <CalendarDays className='size-5' />
+                  </div>
+                  <div>
+                    <p className='text-xs font-bold text-muted-foreground'>Thời gian phát hành</p>
+                    <p className='mt-0.5 font-bold text-foreground'>
+                      {defense.serialization.serializedSince
+                        ? new Date(defense.serialization.serializedSince).toLocaleDateString('vi-VN')
+                        : 'Chưa có'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-export function AdminReferenceRankingPage({
-  periods,
-  selected,
-  rankingData
-}: {
-  periods: SelectItem[]
-  selected: Record<string, string>
-  rankingData: Record<string, unknown>
-}) {
-  const { t } = useTranslation('admin')
-  return (
-    <ReferenceShell title={t('operations.reference.ranking')} description={t('operations.reference.rankingHelp')} returnTo={selected.returnTo}>
-      <Panel icon={Database} title={t('operations.reference.ranking')} description={t('operations.reference.rankingHelp')}>
-        <Form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'>
-          <input type='hidden' name='returnTo' value={selected.returnTo} />
-          <select className={inputClass} name='surveyPeriodId' defaultValue={selected.surveyPeriodId} required>
-            <option value=''>{t('operations.reference.selectPeriod')}</option>
-            {periods.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.issueNumber ?? t('common.notAvailable')} -{' '}
-                {item.status
-                  ? t(`operations.surveyStatuses.${item.status}`, {
-                      defaultValue: t('common.notAvailable')
-                    })
-                  : t('common.notAvailable')}
-              </option>
-            ))}
-          </select>
-          <LoadButton label={t('operations.reference.load')} />
-        </Form>
-        <DatasetGrid data={rankingData} />
+            <section className='rounded-2xl border border-border bg-card shadow-sm overflow-hidden'>
+              <header className='border-b border-border bg-muted/30 px-6 py-4'>
+                <div className='flex items-center gap-2'>
+                  <BarChart3 className='size-5 text-primary' />
+                  <h3 className='font-bold text-foreground'>Xu hướng xếp hạng</h3>
+                </div>
+              </header>
+              <div className='p-6'>
+                {defense.rankingTrend.length > 0 ? (
+                  <div className='grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
+                    {defense.rankingTrend.map((trend, idx) => (
+                      <div
+                        key={trend.surveyPeriodId || idx}
+                        className='relative rounded-xl border border-border p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md'
+                      >
+                        {trend.isAtRisk && (
+                          <div className='absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm'>
+                            <AlertTriangle className='size-3.5' />
+                          </div>
+                        )}
+                        <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2'>
+                          {new Date(trend.recordedAt).toLocaleDateString('vi-VN', { month: 'short', year: 'numeric' })}
+                        </p>
+                        <div className='flex items-end justify-between'>
+                          <div>
+                            <div className='text-3xl font-black text-foreground'>#{trend.rankPosition ?? '-'}</div>
+                            <div className='mt-1 text-[11px] font-medium text-muted-foreground'>
+                              {new Intl.NumberFormat('vi-VN').format(trend.voteCount)} phiếu
+                            </div>
+                          </div>
+                          {trend.rankChange !== null && trend.rankChange !== 0 ? (
+                            <div
+                              className={`flex items-center gap-1 text-xs font-bold ${trend.rankChange > 0 ? 'text-emerald-500' : 'text-destructive'}`}
+                            >
+                              {trend.rankChange > 0 ? (
+                                <TrendingUp className='size-4' />
+                              ) : (
+                                <TrendingDown className='size-4' />
+                              )}
+                              {Math.abs(trend.rankChange)}
+                            </div>
+                          ) : (
+                            <div className='flex items-center gap-1 text-xs font-bold text-muted-foreground'>
+                              <Minus className='size-4' />0
+                            </div>
+                          )}
+                        </div>
+                        {trend.riskLevel !== 'NONE' && (
+                          <div
+                            className={`mt-3 inline-flex rounded-md px-2 py-1 text-[10px] font-bold ${
+                              trend.riskLevel === 'SEVERE'
+                                ? 'bg-destructive/10 text-destructive'
+                                : trend.riskLevel === 'MEDIUM'
+                                  ? 'bg-orange-500/10 text-orange-600'
+                                  : 'bg-amber-500/10 text-amber-600'
+                            }`}
+                          >
+                            Rủi ro:{' '}
+                            {t(`common:businessData.values.${trend.riskLevel}`, { defaultValue: trend.riskLevel })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className='flex flex-col items-center justify-center py-8 text-center'>
+                    <BarChart3 className='size-10 text-muted-foreground/30 mb-3' />
+                    <p className='text-sm text-muted-foreground'>Chưa có dữ liệu xếp hạng</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className='rounded-2xl border border-border bg-card shadow-sm overflow-hidden'>
+              <header className='border-b border-border bg-muted/30 px-6 py-4'>
+                <div className='flex items-center gap-2'>
+                  <Award className='size-5 text-primary' />
+                  <h3 className='font-bold text-foreground'>Báo cáo / Quyết định Hội đồng</h3>
+                </div>
+              </header>
+              <div className='divide-y divide-border'>
+                {defense.seriesReports.length > 0 ? (
+                  defense.seriesReports.map((report) => (
+                    <article key={report.id} className='p-6 transition hover:bg-muted/30'>
+                      <div className='flex items-center justify-between mb-3'>
+                        <span className='inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary'>
+                          {report.reportType
+                            ? t(`board:reports.types.${report.reportType}`, { defaultValue: report.reportType })
+                            : 'Báo cáo'}
+                        </span>
+                        <span className='text-xs text-muted-foreground'>
+                          {new Date(report.createdAt).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                      <p className='text-sm leading-relaxed text-foreground whitespace-pre-wrap'>{report.content}</p>
+                    </article>
+                  ))
+                ) : (
+                  <div className='p-6 text-center text-sm text-muted-foreground'>Chưa có báo cáo nào</div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
       </Panel>
     </ReferenceShell>
   )
@@ -207,18 +271,484 @@ export function AdminReferenceRankingPage({
 
 export function AdminReferenceDirectoriesPage({
   directories,
-  selected
+  selected,
+  pagination,
+  search,
+  tab
 }: {
-  directories: Record<string, unknown>
+  directories: {
+    mangakas: { items: MangakaDirectoryItem[]; total: number; limit: number; offset: number }
+    assistants: { items: AssistantDirectoryItem[]; total: number; limit: number; offset: number }
+  }
   selected: Record<string, string>
+  pagination: { page: number; limit: number; totalMangakas: number; totalAssistants: number }
+  search: string
+  tab: string
 }) {
   const { t } = useTranslation('admin')
+  const fetcher = useFetcher()
+  const [activeTab, setActiveTab] = useState(tab)
+
+  const totalMangakas = pagination.totalMangakas
+  const totalAssistants = pagination.totalAssistants
+  const totalPages =
+    activeTab === 'mangakas'
+      ? Math.ceil(totalMangakas / pagination.limit)
+      : Math.ceil(totalAssistants / pagination.limit)
+
   return (
-    <ReferenceShell title={t('operations.reference.directories')} description={t('operations.reference.directoriesHelp')} returnTo={selected.returnTo}>
-      <Panel icon={Library} title={t('operations.reference.directories')} description={t('operations.reference.directoriesHelp')}>
-        <DatasetGrid data={directories} />
-      </Panel>
+    <ReferenceShell
+      title={t('operations.reference.directories')}
+      description={t('operations.reference.directoriesHelp')}
+      returnTo={selected.returnTo}
+    >
+      <fetcher.Form method='post' className='mb-4'>
+        <input type='hidden' name='intent' value='search' />
+        <input type='hidden' name='tab' value={activeTab} />
+        <div className='flex gap-2'>
+          <div className='relative flex-1'>
+            <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+            <input
+              name='q'
+              defaultValue={search}
+              placeholder={t('operations.reference.searchPlaceholder')}
+              className='h-10 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-xs outline-none focus:border-primary'
+            />
+          </div>
+          <button type='submit' className='h-10 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground'>
+            {t('operations.reference.search')}
+          </button>
+        </div>
+      </fetcher.Form>
+
+      <div className='mb-4 flex gap-1 rounded-lg border border-border p-1'>
+        <button
+          onClick={() => setActiveTab('mangakas')}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition-colors ${
+            activeTab === 'mangakas' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <BookOpen className='size-4' />
+          {t('operations.reference.mangakas')} ({totalMangakas})
+        </button>
+        <button
+          onClick={() => setActiveTab('assistants')}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition-colors ${
+            activeTab === 'assistants' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <Users className='size-4' />
+          {t('operations.reference.assistants')} ({totalAssistants})
+        </button>
+      </div>
+
+      {activeTab === 'mangakas' && <MangakaDirectoryList items={directories.mangakas.items} />}
+      {activeTab === 'assistants' && <AssistantDirectoryList items={directories.assistants.items} />}
+
+      {totalPages > 1 && (
+        <Pagination currentPage={pagination.page} totalPages={totalPages} tab={activeTab} search={search} />
+      )}
     </ReferenceShell>
+  )
+}
+
+interface MangakaDirectoryItem {
+  userId: string
+  displayName: string | null
+  avatar: string | null
+  penName: string
+  genres: string[]
+  experienceLevel: string | null
+  bio: string | null
+  reputationScore: number
+  ratingAvg: number
+  ratingCount: number
+  isRecommended: boolean
+  email: string
+  phoneNumber: string | null
+}
+
+function MangakaDirectoryList({ items }: { items: MangakaDirectoryItem[] }) {
+  const { t } = useTranslation('admin')
+  const [selectedPerson, setSelectedPerson] = useState<DirectoryPerson | null>(null)
+  if (items.length === 0) {
+    return (
+      <div className='rounded-lg border border-border bg-card p-8 text-center'>
+        <BookOpen className='mx-auto size-10 text-muted-foreground/50' />
+        <p className='mt-3 text-sm font-semibold text-muted-foreground'>{t('operations.reference.noMangakas')}</p>
+      </div>
+    )
+  }
+  return (
+    <div className='space-y-3'>
+      {items.map((item) => (
+        <button
+          type='button'
+          key={item.userId}
+          onClick={() =>
+            setSelectedPerson({ userId: item.userId, kind: 'mangaka', name: item.displayName ?? item.penName })
+          }
+          className='block w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+        >
+          <div className='flex items-start gap-4'>
+            <div className='size-12 shrink-0 overflow-hidden rounded-full bg-primary/10'>
+              {item.avatar ? (
+                <img src={item.avatar} alt={item.displayName ?? item.penName} className='size-full object-cover' />
+              ) : (
+                <div className='flex size-full items-center justify-center'>
+                  <BookOpen className='size-5 text-primary' />
+                </div>
+              )}
+            </div>
+            <div className='min-w-0 flex-1'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <h3 className='font-bold text-foreground'>{item.displayName ?? item.penName}</h3>
+                {item.isRecommended && (
+                  <span className='inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700'>
+                    <Star className='size-3' /> {t('operations.reference.recommended')}
+                  </span>
+                )}
+              </div>
+              <p className='mt-1 text-xs text-muted-foreground'>{item.penName}</p>
+              <div className='mt-2 flex flex-wrap gap-1'>
+                {item.genres.slice(0, 5).map((genre) => (
+                  <span
+                    key={genre}
+                    className='rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary'
+                  >
+                    {t(`operations.reference.genres.${genre}`, { defaultValue: genre })}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className='shrink-0 text-right'>
+              <div className='text-lg font-bold text-foreground'>{item.reputationScore.toFixed(1)}</div>
+              <div className='text-[10px] text-muted-foreground'>{t('operations.reference.reputation')}</div>
+              {item.experienceLevel && (
+                <span className='mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground'>
+                  {t(`operations.reference.levels.${item.experienceLevel}`)}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className='mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted-foreground'>
+            <span>
+              <span className='font-medium'>{t('operations.reference.email')}:</span> {item.email}
+            </span>
+            {item.phoneNumber && (
+              <span>
+                <span className='font-medium'>{t('operations.reference.phone')}:</span> {item.phoneNumber}
+              </span>
+            )}
+            <span>
+              <span className='font-medium'>{t('operations.reference.rating')}:</span> {item.ratingAvg.toFixed(1)} (
+              {item.ratingCount})
+            </span>
+          </div>
+          <div className='mt-3 flex items-center justify-end border-t border-border pt-3 text-xs font-bold text-primary'>
+            {t('operations.reference.profile.view')}
+          </div>
+        </button>
+      ))}
+      {selectedPerson && <DirectoryProfileDialog person={selectedPerson} onClose={() => setSelectedPerson(null)} />}
+    </div>
+  )
+}
+
+interface AssistantDirectoryItem {
+  userId: string
+  displayName: string | null
+  avatar: string | null
+  specializations: string[]
+  experienceLevel: string | null
+  availabilityStatus: string | null
+  reputationScore: number
+  ratingAvg: number
+  ratingCount: number
+  isRecommended: boolean
+  email: string
+  phoneNumber: string | null
+}
+
+function AssistantDirectoryList({ items }: { items: AssistantDirectoryItem[] }) {
+  const { t } = useTranslation('admin')
+  const [selectedPerson, setSelectedPerson] = useState<DirectoryPerson | null>(null)
+  if (items.length === 0) {
+    return (
+      <div className='rounded-lg border border-border bg-card p-8 text-center'>
+        <Users className='mx-auto size-10 text-muted-foreground/50' />
+        <p className='mt-3 text-sm font-semibold text-muted-foreground'>{t('operations.reference.noAssistants')}</p>
+      </div>
+    )
+  }
+  return (
+    <div className='space-y-3'>
+      {items.map((item) => (
+        <button
+          type='button'
+          key={item.userId}
+          onClick={() =>
+            setSelectedPerson({
+              userId: item.userId,
+              kind: 'assistant',
+              name: item.displayName ?? t('operations.reference.assistants')
+            })
+          }
+          className='block w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+        >
+          <div className='flex items-start gap-4'>
+            <div className='size-12 shrink-0 overflow-hidden rounded-full bg-primary/10'>
+              {item.avatar ? (
+                <img src={item.avatar} alt={item.displayName ?? ''} className='size-full object-cover' />
+              ) : (
+                <div className='flex size-full items-center justify-center'>
+                  <Users className='size-5 text-primary' />
+                </div>
+              )}
+            </div>
+            <div className='min-w-0 flex-1'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <h3 className='font-bold text-foreground'>{item.displayName ?? t('common.notAvailable')}</h3>
+                {item.isRecommended && (
+                  <span className='inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700'>
+                    <Star className='size-3' /> {t('operations.reference.recommended')}
+                  </span>
+                )}
+                {item.availabilityStatus && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      item.availabilityStatus === 'AVAILABLE'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : item.availabilityStatus === 'BUSY'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {t(`operations.reference.availability.${item.availabilityStatus}`)}
+                  </span>
+                )}
+              </div>
+              <div className='mt-2 flex flex-wrap gap-1'>
+                {item.specializations.map((spec) => (
+                  <span key={spec} className='rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700'>
+                    {t(`operations.reference.specs.${spec}`)}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className='shrink-0 text-right'>
+              <div className='text-lg font-bold text-foreground'>{item.reputationScore.toFixed(1)}</div>
+              <div className='text-[10px] text-muted-foreground'>{t('operations.reference.reputation')}</div>
+              {item.experienceLevel && (
+                <span className='mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground'>
+                  <GraduationCap className='mr-1 inline size-3' />
+                  {t(`operations.reference.levels.${item.experienceLevel}`)}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className='mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted-foreground'>
+            <span>
+              <span className='font-medium'>{t('operations.reference.email')}:</span> {item.email}
+            </span>
+            {item.phoneNumber && (
+              <span>
+                <span className='font-medium'>{t('operations.reference.phone')}:</span> {item.phoneNumber}
+              </span>
+            )}
+            <span>
+              <span className='font-medium'>{t('operations.reference.rating')}:</span> {item.ratingAvg.toFixed(1)} (
+              {item.ratingCount})
+            </span>
+          </div>
+          <div className='mt-3 flex items-center justify-end border-t border-border pt-3 text-xs font-bold text-primary'>
+            {t('operations.reference.profile.view')}
+          </div>
+        </button>
+      ))}
+      {selectedPerson && <DirectoryProfileDialog person={selectedPerson} onClose={() => setSelectedPerson(null)} />}
+    </div>
+  )
+}
+
+type DirectoryPerson = { userId: string; kind: 'mangaka' | 'assistant'; name: string }
+type DirectoryProfile = MangakaProfileResDtoOutput | AssistantProfileResDtoOutput
+
+function DirectoryProfileDialog({ person, onClose }: { person: DirectoryPerson; onClose: () => void }) {
+  const { t } = useTranslation('admin')
+  const [profile, setProfile] = useState<DirectoryProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const request =
+      person.kind === 'mangaka'
+        ? usersControllerGetMangakaProfile({ userId: person.userId })
+        : usersControllerGetAssistantProfile({ userId: person.userId })
+    request
+      .then((response) => {
+        if (!cancelled) setProfile(response.data)
+      })
+      .catch(() => {
+        if (!cancelled) setHasError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [person.kind, person.userId])
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      titleId='directory-profile'
+      title={
+        person.kind === 'mangaka'
+          ? t('operations.reference.profile.mangakaTitle')
+          : t('operations.reference.profile.assistantTitle')
+      }
+      description={person.name}
+      size='md'
+    >
+      <div className='relative'>
+        <button
+          type='button'
+          onClick={onClose}
+          aria-label={t('operations.reference.profile.close')}
+          className='absolute right-0 top-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground'
+        >
+          <X className='size-4' />
+        </button>
+        {loading && <p className='py-8 text-center text-sm text-muted-foreground'>{t('common.loading')}</p>}
+        {!loading && hasError && (
+          <p className='py-8 text-center text-sm text-destructive'>{t('operations.reference.profile.loadError')}</p>
+        )}
+        {!loading && !hasError && profile && (
+          <div className='space-y-5'>
+            <div className='flex items-center gap-4 border-b border-border pb-4'>
+              <div className='grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-primary'>
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt={person.name} className='size-full object-cover' />
+                ) : (
+                  <Users className='size-6' />
+                )}
+              </div>
+              <div className='min-w-0'>
+                <h2 className='truncate text-lg font-bold text-foreground'>{profile.displayName || person.name}</h2>
+                {'penName' in profile && (
+                  <p className='text-xs text-muted-foreground'>{profile.penName || t('common.notAvailable')}</p>
+                )}
+                <p className='mt-1 text-xs font-semibold text-primary'>
+                  {t(`operations.reference.levels.${profile.experienceLevel}`, {
+                    defaultValue: profile.experienceLevel || t('common.notAvailable')
+                  })}
+                </p>
+              </div>
+            </div>
+            <dl className='grid gap-3 sm:grid-cols-2'>
+              <ProfileField icon={Mail} label={t('operations.reference.email')} value={profile.email} />
+              <ProfileField icon={Phone} label={t('operations.reference.phone')} value={profile.phoneNumber} />
+              <ProfileField
+                icon={Star}
+                label={t('operations.reference.reputation')}
+                value={`${profile.reputationScore.toFixed(1)} · ${profile.ratingAvg.toFixed(1)} (${profile.ratingCount})`}
+              />
+              {'availabilityStatus' in profile && (
+                <ProfileField
+                  icon={Briefcase}
+                  label={t('operations.reference.profile.availability')}
+                  value={t(`operations.reference.availability.${profile.availabilityStatus}`, {
+                    defaultValue: profile.availabilityStatus || t('common.notAvailable')
+                  })}
+                />
+              )}
+            </dl>
+            <section>
+              <h3 className='text-xs font-bold text-foreground'>{t('operations.reference.profile.bio')}</h3>
+              <p className='mt-1 whitespace-pre-wrap text-sm leading-6 text-muted-foreground'>
+                {'bio' in profile && profile.bio ? profile.bio : t('operations.reference.profile.noBio')}
+              </p>
+            </section>
+            <section>
+              <h3 className='text-xs font-bold text-foreground'>{t('operations.reference.profile.portfolio')}</h3>
+              {profile.portfolioFiles.length ? (
+                <ul className='mt-2 space-y-1 text-xs text-primary'>
+                  {profile.portfolioFiles.map((file) => (
+                    <li key={file} className='truncate'>
+                      {file}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className='mt-1 text-sm text-muted-foreground'>{t('operations.reference.profile.noPortfolio')}</p>
+              )}
+            </section>
+          </div>
+        )}
+      </div>
+    </Dialog>
+  )
+}
+
+function ProfileField({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+  return (
+    <div className='rounded-lg bg-muted/30 p-3'>
+      <dt className='flex items-center gap-2 text-[11px] font-semibold text-muted-foreground'>
+        <Icon className='size-3.5' />
+        {label}
+      </dt>
+      <dd className='mt-1 break-words text-xs font-bold text-foreground'>{value || '—'}</dd>
+    </div>
+  )
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  tab,
+  search
+}: {
+  currentPage: number
+  totalPages: number
+  tab: string
+  search: string
+}) {
+  const { t } = useTranslation('admin')
+  const pageUrl = (page: number) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('page', String(page))
+    url.searchParams.set('tab', tab)
+    if (search) url.searchParams.set('q', search)
+    return url.pathname + url.search
+  }
+  return (
+    <div className='mt-6 flex items-center justify-center gap-2'>
+      {currentPage > 1 && (
+        <a
+          href={pageUrl(currentPage - 1)}
+          className='flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted'
+        >
+          <ArrowLeft className='size-3' />
+          {t('operations.reference.prev')}
+        </a>
+      )}
+      <span className='px-3 text-xs text-muted-foreground'>
+        {t('operations.reference.pageOf', { current: currentPage, total: totalPages })}
+      </span>
+      {currentPage < totalPages && (
+        <a
+          href={pageUrl(currentPage + 1)}
+          className='flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted'
+        >
+          {t('operations.reference.next')}
+          <ArrowLeft className='size-3 rotate-180' />
+        </a>
+      )}
+    </div>
   )
 }
 
@@ -258,13 +788,15 @@ function LookupPageDirectory({ returnTo }: { returnTo: string }) {
   const referenceReturnTo = `/dashboard/admin/operations/reference?returnTo=${encodeURIComponent(returnTo)}`
   const pages = [
     ['series', BookOpen, t('operations.reference.series'), t('operations.reference.seriesHelp')],
-    ['chapter', FileSearch, t('operations.reference.chapter'), t('operations.reference.chapterHelp')],
-    ['ranking', Database, t('operations.reference.ranking'), t('operations.reference.rankingHelp')],
     ['directories', Library, t('operations.reference.directories'), t('operations.reference.directoriesHelp')]
   ] as const
 
   return (
-    <Panel icon={Search} title={t('operations.reference.lookupPages')} description={t('operations.reference.lookupPagesDescription')}>
+    <Panel
+      icon={Search}
+      title={t('operations.reference.lookupPages')}
+      description={t('operations.reference.lookupPagesDescription')}
+    >
       <div className='grid gap-3 md:grid-cols-2'>
         {pages.map(([path, Icon, title, description]) => (
           <Link
@@ -289,644 +821,6 @@ function LookupPageDirectory({ returnTo }: { returnTo: string }) {
     </Panel>
   )
 }
-
-function ReferenceSummary({ magazines, series, periods }: { magazines: number; series: number; periods: number }) {
-  const { t } = useTranslation('admin')
-  return (
-    <div className='flex flex-wrap gap-2'>
-      <SummaryItem icon={Library} label={t('operations.reference.magazineCount')} value={magazines} />
-      <SummaryItem icon={BookOpen} label={t('operations.reference.seriesCount')} value={series} />
-      <SummaryItem icon={Database} label={t('operations.reference.periodCount')} value={periods} />
-    </div>
-  )
-}
-
-function SummaryItem({
-  icon: Icon,
-  label,
-  value
-}: {
-  icon: LucideIcon
-  label: string
-  value: number
-}) {
-  return (
-    <div className='inline-flex h-9 min-w-0 items-center gap-2 rounded-full border border-border bg-card px-3 text-xs font-semibold text-muted-foreground shadow-sm'>
-      <Icon className='size-3.5 shrink-0 text-primary' />
-      <span>{label}:</span>
-      <strong className='text-foreground'>{value}</strong>
-    </div>
-  )
-}
-
-// Kept for the older reference layout while the current page uses the tabbed panels above.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ReferenceLookup({
-  series,
-  periods,
-  returnTo,
-  selected,
-  directories,
-  seriesData,
-  chapterData,
-  rankingData
-}: {
-  series: SelectItem[]
-  periods: SelectItem[]
-  returnTo: string
-  selected: Record<string, string>
-  directories: Record<string, unknown>
-  seriesData: Record<string, unknown>
-  chapterData: Record<string, unknown>
-  rankingData: Record<string, unknown>
-}) {
-  const { t } = useTranslation('admin')
-  return (
-    <div className='grid gap-6'>
-      <Panel icon={BookOpen} title={t('operations.reference.series')} description={t('operations.reference.seriesHelp')}>
-        <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
-          <input type='hidden' name='returnTo' value={returnTo} />
-          <select className={inputClass} name='seriesId' defaultValue={selected.seriesId} required>
-            <option value=''>{t('operations.reference.selectSeries')}</option>
-            {series.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title ?? t('common.notAvailable')}
-              </option>
-            ))}
-          </select>
-          <input
-            className={inputClass}
-            name='seriesNameId'
-            defaultValue={selected.seriesNameId}
-            placeholder={t('operations.reference.seriesNameId')}
-          />
-          <LoadButton label={t('operations.reference.load')} />
-        </Form>
-        <DatasetGrid data={seriesData} />
-      </Panel>
-
-      <Panel icon={FileSearch} title={t('operations.reference.chapter')} description={t('operations.reference.chapterHelp')}>
-        <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
-          <input type='hidden' name='returnTo' value={returnTo} />
-          <input
-            className={inputClass}
-            name='chapterId'
-            defaultValue={selected.chapterId}
-            placeholder={t('operations.reference.chapterId')}
-            required
-          />
-          <input
-            className={inputClass}
-            name='chapterNameId'
-            defaultValue={selected.chapterNameId}
-            placeholder={t('operations.reference.chapterNameId')}
-          />
-          <LoadButton label={t('operations.reference.load')} />
-        </Form>
-        <DatasetGrid data={chapterData} />
-      </Panel>
-
-      <div className='grid gap-6 xl:grid-cols-2'>
-        <Panel icon={Database} title={t('operations.reference.ranking')} description={t('operations.reference.rankingHelp')}>
-          <Form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'>
-            <input type='hidden' name='returnTo' value={returnTo} />
-            <select className={inputClass} name='surveyPeriodId' defaultValue={selected.surveyPeriodId} required>
-              <option value=''>{t('operations.reference.selectPeriod')}</option>
-              {periods.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.issueNumber ?? t('common.notAvailable')} ·{' '}
-                  {item.status
-                    ? t(`operations.surveyStatuses.${item.status}`, {
-                        defaultValue: t('common.notAvailable')
-                      })
-                    : t('common.notAvailable')}
-                </option>
-              ))}
-            </select>
-            <LoadButton label={t('operations.reference.load')} />
-          </Form>
-          <DatasetGrid data={rankingData} />
-        </Panel>
-        <Panel icon={Library} title={t('operations.reference.directories')} description={t('operations.reference.directoriesHelp')}>
-          <DatasetGrid data={directories} />
-        </Panel>
-      </div>
-    </div>
-  )
-}
-
-function MagazineAdminPanel({
-  magazines,
-  onEdit
-}: {
-  magazines: MagazineListResDtoOutputItemsItem[]
-  onEdit: (magazine: MagazineListResDtoOutputItemsItem) => void
-}) {
-  const { t } = useTranslation('admin')
-  return (
-    <section className='overflow-hidden rounded-lg border border-border bg-card shadow-sm'>
-      <header className='flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4'>
-        <div className='min-w-0'>
-          <h2 className='text-sm font-bold text-foreground'>{t('operations.reference.registeredMagazines')}</h2>
-          <p className='mt-1 text-xs text-muted-foreground'>{t('operations.reference.directoryHint')}</p>
-        </div>
-        <span className='rounded-md bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground'>
-          {t('operations.reference.magazineTotal', { count: magazines.length })}
-        </span>
-      </header>
-      <div>
-        {magazines.map((magazine) => (
-          <MagazineDirectoryRow key={magazine.name} magazine={magazine} onEdit={() => onEdit(magazine)} />
-        ))}
-        {!magazines.length && (
-          <p className='p-5 text-xs text-muted-foreground'>{t('operations.reference.emptyMagazines')}</p>
-        )}
-      </div>
-    </section>
-  )
-}
-
-function MagazineDirectoryRow({
-  magazine,
-  onEdit
-}: {
-  magazine: MagazineListResDtoOutputItemsItem
-  onEdit: () => void
-}) {
-  const { t } = useTranslation('admin')
-  const fetcher = useFetcher<AdminReferenceActionResult>()
-  return (
-    <article className='flex flex-col gap-3 border-b border-border px-5 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between'>
-      <div className='min-w-0'>
-        <h3 className='break-words text-sm font-bold text-foreground'>{magazine.name}</h3>
-        <div className='mt-2 flex flex-wrap gap-1.5'>
-          {magazine.publicationTypes.map((item) => (
-            <span
-              key={item}
-              className='rounded-md bg-primary/10 px-2 py-1 text-[11px] font-bold text-primary'
-            >
-              {t(`operations.publicationTypes.${item}`, { defaultValue: item })}
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className='grid shrink-0 gap-2 sm:flex sm:flex-wrap'>
-        <button
-          type='button'
-          onClick={onEdit}
-          className={`${modalButtonClass} gap-2 border border-border bg-card text-foreground hover:bg-muted`}
-        >
-          <Pencil className='size-4 text-primary' />
-          {t('operations.reference.editMagazine')}
-        </button>
-        <fetcher.Form method='post'>
-          <input type='hidden' name='intent' value='deleteMagazine' />
-          <input type='hidden' name='name' value={magazine.name} />
-          <button
-            disabled={fetcher.state !== 'idle'}
-            className={`${modalButtonClass} gap-2 border border-destructive/30 bg-destructive/10 text-destructive disabled:opacity-50`}
-          >
-            <Trash2 className='size-4' />
-            {t('operations.reference.deleteMagazine')}
-          </button>
-        </fetcher.Form>
-      </div>
-      <ActionFeedback data={fetcher.data} />
-    </article>
-  )
-}
-
-function AddMagazineDialog({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation('admin')
-  const fetcher = useFetcher<AdminReferenceActionResult>()
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
-  }, [fetcher.data, fetcher.state, onClose])
-
-  return (
-    <Dialog
-      compact
-      open
-      onClose={onClose}
-      titleId='admin-add-magazine'
-      title={t('operations.reference.addMagazine')}
-      description={t('operations.reference.addMagazineHelp')}
-      size='md'
-    >
-      <fetcher.Form method='post' className='grid gap-4'>
-        <input type='hidden' name='intent' value='createMagazine' />
-        <label className={referenceFieldClass}>
-          <span className={referenceFieldLabelClass}>{t('operations.reference.magazineName')}</span>
-          <input className={inputClass} name='name' required />
-        </label>
-        <FieldGroup label={t('operations.reference.publicationTypes')}>
-          <PublicationTypeChecks publicationTypes={PUBLICATION_TYPES} defaultValues={['WEEKLY']} />
-        </FieldGroup>
-        <ModalActions
-          cancelLabel={t('common.cancel')}
-          submitLabel={t('operations.reference.saveMagazine')}
-          busy={fetcher.state !== 'idle'}
-          onCancel={onClose}
-        />
-        <ActionFeedback data={fetcher.data} />
-      </fetcher.Form>
-    </Dialog>
-  )
-}
-
-function EditMagazineDialog({
-  magazine,
-  onClose
-}: {
-  magazine: MagazineListResDtoOutputItemsItem
-  onClose: () => void
-}) {
-  const { t } = useTranslation('admin')
-  const fetcher = useFetcher<AdminReferenceActionResult>()
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
-  }, [fetcher.data, fetcher.state, onClose])
-
-  return (
-    <Dialog
-      compact
-      open
-      onClose={onClose}
-      titleId='admin-edit-magazine'
-      title={t('operations.reference.editMagazineTitle', { name: magazine.name })}
-      description={t('operations.reference.editMagazineHelp')}
-      size='md'
-    >
-      <fetcher.Form method='post' className='grid gap-4'>
-        <input type='hidden' name='intent' value='updateMagazine' />
-        <input type='hidden' name='name' value={magazine.name} />
-        <FieldGroup label={t('operations.reference.publicationTypes')}>
-          <PublicationTypeChecks publicationTypes={PUBLICATION_TYPES} defaultValues={magazine.publicationTypes} />
-        </FieldGroup>
-        <ModalActions
-          cancelLabel={t('common.cancel')}
-          submitLabel={t('operations.reference.updateMagazine')}
-          busy={fetcher.state !== 'idle'}
-          onCancel={onClose}
-        />
-        <ActionFeedback data={fetcher.data} />
-      </fetcher.Form>
-    </Dialog>
-  )
-}
-
-function UpdateSeriesSlotDialog({
-  magazines,
-  series,
-  onClose
-}: {
-  magazines: MagazineListResDtoOutputItemsItem[]
-  series: SelectItem[]
-  onClose: () => void
-}) {
-  const { t } = useTranslation('admin')
-  const fetcher = useFetcher<AdminReferenceActionResult>()
-  const firstMagazine = magazines[0]
-  const [slotMagazine, setSlotMagazine] = useState(firstMagazine?.name ?? '')
-  const slotPublicationTypes = magazines.find((item) => item.name === slotMagazine)?.publicationTypes ?? []
-  const [slotPublicationType, setSlotPublicationType] = useState<string>(slotPublicationTypes[0] ?? '')
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
-  }, [fetcher.data, fetcher.state, onClose])
-
-  return (
-    <Dialog
-      compact
-      open
-      onClose={onClose}
-      titleId='admin-update-series-slot'
-      title={t('operations.reference.updateSeriesSlot')}
-      description={t('operations.reference.updateSeriesSlotHelp')}
-      size='md'
-    >
-      <fetcher.Form method='post' className='grid gap-4'>
-        <input type='hidden' name='intent' value='updateSeriesSlot' />
-        <label className={referenceFieldClass}>
-          <span className={referenceFieldLabelClass}>{t('operations.reference.selectSeries')}</span>
-          <select className={inputClass} name='seriesId' required>
-            <option value=''>{t('operations.reference.selectSeries')}</option>
-            {series.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title ?? item.id}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={referenceFieldClass}>
-          <span className={referenceFieldLabelClass}>{t('operations.reference.selectMagazine')}</span>
-          <select
-            className={inputClass}
-            name='magazine'
-            required
-            value={slotMagazine}
-            onChange={(event) => {
-              const nextMagazine = event.target.value
-              const nextTypes = magazines.find((item) => item.name === nextMagazine)?.publicationTypes ?? []
-              setSlotMagazine(nextMagazine)
-              setSlotPublicationType(nextTypes[0] ?? '')
-            }}
-          >
-            <option value='' disabled>
-              {t('operations.reference.selectMagazine')}
-            </option>
-            {magazines.map((item) => (
-              <option key={item.name} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className='grid gap-3 sm:grid-cols-2'>
-          <label className={referenceFieldClass}>
-            <span className={referenceFieldLabelClass}>{t('operations.reference.startIssueNumber')}</span>
-            <input className={inputClass} name='startIssueNumber' type='number' min={1} required />
-          </label>
-          <label className={referenceFieldClass}>
-            <span className={referenceFieldLabelClass}>{t('operations.reference.selectPublicationType')}</span>
-            <select
-              className={inputClass}
-              name='publicationType'
-              required
-              value={slotPublicationType}
-              disabled={!slotPublicationTypes.length}
-              onChange={(event) => setSlotPublicationType(event.target.value)}
-            >
-              {!slotPublicationType && (
-                <option value='' disabled>
-                  {t('operations.reference.selectPublicationType')}
-                </option>
-              )}
-              {slotPublicationTypes.map((item) => (
-                <option key={item} value={item}>
-                  {t(`operations.publicationTypes.${item}`, { defaultValue: item })}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <ModalActions
-          cancelLabel={t('common.cancel')}
-          submitLabel={t('operations.reference.saveSeriesSlot')}
-          busy={fetcher.state !== 'idle'}
-          onCancel={onClose}
-        />
-        <ActionFeedback data={fetcher.data} />
-      </fetcher.Form>
-    </Dialog>
-  )
-}
-
-function FieldGroup({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <fieldset className='grid gap-2'>
-      <legend className='text-xs font-semibold'>{label}</legend>
-      {children}
-    </fieldset>
-  )
-}
-
-function ModalActions({
-  cancelLabel,
-  submitLabel,
-  busy,
-  onCancel
-}: {
-  cancelLabel: string
-  submitLabel: string
-  busy: boolean
-  onCancel: () => void
-}) {
-  return (
-    <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
-      <button type='button' onClick={onCancel} className={`${modalButtonClass} border border-border`}>
-        {cancelLabel}
-      </button>
-      <button disabled={busy} className={`${modalButtonClass} bg-primary text-primary-foreground disabled:opacity-50`}>
-        {submitLabel}
-      </button>
-    </div>
-  )
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function LegacyMagazineAdminPanel({
-  magazines,
-  series
-}: {
-  magazines: MagazineListResDtoOutputItemsItem[]
-  series: SelectItem[]
-}) {
-  const { t } = useTranslation('admin')
-  const createFetcher = useFetcher<AdminReferenceActionResult>()
-  const slotFetcher = useFetcher<AdminReferenceActionResult>()
-  const publicationTypes = ['WEEKLY', 'MONTHLY', 'IRREGULAR'] as const
-  const firstMagazine = magazines[0]
-  const [slotMagazine, setSlotMagazine] = useState(firstMagazine?.name ?? '')
-  const slotPublicationTypes = magazines.find((item) => item.name === slotMagazine)?.publicationTypes ?? []
-  const [slotPublicationType, setSlotPublicationType] = useState<string>(slotPublicationTypes[0] ?? '')
-
-  return (
-    <Panel icon={Library} title={t('operations.reference.magazines')} description={t('operations.reference.magazinesHelp')}>
-      <div className='grid gap-4 xl:grid-cols-2'>
-        <section className='rounded-lg border border-border bg-muted/30 p-4'>
-          <div>
-            <h3 className='text-sm font-bold text-foreground'>{t('operations.reference.addMagazine')}</h3>
-            <p className='mt-1 text-xs leading-5 text-muted-foreground'>
-              {t('operations.reference.addMagazineHelp')}
-            </p>
-          </div>
-          <createFetcher.Form method='post' className='mt-3 grid gap-3'>
-            <input type='hidden' name='intent' value='createMagazine' />
-            <input className={inputClass} name='name' placeholder={t('operations.reference.magazineName')} required />
-            <PublicationTypeChecks publicationTypes={publicationTypes} defaultValues={['WEEKLY']} />
-            <SubmitButton label={t('operations.reference.saveMagazine')} busy={createFetcher.state !== 'idle'} />
-          </createFetcher.Form>
-          <ActionFeedback data={createFetcher.data} />
-        </section>
-        <section className='rounded-lg border border-border bg-muted/30 p-4'>
-          <div>
-            <h3 className='text-sm font-bold text-foreground'>{t('operations.reference.updateSeriesSlot')}</h3>
-            <p className='mt-1 text-xs leading-5 text-muted-foreground'>
-              {t('operations.reference.updateSeriesSlotHelp')}
-            </p>
-          </div>
-          <slotFetcher.Form method='post' className='mt-3 grid gap-3'>
-            <input type='hidden' name='intent' value='updateSeriesSlot' />
-            <select className={inputClass} name='seriesId' required>
-              <option value=''>{t('operations.reference.selectSeries')}</option>
-              {series.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.title ?? item.id}
-                </option>
-              ))}
-            </select>
-            <select
-              className={inputClass}
-              name='magazine'
-              required
-              value={slotMagazine}
-              onChange={(event) => {
-                const nextMagazine = event.target.value
-                const nextTypes = magazines.find((item) => item.name === nextMagazine)?.publicationTypes ?? []
-                setSlotMagazine(nextMagazine)
-                setSlotPublicationType(nextTypes[0] ?? '')
-              }}
-            >
-              <option value='' disabled>
-                {t('operations.reference.selectMagazine')}
-              </option>
-              {magazines.map((item) => (
-                <option key={item.name} value={item.name}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <div className='grid gap-3 sm:grid-cols-2'>
-              <input
-                className={inputClass}
-                name='startIssueNumber'
-                type='number'
-                min={1}
-                placeholder={t('operations.reference.startIssueNumber')}
-                required
-              />
-              <select
-                className={inputClass}
-                name='publicationType'
-                required
-                value={slotPublicationType}
-                disabled={!slotPublicationTypes.length}
-                onChange={(event) => setSlotPublicationType(event.target.value)}
-              >
-                {!slotPublicationType && (
-                  <option value='' disabled>
-                    {t('operations.reference.selectPublicationType')}
-                  </option>
-                )}
-                {slotPublicationTypes.map((item) => (
-                  <option key={item} value={item}>
-                    {t(`operations.publicationTypes.${item}`, { defaultValue: item })}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <SubmitButton label={t('operations.reference.saveSeriesSlot')} busy={slotFetcher.state !== 'idle'} />
-          </slotFetcher.Form>
-          <ActionFeedback data={slotFetcher.data} />
-        </section>
-      </div>
-      <div className='mt-5'>
-        <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
-          <h3 className='text-sm font-bold text-foreground'>{t('operations.reference.registeredMagazines')}</h3>
-          <span className='rounded-md bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground'>
-            {t('operations.reference.magazineTotal', { count: magazines.length })}
-          </span>
-        </div>
-        <div className='grid gap-3 lg:grid-cols-2'>
-          {magazines.map((magazine) => (
-            <MagazineRow key={magazine.name} magazine={magazine} />
-          ))}
-          {!magazines.length && (
-            <p className='rounded-lg border border-border bg-muted/50 p-3 text-xs text-muted-foreground'>
-              {t('operations.reference.emptyMagazines')}
-            </p>
-          )}
-        </div>
-      </div>
-    </Panel>
-  )
-}
-
-function MagazineRow({ magazine }: { magazine: MagazineListResDtoOutputItemsItem }) {
-  const { t } = useTranslation('admin')
-  const fetcher = useFetcher<AdminReferenceActionResult>()
-  const publicationTypes = ['WEEKLY', 'MONTHLY', 'IRREGULAR'] as const
-
-  return (
-    <article className='rounded-lg border border-border p-4'>
-      <div className='flex flex-wrap items-start justify-between gap-3'>
-        <div>
-          <h3 className='font-bold text-foreground'>{magazine.name}</h3>
-          <p className='mt-1 text-xs text-muted-foreground'>
-            {magazine.publicationTypes.map((item) => t(`operations.publicationTypes.${item}`, { defaultValue: item })).join(' · ')}
-          </p>
-        </div>
-        <fetcher.Form method='post'>
-          <input type='hidden' name='intent' value='deleteMagazine' />
-          <input type='hidden' name='name' value={magazine.name} />
-          <button
-            disabled={fetcher.state !== 'idle'}
-            className={`${modalButtonClass} border border-destructive/40 text-destructive disabled:opacity-50`}
-          >
-            {t('operations.reference.deleteMagazine')}
-          </button>
-        </fetcher.Form>
-      </div>
-      <fetcher.Form method='post' className='mt-3 grid gap-3'>
-        <input type='hidden' name='intent' value='updateMagazine' />
-        <input type='hidden' name='name' value={magazine.name} />
-        <PublicationTypeChecks publicationTypes={publicationTypes} defaultValues={magazine.publicationTypes} />
-        <SubmitButton label={t('operations.reference.updateMagazine')} busy={fetcher.state !== 'idle'} />
-      </fetcher.Form>
-      <ActionFeedback data={fetcher.data} />
-    </article>
-  )
-}
-
-function PublicationTypeChecks({
-  publicationTypes,
-  defaultValues
-}: {
-  publicationTypes: readonly ('WEEKLY' | 'MONTHLY' | 'IRREGULAR')[]
-  defaultValues: readonly string[]
-}) {
-  const { t } = useTranslation('admin')
-  return (
-    <div className='grid gap-2 sm:grid-cols-3'>
-      {publicationTypes.map((item) => (
-        <label key={item} className='flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs'>
-          <input
-            type='checkbox'
-            name='publicationTypes'
-            value={item}
-            defaultChecked={defaultValues.includes(item)}
-            className='size-4 accent-primary'
-          />
-          <span>{t(`operations.publicationTypes.${item}`, { defaultValue: item })}</span>
-        </label>
-      ))}
-    </div>
-  )
-}
-
-function SubmitButton({ label, busy }: { label: string; busy: boolean }) {
-  return (
-    <button disabled={busy} className={`${modalButtonClass} bg-primary text-primary-foreground disabled:opacity-50`}>
-      {label}
-    </button>
-  )
-}
-
-function ActionFeedback({ data }: { data?: AdminReferenceActionResult }) {
-  const { t } = useTranslation('admin')
-  if (!data) return null
-  const message = data.message ?? (data.ok ? t(`operations.reference.messages.${data.intent}`) : '')
-  if (!message) return null
-  return (
-    <p className={data.ok ? 'mt-3 text-xs font-semibold text-primary' : 'mt-3 text-xs font-semibold text-destructive'}>
-      {message}
-    </p>
-  )
-}
-
 function Panel({
   icon: Icon,
   title,
@@ -958,22 +852,4 @@ function Panel({
 
 function LoadButton({ label }: { label: string }) {
   return <button className={`${modalButtonClass} bg-primary text-primary-foreground`}>{label}</button>
-}
-
-function DatasetGrid({ data }: { data: Record<string, unknown> }) {
-  const { t } = useTranslation('admin')
-  const entries = Object.entries(data).filter(([, value]) => value !== null)
-  if (!entries.length) return null
-  return (
-    <div className='mt-4 grid gap-3 lg:grid-cols-2'>
-      {entries.map(([key, value]) => (
-        <section key={key} className='min-w-0 rounded-lg border border-border p-4'>
-          <h3 className='mb-3 text-xs font-bold text-foreground'>
-            {t(`operations.reference.datasets.${key}`, { defaultValue: t('common.data') })}
-          </h3>
-          <BusinessDataView value={value} />
-        </section>
-      ))}
-    </div>
-  )
 }

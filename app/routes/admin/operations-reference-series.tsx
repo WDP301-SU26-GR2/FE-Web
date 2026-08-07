@@ -1,6 +1,5 @@
 import { useLoaderData, type ClientLoaderFunctionArgs } from 'react-router'
 import { seriesControllerGetSeries, seriesControllerListSeries } from '~/api/operations/series/series'
-import { surveyControllerGetSeriesTrend } from '~/api/operations/survey/survey'
 import { tankobonControllerDashboard } from '~/api/operations/tankobon/tankobon'
 import { AdminReferenceSeriesPage } from '~/features/admin'
 import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
@@ -8,24 +7,22 @@ import { loadAllOffsetItems } from '~/shared/lib/api/load-all-offset-items'
 export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   const search = new URL(request.url).searchParams
   const seriesId = clean(search.get('seriesId'))
-  const seriesNameId = clean(search.get('seriesNameId'))
   const returnTo = safeReturnTo(search.get('returnTo'))
   const series = await loadAllOffsetItems((pagination) =>
     seriesControllerListSeries(pagination).then((response) => response.data)
   )
 
-  const [detail, defense, rankingTrend] = seriesId
+  const [detail, defense] = seriesId
     ? await Promise.all([
         settle(seriesControllerGetSeries({ id: seriesId })),
-        settle(tankobonControllerDashboard({ id: seriesId })),
-        settle(surveyControllerGetSeriesTrend({ seriesId, periods: 12 }))
+        settle(tankobonControllerDashboard({ id: seriesId }))
       ])
-    : [null, null, null]
+    : [null, null]
 
   return {
     series,
-    selected: { seriesId, seriesNameId, returnTo },
-    seriesData: { detail, defense, rankingTrend }
+    selected: { seriesId, returnTo },
+    seriesData: { detail, defense }
   }
 }
 

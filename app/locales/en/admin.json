@@ -1,7 +1,9 @@
 {
   "common": {
     "notAvailable": "Not available",
-    "data": "Data"
+    "data": "Data",
+    "cancel": "Cancel",
+    "loading": "Loading..."
   },
   "navigation": {
     "backDashboard": "Back to Admin dashboard"
@@ -194,6 +196,7 @@
         "submit": "Issue password"
       }
     },
+    "cannotModifyAdminNotice": "A Super Admin account cannot be modified by another Super Admin. Contact engineering if a change is truly required.",
     "temporaryPassword": {
       "label": "Temporary password for {{email}}",
       "notice": "Copy it now. This password cannot be viewed again after the page reloads."
@@ -263,6 +266,14 @@
     "app": {
       "title": "Business parameters",
       "description": "Shared operational thresholds; server caches may take up to 30 seconds to refresh.",
+      "sections": {
+        "workflow": "Workflow",
+        "review": "Review & Deadline",
+        "quality": "Quality & Reputation",
+        "ranking": "Ranking",
+        "upload": "Upload",
+        "assignment": "Assignment"
+      },
       "coOwnerApprovalGraceDays": "Co-owner approval grace period",
       "storyboardMaxReviewRounds": "Maximum storyboard review rounds",
       "boardRepClaimGraceDays": "Representative claim grace period",
@@ -285,6 +296,11 @@
     "voting": {
       "title": "Reader voting configuration",
       "description": "Control OTP/CAPTCHA authentication, request limits, and anti-fraud activation conditions.",
+      "sections": {
+        "auth": "Authentication",
+        "otp": "OTP Settings",
+        "rateLimit": "Rate Limits"
+      },
       "authMode": "Authentication mode",
       "authModes": {
         "OTP": "OTP verification",
@@ -357,7 +373,8 @@
         "allResolutionStates": "All resolution states"
       },
       "revisionTypes": {
-        "PROPOSAL": "Series proposal",
+      "PROPOSAL": "Series proposal",
+      "STORYBOARD": "Storyboard",
         "NAME": "Storyboard",
         "MANUSCRIPT": "Manuscript",
         "TASK": "Production task"
@@ -411,7 +428,66 @@
     "surveys": {
       "title": "Reader voting periods",
       "description": "Create a voting period for a magazine issue, control its state, import offline votes, and finalize rankings.",
-      "adminOnly": "Super Admin operation"
+      "adminOnly": "Super Admin operation",
+      "create": "Create survey period",
+      "createHelp": "Set the magazine issue, dates, and eligible series for a new voting period.",
+      "open": "Open voting",
+      "close": "Close voting",
+      "finalize": "Finalize ranking",
+      "empty": "No survey periods created yet.",
+      "issueNumber": "Issue number",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "magazine": "Magazine",
+      "publicationType": "Publication type",
+      "eligibleSeries": "Eligible series",
+      "workspaceTitle": "Voting period workspace",
+      "workspaceDescription": "Choose the exact magazine and cadence so the system can load the eligible series for that scope.",
+      "period": "Voting period",
+      "seriesUnit": "series",
+      "seriesInPeriod": "Series in this period",
+      "viewDetails": "View period data",
+      "selectMagazine": "Select a magazine",
+      "selectPublicationType": "Select a cadence",
+      "eligibleSeriesHelp": "This list comes directly from the API for the selected magazine and cadence.",
+      "loadingEligibleSeries": "Loading eligible series...",
+      "eligibleSeriesError": "Could not load eligible series. Please try again.",
+      "noEligibleSeries": "No series are eligible for this scope.",
+      "status": "Status",
+      "detailsTitle": "Voting period {{issue}} data",
+      "detailsDescription": "Review the scope, offline imports, and ranking results for this period.",
+      "importTitle": "Import offline votes",
+      "importDescription": "Import postcard or offline vote counts for each series in the period snapshot.",
+      "voteCount": "Vote count",
+      "import": "Import votes",
+      "rankingTitle": "Ranking results",
+      "resultUnit": "results",
+      "voteUnit": "votes",
+      "noRanking": "This period has no ranking data yet.",
+      "importHistory": "Import history",
+      "importUnit": "imports",
+      "readerVotes": "Reader votes",
+      "surveyStatuses": {
+        "DRAFT": "Draft",
+        "OPEN": "Voting open",
+        "CLOSED": "Voting closed",
+        "REFLECTED": "Ranking published"
+      }
+    },
+    "magazineSurvey": {
+      "pagination": "Page {{page}} / {{pageCount}}",
+      "previous": "Previous",
+      "next": "Next",
+      "title": "Magazine & Survey Management",
+      "subtitle": "Manage the magazine catalog and reader voting periods for your platform.",
+      "loadError": "Failed to load data. Please try again.",
+      "tabs": {
+        "magazines": "Magazine Catalog",
+        "surveys": "Voting Periods"
+      },
+      "magazine": "Magazine",
+      "publicationTypes": "Publication Types",
+      "actions": "Actions"
     },
     "publicationVersions": {
       "title": "Publication versions",
@@ -423,6 +499,8 @@
       "IRREGULAR": "Irregular"
     },
     "reference": {
+      "slotWorkspaceTitle": "Adjust a slot from the survey workspace",
+      "slotWorkspaceDescription": "Choose a series in the survey context to repair its magazine, issue number, and publication cadence.",
       "title": "Operational reference data",
       "description": "Manage the magazine catalog and open each operational reference lookup as its own page.",
       "backPrevious": "Back to previous page",
@@ -466,6 +544,7 @@
       },
       "series": "Series defense and ranking trend",
       "seriesHelp": "Open one series and optional storyboard proposal data for performance review.",
+      "seriesStatus": "Work status",
       "selectSeries": "Select a series",
       "seriesNameId": "Proposal Name ID (optional)",
       "chapter": "Chapter production reference",
@@ -504,6 +583,70 @@
         "transferRequest": "Transfer request",
         "transferContract": "Transfer contract",
         "transferSignatures": "Transfer signatures"
+      },
+      "search": "Search",
+      "searchPlaceholder": "Search by name or pen name...",
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{current}} of {{total}}",
+      "noMangakas": "No mangakas found.",
+      "noAssistants": "No assistants found.",
+      "recommended": "Recommended",
+      "reputation": "Reputation",
+      "rating": "Rating",
+      "email": "Email",
+      "phone": "Phone",
+      "availability": {
+        "AVAILABLE": "Available",
+        "BUSY": "Busy",
+        "ON_LEAVE": "On leave",
+        "UNAVAILABLE": "Unavailable"
+      },
+      "specs": {
+        "BACKGROUND": "Background",
+        "SCREENTONE": "Screentone",
+        "EFFECT_LINES": "Effect Lines",
+        "INKING": "Inking",
+        "COLORING": "Coloring",
+        "LETTERING": "Lettering"
+      },
+      "levels": {
+        "JUNIOR": "Junior",
+        "MID": "Mid-level",
+        "SENIOR": "Senior"
+      },
+      "genres": {
+        "ACTION": "Action",
+        "ADVENTURE": "Adventure",
+        "COMEDY": "Comedy",
+        "DRAMA": "Drama",
+        "FANTASY": "Fantasy",
+        "HORROR": "Horror",
+        "MYSTERY": "Mystery",
+        "ROMANCE": "Romance",
+        "SCI_FI": "Science fiction",
+        "SLICE_OF_LIFE": "Slice of life",
+        "SPORTS": "Sports",
+        "SUPERNATURAL": "Supernatural",
+        "THRILLER": "Thriller",
+        "HISTORICAL": "Historical",
+        "ISEKAI": "Isekai",
+        "MECHA": "Mecha",
+        "PSYCHOLOGICAL": "Psychological"
+      },
+      "profile": {
+        "view": "View profile",
+        "close": "Close",
+        "bio": "About",
+        "portfolio": "Portfolio",
+        "availability": "Availability",
+        "availableFrom": "Available from",
+        "availableTo": "Available to",
+        "noBio": "No biography provided.",
+        "noPortfolio": "No portfolio files.",
+        "loadError": "Could not load this profile. Please try again.",
+        "mangakaTitle": "Mangaka profile",
+        "assistantTitle": "Assistant profile"
       }
     },
     "workspace": {
@@ -612,6 +755,7 @@
       "BOARD_SESSION": "Board session"
     },
     "actions": {
+      "unknown": "Unknown action",
       "CREATE": "Created",
       "UPDATE": "Updated",
       "DELETE": "Deleted",

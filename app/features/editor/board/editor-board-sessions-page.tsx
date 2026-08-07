@@ -37,6 +37,7 @@ export function EditorBoardSessionsPage({
   boardConfig,
   hasError,
   manageAll = false,
+  hideCreateButton = false,
   backPath = '/dashboard/editor/board',
   detailBasePath = '/dashboard/editor/board/sessions'
 }: {
@@ -46,6 +47,7 @@ export function EditorBoardSessionsPage({
   boardConfig: BoardConfigResDtoOutput | null
   hasError: boolean
   manageAll?: boolean
+  hideCreateButton?: boolean
   backPath?: string
   detailBasePath?: string
 }) {
@@ -76,20 +78,22 @@ export function EditorBoardSessionsPage({
       hasError={hasError}
       backPath={backPath}
     >
-      <div className='flex justify-end'>
-        <button
-          type='button'
-          onClick={() => {
-            const randomSeries = series[Math.floor(Math.random() * series.length)]
-            setRosterSourceSeriesId(randomSeries?.id ?? '')
-            setCreateDialogOpen(true)
-          }}
-          className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
-        >
-          <Plus className='size-4' />
-          {t('actions.createSession')}
-        </button>
-      </div>
+      {!hideCreateButton && (
+        <div className='flex justify-end'>
+          <button
+            type='button'
+            onClick={() => {
+              const randomSeries = series[Math.floor(Math.random() * series.length)]
+              setRosterSourceSeriesId(randomSeries?.id ?? '')
+              setCreateDialogOpen(true)
+            }}
+            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+          >
+            <Plus className='size-4' />
+            {t('actions.createSession')}
+          </button>
+        </div>
+      )}
       <BoardPanel title={t('board.sessions')}>
         <div className='grid gap-3'>
           <div className='grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>

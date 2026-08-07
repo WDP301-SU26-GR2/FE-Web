@@ -50,13 +50,15 @@ export function EditorBoardDecisionsPage({
   useBoardAutoRefresh()
   const realtime = useEditorSessionVoteProgress(sessions, decisions)
   const visibleDecisions = orderBoardDecisions(
-    realtime.decisions.filter(
-      (decision) =>
-        (!selectedSeriesId || decision.targetSeriesId === selectedSeriesId) &&
-        (!selectedSessionId || decision.boardSessionId === selectedSessionId) &&
-        (!decisionType || decision.decisionType === decisionType) &&
-        (!decisionResult || decision.result === decisionResult)
-    )
+    realtime.decisions
+      .filter(
+        (decision) =>
+          (!selectedSeriesId || decision.targetSeriesId === selectedSeriesId) &&
+          (!selectedSessionId || decision.boardSessionId === selectedSessionId) &&
+          (!decisionType || decision.decisionType === decisionType) &&
+          (!decisionResult || decision.result === decisionResult) &&
+          !['CONTINUE', 'CANCEL', 'HIATUS', 'ENDING_ALLOWANCE', 'SERIES_CONTRACT_APPROVAL'].includes(decision.decisionType ?? '')
+      )
   )
 
   function selectSeries(seriesId: string) {
@@ -99,13 +101,13 @@ export function EditorBoardDecisionsPage({
           </select>
           <select className={boardInput} value={decisionType} onChange={(event) => setDecisionType(event.target.value)}>
             <option value=''>{t('board.filters.allDecisionTypes')}</option>
-            {[...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))].map(
-              (value) => (
+            {[...new Set(realtime.decisions.flatMap((item) => (item.decisionType ? [item.decisionType] : [])))]
+              .filter((type) => !['CONTINUE', 'CANCEL', 'HIATUS', 'ENDING_ALLOWANCE', 'SERIES_CONTRACT_APPROVAL'].includes(type))
+              .map((value) => (
                 <option key={value} value={value}>
                   {t(`board.decisionTypeLabels.${value}`, { defaultValue: t('common.notAvailable') })}
                 </option>
-              )
-            )}
+              ))}
           </select>
           <select
             className={boardInput}

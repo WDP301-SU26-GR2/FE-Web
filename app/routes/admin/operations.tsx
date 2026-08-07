@@ -3,8 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
-  Binoculars,
-  Library,
+  BookOpen,
   Search,
   ShieldAlert,
   Telescope,
@@ -26,26 +25,19 @@ export default function AdminOperationsRoute() {
   const { t } = useTranslation('admin')
   const items: OperationItem[] = [
     {
+      href: '/dashboard/admin/operations/magazine-survey',
+      icon: BarChart3,
+      title: t('operations.magazineSurvey.title'),
+      description: t('operations.magazineSurvey.description'),
+      mode: 'write',
+      featured: true
+    },
+    {
       href: '/dashboard/admin/operations/monitoring',
       icon: Search,
       title: t('operations.monitoring.title'),
       description: t('operations.monitoring.description'),
       mode: 'readOnly'
-    },
-    {
-      href: '/dashboard/admin/operations/surveys',
-      icon: BarChart3,
-      title: t('operations.surveys.title'),
-      description: t('operations.surveys.description'),
-      mode: 'write',
-      featured: true
-    },
-    {
-      href: '/dashboard/admin/operations/publication-versions',
-      icon: Library,
-      title: t('operations.publicationVersions.title'),
-      description: t('operations.publicationVersions.description'),
-      mode: 'write'
     },
     {
       href: '/dashboard/admin/operations/reference?returnTo=/dashboard/admin/operations',
@@ -76,13 +68,13 @@ export default function AdminOperationsRoute() {
           </header>
           <div className='grid grid-cols-2 gap-3'>
             <div className='rounded-2xl border border-border bg-background/70 p-4'>
-              <Binoculars className='size-5 text-primary' />
+              <Search className='size-5 text-muted-foreground' />
               <p className='mt-3 text-xl font-black text-foreground'>02</p>
               <p className='mt-1 text-[11px] font-bold text-muted-foreground'>{t('operations.summary.readOnly')}</p>
             </div>
             <div className='rounded-2xl border border-primary/20 bg-primary/10 p-4'>
-              <Wrench className='size-5 text-primary' />
-              <p className='mt-3 text-xl font-black text-foreground'>02</p>
+              <BarChart3 className='size-5 text-primary' />
+              <p className='mt-3 text-xl font-black text-foreground'>01</p>
               <p className='mt-1 text-[11px] font-bold text-muted-foreground'>{t('operations.summary.write')}</p>
             </div>
           </div>

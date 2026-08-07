@@ -4,10 +4,8 @@ export { AdminUserDetailPage } from './users/admin-user-detail-page'
 export { AdminSettingsPage } from './settings/admin-settings-page'
 export { AdminAuditPage } from './audit/admin-audit-page'
 export {
-  AdminReferenceChapterPage,
   AdminReferenceDirectoriesPage,
   AdminReferencePage,
-  AdminReferenceRankingPage,
   AdminReferenceSeriesPage
 } from './operations/admin-reference-page'
 export type { AdminUserActionIntent, AdminUserActionResult } from './users/types'
