@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Bot, ExternalLink, Filter, Search, ShieldCheck, 
 import { useTranslation } from 'react-i18next'
 
 import type { AuditLogListResDtoOutput } from '~/api/model/audit'
-import { KNOWN_AUDIT_ACTIONS, validateAuditAction } from '~/shared/lib/audit-action'
+import { KNOWN_AUDIT_ACTIONS, isKnownAuditAction } from '~/shared/lib/audit-action'
 
 const ENTITY_TYPES = [
   'SERIES',
@@ -151,7 +151,7 @@ export function AdminAuditPage({
                   <div className='min-w-0'>
                     <div className='flex flex-wrap items-center gap-2'>
                       <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary'>
-                        {(validateAuditAction(item.action), t(`audit.actions.${item.action}`, { defaultValue: t('audit.actions.unknown') }))}
+                        {t(`audit.actions.${item.action}`, { defaultValue: isKnownAuditAction(item.action) ? item.action : t('audit.actions.unknown') })}
                       </span>
                       <span className='rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
                         {t(`audit.entityTypes.${item.entityType}`, {
@@ -191,13 +191,13 @@ export function AdminAuditPage({
                     <span>
                       {item.fromState
                         ? t(`audit.states.${item.fromState}`, { defaultValue: t('common.notAvailable') })
-                        : 'ù'}
+                        : ''}
                     </span>
                     <ArrowRight className='size-3.5 text-primary' />
                     <span>
                       {item.toState
                         ? t(`audit.states.${item.toState}`, { defaultValue: t('common.notAvailable') })
-                        : 'ù'}
+                        : ''}
                     </span>
                   </div>
                 )}
@@ -286,7 +286,7 @@ function ReferenceCard({
 }
 
 function shortId(id: string) {
-  return id.length > 12 ? `${id.slice(0, 6)}ù${id.slice(-4)}` : id
+  return id.length > 12 ? `${id.slice(0, 6)}${id.slice(-4)}` : id
 }
 
 function PageLink({
