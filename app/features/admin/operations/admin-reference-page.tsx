@@ -55,10 +55,6 @@ export function AdminReferencePage({ selected }: { selected: Record<string, stri
         </div>
       </header>
 
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-        <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>{t('operations.reference.description')}</p>
-      </div>
-
       <LookupPageDirectory returnTo={returnTo} />
     </div>
   )
@@ -754,7 +750,6 @@ function Pagination({
 
 function ReferenceShell({
   title,
-  description,
   returnTo,
   children
 }: {
@@ -776,7 +771,6 @@ function ReferenceShell({
         </Link>
         <p className='text-xs font-bold uppercase tracking-[0.18em] text-primary'>{t('operations.eyebrow')}</p>
         <h1 className='mt-1 text-2xl font-bold text-foreground'>{title}</h1>
-        <p className='mt-2 max-w-3xl text-sm leading-6 text-muted-foreground'>{description}</p>
       </header>
       {children}
     </div>

@@ -241,11 +241,7 @@ function TransferSignDialog({ contractId, onClose }: { contractId: string; onClo
           >
             {isCoolingDown ? `${t('contracts.sendOtp')} (${remainingSeconds}s)` : t('contracts.sendOtp')}
           </button>
-          <button
-            type='button'
-            onClick={onClose}
-            className={`${boardDialogButton} border border-border`}
-          >
+          <button type='button' onClick={onClose} className={`${boardDialogButton} border border-border`}>
             {t('common.cancel')}
           </button>
           <button
@@ -345,9 +341,12 @@ function TransferCard({
                 ))}
               </select>
               {!eligibleDecisions.length && (
-                <div className='space-y-2 rounded-lg border border-warning/30 bg-warning/10 p-3 sm:col-span-2'>
-                  <p className='text-xs text-warning-foreground'>{t('transfers.noTerminalDecision')}</p>
-                  <Link className='inline-flex text-xs font-bold text-primary underline' to='/dashboard/board/sessions'>
+                <div className='space-y-2 rounded-lg bg-slate-900 dark:bg-slate-800 p-3 shadow-md sm:col-span-2'>
+                  <p className='text-xs font-medium text-slate-100'>{t('transfers.noTerminalDecision')}</p>
+                  <Link
+                    className='inline-flex text-xs font-bold text-amber-400 hover:text-amber-300 underline'
+                    to='/dashboard/board/sessions'
+                  >
                     {t('transfers.openBoardSessions')}
                   </Link>
                 </div>

@@ -141,9 +141,10 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
           type='number'
           min={CONTRACT_FIELD_LIMITS.moneyMinimum}
           max={CONTRACT_FIELD_LIMITS.moneyMaximum}
-          step={1}
-          defaultValue={numberValue(amendment?.valuationAmount)}
-          onChange={(event) => setValuationAmount(event.target.value ? Number(event.target.value) : null)}
+          defaultValue={amendment?.valuationAmount ?? ''}
+          onChange={(event) => {
+            setValuationAmount(event.target.value ? Number(event.target.value) : null)
+          }}
           className={contractInput}
           placeholder={t('contracts.valuation')}
         />
@@ -155,7 +156,7 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
         min={0}
         max={100}
         step={1}
-        defaultValue={numberValue(amendment?.publisherOwnershipPct)}
+        // defaultValue={numberValue(amendment?.publisherOwnershipPct)}
         className={contractInput}
         placeholder={t('contracts.publisherPct')}
       />
@@ -165,20 +166,20 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
         min={0}
         max={100}
         step={1}
-        defaultValue={numberValue(amendment?.mangakaOwnershipPct)}
+        // defaultValue={numberValue(amendment?.mangakaOwnershipPct)}
         className={contractInput}
         placeholder={t('contracts.mangakaPct')}
       />
       <input
         name='terminationClause'
-        defaultValue={amendment?.terminationClause ?? ''}
+        // defaultValue={amendment?.terminationClause ?? ''}
         className={contractInput}
         placeholder={t('contracts.terminationClause')}
       />
       <input
         name='contractStart'
         type='datetime-local'
-        defaultValue={toLocal(amendment?.contractStart)}
+        // defaultValue={toLocal(amendment?.contractStart)}
         className={contractInput}
       />
       <input
@@ -191,9 +192,9 @@ function AmendmentTermFields({ amendment }: { amendment?: AmendmentResDtoOutput 
   )
 }
 
-function numberValue(value: number | null | undefined) {
-  return value ?? ''
-}
+// function numberValue(value: number | null | undefined) {
+//   return value ?? ''
+// }
 
 function toLocal(value: string | null | undefined) {
   if (!value) return ''

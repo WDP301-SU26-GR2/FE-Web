@@ -177,7 +177,7 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
       if (signatures.status !== 200) throw new Error('Không thể tải tiến độ chữ ký.')
       const signedRoles = new Set(signatures.data.signatures.map((signature) => signature.role))
       if (!signedRoles.has('MANGAKA_A') || !signedRoles.has('MANGAKA_B')) {
-        throw new Error('Cần đủ chữ ký của hai Mangaka trước khi Hội đồng ký.')
+        throw new Error('Cần đủ chữ ký của hai tác giả trước khi Hội đồng ký.')
       }
       await transferControllerSignTransferContract({ id: contractId }, { otpCode: required(form, 'otpCode') })
     } else return { ok: false, intent }

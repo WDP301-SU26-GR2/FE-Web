@@ -106,14 +106,14 @@
     "allContractStatuses": "Tất cả trạng thái hợp đồng",
     "allContractTypes": "Tất cả loại hợp đồng",
     "allReprintStatuses": "Tất cả trạng thái tái bản",
-    "searchTransfers": "Tìm theo bộ truyện hoặc Mangaka",
+    "searchTransfers": "Tìm theo bộ truyện hoặc tác giả",
     "allTransferStatuses": "Tất cả trạng thái chuyển nhượng",
     "reprintStatuses": {
       "PENDING": "Đang chờ",
       "PROPOSED": "Đã đề xuất",
-      "MANGAKA_REVIEW": "Mangaka đang xem xét",
-      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
-      "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
+      "MANGAKA_REVIEW": "Tác giả đang xem xét",
+      "MANGAKA_APPROVED": "Tác giả đã đồng ý",
+      "REJECTED_BY_MANGAKA": "Tác giả đã từ chối",
       "BOARD_APPROVED": "Hội đồng đã duyệt",
       "APPROVED": "Đã duyệt",
       "IN_PRODUCTION": "Đang sản xuất",
@@ -125,7 +125,7 @@
       "UNDER_REVIEW": "Đã áp dụng quyết định · chưa chuyển quyền",
       "REJECTED_BY_BOARD": "Hội đồng đã từ chối",
       "NEGOTIATING": "Đang thương lượng",
-      "REJECTED_BY_ORIGINAL_MANGAKA": "Mangaka gốc đã từ chối",
+      "REJECTED_BY_ORIGINAL_MANGAKA": "Tác giả gốc đã từ chối",
       "PROPOSED": "Đã đề xuất",
       "ACCEPTED": "Đã chấp nhận",
       "REJECTED": "Đã từ chối",
@@ -134,8 +134,16 @@
       "AWAITING_TRANSFER_SIGNATURES": "Chờ ký hợp đồng chuyển nhượng",
       "COMPLETED": "Đã hoàn tất"
     },
-    "sessionStatuses": { "UPCOMING": "Sắp diễn ra", "ACTIVE": "Đang họp", "CONCLUDED": "Đã kết thúc" },
-    "sessionPhases": { "PRESENTING": "Trình bày", "QA": "Hỏi đáp", "VOTING": "Biểu quyết" },
+    "sessionStatuses": {
+      "UPCOMING": "Sắp diễn ra",
+      "ACTIVE": "Đang họp",
+      "CONCLUDED": "Đã kết thúc"
+    },
+    "sessionPhases": {
+      "PRESENTING": "Trình bày",
+      "QA": "Hỏi đáp",
+      "VOTING": "Biểu quyết"
+    },
     "decisionTypes": {
       "SERIALIZATION": "Duyệt đăng dài kỳ",
       "CANCELLATION": "Hủy bộ truyện",
@@ -164,14 +172,17 @@
       "REJECTED": "Đã từ chối",
       "VOIDED": "Đã hủy hiệu lực"
     },
-    "contractTypes": { "FULL_BUYOUT": "Mua đứt toàn bộ", "REVENUE_SHARE": "Chia sẻ doanh thu" },
+    "contractTypes": {
+      "FULL_BUYOUT": "Mua đứt toàn bộ",
+      "REVENUE_SHARE": "Chia sẻ doanh thu"
+    },
     "contractStatuses": {
       "DRAFT": "Bản nháp",
-      "MANGAKA_REVIEW": "Mangaka đang xem xét",
+      "MANGAKA_REVIEW": "Tác giả đang xem xét",
       "NEGOTIATION": "Đang thương lượng",
-      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
+      "MANGAKA_APPROVED": "Tác giả đã đồng ý",
       "BOARD_APPROVED": "Hội đồng đã duyệt",
-      "MANGAKA_SIGNED": "Mangaka đã ký",
+      "MANGAKA_SIGNED": "Tác giả đã ký",
       "FULLY_EXECUTED": "Đã ký hoàn tất",
       "FULFILLED": "Đã hoàn thành",
       "TERMINATED": "Đã chấm dứt",
@@ -213,7 +224,11 @@
     "title": "Trung tâm quyết định Hội đồng",
     "description": "Xem xét bằng chứng, bỏ phiếu, duyệt nghiệp vụ thương mại và phân xử rủi ro xuất bản.",
     "liveDataError": "Tạm thời chưa tải được dữ liệu tổng quan. Các lối tắt nghiệp vụ vẫn hoạt động.",
-    "summary": { "pending": "Quyết định chờ xử lý", "upcoming": "Phiên sắp diễn ra", "unread": "Thông báo chưa đọc" },
+    "summary": {
+      "pending": "Quyết định chờ xử lý",
+      "upcoming": "Phiên sắp diễn ra",
+      "unread": "Thông báo chưa đọc"
+    },
     "pendingDecisions": "Quyết định cần xử lý",
     "severeRisk": "Bộ truyện có rủi ro nghiêm trọng",
     "emptyPending": "Không có quyết định đang hoạt động cần bạn xử lý.",
@@ -281,7 +296,11 @@
         "JOSEI": "Nữ trưởng thành",
         "KODOMO": "Thiếu nhi"
       },
-      "publicationTypes": { "WEEKLY": "Hàng tuần", "MONTHLY": "Hàng tháng", "IRREGULAR": "Không định kỳ" },
+      "publicationTypes": {
+        "WEEKLY": "Hàng tuần",
+        "MONTHLY": "Hàng tháng",
+        "IRREGULAR": "Không định kỳ"
+      },
       "proposalStatuses": {
         "DRAFT": "Bản nháp",
         "PROPOSAL_REVIEW": "Đang được biên tập duyệt",
@@ -339,6 +358,11 @@
       "connecting": "Đang kết nối cập nhật trực tiếp...",
       "connected": "Đang cập nhật trực tiếp",
       "disconnected": "Mất kết nối trực tiếp, dữ liệu vẫn được làm mới định kỳ"
+    },
+    "senderRoles": {
+      "editor": "Biên tập viên",
+      "boardMember": "Thành viên Hội đồng",
+      "unknown": "Chưa xác định"
     }
   },
   "decisions": {
@@ -417,7 +441,7 @@
     "content": "Nội dung phân tích",
     "selectEvidence": "Chọn dữ liệu đưa vào báo cáo",
     "selectEvidenceHint": "Dữ liệu được lấy lại từ hệ thống và lưu thành bản chụp tại thời điểm gửi.",
-    "optionalAnalysis": "Nhận định biên tập (không bắt buộc)",
+    "optionalAnalysis": "Nhận định biên tập",
     "optionalAnalysisHint": "Bổ sung nhận xét, nguyên nhân hoặc đề xuất của biên tập viên.",
     "chapterCount": "{{count}} chương",
     "unitCount": "{{count}} bản",
@@ -455,7 +479,7 @@
     }
   },
   "contracts": {
-    "unknownMangaka": "Không có thông tin Mangaka",
+    "unknownMangaka": "Không có thông tin tác giả",
     "title": "Duyệt hợp đồng",
     "description": "Duyệt điều khoản, ký thỏa thuận và xem phụ lục.",
     "empty": "Chưa có hợp đồng.",
@@ -465,7 +489,7 @@
     "unknownSeries": "Chưa xác định bộ truyện",
     "terms": "Điều khoản thương mại",
     "valuation": "Định giá",
-    "ownership": "Sở hữu NXB / Mangaka",
+    "ownership": "Sở hữu NXB / Tác giả",
     "contractType": "Loại hợp đồng",
     "startDate": "Ngày bắt đầu",
     "endDate": "Ngày kết thúc",
@@ -503,7 +527,7 @@
     "confirmClaimRepresentative": "Xác nhận nhận đại diện",
     "confirmReleaseRepresentative": "Xác nhận nhả vai trò",
     "signRepresentative": "Ký với tư cách đại diện",
-    "representativeSigned": "Đại diện đã ký; hợp đồng đang chờ Mangaka.",
+    "representativeSigned": "Đại diện đã ký; hợp đồng đang chờ tác giả.",
     "representativePending": "Đại diện đã nhận hợp đồng và chưa ký.",
     "comments": "Ý kiến tư vấn",
     "commentPlaceholder": "Thêm ý kiến tư vấn không ràng buộc cho biên tập viên phụ trách...",
@@ -524,7 +548,8 @@
     "openPayments": "Mở các khoản thanh toán",
     "reportRevenue": "Ghi nhận doanh thu",
     "revenuePeriod": "Kỳ doanh thu, ví dụ 2026-Q2",
-    "revenueAmount": "Doanh thu trong kỳ"
+    "revenueAmount": "Doanh thu trong kỳ",
+    "terminationClause": "Điều khoản chấm dứt"
   },
   "payments": {
     "unknownReceiver": "Không có thông tin người nhận",
@@ -541,7 +566,10 @@
     "approve": "Duyệt khoản chi",
     "approveConfirmation": "Duyệt khoản chi {{amount}} cho {{receiver}}? Hãy kiểm tra chi tiết trước khi xác nhận.",
     "method": "Phương thức thanh toán",
-    "methods": { "BANK_TRANSFER": "Chuyển khoản ngân hàng", "CASH": "Tiền mặt" },
+    "methods": {
+      "BANK_TRANSFER": "Chuyển khoản ngân hàng",
+      "CASH": "Tiền mặt"
+    },
     "pay": "Xác nhận đã trả",
     "cancelReason": "Lý do hủy",
     "cancel": "Hủy thanh toán",
@@ -677,8 +705,15 @@
     "participation": "Mức tham gia",
     "provisional": "Tạm tính",
     "aggregateEmpty": "Chưa có xếp hạng tổng hợp cho bộ lọc này.",
-    "levels": { "MONTH": "Tháng", "YEAR": "Năm" },
-    "publicationTypes": { "WEEKLY": "Hàng tuần", "MONTHLY": "Hàng tháng", "IRREGULAR": "Không định kỳ" }
+    "levels": {
+      "MONTH": "Tháng",
+      "YEAR": "Năm"
+    },
+    "publicationTypes": {
+      "WEEKLY": "Hàng tuần",
+      "MONTHLY": "Hàng tháng",
+      "IRREGULAR": "Không định kỳ"
+    }
   },
   "reprints": {
     "title": "Quy trình tái bản",
@@ -695,20 +730,20 @@
     "review": "Xem xét yêu cầu tái bản",
     "approve": "Duyệt tái bản",
     "reject": "Từ chối tái bản",
-    "revenueShareRejectUnavailable": "Hệ thống hiện chưa cho phép chuyển yêu cầu từ trạng thái Mangaka đã đồng ý sang trạng thái bị từ chối. Giao diện chỉ cho duyệt để tránh gửi thao tác chắc chắn thất bại.",
+    "revenueShareRejectUnavailable": "Hệ thống hiện chưa cho phép chuyển yêu cầu từ trạng thái tác giả đã đồng ý sang trạng thái bị từ chối. Giao diện chỉ cho duyệt để tránh gửi thao tác chắc chắn thất bại.",
     "revisionModes": {
       "AS_IS": "Tái bản nguyên trạng",
       "WITH_REVISION": "Tái bản có chỉnh sửa"
     },
-    "waitingMangaka": "Yêu cầu thuộc hợp đồng chia sẻ doanh thu và đang chờ Mangaka đồng ý.",
+    "waitingMangaka": "Yêu cầu thuộc hợp đồng chia sẻ doanh thu và đang chờ tác giả đồng ý.",
     "assignReviser": "Phân công người chỉnh sửa",
     "selectChapter": "Chọn chương tái bản",
     "chapter": "Chương tái bản {{number}}",
-    "selectReviser": "Chọn Mangaka chỉnh sửa",
-    "unknownMangaka": "Mangaka chưa xác định",
+    "selectReviser": "Chọn tác giả chỉnh sửa",
+    "unknownMangaka": "Tác giả chưa xác định",
     "internalReviserId": "Mã nhân sự của đội nội bộ",
     "reviserTypes": {
-      "OTHER_MANGAKA": "Mangaka khác",
+      "OTHER_MANGAKA": "Tác giả khác",
       "INTERNAL_TEAM": "Đội nội bộ"
     },
     "chapterStatuses": {
@@ -721,7 +756,7 @@
   },
   "transfers": {
     "unknownSeries": "Bộ truyện không còn khả dụng",
-    "unknownMangaka": "Không có thông tin Mangaka",
+    "unknownMangaka": "Không có thông tin tác giả",
     "types": {
       "FULL_TRANSFER": "Chuyển nhượng toàn bộ",
       "PARTIAL_TRANSFER": "Chuyển nhượng một phần"
@@ -747,15 +782,15 @@
     "signInstruction": "Nhập mã hợp đồng chuyển nhượng và xác nhận chữ ký bằng mã xác thực dùng một lần.",
     "signatureProgress": "Tiến độ ký hợp đồng chuyển nhượng",
     "boardAlreadySigned": "Hội đồng đã ký hợp đồng chuyển nhượng này.",
-    "awaitingMangakaSignatures": "Chữ ký Hội đồng bị khóa cho tới khi cả Mangaka chuyển giao và Mangaka tiếp nhận đã ký.",
+    "awaitingMangakaSignatures": "Chữ ký Hội đồng bị khóa cho tới khi cả tác giả chuyển giao và tác giả tiếp nhận đã ký.",
     "fullBuyoutHelp": "Hệ thống sẽ dùng quyết định Hội đồng đã gắn với yêu cầu. Hãy khai báo định giá và các mốc thanh toán cho hợp đồng thay thế.",
     "newContractConditions": "Điều kiện hợp đồng mới",
     "addCondition": "+ Thêm điều kiện",
     "removeLastCondition": "Bỏ điều kiện cuối",
     "missingDecisionLink": "Yêu cầu chưa có tham chiếu quyết định Hội đồng. Hãy tải lại sau khi sàng lọc hoặc nhờ biên tập viên kiểm tra quy trình.",
-    "replacementContractNextStep": "Điều kiện thanh toán đã được tạo trước khi ký. Hợp đồng thay thế đang chờ Mangaka và Hội đồng duyệt, ký tại khu vực Hợp đồng.",
+    "replacementContractNextStep": "Điều kiện thanh toán đã được tạo trước khi ký. Hợp đồng thay thế đang chờ tác giả và Hội đồng duyệt, ký tại khu vực Hợp đồng.",
     "openReplacementContracts": "Mở danh sách hợp đồng",
-    "transferContractSigningStep": "Hợp đồng chuyển nhượng đang chờ đủ chữ ký của hai Mangaka trước lượt ký Hội đồng.",
+    "transferContractSigningStep": "Hợp đồng chuyển nhượng đang chờ đủ chữ ký của hai tác giả trước lượt ký Hội đồng.",
     "openTransferContract": "Mở hợp đồng chuyển nhượng",
     "conditionTypes": {
       "CHAPTER_MILESTONE": "Mốc số chương",
@@ -764,8 +799,8 @@
       "TIME_BOUND": "Mốc theo thời hạn"
     },
     "signatureRoles": {
-      "MANGAKA_A": "Mangaka chuyển giao",
-      "MANGAKA_B": "Mangaka tiếp nhận",
+      "MANGAKA_A": "Tác giả chuyển giao",
+      "MANGAKA_B": "Tác giả tiếp nhận",
       "BOARD": "Đại diện Hội đồng"
     },
     "contractSummary": {
@@ -777,15 +812,15 @@
       "parties": "Các bên chuyển nhượng",
       "ownership": "Tỷ lệ sở hữu doanh thu mới",
       "publisher": "Nhà xuất bản",
-      "originalMangaka": "Mangaka ban đầu",
-      "newMangaka": "Mangaka mới",
-      "coOwnerRequired": "Mangaka ban đầu vẫn là đồng sở hữu và phải duyệt các chương về sau.",
+      "originalMangaka": "Tác giả ban đầu",
+      "newMangaka": "Tác giả mới",
+      "coOwnerRequired": "Tác giả ban đầu vẫn là đồng sở hữu và phải duyệt các chương về sau.",
       "coOwnerNotRequired": "Không yêu cầu đồng sở hữu duyệt chương sau chuyển nhượng."
     },
     "contractStatuses": {
       "DRAFT": "Bản nháp",
-      "A_SIGNED": "Mangaka chuyển giao đã ký",
-      "B_SIGNED": "Mangaka tiếp nhận đã ký",
+      "A_SIGNED": "Tác giả chuyển giao đã ký",
+      "B_SIGNED": "Tác giả tiếp nhận đã ký",
       "BOARD_SIGNED": "Hội đồng đã ký",
       "FULLY_EXECUTED": "Đã ký hoàn tất",
       "VOIDED": "Đã hủy hiệu lực"

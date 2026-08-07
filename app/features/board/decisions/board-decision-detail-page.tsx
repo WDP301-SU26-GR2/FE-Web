@@ -129,14 +129,13 @@ export function BoardDecisionDetailPage({
       )}
       <BoardHeader
         title={displayTitle}
-        description={`${typeLabel} · ${t('decisions.sessionLabel')}: ${sessionTitle}`}
       />
       {seriesBrief && (
         <BoardPanel title={t('sessions.seriesBrief.title')}>
           <SeriesMeetingBrief brief={seriesBrief} />
         </BoardPanel>
       )}
-      {decision.details && Object.keys(decision.details).length > 0 && <DecisionDetails details={decision.details} />}
+      {decision.details && Object.keys(decision.details).length > 0}
       {defense && <DefenseEvidence defense={defense} />}
       <BoardPanel title={t('decisions.progress')}>
         <div className='flex flex-wrap items-center justify-between gap-3'>
@@ -237,20 +236,6 @@ export function BoardDecisionDetailPage({
             {!reports.length && <p className='text-xs text-muted-foreground'>{t('reports.empty')}</p>}
           </div>
         </BoardPanel>
-        <BoardPanel title={t('decisions.votes')}>
-          <div className='space-y-2'>
-            {votes.map((vote, index) => (
-              <div
-                key={`${vote.voterId ?? 'vote'}-${index}`}
-                className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-xs'
-              >
-                <span>{vote.voterId}</span>
-                <StatusBadge value={vote.voteValue ?? 'ABSTAIN'} />
-              </div>
-            ))}
-            {!votes.length && <p className='text-xs text-muted-foreground'>{t('decisions.emptyVotes')}</p>}
-          </div>
-        </BoardPanel>
       </div>
       {reportOpen && (
         <CreateReportDialog
@@ -280,25 +265,6 @@ function DefenseEvidence({ defense }: { defense: DefenseDashboardResDtoOutput })
               : '—'
           }
         />
-      </dl>
-    </BoardPanel>
-  )
-}
-
-function DecisionDetails({ details }: { details: Record<string, unknown> }) {
-  const { t } = useTranslation('board')
-  return (
-    <BoardPanel title={t('decisions.details')}>
-      <dl className='grid gap-3 text-xs sm:grid-cols-2'>
-        {Object.entries(details).map(([key, value]) => (
-          <DecisionFact
-            key={key}
-            label={t(`decisions.detailFields.${key}`, { defaultValue: t('common.data') })}
-            value={formatDetailValue(value, t('common.yes'), t('common.no'), (item) =>
-              t(`common:businessData.values.${item}`, { defaultValue: item })
-            )}
-          />
-        ))}
       </dl>
     </BoardPanel>
   )
@@ -574,9 +540,7 @@ function CreateReportDialog({
         <label className={boardDecisionDetailFieldClass}>
           <span className={boardDecisionDetailFieldLabelClass}>{t('reports.reportType')}</span>
           <select className={boardInput} name='reportType' required defaultValue='DEFENSE'>
-            <option value='DEFENSE'>{t('reports.types.DEFENSE')}</option>
             <option value='PERFORMANCE'>{t('reports.types.PERFORMANCE')}</option>
-            <option value='LIFECYCLE'>{t('reports.types.LIFECYCLE')}</option>
           </select>
         </label>
         <fieldset className='grid gap-2'>
@@ -806,18 +770,6 @@ function formatFileSize(bytes: number) {
 function formatDate(value: string, locale: string) {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
-}
-
-function formatDetailValue(value: unknown, yesLabel: string, noLabel: string, valueLabel: (value: string) => string) {
-  if (value == null || value === '') return '—'
-  if (typeof value === 'boolean') return value ? yesLabel : noLabel
-  if (typeof value === 'object') {
-    return JSON.stringify(value, (_key, item: unknown) =>
-      typeof item === 'string' && /^[A-Z][A-Z0-9_]*$/.test(item) ? valueLabel(item) : item
-    )
-  }
-  if (typeof value === 'string' && /^[A-Z][A-Z0-9_]*$/.test(value)) return valueLabel(value)
-  return String(value)
 }
 
 function VoteDialog({ onClose }: { onClose: () => void }) {

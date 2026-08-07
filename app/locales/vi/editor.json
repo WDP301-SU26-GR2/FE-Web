@@ -217,7 +217,7 @@
     "approveTitle": "Duyệt đề xuất bộ truyện",
     "approveDescription": "Xác nhận đề xuất đã đáp ứng yêu cầu biên tập và sẵn sàng chuyển sang bước tiếp theo.",
     "revisionTitle": "Yêu cầu chỉnh sửa đề xuất",
-    "revisionDescription": "Nêu rõ nội dung Mangaka cần chỉnh sửa trước khi nộp lại đề xuất.",
+    "revisionDescription": "Nêu rõ nội dung tác giả cần chỉnh sửa trước khi nộp lại đề xuất.",
     "revisionReason": "Lý do yêu cầu chỉnh sửa",
     "revisionReasonHint": "Lý do sẽ được gửi cho tác giả khi bạn chọn yêu cầu chỉnh sửa.",
     "rejectTitle": "Từ chối ý tưởng",
@@ -298,12 +298,12 @@
   "publicationUx": {
     "summary": "Tổng quan hàng đợi xuất bản",
     "needsAction": "Cần biên tập viên xử lý",
-    "needsActionDescription": "Bản thảo đã được Mangaka nộp và đang chờ biên tập viên kiểm tra.",
+    "needsActionDescription": "Bản thảo đã được tác giả nộp và đang chờ biên tập viên kiểm tra.",
     "approved": "Đã duyệt, chờ phát hành",
     "approvedDescription": "Bản thảo đã qua bước duyệt của biên tập viên; kiểm tra hợp đồng hoặc chờ đồng sở hữu trước khi phát hành.",
     "emptyApproved": "Không có bản thảo đã duyệt nào đang chờ phát hành.",
     "inProgress": "Đang sản xuất",
-    "inProgressDescription": "Chương đang được Mangaka hoàn thiện hoặc chờ bên liên quan.",
+    "inProgressDescription": "Chương đang được tác giả hoàn thiện hoặc chờ bên liên quan.",
     "emptyInProgress": "Không có chương nào đang trong quá trình sản xuất.",
     "historyDescription": "Các chương đã hoàn tất phát hành."
   },
@@ -321,21 +321,21 @@
     "pagesBlocked": "Còn trang chưa được duyệt",
     "pagesBlockedDescription": "Có {{count}} trang chưa ở trạng thái hoàn tất. Hãy yêu cầu nộp lại bản thảo hoặc loại bỏ trang thừa trước khi xuất bản.",
     "endingPhaseContractBypass": "Chương kết thúc thuộc bộ truyện đang hoàn tất hoặc hủy nên được miễn kiểm tra điều kiện hợp đồng.",
-    "noActionAvailable": "Hiện chưa có thao tác duyệt dành cho biên tập viên ở bước này. Hệ thống sẽ cập nhật khi Mangaka hoặc đồng sở hữu hoàn tất phần việc.",
+    "noActionAvailable": "Hiện chưa có thao tác duyệt dành cho biên tập viên ở bước này. Hệ thống sẽ cập nhật khi tác giả hoặc đồng sở hữu hoàn tất phần việc.",
     "workflow": {
       "DRAFT": "Chờ hoàn thiện bản phác thảo",
       "IN_PRODUCTION": "Đang sản xuất trang",
       "EDITOR_REVIEW": "Duyệt bản thảo cuối",
-      "EDITOR_REVISION": "Đang chờ Mangaka sửa",
+      "EDITOR_REVISION": "Đang chờ tác giả sửa",
       "READY_FOR_PRINT": "Kiểm tra điều kiện xuất bản",
       "AWAITING_CO_OWNER_APPROVAL": "Chờ đồng sở hữu duyệt",
       "PUBLISHED": "Đã xuất bản"
     },
     "workflowDescription": {
-      "DRAFT": "Mangaka cần hoàn thiện và gửi bản phác thảo trước khi bắt đầu sản xuất trang.",
-      "IN_PRODUCTION": "Các trang và công việc đang được thực hiện; biên tập viên có thể theo dõi tiến độ và thời hạn. Khi tất cả trang đã hoàn thành, Mangaka sẽ nộp bản thảo để biên tập viên duyệt.",
+      "DRAFT": "Tác giả cần hoàn thiện và gửi bản phác thảo trước khi bắt đầu sản xuất trang.",
+      "IN_PRODUCTION": "Các trang và công việc đang được thực hiện; biên tập viên có thể theo dõi tiến độ và thời hạn. Khi tất cả trang đã hoàn thành, tác giả sẽ nộp bản thảo để biên tập viên duyệt.",
       "EDITOR_REVIEW": "Kiểm tra các trang ghép hoàn chỉnh, ghi chú phần cần sửa hoặc duyệt bản thảo.",
-      "EDITOR_REVISION": "Yêu cầu sửa đã được gửi; chờ Mangaka cập nhật và nộp lại.",
+      "EDITOR_REVISION": "Yêu cầu sửa đã được gửi; chờ tác giả cập nhật và nộp lại.",
       "READY_FOR_PRINT": "Bản thảo đã đạt yêu cầu; xác nhận hợp đồng trước khi xuất bản.",
       "AWAITING_CO_OWNER_APPROVAL": "Bản thảo đang chờ đồng sở hữu chấp thuận trước khi phát hành.",
       "PUBLISHED": "Chương đã phát hành và không còn thao tác duyệt."
@@ -798,7 +798,7 @@
     "subtitle": "Quản lý thời hạn, kỳ xếp hạng, vòng đời bộ truyện, tái bản, chuyển nhượng và phiên bản phát hành.",
     "lifecycle": "Xử lý vòng đời bộ truyện",
     "sales": "Doanh số truyện đóng tập",
-    "reviews": "Đánh giá Mangaka",
+    "reviews": "Đánh giá tác giả",
     "deadlines": "Thương lượng thời hạn",
     "surveys": "Kỳ bình chọn độc giả",
     "reprints": "Quy trình tái bản",
@@ -853,8 +853,8 @@
     "transferContractCreated": "Đã tạo hợp đồng chuyển nhượng.",
     "viewSignatureProgress": "Xem tiến độ ký",
     "transferSignatureRoles": {
-      "MANGAKA_A": "Mangaka chuyển giao",
-      "MANGAKA_B": "Mangaka tiếp nhận",
+      "MANGAKA_A": "Tác giả chuyển giao",
+      "MANGAKA_B": "Tác giả tiếp nhận",
       "BOARD": "Đại diện Hội đồng"
     },
     "coOwner": "Yêu cầu đồng sở hữu duyệt chương",
@@ -865,7 +865,7 @@
     "defense": "Bảng điều khiển bảo vệ bộ truyện",
     "versionList": "Các phiên bản phát hành",
     "deadlineList": "Các yêu cầu thay đổi thời hạn",
-    "rating": "Điểm Mangaka (1-5)",
+    "rating": "Điểm tác giả (1-5)",
     "comment": "Nhận xét đánh giá",
     "selectDeadlineRequest": "Chọn yêu cầu đổi thời hạn",
     "selectSeries": "Chọn bộ truyện",
@@ -900,7 +900,7 @@
     "deadlineSelectRequest": "Chọn một yêu cầu để xem chi tiết và thao tác phù hợp.",
     "deadlineAffectsSlot": "Thời hạn này ảnh hưởng vị trí xuất bản; sau khi hai bên đồng ý, yêu cầu phải được Hội đồng duyệt.",
     "deadlineNoSlotImpact": "Thời hạn này không ảnh hưởng vị trí xuất bản và biên tập viên có thể chốt sau khi hai bên đồng ý.",
-    "deadlineWaitingMangaka": "Đang chờ Mangaka phản hồi đề xuất gần nhất.",
+    "deadlineWaitingMangaka": "Đang chờ tác giả phản hồi đề xuất gần nhất.",
     "deadlineWaitingBoard": "Yêu cầu đang chờ Hội đồng phân xử; biên tập viên không còn thao tác thương lượng.",
     "deadlineFinalizeBoardWarning": "Khi chốt, yêu cầu sẽ chuyển sang Hội đồng vì thời hạn ảnh hưởng vị trí xuất bản.",
     "deadlineFinalizeDirectWarning": "Khi chốt, thời hạn mới sẽ được áp dụng trực tiếp vào lịch của chương.",
@@ -909,15 +909,15 @@
     "deadlineDialogs": {
       "createDeadline": {
         "title": "Tạo đề xuất thời hạn",
-        "description": "Nhập thời hạn mới và lý do để bắt đầu thương lượng với Mangaka."
+        "description": "Nhập thời hạn mới và lý do để bắt đầu thương lượng với tác giả."
       },
       "counterDeadline": {
         "title": "Đề xuất thời hạn khác",
-        "description": "Phản hồi Mangaka bằng một thời hạn thay thế và lý do rõ ràng."
+        "description": "Phản hồi tác giả bằng một thời hạn thay thế và lý do rõ ràng."
       },
       "agreeDeadline": {
         "title": "Đồng ý thời hạn",
-        "description": "Xác nhận đồng ý với thời hạn mà Mangaka đề xuất gần nhất."
+        "description": "Xác nhận đồng ý với thời hạn mà tác giả đề xuất gần nhất."
       },
       "rejectDeadline": {
         "title": "Chuyển Hội đồng phân xử",
@@ -929,11 +929,11 @@
       },
       "finalizeDeadline": {
         "title": "Chốt thỏa thuận thời hạn",
-        "description": "Hoàn tất thỏa thuận sau khi cả biên tập viên và Mangaka đã đồng ý."
+        "description": "Hoàn tất thỏa thuận sau khi cả biên tập viên và tác giả đã đồng ý."
       }
     },
     "reviewSeriesOwner": "Bộ truyện liên quan (không bắt buộc)",
-    "selectSeriesFirst": "Chọn Mangaka trước để xem các bộ truyện của họ.",
+    "selectSeriesFirst": "Chọn tác giả trước để xem các bộ truyện của họ.",
     "selectMangaka": "Chọn tác giả",
     "keepCurrent": "Giữ giá trị hiện tại",
     "selectPublicationVersion": "Chọn phiên bản xuất bản",
@@ -946,7 +946,7 @@
       "UNDER_REVIEW": "Đã qua Hội đồng · cần xác nhận bước xử lý",
       "REJECTED_BY_BOARD": "Hội đồng đã từ chối",
       "NEGOTIATING": "Đang thương lượng",
-      "REJECTED_BY_ORIGINAL_MANGAKA": "Mangaka ban đầu đã từ chối",
+      "REJECTED_BY_ORIGINAL_MANGAKA": "Tác giả ban đầu đã từ chối",
       "PROPOSED": "Đã gửi đề xuất",
       "ACCEPTED": "Đã chấp thuận",
       "REJECTED": "Đã từ chối",
@@ -957,26 +957,26 @@
     },
     "ownershipSplit": "Tỷ lệ sở hữu doanh thu mới",
     "publisherShare": "Nhà xuất bản (%)",
-    "originalMangakaShare": "Mangaka ban đầu (%)",
-    "newMangakaShare": "Mangaka mới (%)",
+    "originalMangakaShare": "Tác giả ban đầu (%)",
+    "newMangakaShare": "Tác giả mới (%)",
     "ownershipHint": "Tổng ba tỷ lệ phải bằng chính xác 100%.",
     "transferLoadHint": "Mở yêu cầu hoặc hợp đồng chuyển nhượng để xem đúng bước nghiệp vụ và các thao tác hiện có.",
     "transferRequestIdPlaceholder": "Nhập mã yêu cầu chuyển nhượng",
-    "transferRequestIdHint": "Chọn từ danh sách được phân công hoặc nhập mã yêu cầu để mở trực tiếp.",
+    "transferRequestIdHint": "Chọn từ danh sách được phân công để mở trực tiếp.",
     "allTransferStatuses": "Tất cả trạng thái",
     "assignedTransferRequests": "Yêu cầu chuyển nhượng được phân công",
     "noAssignedTransfers": "Không có yêu cầu chuyển nhượng phù hợp.",
-    "transferAwaitingBoardDecision": "Yêu cầu mới chỉ được Mangaka gửi và đang chờ quyết định chuyển nhượng của Hội đồng. Biên tập viên có thể chuẩn bị phiên họp và báo cáo, nhưng chưa được bắt đầu thương lượng hoặc tạo hợp đồng.",
-    "transferNegotiatingHint": "Đang chờ Mangaka ban đầu đồng ý hoặc từ chối đề nghị. Biên tập viên chưa cần thực hiện thêm thao tác.",
-    "transferStartHint": "Chỉ bắt đầu thương lượng sau khi Hội đồng sàng lọc. Yêu cầu sẽ được chuyển tới Mangaka ban đầu để lấy sự đồng thuận.",
-    "transferAcceptedHint": "Chỉ tạo hợp đồng khi đã xác nhận Mangaka ban đầu đồng ý. Hãy kiểm tra điều khoản thương mại trước khi tiếp tục.",
+    "transferAwaitingBoardDecision": "Yêu cầu mới chỉ được tác giả gửi và đang chờ quyết định chuyển nhượng của Hội đồng. Biên tập viên có thể chuẩn bị phiên họp và báo cáo, nhưng chưa được bắt đầu thương lượng hoặc tạo hợp đồng.",
+    "transferNegotiatingHint": "Đang chờ tác giả ban đầu đồng ý hoặc từ chối đề nghị. Biên tập viên chưa cần thực hiện thêm thao tác.",
+    "transferStartHint": "Chỉ bắt đầu thương lượng sau khi Hội đồng sàng lọc. Yêu cầu sẽ được chuyển tới tác giả ban đầu để lấy sự đồng thuận.",
+    "transferAcceptedHint": "Chỉ tạo hợp đồng khi đã xác nhận tác giả ban đầu đồng ý. Hãy kiểm tra điều khoản thương mại trước khi tiếp tục.",
     "transferStagePrompt": "Chọn bước hiện tại của yêu cầu",
     "transferStagePlaceholder": "Chọn thao tác cần thực hiện",
     "transferStageScreened": "Mới được Hội đồng duyệt — bắt đầu thương lượng",
-    "transferStageConsented": "Mangaka ban đầu đã đồng ý — tạo hợp đồng",
-    "transferStageTemporaryHint": "Đây là bước xác nhận tạm thời vì hệ thống đang dùng cùng trạng thái đang xem xét trước và sau khi Mangaka đồng ý.",
-    "partialTransferHint": "Chuyển nhượng một phần giữ Mangaka ban đầu làm đồng sở hữu và yêu cầu họ duyệt các chương về sau.",
-    "fullTransferHint": "Chuyển nhượng toàn bộ đưa tỷ lệ của Mangaka ban đầu về 0% và không yêu cầu duyệt đồng sở hữu về sau.",
+    "transferStageConsented": "Tác giả ban đầu đã đồng ý — tạo hợp đồng",
+    "transferStageTemporaryHint": "Đây là bước xác nhận tạm thời vì hệ thống đang dùng cùng trạng thái đang xem xét trước và sau khi tác giả đồng ý.",
+    "partialTransferHint": "Chuyển nhượng một phần giữ tác giả ban đầu làm đồng sở hữu và yêu cầu họ duyệt các chương về sau.",
+    "fullTransferHint": "Chuyển nhượng toàn bộ đưa tỷ lệ của tác giả ban đầu về 0% và không yêu cầu duyệt đồng sở hữu về sau.",
     "transferContractSummary": {
       "title": "Điều khoản hợp đồng chuyển nhượng",
       "editorDescription": "Kiểm tra điều khoản thương mại đã tạo và tiến độ chữ ký trước khi liên hệ các bên.",
@@ -985,7 +985,7 @@
       "amount": "Giá trị chuyển nhượng",
       "parties": "Các bên chuyển nhượng",
       "ownership": "Tỷ lệ sở hữu doanh thu mới",
-      "coOwnerRequired": "Mangaka ban đầu vẫn là đồng sở hữu và phải duyệt các chương về sau.",
+      "coOwnerRequired": "Tác giả ban đầu vẫn là đồng sở hữu và phải duyệt các chương về sau.",
       "coOwnerNotRequired": "Không yêu cầu đồng sở hữu duyệt chương sau chuyển nhượng."
     },
     "transferTypes": {
@@ -994,8 +994,8 @@
     },
     "transferContractStatuses": {
       "DRAFT": "Bản nháp",
-      "A_SIGNED": "Mangaka chuyển giao đã ký",
-      "B_SIGNED": "Mangaka tiếp nhận đã ký",
+      "A_SIGNED": "Tác giả chuyển giao đã ký",
+      "B_SIGNED": "Tác giả tiếp nhận đã ký",
       "BOARD_SIGNED": "Hội đồng đã ký",
       "FULLY_EXECUTED": "Đã ký hoàn tất",
       "VOIDED": "Đã hủy hiệu lực"
@@ -1107,25 +1107,25 @@
     "noReprints": "Chưa có yêu cầu tái bản.",
     "selectReprint": "Chọn yêu cầu tái bản",
     "selectReprintChapter": "Chọn chương trong yêu cầu tái bản",
-    "selectReviser": "Chọn Mangaka chỉnh sửa",
+    "selectReviser": "Chọn tác giả chỉnh sửa",
     "internalReviserId": "Mã người phụ trách thuộc đội nội bộ",
     "unknownSeries": "Bộ truyện không còn khả dụng",
     "unknownChapter": "Chương không còn khả dụng",
-    "unknownMangaka": "Mangaka không còn khả dụng",
+    "unknownMangaka": "Tác giả không còn khả dụng",
     "revisionModes": {
       "AS_IS": "Tái bản nguyên trạng",
       "WITH_REVISION": "Tái bản có chỉnh sửa"
     },
     "reviserTypes": {
       "INTERNAL_TEAM": "Đội ngũ nội bộ",
-      "OTHER_MANGAKA": "Mangaka khác"
+      "OTHER_MANGAKA": "Tác giả khác"
     },
     "reprintStatuses": {
       "PENDING": "Đang chờ xử lý",
       "PROPOSED": "Đã đề xuất",
-      "MANGAKA_REVIEW": "Mangaka đang xem xét",
-      "MANGAKA_APPROVED": "Mangaka đã đồng ý",
-      "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
+      "MANGAKA_REVIEW": "Tác giả đang xem xét",
+      "MANGAKA_APPROVED": "Tác giả đã đồng ý",
+      "REJECTED_BY_MANGAKA": "Tác giả đã từ chối",
       "BOARD_APPROVED": "Hội đồng đã duyệt",
       "APPROVED": "Đã duyệt",
       "IN_PRODUCTION": "Đang sản xuất",
@@ -1139,7 +1139,7 @@
       "APPROVED": "Đã duyệt",
       "PUBLISHED": "Đã phát hành"
     },
-    "reprintAsIsReviewHint": "Tái bản nguyên trạng: duyệt trực tiếp chương gốc, không yêu cầu Mangaka nộp bản thảo mới.",
+    "reprintAsIsReviewHint": "Tái bản nguyên trạng: duyệt trực tiếp chương gốc, không yêu cầu tác giả nộp bản thảo mới.",
     "reprintRevisionReviewHint": "Tái bản có chỉnh sửa: hãy mở và kiểm tra bản thảo đã nộp trước khi duyệt hoặc yêu cầu sửa.",
     "reprintUsesOriginalChapter": "Yêu cầu này sử dụng chương gốc nên không có bản thảo thay thế.",
     "startTransferSection": "Bắt đầu thương lượng chuyển nhượng",
@@ -1151,9 +1151,9 @@
     "back": "Quay lại bàn vận hành",
     "open": "Mở chức năng",
     "descriptions": {
-      "lifecycle": "Quản lý trạng thái bộ truyện, doanh số truyện đóng tập và đánh giá Mangaka.",
+      "lifecycle": "Quản lý trạng thái bộ truyện, doanh số truyện đóng tập và đánh giá tác giả.",
       "sales": "Ghi nhận doanh số truyện đóng tập theo tập và kỳ báo cáo.",
-      "reviews": "Đánh giá hiệu quả làm việc của Mangaka và có thể gắn đánh giá với một bộ truyện của họ.",
+      "reviews": "Đánh giá hiệu quả làm việc của tác giả và có thể gắn đánh giá với một bộ truyện của họ.",
       "deadlines": "Tạo và xử lý các phiên thương lượng thời hạn của chương.",
       "surveys": "Theo dõi kỳ bình chọn độc giả, phiếu ngoại tuyến và bảng xếp hạng.",
       "reprints": "Tạo yêu cầu tái bản, duyệt chương và phân công người chỉnh sửa.",
@@ -1263,7 +1263,7 @@
     "createVersion": "Tạo phiên bản phát hành",
     "updateVersion": "Cập nhật phiên bản phát hành",
     "load": "Tải dữ liệu",
-    "reviewMangaka": "Đánh giá Mangaka",
+    "reviewMangaka": "Đánh giá tác giả",
     "addVoteRow": "Thêm bộ truyện khác",
     "markAllRead": "Đánh dấu đã đọc tất cả",
     "markRead": "Đánh dấu đã đọc",
@@ -1322,7 +1322,7 @@
     "approveReprintChapter": "Đã duyệt chương tái bản thành công.",
     "requestReprintRevision": "Đã gửi yêu cầu sửa chương tái bản.",
     "assignReviser": "Đã phân công người sửa bản tái bản thành công.",
-    "reviewMangaka": "Đã gửi đánh giá Mangaka thành công.",
+    "reviewMangaka": "Đã gửi đánh giá tác giả thành công.",
     "tankobon": "Đã cập nhật số liệu bản in thành công.",
     "createSurvey": "Đã tạo kỳ bình chọn thành công.",
     "surveyStatus": "Đã cập nhật trạng thái kỳ bình chọn thành công.",
@@ -1360,7 +1360,7 @@
     "reviewStarted": "Không thể nhả hồ sơ vì quá trình xét duyệt đã bắt đầu.",
     "notAssigned": "Bạn không phải biên tập viên phụ trách nội dung này.",
     "invalidState": "Trạng thái hiện tại không cho phép thao tác này.",
-    "transferInvalidState": "Yêu cầu chuyển nhượng đã đổi trạng thái. Chỉ có thể tạo hợp đồng sau khi Mangaka gốc đồng ý.",
+    "transferInvalidState": "Yêu cầu chuyển nhượng đã đổi trạng thái. Chỉ có thể tạo hợp đồng sau khi tác giả gốc đồng ý.",
     "transferRevenueShareOnly": "Chỉ yêu cầu có hợp đồng gốc chia sẻ doanh thu mới dùng quy trình hợp đồng chuyển nhượng ba bên.",
     "transferAccessDenied": "Bạn không phải Editor phụ trách yêu cầu chuyển nhượng này.",
     "transferRequestNotFound": "Không tìm thấy yêu cầu chuyển nhượng hoặc yêu cầu không còn khả dụng.",
@@ -1409,7 +1409,7 @@
     "deadlineNotCounterparty": "Hiện chưa đến lượt biên tập viên phản hồi đề xuất này.",
     "reprintDownloadFailed": "Không thể mở bản thảo tái bản. Vui lòng thử lại.",
     "payoutRequired": "Chỉ nhập một kiểu chi trả: số tiền nguyên từ 1 đến 1.000.000.000.000 hoặc phần trăm nguyên từ 1 đến 100.",
-    "paymentConditionRequired": "Cần ít nhất một điều kiện thanh toán hợp lệ trước khi gửi hợp đồng cho Mangaka.",
+    "paymentConditionRequired": "Cần ít nhất một điều kiện thanh toán hợp lệ trước khi gửi hợp đồng cho tác giả.",
     "paymentConditionLocked": "Không thể thay đổi điều kiện thanh toán sau khi hợp đồng đã được gửi đi duyệt.",
     "invalidChapterRange": "Khoảng chương không hợp lệ. Chương kết thúc phải lớn hơn hoặc bằng chương bắt đầu."
   }

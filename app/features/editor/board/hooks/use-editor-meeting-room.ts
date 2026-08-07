@@ -45,7 +45,16 @@ export function useEditorMeetingRoom({
 }) {
   const [phase, setPhase] = useState(initialPhase)
   const [messages, setMessages] = useState(initialMessages)
-  const [baseDecisions, setBaseDecisions] = useState(initialDecisions)
+  const [baseDecisions, setBaseDecisions] = useState<BoardDecisionResDtoOutput[]>(initialDecisions)
+  const [decisionDetailsMap, setDecisionDetailsMap] = useState<Record<string, BoardDecisionResDtoOutput>>(() => {
+    const map: Record<string, BoardDecisionResDtoOutput> = {}
+    initialDecisions.forEach((decision) => {
+      if (decision.id) {
+        map[decision.id] = decision
+      }
+    })
+    return map
+  })
   const [updates, setUpdates] = useState<Record<string, VoteProgress>>({})
   const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected'>(() =>
     readStorage(STORAGE_KEYS.accessToken) ? 'connecting' : 'disconnected'
@@ -76,25 +85,32 @@ export function useEditorMeetingRoom({
         if (session?.status === 200) setPhase(readBoardSessionPhase(session.data))
         if (messageResponse?.status === 200) setMessages(messageResponse.data.items)
         if (decisionResponse?.status === 200) {
-          const details = await Promise.all(
-            decisionResponse.data.map(async (item) => {
-              const response = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
-              return response?.status === 200 ? response.data : null
-            })
-          )
-          setBaseDecisions(details.filter((item): item is BoardDecisionResDtoOutput => item != null))
+          const decisionsList = decisionResponse.data
+          const detailsMap: Record<string, BoardDecisionResDtoOutput> = {}
+          decisionsList.forEach((decision) => {
+            if (decision.id) {
+              detailsMap[decision.id] = decision as BoardDecisionResDtoOutput
+            }
+          })
+          setBaseDecisions(decisionsList as BoardDecisionResDtoOutput[])
+          setDecisionDetailsMap((prev) => ({ ...prev, ...detailsMap }))
         }
       } finally {
         resyncInFlightRef.current = false
       }
     }
+    let lastResyncTime = 0
     const requestResync = () => {
-      if (resyncTimerRef.current != null) return
+      const now = Date.now()
+      if (now - lastResyncTime < 5000) return // Cooldown 5s
+      if (resyncTimerRef.current != null) return // Đã có timer đang chờ
+      lastResyncTime = now
       resyncTimerRef.current = window.setTimeout(() => {
         resyncTimerRef.current = null
         void resync()
-      }, 300)
+      }, 1000)
     }
+    const handleFocus = () => requestResync()
     const flushRealtimeUpdates = () => {
       flushTimerRef.current = null
       const nextMessages = pendingMessagesRef.current
@@ -118,12 +134,12 @@ export function useEditorMeetingRoom({
       flushTimerRef.current = window.setTimeout(flushRealtimeUpdates, 300)
     }
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') void resync()
+      if (document.visibilityState === 'visible') requestResync()
     }
     socket.on('connect', () => {
       setConnectionState('connected')
       joinBoardSession(socket, sessionId, () => setConnectionState('disconnected'))
-      void resync()
+      requestResync()
     })
     socket.on('disconnect', () => setConnectionState('disconnected'))
     socket.on('connect_error', () => setConnectionState('disconnected'))
@@ -154,7 +170,7 @@ export function useEditorMeetingRoom({
       }
       scheduleRealtimeFlush()
     })
-    window.addEventListener('focus', resync)
+    window.addEventListener('focus', handleFocus)
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
       if (resyncTimerRef.current != null) window.clearTimeout(resyncTimerRef.current)
@@ -164,7 +180,7 @@ export function useEditorMeetingRoom({
       pendingMessagesRef.current = []
       pendingPhaseRef.current = null
       pendingVoteUpdatesRef.current = {}
-      window.removeEventListener('focus', resync)
+      window.removeEventListener('focus', handleFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       socketRef.current = null
       socket.disconnect()
@@ -178,23 +194,45 @@ export function useEditorMeetingRoom({
   const updatePhase = useCallback((nextPhase: BoardSessionPhase) => setPhase(nextPhase), [])
   const addDecision = useCallback((decision: BoardDecisionResDtoOutput) => {
     setBaseDecisions((current) => (current.some((item) => item.id === decision.id) ? current : [...current, decision]))
+    setDecisionDetailsMap((prev) => {
+      if (decision.id) {
+        return { ...prev, [decision.id]: decision }
+      }
+      return prev
+    })
   }, [])
+  const loadDecisionDetail = useCallback(async (decisionId: string) => {
+    const cached = decisionDetailsMap[decisionId]
+    if (cached) return cached
+    const response = await boardControllerGetDecisionDetails({ id: decisionId }).catch(() => null)
+    if (response?.status === 200) {
+      const detail = response.data
+      setDecisionDetailsMap((prev) => ({ ...prev, [decisionId]: detail }))
+      return detail
+    }
+    return null
+  }, [decisionDetailsMap])
   const refreshDecisions = useCallback(async () => {
     const response = await boardControllerGetDecisions({ boardSessionId: sessionId }).catch(() => null)
     if (response?.status === 200) {
-      const details = await Promise.all(
-        response.data.map(async (item) => {
-          const detail = await boardControllerGetDecisionDetails({ id: item.id }).catch(() => null)
-          return detail?.status === 200 ? detail.data : null
-        })
-      )
-      setBaseDecisions(details.filter((item): item is BoardDecisionResDtoOutput => item != null))
+      const decisionsList = response.data
+      const detailsMap: Record<string, BoardDecisionResDtoOutput> = {}
+      decisionsList.forEach((decision) => {
+        if (decision.id) {
+          detailsMap[decision.id] = decision as BoardDecisionResDtoOutput
+        }
+      })
+      setBaseDecisions(decisionsList as BoardDecisionResDtoOutput[])
+      setDecisionDetailsMap((prev) => ({ ...prev, ...detailsMap }))
     }
   }, [sessionId])
 
-  const decisions = useMemo(
-    () => baseDecisions.map((decision) => (updates[decision.id] ? { ...decision, ...updates[decision.id] } : decision)),
-    [baseDecisions, updates]
-  )
-  return { phase, messages, decisions, connectionState, sendMessage, updatePhase, addDecision, refreshDecisions }
+  const decisions = useMemo(() => {
+    return baseDecisions.map((decision) => {
+      const cached = decisionDetailsMap[decision.id]
+      const base = cached ?? decision
+      return updates[decision.id] ? { ...base, ...updates[decision.id] } : base
+    })
+  }, [baseDecisions, decisionDetailsMap, updates])
+  return { phase, messages, decisions, connectionState, sendMessage, updatePhase, addDecision, loadDecisionDetail, refreshDecisions }
 }

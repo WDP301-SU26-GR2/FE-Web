@@ -74,7 +74,7 @@ export function EditorBoardMeetingRoomPage({
   })
   const { updatePhase } = meeting
   const isCreator = manageAll || session.creatorId === authSession?.user.id
-  const canChat = allowChat && session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase !== 'VOTING'
+  const canChat = allowChat && session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'QA'
   const canPrepareSession =
     isCreator &&
     (session.status === BoardSessionResDtoOutputStatus.UPCOMING ||
@@ -158,7 +158,7 @@ export function EditorBoardMeetingRoomPage({
                 </button>
               </fetcher.Form>
             )}
-            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'PRESENTING' && (
+            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'PRESENTING' && meeting.decisions.length > 0 && (
               <fetcher.Form method='post'>
                 <input type='hidden' name='intent' value='advancePhase' />
                 <button
@@ -171,7 +171,7 @@ export function EditorBoardMeetingRoomPage({
                 </button>
               </fetcher.Form>
             )}
-            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'QA' && (
+            {session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'QA' && meeting.decisions.length > 0 && (
               <fetcher.Form method='post'>
                 <input type='hidden' name='intent' value='advancePhase' />
                 <button
@@ -208,6 +208,14 @@ export function EditorBoardMeetingRoomPage({
             <MessageSquareText className='size-5 text-primary' />
             {t('board.meeting.chat')}
           </h2>
+          <div className='mt-3 flex flex-wrap items-center gap-3 text-xs'>
+            <span className='flex items-center gap-1.5'>
+              <span className='rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary'>{t('board.meeting.senderRoles.editor')}</span>
+            </span>
+            <span className='flex items-center gap-1.5'>
+              <span className='rounded-full bg-secondary px-2 py-0.5 font-semibold text-secondary-foreground'>{t('board.meeting.senderRoles.boardMember')}</span>
+            </span>
+          </div>
           <div className='mt-4 max-h-[28rem] space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-3'>
             {meeting.messages.map((message) => {
               const isEditor = message.sender.id === session.creatorId
@@ -495,7 +503,7 @@ function AddSessionDecisionDialog({
               </option>
               {availableTransferRequests.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.series?.title ?? item.seriesId} · {item.id}
+                  {item.series?.title ?? item.seriesId}
                 </option>
               ))}
             </select>
