@@ -393,7 +393,7 @@
     "sessionDescription": "Set the meeting schedule and manually choose the Board members who will join.",
     "sessionRulesTitle": "System recommendation",
     "sessionSystemRosterNotice": "Choose a series as context, then manually choose the Board members who will join.",
-    "sessionManualRosterNotice": "Select exactly {{required}}/{{total}} Board members according to the system configuration. The roster must be valid before creating the session.",
+    "sessionManualRosterNotice": "Select exactly {{quorumMin}} Board members according to the system configuration. The roster must be valid before creating the session.",
     "noEligibleSeriesForSession": "No series is available to provide context for a Board session.",
     "rosterSourceSeries": "Series used for roster suggestions",
     "rosterSourceSeriesHint": "The series only provides genre context for roster selection and does not limit decisions added to the session.",
@@ -490,6 +490,11 @@
       "chatPlaceholder": "Write a message...",
       "chatLocked": "Discussion is locked during voting.",
       "unknownMember": "Board member",
+      "senderRoles": {
+        "editor": "Editor",
+        "boardMember": "Board Member",
+        "unknown": "Unknown"
+      },
       "decisionAgendaHint": "Serialization and series lifecycle voting items are prepared directly inside this session.",
       "addDecisionTitle": "Add a voting item",
       "addDecisionDescription": "Select a decision type and its series. The form only shows the information required for that decision type.",

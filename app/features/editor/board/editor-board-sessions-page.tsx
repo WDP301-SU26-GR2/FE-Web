@@ -198,7 +198,8 @@ function CreateSessionDialog({
   useEffect(() => {
     if (!rosterSourceSeriesId) return
     let active = true
-    boardControllerSuggestMembers({ seriesId: rosterSourceSeriesId })
+    const suggestedSize = boardConfig?.boardTotalMembers
+    boardControllerSuggestMembers({ seriesId: rosterSourceSeriesId, size: suggestedSize })
       .then((res) => {
         if (!active) return
         setSuggestedMembers(res.data?.items ?? [])
@@ -212,7 +213,7 @@ function CreateSessionDialog({
     return () => {
       active = false
     }
-  }, [rosterSourceSeriesId])
+  }, [rosterSourceSeriesId, boardConfig?.boardTotalMembers])
 
   function toggleMember(memberId: string) {
     setSelectedMemberIds((current) => {
@@ -244,8 +245,7 @@ function CreateSessionDialog({
           </div>
           <p className='mt-2 text-xs leading-5'>
             {t('board.sessionManualRosterNotice', {
-              required: rosterSize || 0,
-              total: boardConfig?.boardTotalMembers ?? suggestedMembers.length
+              quorumMin: boardConfig?.quorumMin || 0
             })}
           </p>
         </aside>
