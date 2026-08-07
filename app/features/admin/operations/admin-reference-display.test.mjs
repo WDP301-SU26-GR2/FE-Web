@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { getEligibleSeriesForScope, isValidSurveyTransition } from './admin-reference-display.ts'
+import {
+  getEligibleSeriesForScope,
+  getSeriesStatusTranslationKey,
+  isValidSurveyTransition
+} from './admin-reference-display.ts'
 
 test('keeps only eligible series matching the selected magazine and cadence', () => {
   const items = [
@@ -19,4 +23,8 @@ test('allows only the documented survey lifecycle transitions', () => {
   assert.equal(isValidSurveyTransition('OPEN', 'CLOSED'), true)
   assert.equal(isValidSurveyTransition('CLOSED', 'OPEN'), false)
   assert.equal(isValidSurveyTransition('REFLECTED', 'CLOSED'), false)
+})
+
+test('uses the admin dashboard series status catalog for work status labels', () => {
+  assert.equal(getSeriesStatusTranslationKey('SERIALIZED'), 'dashboard.seriesStatuses.SERIALIZED')
 })

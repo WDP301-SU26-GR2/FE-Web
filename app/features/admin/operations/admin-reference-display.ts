@@ -17,3 +17,7 @@ export function isValidSurveyTransition(currentStatus: string, nextStatus: strin
     (currentStatus === 'OPEN' && nextStatus === 'CLOSED')
   )
 }
+
+export function getSeriesStatusTranslationKey(status: string) {
+  return `dashboard.seriesStatuses.${status}`
+}
