@@ -2,17 +2,13 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import {
-  seriesControllerFranchiseConsent,
-  seriesControllerProposeCompletion,
-  seriesControllerUpdateSeriesMetadata
-} from '~/api/operations/series/series'
+import { seriesControllerFranchiseConsent, seriesControllerUpdateSeriesMetadata } from '~/api/operations/series/series'
 import type { SeriesResDtoOutput, UpdateSeriesMetadataBodyDto } from '~/api/model/series'
 import { isFetchError } from '~/api/mutator/custom-fetch'
 import { extractApiErrorCode, extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 import { uploadToR2 } from '~/shared/lib/upload/upload-to-r2'
 
-export type SeriesLifecycleAction = 'metadata' | 'franchiseConsent' | 'completion' | null
+export type SeriesLifecycleAction = 'metadata' | 'franchiseConsent' | null
 
 export type SeriesMetadataInput = {
   title?: string
@@ -30,10 +26,6 @@ type UseSeriesLifecycleResult = {
   activeAction: SeriesLifecycleAction
   updateMetadata: (seriesId: string, input: SeriesMetadataInput) => Promise<SeriesResDtoOutput | null>
   giveFranchiseConsent: (seriesId: string, approve: boolean) => Promise<SeriesResDtoOutput | null>
-  proposeCompletion: (
-    seriesId: string,
-    input: { reason: string; proposedEndingChapters?: number }
-  ) => Promise<SeriesResDtoOutput | null>
 }
 
 /**
@@ -136,46 +128,5 @@ export function useSeriesLifecycle(): UseSeriesLifecycleResult {
     [activeAction, t]
   )
 
-  const proposeCompletion = useCallback(
-    async (seriesId: string, input: { reason: string; proposedEndingChapters?: number }) => {
-      if (!seriesId || activeAction) return null
-
-      setActiveAction('completion')
-      try {
-        const response = await seriesControllerProposeCompletion(
-          { id: seriesId },
-          {
-            reason: input.reason,
-            ...(input.proposedEndingChapters === undefined
-              ? {}
-              : { proposedEndingChapters: input.proposedEndingChapters })
-          }
-        )
-        toast.success(t('seriesDetail.lifecycle.completion.success'))
-        return response.data as SeriesResDtoOutput
-      } catch (error: unknown) {
-        if (isFetchError(error)) {
-          if (error.status === 403) {
-            toast.error(t('seriesDetail.lifecycle.completion.errorPermission'))
-            return null
-          }
-          if (error.status === 404) {
-            toast.error(t('seriesDetail.lifecycle.completion.errorNotFound'))
-            return null
-          }
-          if (error.status === 409) {
-            toast.error(t('seriesDetail.lifecycle.completion.errorNotAvailable'))
-            return null
-          }
-        }
-        toast.error(extractSafeApiMessage(error, t('seriesDetail.lifecycle.completion.errorGeneric')))
-        return null
-      } finally {
-        setActiveAction(null)
-      }
-    },
-    [activeAction, t]
-  )
-
-  return { activeAction, updateMetadata, giveFranchiseConsent, proposeCompletion }
+  return { activeAction, updateMetadata, giveFranchiseConsent }
 }

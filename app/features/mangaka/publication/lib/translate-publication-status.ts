@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+
 type Translate = (key: string) => string
 
 const STORYBOARD_STATUS_KEYS: Record<string, string> = {
@@ -32,4 +34,11 @@ export function translatePageStatus(status: string | null | undefined, t: Transl
 export function translateProductionStageName(name: string, t: Translate): string {
   const key = PRODUCTION_STAGE_NAME_KEYS[name]
   return key ? t(key) : name
+}
+
+export function formatProductionStageOption(order: number, name: string, t: TFunction<'mangaka'>): string {
+  return t('studio.tasks.composer.stageOption', {
+    order,
+    name: translateProductionStageName(name, t)
+  })
 }
