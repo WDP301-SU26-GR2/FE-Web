@@ -1,7 +1,9 @@
 {
   "common": {
     "notAvailable": "Chưa có dữ liệu",
-    "data": "Dữ liệu"
+    "data": "Dữ liệu",
+    "cancel": "Hủy",
+    "loading": "Đang tải..."
   },
   "navigation": {
     "backDashboard": "Quay lại tổng quan quản trị"
@@ -194,6 +196,7 @@
         "submit": "Cấp mật khẩu mới"
       }
     },
+    "cannotModifyAdminNotice": "Tài khoản Quản trị viên cấp cao không thể bị thao tác bởi một Quản trị viên khác. Liên hệ bộ phận kỹ thuật nếu thực sự cần thay đổi.",
     "temporaryPassword": {
       "label": "Mật khẩu tạm cho địa chỉ {{email}}",
       "notice": "Hãy sao chép ngay. Mật khẩu này không thể xem lại sau khi tải lại trang."
@@ -263,6 +266,14 @@
     "app": {
       "title": "Tham số nghiệp vụ",
       "description": "Các ngưỡng vận hành dùng chung; thay đổi có thể cần tối đa 30 giây để bộ nhớ đệm máy chủ làm mới.",
+      "sections": {
+        "workflow": "Quy trình",
+        "review": "Xem xét & Hạn chót",
+        "quality": "Chất lượng & Uy tín",
+        "ranking": "Xếp hạng",
+        "upload": "Tải lên",
+        "assignment": "Phân công"
+      },
       "coOwnerApprovalGraceDays": "Thời gian chờ đồng sở hữu duyệt chương",
       "storyboardMaxReviewRounds": "Số vòng duyệt bản phác thảo tối đa",
       "boardRepClaimGraceDays": "Thời hạn nhận làm đại diện",
@@ -285,6 +296,11 @@
     "voting": {
       "title": "Cấu hình bình chọn độc giả",
       "description": "Kiểm soát mã xác thực dùng một lần, phép xác minh chống tự động, giới hạn tần suất và điều kiện kích hoạt chống gian lận.",
+      "sections": {
+        "auth": "Xác thực",
+        "otp": "Cài đặt OTP",
+        "rateLimit": "Giới hạn tần suất"
+      },
       "authMode": "Phương thức xác thực",
       "authModes": {
         "OTP": "Mã xác thực dùng một lần",
@@ -357,7 +373,8 @@
         "allResolutionStates": "Tất cả tình trạng xử lý"
       },
       "revisionTypes": {
-        "PROPOSAL": "Đề xuất bộ truyện",
+      "PROPOSAL": "Đề xuất bộ truyện",
+      "STORYBOARD": "Bản phác thảo",
         "NAME": "Bản phác thảo ",
         "MANUSCRIPT": "Bản thảo",
         "TASK": "Công việc sản xuất"
@@ -411,7 +428,67 @@
     "surveys": {
       "title": "Kỳ bình chọn độc giả",
       "description": "Tạo kỳ bình chọn theo tạp chí/số phát hành, điều khiển trạng thái, nhập phiếu ngoại tuyến và chốt bảng xếp hạng.",
-      "adminOnly": "Thao tác dành riêng cho Quản trị viên cấp cao"
+      "adminOnly": "Thao tác dành riêng cho Quản trị viên cấp cao",
+      "create": "Tạo kỳ bình chọn",
+      "createHelp": "Đặt tạp chí, ngày tháng và các bộ truyện đủ điều kiện cho kỳ bình chọn mới.",
+      "open": "Mở bình chọn",
+      "close": "Đóng bình chọn",
+      "finalize": "Chốt xếp hạng",
+      "empty": "Chưa có kỳ bình chọn nào.",
+      "issueNumber": "Số kỳ",
+      "startDate": "Ngày bắt đầu",
+      "endDate": "Ngày kết thúc",
+      "magazine": "Tạp chí",
+      "publicationType": "Nhịp phát hành",
+      "eligibleSeries": "Bộ truyện đủ điều kiện",
+      "workspaceTitle": "Điều phối kỳ bình chọn",
+      "workspaceDescription": "Chọn đúng tạp chí và nhịp phát hành để hệ thống tải danh sách bộ truyện đủ điều kiện.",
+      "period": "Thời gian bình chọn",
+      "seriesUnit": "bộ truyện",
+      "seriesInPeriod": "Bộ truyện trong kỳ",
+      "viewDetails": "Xem dữ liệu kỳ",
+      "selectMagazine": "Chọn tạp chí",
+      "selectPublicationType": "Chọn nhịp phát hành",
+      "eligibleSeriesHelp": "Danh sách được lấy trực tiếp từ API theo đúng tạp chí và nhịp đã chọn.",
+      "loadingEligibleSeries": "Đang tải bộ truyện đủ điều kiện...",
+      "eligibleSeriesError": "Không thể tải danh sách bộ truyện. Vui lòng thử lại.",
+      "noEligibleSeries": "Không có bộ truyện đủ điều kiện trong phạm vi này.",
+      "status": "Trạng thái",
+      "detailsTitle": "Dữ liệu kỳ bình chọn số {{issue}}",
+      "detailsDescription": "Theo dõi phạm vi, phiếu nhập ngoại tuyến và kết quả xếp hạng của kỳ.",
+      "importTitle": "Nhập phiếu ngoại tuyến",
+      "importDescription": "Nhập số phiếu từ postcard hoặc nguồn ngoại tuyến cho từng bộ truyện trong snapshot của kỳ.",
+      "voteCount": "Số phiếu",
+      "import": "Nhập phiếu",
+      "rankingTitle": "Kết quả xếp hạng",
+      "resultUnit": "kết quả",
+      "voteUnit": "phiếu",
+      "noRanking": "Kỳ này chưa có dữ liệu xếp hạng.",
+      "importHistory": "Lịch sử nhập phiếu",
+      "importUnit": "lần nhập",
+      "readerVotes": "Phiếu độc giả",
+      "surveyStatuses": {
+        "DRAFT": "Bản nháp",
+        "OPEN": "Đang mở bình chọn",
+        "CLOSED": "Đã đóng bình chọn",
+        "REFLECTED": "Đã công bố xếp hạng"
+      }
+    },
+    "magazineSurvey": {
+      "pagination": "Trang {{page}} / {{pageCount}}",
+      "previous": "Trước",
+      "next": "Tiếp",
+      "title": "Quản lý Tạp chí & Bình chọn",
+      "subtitle": "Quản lý danh mục tạp chí và các kỳ bình chọn độc giả cho nền tảng.",
+      "description": "Quản lý danh mục tạp chí và các kỳ bình chọn độc giả cho nền tảng.",
+      "loadError": "Không thể tải dữ liệu. Vui lòng thử lại.",
+      "tabs": {
+        "magazines": "Danh mục tạp chí",
+        "surveys": "Kỳ bình chọn"
+      },
+      "magazine": "Tạp chí",
+      "publicationTypes": "Nhịp phát hành",
+      "actions": "Thao tác"
     },
     "publicationVersions": {
       "title": "Phiên bản xuất bản",
@@ -423,6 +500,8 @@
       "IRREGULAR": "Không định kỳ"
     },
     "reference": {
+      "slotWorkspaceTitle": "Hiệu chỉnh slot trong kỳ bình chọn",
+      "slotWorkspaceDescription": "Chọn tác phẩm trong ngữ cảnh kỳ bình chọn để sửa tạp chí, số kỳ và nhịp phát hành.",
       "title": "Dữ liệu tham chiếu vận hành",
       "description": "Quản lý danh mục tạp chí và mở từng trang tra cứu tham chiếu vận hành riêng.",
       "backPrevious": "Quay lại trang trước",
@@ -466,6 +545,7 @@
       },
       "series": "Hồ sơ bảo vệ và xu hướng xếp hạng",
       "seriesHelp": "Mở một bộ truyện và dữ liệu phác thảo đề xuất liên quan để đối chiếu hiệu suất.",
+      "seriesStatus": "Trạng thái của tác phẩm",
       "selectSeries": "Chọn bộ truyện",
       "seriesNameId": "Mã bản phác thảo đề xuất (không bắt buộc)",
       "chapter": "Tham chiếu tiến độ chương",
@@ -504,6 +584,70 @@
         "transferRequest": "Yêu cầu chuyển nhượng",
         "transferContract": "Hợp đồng chuyển nhượng",
         "transferSignatures": "Chữ ký chuyển nhượng"
+      },
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo tên hoặc bút danh...",
+      "prev": "Trước",
+      "next": "Tiếp",
+      "pageOf": "Trang {{current}} / {{total}}",
+      "noMangakas": "Không tìm thấy tác giả nào.",
+      "noAssistants": "Không tìm thấy trợ lý nào.",
+      "recommended": "Đề xuất",
+      "reputation": "Uy tín",
+      "rating": "Đánh giá",
+      "email": "Email",
+      "phone": "Điện thoại",
+      "availability": {
+        "AVAILABLE": "Sẵn sàng",
+        "BUSY": "Bận",
+        "ON_LEAVE": "Nghỉ phép",
+        "UNAVAILABLE": "Không khả dụng"
+      },
+      "specs": {
+        "BACKGROUND": "Nền",
+        "SCREENTONE": "Screentone",
+        "EFFECT_LINES": "Đường nét hiệu ứng",
+        "INKING": "Tô mực",
+        "COLORING": "Tô màu",
+        "LETTERING": "Chữ"
+      },
+      "levels": {
+        "JUNIOR": "Mới vào",
+        "MID": "Trung cấp",
+        "SENIOR": "Cao cấp"
+      },
+      "genres": {
+        "ACTION": "Hành động",
+        "ADVENTURE": "Phiêu lưu",
+        "COMEDY": "Hài hước",
+        "DRAMA": "Tâm lý",
+        "FANTASY": "Kỳ ảo",
+        "HORROR": "Kinh dị",
+        "MYSTERY": "Bí ẩn",
+        "ROMANCE": "Lãng mạn",
+        "SCI_FI": "Khoa học viễn tưởng",
+        "SLICE_OF_LIFE": "Đời thường",
+        "SPORTS": "Thể thao",
+        "SUPERNATURAL": "Siêu nhiên",
+        "THRILLER": "Giật gân",
+        "HISTORICAL": "Lịch sử",
+        "ISEKAI": "Dị giới",
+        "MECHA": "Robot",
+        "PSYCHOLOGICAL": "Tâm lý"
+      },
+      "profile": {
+        "view": "Xem hồ sơ",
+        "close": "Đóng",
+        "bio": "Giới thiệu",
+        "portfolio": "Hồ sơ năng lực",
+        "availability": "Tình trạng nhận việc",
+        "availableFrom": "Nhận việc từ",
+        "availableTo": "Nhận việc đến",
+        "noBio": "Chưa có giới thiệu.",
+        "noPortfolio": "Chưa có tệp hồ sơ năng lực.",
+        "loadError": "Không thể tải hồ sơ người dùng. Vui lòng thử lại.",
+        "mangakaTitle": "Hồ sơ Mangaka",
+        "assistantTitle": "Hồ sơ trợ lý"
       }
     },
     "workspace": {
@@ -612,6 +756,7 @@
       "BOARD_SESSION": "Phiên họp Hội đồng"
     },
     "actions": {
+      "unknown": "Hành động không xác định",
       "CREATE": "Đã tạo",
       "UPDATE": "Đã cập nhật",
       "DELETE": "Đã xóa",

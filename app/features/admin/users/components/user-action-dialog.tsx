@@ -31,6 +31,7 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
   const Icon = ACTION_ICON[action]
   const isSubmitting = fetcher.state !== 'idle'
   const submitted = useRef(false)
+  const isTargetAdmin = user.role === 'SUPER_ADMIN'
 
   useEffect(() => {
     if (fetcher.state !== 'idle') submitted.current = true
@@ -72,6 +73,15 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
           <input type='hidden' name='userId' value={user.id} />
           <input type='hidden' name='userEmail' value={user.email} />
 
+          {isTargetAdmin && (
+            <div
+              role='alert'
+              className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs leading-relaxed text-destructive'
+            >
+              {t('users.cannotModifyAdminNotice')}
+            </div>
+          )}
+
           <p className='text-xs leading-relaxed text-muted-foreground'>{t(`users.dialogs.${action}.description`)}</p>
 
           {action === 'status' && (
@@ -111,8 +121,14 @@ export function UserActionDialog({ selection, fetcher, onClose }: UserActionDial
             </button>
             <button
               type='submit'
+<<<<<<< HEAD
               disabled={isSubmitting}
               className={`${modalButtonClass} bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`}
+=======
+              disabled={isSubmitting || isTargetAdmin}
+              title={isTargetAdmin ? t('users.cannotModifyAdminNotice') : undefined}
+              className='rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+>>>>>>> cef4f21789faf7511d8522666f5db7065d0b67bd
             >
               {isSubmitting ? t('users.actions.processing') : t(`users.dialogs.${action}.submit`)}
             </button>
