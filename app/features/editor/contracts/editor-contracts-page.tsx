@@ -37,7 +37,9 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const [contractType, setContractType] = useState<CreateContractBodyDtoContractType>(
     CreateContractBodyDtoContractType.REVENUE_SHARE
   )
-  const [valuationAmount, setValuationAmount] = useState(0)
+  const [valuationInput, setValuationInput] = useState('')
+
+  const valuationAmount = valuationInput === '' ? null : Number(valuationInput)
   const [publisherOwnershipPct, setPublisherOwnershipPct] = useState(50)
   const [mangakaOwnershipPct, setMangakaOwnershipPct] = useState(50)
   const [contractStart, setContractStart] = useState('')
@@ -65,7 +67,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const selectedSession = data.sessions.find((session) => session.id === selectedDecision?.boardSessionId)
   const ownershipValid = ownershipIsValid(contractType, publisherOwnershipPct, mangakaOwnershipPct)
   const datesValid = contractDatesAreValid(contractStart, contractEnd)
-  const valuationValid = contractValuationIsValid(valuationAmount)
+  const valuationValid = valuationAmount !== null && contractValuationIsValid(valuationAmount)
   const contractStatuses = [...new Set(data.contracts.map((contract) => contract.status))]
   const filteredContracts = data.contracts.filter((contract) => {
     const contractSeries = data.series.find((item) => item.id === contract.seriesId)
@@ -218,8 +220,10 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 max={CONTRACT_FIELD_LIMITS.moneyMaximum}
                 step={1}
                 required
-                value={valuationAmount}
-                onChange={(event) => setValuationAmount(Number(event.target.value))}
+                value={valuationInput}
+                onChange={(event) => {
+                  setValuationInput(event.target.value)
+                }}
                 className={inputClass}
               />
               <MoneyInWords amount={valuationAmount} locale={i18n.language} />
