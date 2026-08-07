@@ -11,6 +11,7 @@ import { TaskAttachmentUploader } from './task-attachment-uploader'
 import type { UseTaskComposerDataOptions } from '../use-task-composer-data'
 import { useTaskComposerData } from '../use-task-composer-data'
 import type { CreateTaskBodyDtoTaskType } from '~/api/model/task'
+import { formatProductionStageOption } from '~/features/mangaka/publication/lib/translate-publication-status'
 
 export interface AssignTaskDialogProps {
   open: boolean
@@ -289,12 +290,7 @@ function AssignTaskDialogBody({
                     <>
                       <dt className='font-medium text-foreground'>{t('studio.tasks.composer.confirm.stage')}</dt>
                       <dd className='text-foreground'>
-                        {selectedStage
-                          ? t('studio.tasks.composer.stageOption', {
-                              order: selectedStage.order,
-                              name: selectedStage.name
-                            })
-                          : '—'}
+                        {selectedStage ? formatProductionStageOption(selectedStage.order, selectedStage.name, t) : '—'}
                       </dd>
                     </>
                   )}

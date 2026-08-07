@@ -12,7 +12,7 @@
     },
     "assistantDirectory": {
       "title": "Danh bạ trợ lý",
-      "description": "Tìm và mời trợ lý cộng tác cho series của bạn."
+      "description": "Tìm và mời trợ lý cộng tác cho bộ truyện của bạn."
     },
     "deadlines": {
       "title": "Yêu cầu gia hạn",
@@ -28,7 +28,7 @@
     },
     "franchiseConsent": {
       "title": "Đồng thuận nhượng quyền",
-      "description": "Xem và phản hồi yêu cầu đồng thuận cho series phái sinh."
+      "description": "Xem và phản hồi yêu cầu đồng thuận cho bộ truyện phái sinh."
     },
     "myStudio": {
       "title": "Xưởng vẽ của tôi",
@@ -40,19 +40,19 @@
     },
     "payments": {
       "title": "Tài chính",
-      "description": "Theo dõi thu nhập và các khoản thanh toán theo series của bạn."
+      "description": "Theo dõi thu nhập và các khoản thanh toán theo bộ truyện của bạn."
     },
     "proposeSeries": {
-      "title": "Đề xuất series mới",
-      "description": "Tạo và gửi đề xuất series mới."
+      "title": "Đề xuất bộ truyện mới",
+      "description": "Tạo và gửi đề xuất bộ truyện mới."
     },
     "rankings": {
       "title": "Bảng xếp hạng",
-      "description": "Xem xếp hạng độc giả công khai và xếp hạng hội đồng cho series của bạn."
+      "description": "Xem xếp hạng độc giả công khai và xếp hạng hội đồng cho bộ truyện của bạn."
     },
     "seriesDetail": {
-      "title": "Chi tiết series",
-      "description": "Quản lý series, chương truyện và vòng đời xuất bản."
+      "title": "Chi tiết bộ truyện",
+      "description": "Quản lý bộ truyện, chương truyện và vòng đời xuất bản."
     },
     "studioOverview": {
       "title": "Tổng quan sản xuất",
@@ -60,11 +60,11 @@
     },
     "seriesEdit": {
       "title": "Chỉnh sửa đề xuất",
-      "description": "Cập nhật đề xuất series còn cho phép chỉnh sửa."
+      "description": "Cập nhật đề xuất bộ truyện còn cho phép chỉnh sửa."
     },
     "series": {
       "title": "Bộ truyện của tôi",
-      "description": "Quản lý các đề xuất và series đã xuất bản của bạn."
+      "description": "Quản lý các đề xuất và bộ truyện đã xuất bản của bạn."
     }
   },
   "dashboard": {
@@ -79,15 +79,15 @@
     "openReview": "Xem phản hồi",
     "weeklyRankings": "Bảng xếp hạng tuần",
     "viewAnalyticsReport": "Xem báo cáo chi tiết",
-    "activeSeries": "Series đang hoạt động",
+    "activeSeries": "Bộ truyện đang hoạt động",
     "actionInbox": "Hộp thư hành động",
     "noCriticalDeadlines": "Không có deadline nguy cơ nào",
-    "noActiveSeries": "Chưa có series đang sản xuất",
+    "noActiveSeries": "Chưa có bộ truyện đang sản xuất",
     "noRankings": "Chưa có dữ liệu xếp hạng",
     "noDeadline": "Không có hạn",
     "deadline": "Hạn: {{date}}",
     "refresh": "Làm mới",
-    "viewAllSeries": "Xem tất cả series",
+    "viewAllSeries": "Xem tất cả bộ truyện",
     "loadError": "Không tải được dashboard",
     "studio": {
       "subtitleDraft": "Bản nháp",
@@ -103,14 +103,14 @@
       "notifications": "{{count}} thông báo chưa đọc",
       "notificationsDesc": "Cập nhật từ Biên tập viên, Hội đồng và hệ thống",
       "revisions": "{{count}} yêu cầu sửa đổi mở",
-      "revisionsDesc": "Biên tập viên đã yêu cầu chỉnh sửa hồ sơ series hoặc bản thảo",
+      "revisionsDesc": "Biên tập viên đã yêu cầu chỉnh sửa hồ sơ bộ truyện hoặc bản thảo",
       "allClear": "Mọi thứ đã xong",
       "allClearDesc": "Không có hành động nào đang chờ"
     }
   },
   "assistantDirectory": {
     "title": "Danh bạ trợ lý",
-    "subtitle": "Tìm và mời trợ lý cộng tác cho series của bạn.",
+    "subtitle": "Tìm và mời trợ lý cộng tác cho bộ truyện của bạn.",
     "filters": {
       "specialization": "Chuyên môn",
       "all": "Tất cả"
@@ -164,9 +164,9 @@
       "dialogTitle": "Mời {{name}} cộng tác",
       "dialogDescription": "Gửi lời mời cộng tác — trợ lý sẽ chấp nhận để bạn giao nhiệm vụ. Khoảng thuê phải ở tương lai và kết thúc sau ngày bắt đầu.",
       "close": "Đóng",
-      "seriesLabel": "Series (tuỳ chọn)",
-      "seriesNone": "Không gắn với series cụ thể",
-      "seriesHint": "BE không kiểm tra quyền sở hữu series khi gửi invite — chỉ là metadata.",
+      "seriesLabel": "Bộ truyện (tuỳ chọn)",
+      "seriesNone": "Không gắn với bộ truyện cụ thể",
+      "seriesHint": "BE không kiểm tra quyền sở hữu bộ truyện khi gửi lời mời — chỉ là metadata.",
       "hireStartLabel": "Bắt đầu thuê",
       "hireEndLabel": "Kết thúc thuê",
       "taskTypesLabel": "Loại công việc",
@@ -215,7 +215,7 @@
       "description": "Xem hồ sơ công khai, danh mục dự án và uy tín của các Mangaka đồng nghiệp."
     },
     "title": "Danh bạ Mangaka",
-    "subtitle": "Khám phá các tác giả đồng nghiệp để hợp tác franchise và xem hồ sơ nghề nghiệp công khai của họ.",
+    "subtitle": "Khám phá các tác giả đồng nghiệp để hợp tác nhượng quyền và xem hồ sơ nghề nghiệp công khai của họ.",
     "filters": {
       "search": "Tên hoặc bút danh",
       "searchPlaceholder": "Tìm Mangaka",
@@ -322,7 +322,7 @@
     },
     "card": {
       "unknownAssistant": "Trợ lý không xác định",
-      "noSeries": "Không có ngữ cảnh series",
+      "noSeries": "Không có ngữ cảnh bộ truyện",
       "hireWindow": "{{from}} – {{to}}"
     },
     "actions": {
@@ -340,7 +340,7 @@
       "loadFailed": "Không thể tải chi tiết lời mời này. Vui lòng thử lại.",
       "unavailable": "Chi tiết lời mời này không còn khả dụng.",
       "assistant": "Trợ lý",
-      "series": "Series",
+      "series": "Bộ truyện",
       "hireWindow": "Thời gian cộng tác",
       "createdAt": "Thời điểm gửi",
       "taskTypes": "Phạm vi công việc",
@@ -374,7 +374,7 @@
   },
   "myStudio": {
     "title": "Xưởng vẽ",
-    "subtitle": "Theo dõi các trợ lý đang/đã cộng tác cho series của bạn.",
+    "subtitle": "Theo dõi các trợ lý đang/đã cộng tác cho bộ truyện của bạn.",
     "filters": {
       "status": "Trạng thái",
       "all": "Tất cả",
@@ -384,8 +384,8 @@
       "unnamedAssistant": "Trợ lý chưa đặt tên",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
-      "seriesNone": "Không gắn với series cụ thể",
-      "series": "Series: {{title}}",
+      "seriesNone": "Không gắn với bộ truyện cụ thể",
+      "series": "Bộ truyện: {{title}}",
       "terminatedReason": "Lý do: {{reason}}",
       "noReason": "Không ghi lý do",
       "ended": "Kết thúc {{date}}",
@@ -450,13 +450,13 @@
   },
   "mySeries": {
     "title": "Bộ truyện của tôi",
-    "subtitle": "Quản lý tất cả series truyện của bạn",
-    "proposeNewSeries": "Tạo hồ sơ series mới",
+    "subtitle": "Quản lý tất cả bộ truyện truyện của bạn",
+    "proposeNewSeries": "Tạo hồ sơ bộ truyện mới",
     "newChapter": "Chương mới",
-    "activeSeries": "Series đang hoạt động",
+    "activeSeries": "Bộ truyện đang hoạt động",
     "published": "Đã xuất bản",
     "hiatus": "Tạm ngưng",
-    "series": "Series",
+    "series": "Bộ truyện",
     "status": "Trạng thái",
     "chapters": "Chương",
     "createdAt": "Ngày tạo",
@@ -466,19 +466,19 @@
     "delete": "Xóa",
     "showing": "Hiển thị",
     "of": "trong",
-    "seriesCount": "series",
-    "actionsMenu": "Thao tác với series",
+    "seriesCount": "bộ truyện",
+    "actionsMenu": "Thao tác với bộ truyện",
     "previousPage": "Trang trước",
     "nextPage": "Trang sau",
     "stats": {
-      "scopeNote": "Số liệu dựa trên trang hiện tại, không phải toàn bộ series."
+      "scopeNote": "Số liệu dựa trên trang hiện tại, không phải toàn bộ bộ truyện."
     },
     "empty": {
-      "title": "Bạn chưa có series nào",
-      "description": "Hãy tạo hồ sơ series đầu tiên để gửi lên ban biên tập xét duyệt."
+      "title": "Bạn chưa có bộ truyện nào",
+      "description": "Hãy tạo hồ sơ bộ truyện đầu tiên để gửi lên ban biên tập xét duyệt."
     },
     "error": {
-      "loadFailed": "Không thể tải danh sách series. Vui lòng thử lại.",
+      "loadFailed": "Không thể tải danh sách bộ truyện. Vui lòng thử lại.",
       "retry": "Thử lại"
     },
     "pagination": {
@@ -501,16 +501,16 @@
     }
   },
   "seriesDetail": {
-    "title": "Series Detail",
-    "subtitle": "Xem thông tin hồ sơ series và các trang bản phác khung truyện mẫu",
+    "title": "Bộ truyện Detail",
+    "subtitle": "Xem thông tin hồ sơ bộ truyện và các trang bản phác khung truyện mẫu",
     "back": "Về Bộ truyện của tôi",
     "loading": "Đang tải...",
     "editProposal": {
-      "button": "Sửa hồ sơ series",
-      "title": "Sửa hồ sơ series",
-      "subtitle": "Cập nhật các trường của hồ sơ series. Giữ nguyên trường nào thì trường đó không đổi.",
-      "notEditableTitle": "Không thể sửa hồ sơ series",
-      "notEditableDescription": "Chỉ sửa được hồ sơ series khi series đang ở DRAFT hoặc khi hồ sơ series đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
+      "button": "Sửa hồ sơ bộ truyện",
+      "title": "Sửa hồ sơ bộ truyện",
+      "subtitle": "Cập nhật các trường của hồ sơ bộ truyện. Giữ nguyên trường nào thì trường đó không đổi.",
+      "notEditableTitle": "Không thể sửa hồ sơ bộ truyện",
+      "notEditableDescription": "Chỉ sửa được hồ sơ bộ truyện khi bộ truyện đang ở DRAFT hoặc khi hồ sơ bộ truyện đang ở trạng thái chờ bạn chỉnh sửa (PROPOSAL_REVISION).",
       "sectionBasic": "Thông tin cơ bản",
       "sectionSynopsis": "Tóm tắt cốt truyện",
       "sectionCharacters": "Thiết kế nhân vật",
@@ -527,34 +527,34 @@
       "removeExistingCharacter": "Xoá ảnh thiết kế nhân vật này",
       "removeExistingCharacterConfirm": "Xoá ảnh thiết kế nhân vật này? Ảnh sẽ bị xoá khi bạn lưu.",
       "markForRemoval": "Đã đánh dấu xoá",
-      "loading": "Đang tải hồ sơ series...",
-      "loadFailed": "Không thể tải hồ sơ series.",
+      "loading": "Đang tải hồ sơ bộ truyện...",
+      "loadFailed": "Không thể tải hồ sơ bộ truyện.",
       "retry": "Thử lại",
-      "success": "Đã cập nhật hồ sơ series.",
+      "success": "Đã cập nhật hồ sơ bộ truyện.",
       "nameSuccess": "Đã cập nhật các trang bản phác khung truyện mẫu.",
       "nameErrorGeneric": "Không thể cập nhật bản phác khung truyện mẫu. Vui lòng thử lại.",
-      "nameMissing": "Không tìm thấy bản phác khung truyện mẫu của hồ sơ series. Hãy tải lại series rồi thử lại.",
+      "nameMissing": "Không tìm thấy bản phác khung truyện mẫu của hồ sơ bộ truyện. Hãy tải lại bộ truyện rồi thử lại.",
       "nameConflict": "Bản phác khung truyện mẫu không còn sửa được ở trạng thái hiện tại.",
-      "errorGeneric": "Không thể cập nhật hồ sơ series. Vui lòng thử lại.",
-      "errorConflict": "Hồ sơ series này không còn sửa được (trạng thái đã đổi).",
-      "errorPermission": "Bạn chỉ có thể sửa hồ sơ series của chính mình.",
-      "errorNotFound": "Series không còn tồn tại. Hãy tải lại danh sách series.",
+      "errorGeneric": "Không thể cập nhật hồ sơ bộ truyện. Vui lòng thử lại.",
+      "errorConflict": "Hồ sơ bộ truyện này không còn sửa được (trạng thái đã đổi).",
+      "errorPermission": "Bạn chỉ có thể sửa hồ sơ bộ truyện của chính mình.",
+      "errorNotFound": "Bộ truyện không còn tồn tại. Hãy tải lại danh sách bộ truyện.",
       "unsavedChangesTitle": "Bỏ các thay đổi chưa lưu?",
       "unsavedChangesDescription": "Bạn có những thay đổi chưa lưu — chúng sẽ bị mất nếu rời trang.",
       "unsavedChangesLeave": "Rời trang",
       "unsavedChangesStay": "Ở lại",
-      "back": "Về trang series"
+      "back": "Về trang bộ truyện"
     },
     "lifecycle": {
       "metadata": {
-        "button": "Sửa thông tin series",
-        "dialogTitle": "Sửa thông tin series",
-        "dialogDescription": "Cập nhật tiêu đề, tóm tắt và hình ảnh công khai của series.",
+        "button": "Sửa thông tin bộ truyện",
+        "dialogTitle": "Sửa thông tin bộ truyện",
+        "dialogDescription": "Cập nhật tiêu đề, tóm tắt và hình ảnh công khai của bộ truyện.",
         "titleLabel": "Tiêu đề",
-        "titleRequired": "Vui lòng nhập tiêu đề series.",
+        "titleRequired": "Vui lòng nhập tiêu đề bộ truyện.",
         "titleTooLong": "Tiêu đề tối đa 200 ký tự.",
         "synopsisLabel": "Tóm tắt",
-        "synopsisPlaceholder": "Thêm hoặc cập nhật phần tóm tắt công khai của series.",
+        "synopsisPlaceholder": "Thêm hoặc cập nhật phần tóm tắt công khai của bộ truyện.",
         "synopsisTooLong": "Tóm tắt tối đa 5.000 ký tự.",
         "coverLabel": "Ảnh bìa",
         "chooseCover": "Chọn ảnh bìa",
@@ -570,55 +570,31 @@
         "cancel": "Hủy",
         "confirm": "Lưu thông tin",
         "submitting": "Đang lưu...",
-        "success": "Đã cập nhật thông tin series.",
-        "errorPermission": "Bạn không có quyền sửa series này.",
-        "errorNotFound": "Series này không còn tồn tại.",
-        "errorNotEditable": "Series này không thể chỉnh sửa nữa.",
-        "errorConflict": "Thông tin series đã được thay đổi ở nơi khác. Hãy tải lại và thử lại.",
-        "errorGeneric": "Không thể cập nhật thông tin series. Vui lòng thử lại."
+        "success": "Đã cập nhật thông tin bộ truyện.",
+        "errorPermission": "Bạn không có quyền sửa bộ truyện này.",
+        "errorNotFound": "Bộ truyện này không còn tồn tại.",
+        "errorNotEditable": "Bộ truyện này không thể chỉnh sửa nữa.",
+        "errorConflict": "Thông tin bộ truyện đã được thay đổi ở nơi khác. Hãy tải lại và thử lại.",
+        "errorGeneric": "Không thể cập nhật thông tin bộ truyện. Vui lòng thử lại."
       },
       "franchise": {
-        "title": "Đang chờ đồng ý franchise",
-        "description": "Một series liên quan cần quyết định của bạn trước khi Mangaka có thể nộp duyệt.",
+        "title": "Đang chờ đồng ý nhượng quyền",
+        "description": "Một bộ truyện liên quan cần quyết định của bạn trước khi Mangaka có thể nộp duyệt.",
         "approve": "Đồng ý",
         "reject": "Từ chối",
-        "approveDialogTitle": "Đồng ý series franchise này?",
+        "approveDialogTitle": "Đồng ý bộ truyện nhượng quyền này?",
         "approveDialogDescription": "Cho phép {{title}} được nộp duyệt khi Mangaka sẵn sàng.",
-        "rejectDialogTitle": "Từ chối series franchise này?",
+        "rejectDialogTitle": "Từ chối bộ truyện nhượng quyền này?",
         "rejectDialogDescription": "{{title}} vẫn thuộc về Mangaka của họ, nhưng không thể được nộp duyệt.",
-        "decisionHint": "Quyết định áp dụng cho yêu cầu đồng ý hiện tại. Series không bị xóa trong cả hai trường hợp.",
+        "decisionHint": "Quyết định áp dụng cho yêu cầu đồng ý hiện tại. Bộ truyện không bị xóa trong cả hai trường hợp.",
         "cancel": "Hủy",
         "submitting": "Đang lưu...",
-        "approveSuccess": "Đã đồng ý franchise.",
-        "rejectSuccess": "Đã từ chối franchise.",
-        "errorPermission": "Chỉ Mangaka của series gốc mới có thể đưa ra quyết định này.",
-        "errorNotFound": "Series này không còn tồn tại.",
-        "errorNoLongerPending": "Yêu cầu đồng ý franchise này không còn chờ xử lý.",
-        "errorGeneric": "Không thể lưu quyết định franchise. Vui lòng thử lại."
-      },
-      "completion": {
-        "button": "Đề xuất kết thúc",
-        "dialogTitle": "Đề xuất kết thúc tự nhiên",
-        "dialogDescription": "Gửi đề xuất kết thúc {{title}} đến biên tập viên phụ trách.",
-        "flowHint": "Thao tác này không kết thúc series ngay. Biên tập viên sẽ xem xét đề xuất và quyết định vòng đời tiếp theo.",
-        "reasonLabel": "Lý do kết thúc",
-        "reasonPlaceholder": "Giải thích vì sao series đã sẵn sàng khép lại.",
-        "reasonRequired": "Vui lòng nhập lý do kết thúc.",
-        "endingChaptersLabel": "Chương kết thúc dự kiến (không bắt buộc)",
-        "endingChaptersPlaceholder": "Ví dụ: 24",
-        "endingChaptersHint": "Đây chỉ là ước tính để lập kế hoạch; không tạo hoặc đóng chương.",
-        "endingChaptersInvalid": "Vui lòng nhập số chương nguyên dương.",
-        "cancel": "Hủy",
-        "confirm": "Gửi đề xuất",
-        "submitting": "Đang gửi...",
-        "success": "Đã gửi đề xuất kết thúc đến biên tập viên.",
-        "errorPermission": "Bạn không có quyền đề xuất kết thúc series này.",
-        "errorNotFound": "Series này không còn tồn tại.",
-        "errorNotAvailable": "Chỉ có thể đề xuất kết thúc khi series đang SERIALIZED hoặc HIATUS.",
-        "errorGeneric": "Không thể gửi đề xuất kết thúc. Vui lòng thử lại.",
-        "proposedTitle": "Đã gửi đề xuất kết thúc",
-        "noEndingChapter": "Chưa có ước tính chương cuối",
-        "endingChaptersValue": "Chương cuối dự kiến: {{count}}"
+        "approveSuccess": "Đã đồng ý nhượng quyền.",
+        "rejectSuccess": "Đã từ chối nhượng quyền.",
+        "errorPermission": "Chỉ Mangaka của bộ truyện gốc mới có thể đưa ra quyết định này.",
+        "errorNotFound": "Bộ truyện này không còn tồn tại.",
+        "errorNoLongerPending": "Yêu cầu đồng ý nhượng quyền này không còn chờ xử lý.",
+        "errorGeneric": "Không thể lưu quyết định nhượng quyền. Vui lòng thử lại."
       }
     },
     "demographic": "Nhóm độc giả",
@@ -635,7 +611,7 @@
       "round": "Vòng {{round}}",
       "openDrawer": "Xem yêu cầu chỉnh sửa",
       "target": {
-        "PROPOSAL": "Hồ sơ series",
+        "PROPOSAL": "Hồ sơ bộ truyện",
         "STORYBOARD": "Bản phác khung truyện",
         "MANUSCRIPT": "Bản thảo",
         "TASK": "Nhiệm vụ"
@@ -649,7 +625,7 @@
       "resolveSuccess": "Đã đánh dấu hoàn tất yêu cầu chỉnh sửa.",
       "resolveError": "Không thể cập nhật yêu cầu chỉnh sửa. Vui lòng thử lại.",
       "drawer": {
-        "subtitle": "Các vòng yêu cầu chỉnh sửa hồ sơ series, bản phác thảo và bản thảo của series này",
+        "subtitle": "Các vòng yêu cầu chỉnh sửa hồ sơ bộ truyện, bản phác thảo và bản thảo của bộ truyện này",
         "close": "Đóng",
         "empty": {
           "title": "Chưa có yêu cầu chỉnh sửa nào",
@@ -666,7 +642,7 @@
         "requestedByEditorFallback": "Yêu cầu bởi Biên tập viên"
       }
     },
-    "relationshipType": "Quan hệ với series gốc",
+    "relationshipType": "Quan hệ với bộ truyện gốc",
     "enums": {
       "genres": {
         "ACTION": "Hành động",
@@ -710,7 +686,7 @@
       "DRAFT": "Bản nháp",
       "PROPOSAL_REVIEW": "Đang xét duyệt",
       "PROPOSAL_REVISION": "Cần chỉnh sửa",
-      "PROPOSAL_APPROVED": "Đã duyệt hồ sơ series",
+      "PROPOSAL_APPROVED": "Đã duyệt hồ sơ bộ truyện",
       "PITCHED": "Đã pitch",
       "APPROVED": "Đã duyệt",
       "REJECTED": "Bị từ chối",
@@ -724,8 +700,8 @@
       "APPROVED": "Đã duyệt"
     },
     "proposal": {
-      "title": "Hồ sơ series",
-      "empty": "Series chưa có hồ sơ series.",
+      "title": "Hồ sơ bộ truyện",
+      "empty": "Bộ truyện chưa có hồ sơ bộ truyện.",
       "synopsis": "Tóm tắt cốt truyện",
       "synopsisMore": "Xem thêm",
       "synopsisLess": "Thu gọn",
@@ -739,7 +715,7 @@
       "characterDesignAlt": "Thiết kế nhân vật {{n}}",
       "estimatedLength": "Số chương ước tính",
       "chaptersCount": "{{count}} chương",
-      "createdAt": "Ngày tạo hồ sơ series",
+      "createdAt": "Ngày tạo hồ sơ bộ truyện",
       "nameId": "Bản phác khung truyện mẫu"
     },
     "names": {
@@ -748,7 +724,7 @@
       "count": "{{count}} bản phác khung truyện",
       "alt": "Trang bản phác khung truyện {{label}}",
       "altShort": "Trang bản phác khung truyện",
-      "sampleLabel": "Bản phác khung truyện mẫu (Hồ sơ series)",
+      "sampleLabel": "Bản phác khung truyện mẫu (Hồ sơ bộ truyện)",
       "chapterLabel": "Chương {{n}}",
       "versionLabel": "Phiên bản {{n}}",
       "pageAlt": "Trang bản phác khung truyện {{n}}",
@@ -757,70 +733,70 @@
     },
     "actions": {
       "cancel": "Huỷ",
-      "errorGeneric": "Không thể thực hiện thao tác với hồ sơ series. Hãy tải lại và thử lại.",
+      "errorGeneric": "Không thể thực hiện thao tác với hồ sơ bộ truyện. Hãy tải lại và thử lại.",
       "delete": {
         "button": "Xoá bản nháp",
         "title": "Xoá bản nháp này?",
         "description": "\"{{title}}\" và bản phác khung truyện mẫu đi kèm sẽ bị xoá vĩnh viễn.",
         "confirm": "Xoá bản nháp",
-        "success": "Đã xoá hồ sơ series nháp."
+        "success": "Đã xoá hồ sơ bộ truyện nháp."
       },
       "withdraw": {
         "button": "Rút hồ sơ",
-        "title": "Rút hồ sơ series này?",
+        "title": "Rút hồ sơ bộ truyện này?",
         "description": "\"{{title}}\" sẽ rời luồng biên tập và chuyển sang trạng thái Đã rút.",
         "reasonLabel": "Lý do",
         "reasonPlaceholder": "Cho biên tập viên biết lý do bạn rút hồ sơ...",
         "reasonHint": "{{count}}/1000 ký tự · bắt buộc",
         "reasonRequired": "Hãy nhập lý do trước khi rút hồ sơ.",
-        "confirm": "Rút hồ sơ series",
-        "success": "Đã rút hồ sơ series."
+        "confirm": "Rút hồ sơ bộ truyện",
+        "success": "Đã rút hồ sơ bộ truyện."
       },
       "reopen": {
         "button": "Nộp lại",
         "success": "Đã mở lại hồ sơ. Về bản nháp để chỉnh sửa và nộp lại."
       },
       "resubmitProposal": {
-        "button": "Nộp lại hồ sơ series",
-        "success": "Đã nộp lại hồ sơ series để xét duyệt."
+        "button": "Nộp lại hồ sơ bộ truyện",
+        "success": "Đã nộp lại hồ sơ bộ truyện để xét duyệt."
       },
       "resubmitName": {
         "button": "Nộp lại bản phác khung truyện",
         "success": "Đã nộp lại bản phác khung truyện mẫu để xét duyệt."
       },
       "errors": {
-        "NotSeriesOwner": "Bạn chỉ có thể thay đổi hồ sơ series của chính mình.",
-        "ProposalNotEditable": "Hồ sơ series không còn sửa được ở trạng thái hiện tại.",
-        "ProposalNotDeletable": "Chỉ hồ sơ series nháp mới có thể bị xoá.",
-        "InvalidProposalState": "Hồ sơ series hiện không chờ được nộp lại.",
+        "NotSeriesOwner": "Bạn chỉ có thể thay đổi hồ sơ bộ truyện của chính mình.",
+        "ProposalNotEditable": "Hồ sơ bộ truyện không còn sửa được ở trạng thái hiện tại.",
+        "ProposalNotDeletable": "Chỉ hồ sơ bộ truyện nháp mới có thể bị xoá.",
+        "InvalidProposalState": "Hồ sơ bộ truyện hiện không chờ được nộp lại.",
         "InvalidNameState": "Bản phác khung truyện mẫu hiện không chờ được nộp lại.",
-        "InvalidSeriesTransition": "Series không ở trạng thái cho phép thao tác này.",
-        "SeriesNotFound": "Series không còn tồn tại.",
-        "FranchiseConsentRequired": "Mangaka của series gốc phải đồng ý nhượng quyền trước khi có thể nộp.",
-        "MangakaProfileRequired": "Bạn cần hoàn thiện hồ sơ Mangaka trước khi nộp hồ sơ series."
+        "InvalidSeriesTransition": "Bộ truyện không ở trạng thái cho phép thao tác này.",
+        "SeriesNotFound": "Bộ truyện không còn tồn tại.",
+        "FranchiseConsentRequired": "Mangaka của bộ truyện gốc phải đồng ý nhượng quyền trước khi có thể nộp.",
+        "MangakaProfileRequired": "Bạn cần hoàn thiện hồ sơ Mangaka trước khi nộp hồ sơ bộ truyện."
       }
     },
     "error": {
-      "loadFailed": "Không thể tải chi tiết series. Vui lòng thử lại.",
+      "loadFailed": "Không thể tải chi tiết bộ truyện. Vui lòng thử lại.",
       "retry": "Thử lại"
     },
     "notFound": {
-      "title": "Không tìm thấy series",
-      "description": "Series này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
+      "title": "Không tìm thấy bộ truyện",
+      "description": "Bộ truyện này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
       "back": "Về Bộ truyện của tôi"
     },
     "submit": {
-      "button": "Nộp hồ sơ series",
-      "dialogTitle": "Nộp series để biên tập viên xét duyệt?",
-      "dialogDescription": "Series \"{{title}}\" sẽ được chuyển sang trạng thái Đang xét duyệt. Sau khi nộp, bạn sẽ không thể sửa hồ sơ series cho tới khi biên tập viên phản hồi.",
-      "bullet1": "Hồ sơ series chuyển sang trạng thái Đang xét duyệt.",
+      "button": "Nộp hồ sơ bộ truyện",
+      "dialogTitle": "Nộp bộ truyện để biên tập viên xét duyệt?",
+      "dialogDescription": "Bộ truyện \"{{title}}\" sẽ được chuyển sang trạng thái Đang xét duyệt. Sau khi nộp, bạn sẽ không thể sửa hồ sơ bộ truyện cho tới khi biên tập viên phản hồi.",
+      "bullet1": "Hồ sơ bộ truyện chuyển sang trạng thái Đang xét duyệt.",
       "bullet2": "Trang bản phác khung truyện mẫu được gửi kèm cho biên tập viên duyệt.",
-      "bullet3": "Không thể chỉnh sửa hồ sơ series trong khi đang được xét duyệt.",
+      "bullet3": "Không thể chỉnh sửa hồ sơ bộ truyện trong khi đang được xét duyệt.",
       "cancel": "Huỷ",
-      "confirm": "Nộp series",
-      "submitting": "Đang nộp series...",
-      "success": "Đã nộp series để biên tập xét duyệt.",
-      "errorGeneric": "Không thể nộp series. Vui lòng thử lại."
+      "confirm": "Nộp bộ truyện",
+      "submitting": "Đang nộp bộ truyện...",
+      "success": "Đã nộp bộ truyện để biên tập xét duyệt.",
+      "errorGeneric": "Không thể nộp bộ truyện. Vui lòng thử lại."
     },
     "publication": {
       "title": "Xuất bản",
@@ -857,7 +833,7 @@
       "manuscriptStatusTitle": "Trạng thái bản thảo",
       "create": {
         "dialogTitle": "Tạo chương mới",
-        "seriesLabel": "Series",
+        "seriesLabel": "Bộ truyện",
         "chapterNumberLabel": "Số chương",
         "titleLabel": "Tiêu đề (tuỳ chọn)",
         "titlePlaceholder": "VD: Khởi đầu mới",
@@ -988,11 +964,11 @@
     "notFound": {
       "title": "Không tìm thấy chương",
       "description": "Chương này có thể đã bị xoá hoặc bạn không có quyền truy cập.",
-      "back": "Về trang series"
+      "back": "Về trang bộ truyện"
     },
     "header": {
       "brandSubtitle": "Bàn làm việc xuất bản",
-      "backToSeries": "Về trang series",
+      "backToSeries": "Về trang bộ truyện",
       "chapterContext": "{{series}} · Chương {{n}}",
       "workbenchLabel": "Bàn làm việc xuất bản",
       "tabName": "Bản phác khung truyện",
@@ -1333,12 +1309,12 @@
     }
   },
   "wizard": {
-    "title": "Hồ sơ series mới",
-    "subtitle": "Điền thông tin để tạo hồ sơ series mới cho ban biên tập xem xét.",
+    "title": "Hồ sơ bộ truyện mới",
+    "subtitle": "Điền thông tin để tạo hồ sơ bộ truyện mới cho ban biên tập xem xét.",
     "step1": "Thông tin cơ bản",
     "step1Desc": "Tiêu đề, ảnh bìa, thể loại, nhóm độc giả và tần suất phát hành.",
     "step2": "Tóm tắt cốt truyện",
-    "step2Desc": "Viết nội dung tóm tắt cốt truyện cho series (tối đa 5000 ký tự).",
+    "step2Desc": "Viết nội dung tóm tắt cốt truyện cho bộ truyện (tối đa 5000 ký tự).",
     "step3": "Thiết kế nhân vật",
     "step3Desc": "Tải lên hình ảnh thiết kế nhân vật chính (ảnh sẽ gửi dưới dạng object key).",
     "step4": "Bản phác khung truyện",
@@ -1346,21 +1322,21 @@
     "back": "Quay lại",
     "next": "Tiếp theo",
     "submit": "Tạo bản nháp",
-    "createSuccess": "Đã tạo hồ sơ series nháp. Hãy kiểm tra lại rồi nộp cho biên tập viên khi sẵn sàng.",
+    "createSuccess": "Đã tạo hồ sơ bộ truyện nháp. Hãy kiểm tra lại rồi nộp cho biên tập viên khi sẵn sàng.",
     "exit": "Thoát",
-    "seriesTitle": "Tiêu đề Series",
-    "seriesTitlePlaceholder": "Nhập tiêu đề series của bạn",
+    "seriesTitle": "Tiêu đề Bộ truyện",
+    "seriesTitlePlaceholder": "Nhập tiêu đề bộ truyện của bạn",
     "coverImage": "Ảnh bìa",
-    "uploadCoverTitle": "Tải lên ảnh bìa series",
+    "uploadCoverTitle": "Tải lên ảnh bìa bộ truyện",
     "uploadCoverSubtitle": "Kéo & thả hoặc chọn 1 hình ảnh (PNG, JPG, WEBP)",
     "genres": "Thể loại",
     "genresHint": "Có thể chọn nhiều thể loại. Bắt buộc chọn từ danh sách cố định.",
     "demographic": "Nhóm độc giả",
-    "demographicHint": "Phân khúc độc giả chính mà series hướng tới (theo độ tuổi & giới tính).",
+    "demographicHint": "Phân khúc độc giả chính mà bộ truyện hướng tới (theo độ tuổi & giới tính).",
     "publicationType": "Tần suất phát hành",
     "estimatedLength": "Số chương ước tính",
     "estimatedLengthPlaceholder": "VD: 50",
-    "estimatedLengthHint": "Ước lượng tổng số chương dự kiến của toàn bộ series (tối thiểu 1).",
+    "estimatedLengthHint": "Ước lượng tổng số chương dự kiến của toàn bộ bộ truyện (tối thiểu 1).",
     "selectOption": "Chọn...",
     "enums": {
       "genres": {
@@ -1407,9 +1383,9 @@
     "characterDesignAlt": "Ảnh thiết kế nhân vật",
     "pageTitlePlaceholder": "Tiêu đề trang...",
     "errors": {
-      "unauthenticated": "Bạn cần đăng nhập để tạo hồ sơ series.",
-      "titleRequired": "Hãy nhập tiêu đề series trước khi tiếp tục.",
-      "submitFailed": "Không thể tạo hồ sơ series. Vui lòng thử lại."
+      "unauthenticated": "Bạn cần đăng nhập để tạo hồ sơ bộ truyện.",
+      "titleRequired": "Hãy nhập tiêu đề bộ truyện trước khi tiếp tục.",
+      "submitFailed": "Không thể tạo hồ sơ bộ truyện. Vui lòng thử lại."
     },
     "toolbar": {
       "bold": "In đậm",
@@ -1424,7 +1400,7 @@
     "title": "Nhiệm vụ",
     "composer": {
       "title": "Giao nhiệm vụ",
-      "fromStudio": "Từ Xưởng vẽ — chọn trợ lý, series, chương, trang",
+      "fromStudio": "Từ Xưởng vẽ — chọn trợ lý, bộ truyện, chương, trang",
       "fromWorkbench": "Từ Workbench — chọn trợ lý cho trang hiện tại",
       "close": "Đóng",
       "back": "Quay lại",
@@ -1433,8 +1409,8 @@
       "submitting": "Đang giao...",
       "selectAssistant": "Chọn trợ lý",
       "selectAssistantPlaceholder": "— Chọn trợ lý —",
-      "selectSeries": "Chọn series",
-      "selectSeriesPlaceholder": "— Chọn series —",
+      "selectSeries": "Chọn bộ truyện",
+      "selectSeriesPlaceholder": "— Chọn bộ truyện —",
       "selectChapter": "Chọn chương",
       "selectChapterPlaceholder": "— Chọn chương —",
       "selectStage": "Giai đoạn sản xuất",
@@ -1453,7 +1429,7 @@
         "BACKGROUND": "Vẽ nền",
         "SCREENTONE": "Dán tone",
         "EFFECT_LINES": "Hiệu ứng đường",
-        "INKING": "Tô mực",
+        "INKING": "Đi nét",
         "COLORING": "Tô màu",
         "LETTERING": "Chèn thoại"
       },
@@ -1558,7 +1534,7 @@
       "summary": "{{regions}} vùng được giao · {{versions}} phiên bản đã nộp",
       "errorTitle": "Không thể mở nhiệm vụ",
       "errors": {
-        "notFound": "Nhiệm vụ không còn tồn tại hoặc không thuộc series của bạn.",
+        "notFound": "Nhiệm vụ không còn tồn tại hoặc không thuộc bộ truyện của bạn.",
         "generic": "Không thể tải chi tiết nhiệm vụ. Hãy quay lại Xưởng vẽ và thử lại."
       }
     }
@@ -1624,7 +1600,7 @@
       "title": "Nhiệm vụ",
       "composer": {
         "title": "Giao nhiệm vụ",
-        "fromStudio": "Từ Xưởng vẽ — chọn trợ lý, series, chương, trang",
+        "fromStudio": "Từ Xưởng vẽ — chọn trợ lý, bộ truyện, chương, trang",
         "fromWorkbench": "Từ Workbench — chọn trợ lý cho trang hiện tại",
         "close": "Đóng",
         "back": "Quay lại",
@@ -1633,8 +1609,8 @@
         "submitting": "Đang giao...",
         "selectAssistant": "Chọn trợ lý",
         "selectAssistantPlaceholder": "— Chọn trợ lý —",
-        "selectSeries": "Chọn series",
-        "selectSeriesPlaceholder": "— Chọn series —",
+        "selectSeries": "Chọn bộ truyện",
+        "selectSeriesPlaceholder": "— Chọn bộ truyện —",
         "selectChapter": "Chọn chương",
         "selectChapterPlaceholder": "— Chọn chương —",
         "selectStage": "Giai đoạn sản xuất",
@@ -1656,11 +1632,11 @@
           "BACKGROUND": "Vẽ nền",
           "SCREENTONE": "Dán tone",
           "EFFECT_LINES": "Hiệu ứng đường",
-          "INKING": "Tô mực",
+          "INKING": "Đi nét",
           "COLORING": "Tô màu",
           "LETTERING": "Chèn thoại"
         },
-        "deadline": "Deadline (tuỳ chọn)",
+        "deadline": "Hạn chót của nhiệm vụ (tuỳ chọn)",
         "deadlineHint": "Để trống nếu không có hạn cụ thể",
         "priority": "Độ ưu tiên",
         "priorityHint": "Số nhỏ hơn = ưu tiên cao hơn",
@@ -1692,7 +1668,7 @@
           "incomplete": "Vui lòng điền đầy đủ thông tin bắt buộc.",
           "taskTypeNotAllowed": "Loại công việc này không được phép ở giai đoạn sản xuất đang hoạt động.",
           "loadAssignments": "Không thể tải các quan hệ cộng tác đang hoạt động.",
-          "loadSeries": "Không thể tải danh sách series.",
+          "loadSeries": "Không thể tải danh sách bộ truyện.",
           "loadChapters": "Không thể tải danh sách chương.",
           "loadPages": "Không thể tải danh sách trang.",
           "loadRegions": "Không thể tải danh sách vùng.",
@@ -1775,31 +1751,31 @@
       }
     },
     "tasksTab": {
-      "selectSeries": "Series",
-      "selectSeriesPlaceholder": "-- Chọn series --",
+      "selectSeries": "Bộ truyện",
+      "selectSeriesPlaceholder": "-- Chọn bộ truyện --",
       "selectChapter": "Chương",
       "selectChapterPlaceholder": "-- Chọn chương --",
       "selectPage": "Trang",
       "selectPagePlaceholder": "-- Chọn trang --",
-      "selectSeriesFirst": "Chọn series trước",
+      "selectSeriesFirst": "Chọn bộ truyện trước",
       "selectChapterFirst": "Chọn chương trước",
       "loading": "Đang tải...",
-      "seriesNone": "Chưa chọn series",
+      "seriesNone": "Chưa chọn bộ truyện",
       "chapterNone": "Chưa chọn chương",
       "pageNone": "Chưa chọn trang",
       "chapterLabel": "Chương {{n}}",
       "pageLabel": "Trang {{n}}",
       "viewAll": "Tất cả nhiệm vụ",
-      "enableFilter": "Lọc theo series",
+      "enableFilter": "Lọc theo bộ truyện",
       "showAll": "Xem tất cả",
-      "allSeries": "Tất cả series",
+      "allSeries": "Tất cả bộ truyện",
       "allChapters": "Tất cả chương",
       "allPages": "Tất cả trang",
       "allStatuses": "Tất cả",
       "clearFilters": "Xoá lọc",
       "empty": {
-        "pickSeries": "Hãy chọn một series để bắt đầu.",
-        "pickChapter": "Hãy chọn một chương trong series.",
+        "pickSeries": "Hãy chọn một bộ truyện để bắt đầu.",
+        "pickChapter": "Hãy chọn một chương trong bộ truyện.",
         "pickPage": "Hãy chọn một trang trong chương để xem nhiệm vụ."
       },
       "revisionPrompt": "Lý do yêu cầu sửa:",
@@ -1830,7 +1806,7 @@
         "cancelFailed": "Không thể huỷ nhiệm vụ."
       },
       "errors": {
-        "loadSeriesFailed": "Không tải được danh sách series.",
+        "loadSeriesFailed": "Không tải được danh sách bộ truyện.",
         "loadChaptersFailed": "Không tải được danh sách chương.",
         "loadPagesFailed": "Không tải được danh sách trang."
       },
@@ -1937,36 +1913,36 @@
     }
   },
   "franchiseConsent": {
-    "eyebrow": "Yêu cầu franchise",
-    "title": "Xem xét đồng ý franchise",
-    "description": "Một series liên quan cần quyết định của Mangaka gốc trước khi chủ sở hữu có thể nộp duyệt.",
-    "targetLabel": "Mã series cần quyết định",
-    "targetValue": "series {{id}}",
+    "eyebrow": "Yêu cầu nhượng quyền",
+    "title": "Xem xét đồng ý nhượng quyền",
+    "description": "Một bộ truyện liên quan cần quyết định của Mangaka gốc trước khi chủ sở hữu có thể nộp duyệt.",
+    "targetLabel": "Mã bộ truyện cần quyết định",
+    "targetValue": "bộ truyện {{id}}",
     "targetMissing": "Không có mã đối tượng",
-    "limitedDetails": "Series đang chờ này thuộc về Mangaka khác. Tiêu đề và metadata không thể đọc qua màn hình series giới hạn theo chủ sở hữu của bạn, nên trang chỉ hiển thị mã đối tượng từ thông báo.",
+    "limitedDetails": "Bộ truyện đang chờ này thuộc về Mangaka khác. Tiêu đề và metadata không thể đọc qua màn hình bộ truyện giới hạn theo chủ sở hữu của bạn, nên trang chỉ hiển thị mã đối tượng từ thông báo.",
     "actions": {
       "approve": "Đồng ý yêu cầu",
       "reject": "Từ chối yêu cầu",
       "backToNotifications": "Quay lại thông báo",
-      "backToSeries": "Quay lại series của tôi"
+      "backToSeries": "Quay lại bộ truyện của tôi"
     },
     "success": {
-      "approvedTitle": "Đã đồng ý yêu cầu franchise",
-      "approvedDescription": "Chủ sở hữu có thể nộp series phái sinh này để duyệt khi sẵn sàng.",
-      "rejectedTitle": "Đã từ chối yêu cầu franchise",
-      "rejectedDescription": "Series phái sinh vẫn thuộc về chủ sở hữu, nhưng không thể nộp duyệt khi quyết định này còn hiệu lực."
+      "approvedTitle": "Đã đồng ý yêu cầu nhượng quyền",
+      "approvedDescription": "Chủ sở hữu có thể nộp bộ truyện phái sinh này để duyệt khi sẵn sàng.",
+      "rejectedTitle": "Đã từ chối yêu cầu nhượng quyền",
+      "rejectedDescription": "Bộ truyện phái sinh vẫn thuộc về chủ sở hữu, nhưng không thể nộp duyệt khi quyết định này còn hiệu lực."
     },
     "errors": {
-      "invalidRequest": "Liên kết yêu cầu franchise không hợp lệ.",
-      "permission": "Chỉ Mangaka gốc của series cha mới có thể đưa ra quyết định này.",
-      "notFound": "Series cần quyết định không còn tồn tại.",
-      "notPending": "Yêu cầu đồng ý franchise này không còn chờ quyết định.",
-      "generic": "Không thể lưu quyết định franchise. Vui lòng thử lại."
+      "invalidRequest": "Liên kết yêu cầu nhượng quyền không hợp lệ.",
+      "permission": "Chỉ Mangaka gốc của bộ truyện cha mới có thể đưa ra quyết định này.",
+      "notFound": "Bộ truyện cần quyết định không còn tồn tại.",
+      "notPending": "Yêu cầu đồng ý nhượng quyền này không còn chờ quyết định.",
+      "generic": "Không thể lưu quyết định nhượng quyền. Vui lòng thử lại."
     }
   },
   "notifications": {
     "title": "Thông báo",
-    "subtitle": "Cập nhật về hồ sơ series, duyệt series, deadline và hoạt động hợp đồng.",
+    "subtitle": "Cập nhật về hồ sơ bộ truyện, duyệt bộ truyện, deadline và hoạt động hợp đồng.",
     "back": "Quay lại dashboard",
     "filters": {
       "all": "Tất cả",
@@ -1984,8 +1960,8 @@
     },
     "item": {
       "noContent": "(không có nội dung)",
-      "openTarget": "Mở series",
-      "openFranchiseConsent": "Xem yêu cầu franchise",
+      "openTarget": "Mở bộ truyện",
+      "openFranchiseConsent": "Xem yêu cầu nhượng quyền",
       "openChapter": "Mở chương",
       "openTask": "Mở nhiệm vụ",
       "openContract": "Mở hợp đồng",
@@ -2030,8 +2006,8 @@
     "title": "Yêu cầu điều chỉnh thời hạn",
     "subtitle": "Tạo và thương lượng thời hạn của chương với Biên tập viên. Quyết định chốt vẫn thuộc vai trò xét duyệt phù hợp.",
     "selector": {
-      "series": "Series",
-      "seriesPlaceholder": "Chọn series",
+      "series": "Bộ truyện",
+      "seriesPlaceholder": "Chọn bộ truyện",
       "chapter": "Chương",
       "chapterPlaceholder": "Chọn chương"
     },
@@ -2111,8 +2087,8 @@
       "withdraw": "Đã rút yêu cầu thời hạn."
     },
     "error": {
-      "loadSeriesFailed": "Không thể tải series của bạn.",
-      "loadChaptersFailed": "Không thể tải chương của series này.",
+      "loadSeriesFailed": "Không thể tải bộ truyện của bạn.",
+      "loadChaptersFailed": "Không thể tải chương của bộ truyện này.",
       "loadFailed": "Không thể tải các yêu cầu thời hạn.",
       "loadRequestFailed": "Không thể tải yêu cầu thời hạn này.",
       "notParticipant": "Bạn không có quyền thao tác với yêu cầu thời hạn này.",
@@ -2141,7 +2117,7 @@
       "statusTitle": "Tiền theo tiến độ xử lý",
       "statusDescription": "Cho biết các khoản tiền đang ở bước nào trong quy trình duyệt và thanh toán.",
       "typeTitle": "Tiền theo lý do phát sinh",
-      "typeDescription": "Cho biết khoản tiền được tạo từ điều kiện hoặc hoạt động nào của series.",
+      "typeDescription": "Cho biết khoản tiền được tạo từ điều kiện hoặc hoạt động nào của bộ truyện.",
       "recordCount": "{{count}} khoản",
       "empty": "Chưa có khoản tiền nào để hiển thị."
     },
@@ -2152,12 +2128,12 @@
       "empty": "Chưa có khoản thanh toán nào."
     },
     "filters": {
-      "label": "Lọc theo series",
-      "all": "Tất cả series",
+      "label": "Lọc theo bộ truyện",
+      "all": "Tất cả bộ truyện",
       "apply": "Lọc",
       "loading": "Đang tải…",
       "allDescription": "Hiển thị tất cả khoản thanh toán dành cho tài khoản của bạn.",
-      "seriesDescription": "Hiển thị các khoản thanh toán qua các hợp đồng của series đã chọn."
+      "seriesDescription": "Hiển thị các khoản thanh toán qua các hợp đồng của bộ truyện đã chọn."
     },
     "actions": {
       "backToRecords": "Quay lại danh sách thanh toán"
@@ -2171,7 +2147,7 @@
       "source": "Nguồn",
       "period": "Kỳ thanh toán",
       "receiver": "Người nhận",
-      "series": "Series",
+      "series": "Bộ truyện",
       "contract": "Hợp đồng",
       "description": "Mô tả",
       "status": "Trạng thái",
@@ -2188,7 +2164,7 @@
       "earnings": "Không thể tải tổng hợp thu nhập. Vui lòng thử lại sau.",
       "records": "Không thể tải các khoản thanh toán. Vui lòng thử lại sau.",
       "detail": "Không thể tải khoản thanh toán này. Khoản này có thể không còn thuộc phạm vi tài khoản của bạn.",
-      "filters": "Không thể tải danh sách series của bạn. Chế độ xem tất cả vẫn khả dụng."
+      "filters": "Không thể tải danh sách bộ truyện của bạn. Chế độ xem tất cả vẫn khả dụng."
     },
     "status": {
       "TRIGGERED": "Đã kích hoạt",
@@ -2221,12 +2197,12 @@
     "typeDescription": {
       "CONDITION_PAYOUT": "Khoản chi khi đạt một điều kiện trong hợp đồng.",
       "REVENUE_SHARE": "Phần doanh thu được chia theo hợp đồng.",
-      "COMPENSATION": "Khoản bồi thường khi series hoặc hợp đồng bị chấm dứt.",
-      "CHAPTER_MILESTONE": "Khoản chi khi series đạt mốc chương đã cam kết.",
+      "COMPENSATION": "Khoản bồi thường khi bộ truyện hoặc hợp đồng bị chấm dứt.",
+      "CHAPTER_MILESTONE": "Khoản chi khi bộ truyện đạt mốc chương đã cam kết.",
       "RECURRING_CHAPTER": "Khoản chi lặp lại theo chu kỳ chương.",
-      "RANKING_MILESTONE": "Khoản chi khi series đạt mốc xếp hạng.",
+      "RANKING_MILESTONE": "Khoản chi khi bộ truyện đạt mốc xếp hạng.",
       "TIME_BOUND": "Khoản chi theo mốc thời hạn đã thỏa thuận.",
-      "TRANSFER": "Khoản chi liên quan đến chuyển nhượng series."
+      "TRANSFER": "Khoản chi liên quan đến chuyển nhượng bộ truyện."
     },
     "explanationUnavailable": "Chưa có mô tả cho khoản này.",
     "source": {
@@ -2239,7 +2215,7 @@
   },
   "rankings": {
     "title": "Xếp hạng",
-    "subtitle": "Theo dõi thứ hạng series của bạn trong các kỳ xếp hạng mới nhất và trước đó.",
+    "subtitle": "Theo dõi thứ hạng bộ truyện của bạn trong các kỳ xếp hạng mới nhất và trước đó.",
     "back": "Quay lại dashboard",
     "refresh": "Làm mới",
     "latest": {
@@ -2261,7 +2237,7 @@
     },
     "board": {
       "title": "So sánh toàn tạp chí",
-      "description": "So sánh series của bạn với mọi series trong một kỳ tạp chí đã REFLECTED. Chế độ này chỉ để xem.",
+      "description": "So sánh bộ truyện của bạn với mọi bộ truyện trong một kỳ tạp chí đã REFLECTED. Chế độ này chỉ để xem.",
       "periodLabel": "Kỳ đã phản ánh",
       "periodOption": "Kỳ {{issue}} · {{magazine}} · {{publicationType}}",
       "unknownMagazine": "Chưa xác định tạp chí",
@@ -2269,12 +2245,12 @@
       "noPeriods": "Chưa có kỳ REFLECTED nào để so sánh.",
       "loading": "Đang tải bảng xếp hạng toàn tạp chí…",
       "empty": "Chưa có bảng xếp hạng được ghi nhận cho kỳ này.",
-      "otherSeries": "Series khác",
-      "yourSeries": "Series của bạn",
+      "otherSeries": "Bộ truyện khác",
+      "yourSeries": "Bộ truyện của bạn",
       "unreliable": "Dữ liệu chưa đủ tin cậy",
       "table": {
         "rank": "Hạng",
-        "series": "Series",
+        "series": "Bộ truyện",
         "votes": "Phiếu",
         "score": "Điểm",
         "change": "Biến động",
@@ -2287,17 +2263,17 @@
       }
     },
     "trend": {
-      "title": "Xu hướng series của tôi",
-      "description": "Hạng qua 12 kỳ gần nhất, tô màu theo mức nguy cơ. Chỉ series bạn sở hữu hiển thị (giới hạn ở BE).",
-      "label": "Series",
-      "selectPlaceholder": "Chọn một series của bạn…",
-      "noSeries": "Bạn chưa có series đã xuất bản — chưa có gì để vẽ biểu đồ.",
+      "title": "Xu hướng bộ truyện của tôi",
+      "description": "Hạng qua 12 kỳ gần nhất, tô màu theo mức nguy cơ. Chỉ bộ truyện bạn sở hữu hiển thị (giới hạn ở BE).",
+      "label": "Bộ truyện",
+      "selectPlaceholder": "Chọn một bộ truyện của bạn…",
+      "noSeries": "Bạn chưa có bộ truyện đã xuất bản — chưa có gì để vẽ biểu đồ.",
       "chartLabel": "Biểu đồ hạng theo thời gian",
       "tooltip": "#{{rank}} · {{date}} · {{votes}} phiếu",
-      "empty": "Series này chưa có kỳ nào được REFLECTED.",
-      "noRanks": "Series này chưa có dữ liệu hạng.",
-      "prompt": "Chọn một series để xem xu hướng.",
-      "promptHint": "Dữ liệu xu hướng được giới hạn ở BE — bạn chỉ xem được series mình sở hữu."
+      "empty": "Bộ truyện này chưa có kỳ nào được REFLECTED.",
+      "noRanks": "Bộ truyện này chưa có dữ liệu hạng.",
+      "prompt": "Chọn một bộ truyện để xem xu hướng.",
+      "promptHint": "Dữ liệu xu hướng được giới hạn ở BE — bạn chỉ xem được bộ truyện mình sở hữu."
     },
     "publicationType": {
       "label": "Nhịp xuất bản",
@@ -2319,13 +2295,13 @@
     "table": {
       "columns": {
         "rank": "Hạng",
-        "series": "Series",
+        "series": "Bộ truyện",
         "publicationType": "Nhịp",
         "votes": "Phiếu",
         "change": "Biến động"
       },
       "changeStable": "Ổn định",
-      "deletedSeries": "(series đã xoá)"
+      "deletedSeries": "(bộ truyện đã xoá)"
     },
     "error": {
       "loadFailed": "Không tải được bảng xếp hạng. Vui lòng thử lại.",
@@ -2334,7 +2310,7 @@
   },
   "transfers": {
     "eyebrow": "Quy trình chuyển nhượng",
-    "title": "Chuyển nhượng series",
+    "title": "Chuyển nhượng bộ truyện",
     "description": "Gửi yêu cầu chuyển nhượng, phản hồi với vai trò Mangaka gốc và ký thỏa thuận ba bên từ liên kết thông báo.",
     "sections": {
       "active": "Đang xử lý",
@@ -2372,14 +2348,14 @@
       "openContracts": "Mở danh sách hợp đồng"
     },
     "card": {
-      "unknownSeries": "Series chưa xác định",
+      "unknownSeries": "Bộ truyện chưa xác định",
       "unknownMangaka": "Mangaka chưa xác định",
       "requester": "Người đề nghị: {{name}}",
       "percentage": "Tỷ lệ sở hữu đề xuất: {{value}}%",
       "contractReadyHint": "Hợp đồng chuyển nhượng đã được soạn. Bạn cần đọc kỹ số tiền, tỷ lệ sở hữu và tiến độ chữ ký trước khi xác nhận.",
       "replacementContractHint": "Hợp đồng thay thế của nhánh mua đứt đang chờ ký. Quyền sở hữu chỉ được cập nhật sau khi hợp đồng có hiệu lực.",
-      "ownershipPending": "Yêu cầu đang được xử lý. Series vẫn thuộc Mangaka hiện tại cho tới khi toàn bộ hợp đồng và chữ ký hoàn tất.",
-      "ownershipUnchanged": "Yêu cầu đã kết thúc mà không hoàn tất chuyển nhượng. Quyền sở hữu series không thay đổi.",
+      "ownershipPending": "Yêu cầu đang được xử lý. Bộ truyện vẫn thuộc Mangaka hiện tại cho tới khi toàn bộ hợp đồng và chữ ký hoàn tất.",
+      "ownershipUnchanged": "Yêu cầu đã kết thúc mà không hoàn tất chuyển nhượng. Quyền sở hữu bộ truyện không thay đổi.",
       "ownershipCompleted": "Chuyển nhượng đã hoàn tất. Hệ thống đã chuyển quyền sở hữu theo hợp đồng có hiệu lực."
     },
     "confirm": {
@@ -2392,10 +2368,10 @@
     },
     "create": {
       "title": "Tạo yêu cầu chuyển nhượng",
-      "description": "Chọn series và trình bày kế hoạch tiếp quản, phát triển tác phẩm.",
-      "series": "Series",
-      "seriesPlaceholder": "Chọn series",
-      "noEligibleSeries": "Hiện không có series SERIALIZED hoặc HIATUS đủ điều kiện. Series do bạn sở hữu sẽ không xuất hiện trong danh sách này.",
+      "description": "Chọn bộ truyện và trình bày kế hoạch tiếp quản, phát triển tác phẩm.",
+      "series": "Bộ truyện",
+      "seriesPlaceholder": "Chọn bộ truyện",
+      "noEligibleSeries": "Hiện không có bộ truyện SERIALIZED hoặc HIATUS đủ điều kiện. Bộ truyện do bạn sở hữu sẽ không xuất hiện trong danh sách này.",
       "type": "Loại chuyển nhượng",
       "percentage": "Tỷ lệ sở hữu (1–99%)",
       "plan": "Kế hoạch tiếp quản",
@@ -2417,7 +2393,7 @@
       "otpPlaceholder": "Nhập OTP ký",
       "legalNoticeTitle": "Chữ ký OTP có giá trị xác nhận điều khoản",
       "legalNotice": "Chỉ tiếp tục khi tên các bên, số tiền và tỷ lệ sở hữu bên dưới đúng với thỏa thuận. Sau khi ký, hệ thống không cho sửa trực tiếp hợp đồng này.",
-      "series": "Series",
+      "series": "Bộ truyện",
       "amount": "Giá trị chuyển nhượng",
       "from": "Mangaka chuyển giao",
       "to": "Mangaka tiếp nhận",
@@ -2451,7 +2427,7 @@
     },
     "errors": {
       "invalidAction": "Thao tác chuyển nhượng không hợp lệ.",
-      "alreadyOwner": "Bạn đang là chủ sở hữu series này.",
+      "alreadyOwner": "Bạn đang là chủ sở hữu bộ truyện này.",
       "inactive": "Tài khoản Mangaka phải hoạt động để gửi yêu cầu.",
       "invalidProposal": "Loại chuyển nhượng và tỷ lệ đề xuất không khớp.",
       "notNegotiating": "Yêu cầu không còn chờ Mangaka gốc phản hồi.",
@@ -2460,9 +2436,9 @@
       "signerNotFound": "Không thể xác minh danh tính người ký.",
       "contractNotFound": "Hợp đồng chuyển nhượng không còn khả dụng.",
       "requestNotFound": "Yêu cầu từ thông báo không còn khả dụng hoặc bạn không có quyền truy cập.",
-      "noActiveContract": "Series chưa có hợp đồng hiệu lực để chuyển nhượng.",
-      "activeRequestExists": "Series này đã có một yêu cầu chuyển nhượng đang được xử lý.",
-      "seriesNotEligible": "Chỉ series đang phát hành hoặc tạm ngưng mới có thể tạo yêu cầu chuyển nhượng.",
+      "noActiveContract": "Bộ truyện chưa có hợp đồng hiệu lực để chuyển nhượng.",
+      "activeRequestExists": "Bộ truyện này đã có một yêu cầu chuyển nhượng đang được xử lý.",
+      "seriesNotEligible": "Chỉ bộ truyện đang phát hành hoặc tạm ngưng mới có thể tạo yêu cầu chuyển nhượng.",
       "awaitingContractDecision": "Hợp đồng chuyển nhượng đang chờ Hội đồng biểu quyết và chưa thể ký.",
       "generic": "Không thể hoàn tất thao tác chuyển nhượng. Vui lòng thử lại.",
       "notYourTurn": "Bạn không phải bên ký hiện tại hoặc hợp đồng chưa đến lượt ký của bạn."
@@ -2473,14 +2449,14 @@
       "listTitle": "Hợp đồng - MangakaStudio Pro",
       "detailTitle": "Chi tiết hợp đồng - MangakaStudio Pro"
     },
-    "unknownSeries": "Series chưa xác định",
+    "unknownSeries": "Bộ truyện chưa xác định",
     "notAvailable": "Chưa có thông tin",
     "list": {
       "eyebrow": "Hợp đồng",
       "title": "Hợp đồng của tôi",
       "description": "Xem điều khoản, phản hồi và hoàn tất ký hợp đồng.",
       "contractTitle": "Hợp đồng — {{series}}",
-      "series": "Series: {{series}}",
+      "series": "Bộ truyện: {{series}}",
       "empty": "Bạn chưa có hợp đồng nào."
     },
     "fields": {
