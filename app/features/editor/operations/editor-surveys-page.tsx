@@ -152,7 +152,12 @@ export function EditorSurveysPage({
                 <option value=''>{t('operations.selectSurvey')}</option>
                 {surveys.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {surveyOptionLabel(item, i18n.language, t(`operations.surveyStatuses.${item.status}`))}
+                    {surveyOptionLabel(
+                      item,
+                      i18n.language,
+                      t(`operations.surveyStatuses.${item.status}`),
+                      item.publicationType ? t(`operations.publicationTypes.${item.publicationType}`, { defaultValue: item.publicationType }) : undefined
+                    )}
                   </option>
                 ))}
               </select>
@@ -963,9 +968,14 @@ function SurveyWorkflow({ status }: { status: SurveyPeriodResDtoOutput['status']
   )
 }
 
-function surveyOptionLabel(survey: SurveyPeriodResDtoOutput, locale: string, statusLabel: string) {
+function surveyOptionLabel(
+  survey: SurveyPeriodResDtoOutput,
+  locale: string,
+  statusLabel: string,
+  pubTypeLabel?: string
+) {
   const issue = `#${survey.issueNumber ?? '—'}`
-  const scope = [survey.magazine, survey.publicationType].filter(Boolean).join(' · ')
+  const scope = [survey.magazine, pubTypeLabel || survey.publicationType].filter(Boolean).join(' · ')
   const start = formatShortDate(survey.startDate, locale)
   const end = formatShortDate(survey.endDate, locale)
   const range = start && end ? `${start} → ${end}` : start || end
