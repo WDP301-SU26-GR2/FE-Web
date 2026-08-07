@@ -194,6 +194,7 @@
         "submit": "Issue password"
       }
     },
+    "cannotModifyAdminNotice": "A Super Admin account cannot be modified by another Super Admin. Contact engineering if a change is truly required.",
     "temporaryPassword": {
       "label": "Temporary password for {{email}}",
       "notice": "Copy it now. This password cannot be viewed again after the page reloads."
@@ -245,6 +246,50 @@
       "passwordPolicy": "Password policy",
       "passwordReady": "Password is ready",
       "registrationType": "Registration source"
+    }
+  },
+  "contracts": {
+    "eyebrow": "Contract administration",
+    "title": "Assign Board Representative",
+    "subtitle": "When no Board member self-claims a representative role within the allowed grace period, a Super Admin can directly assign a member from the Board roster.",
+    "loadError": {
+      "title": "Unable to load contracts",
+      "description": "Check your connection or Super Admin permissions and try again."
+    },
+    "empty": {
+      "title": "No contracts pending representative",
+      "description": "All contracts in BOARD_REVIEW status have been assigned a representative, or there are no such contracts."
+    },
+    "form": {
+      "representative": "Board member to assign",
+      "representativePlaceholder": "Select member...",
+      "representativeHint": "Only members in the Board's approved roster may sign.",
+      "assign": "Assign representative",
+      "assigning": "Assigning...",
+      "confirmTitle": "Confirm assignment",
+      "confirmDescription": "You are assigning {{name}} as the Board representative to sign contract \"{{seriesName}}\". This action cannot be undone.",
+      "success": "Representative assigned successfully.",
+      "assignError": "Unable to assign representative. Please check the information."
+    },
+    "table": {
+      "series": "Series",
+      "mangaka": "Mangaka",
+      "editor": "Editor",
+      "contractType": "Contract type",
+      "createdAt": "Created at",
+      "noRepresentative": "No representative",
+      "assign": "Assign",
+      "viewComments": "View comments"
+    },
+    "comments": {
+      "title": "Consultation comments",
+      "empty": "No comments yet.",
+      "loadError": "Unable to load comments.",
+      "placeholder": "No data"
+    },
+    "status": {
+      "FULL_BUYOUT": "Full buyout",
+      "REVENUE_SHARE": "Revenue share"
     }
   },
   "settings": {
@@ -612,6 +657,7 @@
       "BOARD_SESSION": "Board session"
     },
     "actions": {
+      "unknown": "Unknown action",
       "CREATE": "Created",
       "UPDATE": "Updated",
       "DELETE": "Deleted",

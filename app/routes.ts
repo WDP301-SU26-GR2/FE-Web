@@ -134,6 +134,8 @@ export default [
       route('board/decisions', 'routes/admin/board-decisions.tsx'),
       route('board/decisions/:id', 'routes/admin/board-decision-detail.tsx'),
       route('board/payments', 'routes/admin/payments.tsx'),
+      route('contracts', 'routes/admin/contracts.tsx'),
+      route('contracts/:id/comments', 'routes/admin/contract-comments.tsx'),
       route('operations', 'routes/admin/operations.tsx'),
       route('operations/monitoring', 'routes/admin/operations-monitoring.tsx'),
       route('operations/surveys', 'routes/admin/operations-surveys.tsx'),

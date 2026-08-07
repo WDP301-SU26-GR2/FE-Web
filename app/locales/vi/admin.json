@@ -194,6 +194,7 @@
         "submit": "Cấp mật khẩu mới"
       }
     },
+    "cannotModifyAdminNotice": "Tài khoản Quản trị viên cấp cao không thể bị thao tác bởi một Quản trị viên khác. Liên hệ bộ phận kỹ thuật nếu thực sự cần thay đổi.",
     "temporaryPassword": {
       "label": "Mật khẩu tạm cho địa chỉ {{email}}",
       "notice": "Hãy sao chép ngay. Mật khẩu này không thể xem lại sau khi tải lại trang."
@@ -245,6 +246,50 @@
       "passwordPolicy": "Chính sách mật khẩu",
       "passwordReady": "Mật khẩu đã sẵn sàng",
       "registrationType": "Nguồn đăng ký"
+    }
+  },
+  "contracts": {
+    "eyebrow": "Quản trị hợp đồng",
+    "title": "Gán đại diện Hội đồng",
+    "subtitle": "Khi không có thành viên Hội đồng nào tự nhận làm đại diện ký kết trong thời hạn cho phép, Quản trị viên cấp cao có thể chỉ định trực tiếp một thành viên từ danh sách phê duyệt.",
+    "loadError": {
+      "title": "Không thể tải danh sách hợp đồng",
+      "description": "Hãy kiểm tra kết nối hoặc quyền Quản trị viên cấp cao rồi thử lại."
+    },
+    "empty": {
+      "title": "Không có hợp đồng chờ đại diện",
+      "description": "Tất cả hợp đồng đang ở trạng thái BOARD_REVIEW đều đã được gán đại diện hoặc không có hợp đồng nào."
+    },
+    "form": {
+      "representative": "Thành viên Hội đồng được chỉ định",
+      "representativePlaceholder": "Chọn thành viên...",
+      "representativeHint": "Chỉ thành viên có trong danh sách phê duyệt của Hội đồng mới được phép ký.",
+      "assign": "Gán đại diện",
+      "assigning": "Đang gán...",
+      "confirmTitle": "Xác nhận gán đại diện",
+      "confirmDescription": "Bạn đang chỉ định {{name}} làm đại diện Hội đồng ký hợp đồng \"{{seriesName}}\". Thao tác này không thể hoàn tác.",
+      "success": "Đã gán đại diện thành công.",
+      "assignError": "Không thể gán đại diện. Vui lòng kiểm tra lại thông tin."
+    },
+    "table": {
+      "series": "Tác phẩm",
+      "mangaka": "Tác giả",
+      "editor": "Biên tập viên",
+      "contractType": "Loại hợp đồng",
+      "createdAt": "Ngày tạo",
+      "noRepresentative": "Chưa có đại diện",
+      "assign": "Gán",
+      "viewComments": "Xem góp ý"
+    },
+    "comments": {
+      "title": "Góp ý tư vấn",
+      "empty": "Chưa có góp ý nào.",
+      "loadError": "Không thể tải góp ý.",
+      "placeholder": "Chưa có dữ liệu"
+    },
+    "status": {
+      "FULL_BUYOUT": "Mua đứt",
+      "REVENUE_SHARE": "Chia sẻ doanh thu"
     }
   },
   "settings": {
@@ -612,6 +657,7 @@
       "BOARD_SESSION": "Phiên họp Hội đồng"
     },
     "actions": {
+      "unknown": "Hành động không xác định",
       "CREATE": "Đã tạo",
       "UPDATE": "Đã cập nhật",
       "DELETE": "Đã xóa",
