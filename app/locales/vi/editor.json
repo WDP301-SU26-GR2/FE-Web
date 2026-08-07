@@ -433,7 +433,7 @@
     "sessionDescription": "Thiết lập lịch họp và chọn thủ công thành viên Hội đồng tham gia phiên.",
     "sessionRulesTitle": "Đề xuất của hệ thống",
     "sessionSystemRosterNotice": "Chọn bộ truyện làm ngữ cảnh, sau đó chọn thủ công thành viên Hội đồng tham gia phiên.",
-    "sessionManualRosterNotice": "Chọn đúng {{required}}/{{total}} thành viên Hội đồng theo cấu hình hệ thống. Danh sách phải hợp lệ trước khi tạo phiên.",
+    "sessionManualRosterNotice": "Chọn đúng {{quorumMin}} thành viên Hội đồng theo cấu hình hệ thống. Danh sách phải hợp lệ trước khi tạo phiên.",
     "noEligibleSeriesForSession": "Chưa có bộ truyện phù hợp để làm ngữ cảnh cho phiên Hội đồng.",
     "rosterSourceSeries": "Bộ truyện dùng để gợi ý thành viên",
     "rosterSourceSeriesHint": "Bộ truyện chỉ cung cấp ngữ cảnh thể loại để chọn thành viên, không giới hạn các quyết định được thêm vào phiên.",
@@ -490,6 +490,11 @@
       "chatPlaceholder": "Nhập nội dung trao đổi...",
       "chatLocked": "Thảo luận đã khóa trong giai đoạn bỏ phiếu.",
       "unknownMember": "Thành viên Hội đồng",
+      "senderRoles": {
+        "editor": "Biên tập viên",
+        "boardMember": "Thành viên Hội đồng",
+        "unknown": "Chưa xác định"
+      },
       "decisionAgendaHint": "Các nội dung đăng dài kỳ và vòng đời bộ truyện được chuẩn bị trực tiếp trong phiên này.",
       "addDecisionTitle": "Thêm nội dung biểu quyết",
       "addDecisionDescription": "Chọn loại quyết định và bộ truyện tương ứng. Biểu mẫu sẽ chỉ hiển thị những thông tin cần thiết cho loại quyết định đó.",

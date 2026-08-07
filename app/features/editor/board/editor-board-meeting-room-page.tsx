@@ -209,19 +209,39 @@ export function EditorBoardMeetingRoomPage({
             {t('board.meeting.chat')}
           </h2>
           <div className='mt-4 max-h-[28rem] space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-3'>
-            {meeting.messages.map((message) => (
-              <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
-                <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-                  <strong className='text-foreground'>
-                    {message.sender.displayName || t('board.meeting.unknownMember')}
-                  </strong>
-                  <span>
-                    {new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(new Date(message.createdAt))}
-                  </span>
-                </div>
-                <p className='mt-2 whitespace-pre-wrap text-xs'>{message.content}</p>
-              </article>
-            ))}
+            {meeting.messages.map((message) => {
+              const isEditor = message.sender.id === session.creatorId
+              const isBoardMember = !isEditor && session.allowedEditorIds.includes(message.sender.id)
+              const roleLabel = isEditor
+                ? t('board.meeting.senderRoles.editor')
+                : isBoardMember
+                  ? t('board.meeting.senderRoles.boardMember')
+                  : t('board.meeting.senderRoles.unknown')
+              const roleClass = isEditor
+                ? 'bg-primary/10 text-primary'
+                : isBoardMember
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'bg-muted text-muted-foreground'
+
+              return (
+                <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
+                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <strong className='text-xs text-foreground'>
+                        {message.sender.displayName || t('board.meeting.unknownMember')}
+                      </strong>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleClass}`}>
+                        {roleLabel}
+                      </span>
+                    </div>
+                    <span className='text-xs text-muted-foreground'>
+                      {new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(new Date(message.createdAt))}
+                    </span>
+                  </div>
+                  <p className='mt-2 whitespace-pre-wrap text-xs'>{message.content}</p>
+                </article>
+              )
+            })}
             {!meeting.messages.length && (
               <p className='text-xs text-muted-foreground'>{t('board.meeting.emptyChat')}</p>
             )}
