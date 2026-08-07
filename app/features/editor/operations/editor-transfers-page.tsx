@@ -10,6 +10,7 @@ import type {
 } from '~/api/model/transfer'
 import { MoneyInWords } from '~/shared/components/money-in-words'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
+import { Pagination } from '~/shared/components'
 import { CONTRACT_FIELD_LIMITS } from '../contracts/contract-flow'
 import {
   OperationAction,
@@ -20,6 +21,8 @@ import {
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
+
+const EDITOR_LIST_PAGE_SIZE = 8
 
 export function EditorTransfersPage({
   requests,
@@ -52,6 +55,12 @@ export function EditorTransfersPage({
   const canCreateContract = Boolean(
     request && isRevenueShare && request.status === 'ACCEPTED' && !request.transferContractId && !contract
   )
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(requests.length / EDITOR_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = requests.length === 0 ? 0 : (currentPage - 1) * EDITOR_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * EDITOR_LIST_PAGE_SIZE, requests.length)
+  const paginatedRequests = requests.slice(from > 0 ? from - 1 : 0, to)
   return (
     <OperationsLayout
       titleKey='operations.transfers'
@@ -98,7 +107,7 @@ export function EditorTransfersPage({
       <section className='rounded-xl border border-border bg-card p-4 shadow-sm'>
         <h2 className='text-sm font-bold text-foreground'>{t('operations.assignedTransferRequests')}</h2>
         <div className='mt-3 grid gap-2'>
-          {requests.map((item) => (
+          {paginatedRequests.map((item) => (
             <Link
               key={item.id}
               to={`?requestId=${encodeURIComponent(item.id)}${status ? `&status=${encodeURIComponent(status)}` : ''}`}
@@ -109,6 +118,18 @@ export function EditorTransfersPage({
               <span className='text-primary'>{t(`operations.transferStatuses.${item.status}`)}</span>
             </Link>
           ))}
+          {requests.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={requests.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
+          )}
           {!requests.length && <p className='text-xs text-muted-foreground'>{t('operations.noAssignedTransfers')}</p>}
         </div>
       </section>

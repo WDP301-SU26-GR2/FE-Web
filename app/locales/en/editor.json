@@ -152,7 +152,10 @@
     "label": "Submission pages",
     "previous": "Previous",
     "next": "Next",
-    "summary": "Showing {{from}}–{{to}} of {{total}}"
+    "summary": "Showing {{from}}–{{to}} of {{total}}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "showingRange": "Showing {{from}}–{{to}} of {{total}}"
   },
   "proposalDetail": {
     "proposalTitle": "Proposal content",
@@ -796,7 +799,6 @@
     "reprints": "Reprint workflow",
     "transfers": "Transfer negotiation",
     "versions": "Publication versions",
-    "insights": "Editorial insights",
     "surveyPeriodId": "Voting period ID",
     "selectSurveyPeriod": "Select a voting period",
     "surveyIssue": "Issue {{issue}}",
@@ -1151,8 +1153,7 @@
       "surveys": "Monitor reader voting periods, offline votes, and published rankings.",
       "reprints": "Create reprint requests, approve chapters and assign revisers.",
       "transfers": "Start negotiations and create ownership transfer contracts.",
-      "versions": "Create and maintain language and publication editions.",
-      "insights": "Review assistant directory, revision history, rankings and payments by series."
+      "versions": "Create and maintain language and publication editions."
     }
   },
   "notifications": {

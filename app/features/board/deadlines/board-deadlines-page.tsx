@@ -1,9 +1,11 @@
 import { Form, useFetcher } from 'react-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { AlertTriangle, CalendarRange, CheckCircle2, Clock3, Loader2, UserRound, XCircle } from 'lucide-react'
+import { Pagination } from '~/shared/components'
 import {
   BoardActionDialog,
   boardDialogButton,
@@ -15,6 +17,7 @@ import {
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 
+const BOARD_LIST_PAGE_SIZE = 8
 const deadlineResolveFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold text-foreground'
 const deadlineResolveFieldLabelClass = 'flex min-h-10 items-end leading-5'
 
@@ -34,6 +37,12 @@ export function BoardDeadlinesPage({
   hasError: boolean
 }) {
   const { t } = useTranslation('board')
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(requests.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = requests.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, requests.length)
+  const paginatedRequests = requests.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -85,10 +94,22 @@ export function BoardDeadlinesPage({
         </div>
       )}
       <div className='grid gap-4'>
-        {requests.map((item) => (
+        {paginatedRequests.map((item) => (
           <DeadlineCard key={item.id} item={item} />
         ))}
       </div>
+      {requests.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={requests.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!chapterId && <EmptyState text={t('deadlines.selectHint')} />}
       {seriesId && chapterId && !requests.length && <EmptyState text={t('deadlines.empty')} />}
     </div>

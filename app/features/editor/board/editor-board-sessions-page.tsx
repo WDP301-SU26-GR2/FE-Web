@@ -13,6 +13,7 @@ import type { SuggestBoardMembersResDtoOutputItemsItem } from '~/api/model/board
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
+import { Pagination } from '~/shared/components'
 import { orderBoardDecisions, orderBoardSessions } from './board-order'
 import { BOARD_SESSION_INTENTS, BOARD_SESSION_FIELD_LIMITS, isValidBoardSessionTimeRange } from './board-session-flow'
 import {
@@ -27,6 +28,7 @@ import {
 } from './components/board-shared'
 import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
 
+const BOARD_LIST_PAGE_SIZE = 8
 const sessionFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
 const sessionFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
@@ -37,7 +39,6 @@ export function EditorBoardSessionsPage({
   boardConfig,
   hasError,
   manageAll = false,
-  hideCreateButton = false,
   backPath = '/dashboard/editor/board',
   detailBasePath = '/dashboard/editor/board/sessions'
 }: {
@@ -47,7 +48,6 @@ export function EditorBoardSessionsPage({
   boardConfig: BoardConfigResDtoOutput | null
   hasError: boolean
   manageAll?: boolean
-  hideCreateButton?: boolean
   backPath?: string
   detailBasePath?: string
 }) {
@@ -57,6 +57,7 @@ export function EditorBoardSessionsPage({
   const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState('')
   const [sessionSearch, setSessionSearch] = useState('')
   const [sessionStatus, setSessionStatus] = useState('')
+  const [page, setPage] = useState(1)
   useBoardAutoRefresh()
   const currentUserId = authSession?.user.id ?? ''
   const visibleSessions = sessions
@@ -70,6 +71,11 @@ export function EditorBoardSessionsPage({
         (!sessionSearch || session.title.toLowerCase().includes(sessionSearch.toLowerCase()))
     )
   )
+  const totalPages = Math.max(1, Math.ceil(filteredSessions.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredSessions.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, filteredSessions.length)
+  const paginatedSessions = filteredSessions.slice(from > 0 ? from - 1 : 0, to)
 
   return (
     <BoardPageLayout
@@ -79,21 +85,6 @@ export function EditorBoardSessionsPage({
       backPath={backPath}
     >
       <div className='flex justify-end'>
-        <button
-          type='button'
-          onClick={() => {
-            const randomSeries = series[Math.floor(Math.random() * series.length)]
-            setRosterSourceSeriesId(randomSeries?.id ?? '')
-            setCreateDialogOpen(true)
-          }}
-          className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
-        >
-          <Plus className='size-4' />
-          {t('actions.createSession')}
-        </button>
-      </div>
-      {!hideCreateButton && (
-        <div className='flex justify-end'>
           <button
             type='button'
             onClick={() => {
@@ -101,26 +92,31 @@ export function EditorBoardSessionsPage({
               setRosterSourceSeriesId(randomSeries?.id ?? '')
               setCreateDialogOpen(true)
             }}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+            className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
           >
             <Plus className='size-4' />
-            {t('actions.createSession')}
+            {t('board.createSession', { defaultValue: 'Tạo phiên họp mới' })}
           </button>
-        </div>
-      )}
+      </div>
       <BoardPanel title={t('board.sessions')}>
         <div className='grid gap-3'>
           <div className='grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>
             <input
               className={boardInput}
               value={sessionSearch}
-              onChange={(event) => setSessionSearch(event.target.value)}
+              onChange={(event) => {
+                setSessionSearch(event.target.value)
+                setPage(1)
+              }}
               placeholder={t('board.filters.searchSessions')}
             />
             <select
               className={boardInput}
               value={sessionStatus}
-              onChange={(event) => setSessionStatus(event.target.value)}
+              onChange={(event) => {
+                setSessionStatus(event.target.value)
+                setPage(1)
+              }}
             >
               <option value=''>{t('board.filters.allStatuses')}</option>
               {Object.values(BoardSessionResDtoOutputStatus).map((status) => (
@@ -136,7 +132,7 @@ export function EditorBoardSessionsPage({
               {t(`board.realtime.${voteProgress.connectionState}`)}
             </div>
           )}
-          {filteredSessions.map((session) => (
+          {paginatedSessions.map((session) => (
             <SessionCard
               key={session.id}
               session={session}
@@ -146,6 +142,18 @@ export function EditorBoardSessionsPage({
               detailBasePath={detailBasePath}
             />
           ))}
+          {filteredSessions.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={filteredSessions.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
+          )}
           {!filteredSessions.length && <p className='text-xs text-muted-foreground'>{t('board.emptySessions')}</p>}
         </div>
       </BoardPanel>

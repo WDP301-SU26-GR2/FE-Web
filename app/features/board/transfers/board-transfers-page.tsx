@@ -24,11 +24,13 @@ import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
 import { MoneyInWords } from '~/shared/components/money-in-words'
 import { TransferContractSummary } from '~/shared/components/transfer-contract-summary'
+import { Pagination } from '~/shared/components'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { useOtpCooldown } from '~/shared/hooks'
 
 const TRANSFER_MONEY_MINIMUM = 1
 const TRANSFER_MONEY_MAXIMUM = 100_000_000_000
+const BOARD_LIST_PAGE_SIZE = 8
 
 export function BoardTransfersPage({
   requests,
@@ -53,6 +55,7 @@ export function BoardTransfersPage({
   const [signOpen, setSignOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  const [page, setPage] = useState(1)
   const hasMangakaA = signatures.some((signature) => signature.role === 'MANGAKA_A')
   const hasMangakaB = signatures.some((signature) => signature.role === 'MANGAKA_B')
   const hasBoard = signatures.some((signature) => signature.role === 'BOARD')
@@ -75,6 +78,11 @@ export function BoardTransfersPage({
           .includes(search.toLowerCase())) &&
       (!status || item.status === status)
   )
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredRequests.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, filteredRequests.length)
+  const paginatedRequests = filteredRequests.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -169,10 +177,22 @@ export function BoardTransfersPage({
         </select>
       </div>
       <div className='grid gap-4'>
-        {filteredRequests.map((item) => (
+        {paginatedRequests.map((item) => (
           <TransferCard key={item.id} item={item} decisions={decisions} />
         ))}
       </div>
+      {filteredRequests.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={filteredRequests.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!filteredRequests.length && <EmptyState text={t('transfers.empty')} />}
     </div>
   )

@@ -2,8 +2,6 @@ import {
   CalendarClock,
   ChartNoAxesCombined,
   ChevronRight,
-  History,
-  LibraryBig,
   RefreshCcw,
   Scale,
   Wrench
@@ -17,9 +15,7 @@ const operationItems = [
   ['deadlines', CalendarClock],
   ['rankings', ChartNoAxesCombined],
   ['reprints', RefreshCcw],
-  ['transfers', Scale],
-  ['audit', History],
-  ['reference', LibraryBig]
+  ['transfers', Scale]
 ] as const
 
 export function BoardOperationsPage() {

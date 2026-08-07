@@ -90,7 +90,6 @@ export default [
       route('operations/reprints', 'routes/editor/operations-reprints.tsx'),
       route('operations/transfers', 'routes/editor/operations-transfers.tsx'),
       route('operations/versions', 'routes/editor/operations-versions.tsx'),
-      route('operations/insights', 'routes/editor/operations-insights.tsx'),
       route('notifications', 'routes/editor/notifications.tsx'),
       route('profile', 'routes/editor/profile.tsx'),
       route('publication', 'routes/editor/publication.tsx'),
@@ -114,8 +113,6 @@ export default [
       route('rankings', 'routes/board/rankings.tsx'),
       route('reprints', 'routes/board/reprints.tsx'),
       route('transfers', 'routes/board/transfers.tsx'),
-      route('audit', 'routes/board/audit.tsx'),
-      route('reference', 'routes/board/reference.tsx'),
       route('notifications', 'routes/board/notifications.tsx'),
       route('profile', 'routes/board/profile.tsx')
     ])

@@ -9,6 +9,7 @@ import {
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { MangakaDirectoryListResDtoOutputItemsItem } from '~/api/model/users'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
+import { Pagination } from '~/shared/components'
 import {
   BoardActionDialog,
   boardDialogButton,
@@ -20,6 +21,8 @@ import {
   StatusBadge
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
+
+const BOARD_LIST_PAGE_SIZE = 8
 
 export function BoardReprintsPage({
   requests,
@@ -39,6 +42,12 @@ export function BoardReprintsPage({
   status: string
 }) {
   const { t } = useTranslation('board')
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(requests.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = requests.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, requests.length)
+  const paginatedRequests = requests.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -70,10 +79,22 @@ export function BoardReprintsPage({
       </BoardPanel>
       {hasError && <p className='text-xs text-destructive'>{t('common.loadError')}</p>}
       <div className='grid gap-4'>
-        {requests.map((item) => (
+        {paginatedRequests.map((item) => (
           <ReprintCard key={item.id} item={item} contractType={contractTypes[item.seriesId]} mangakas={mangakas} />
         ))}
       </div>
+      {requests.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={requests.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!requests.length && <EmptyState text={t('reprints.empty')} />}
     </div>
   )

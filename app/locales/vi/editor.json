@@ -152,7 +152,10 @@
     "label": "Các trang hồ sơ",
     "previous": "Trang trước",
     "next": "Trang sau",
-    "summary": "Đang hiển thị {{from}}–{{to}} trong tổng số {{total}}"
+    "summary": "Đang hiển thị {{from}}–{{to}} trong tổng số {{total}}",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau",
+    "showingRange": "Đang hiển thị {{from}}–{{to}} trong tổng số {{total}}"
   },
   "proposalDetail": {
     "proposalTitle": "Nội dung đề xuất",
@@ -796,7 +799,6 @@
     "reprints": "Quy trình tái bản",
     "transfers": "Thương lượng chuyển nhượng",
     "versions": "Phiên bản phát hành",
-    "insights": "Dữ liệu biên tập",
     "surveyPeriodId": "Mã kỳ bình chọn",
     "selectSurveyPeriod": "Chọn kỳ bình chọn",
     "surveyIssue": "Kỳ số {{issue}}",
@@ -1151,8 +1153,7 @@
       "surveys": "Theo dõi kỳ bình chọn độc giả, phiếu ngoại tuyến và bảng xếp hạng.",
       "reprints": "Tạo yêu cầu tái bản, duyệt chương và phân công người chỉnh sửa.",
       "transfers": "Bắt đầu thương lượng và tạo hợp đồng chuyển quyền sở hữu.",
-      "versions": "Tạo và quản lý các phiên bản ngôn ngữ, hình thức phát hành.",
-      "insights": "Xem danh bạ trợ lý, lịch sử yêu cầu sửa, xếp hạng và thanh toán theo bộ truyện."
+      "versions": "Tạo và quản lý các phiên bản ngôn ngữ, hình thức phát hành."
     }
   },
   "notifications": {

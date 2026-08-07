@@ -17,10 +17,6 @@ import { toast } from 'sonner'
 import type { AdminSettingsActionResult, AdminSettingsData } from './types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
-const adminDialogButton =
-  'inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold sm:w-auto'
-const settingsFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5'
-const settingsFieldLabelClass = 'flex min-h-10 items-end text-xs font-bold leading-5 text-foreground'
 
 export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData | null; hasError: boolean }) {
   const { t } = useTranslation('admin')
@@ -241,6 +237,7 @@ function BoardConfigCard({ data }: { data: AdminSettingsData }) {
   const fetcher = useFetcher<AdminSettingsActionResult>()
   const config = data.boardConfig
   const [open, setOpen] = useState(false)
+  const [step, setStep] = useState(1)
 
   return (
     <>
@@ -264,7 +261,7 @@ function BoardConfigCard({ data }: { data: AdminSettingsData }) {
             />
           </div>
           <button
-            onClick={() => setOpen(true)}
+            onClick={() => { setOpen(true); setStep(1) }}
             className='inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md'
           >
             <Pencil className='size-4' />
@@ -288,33 +285,68 @@ function BoardConfigCard({ data }: { data: AdminSettingsData }) {
             <input type='hidden' name='configId' value={config.id} />
             <input type='hidden' name='updatedBy' value={data.currentUserId} />
             <div className='space-y-4'>
+              <div className='flex items-center gap-2 text-xs font-bold text-amber-700'>
+                <span className={`flex size-7 items-center justify-center rounded-full border-2 ${step >= 1 ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-200 text-amber-400'}`}>1</span>
+                <span className={step >= 1 ? 'text-amber-700' : 'text-amber-400'}>{t('settings.board.step1Title', { defaultValue: 'Cấu hình tổng quát' })}</span>
+                <span className='ml-auto text-[10px] font-medium text-amber-600'>{t('settings.board.step1Hint', { defaultValue: 'Tổng thành viên & tỷ lệ phiếu thuận' })}</span>
+              </div>
+              {step === 1 && (
+                <div className='grid gap-4 sm:grid-cols-2'>
+                  <NumberField
+                    name='boardTotalMembers'
+                    value={config.boardTotalMembers}
+                    min={3}
+                    step={2}
+                    label={t('settings.board.boardTotalMembers')}
+                    isOdd
+                  />
+                  <NumberField
+                    name='approveMajorityPercent'
+                    value={Math.round(config.approveMajorityRatio * 100)}
+                    min={3}
+                    step={2}
+                    max={100}
+                    label={t('settings.board.approveMajorityRatio')}
+                    unit='%'
+                  />
+                </div>
+              )}
+              <div className='flex items-center gap-2 text-xs font-bold text-amber-700'>
+                <span className={`flex size-7 items-center justify-center rounded-full border-2 ${step >= 2 ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-200 text-amber-400'}`}>2</span>
+                <span className={step >= 2 ? 'text-amber-700' : 'text-amber-400'}>{t('settings.board.step2Title', { defaultValue: 'Số thành viên được mời' })}</span>
+                <span className='ml-auto text-[10px] font-medium text-amber-600'>{t('settings.board.step2Hint', { defaultValue: 'Quorum tối thiểu cho phiên họp' })}</span>
+              </div>
+              {step === 2 && (
+                <div className='grid gap-4 sm:grid-cols-1'>
+                  <NumberField name='quorumMin' value={config.quorumMin} min={3} label={t('settings.board.quorumMin')} />
+                </div>
+              )}
               <div className='rounded-lg border border-amber-200 bg-amber-50 p-3'>
                 <p className='flex items-center gap-2 text-xs font-medium text-amber-800'>
                   <AlertTriangle className='size-4 shrink-0' />
                   {t('settings.board.lockNotice')}
                 </p>
               </div>
-              <div className='grid gap-4 sm:grid-cols-3'>
-                <NumberField
-                  name='boardTotalMembers'
-                  value={config.boardTotalMembers}
-                  min={3}
-                  step={2}
-                  label={t('settings.board.boardTotalMembers')}
-                  isOdd
-                />
-                <NumberField name='quorumMin' value={config.quorumMin} min={1} label={t('settings.board.quorumMin')} />
-                <NumberField
-                  name='approveMajorityPercent'
-                  value={Math.round(config.approveMajorityRatio * 100)}
-                  min={1}
-                  max={100}
-                  label={t('settings.board.approveMajorityRatio')}
-                  unit='%'
-                />
-              </div>
             </div>
-            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
+            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} extra={
+              <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
+                {step === 2 && (
+                  <button type='button' onClick={() => setStep(1)} className={boardDialogButton}>
+                    {t('actions.back', { defaultValue: 'Quay lại' })}
+                  </button>
+                )}
+                {step === 1 ? (
+                  <button type='button' onClick={() => setStep(2)} className={boardDialogButton}>
+                    {t('actions.next', { defaultValue: 'Tiếp theo' })}
+                  </button>
+                ) : (
+                  <button type='submit' disabled={fetcher.state !== 'idle'} className={boardDialogButton}>
+                    {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <Save className='size-4' />}
+                    {t('settings.save')}
+                  </button>
+                )}
+              </div>
+            } />
           </fetcher.Form>
         </Dialog>
       )}
@@ -530,10 +562,12 @@ function NumberField({
 
 function FormFooter({
   fetcher,
-  updatedAt
+  updatedAt,
+  extra
 }: {
   fetcher: ReturnType<typeof useFetcher<AdminSettingsActionResult>>
   updatedAt?: string
+  extra?: React.ReactNode
 }) {
   const { t, i18n } = useTranslation('admin')
   const busy = fetcher.state !== 'idle'
@@ -564,7 +598,8 @@ function FormFooter({
           })}
         </p>
       )}
-      <div className='ml-auto'>
+      <div className='ml-auto flex items-center gap-2'>
+        {extra}
         <button
           type='submit'
           disabled={busy}
@@ -580,3 +615,6 @@ function FormFooter({
 
 const inputClassName =
   'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20'
+
+const boardDialogButton =
+  'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold shadow-sm transition-all'

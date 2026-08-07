@@ -5,6 +5,7 @@ import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
+import { Pagination } from '~/shared/components'
 import { Dialog } from '~/shared/ui/dialog'
 import {
   OperationFeedback,
@@ -22,6 +23,7 @@ type DeadlineAction =
   | 'withdrawDeadline'
   | 'finalizeDeadline'
 
+const EDITOR_LIST_PAGE_SIZE = 8
 const CLOSED_STATUSES = new Set(['APPROVED', 'REJECTED'])
 const NEGOTIABLE_STATUSES = new Set(['PROPOSED', 'COUNTER_PROPOSED'])
 const deadlineDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold'
@@ -67,6 +69,12 @@ export function EditorDeadlinesPage({
   const canRespond = negotiable && editorHasTurn
   const canWithdraw = negotiable && selectedRequest?.requestedBy === 'EDITOR'
   const canFinalize = selectedRequest?.status === 'AGREED_BY_PARTIES'
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(items.length / EDITOR_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = items.length === 0 ? 0 : (currentPage - 1) * EDITOR_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * EDITOR_LIST_PAGE_SIZE, items.length)
+  const paginatedItems = items.slice(from > 0 ? from - 1 : 0, to)
 
   return (
     <OperationsLayout
@@ -83,6 +91,7 @@ export function EditorDeadlinesPage({
               setActiveSeriesId(event.target.value)
               setActiveChapterId('')
               setSelectedRequestId('')
+              setPage(1)
             }}
             className={operationInput}
           >
@@ -99,6 +108,7 @@ export function EditorDeadlinesPage({
             onChange={(event) => {
               setActiveChapterId(event.target.value)
               setSelectedRequestId('')
+              setPage(1)
             }}
             className={operationInput}
             disabled={!activeSeriesId}
@@ -148,7 +158,7 @@ export function EditorDeadlinesPage({
           </div>
           {items.length ? (
             <div className='divide-y divide-border'>
-              {items.map((item) => (
+              {paginatedItems.map((item) => (
                 <button
                   key={item.id}
                   type='button'
@@ -175,6 +185,18 @@ export function EditorDeadlinesPage({
             <p className='px-5 py-8 text-center text-xs text-muted-foreground'>
               {activeChapterId ? t('operations.deadlineEmpty') : t('operations.deadlineSelectChapter')}
             </p>
+          )}
+          {items.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={items.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
           )}
         </div>
 

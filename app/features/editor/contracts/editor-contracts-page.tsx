@@ -8,6 +8,7 @@ import { MoneyInWords } from '~/shared/components/money-in-words'
 import { Dialog } from '~/shared/ui/dialog'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { CreateContractBodyDtoContractType } from '~/api/model/contracts'
+import { Pagination } from '~/shared/components'
 import {
   CONTRACT_FIELD_LIMITS,
   EDITOR_CONTRACT_INTENTS,
@@ -22,6 +23,7 @@ import {
   type InitialPayoutMode
 } from './components/initial-payment-condition-fields'
 
+const EDITOR_LIST_PAGE_SIZE = 8
 const inputClass =
   'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 const contractFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
@@ -46,6 +48,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const [contractSearch, setContractSearch] = useState('')
   const [contractStatus, setContractStatus] = useState('')
   const [listContractType, setListContractType] = useState('')
+  const [page, setPage] = useState(1)
   const submittedRef = useRef(false)
   const eligibleDecisions = data.decisions.filter(
     (decision) =>
@@ -75,6 +78,11 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
       (!listContractType || contract.contractType === listContractType)
     )
   })
+  const totalPages = Math.max(1, Math.ceil(filteredContracts.length / EDITOR_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredContracts.length === 0 ? 0 : (currentPage - 1) * EDITOR_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * EDITOR_LIST_PAGE_SIZE, filteredContracts.length)
+  const paginatedContracts = filteredContracts.slice(from > 0 ? from - 1 : 0, to)
 
   function selectContractType(value: typeof contractType) {
     setContractType(value)
@@ -319,13 +327,19 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           <input
             className={inputClass}
             value={contractSearch}
-            onChange={(event) => setContractSearch(event.target.value)}
+            onChange={(event) => {
+              setContractSearch(event.target.value)
+              setPage(1)
+            }}
             placeholder={t('filters.searchContracts')}
           />
           <select
             className={inputClass}
             value={contractStatus}
-            onChange={(event) => setContractStatus(event.target.value)}
+            onChange={(event) => {
+              setContractStatus(event.target.value)
+              setPage(1)
+            }}
           >
             <option value=''>{t('filters.allContractStatuses')}</option>
             {contractStatuses.map((value) => (
@@ -337,7 +351,10 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           <select
             className={inputClass}
             value={listContractType}
-            onChange={(event) => setListContractType(event.target.value)}
+            onChange={(event) => {
+              setListContractType(event.target.value)
+              setPage(1)
+            }}
           >
             <option value=''>{t('filters.allContractTypes')}</option>
             <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
@@ -345,7 +362,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           </select>
         </div>
         <div className='grid gap-4 xl:grid-cols-2'>
-          {filteredContracts.map((contract) => {
+          {paginatedContracts.map((contract) => {
             const series = data.series.find((item) => item.id === contract.seriesId)
             return (
               <Link
@@ -371,6 +388,18 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               </Link>
             )
           })}
+          {filteredContracts.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={filteredContracts.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
+          )}
           {!filteredContracts.length && (
             <div className='rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
               {t('contracts.empty')}

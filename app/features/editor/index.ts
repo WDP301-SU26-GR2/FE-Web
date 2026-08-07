@@ -71,8 +71,6 @@ export { EditorSurveysPage } from './operations/editor-surveys-page'
 export { EditorReprintsPage } from './operations/editor-reprints-page'
 export { EditorTransfersPage } from './operations/editor-transfers-page'
 export { EditorPublicationVersionsPage } from './operations/editor-publication-versions-page'
-export { EditorInsightsPage } from './operations/editor-insights-page'
-
 export { EditorNotificationsPage } from './notifications/editor-notifications-page'
 export { EditorProfilePage } from './profile/editor-profile-page'
 

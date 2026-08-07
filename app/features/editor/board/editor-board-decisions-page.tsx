@@ -6,6 +6,7 @@ import type { BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
+import { Pagination } from '~/shared/components'
 import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
 import { orderBoardDecisions } from './board-order'
 import {
@@ -19,6 +20,7 @@ import {
   useBoardFetcher
 } from './components/board-shared'
 
+const BOARD_LIST_PAGE_SIZE = 8
 const voteFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold text-foreground'
 const voteFieldLabelClass = 'flex min-h-10 items-end leading-5'
 
@@ -47,6 +49,7 @@ export function EditorBoardDecisionsPage({
   const [selectedSessionId, setSelectedSessionId] = useState('')
   const [decisionType, setDecisionType] = useState('')
   const [decisionResult, setDecisionResult] = useState('')
+  const [page, setPage] = useState(1)
   useBoardAutoRefresh()
   const realtime = useEditorSessionVoteProgress(sessions, decisions)
   const visibleDecisions = orderBoardDecisions(
@@ -60,10 +63,16 @@ export function EditorBoardDecisionsPage({
           !['CONTINUE', 'CANCEL', 'HIATUS', 'ENDING_ALLOWANCE', 'SERIES_CONTRACT_APPROVAL'].includes(decision.decisionType ?? '')
       )
   )
+  const totalPages = Math.max(1, Math.ceil(visibleDecisions.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = visibleDecisions.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, visibleDecisions.length)
+  const paginatedDecisions = visibleDecisions.slice(from > 0 ? from - 1 : 0, to)
 
   function selectSeries(seriesId: string) {
     setSelectedSeriesId(seriesId)
     setSelectedSessionId('')
+    setPage(1)
   }
 
   return (
@@ -90,7 +99,10 @@ export function EditorBoardDecisionsPage({
           <select
             className={boardInput}
             value={selectedSessionId}
-            onChange={(event) => setSelectedSessionId(event.target.value)}
+            onChange={(event) => {
+              setSelectedSessionId(event.target.value)
+              setPage(1)
+            }}
           >
             <option value=''>{t('board.filters.allSessions')}</option>
             {sessions.map((item) => (
@@ -123,7 +135,7 @@ export function EditorBoardDecisionsPage({
           </select>
         </div>
         <div className='space-y-3'>
-          {visibleDecisions.map((decision) => (
+          {paginatedDecisions.map((decision) => (
             <DecisionCard
               key={decision.id}
               decision={decision}
@@ -140,6 +152,18 @@ export function EditorBoardDecisionsPage({
               )}
             />
           ))}
+          {visibleDecisions.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={visibleDecisions.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
+          )}
           {!visibleDecisions.length && (
             <p className='text-xs text-muted-foreground'>{t('board.emptyDecisionsForSelection')}</p>
           )}

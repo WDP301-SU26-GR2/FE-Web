@@ -25,6 +25,7 @@ import {
 import { useId, useState, type ReactNode } from 'react'
 import { Dialog } from '~/shared/ui/dialog'
 import { MoneyInWords } from '~/shared/components/money-in-words'
+import { Pagination } from '~/shared/components'
 import {
   BoardActionDialog,
   boardDialogButton,
@@ -35,6 +36,8 @@ import {
   StatusBadge
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
+
+const BOARD_LIST_PAGE_SIZE = 8
 
 export function BoardPaymentsPage({
   payments,
@@ -61,6 +64,7 @@ export function BoardPaymentsPage({
   const paymentType = searchParams.get('paymentType') ?? ''
   const paymentSource = searchParams.get('paymentSource') ?? ''
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const filteredPayments = payments.filter(
     (payment) =>
       (!paymentStatus || payment.status === paymentStatus) &&
@@ -76,6 +80,11 @@ export function BoardPaymentsPage({
         (left, right) => Number(right.id === focusPaymentId) - Number(left.id === focusPaymentId)
       )
     : filteredPayments
+  const totalPages = Math.max(1, Math.ceil(orderedPayments.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = orderedPayments.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, orderedPayments.length)
+  const paginatedPayments = orderedPayments.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
@@ -149,7 +158,7 @@ export function BoardPaymentsPage({
         </div>
       )}
       <div className='grid gap-4'>
-        {orderedPayments.map((payment) => (
+        {paginatedPayments.map((payment) => (
           <PaymentCard
             key={payment.id}
             payment={payment}
@@ -160,6 +169,18 @@ export function BoardPaymentsPage({
           />
         ))}
       </div>
+      {orderedPayments.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={orderedPayments.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!orderedPayments.length && <EmptyState text={t('payments.empty')} />}
     </div>
   )

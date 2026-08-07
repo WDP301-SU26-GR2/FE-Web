@@ -3,7 +3,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ContractListItemDtoOutputContractType, type ContractListItemDtoOutput } from '~/api/model/contracts'
 import { MoneyInWords } from '~/shared/components/money-in-words'
+import { Pagination } from '~/shared/components'
 import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
+
+const BOARD_LIST_PAGE_SIZE = 8
 
 export function BoardContractsPage({
   contracts,
@@ -16,6 +19,7 @@ export function BoardContractsPage({
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [contractType, setContractType] = useState('')
+  const [page, setPage] = useState(1)
   const statuses = [...new Set(contracts.map((contract) => contract.status))]
   const filteredContracts = contracts.filter(
     (contract) =>
@@ -24,6 +28,11 @@ export function BoardContractsPage({
       (!status || contract.status === status) &&
       (!contractType || contract.contractType === contractType)
   )
+  const totalPages = Math.max(1, Math.ceil(filteredContracts.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredContracts.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, filteredContracts.length)
+  const paginatedContracts = filteredContracts.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader title={t('contracts.title')} description={t('contracts.description')} backHref='/dashboard/board' />
@@ -53,7 +62,7 @@ export function BoardContractsPage({
         </select>
       </div>
       <div className='grid gap-4 md:grid-cols-2'>
-        {filteredContracts.map((contract) => (
+        {paginatedContracts.map((contract) => (
           <Link
             key={contract.id}
             to={`/dashboard/board/contracts/${contract.id}`}
@@ -73,6 +82,18 @@ export function BoardContractsPage({
           </Link>
         ))}
       </div>
+      {filteredContracts.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={filteredContracts.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!filteredContracts.length && <EmptyState text={t('contracts.empty')} />}
     </div>
   )

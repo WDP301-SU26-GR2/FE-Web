@@ -5,8 +5,6 @@ import {
   ChartNoAxesCombined,
   ClipboardCheck,
   FileSignature,
-  History,
-  LibraryBig,
   RefreshCcw,
   Scale,
   UserRoundCog,
@@ -29,8 +27,6 @@ const sections = [
   ['rankings', ChartNoAxesCombined, 'bg-info/10 text-info'],
   ['reprints', RefreshCcw, 'bg-success/10 text-success'],
   ['transfers', Scale, 'bg-primary/10 text-primary'],
-  ['audit', History, 'bg-muted text-muted-foreground'],
-  ['reference', LibraryBig, 'bg-info/10 text-info'],
   ['notifications', Bell, 'bg-destructive/10 text-destructive'],
   ['profile', UserRoundCog, 'bg-primary/10 text-primary']
 ] as const
