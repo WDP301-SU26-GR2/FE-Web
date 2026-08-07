@@ -64,7 +64,6 @@ export function AdminAuditPage({
           {t('audit.eyebrow')}
         </div>
         <h1 className='mt-2 text-xl font-bold text-foreground md:text-2xl'>{t('audit.title')}</h1>
-        <p className='mt-2 max-w-3xl text-xs leading-6 text-muted-foreground'>{t('audit.subtitle')}</p>
       </header>
 
       {hasError && (

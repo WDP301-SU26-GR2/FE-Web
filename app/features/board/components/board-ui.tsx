@@ -17,11 +17,10 @@ export const boardDialogButton =
 
 export function BoardHeader({
   title,
-  description,
   backHref
 }: {
   title: string
-  description: string
+  description?: string
   backHref?: string
 }) {
   const { t } = useTranslation('board')
@@ -41,7 +40,6 @@ export function BoardHeader({
         {t('common.eyebrow')}
       </p>
       <h1 className='mt-2 text-2xl font-bold text-foreground'>{title}</h1>
-      <p className='mt-2 text-xs text-muted-foreground'>{description}</p>
     </header>
   )
 }

@@ -119,13 +119,13 @@
   "users": {
     "eyebrow": "Quản trị danh tính",
     "title": "Quản lý người dùng",
-    "subtitle": "Tìm kiếm và quản lý tài khoản Mangaka, Trợ lý, Biên tập viên và Thành viên Hội đồng.",
+    "subtitle": "Tìm kiếm và quản lý tài khoản tác giả , Trợ lý, Biên tập viên và Thành viên Hội đồng.",
     "total": "Tổng cộng {{count}} tài khoản",
     "restoreMode": "Đang hiển thị cả tài khoản đã xoá",
     "create": {
       "button": "Tạo tài khoản nhân sự",
       "title": "Tạo tài khoản Biên tập viên hoặc Thành viên Hội đồng",
-      "description": "Mangaka và Trợ lý tự đăng ký; Quản trị viên cấp cao chỉ cấp trực tiếp tài khoản nhân sự nhà xuất bản.",
+      "description": "Tác giả và Trợ lý tự đăng ký; Quản trị viên cấp cao chỉ cấp trực tiếp tài khoản nhân sự nhà xuất bản.",
       "passwordNotice": "Mật khẩu tạm chỉ được trả về một lần. Người dùng bắt buộc đổi mật khẩu khi đăng nhập lần đầu.",
       "submit": "Tạo tài khoản"
     },
@@ -397,9 +397,9 @@
       "reprintStatuses": {
         "PENDING": "Đang chờ xử lý",
         "PROPOSED": "Đã đề xuất",
-        "MANGAKA_REVIEW": "Chờ Mangaka xem xét",
-        "MANGAKA_APPROVED": "Mangaka đã đồng ý",
-        "REJECTED_BY_MANGAKA": "Mangaka đã từ chối",
+        "MANGAKA_REVIEW": "Chờ tác giả xem xét",
+        "MANGAKA_APPROVED": "Tác giả đã đồng ý",
+        "REJECTED_BY_MANGAKA": "Tác giả đã từ chối",
         "BOARD_APPROVED": "Hội đồng đã duyệt",
         "APPROVED": "Đã duyệt",
         "IN_PRODUCTION": "Đang sản xuất",
@@ -555,7 +555,7 @@
       "ranking": "Bảng xếp hạng Hội đồng",
       "rankingHelp": "Tải dữ liệu xếp hạng làm căn cứ cho một kỳ khảo sát.",
       "selectPeriod": "Chọn kỳ khảo sát",
-      "directories": "Danh bạ Mangaka và trợ lý",
+      "directories": "Danh bạ tác giả và trợ lý",
       "directoriesHelp": "Xem danh bạ hồ sơ đang được dùng cho phân công và đánh giá.",
       "workflows": "Chi tiết quy trình",
       "workflowsHelp": "Tra cứu hồ sơ tái bản, thời hạn và chuyển nhượng theo mã.",
@@ -576,7 +576,7 @@
         "rankingTrend": "Xu hướng xếp hạng",
         "boardRanking": "Đánh giá của Hội đồng",
         "assistants": "Trợ lý",
-        "mangakas": "Mangaka",
+        "mangakas": "Tác giả ",
         "reprint": "Yêu cầu tái bản",
         "reprintChapters": "Các chương tái bản",
         "reprintChapter": "Chương tái bản đang chọn",
@@ -646,7 +646,7 @@
         "noBio": "Chưa có giới thiệu.",
         "noPortfolio": "Chưa có tệp hồ sơ năng lực.",
         "loadError": "Không thể tải hồ sơ người dùng. Vui lòng thử lại.",
-        "mangakaTitle": "Hồ sơ Mangaka",
+        "mangakaTitle": "Hồ sơ tác giả ",
         "assistantTitle": "Hồ sơ trợ lý"
       }
     },

@@ -75,9 +75,11 @@ export function BoardSessionDetailPage({
       </BoardPanel>
       <MeetingChat
         messages={meeting.messages}
-        disabled={session.status !== 'ACTIVE' || meeting.phase === 'VOTING'}
+        disabled={session.status !== 'ACTIVE' || meeting.phase !== 'QA'}
         connectionState={meeting.connectionState}
         sendMessage={meeting.sendMessage}
+        creatorId={session.creatorId}
+        allowedEditorIds={session.allowedEditorIds}
       />
       <BoardPanel title={t('decisions.title')}>
         <div className='mb-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground'>
@@ -99,12 +101,16 @@ function MeetingChat({
   messages,
   disabled,
   connectionState,
-  sendMessage
+  sendMessage,
+  creatorId,
+  allowedEditorIds
 }: {
   messages: BoardMessage[]
   disabled: boolean
   connectionState: 'connecting' | 'connected' | 'disconnected'
   sendMessage: (content: string) => Promise<{ status: string; reason?: string }>
+  creatorId: string
+  allowedEditorIds: string[]
 }) {
   const { t, i18n } = useTranslation('board')
   const [content, setContent] = useState('')
@@ -128,19 +134,59 @@ function MeetingChat({
     }
   }
 
+  const getSenderRole = (senderId: string) => {
+    if (senderId === creatorId) return 'editor'
+    if (allowedEditorIds.includes(senderId)) return 'boardMember'
+    return 'unknown'
+  }
+
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'editor':
+        return 'bg-primary/10 text-primary'
+      case 'boardMember':
+        return 'bg-secondary text-secondary-foreground'
+      default:
+        return 'bg-muted text-muted-foreground'
+    }
+  }
+
   return (
     <BoardPanel title={t('sessions.chat')}>
-      <div className='max-h-80 space-y-3 overflow-y-auto rounded-lg border border-border p-3'>
-        {messages.map((message) => (
-          <article key={message.id} className='rounded-md bg-muted p-3 text-xs'>
-            <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-              <strong className='text-foreground'>{message.sender.displayName ?? t('sessions.unknownMember')}</strong>
-              <time>{new Date(message.createdAt).toLocaleTimeString(i18n.language)}</time>
-            </div>
-            <p className='mt-1 whitespace-pre-wrap'>{message.content}</p>
-          </article>
-        ))}
-        {!messages.length && <EmptyState text={t('sessions.emptyChat')} />}
+      <div className='mt-3 flex flex-wrap items-center gap-3 text-xs'>
+        <span className='flex items-center gap-1.5'>
+          <span className='rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary'>{t('sessions.senderRoles.editor')}</span>
+        </span>
+        <span className='flex items-center gap-1.5'>
+          <span className='rounded-full bg-secondary px-2 py-0.5 font-semibold text-secondary-foreground'>{t('sessions.senderRoles.boardMember')}</span>
+        </span>
+      </div>
+      <div className='mt-4 max-h-80 space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-3'>
+        {messages.map((message) => {
+          const role = getSenderRole(message.sender.id)
+          const roleLabel = role === 'editor' ? t('sessions.senderRoles.editor') : role === 'boardMember' ? t('sessions.senderRoles.boardMember') : t('sessions.senderRoles.unknown')
+          const roleClass = getRoleBadgeClass(role)
+
+          return (
+            <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
+              <div className='flex flex-wrap items-center justify-between gap-2'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <strong className='text-xs text-foreground'>
+                    {message.sender.displayName || t('sessions.unknownMember')}
+                  </strong>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleClass}`}>
+                    {roleLabel}
+                  </span>
+                </div>
+                <time className='text-xs text-muted-foreground'>{new Date(message.createdAt).toLocaleTimeString(i18n.language)}</time>
+              </div>
+              <p className='mt-2 whitespace-pre-wrap text-xs'>{message.content}</p>
+            </article>
+          )
+        })}
+        {!messages.length && (
+          <p className='text-xs text-muted-foreground'>{t('sessions.emptyChat')}</p>
+        )}
       </div>
       <form onSubmit={submit} className='mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2'>
         <input

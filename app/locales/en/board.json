@@ -134,8 +134,16 @@
       "AWAITING_TRANSFER_SIGNATURES": "Awaiting transfer agreement signatures",
       "COMPLETED": "Completed"
     },
-    "sessionStatuses": { "UPCOMING": "Upcoming", "ACTIVE": "Active", "CONCLUDED": "Concluded" },
-    "sessionPhases": { "PRESENTING": "Presenting", "QA": "Q&A", "VOTING": "Voting" },
+    "sessionStatuses": {
+      "UPCOMING": "Upcoming",
+      "ACTIVE": "Active",
+      "CONCLUDED": "Concluded"
+    },
+    "sessionPhases": {
+      "PRESENTING": "Presenting",
+      "QA": "Q&A",
+      "VOTING": "Voting"
+    },
     "decisionTypes": {
       "SERIALIZATION": "Serialization approval",
       "CANCELLATION": "Series cancellation",
@@ -164,7 +172,10 @@
       "REJECTED": "Rejected",
       "VOIDED": "Voided"
     },
-    "contractTypes": { "FULL_BUYOUT": "Full buyout", "REVENUE_SHARE": "Revenue share" },
+    "contractTypes": {
+      "FULL_BUYOUT": "Full buyout",
+      "REVENUE_SHARE": "Revenue share"
+    },
     "contractStatuses": {
       "DRAFT": "Draft",
       "MANGAKA_REVIEW": "Mangaka review",
@@ -213,7 +224,11 @@
     "title": "Board decision center",
     "description": "Review evidence, vote on decisions, approve commercial workflows and arbitrate publication risks.",
     "liveDataError": "Live dashboard data is temporarily unavailable. The workflow shortcuts remain available.",
-    "summary": { "pending": "Pending decisions", "upcoming": "Upcoming sessions", "unread": "Unread notifications" },
+    "summary": {
+      "pending": "Pending decisions",
+      "upcoming": "Upcoming sessions",
+      "unread": "Unread notifications"
+    },
     "pendingDecisions": "Decisions requiring attention",
     "severeRisk": "Severe-risk series",
     "emptyPending": "No active decision currently requires your attention.",
@@ -281,7 +296,11 @@
         "JOSEI": "Josei",
         "KODOMO": "Kodomo"
       },
-      "publicationTypes": { "WEEKLY": "Weekly", "MONTHLY": "Monthly", "IRREGULAR": "Irregular" },
+      "publicationTypes": {
+        "WEEKLY": "Weekly",
+        "MONTHLY": "Monthly",
+        "IRREGULAR": "Irregular"
+      },
       "proposalStatuses": {
         "DRAFT": "Draft",
         "PROPOSAL_REVIEW": "Under editorial review",
@@ -339,6 +358,11 @@
       "connecting": "Connecting to live updates...",
       "connected": "Live updates connected",
       "disconnected": "Live connection unavailable; periodic refresh remains active"
+    },
+    "senderRoles": {
+      "editor": "Editor",
+      "boardMember": "Board Member",
+      "unknown": "Unknown"
     }
   },
   "decisions": {
@@ -449,9 +473,7 @@
     "riskLevel": "Risk level",
     "unknownSeries": "Unknown series",
     "types": {
-      "DEFENSE": "Series defense report",
-      "PERFORMANCE": "Performance report",
-      "LIFECYCLE": "Lifecycle recommendation"
+      "PERFORMANCE": "Performance report"
     }
   },
   "contracts": {
@@ -541,7 +563,10 @@
     "approve": "Approve payout",
     "approveConfirmation": "Approve the payout of {{amount}} to {{receiver}}? Review the details before confirming.",
     "method": "Payment method",
-    "methods": { "BANK_TRANSFER": "Bank transfer", "CASH": "Cash" },
+    "methods": {
+      "BANK_TRANSFER": "Bank transfer",
+      "CASH": "Cash"
+    },
     "pay": "Confirm paid",
     "cancelReason": "Cancellation reason",
     "cancel": "Cancel payment",
@@ -677,8 +702,15 @@
     "participation": "Coverage",
     "provisional": "Provisional",
     "aggregateEmpty": "No aggregate ranking is available for these filters.",
-    "levels": { "MONTH": "Month", "YEAR": "Year" },
-    "publicationTypes": { "WEEKLY": "Weekly", "MONTHLY": "Monthly", "IRREGULAR": "Irregular" }
+    "levels": {
+      "MONTH": "Month",
+      "YEAR": "Year"
+    },
+    "publicationTypes": {
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "IRREGULAR": "Irregular"
+    }
   },
   "reprints": {
     "title": "Reprint workflow",

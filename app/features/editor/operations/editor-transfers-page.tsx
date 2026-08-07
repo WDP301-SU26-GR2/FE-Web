@@ -93,12 +93,6 @@ export function EditorTransfersPage({
             </option>
           ))}
         </select>
-        <input
-          name='requestId'
-          defaultValue={requestId}
-          className={operationInput}
-          placeholder={t('operations.transferRequestIdPlaceholder')}
-        />
         <button type='submit' className={`${operationDialogButton} bg-primary text-primary-foreground`}>
           {t('actions.openTransferRequest')}
         </button>

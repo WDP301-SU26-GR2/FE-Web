@@ -115,11 +115,12 @@ export function BoardContractDetailPage({
             <p className='mt-1 font-bold'>{formatDate(contract.contractEnd, i18n.language)}</p>
           </div>
         </div>
-        <p className='mt-4 text-xs text-muted-foreground'>{contract.terminationClause}</p>
-        <p className='mt-3 text-xs text-muted-foreground'>
-          {contract.mangaka?.displayName ?? t('contracts.unknownMangaka')}
-          {contract.editor ? ` · ${contract.editor.displayName}` : ''}
-        </p>
+        <div className='mt-5 border-t border-border pt-4'>
+          <p className='text-xs text-muted-foreground'>{t('contracts.terminationClause')}</p>
+          <p className='mt-1 whitespace-pre-wrap text-xs font-semibold leading-5 text-foreground'>
+            {contract.terminationClause || t('common.notAvailable')}
+          </p>
+        </div>
       </BoardPanel>
       <div className='space-y-4'>
         <BoardPanel title={t('contracts.conditions')}>

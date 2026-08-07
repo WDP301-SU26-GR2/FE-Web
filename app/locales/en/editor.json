@@ -962,7 +962,7 @@
     "ownershipHint": "The three percentages must total exactly 100%.",
     "transferLoadHint": "Open a transfer request or agreement to see its current workflow step and available actions.",
     "transferRequestIdPlaceholder": "Enter a transfer request ID",
-    "transferRequestIdHint": "Select an assigned request below or enter an ID to open it directly.",
+    "transferRequestIdHint": "Select an assigned request below to open it directly.",
     "allTransferStatuses": "All statuses",
     "assignedTransferRequests": "Assigned transfer requests",
     "noAssignedTransfers": "No matching transfer requests.",

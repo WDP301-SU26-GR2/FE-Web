@@ -79,7 +79,6 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
             <h1 className='max-w-3xl text-xl font-black tracking-tight text-foreground md:text-2xl'>
               {t('dashboard.title')}
             </h1>
-            <p className='mt-3 max-w-2xl text-sm leading-6 text-muted-foreground'>{t('dashboard.subtitle')}</p>
             <div className='mt-5 flex flex-wrap gap-2'>
               <QuickLink href='/dashboard/admin/users' icon={Users} label={t('dashboard.quickActions.users')} />
               <QuickLink href='/dashboard/admin/board' icon={Gavel} label={t('dashboard.quickActions.board')} />
@@ -185,7 +184,6 @@ export function AdminDashboard({ stats, unreadNotifications, hasError }: AdminDa
             {t('dashboard.pulse.eyebrow')}
           </div>
           <h2 className='mt-2 text-lg font-bold text-foreground'>{t('dashboard.pulse.title')}</h2>
-          <p className='mt-1 text-xs text-muted-foreground'>{t('dashboard.pulse.description')}</p>
         </div>
         <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
           <SnapshotInsight

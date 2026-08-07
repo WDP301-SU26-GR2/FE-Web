@@ -261,8 +261,6 @@ export function MangakaContractDetailPage({
               >
                 {t('contracts.actions.signContract')}
               </button>
-            </fetcher.Form>
-            {canRespond && (
               <div className='flex flex-wrap gap-3'>
                 <button
                   type='button'
@@ -273,7 +271,7 @@ export function MangakaContractDetailPage({
                   {t('contracts.actions.rejectContract')}
                 </button>
               </div>
-            )}
+            </fetcher.Form>
           </div>
         )}
         <ActionFeedback fetcher={fetcher} />
