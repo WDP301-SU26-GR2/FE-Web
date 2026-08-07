@@ -24,8 +24,11 @@ import {
 } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 import { Dialog } from '~/shared/ui/dialog'
+import { MoneyInWords } from '~/shared/components/money-in-words'
+import { Pagination } from '~/shared/components'
 import {
   BoardActionDialog,
+  boardDialogButton,
   boardInput,
   BoardFeedback,
   BoardHeader,
@@ -33,6 +36,8 @@ import {
   StatusBadge
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
+
+const BOARD_LIST_PAGE_SIZE = 8
 
 export function BoardPaymentsPage({
   payments,
@@ -59,6 +64,7 @@ export function BoardPaymentsPage({
   const paymentType = searchParams.get('paymentType') ?? ''
   const paymentSource = searchParams.get('paymentSource') ?? ''
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const filteredPayments = payments.filter(
     (payment) =>
       (!paymentStatus || payment.status === paymentStatus) &&
@@ -74,6 +80,11 @@ export function BoardPaymentsPage({
         (left, right) => Number(right.id === focusPaymentId) - Number(left.id === focusPaymentId)
       )
     : filteredPayments
+  const totalPages = Math.max(1, Math.ceil(orderedPayments.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = orderedPayments.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, orderedPayments.length)
+  const paginatedPayments = orderedPayments.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       {backPath && (
@@ -147,7 +158,7 @@ export function BoardPaymentsPage({
         </div>
       )}
       <div className='grid gap-4'>
-        {orderedPayments.map((payment) => (
+        {paginatedPayments.map((payment) => (
           <PaymentCard
             key={payment.id}
             payment={payment}
@@ -158,6 +169,18 @@ export function BoardPaymentsPage({
           />
         ))}
       </div>
+      {orderedPayments.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={orderedPayments.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!orderedPayments.length && <EmptyState text={t('payments.empty')} />}
     </div>
   )
@@ -205,6 +228,7 @@ function PaymentCard({
         <div className='text-right'>
           <StatusBadge value={payment.status} />
           <p className='mt-2 font-bold'>{new Intl.NumberFormat(i18n.language).format(payment.amount)}</p>
+          <MoneyInWords amount={payment.amount} locale={i18n.language} className='max-w-56 text-right' />
         </div>
       </div>
       <div className='mt-4 flex flex-wrap gap-2'>
@@ -213,17 +237,20 @@ function PaymentCard({
           <BoardActionDialog title={t('payments.approve')}>
             <fetcher.Form method='post' className='grid gap-4'>
               <input type='hidden' name='paymentId' value={payment.id} />
-              <p className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning-foreground'>
-                {t('payments.approveConfirmation', {
-                  amount: new Intl.NumberFormat(i18n.language).format(payment.amount),
-                  receiver: payment.receiver?.displayName ?? t('payments.unknownReceiver')
-                })}
-              </p>
+              <div className='rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning-foreground'>
+                <p>
+                  {t('payments.approveConfirmation', {
+                    amount: new Intl.NumberFormat(i18n.language).format(payment.amount),
+                    receiver: payment.receiver?.displayName ?? t('payments.unknownReceiver')
+                  })}
+                </p>
+                <MoneyInWords amount={payment.amount} locale={i18n.language} className='mt-2 text-warning-foreground' />
+              </div>
               <button
                 name='intent'
                 value='approve'
                 disabled={fetcher.state !== 'idle'}
-                className='h-10 rounded-md bg-success px-3 text-xs font-bold text-success-foreground disabled:opacity-50'
+                className={`${boardDialogButton} bg-success text-success-foreground disabled:opacity-50`}
               >
                 <BadgeCheck className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.approve')}
@@ -256,7 +283,7 @@ function PaymentCard({
               <button
                 name='intent'
                 value='pay'
-                className='h-10 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90'
+                className={`${boardDialogButton} bg-primary text-primary-foreground transition-opacity hover:opacity-90`}
               >
                 <Banknote className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.pay')}
@@ -273,7 +300,7 @@ function PaymentCard({
               <button
                 name='intent'
                 value='cancel'
-                className='h-10 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20'
+                className={`${boardDialogButton} border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20`}
               >
                 <XCircle className='mr-1.5 inline size-4' aria-hidden='true' />
                 {t('payments.cancel')}
@@ -316,7 +343,7 @@ function PaymentDetailsDialog({
       <button
         type='button'
         onClick={() => setOpen(true)}
-        className='inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold text-foreground transition-colors hover:border-primary/40 hover:text-primary'
+        className={`${boardDialogButton} gap-2 border border-border bg-card text-foreground transition-colors hover:border-primary/40 hover:text-primary`}
       >
         <Eye className='size-4' />
         {t('payments.details')}
@@ -347,6 +374,7 @@ function PaymentDetailsDialog({
                       {t('payments.paymentSummary')}
                     </p>
                     <p className='mt-1 text-2xl font-black tabular-nums text-foreground'>{amount}</p>
+                    <MoneyInWords amount={payment.amount} locale={i18n.language} />
                     <p className='mt-1 truncate text-xs font-bold text-foreground'>
                       {payment.series?.title ?? t('payments.unknownSeries')}
                     </p>

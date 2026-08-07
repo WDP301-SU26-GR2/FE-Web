@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
-import { AlertTriangle, ArrowLeft, Gavel, Loader2, Pencil, Save, Settings2, SlidersHorizontal, Vote } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Gavel,
+  Loader2,
+  Pencil,
+  Save,
+  Settings2,
+  SlidersHorizontal,
+  Vote
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import type { AdminSettingsActionResult, AdminSettingsData } from './types'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
+
 
 export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData | null; hasError: boolean }) {
   const { t } = useTranslation('admin')
@@ -45,7 +56,10 @@ export function AdminSettingsPage({ data, hasError }: { data: AdminSettingsData 
 
 function AdminDashboardBackLink({ label }: { label: string }) {
   return (
-    <Link to='/dashboard/admin' className='inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline'>
+    <Link
+      to='/dashboard/admin'
+      className='inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline'
+    >
       <ArrowLeft className='size-4' />
       {label}
     </Link>
@@ -72,10 +86,26 @@ function AppConfigCard({ data }: { data: AdminSettingsData }) {
         </div>
         <div className='p-5'>
           <div className='mb-4 grid grid-cols-2 gap-3'>
-            <ConfigStat label={t('settings.app.storyboardMaxReviewRounds')} value={config.storyboardMaxReviewRounds} unit='vòng' />
-            <ConfigStat label={t('settings.app.boardRepClaimGraceDays')} value={config.boardRepClaimGraceDays} unit={t('settings.units.days')} />
-            <ConfigStat label={t('settings.app.taskOverdueGraceHours')} value={config.taskOverdueGraceHours} unit={t('settings.units.hours')} />
-            <ConfigStat label={t('settings.app.hiatusTooLongDays')} value={config.hiatusTooLongDays} unit={t('settings.units.days')} />
+            <ConfigStat
+              label={t('settings.app.storyboardMaxReviewRounds')}
+              value={config.storyboardMaxReviewRounds}
+              unit='vòng'
+            />
+            <ConfigStat
+              label={t('settings.app.boardRepClaimGraceDays')}
+              value={config.boardRepClaimGraceDays}
+              unit={t('settings.units.days')}
+            />
+            <ConfigStat
+              label={t('settings.app.taskOverdueGraceHours')}
+              value={config.taskOverdueGraceHours}
+              unit={t('settings.units.hours')}
+            />
+            <ConfigStat
+              label={t('settings.app.hiatusTooLongDays')}
+              value={config.hiatusTooLongDays}
+              unit={t('settings.units.days')}
+            />
           </div>
           <button
             onClick={() => setOpen(true)}
@@ -101,33 +131,98 @@ function AppConfigCard({ data }: { data: AdminSettingsData }) {
             <input type='hidden' name='intent' value='appConfig' />
             <ConfigSection title={t('settings.app.sections.workflow')}>
               <div className='grid gap-4 sm:grid-cols-2'>
-                <NumberField name='coOwnerApprovalGraceDays' value={config.coOwnerApprovalGraceDays} min={0} label={t('settings.app.coOwnerApprovalGraceDays')} unit={t('settings.units.days')} />
-                <NumberField name='boardRepClaimGraceDays' value={config.boardRepClaimGraceDays} min={0} label={t('settings.app.boardRepClaimGraceDays')} unit={t('settings.units.days')} />
+                <NumberField
+                  name='coOwnerApprovalGraceDays'
+                  value={config.coOwnerApprovalGraceDays}
+                  min={0}
+                  label={t('settings.app.coOwnerApprovalGraceDays')}
+                  unit={t('settings.units.days')}
+                />
+                <NumberField
+                  name='boardRepClaimGraceDays'
+                  value={config.boardRepClaimGraceDays}
+                  min={0}
+                  label={t('settings.app.boardRepClaimGraceDays')}
+                  unit={t('settings.units.days')}
+                />
               </div>
             </ConfigSection>
             <ConfigSection title={t('settings.app.sections.review')}>
               <div className='grid gap-4 sm:grid-cols-2'>
-                <NumberField name='storyboardMaxReviewRounds' value={config.storyboardMaxReviewRounds} min={1} label={t('settings.app.storyboardMaxReviewRounds')} />
-                <NumberField name='taskOverdueGraceHours' value={config.taskOverdueGraceHours} min={0} max={168} label={t('settings.app.taskOverdueGraceHours')} unit={t('settings.units.hours')} isWarning={config.taskOverdueGraceHours === 0} />
+                <NumberField
+                  name='storyboardMaxReviewRounds'
+                  value={config.storyboardMaxReviewRounds}
+                  min={1}
+                  label={t('settings.app.storyboardMaxReviewRounds')}
+                />
+                <NumberField
+                  name='taskOverdueGraceHours'
+                  value={config.taskOverdueGraceHours}
+                  min={0}
+                  max={168}
+                  label={t('settings.app.taskOverdueGraceHours')}
+                  unit={t('settings.units.hours')}
+                  isWarning={config.taskOverdueGraceHours === 0}
+                />
               </div>
             </ConfigSection>
             <ConfigSection title={t('settings.app.sections.quality')}>
               <div className='grid gap-4 sm:grid-cols-2'>
-                <NumberField name='reputationRecommendThreshold' value={config.reputationRecommendThreshold} min={1} max={5} step={0.1} label={t('settings.app.reputationRecommendThreshold')} />
-                <NumberField name='hiatusTooLongDays' value={config.hiatusTooLongDays} min={1} label={t('settings.app.hiatusTooLongDays')} unit={t('settings.units.days')} />
+                <NumberField
+                  name='reputationRecommendThreshold'
+                  value={config.reputationRecommendThreshold}
+                  min={1}
+                  max={5}
+                  step={0.1}
+                  label={t('settings.app.reputationRecommendThreshold')}
+                />
+                <NumberField
+                  name='hiatusTooLongDays'
+                  value={config.hiatusTooLongDays}
+                  min={1}
+                  label={t('settings.app.hiatusTooLongDays')}
+                  unit={t('settings.units.days')}
+                />
               </div>
             </ConfigSection>
             <ConfigSection title={t('settings.app.sections.ranking')}>
               <div className='grid gap-4 sm:grid-cols-2'>
-                <NumberField name='lowVoteReliabilityThreshold' value={config.lowVoteReliabilityThreshold} min={0} label={t('settings.app.lowVoteReliabilityThreshold')} />
-                <NumberField name='rankingAggregateMinCoveragePercent' value={config.rankingAggregateMinCoverageRatio * 100} min={1} max={100} step={1} label={t('settings.app.rankingAggregateMinCoverageRatio')} unit='%' />
+                <NumberField
+                  name='lowVoteReliabilityThreshold'
+                  value={config.lowVoteReliabilityThreshold}
+                  min={0}
+                  label={t('settings.app.lowVoteReliabilityThreshold')}
+                />
+                <NumberField
+                  name='rankingAggregateMinCoveragePercent'
+                  value={config.rankingAggregateMinCoverageRatio * 100}
+                  min={1}
+                  max={100}
+                  step={1}
+                  label={t('settings.app.rankingAggregateMinCoverageRatio')}
+                  unit='%'
+                />
               </div>
             </ConfigSection>
             <ConfigSection title={t('settings.app.sections.upload')}>
-              <NumberField name='maxUploadMb' value={Math.round(config.maxUploadBytes / 1024 / 1024)} min={1} max={50} step={1} label={t('settings.app.maxUploadBytes')} unit='MB' />
+              <NumberField
+                name='maxUploadMb'
+                value={Math.round(config.maxUploadBytes / 1024 / 1024)}
+                min={1}
+                max={50}
+                step={1}
+                label={t('settings.app.maxUploadBytes')}
+                unit='MB'
+              />
             </ConfigSection>
             <ConfigSection title={t('settings.app.sections.assignment')}>
-              <NumberField name='assignmentGraceDays' value={config.assignmentGraceDays} min={0} label={t('settings.app.assignmentGraceDays')} unit={t('settings.units.days')} />
+              <NumberField
+                name='assignmentGraceDays'
+                value={config.assignmentGraceDays}
+                min={0}
+                label={t('settings.app.assignmentGraceDays')}
+                unit={t('settings.units.days')}
+              />
             </ConfigSection>
             <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
           </fetcher.Form>
@@ -142,6 +237,7 @@ function BoardConfigCard({ data }: { data: AdminSettingsData }) {
   const fetcher = useFetcher<AdminSettingsActionResult>()
   const config = data.boardConfig
   const [open, setOpen] = useState(false)
+  const [step, setStep] = useState(1)
 
   return (
     <>
@@ -159,10 +255,13 @@ function BoardConfigCard({ data }: { data: AdminSettingsData }) {
           <div className='mb-4 grid grid-cols-3 gap-3'>
             <ConfigStat label={t('settings.board.boardTotalMembers')} value={config.boardTotalMembers} />
             <ConfigStat label={t('settings.board.quorumMin')} value={config.quorumMin} />
-            <ConfigStat label={t('settings.board.approveMajorityRatio')} value={`${Math.round(config.approveMajorityRatio * 100)}%`} />
+            <ConfigStat
+              label={t('settings.board.approveMajorityRatio')}
+              value={`${Math.round(config.approveMajorityRatio * 100)}%`}
+            />
           </div>
           <button
-            onClick={() => setOpen(true)}
+            onClick={() => { setOpen(true); setStep(1) }}
             className='inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md'
           >
             <Pencil className='size-4' />
@@ -186,19 +285,68 @@ function BoardConfigCard({ data }: { data: AdminSettingsData }) {
             <input type='hidden' name='configId' value={config.id} />
             <input type='hidden' name='updatedBy' value={data.currentUserId} />
             <div className='space-y-4'>
+              <div className='flex items-center gap-2 text-xs font-bold text-amber-700'>
+                <span className={`flex size-7 items-center justify-center rounded-full border-2 ${step >= 1 ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-200 text-amber-400'}`}>1</span>
+                <span className={step >= 1 ? 'text-amber-700' : 'text-amber-400'}>{t('settings.board.step1Title', { defaultValue: 'Cấu hình tổng quát' })}</span>
+                <span className='ml-auto text-[10px] font-medium text-amber-600'>{t('settings.board.step1Hint', { defaultValue: 'Tổng thành viên & tỷ lệ phiếu thuận' })}</span>
+              </div>
+              {step === 1 && (
+                <div className='grid gap-4 sm:grid-cols-2'>
+                  <NumberField
+                    name='boardTotalMembers'
+                    value={config.boardTotalMembers}
+                    min={3}
+                    step={2}
+                    label={t('settings.board.boardTotalMembers')}
+                    isOdd
+                  />
+                  <NumberField
+                    name='approveMajorityPercent'
+                    value={Math.round(config.approveMajorityRatio * 100)}
+                    min={3}
+                    step={2}
+                    max={100}
+                    label={t('settings.board.approveMajorityRatio')}
+                    unit='%'
+                  />
+                </div>
+              )}
+              <div className='flex items-center gap-2 text-xs font-bold text-amber-700'>
+                <span className={`flex size-7 items-center justify-center rounded-full border-2 ${step >= 2 ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-200 text-amber-400'}`}>2</span>
+                <span className={step >= 2 ? 'text-amber-700' : 'text-amber-400'}>{t('settings.board.step2Title', { defaultValue: 'Số thành viên được mời' })}</span>
+                <span className='ml-auto text-[10px] font-medium text-amber-600'>{t('settings.board.step2Hint', { defaultValue: 'Quorum tối thiểu cho phiên họp' })}</span>
+              </div>
+              {step === 2 && (
+                <div className='grid gap-4 sm:grid-cols-1'>
+                  <NumberField name='quorumMin' value={config.quorumMin} min={3} label={t('settings.board.quorumMin')} />
+                </div>
+              )}
               <div className='rounded-lg border border-amber-200 bg-amber-50 p-3'>
                 <p className='flex items-center gap-2 text-xs font-medium text-amber-800'>
                   <AlertTriangle className='size-4 shrink-0' />
                   {t('settings.board.lockNotice')}
                 </p>
               </div>
-              <div className='grid gap-4 sm:grid-cols-3'>
-                <NumberField name='boardTotalMembers' value={config.boardTotalMembers} min={3} step={2} label={t('settings.board.boardTotalMembers')} isOdd />
-                <NumberField name='quorumMin' value={config.quorumMin} min={1} label={t('settings.board.quorumMin')} />
-                <NumberField name='approveMajorityPercent' value={Math.round(config.approveMajorityRatio * 100)} min={1} max={100} label={t('settings.board.approveMajorityRatio')} unit='%' />
-              </div>
             </div>
-            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} />
+            <FormFooter fetcher={fetcher} updatedAt={config.updatedAt} extra={
+              <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
+                {step === 2 && (
+                  <button type='button' onClick={() => setStep(1)} className={boardDialogButton}>
+                    {t('actions.back', { defaultValue: 'Quay lại' })}
+                  </button>
+                )}
+                {step === 1 ? (
+                  <button type='button' onClick={() => setStep(2)} className={boardDialogButton}>
+                    {t('actions.next', { defaultValue: 'Tiếp theo' })}
+                  </button>
+                ) : (
+                  <button type='submit' disabled={fetcher.state !== 'idle'} className={boardDialogButton}>
+                    {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <Save className='size-4' />}
+                    {t('settings.save')}
+                  </button>
+                )}
+              </div>
+            } />
           </fetcher.Form>
         </Dialog>
       )}
@@ -233,7 +381,10 @@ function VotingConfigCard({ data }: { data: AdminSettingsData }) {
         </div>
         <div className='p-5'>
           <div className='mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4'>
-            <ConfigStat label={t('settings.voting.authMode')} value={t(`settings.voting.authModes.${config.authMode}`)} />
+            <ConfigStat
+              label={t('settings.voting.authMode')}
+              value={t(`settings.voting.authModes.${config.authMode}`)}
+            />
             <ConfigStat label={t('settings.voting.maxSeriesPerVote')} value={config.maxSeriesPerVote} />
             <ConfigStat label={t('settings.voting.otpExpirySeconds')} value={`${config.otpExpirySeconds}s`} />
             <ConfigStat label={t('settings.voting.ipRateLimit')} value={config.ipRateLimit} />
@@ -259,26 +410,72 @@ function VotingConfigCard({ data }: { data: AdminSettingsData }) {
                   <span className='text-xs font-bold text-foreground'>{t('settings.voting.authMode')}</span>
                   <select name='authMode' defaultValue={config.authMode} className={inputClassName}>
                     {(['OTP', 'CAPTCHA', 'HYBRID'] as const).map((mode) => (
-                      <option key={mode} value={mode}>{t(`settings.voting.authModes.${mode}`)}</option>
+                      <option key={mode} value={mode}>
+                        {t(`settings.voting.authModes.${mode}`)}
+                      </option>
                     ))}
                   </select>
                 </label>
-                <NumberField name='maxSeriesPerVote' value={config.maxSeriesPerVote} min={1} label={t('settings.voting.maxSeriesPerVote')} />
+                <NumberField
+                  name='maxSeriesPerVote'
+                  value={config.maxSeriesPerVote}
+                  min={1}
+                  label={t('settings.voting.maxSeriesPerVote')}
+                />
               </div>
             </ConfigSection>
             <ConfigSection title={t('settings.voting.sections.otp')}>
               <div className='grid gap-4 sm:grid-cols-3'>
-                <NumberField name='otpExpirySeconds' value={config.otpExpirySeconds} min={60} label={t('settings.voting.otpExpirySeconds')} unit={t('settings.units.seconds')} />
-                <NumberField name='otpMaxAttempts' value={config.otpMaxAttempts} min={1} label={t('settings.voting.otpMaxAttempts')} />
-                <NumberField name='otpCooldownSeconds' value={config.otpCooldownSeconds} min={0} label={t('settings.voting.otpCooldownSeconds')} unit={t('settings.units.seconds')} />
+                <NumberField
+                  name='otpExpirySeconds'
+                  value={config.otpExpirySeconds}
+                  min={60}
+                  label={t('settings.voting.otpExpirySeconds')}
+                  unit={t('settings.units.seconds')}
+                />
+                <NumberField
+                  name='otpMaxAttempts'
+                  value={config.otpMaxAttempts}
+                  min={1}
+                  label={t('settings.voting.otpMaxAttempts')}
+                />
+                <NumberField
+                  name='otpCooldownSeconds'
+                  value={config.otpCooldownSeconds}
+                  min={0}
+                  label={t('settings.voting.otpCooldownSeconds')}
+                  unit={t('settings.units.seconds')}
+                />
               </div>
             </ConfigSection>
             <ConfigSection title={t('settings.voting.sections.rateLimit')}>
               <div className='grid gap-4 sm:grid-cols-2'>
-                <NumberField name='ipRateLimit' value={config.ipRateLimit} min={1} label={t('settings.voting.ipRateLimit')} />
-                <NumberField name='ipVotesPerPeriod' value={config.ipVotesPerPeriod} min={1} label={t('settings.voting.ipVotesPerPeriod')} />
-                <NumberField name='phoneRateLimit' value={config.phoneRateLimit} min={1} label={t('settings.voting.phoneRateLimit')} />
-                <NumberField name='captchaThreshold' value={config.captchaThreshold} min={0} max={1} step={0.05} label={t('settings.voting.captchaThreshold')} />
+                <NumberField
+                  name='ipRateLimit'
+                  value={config.ipRateLimit}
+                  min={1}
+                  label={t('settings.voting.ipRateLimit')}
+                />
+                <NumberField
+                  name='ipVotesPerPeriod'
+                  value={config.ipVotesPerPeriod}
+                  min={1}
+                  label={t('settings.voting.ipVotesPerPeriod')}
+                />
+                <NumberField
+                  name='phoneRateLimit'
+                  value={config.phoneRateLimit}
+                  min={1}
+                  label={t('settings.voting.phoneRateLimit')}
+                />
+                <NumberField
+                  name='captchaThreshold'
+                  value={config.captchaThreshold}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  label={t('settings.voting.captchaThreshold')}
+                />
               </div>
             </ConfigSection>
             <FormFooter fetcher={fetcher} />
@@ -301,7 +498,10 @@ function ConfigSection({ title, children }: { title: string; children: React.Rea
 function ConfigStat({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
   return (
     <div className='rounded-lg border border-border bg-muted/30 p-3 text-center'>
-      <div className='text-lg font-bold text-foreground'>{value}{unit ? ` ${unit}` : ''}</div>
+      <div className='text-lg font-bold text-foreground'>
+        {value}
+        {unit ? ` ${unit}` : ''}
+      </div>
       <div className='mt-1 text-[10px] text-muted-foreground'>{label}</div>
     </div>
   )
@@ -343,7 +543,9 @@ function NumberField({
           className={`${inputClassName} ${isWarning ? 'border-amber-400 bg-amber-50 focus:border-amber-500' : ''} ${isOdd ? 'border-amber-400' : ''}`}
         />
         {unit && (
-          <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold ${isWarning ? 'text-amber-600' : 'text-muted-foreground'}`}>
+          <span
+            className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold ${isWarning ? 'text-amber-600' : 'text-muted-foreground'}`}
+          >
             {unit}
           </span>
         )}
@@ -360,10 +562,12 @@ function NumberField({
 
 function FormFooter({
   fetcher,
-  updatedAt
+  updatedAt,
+  extra
 }: {
   fetcher: ReturnType<typeof useFetcher<AdminSettingsActionResult>>
   updatedAt?: string
+  extra?: React.ReactNode
 }) {
   const { t, i18n } = useTranslation('admin')
   const busy = fetcher.state !== 'idle'
@@ -388,11 +592,14 @@ function FormFooter({
       {updatedAt && (
         <p className='text-xs text-muted-foreground'>
           {t('settings.lastUpdated', {
-            date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(updatedAt))
+            date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+              new Date(updatedAt)
+            )
           })}
         </p>
       )}
-      <div className='ml-auto'>
+      <div className='ml-auto flex items-center gap-2'>
+        {extra}
         <button
           type='submit'
           disabled={busy}
@@ -408,3 +615,6 @@ function FormFooter({
 
 const inputClassName =
   'h-10 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20'
+
+const boardDialogButton =
+  'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold shadow-sm transition-all'

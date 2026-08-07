@@ -96,6 +96,8 @@ export function EditorPublicationPage({
 
   useEffect(() => {
     if (!focusReferenceId) return
+    // Align the visible tab with a deep-linked chapter after loader data changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveGroup(groupForReference(data?.chapters ?? [], focusReferenceId))
   }, [data?.chapters, focusReferenceId])
 
@@ -123,7 +125,7 @@ export function EditorPublicationPage({
         </div>
       )}
       <input
-        className='h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+        className='h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder={t('filters.searchPublication')}
@@ -275,11 +277,11 @@ const ChapterSection = memo(function ChapterSection({
                       chapter.id === focusReferenceId && 'bg-primary/10 ring-2 ring-inset ring-primary'
                     )}
                   >
-                    <div className='flex items-start gap-3'>
+                    <div className='flex min-w-0 items-start gap-3'>
                       <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>
                         <BookCheck className='size-5' />
                       </div>
-                      <div>
+                      <div className='min-w-0'>
                         <h4 className='font-bold text-foreground'>
                           {t('publication.chapter', { number: chapter.chapterNumber })}
                           {chapter.title ? ` · ${chapter.title}` : ''}
@@ -299,7 +301,7 @@ const ChapterSection = memo(function ChapterSection({
                     </div>
                     <Link
                       to={`/dashboard/editor/publication/${series.id}/${chapter.id}`}
-                      className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                      className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 md:w-auto'
                     >
                       <Eye className='size-4' />
                       {t('actions.review')}
@@ -342,7 +344,7 @@ const SummaryCard = memo(function SummaryCard({
       )}
     >
       <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/70'>{icon}</div>
-      <div>
+      <div className='min-w-0'>
         <p className='text-xl font-black leading-none'>{value}</p>
         <p className='mt-1 text-xs font-bold uppercase tracking-wider'>{label}</p>
       </div>

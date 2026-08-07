@@ -25,6 +25,11 @@ import { ratioToPercent } from '~/shared/lib/progress'
 import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 
 const HOLDABLE_MANUSCRIPT_STATUSES = new Set(['IN_PRODUCTION', 'EDITOR_REVIEW', 'EDITOR_REVISION', 'READY_FOR_PRINT'])
+const dialogButton = 'inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-bold sm:w-auto'
+const dialogInput =
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
+const chapterDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold text-foreground'
+const chapterDialogFieldLabelClass = 'flex min-h-10 items-end leading-5'
 
 export function EditorChapterReviewPage({
   data,
@@ -239,7 +244,7 @@ export function EditorChapterReviewPage({
               type='button'
               onClick={() => setStoryboardReviewOpen(true)}
               disabled={!['SUBMITTED', 'IN_REVIEW'].includes(data.storyboard.status) || busy}
-              className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+              className={`${dialogButton} bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
             >
               <FileCheck2 className='size-4' />
               {t('actions.review')}
@@ -352,26 +357,28 @@ export function EditorChapterReviewPage({
                 ))}
               </div>
             )}
-            <fetcher.Form method='post' className='mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]'>
+            <fetcher.Form method='post' className='mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]'>
               <input type='hidden' name='chapterId' value={chapter.id} />
-              <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-                {chapter.schedule?.currentDeadline
-                  ? t('chapterReview.newDeadline')
-                  : t('chapterReview.initialDeadline')}
+              <label className={chapterDialogFieldClass}>
+                <span className={chapterDialogFieldLabelClass}>
+                  {chapter.schedule?.currentDeadline
+                    ? t('chapterReview.newDeadline')
+                    : t('chapterReview.initialDeadline')}
+                </span>
                 <input
                   name='deadline'
                   type='datetime-local'
                   required
                   defaultValue={toDateTimeLocal(chapter.schedule?.currentDeadline)}
                   disabled={!scheduleEditable || busy}
-                  className='h-10 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground disabled:opacity-50'
+                  className={dialogInput}
                 />
               </label>
               <button
                 name='intent'
                 value={chapter.schedule?.currentDeadline ? 'extendSchedule' : 'setSchedule'}
                 disabled={!scheduleEditable || busy}
-                className='inline-flex h-10 items-center justify-center gap-2 self-end rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                className={`${dialogButton} self-end bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 <CalendarClock className='size-4' />
                 {chapter.schedule?.currentDeadline ? t('actions.extendDeadline') : t('actions.setDeadline')}
@@ -380,7 +387,7 @@ export function EditorChapterReviewPage({
                 type='button'
                 onClick={() => setHoldOpen(true)}
                 disabled={!holdable || busy}
-                className='inline-flex h-10 items-center justify-center gap-2 self-end rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                className={`${dialogButton} self-end border border-border text-foreground disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {data.progress?.onHold ? <Play className='size-4' /> : <Pause className='size-4' />}
                 {data.progress?.onHold ? t('actions.resumeChapter') : t('actions.holdChapter')}
@@ -403,12 +410,12 @@ export function EditorChapterReviewPage({
           <fetcher.Form method='post' className='space-y-4'>
             <input type='hidden' name='chapterId' value={chapter.id} />
             <input type='hidden' name='storyboardId' value={data.storyboard.id} />
-            <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
-              {t('actions.revisionReason')}
+            <label className={chapterDialogFieldClass}>
+              <span className={chapterDialogFieldLabelClass}>{t('actions.revisionReason')}</span>
               <textarea
                 name='reason'
                 maxLength={1000}
-                className='min-h-24 w-full rounded-md border border-input bg-background p-3 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20'
+                className='min-h-24 min-w-0 w-full rounded-md border border-input bg-background p-3 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20'
                 placeholder={t('actions.revisionPlaceholder')}
               />
             </label>
@@ -417,7 +424,7 @@ export function EditorChapterReviewPage({
                 name='intent'
                 value='reviseStoryboard'
                 disabled={busy}
-                className='h-10 rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:opacity-50'
+                className={`${dialogButton} border border-border text-foreground disabled:opacity-50`}
               >
                 {t('actions.requestRevision')}
               </button>
@@ -425,7 +432,7 @@ export function EditorChapterReviewPage({
                 name='intent'
                 value='approveStoryboard'
                 disabled={busy}
-                className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                className={`${dialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
               >
                 {t('actions.approveStoryboard')}
               </button>
@@ -444,24 +451,26 @@ export function EditorChapterReviewPage({
         <CloseDialogOnSuccess data={fetcher.data} state={fetcher.state} />
         <fetcher.Form method='post' className='space-y-4'>
           <input type='hidden' name='chapterId' value={chapter.id} />
-          <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
-            {chapter.schedule?.currentDeadline ? t('chapterReview.newDeadline') : t('chapterReview.initialDeadline')}
+          <label className={chapterDialogFieldClass}>
+            <span className={chapterDialogFieldLabelClass}>
+              {chapter.schedule?.currentDeadline ? t('chapterReview.newDeadline') : t('chapterReview.initialDeadline')}
+            </span>
             <input
               name='deadline'
               type='datetime-local'
               required
               defaultValue={toDateTimeLocal(chapter.schedule?.currentDeadline)}
               disabled={busy}
-              className='h-10 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
+              className={dialogInput}
             />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
-            {t('chapterReview.reason')}
+          <label className={chapterDialogFieldClass}>
+            <span className={chapterDialogFieldLabelClass}>{t('chapterReview.reason')}</span>
             <input
               name='reason'
               required={Boolean(chapter.schedule?.currentDeadline)}
               disabled={busy}
-              className='h-10 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
+              className={dialogInput}
               placeholder={
                 chapter.schedule?.currentDeadline
                   ? t('chapterReview.extensionReasonPlaceholder')
@@ -473,7 +482,7 @@ export function EditorChapterReviewPage({
             name='intent'
             value={chapter.schedule?.currentDeadline ? 'extendSchedule' : 'setSchedule'}
             disabled={busy}
-            className='h-10 w-full rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            className={`${dialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
           >
             {chapter.schedule?.currentDeadline ? t('actions.extendDeadline') : t('actions.setDeadline')}
           </button>
@@ -492,23 +501,23 @@ export function EditorChapterReviewPage({
           <input type='hidden' name='chapterId' value={chapter.id} />
           {!data.progress?.onHold && (
             <>
-              <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
-                {t('chapterReview.reason')}
+              <label className={chapterDialogFieldClass}>
+                <span className={chapterDialogFieldLabelClass}>{t('chapterReview.reason')}</span>
                 <input
                   name='reason'
                   required
                   disabled={busy}
-                  className='h-10 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground'
+                  className={dialogInput}
                   placeholder={t('chapterReview.holdReason')}
                 />
               </label>
-              <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
-                {t('chapterReview.expectedReturnDate')}
+              <label className={chapterDialogFieldClass}>
+                <span className={chapterDialogFieldLabelClass}>{t('chapterReview.expectedReturnDate')}</span>
                 <input
                   name='expectedReturnDate'
                   type='datetime-local'
                   disabled={busy}
-                  className='h-10 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground'
+                  className={dialogInput}
                 />
               </label>
             </>
@@ -575,7 +584,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
             type='button'
             onClick={() => setActionOpen(true)}
             disabled={busy || isOnHold}
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+            className={`${dialogButton} bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <FileCheck2 className='size-4' />
             {t('actions.review')}
@@ -662,8 +671,8 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
           <div className='space-y-4'>
             <fetcher.Form method='post' className='space-y-4'>
               <input type='hidden' name='chapterId' value={chapter.id} />
-              <label className='grid gap-1.5 text-xs font-semibold text-foreground'>
-                {t('actions.revisionReason')}
+              <label className={chapterDialogFieldClass}>
+                <span className={chapterDialogFieldLabelClass}>{t('actions.revisionReason')}</span>
                 <textarea
                   name='reason'
                   required
@@ -672,7 +681,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
                   rows={5}
                   disabled={busy || isOnHold}
                   placeholder={t('actions.revisionPlaceholder')}
-                  className='w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
+                  className='min-w-0 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs font-normal text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
                 />
               </label>
               <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs leading-6 text-muted-foreground'>
@@ -683,7 +692,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
                   name='intent'
                   value='reviseManuscript'
                   disabled={busy || isOnHold}
-                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-xs font-bold text-foreground disabled:opacity-50'
+                  className={`${dialogButton} border border-border text-foreground disabled:opacity-50`}
                 >
                   <RotateCcw className='size-4' />
                   {t('actions.requestRevision')}
@@ -693,7 +702,7 @@ function WorkflowActionPanel({ data }: { data: EditorChapterReviewData }) {
                   value='approveManuscript'
                   formNoValidate
                   disabled={busy || isOnHold}
-                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                  className={`${dialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
                 >
                   {busy ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
                   {t('actions.approveManuscript')}

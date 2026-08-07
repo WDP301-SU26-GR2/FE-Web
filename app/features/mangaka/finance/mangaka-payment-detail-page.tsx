@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { formatPaymentAmount, formatPaymentDate } from './payment-formatters'
 import { paymentStatusClass } from './payment-status'
 
@@ -50,6 +51,7 @@ export function MangakaPaymentDetailPage({ payment, loadFailed }: MangakaPayment
         </div>
         <div className='text-right'>
           <p className='text-2xl font-bold text-foreground'>{formatPaymentAmount(payment.amount, language)}</p>
+          <MoneyInWords amount={payment.amount} locale={language} className='max-w-xs text-right' />
           <span className={paymentStatusClass}>{status}</span>
         </div>
       </header>

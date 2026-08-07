@@ -21,6 +21,10 @@ import {
   isReadyToPitch
 } from './proposal-review'
 
+const dialogButton = 'inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-bold sm:w-auto'
+const proposalDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold text-foreground'
+const proposalDialogFieldLabelClass = 'flex min-h-10 items-end leading-5'
+
 export function EditorProposalDetailPage({
   data,
   hasError
@@ -109,7 +113,7 @@ export function EditorProposalDetailPage({
             name='intent'
             value={EDITOR_PROPOSAL_INTENTS.release}
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+            className={`${dialogButton} border border-border text-foreground hover:bg-muted disabled:opacity-50`}
           >
             <Unlock className='size-4' />
             {t('actions.release')}
@@ -223,7 +227,7 @@ export function EditorProposalDetailPage({
                 name='intent'
                 value={EDITOR_PROPOSAL_INTENTS.pitch}
                 disabled={fetcher.state !== 'idle'}
-                className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+                className={`${dialogButton} bg-primary text-primary-foreground`}
               >
                 <Presentation className='size-4' />
                 {t('actions.pitch')}
@@ -468,7 +472,7 @@ function ProposalApprovalDialog({
             <button
               type='button'
               onClick={() => setOpen(false)}
-              className='h-10 rounded-md border border-border px-4 text-xs font-bold text-foreground'
+              className={`${dialogButton} border border-border text-foreground`}
             >
               {t('actions.cancel')}
             </button>
@@ -476,7 +480,7 @@ function ProposalApprovalDialog({
               name='intent'
               value={approveIntent}
               disabled={busy}
-              className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-success px-4 text-xs font-bold text-success-foreground disabled:opacity-50'
+              className={`${dialogButton} bg-success text-success-foreground disabled:opacity-50`}
             >
               {busy ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
               {t('actions.approve')}
@@ -536,8 +540,8 @@ function ProposalDecisionDialog({
         disabled={disabled || busy}
         className={
           destructive
-            ? 'inline-flex h-10 items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 text-xs font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50'
-            : 'inline-flex h-10 items-center gap-2 rounded-md border border-border px-4 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+            ? `${dialogButton} border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 disabled:opacity-50`
+            : `${dialogButton} border border-border text-foreground hover:bg-muted disabled:opacity-50`
         }
       >
         <Icon className='size-4' />
@@ -555,14 +559,14 @@ function ProposalDecisionDialog({
       >
         <fetcher.Form method='post' className='space-y-4' onSubmit={() => (submitted.current = true)}>
           <input type='hidden' name='seriesId' value={seriesId} />
-          <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-            {reasonLabel}
+          <label className={proposalDialogFieldClass}>
+            <span className={proposalDialogFieldLabelClass}>{reasonLabel}</span>
             <textarea
               name='reason'
               required={reasonRequired}
               maxLength={1000}
               rows={4}
-              className='w-full resize-y rounded-md border border-input bg-background p-3 text-xs font-normal text-foreground outline-none focus:border-primary'
+              className='min-w-0 w-full resize-y rounded-md border border-input bg-background p-3 text-xs font-normal text-foreground outline-none focus:border-primary'
               placeholder={reasonPlaceholder}
             />
           </label>
@@ -570,7 +574,7 @@ function ProposalDecisionDialog({
             <button
               type='button'
               onClick={() => setOpen(false)}
-              className='h-10 rounded-md border border-border px-4 text-xs font-bold text-foreground'
+              className={`${dialogButton} border border-border text-foreground`}
             >
               {t('actions.cancel')}
             </button>
@@ -580,8 +584,8 @@ function ProposalDecisionDialog({
               disabled={disabled || busy}
               className={
                 destructive
-                  ? 'inline-flex h-10 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-xs font-bold text-destructive-foreground disabled:opacity-50'
-                  : 'inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                  ? `${dialogButton} bg-destructive text-destructive-foreground disabled:opacity-50`
+                  : `${dialogButton} bg-primary text-primary-foreground disabled:opacity-50`
               }
             >
               {busy ? <Loader2 className='size-4 animate-spin' /> : <Icon className='size-4' />}

@@ -21,7 +21,10 @@ import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { EditorActionResult } from '../../types'
 import { Dialog, useDialogClose, type DialogProps } from '~/shared/ui/dialog'
 
-export const operationInput = 'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
+export const operationInput =
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground'
+export const operationDialogButton =
+  'inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-bold sm:w-auto'
 
 export function OperationsLayout({
   titleKey,
@@ -126,7 +129,7 @@ export function OperationDialogPanel({
         <button
           type='button'
           onClick={() => setOpen(true)}
-          className={`inline-flex h-10 items-center gap-2 rounded-md px-4 text-xs font-bold ${
+          className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-bold sm:w-auto ${
             compact
               ? 'border border-border bg-background text-foreground hover:border-primary hover:text-primary'
               : 'bg-primary text-primary-foreground'
@@ -206,7 +209,7 @@ export function OperationAction({
     <button
       name='intent'
       value={intent}
-      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors ${visual.className}`}
+      className={`inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors sm:w-auto ${visual.className}`}
     >
       <Icon className='size-3.5' aria-hidden='true' />
       {label}

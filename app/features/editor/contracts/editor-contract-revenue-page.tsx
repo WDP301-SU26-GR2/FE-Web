@@ -6,6 +6,7 @@ import {
   ContractActionMessage,
   ContractDialogPanel,
   ContractPageLayout,
+  contractDialogButton,
   contractInput
 } from './components/contract-shared'
 
@@ -22,7 +23,7 @@ export function EditorContractRevenuePage({
     <ContractPageLayout contract={contract} progress={progress} title={t('contractDetail.sections.revenue')}>
       {contract.contractType === 'REVENUE_SHARE' && contract.status === 'FULLY_EXECUTED' ? (
         <ContractDialogPanel title={t('actions.reportRevenue')}>
-          <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-3'>
+          <fetcher.Form method='post' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
             <input type='hidden' name='intent' value='reportRevenue' />
             <input name='period' required className={contractInput} placeholder='2026-Q2' />
             <input
@@ -33,7 +34,7 @@ export function EditorContractRevenuePage({
               className={contractInput}
               placeholder={t('contractDetail.revenue')}
             />
-            <button className='rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'>
+            <button className={`${contractDialogButton} bg-primary text-primary-foreground`}>
               {t('actions.reportRevenue')}
             </button>
           </fetcher.Form>

@@ -1,11 +1,14 @@
 import { Form, useFetcher } from 'react-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { AlertTriangle, CalendarRange, CheckCircle2, Clock3, Loader2, UserRound, XCircle } from 'lucide-react'
+import { Pagination } from '~/shared/components'
 import {
   BoardActionDialog,
+  boardDialogButton,
   boardInput,
   BoardFeedback,
   BoardHeader,
@@ -13,6 +16,10 @@ import {
   StatusBadge
 } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
+
+const BOARD_LIST_PAGE_SIZE = 8
+const deadlineResolveFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold text-foreground'
+const deadlineResolveFieldLabelClass = 'flex min-h-10 items-end leading-5'
 
 export function BoardDeadlinesPage({
   requests,
@@ -30,6 +37,12 @@ export function BoardDeadlinesPage({
   hasError: boolean
 }) {
   const { t } = useTranslation('board')
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(requests.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = requests.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, requests.length)
+  const paginatedRequests = requests.slice(from > 0 ? from - 1 : 0, to)
   return (
     <div className='space-y-6 pb-12'>
       <BoardHeader
@@ -43,7 +56,7 @@ export function BoardDeadlinesPage({
           <h2 className='text-sm font-bold text-foreground'>{t('deadlines.queueTitle')}</h2>
           <p className='mt-1 text-xs text-muted-foreground'>{t('deadlines.queueHint')}</p>
         </div>
-        <Form method='get' replace preventScrollReset className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
+        <Form method='get' replace preventScrollReset className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
           <select className={boardInput} name='seriesId' defaultValue={seriesId}>
             <option value=''>{t('deadlines.selectSeries')}</option>
             {series.map((item) => (
@@ -60,7 +73,7 @@ export function BoardDeadlinesPage({
               </option>
             ))}
           </select>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
             {t('common.load')}
           </button>
         </Form>
@@ -81,10 +94,22 @@ export function BoardDeadlinesPage({
         </div>
       )}
       <div className='grid gap-4'>
-        {requests.map((item) => (
+        {paginatedRequests.map((item) => (
           <DeadlineCard key={item.id} item={item} />
         ))}
       </div>
+      {requests.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          setPage={setPage}
+          from={from}
+          to={to}
+          total={requests.length}
+          tKeyPrefix='pagination'
+          t={t}
+        />
+      )}
       {!chapterId && <EmptyState text={t('deadlines.selectHint')} />}
       {seriesId && chapterId && !requests.length && <EmptyState text={t('deadlines.empty')} />}
     </div>
@@ -162,10 +187,10 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
             </p>
             <fetcher.Form method='post' className='grid gap-3'>
               <input type='hidden' name='requestId' value={item.id} />
-              <label className='grid gap-1.5 text-xs font-bold text-foreground'>
-                {t('deadlines.note')}
+              <label className={deadlineResolveFieldClass}>
+                <span className={deadlineResolveFieldLabelClass}>{t('deadlines.note')}</span>
                 <textarea
-                  className='min-h-24 rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
+                  className='min-h-24 min-w-0 rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground'
                   name='note'
                   maxLength={1000}
                   placeholder={t('deadlines.notePlaceholder')}
@@ -176,7 +201,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
                   name='intent'
                   value='approve'
                   disabled={isSubmitting}
-                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-success px-3 text-xs font-bold text-success-foreground hover:opacity-90 disabled:opacity-50'
+                  className={`${boardDialogButton} bg-success text-success-foreground hover:opacity-90 disabled:opacity-50`}
                 >
                   {isSubmitting ? (
                     <Loader2 className='size-4 animate-spin' aria-hidden='true' />
@@ -189,7 +214,7 @@ function DeadlineCard({ item }: { item: DeadlineRequestResDtoOutput }) {
                   name='intent'
                   value='reject'
                   disabled={isSubmitting}
-                  className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 text-xs font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50'
+                  className={`${boardDialogButton} border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 disabled:opacity-50`}
                 >
                   {isSubmitting ? (
                     <Loader2 className='size-4 animate-spin' aria-hidden='true' />

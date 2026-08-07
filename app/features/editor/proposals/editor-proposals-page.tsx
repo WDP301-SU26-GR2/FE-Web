@@ -102,7 +102,7 @@ export function EditorProposalsPage({
 }
 
 const filterInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
 
 function ProposalSection({
   title,
@@ -168,11 +168,11 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
         ))}
       </div>
       <EditorActionToast data={fetcher.data} scope={`editor-proposal-${item.id}`} />
-      <div className='mt-5 flex flex-wrap gap-2 border-t border-border pt-4'>
+      <div className='mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap'>
         {item.editorId ? (
           <Link
             to={EDITOR_PROPOSAL_ROUTES.detail(item.id)}
-            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted'
+            className='inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground hover:bg-muted sm:w-auto'
           >
             <BookOpen className='size-4' />
             {t('actions.review')}
@@ -190,7 +190,7 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
             <button
               type='submit'
               disabled={busy}
-              className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+              className='inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
             >
               {busy ? <Loader2 className='size-4 animate-spin' /> : <LockKeyhole className='size-4' />}
               {t('actions.claim')}

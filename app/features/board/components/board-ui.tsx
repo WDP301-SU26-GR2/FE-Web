@@ -8,7 +8,12 @@ import { Dialog, useDialogClose } from '~/shared/ui/dialog'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
 
 export const boardInput =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+
+export const boardDialogInlineActions = 'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'
+export const boardDialogActions = `${boardDialogInlineActions} border-t border-border pt-4`
+export const boardDialogButton =
+  'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
 
 export function BoardHeader({
   title,
@@ -59,7 +64,7 @@ export function BoardActionDialog({ title, children }: { title: string; children
       <button
         type='button'
         onClick={() => setOpen(true)}
-        className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground'
+        className='inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground sm:w-auto'
       >
         <PencilLine className='size-4' />
         {title}
@@ -132,7 +137,7 @@ export function ActionButton({ label, intent, disabled }: { label: string; inten
       name={intent ? 'intent' : undefined}
       value={intent}
       disabled={disabled || fetcher.state !== 'idle'}
-      className='inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50'
+      className='inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50 sm:w-auto'
     >
       {fetcher.state !== 'idle' && <Loader2 className='size-4 animate-spin' />}
       {label}

@@ -28,6 +28,7 @@ import {
   OperationFeedback,
   OperationPanel,
   OperationsLayout,
+  operationDialogButton,
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
@@ -47,6 +48,9 @@ type SurveyRankingDisplayItem = {
   isReliable: boolean
   riskLevel: string | null
 }
+
+const surveyModalFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1 text-xs font-bold text-foreground'
+const surveyModalFieldLabelClass = 'flex min-h-10 items-end leading-5'
 
 export function EditorSurveysPage({
   series,
@@ -322,7 +326,7 @@ export function EditorSurveysPage({
                 <fetcher.Form method='post' className='grid gap-3'>
                   <input type='hidden' name='surveyId' value={selectedSurveyId} />
                   {rows.map((row, index) => (
-                    <div key={row} className='grid gap-2 sm:grid-cols-[1fr_8rem_auto]'>
+                    <div key={row} className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_auto]'>
                       <SurveySeriesSelect
                         eligibleSeriesIds={selectedSurvey.eligibleSeriesIds}
                         seriesTitles={seriesTitles}
@@ -339,7 +343,7 @@ export function EditorSurveysPage({
                         type='button'
                         disabled={rows.length === 1}
                         onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
-                        className='h-10 rounded-md border border-border px-3 text-xs disabled:opacity-50'
+                        className={`${operationDialogButton} border border-border disabled:opacity-50`}
                       >
                         {t('actions.remove')}
                       </button>
@@ -348,7 +352,7 @@ export function EditorSurveysPage({
                   <button
                     type='button'
                     onClick={() => setRows((current) => [...current, Math.max(...current) + 1])}
-                    className='h-9 rounded-md border border-dashed border-border text-xs font-bold'
+                    className={`${operationDialogButton} border border-dashed border-border`}
                   >
                     {t('actions.addVoteRow')}
                   </button>
@@ -482,8 +486,8 @@ function CreateSurveyForm({
           </p>
           <p className='mt-1 text-xs text-muted-foreground'>{t('operations.createSurveyScopeHelp')}</p>
         </div>
-        <label className='grid min-w-0 gap-1 text-xs font-bold text-foreground'>
-          {t('operations.magazine')}
+        <label className={surveyModalFieldClass}>
+          <span className={surveyModalFieldLabelClass}>{t('operations.magazine')}</span>
           <select
             name='magazine'
             value={magazine}
@@ -503,8 +507,8 @@ function CreateSurveyForm({
             ))}
           </select>
         </label>
-        <label className='grid min-w-0 gap-1 text-xs font-bold text-foreground'>
-          {t('operations.publicationType')}
+        <label className={surveyModalFieldClass}>
+          <span className={surveyModalFieldLabelClass}>{t('operations.publicationType')}</span>
           <select
             name='publicationType'
             value={publicationType}
@@ -526,8 +530,8 @@ function CreateSurveyForm({
             ))}
           </select>
         </label>
-        <label className='grid min-w-0 gap-1 text-xs font-bold text-foreground'>
-          <span className='flex items-center justify-between gap-2'>
+        <label className={surveyModalFieldClass}>
+          <span className={`${surveyModalFieldLabelClass} justify-between gap-2`}>
             {t('operations.issue')}
             {magazine && publicationType && (
               <span className='font-normal text-muted-foreground'>
@@ -685,12 +689,12 @@ function CreateSurveyForm({
             {t('operations.createSurveyTimeStep')}
           </p>
         </div>
-        <label className='grid min-w-0 gap-1 text-xs font-bold text-foreground'>
-          {t('operations.startDate')}
+        <label className={surveyModalFieldClass}>
+          <span className={surveyModalFieldLabelClass}>{t('operations.startDate')}</span>
           <input name='startDate' type='datetime-local' required className={operationInput} />
         </label>
-        <label className='grid min-w-0 gap-1 text-xs font-bold text-foreground'>
-          {t('operations.endDate')}
+        <label className={surveyModalFieldClass}>
+          <span className={surveyModalFieldLabelClass}>{t('operations.endDate')}</span>
           <input name='endDate' type='datetime-local' required className={operationInput} />
         </label>
         <div className='sm:col-span-2'>

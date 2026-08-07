@@ -1,18 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  Check,
-  ChevronUp,
-  ImageIcon,
-  Loader2,
-  MessageSquareText,
-  PencilLine,
-  Plus,
-  Trash2,
-  Upload,
-  X
-} from 'lucide-react'
+import { Check, ChevronUp, ImageIcon, Loader2, MessageSquareText, Plus, Trash2, Upload, X } from 'lucide-react'
 
 import { cn } from '~/shared/lib/cn'
 import { Dialog } from '~/shared/ui/dialog'
@@ -24,7 +13,6 @@ import { SignedImage } from '~/shared/components/signed-image'
 import { useCreatePage } from './hooks/use-create-page'
 import { useDeletePage } from './hooks/use-delete-page'
 import { useDeletePagesBulk } from './hooks/use-delete-pages-bulk'
-import { useUpdatePage } from './hooks/use-update-page'
 import { useManuscriptRevisions } from './hooks/use-manuscript-revisions'
 import { uploadToR2WithMessage } from '~/shared/lib/upload/upload-to-r2'
 import { ManuscriptActionPanel } from './components/manuscript-action-panel'
@@ -55,7 +43,7 @@ import { ProductionStagePanel } from './components/production-stage-panel'
  *     assign compatible tasks → confirm all page outputs → complete the
  *     stage. FINAL_CHECK is closed only by manuscript submission.
  *
- * Delete / Update per FE-API-Guide-v3 §5 (2026-07-21):
+ * Delete per FE-API-Guide-v3 §5 (2026-07-21):
  *   - `DELETE /pages/:pageId` — delete single page (cascade Region + Task).
  *   - `DELETE /chapters/:id/pages` with `{pageIds}` — bulk delete (all-or-nothing, max 50).
  *   - Pages must be `DRAFT`/`REVISING` to delete. `COMPLETED` pages are locked.
@@ -77,7 +65,6 @@ export function PublicationPagesReaderView() {
   const { createPage, isCreating } = useCreatePage()
   const { deletePage, isDeleting } = useDeletePage()
   const { deletePagesBulk, isDeletingBulk } = useDeletePagesBulk()
-  const { updatePage, isUpdating } = useUpdatePage()
 
   // The page that's currently in-view on the centre stack.
   const [activePageId, setActivePageId] = useState<string | null>(null)
@@ -90,7 +77,6 @@ export function PublicationPagesReaderView() {
   // Confirm dialog state.
   const [deleteConfirmPage, setDeleteConfirmPage] = useState<PageListResDtoOutputItemsItem | null>(null)
   const [deleteBulkConfirm, setDeleteBulkConfirm] = useState(false)
-  const [renumberPage, setRenumberPage] = useState<PageListResDtoOutputItemsItem | null>(null)
   const [productionReady, setProductionReady] = useState(false)
   const [pageSetLocked, setPageSetLocked] = useState(false)
   const [productionVersion, setProductionVersion] = useState(0)
@@ -175,7 +161,7 @@ export function PublicationPagesReaderView() {
     setDeleteBulkConfirm(false)
   }, [])
 
-  const isPageEditable = useCallback((page: PageListResDtoOutputItemsItem) => {
+  const isPageDeletable = useCallback((page: PageListResDtoOutputItemsItem) => {
     return page.status === 'DRAFT' || page.status === 'REVISING'
   }, [])
 
@@ -195,16 +181,6 @@ export function PublicationPagesReaderView() {
     exitBulkMode()
     refreshPages()
   }, [deletePagesBulk, chapter, selectedPageIds, exitBulkMode, refreshPages])
-
-  const handleRenumberPage = useCallback(
-    async (pageId: string, pageNumber: number) => {
-      const updated = await updatePage({ pageId, body: { pageNumber } })
-      if (!updated) return
-      setRenumberPage(null)
-      await refreshPages()
-    },
-    [refreshPages, updatePage]
-  )
 
   const handlePageSetLockChange = useCallback((locked: boolean) => {
     setPageSetLocked(locked)
@@ -401,10 +377,8 @@ export function PublicationPagesReaderView() {
                   selected={selectedPageIds.has(p.id)}
                   onToggleSelect={() => togglePageSelection(p.id)}
                   onDelete={() => setDeleteConfirmPage(p)}
-                  onRenumber={() => setRenumberPage(p)}
-                  isEditable={isPageEditable(p)}
+                  isDeletable={isPageDeletable(p)}
                   deleteLocked={pageSetLocked || Boolean(chapter.hold)}
-                  renumberLocked={Boolean(chapter.hold)}
                 />
               ))}
               <button
@@ -452,15 +426,6 @@ export function PublicationPagesReaderView() {
               onCancel={() => setDeleteBulkConfirm(false)}
             />
           )}
-
-          {renumberPage && (
-            <UpdatePageNumberDialog
-              page={renumberPage}
-              isUpdating={isUpdating}
-              onConfirm={(pageNumber) => void handleRenumberPage(renumberPage.id, pageNumber)}
-              onCancel={() => setRenumberPage(null)}
-            />
-          )}
         </main>
 
         {/* RIGHT: manuscript revision rail */}
@@ -483,10 +448,8 @@ function PageCard({
   selected,
   onToggleSelect,
   onDelete,
-  onRenumber,
-  isEditable,
-  deleteLocked,
-  renumberLocked
+  isDeletable,
+  deleteLocked
 }: {
   page: PageListResDtoOutputItemsItem
   setRef: (el: HTMLDivElement | null) => void
@@ -494,10 +457,8 @@ function PageCard({
   selected: boolean
   onToggleSelect: () => void
   onDelete: () => void
-  onRenumber: () => void
-  isEditable: boolean
+  isDeletable: boolean
   deleteLocked: boolean
-  renumberLocked: boolean
 }) {
   const { t } = useTranslation('mangaka')
 
@@ -528,27 +489,16 @@ function PageCard({
           </span>
         )}
         <PageStatusBadge status={page.status} />
-        {!bulkMode && isEditable && (
-          <div className='ml-auto flex items-center gap-1'>
-            <button
-              type='button'
-              onClick={onRenumber}
-              disabled={renumberLocked}
-              aria-label={t('publication.pagesReader.updatePageNumber.dialogTitle')}
-              className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40'
-            >
-              <PencilLine className='h-3.5 w-3.5' />
-            </button>
-            <button
-              type='button'
-              onClick={onDelete}
-              disabled={deleteLocked}
-              aria-label={t('publication.pagesReader.delete.confirmButton')}
-              className='flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40'
-            >
-              <Trash2 className='h-3.5 w-3.5' />
-            </button>
-          </div>
+        {!bulkMode && isDeletable && (
+          <button
+            type='button'
+            onClick={onDelete}
+            disabled={deleteLocked}
+            aria-label={t('publication.pagesReader.delete.confirmButton')}
+            className='ml-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40'
+          >
+            <Trash2 className='h-3.5 w-3.5' />
+          </button>
         )}
       </div>
 
@@ -559,70 +509,6 @@ function PageCard({
         className='w-full'
       />
     </div>
-  )
-}
-
-function UpdatePageNumberDialog({
-  page,
-  isUpdating,
-  onConfirm,
-  onCancel
-}: {
-  page: PageListResDtoOutputItemsItem
-  isUpdating: boolean
-  onConfirm: (pageNumber: number) => void
-  onCancel: () => void
-}) {
-  const { t } = useTranslation('mangaka')
-  const [pageNumber, setPageNumber] = useState(String(page.pageNumber))
-  const parsedPageNumber = Number(pageNumber)
-  const isValid = Number.isInteger(parsedPageNumber) && parsedPageNumber > 0 && parsedPageNumber !== page.pageNumber
-
-  return (
-    <Dialog
-      open
-      onClose={onCancel}
-      titleId='update-page-number-title'
-      title={t('publication.pagesReader.updatePageNumber.dialogTitle')}
-      description={t('publication.pagesReader.updatePageNumber.currentLabel', { number: page.pageNumber })}
-      size='sm'
-      footer={
-        <div className='flex justify-end gap-2'>
-          <button
-            type='button'
-            onClick={onCancel}
-            disabled={isUpdating}
-            className='rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50'
-          >
-            {t('publication.pagesReader.updatePageNumber.cancel')}
-          </button>
-          <button
-            type='button'
-            onClick={() => onConfirm(parsedPageNumber)}
-            disabled={isUpdating || !isValid}
-            className='inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50'
-          >
-            {isUpdating && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
-            {isUpdating
-              ? t('publication.pagesReader.updatePageNumber.saving')
-              : t('publication.pagesReader.updatePageNumber.confirm')}
-          </button>
-        </div>
-      }
-    >
-      <label className='grid gap-1.5 text-sm font-medium' htmlFor='page-number-input'>
-        {t('publication.pagesReader.updatePageNumber.newLabel')}
-        <input
-          id='page-number-input'
-          type='number'
-          min={1}
-          step={1}
-          value={pageNumber}
-          onChange={(event) => setPageNumber(event.target.value)}
-          className='rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring'
-        />
-      </label>
-    </Dialog>
   )
 }
 

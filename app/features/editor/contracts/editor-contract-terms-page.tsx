@@ -3,6 +3,7 @@ import { useFetcher } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { ContractResDtoOutput } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import {
   CONTRACT_FIELD_LIMITS,
   EDITOR_CONTRACT_INTENTS,
@@ -11,10 +12,14 @@ import {
   contractValuationIsValid,
   ownershipIsValid
 } from './contract-flow'
-import { ContractActionMessage, contractInput } from './components/contract-shared'
+import { ContractActionMessage, contractDialogButton, contractInput } from './components/contract-shared'
+
+const contractTermFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const contractTermWideFieldClass = `${contractTermFieldClass} md:col-span-2`
+const contractTermFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function ContractTermsForm({ contract, action }: { contract: ContractResDtoOutput; action: string }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const editable = canEditContract(contract)
   const [contractType, setContractType] = useState(contract.contractType)
@@ -38,8 +43,8 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
     <div className='space-y-4'>
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <fetcher.Form method='post' action={action} className='grid gap-3 md:grid-cols-2'>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contracts.contractType')}
+          <label className={contractTermFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.contractType')}</span>
             <select
               name='contractType'
               value={contractType}
@@ -52,8 +57,8 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
             </select>
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contracts.valuation')}
+          <label className={contractTermFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.valuation')}</span>
             <input
               name='valuationAmount'
               type='number'
@@ -66,9 +71,10 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               required
               className={contractInput}
             />
+            <MoneyInWords amount={valuationAmount} locale={i18n.language} />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contracts.publisherPct')}
+          <label className={contractTermFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.publisherPct')}</span>
             <input
               name='publisherOwnershipPct'
               type='number'
@@ -83,8 +89,8 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               className={contractInput}
             />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contracts.mangakaPct')}
+          <label className={contractTermFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.mangakaPct')}</span>
             <input
               name='mangakaOwnershipPct'
               type='number'
@@ -99,8 +105,8 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               className={contractInput}
             />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contracts.contractStart')}
+          <label className={contractTermFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.contractStart')}</span>
             <input
               name='contractStart'
               type='datetime-local'
@@ -115,8 +121,8 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               className={contractInput}
             />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contracts.contractEnd')}
+          <label className={contractTermFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.contractEnd')}</span>
             <input
               name='contractEnd'
               type='datetime-local'
@@ -128,23 +134,23 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               className={contractInput}
             />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold md:col-span-2'>
-            {t('contracts.terminationClause')}
+          <label className={contractTermWideFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contracts.terminationClause')}</span>
             <textarea
               name='terminationClause'
               defaultValue={contract.terminationClause ?? ''}
               disabled={!editable}
               required
-              className='min-h-28 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70'
+              className='min-h-28 min-w-0 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70'
             />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold md:col-span-2'>
-            {t('contractDetail.editNote')}
+          <label className={contractTermWideFieldClass}>
+            <span className={contractTermFieldLabelClass}>{t('contractDetail.editNote')}</span>
             <textarea
               name='note'
               maxLength={CONTRACT_FIELD_LIMITS.versionNoteMaxLength}
               disabled={!editable}
-              className='min-h-20 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70'
+              className='min-h-20 min-w-0 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70'
             />
           </label>
           {editable && (
@@ -153,7 +159,7 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
                 name='intent'
                 value={EDITOR_CONTRACT_INTENTS.update}
                 disabled={fetcher.state !== 'idle' || !valuationValid || !ownershipValid || !datesValid}
-                className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                className={`${contractDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
               >
                 {t('actions.saveContract')}
               </button>

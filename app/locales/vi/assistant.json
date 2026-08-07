@@ -84,11 +84,11 @@
     },
     "taskType": {
       "BACKGROUND": "Vẽ nền",
-      "SCREENTONE": "Dán mảng sắc độ",
-      "EFFECT_LINES": "Đường tốc độ",
-      "INKING": "Đi mực",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Hiệu ứng đường",
+      "INKING": "Đi nét",
       "COLORING": "Tô màu",
-      "LETTERING": "Chữ/thoại"
+      "LETTERING": "Chèn thoại"
     },
     "card": {
       "taskType": "Loại công việc",
@@ -247,17 +247,17 @@
     },
     "taskType": {
       "BACKGROUND": "Vẽ nền",
-      "SCREENTONE": "Dán mảng sắc độ",
-      "EFFECT_LINES": "Đường tốc độ",
-      "INKING": "Đi mực",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Hiệu ứng đường",
+      "INKING": "Đi nét",
       "COLORING": "Tô màu",
-      "LETTERING": "Chữ/thoại"
+      "LETTERING": "Chèn thoại"
     },
     "card": {
       "unknownMangaka": "Tác giả",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
-      "seriesNone": "Không có ngữ cảnh series",
+      "seriesNone": "Không có ngữ cảnh bộ truyện",
       "terminatedReason": "Lý do: {{reason}}",
       "noReason": "Không có lý do",
       "ended": "Bắt đầu {{date}}",
@@ -303,17 +303,17 @@
     },
     "taskType": {
       "BACKGROUND": "Vẽ nền",
-      "SCREENTONE": "Dán mảng sắc độ",
-      "EFFECT_LINES": "Đường tốc độ",
-      "INKING": "Đi mực",
+      "SCREENTONE": "Dán tone",
+      "EFFECT_LINES": "Hiệu ứng đường",
+      "INKING": "Đi nét",
       "COLORING": "Tô màu",
-      "LETTERING": "Chữ/thoại"
+      "LETTERING": "Chèn thoại"
     },
     "card": {
       "unknownMangaka": "Tác giả",
       "hireWindow": "{{from}} – {{to}}",
       "hireWindowNoEnd": "Từ {{from}}",
-      "seriesNone": "Không có ngữ cảnh series",
+      "seriesNone": "Không có ngữ cảnh bộ truyện",
       "taskTypesTitle": "Sẽ làm việc về",
       "loadingDetails": "Đang tải chi tiết lời mời...",
       "receivedAt": "Nhận {{date}}"

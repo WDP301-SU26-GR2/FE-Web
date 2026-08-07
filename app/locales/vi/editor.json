@@ -152,7 +152,10 @@
     "label": "Các trang hồ sơ",
     "previous": "Trang trước",
     "next": "Trang sau",
-    "summary": "Đang hiển thị {{from}}–{{to}} trong tổng số {{total}}"
+    "summary": "Đang hiển thị {{from}}–{{to}} trong tổng số {{total}}",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau",
+    "showingRange": "Đang hiển thị {{from}}–{{to}} trong tổng số {{total}}"
   },
   "proposalDetail": {
     "proposalTitle": "Nội dung đề xuất",
@@ -427,15 +430,23 @@
     "readyDescription": "Gửi bộ truyện đã được biên tập viên duyệt lên Hội đồng.",
     "emptyReady": "Không có bộ truyện nào sẵn sàng trình duyệt.",
     "sessionTitle": "Tạo phiên Hội đồng",
-    "sessionDescription": "Thiết lập lịch họp; hệ thống sẽ tự động phân công thành viên Hội đồng phù hợp.",
+    "sessionDescription": "Thiết lập lịch họp và chọn thủ công thành viên Hội đồng tham gia phiên.",
     "sessionRulesTitle": "Đề xuất của hệ thống",
-    "sessionSystemRosterNotice": "Hệ thống sẽ tự động phân công thành viên Hội đồng phù hợp.",
+    "sessionSystemRosterNotice": "Chọn bộ truyện làm ngữ cảnh, sau đó chọn thủ công thành viên Hội đồng tham gia phiên.",
+    "sessionManualRosterNotice": "Chọn đúng {{quorumMin}} thành viên Hội đồng theo cấu hình hệ thống. Danh sách phải hợp lệ trước khi tạo phiên.",
     "noEligibleSeriesForSession": "Chưa có bộ truyện phù hợp để làm ngữ cảnh cho phiên Hội đồng.",
     "rosterSourceSeries": "Bộ truyện dùng để gợi ý thành viên",
     "rosterSourceSeriesHint": "Bộ truyện chỉ cung cấp ngữ cảnh thể loại để chọn thành viên, không giới hạn các quyết định được thêm vào phiên.",
     "suggestedMembersTitle": "Thành viên được đề xuất ({{count}})",
     "suggestedMemberMatch": "Thể loại phù hợp: {{genres}} · điểm: {{score}}",
     "unnamedBoardMember": "Thành viên Hội đồng chưa có tên",
+    "selectBoardMembers": "Chọn thành viên tham gia",
+    "selectedBoardMembers": "Đã chọn {{selected}}/{{required}} thành viên",
+    "rosterValid": "Hợp lệ",
+    "rosterNeedsSelection": "Cần chọn đủ",
+    "boardMembersLoadFailed": "Không tải được danh sách thành viên Hội đồng hiện có.",
+    "notEnoughBoardMembers": "Chỉ có {{total}} thành viên khả dụng, chưa đủ {{required}} thành viên theo cấu hình.",
+    "emptyBoardMembers": "Chưa có thành viên Hội đồng khả dụng.",
     "noMatchedGenres": "không có thể loại trùng khớp",
     "emptySuggestedMembers": "Không có thành viên Hội đồng phù hợp được đề xuất cho bộ truyện này.",
     "rosterMode": "Cách chọn thành viên Hội đồng",
@@ -479,6 +490,11 @@
       "chatPlaceholder": "Nhập nội dung trao đổi...",
       "chatLocked": "Thảo luận đã khóa trong giai đoạn bỏ phiếu.",
       "unknownMember": "Thành viên Hội đồng",
+      "senderRoles": {
+        "editor": "Biên tập viên",
+        "boardMember": "Thành viên Hội đồng",
+        "unknown": "Chưa xác định"
+      },
       "decisionAgendaHint": "Các nội dung đăng dài kỳ và vòng đời bộ truyện được chuẩn bị trực tiếp trong phiên này.",
       "addDecisionTitle": "Thêm nội dung biểu quyết",
       "addDecisionDescription": "Chọn loại quyết định và bộ truyện tương ứng. Biểu mẫu sẽ chỉ hiển thị những thông tin cần thiết cho loại quyết định đó.",
@@ -651,7 +667,7 @@
     "chapterMilestone": "Số chương cần đạt",
     "everyChapters": "Chi trả sau mỗi N chương",
     "topRank": "Thứ hạng cao nhất cần đạt",
-    "deadline": "Hạn hoàn thành",
+    "deadline": "Ngày thanh toán",
     "thresholdChapter": "Đạt chương {{chapter}} đã xuất bản",
     "thresholdEvery": "Chi trả sau mỗi {{count}} chương đã xuất bản",
     "thresholdRank": "Đạt top {{rank}} trên bảng xếp hạng",
@@ -788,7 +804,6 @@
     "reprints": "Quy trình tái bản",
     "transfers": "Thương lượng chuyển nhượng",
     "versions": "Phiên bản phát hành",
-    "insights": "Dữ liệu biên tập",
     "surveyPeriodId": "Mã kỳ bình chọn",
     "selectSurveyPeriod": "Chọn kỳ bình chọn",
     "surveyIssue": "Kỳ số {{issue}}",
@@ -1143,8 +1158,7 @@
       "surveys": "Theo dõi kỳ bình chọn độc giả, phiếu ngoại tuyến và bảng xếp hạng.",
       "reprints": "Tạo yêu cầu tái bản, duyệt chương và phân công người chỉnh sửa.",
       "transfers": "Bắt đầu thương lượng và tạo hợp đồng chuyển quyền sở hữu.",
-      "versions": "Tạo và quản lý các phiên bản ngôn ngữ, hình thức phát hành.",
-      "insights": "Xem danh bạ trợ lý, lịch sử yêu cầu sửa, xếp hạng và thanh toán theo bộ truyện."
+      "versions": "Tạo và quản lý các phiên bản ngôn ngữ, hình thức phát hành."
     }
   },
   "notifications": {
@@ -1169,7 +1183,7 @@
     "review": "Xem và xử lý",
     "save": "Lưu",
     "claim": "Nhận hồ sơ",
-    "release": "Nhả hồ sơ",
+    "release": "Bỏ làm đại diện series",
     "back": "Quay lại hàng đợi",
     "backPublication": "Quay lại bàn xuất bản",
     "approve": "Duyệt",
@@ -1253,7 +1267,8 @@
     "addVoteRow": "Thêm bộ truyện khác",
     "markAllRead": "Đánh dấu đã đọc tất cả",
     "markRead": "Đánh dấu đã đọc",
-    "saveProfile": "Lưu hồ sơ"
+    "saveProfile": "Lưu hồ sơ",
+    "submitContractReview": "Gửi hợp đồng để Hội đồng xem xét"
   },
   "messages": {
     "claimed": "Đã nhận phụ trách hồ sơ.",

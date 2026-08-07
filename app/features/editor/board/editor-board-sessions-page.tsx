@@ -5,15 +5,20 @@ import { Link } from 'react-router'
 import {
   BoardSessionResDtoOutputStatus,
   type BoardDecisionResDtoOutput,
+  type BoardConfigResDtoOutput,
   type BoardSessionResDtoOutput
 } from '~/api/model/board'
+import { boardControllerSuggestMembers } from '~/api/operations/board/board'
+import type { SuggestBoardMembersResDtoOutputItemsItem } from '~/api/model/board'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import { useAuth } from '~/features/auth/context/auth-context'
 import { Dialog } from '~/shared/ui/dialog'
+import { Pagination } from '~/shared/components'
 import { orderBoardDecisions, orderBoardSessions } from './board-order'
 import { BOARD_SESSION_INTENTS, BOARD_SESSION_FIELD_LIMITS, isValidBoardSessionTimeRange } from './board-session-flow'
 import {
   boardInput,
+  boardDialogButton,
   BoardFeedback,
   BoardPageLayout,
   BoardPanel,
@@ -23,22 +28,26 @@ import {
 } from './components/board-shared'
 import { useEditorSessionVoteProgress } from './hooks/use-editor-session-vote-progress'
 
+const BOARD_LIST_PAGE_SIZE = 8
+const sessionFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const sessionFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
+
 export function EditorBoardSessionsPage({
   series,
   sessions,
   decisions,
+  boardConfig,
   hasError,
   manageAll = false,
-  hideCreateButton = false,
   backPath = '/dashboard/editor/board',
   detailBasePath = '/dashboard/editor/board/sessions'
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   sessions: BoardSessionResDtoOutput[]
   decisions: BoardDecisionResDtoOutput[]
+  boardConfig: BoardConfigResDtoOutput | null
   hasError: boolean
   manageAll?: boolean
-  hideCreateButton?: boolean
   backPath?: string
   detailBasePath?: string
 }) {
@@ -48,6 +57,7 @@ export function EditorBoardSessionsPage({
   const [rosterSourceSeriesId, setRosterSourceSeriesId] = useState('')
   const [sessionSearch, setSessionSearch] = useState('')
   const [sessionStatus, setSessionStatus] = useState('')
+  const [page, setPage] = useState(1)
   useBoardAutoRefresh()
   const currentUserId = authSession?.user.id ?? ''
   const visibleSessions = sessions
@@ -61,6 +71,11 @@ export function EditorBoardSessionsPage({
         (!sessionSearch || session.title.toLowerCase().includes(sessionSearch.toLowerCase()))
     )
   )
+  const totalPages = Math.max(1, Math.ceil(filteredSessions.length / BOARD_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredSessions.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * BOARD_LIST_PAGE_SIZE, filteredSessions.length)
+  const paginatedSessions = filteredSessions.slice(from > 0 ? from - 1 : 0, to)
 
   return (
     <BoardPageLayout
@@ -69,8 +84,7 @@ export function EditorBoardSessionsPage({
       hasError={hasError}
       backPath={backPath}
     >
-      {!hideCreateButton && (
-        <div className='flex justify-end'>
+      <div className='flex justify-end'>
           <button
             type='button'
             onClick={() => {
@@ -78,26 +92,31 @@ export function EditorBoardSessionsPage({
               setRosterSourceSeriesId(randomSeries?.id ?? '')
               setCreateDialogOpen(true)
             }}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'
+            className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
           >
             <Plus className='size-4' />
-            {t('actions.createSession')}
+            {t('board.createSession', { defaultValue: 'Tạo phiên họp mới' })}
           </button>
-        </div>
-      )}
+      </div>
       <BoardPanel title={t('board.sessions')}>
         <div className='grid gap-3'>
           <div className='grid gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2'>
             <input
               className={boardInput}
               value={sessionSearch}
-              onChange={(event) => setSessionSearch(event.target.value)}
+              onChange={(event) => {
+                setSessionSearch(event.target.value)
+                setPage(1)
+              }}
               placeholder={t('board.filters.searchSessions')}
             />
             <select
               className={boardInput}
               value={sessionStatus}
-              onChange={(event) => setSessionStatus(event.target.value)}
+              onChange={(event) => {
+                setSessionStatus(event.target.value)
+                setPage(1)
+              }}
             >
               <option value=''>{t('board.filters.allStatuses')}</option>
               {Object.values(BoardSessionResDtoOutputStatus).map((status) => (
@@ -113,7 +132,7 @@ export function EditorBoardSessionsPage({
               {t(`board.realtime.${voteProgress.connectionState}`)}
             </div>
           )}
-          {filteredSessions.map((session) => (
+          {paginatedSessions.map((session) => (
             <SessionCard
               key={session.id}
               session={session}
@@ -123,26 +142,86 @@ export function EditorBoardSessionsPage({
               detailBasePath={detailBasePath}
             />
           ))}
+          {filteredSessions.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={filteredSessions.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
+          )}
           {!filteredSessions.length && <p className='text-xs text-muted-foreground'>{t('board.emptySessions')}</p>}
         </div>
       </BoardPanel>
       {createDialogOpen && (
-        <CreateSessionDialog rosterSourceSeriesId={rosterSourceSeriesId} onClose={() => setCreateDialogOpen(false)} />
+        <CreateSessionDialog
+          rosterSourceSeriesId={rosterSourceSeriesId}
+          boardConfig={boardConfig}
+          onClose={() => setCreateDialogOpen(false)}
+        />
       )}
     </BoardPageLayout>
   )
 }
 
-function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSeriesId: string; onClose: () => void }) {
+function CreateSessionDialog({
+  rosterSourceSeriesId,
+  boardConfig,
+  onClose
+}: {
+  rosterSourceSeriesId: string
+  boardConfig: BoardConfigResDtoOutput | null
+  onClose: () => void
+}) {
   const { t } = useTranslation('editor')
   const fetcher = useBoardFetcher()
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
+  const [suggestedMembers, setSuggestedMembers] = useState<SuggestBoardMembersResDtoOutputItemsItem[]>([])
+  const [suggestMembersFailed, setSuggestMembersFailed] = useState(false)
+  const [loadingSuggested, setLoadingSuggested] = useState(true)
   const timeRangeIsValid = isValidBoardSessionTimeRange(startTime, endTime || undefined)
+  const rosterSize = getRequiredRosterSize(boardConfig, suggestedMembers.length)
+  const selectedCount = selectedMemberIds.length
+  const rosterIsValid = rosterSize > 0 && selectedCount === rosterSize && !loadingSuggested
+  const canSelectMoreMembers = selectedCount < rosterSize
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok) onClose()
   }, [fetcher.data, fetcher.state, onClose])
+
+  useEffect(() => {
+    if (!rosterSourceSeriesId) return
+    let active = true
+    const suggestedSize = boardConfig?.boardTotalMembers
+    boardControllerSuggestMembers({ seriesId: rosterSourceSeriesId, size: suggestedSize })
+      .then((res) => {
+        if (!active) return
+        setSuggestedMembers(res.data?.items ?? [])
+      })
+      .catch(() => {
+        if (active) setSuggestMembersFailed(true)
+      })
+      .finally(() => {
+        if (active) setLoadingSuggested(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [rosterSourceSeriesId, boardConfig?.boardTotalMembers])
+
+  function toggleMember(memberId: string) {
+    setSelectedMemberIds((current) => {
+      if (current.includes(memberId)) return current.filter((id) => id !== memberId)
+      if (current.length >= rosterSize) return current
+      return [...current, memberId]
+    })
+  }
 
   return (
     <Dialog
@@ -154,6 +233,7 @@ function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSe
       title={t('board.sessionTitle')}
       description={t('board.sessionDescription')}
       size='xl'
+      className='max-w-4xl'
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value={BOARD_SESSION_INTENTS.create} />
@@ -163,15 +243,19 @@ function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSe
             <CircleAlert className='size-4 shrink-0' />
             {t('board.sessionRulesTitle')}
           </div>
-          <p className='mt-2 text-xs leading-5'>{t('board.sessionSystemRosterNotice')}</p>
+          <p className='mt-2 text-xs leading-5'>
+            {t('board.sessionManualRosterNotice', {
+              quorumMin: boardConfig?.quorumMin || 0
+            })}
+          </p>
         </aside>
         {!rosterSourceSeriesId && (
           <p className='rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground'>
             {t('board.noSeriesForAutomaticRoster')}
           </p>
         )}
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('board.sessionName')}
+        <label className={sessionFieldClass}>
+          <span className={sessionFieldLabelClass}>{t('board.sessionName')}</span>
           <input
             className={boardInput}
             name='title'
@@ -181,8 +265,8 @@ function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSe
           />
         </label>
         <div className='grid min-w-0 gap-3'>
-          <label className='grid min-w-0 gap-1.5 text-xs font-semibold'>
-            {t('board.startTime')}
+          <label className={sessionFieldClass}>
+            <span className={sessionFieldLabelClass}>{t('board.startTime')}</span>
             <input
               className={`${boardInput} min-w-0 [color-scheme:light] dark:[color-scheme:dark]`}
               name='startTime'
@@ -196,8 +280,8 @@ function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSe
               }}
             />
           </label>
-          <label className='grid min-w-0 gap-1.5 text-xs font-semibold'>
-            {t('board.endTime')}
+          <label className={sessionFieldClass}>
+            <span className={sessionFieldLabelClass}>{t('board.endTime')}</span>
             <input
               className={`${boardInput} min-w-0 [color-scheme:light] dark:[color-scheme:dark]`}
               name='endTime'
@@ -208,26 +292,89 @@ function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSe
             />
           </label>
         </div>
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('board.sessionNote')}
+        <label className={sessionFieldClass}>
+          <span className={sessionFieldLabelClass}>{t('board.sessionNote')}</span>
           <textarea
             className={`${boardInput} min-h-24 py-2`}
             name='description'
             maxLength={BOARD_SESSION_FIELD_LIMITS.descriptionMaxLength}
           />
         </label>
+        <section className='grid gap-3 rounded-lg border border-border p-3'>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <div>
+              <h3 className='text-sm font-bold text-foreground'>{t('board.selectBoardMembers')}</h3>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                {t('board.selectedBoardMembers', { selected: selectedCount, required: rosterSize || 0 })}
+              </p>
+            </div>
+            {rosterIsValid ? (
+              <span className='rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-bold text-success'>
+                {t('board.rosterValid')}
+              </span>
+            ) : (
+              <span className='rounded-full bg-warning/10 px-2.5 py-1 text-[11px] font-bold text-warning-foreground'>
+                {t('board.rosterNeedsSelection')}
+              </span>
+            )}
+          </div>
+          {suggestMembersFailed && (
+            <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
+              {t('board.boardMembersLoadFailed')}
+            </p>
+          )}
+          {!suggestMembersFailed && rosterSize > suggestedMembers.length && (
+            <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
+              {t('board.notEnoughBoardMembers', { required: rosterSize, total: suggestedMembers.length })}
+            </p>
+          )}
+          <div className='grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2'>
+            {suggestedMembers.map((member) => {
+              const checked = selectedMemberIds.includes(member.userId)
+              const disabled = !checked && !canSelectMoreMembers
+              return (
+                <label
+                  key={member.userId}
+                  className={`flex min-w-0 items-start gap-3 rounded-lg border p-3 text-xs transition-colors ${
+                    checked ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                  } ${disabled ? 'opacity-60' : ''}`}
+                >
+                  <input
+                    type='checkbox'
+                    name='allowedEditorIds'
+                    value={member.userId}
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => toggleMember(member.userId)}
+                    className='mt-1 size-4 accent-primary'
+                  />
+                  <span className='min-w-0'>
+                    <span className='block truncate font-bold text-foreground'>
+                      {member.displayName || member.userId.slice(-5) || t('board.unnamedBoardMember')}
+                    </span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          {!suggestedMembers.length && !suggestMembersFailed && !loadingSuggested && (
+            <p className='rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground'>
+              {t('board.emptyBoardMembers')}
+            </p>
+          )}
+        </section>
         <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
           <button
             type='button'
             onClick={onClose}
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50'
+            className={`${boardDialogButton} border border-border text-foreground hover:bg-muted disabled:opacity-50`}
           >
             {t('actions.cancel')}
           </button>
           <button
-            disabled={fetcher.state !== 'idle' || !rosterSourceSeriesId || !timeRangeIsValid}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            disabled={fetcher.state !== 'idle' || !rosterSourceSeriesId || !timeRangeIsValid || !rosterIsValid}
+            className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground disabled:opacity-50`}
           >
             {fetcher.state !== 'idle' ? (
               <Loader2 className='size-4 animate-spin' />
@@ -241,6 +388,16 @@ function CreateSessionDialog({ rosterSourceSeriesId, onClose }: { rosterSourceSe
       <BoardFeedback data={fetcher.data} />
     </Dialog>
   )
+}
+
+function getRequiredRosterSize(config: BoardConfigResDtoOutput | null, availableMembers: number) {
+  const configuredTotal = config?.boardTotalMembers ?? availableMembers
+  const maximum = Math.max(0, Math.min(configuredTotal, availableMembers))
+  if (maximum < 3) return 0
+  const configuredSize = Math.max(3, config?.quorumMin ?? 3)
+  const oddConfiguredSize = configuredSize % 2 === 0 ? configuredSize + 1 : configuredSize
+  const cappedSize = Math.min(oddConfiguredSize, maximum)
+  return cappedSize % 2 === 0 ? cappedSize - 1 : cappedSize
 }
 
 function SessionCard({
@@ -310,7 +467,7 @@ function SessionCard({
           <input type='hidden' name='sessionId' value={session.id} />
           <button
             disabled={fetcher.state !== 'idle'}
-            className='inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-foreground'
+            className={`${boardDialogButton} border border-border text-foreground disabled:opacity-50`}
           >
             {fetcher.state !== 'idle' ? (
               <Loader2 className='size-4 animate-spin' />

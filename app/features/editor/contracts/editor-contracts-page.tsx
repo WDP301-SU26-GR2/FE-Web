@@ -4,9 +4,11 @@ import { FilePlus2, FileSignature, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { EditorActionResult, EditorContractsData } from '../types'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { Dialog } from '~/shared/ui/dialog'
 import { EditorActionToast } from '../components/editor-action-toast'
 import { CreateContractBodyDtoContractType } from '~/api/model/contracts'
+import { Pagination } from '~/shared/components'
 import {
   CONTRACT_FIELD_LIMITS,
   EDITOR_CONTRACT_INTENTS,
@@ -21,8 +23,12 @@ import {
   type InitialPayoutMode
 } from './components/initial-payment-condition-fields'
 
+const EDITOR_LIST_PAGE_SIZE = 8
 const inputClass =
-  'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+  'h-10 min-w-0 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
+const contractFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const contractFieldWideClass = `${contractFieldClass} md:col-span-2`
+const contractFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 export function EditorContractsPage({ data, hasError }: { data: EditorContractsData; hasError: boolean }) {
   const { t, i18n } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
@@ -42,6 +48,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
   const [contractSearch, setContractSearch] = useState('')
   const [contractStatus, setContractStatus] = useState('')
   const [listContractType, setListContractType] = useState('')
+  const [page, setPage] = useState(1)
   const submittedRef = useRef(false)
   const eligibleDecisions = data.decisions.filter(
     (decision) =>
@@ -71,6 +78,11 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
       (!listContractType || contract.contractType === listContractType)
     )
   })
+  const totalPages = Math.max(1, Math.ceil(filteredContracts.length / EDITOR_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = filteredContracts.length === 0 ? 0 : (currentPage - 1) * EDITOR_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * EDITOR_LIST_PAGE_SIZE, filteredContracts.length)
+  const paginatedContracts = filteredContracts.slice(from > 0 ? from - 1 : 0, to)
 
   function selectContractType(value: typeof contractType) {
     setContractType(value)
@@ -113,7 +125,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           type='button'
           onClick={() => setCreateOpen(true)}
           disabled={!eligibleDecisions.length}
-          className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+          className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
         >
           <FilePlus2 className='size-4' />
           {t('actions.createContract')}
@@ -142,8 +154,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
             <input type='hidden' name='intent' value={EDITOR_CONTRACT_INTENTS.create} />
             <input type='hidden' name='seriesId' value={selectedSeries?.id ?? ''} />
             <input type='hidden' name='mangakaId' value={selectedSeries?.mangakaId ?? ''} />
-            <label className='grid gap-1.5 text-xs font-semibold md:col-span-2'>
-              {t('contracts.selectApprovedDecision')}
+            <label className={contractFieldWideClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.selectApprovedDecision')}</span>
               <select
                 name='boardDecisionId'
                 required
@@ -182,8 +194,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 </p>
               </aside>
             )}
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('contracts.contractType')}
+            <label className={contractFieldClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.contractType')}</span>
               <select
                 name='contractType'
                 value={contractType}
@@ -197,8 +209,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 ))}
               </select>
             </label>
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('contracts.valuation')}
+            <label className={contractFieldClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.valuation')}</span>
               <input
                 name='valuationAmount'
                 type='number'
@@ -210,9 +222,10 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 onChange={(event) => setValuationAmount(Number(event.target.value))}
                 className={inputClass}
               />
+              <MoneyInWords amount={valuationAmount} locale={i18n.language} />
             </label>
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('contracts.publisherPct')}
+            <label className={contractFieldClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.publisherPct')}</span>
               <input
                 name='publisherOwnershipPct'
                 type='number'
@@ -226,8 +239,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('contracts.mangakaPct')}
+            <label className={contractFieldClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.mangakaPct')}</span>
               <input
                 name='mangakaOwnershipPct'
                 type='number'
@@ -241,8 +254,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('contracts.contractStart')}
+            <label className={contractFieldClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.contractStart')}</span>
               <input
                 name='contractStart'
                 type='datetime-local'
@@ -256,8 +269,8 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('contracts.contractEnd')}
+            <label className={contractFieldClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.contractEnd')}</span>
               <input
                 name='contractEnd'
                 type='datetime-local'
@@ -268,12 +281,12 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 className={inputClass}
               />
             </label>
-            <label className='grid gap-1.5 text-xs font-semibold md:col-span-2'>
-              {t('contracts.terminationClause')}
+            <label className={contractFieldWideClass}>
+              <span className={contractFieldLabelClass}>{t('contracts.terminationClause')}</span>
               <textarea
                 name='terminationClause'
                 required
-                className='min-h-24 rounded-md border border-input bg-background p-3 text-xs text-foreground'
+                className='min-h-24 min-w-0 rounded-md border border-input bg-background p-3 text-xs text-foreground'
               />
             </label>
             <InitialPaymentConditionFields
@@ -291,7 +304,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 !ownershipValid ||
                 !datesValid
               }
-              className='inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50 md:col-span-2'
+              className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50 md:col-span-2'
             >
               {fetcher.state !== 'idle' ? (
                 <Loader2 className='size-4 animate-spin' />
@@ -314,13 +327,19 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           <input
             className={inputClass}
             value={contractSearch}
-            onChange={(event) => setContractSearch(event.target.value)}
+            onChange={(event) => {
+              setContractSearch(event.target.value)
+              setPage(1)
+            }}
             placeholder={t('filters.searchContracts')}
           />
           <select
             className={inputClass}
             value={contractStatus}
-            onChange={(event) => setContractStatus(event.target.value)}
+            onChange={(event) => {
+              setContractStatus(event.target.value)
+              setPage(1)
+            }}
           >
             <option value=''>{t('filters.allContractStatuses')}</option>
             {contractStatuses.map((value) => (
@@ -332,7 +351,10 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           <select
             className={inputClass}
             value={listContractType}
-            onChange={(event) => setListContractType(event.target.value)}
+            onChange={(event) => {
+              setListContractType(event.target.value)
+              setPage(1)
+            }}
           >
             <option value=''>{t('filters.allContractTypes')}</option>
             <option value='FULL_BUYOUT'>{t('filters.contractTypes.FULL_BUYOUT')}</option>
@@ -340,7 +362,7 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
           </select>
         </div>
         <div className='grid gap-4 xl:grid-cols-2'>
-          {filteredContracts.map((contract) => {
+          {paginatedContracts.map((contract) => {
             const series = data.series.find((item) => item.id === contract.seriesId)
             return (
               <Link
@@ -359,12 +381,25 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
                 <p className='mt-2 text-xs text-muted-foreground'>
                   {t(`filters.contractTypes.${contract.contractType}`)} · {formatMoney(contract.valuationAmount)}
                 </p>
+                <MoneyInWords amount={contract.valuationAmount} locale={i18n.language} />
                 <p className='mt-3 text-xs text-muted-foreground'>
                   {contract.publisherOwnershipPct ?? 0}% / {contract.mangakaOwnershipPct ?? 0}%
                 </p>
               </Link>
             )
           })}
+          {filteredContracts.length > 0 && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+              from={from}
+              to={to}
+              total={filteredContracts.length}
+              tKeyPrefix='pagination'
+              t={t}
+            />
+          )}
           {!filteredContracts.length && (
             <div className='rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
               {t('contracts.empty')}

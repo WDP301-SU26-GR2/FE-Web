@@ -5,6 +5,13 @@ import type { FetcherWithComponents } from 'react-router'
 
 import type { AdminUserActionResult } from '../types'
 
+const modalPanelClass = 'flex max-h-[calc(100vh-3rem)] min-w-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl'
+const modalBodyClass = 'min-w-0 flex-1 overflow-y-auto space-y-4 p-5'
+const modalFooterClass = 'flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'
+const modalButtonClass = 'inline-flex h-10 w-full items-center justify-center rounded-lg px-4 text-xs font-bold sm:w-auto'
+const fieldClass =
+  'min-w-0 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+
 export interface CreateUserDialogProps {
   fetcher: FetcherWithComponents<AdminUserActionResult>
   onClose: () => void
@@ -23,17 +30,17 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
   return (
     <div className='fixed inset-0 z-[70] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm'>
       <div
-        className='w-full max-w-lg rounded-xl border border-border bg-card shadow-xl'
+        className={`${modalPanelClass} max-w-lg`}
         role='dialog'
         aria-modal='true'
         aria-labelledby='create-user-title'
       >
         <div className='flex items-start justify-between gap-4 border-b border-border p-5'>
-          <div className='flex items-start gap-3'>
+          <div className='flex min-w-0 items-start gap-3'>
             <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>
               <UserPlus className='size-5' aria-hidden='true' />
             </div>
-            <div>
+            <div className='min-w-0'>
               <h2 id='create-user-title' className='text-sm font-bold text-foreground'>
                 {t('users.create.title')}
               </h2>
@@ -50,7 +57,7 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
           </button>
         </div>
 
-        <fetcher.Form method='post' className='space-y-4 p-5'>
+        <fetcher.Form method='post' className={modalBodyClass}>
           <input type='hidden' name='intent' value='create' />
           <Field label={t('users.fields.name')} name='name' minLength={2} maxLength={100} required />
           <Field label={t('users.fields.email')} name='email' type='email' required />
@@ -68,7 +75,7 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
               name='roleCode'
               required
               defaultValue='EDITOR'
-              className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+              className={fieldClass}
             >
               <option value='EDITOR'>{t('dashboard.roles.EDITOR')}</option>
               <option value='BOARD_MEMBER'>{t('dashboard.roles.BOARD_MEMBER')}</option>
@@ -79,18 +86,18 @@ export function CreateUserDialog({ fetcher, onClose }: CreateUserDialogProps) {
             {t('users.create.passwordNotice')}
           </div>
 
-          <div className='flex justify-end gap-3 border-t border-border pt-4'>
+          <div className={modalFooterClass}>
             <button
               type='button'
               onClick={onClose}
-              className='rounded-lg border border-border px-4 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted'
+              className={`${modalButtonClass} border border-border text-foreground transition-colors hover:bg-muted`}
             >
               {t('users.actions.cancel')}
             </button>
             <button
               type='submit'
               disabled={isSubmitting}
-              className='rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+              className={`${modalButtonClass} bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {isSubmitting ? t('users.actions.processing') : t('users.create.submit')}
             </button>
@@ -120,7 +127,7 @@ function Field({ label, name, type = 'text', ...inputProps }: FieldProps) {
         name={name}
         type={type}
         {...inputProps}
-        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+        className={fieldClass}
       />
     </label>
   )

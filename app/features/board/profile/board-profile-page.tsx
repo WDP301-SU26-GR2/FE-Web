@@ -7,9 +7,12 @@ import {
   StaffProfileBodyDtoSpecialtyGenresItem,
   type StaffProfileResDtoOutput
 } from '~/api/model/users'
-import { boardInput, BoardFeedback, BoardHeader, BoardPanel } from '../components/board-ui'
+import { boardDialogActions, boardDialogButton, boardInput, BoardFeedback, BoardHeader, BoardPanel } from '../components/board-ui'
 import type { BoardActionResult } from '../types'
 import { Dialog } from '~/shared/ui/dialog'
+
+const profileDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-2 text-xs font-bold'
+const profileDialogFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function BoardProfilePage({ profile }: { profile: StaffProfileResDtoOutput }) {
   const { t } = useTranslation('board')
@@ -95,8 +98,8 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
             ))}
           </div>
         </fieldset>
-        <label className='grid gap-2 text-xs font-bold'>
-          {t('profile.experience')}
+        <label className={profileDialogFieldClass}>
+          <span className={profileDialogFieldLabelClass}>{t('profile.experience')}</span>
           <input
             className={boardInput}
             name='yearsOfExperience'
@@ -106,8 +109,8 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
             defaultValue={profile.yearsOfExperience ?? 0}
           />
         </label>
-        <label className='grid gap-2 text-xs font-bold'>
-          {t('profile.bio')}
+        <label className={profileDialogFieldClass}>
+          <span className={profileDialogFieldLabelClass}>{t('profile.bio')}</span>
           <textarea
             className={`${boardInput} min-h-32 py-2`}
             name='bio'
@@ -115,15 +118,15 @@ function BoardProfileDialog({ profile, onClose }: { profile: StaffProfileResDtoO
             defaultValue={profile.bio ?? ''}
           />
         </label>
-        <div className='flex justify-end gap-2 border-t border-border pt-4'>
+        <div className={boardDialogActions}>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('profile.cancel')}
           </button>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
             {t('profile.save')}
           </button>
         </div>

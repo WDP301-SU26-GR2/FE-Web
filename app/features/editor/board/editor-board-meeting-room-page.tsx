@@ -19,8 +19,18 @@ import {
   type BoardSessionDecisionType
 } from './board-decision-flow'
 import { BOARD_DECISION_LIMITS, BOARD_SESSION_INTENTS } from './board-session-flow'
-import { boardInput, BoardFeedback, BoardStatus, useBoardFetcher } from './components/board-shared'
+import {
+  boardDialogActions,
+  boardDialogButton,
+  boardInput,
+  BoardFeedback,
+  BoardStatus,
+  useBoardFetcher
+} from './components/board-shared'
 import { useEditorMeetingRoom } from './hooks/use-editor-meeting-room'
+
+const boardDecisionFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const boardDecisionFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function EditorBoardMeetingRoomPage({
   session,
@@ -134,14 +144,14 @@ export function EditorBoardMeetingRoomPage({
       {isCreator && session.status !== BoardSessionResDtoOutputStatus.CONCLUDED && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='font-bold text-foreground'>{t('board.meeting.phaseControls')}</h2>
-          <div className='mt-3 flex flex-wrap gap-2'>
+          <div className='mt-3 grid gap-2 sm:flex sm:flex-wrap'>
             {session.status === BoardSessionResDtoOutputStatus.UPCOMING && (
               <fetcher.Form method='post'>
                 <button
                   name='intent'
                   value={BOARD_SESSION_INTENTS.start}
                   disabled={fetcher.state !== 'idle'}
-                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                  className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
                 >
                   <Play className='size-4' />
                   {t('actions.startSession')}
@@ -155,7 +165,7 @@ export function EditorBoardMeetingRoomPage({
                   name='phase'
                   value='QA'
                   disabled={fetcher.state !== 'idle'}
-                  className='rounded-md border border-border px-4 py-2 text-xs font-bold disabled:opacity-50'
+                  className={`${boardDialogButton} border border-border disabled:opacity-50`}
                 >
                   {t('board.meeting.openQa')}
                 </button>
@@ -168,7 +178,7 @@ export function EditorBoardMeetingRoomPage({
                   name='phase'
                   value='VOTING'
                   disabled={fetcher.state !== 'idle'}
-                  className='rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                  className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
                 >
                   {t('board.meeting.openVoting')}
                 </button>
@@ -180,7 +190,7 @@ export function EditorBoardMeetingRoomPage({
                   name='intent'
                   value={BOARD_SESSION_INTENTS.conclude}
                   disabled={fetcher.state !== 'idle'}
-                  className='inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50'
+                  className={`${boardDialogButton} bg-primary text-primary-foreground disabled:opacity-50`}
                 >
                   <Square className='size-4' />
                   {t('actions.concludeSession')}
@@ -199,35 +209,55 @@ export function EditorBoardMeetingRoomPage({
             {t('board.meeting.chat')}
           </h2>
           <div className='mt-4 max-h-[28rem] space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-3'>
-            {meeting.messages.map((message) => (
-              <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
-                <div className='flex justify-between gap-3 text-xs text-muted-foreground'>
-                  <strong className='text-foreground'>
-                    {message.sender.displayName || t('board.meeting.unknownMember')}
-                  </strong>
-                  <span>
-                    {new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(new Date(message.createdAt))}
-                  </span>
-                </div>
-                <p className='mt-2 whitespace-pre-wrap text-xs'>{message.content}</p>
-              </article>
-            ))}
+            {meeting.messages.map((message) => {
+              const isEditor = message.sender.id === session.creatorId
+              const isBoardMember = !isEditor && session.allowedEditorIds.includes(message.sender.id)
+              const roleLabel = isEditor
+                ? t('board.meeting.senderRoles.editor')
+                : isBoardMember
+                  ? t('board.meeting.senderRoles.boardMember')
+                  : t('board.meeting.senderRoles.unknown')
+              const roleClass = isEditor
+                ? 'bg-primary/10 text-primary'
+                : isBoardMember
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'bg-muted text-muted-foreground'
+
+              return (
+                <article key={message.id} className='rounded-lg border border-border bg-card p-3'>
+                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <strong className='text-xs text-foreground'>
+                        {message.sender.displayName || t('board.meeting.unknownMember')}
+                      </strong>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleClass}`}>
+                        {roleLabel}
+                      </span>
+                    </div>
+                    <span className='text-xs text-muted-foreground'>
+                      {new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(new Date(message.createdAt))}
+                    </span>
+                  </div>
+                  <p className='mt-2 whitespace-pre-wrap text-xs'>{message.content}</p>
+                </article>
+              )
+            })}
             {!meeting.messages.length && (
               <p className='text-xs text-muted-foreground'>{t('board.meeting.emptyChat')}</p>
             )}
           </div>
-          <form onSubmit={submitMessage} className='mt-3 flex gap-2'>
+          <form onSubmit={submitMessage} className='mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2'>
             <input
               value={messageText}
               onChange={(event) => setMessageText(event.target.value)}
               maxLength={1000}
               disabled={!canChat || meeting.connectionState !== 'connected' || sendingMessage}
-              className='h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-xs'
+              className='h-10 min-w-0 rounded-md border border-input bg-background px-3 text-xs'
               placeholder={canChat ? t('board.meeting.chatPlaceholder') : t('board.meeting.chatLocked')}
             />
             <button
               disabled={!canChat || meeting.connectionState !== 'connected' || sendingMessage || !messageText.trim()}
-              className='rounded-md bg-primary px-3 text-primary-foreground disabled:opacity-50'
+              className='inline-flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50'
             >
               <Send className='size-4' />
             </button>
@@ -246,7 +276,7 @@ export function EditorBoardMeetingRoomPage({
                 type='button'
                 onClick={() => setAddDecisionOpen(true)}
                 disabled={!series.length}
-                className='inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                className={`${boardDialogButton} bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 <Plus className='size-4' />
                 {t('actions.addDecisionToSession')}
@@ -385,8 +415,8 @@ function AddSessionDecisionDialog({
     >
       <fetcher.Form method='post' className='grid gap-4'>
         <input type='hidden' name='intent' value='addSessionDecision' />
-        <label className='grid gap-1.5 text-xs font-semibold'>
-          {t('board.decisionType')}
+        <label className={boardDecisionFieldClass}>
+          <span className={boardDecisionFieldLabelClass}>{t('board.decisionType')}</span>
           <select
             className={boardInput}
             name='decisionType'
@@ -408,8 +438,8 @@ function AddSessionDecisionDialog({
           </select>
         </label>
         {decisionType === 'CONTRACT' && (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.contractResource')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.contractResource')}</span>
             <select
               className={boardInput}
               name='resourceId'
@@ -447,8 +477,8 @@ function AddSessionDecisionDialog({
           </label>
         )}
         {decisionType === 'TRANSFER' && (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.transferRequest')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.transferRequest')}</span>
             <select
               className={boardInput}
               name='transferRequestId'
@@ -472,8 +502,8 @@ function AddSessionDecisionDialog({
           </label>
         )}
         {isResourceDecision ? (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.selectSeries')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.selectSeries')}</span>
             <input type='hidden' name='seriesId' value={seriesId} />
             <input
               className={boardInput}
@@ -483,8 +513,8 @@ function AddSessionDecisionDialog({
             />
           </label>
         ) : (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.selectSeries')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.selectSeries')}</span>
             <select
               className={boardInput}
               name='seriesId'
@@ -515,8 +545,8 @@ function AddSessionDecisionDialog({
         )}
         {decisionType === 'SERIALIZATION' && (
           <>
-            <label className='grid gap-1.5 text-xs font-semibold'>
-              {t('board.magazine')}
+            <label className={boardDecisionFieldClass}>
+              <span className={boardDecisionFieldLabelClass}>{t('board.magazine')}</span>
               <select
                 className={boardInput}
                 name='magazine'
@@ -541,8 +571,8 @@ function AddSessionDecisionDialog({
               </select>
             </label>
             <div className='grid gap-3 sm:grid-cols-2'>
-              <label className='grid gap-1.5 text-xs font-semibold'>
-                {t('board.startIssue')}
+              <label className={boardDecisionFieldClass}>
+                <span className={boardDecisionFieldLabelClass}>{t('board.startIssue')}</span>
                 <input
                   className={boardInput}
                   name='startIssueNumber'
@@ -564,8 +594,8 @@ function AddSessionDecisionDialog({
           </>
         )}
         {decisionType === 'CANCELLATION' && (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.endingChapterAllowance')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.endingChapterAllowance')}</span>
             <input
               className={boardInput}
               name='endingChapterAllowance'
@@ -577,8 +607,8 @@ function AddSessionDecisionDialog({
           </label>
         )}
         {decisionType === 'FORMAT_CHANGE' && (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.newPublicationType')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.newPublicationType')}</span>
             <select
               className={boardInput}
               name='publicationType'
@@ -593,16 +623,16 @@ function AddSessionDecisionDialog({
           </label>
         )}
         {decisionType !== 'SERIALIZATION' && (
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('board.decisionNote')}
+          <label className={boardDecisionFieldClass}>
+            <span className={boardDecisionFieldLabelClass}>{t('board.decisionNote')}</span>
             <textarea className={`${boardInput} min-h-24 py-2`} name='decisionNote' maxLength={1000} />
           </label>
         )}
-        <div className='flex justify-end gap-2 border-t border-border pt-4'>
+        <div className={boardDialogActions}>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+            className={`${boardDialogButton} border border-border`}
           >
             {t('actions.cancel')}
           </button>
@@ -614,7 +644,7 @@ function AddSessionDecisionDialog({
               (decisionType === 'SERIALIZATION' && (!magazine || !publicationType)) ||
               fetcher.state !== 'idle'
             }
-            className='inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50'
+            className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground disabled:opacity-50`}
           >
             {fetcher.state !== 'idle' ? <Loader2 className='size-4 animate-spin' /> : <Gavel className='size-4' />}
             {t('actions.addDecisionToSession')}
@@ -648,8 +678,8 @@ function PublicationTypeField({
   const { t } = useTranslation('editor')
   const optionValues = options?.length ? options : ['WEEKLY', 'MONTHLY', 'IRREGULAR']
   return (
-    <label className='grid gap-1.5 text-xs font-semibold'>
-      {t('proposalDetail.publicationType')}
+    <label className={boardDecisionFieldClass}>
+      <span className={boardDecisionFieldLabelClass}>{t('proposalDetail.publicationType')}</span>
       <select
         key={selectedSeries?.id ?? 'empty'}
         className={boardInput}

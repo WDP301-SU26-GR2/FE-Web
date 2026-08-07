@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '~/shared/ui'
 import type { UseTaskComposerDataOptions, UseTaskComposerDataResult } from '../use-task-composer-data'
 import { PagePickerWithPopup } from '~/features/mangaka/studio/components/page-picker-with-popup'
+import { formatProductionStageOption } from '~/features/mangaka/publication/lib/translate-publication-status'
 
 export interface TaskContextPickerProps {
   openFrom: 'studio' | 'workbench'
@@ -213,7 +214,7 @@ export function TaskContextPicker({
               <option value=''>{t('studio.tasks.composer.selectStagePlaceholder')}</option>
               {data.stages.map((stage) => (
                 <option key={stage.id} value={stage.id}>
-                  {t('studio.tasks.composer.stageOption', { order: stage.order, name: stage.name })}
+                  {formatProductionStageOption(stage.order, stage.name, t)}
                 </option>
               ))}
             </select>
