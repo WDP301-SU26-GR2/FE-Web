@@ -4,8 +4,12 @@ import { Ban } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ContractResDtoOutput, PaymentConditionListResDtoOutputDataItem } from '~/api/model/contracts'
 import type { EditorActionResult } from '../types'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { CONTRACT_FIELD_LIMITS, canEditContract } from './contract-flow'
-import { ContractActionMessage, ContractDialogPanel, contractInput } from './components/contract-shared'
+import { ContractActionMessage, ContractDialogPanel, contractDialogButton, contractInput } from './components/contract-shared'
+
+const conditionFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-semibold'
+const conditionFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function ContractConditionsManager({
   contract,
@@ -16,9 +20,10 @@ export function ContractConditionsManager({
   conditions: PaymentConditionListResDtoOutputDataItem[]
   action: string
 }) {
-  const { t } = useTranslation('editor')
+  const { t, i18n } = useTranslation('editor')
   const fetcher = useFetcher<EditorActionResult>()
   const [conditionType, setConditionType] = useState('CHAPTER_MILESTONE')
+  const [newPayoutAmount, setNewPayoutAmount] = useState<number | null>(null)
   const canManageConditions = canEditContract(contract)
   return (
     <div className='space-y-4'>
@@ -34,8 +39,8 @@ export function ContractConditionsManager({
       >
         <fetcher.Form method='post' action={action} className='grid gap-3 md:grid-cols-2'>
           <input type='hidden' name='intent' value='createCondition' />
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contractDetail.conditionType')}
+          <label className={conditionFieldClass}>
+            <span className={conditionFieldLabelClass}>{t('contractDetail.conditionType')}</span>
             <select
               name='conditionType'
               value={conditionType}
@@ -46,23 +51,25 @@ export function ContractConditionsManager({
             </select>
           </label>
           <ThresholdField type={conditionType} />
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contractDetail.payoutAmount')}
+          <label className={conditionFieldClass}>
+            <span className={conditionFieldLabelClass}>{t('contractDetail.payoutAmount')}</span>
             <input
               name='payoutAmount'
               type='number'
               min={CONTRACT_FIELD_LIMITS.moneyMinimum}
               max={CONTRACT_FIELD_LIMITS.moneyMaximum}
               step={1}
+              onChange={(event) => setNewPayoutAmount(event.target.value ? Number(event.target.value) : null)}
               className={contractInput}
             />
+            <MoneyInWords amount={newPayoutAmount} locale={i18n.language} />
           </label>
-          <label className='grid gap-1.5 text-xs font-semibold'>
-            {t('contractDetail.payoutPct')}
+          <label className={conditionFieldClass}>
+            <span className={conditionFieldLabelClass}>{t('contractDetail.payoutPct')}</span>
             <input name='payoutPct' type='number' min={1} max={100} step={1} className={contractInput} />
           </label>
           <p className='text-xs text-muted-foreground md:col-span-2'>{t('contractDetail.payoutRequirement')}</p>
-          <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground md:col-span-2'>
+          <button className={`${contractDialogButton} bg-primary text-primary-foreground md:col-span-2 md:w-full`}>
             {t('actions.addCondition')}
           </button>
         </fetcher.Form>
@@ -90,7 +97,7 @@ export function ContractConditionsManager({
                   <fetcher.Form method='post' action={action}>
                     <input type='hidden' name='intent' value='disableCondition' />
                     <input type='hidden' name='conditionId' value={condition.id} />
-                    <button className='inline-flex h-9 items-center gap-2 rounded-md border border-destructive/30 px-3 text-xs font-bold text-destructive'>
+                    <button className={`${contractDialogButton} border border-destructive/30 text-destructive`}>
                       <Ban className='size-4' />
                       {t('actions.disable')}
                     </button>
@@ -107,20 +114,12 @@ export function ContractConditionsManager({
                   <input type='hidden' name='conditionId' value={condition.id} />
                   <input type='hidden' name='conditionType' value={condition.conditionType} />
                   <ThresholdField type={condition.conditionType} config={condition.thresholdConfig} />
-                  <label className='grid gap-1.5 text-xs font-semibold'>
-                    {t('contractDetail.payoutAmount')}
-                    <input
-                      name='payoutAmount'
-                      type='number'
-                      min={CONTRACT_FIELD_LIMITS.moneyMinimum}
-                      max={CONTRACT_FIELD_LIMITS.moneyMaximum}
-                      step={1}
-                      defaultValue={condition.payoutAmount ?? ''}
-                      className={contractInput}
-                    />
+                  <label className={conditionFieldClass}>
+                    <span className={conditionFieldLabelClass}>{t('contractDetail.payoutAmount')}</span>
+                    <ConditionPayoutAmountField defaultValue={condition.payoutAmount} locale={i18n.language} />
                   </label>
-                  <label className='grid gap-1.5 text-xs font-semibold'>
-                    {t('contractDetail.payoutPct')}
+                  <label className={conditionFieldClass}>
+                    <span className={conditionFieldLabelClass}>{t('contractDetail.payoutPct')}</span>
                     <input
                       name='payoutPct'
                       type='number'
@@ -131,7 +130,7 @@ export function ContractConditionsManager({
                       className={contractInput}
                     />
                   </label>
-                  <button className='rounded-md border border-border px-3 text-xs font-bold'>
+                  <button className={`${contractDialogButton} border border-border sm:w-full`}>
                     {t('actions.update')}
                   </button>
                 </fetcher.Form>
@@ -162,13 +161,32 @@ function ConditionOptions() {
   )
 }
 
+function ConditionPayoutAmountField({ defaultValue, locale }: { defaultValue: number | null; locale: string }) {
+  const [value, setValue] = useState<number | null>(defaultValue)
+  return (
+    <>
+      <input
+        name='payoutAmount'
+        type='number'
+        min={CONTRACT_FIELD_LIMITS.moneyMinimum}
+        max={CONTRACT_FIELD_LIMITS.moneyMaximum}
+        step={1}
+        defaultValue={defaultValue ?? ''}
+        onChange={(event) => setValue(event.target.value ? Number(event.target.value) : null)}
+        className={contractInput}
+      />
+      <MoneyInWords amount={value} locale={locale} />
+    </>
+  )
+}
+
 function ThresholdField({ type, config }: { type: string; config?: unknown }) {
   const { t } = useTranslation('editor')
   const values = record(config)
   if (type === 'RECURRING_CHAPTER')
     return (
-      <label className='grid gap-1.5 text-xs font-semibold'>
-        {t('contractDetail.everyChapters')}
+      <label className={conditionFieldClass}>
+        <span className={conditionFieldLabelClass}>{t('contractDetail.everyChapters')}</span>
         <input
           name='every'
           type='number'
@@ -183,8 +201,8 @@ function ThresholdField({ type, config }: { type: string; config?: unknown }) {
     )
   if (type === 'RANKING_MILESTONE')
     return (
-      <label className='grid gap-1.5 text-xs font-semibold'>
-        {t('contractDetail.topRank')}
+      <label className={conditionFieldClass}>
+        <span className={conditionFieldLabelClass}>{t('contractDetail.topRank')}</span>
         <input
           name='topRank'
           type='number'
@@ -199,14 +217,14 @@ function ThresholdField({ type, config }: { type: string; config?: unknown }) {
     )
   if (type === 'TIME_BOUND')
     return (
-      <label className='grid gap-1.5 text-xs font-semibold'>
-        {t('contractDetail.deadline')}
+      <label className={conditionFieldClass}>
+        <span className={conditionFieldLabelClass}>{t('contractDetail.deadline')}</span>
         <input name='deadline' type='date' required defaultValue={text(values.deadline)} className={contractInput} />
       </label>
     )
   return (
-    <label className='grid gap-1.5 text-xs font-semibold'>
-      {t('contractDetail.chapterMilestone')}
+    <label className={conditionFieldClass}>
+      <span className={conditionFieldLabelClass}>{t('contractDetail.chapterMilestone')}</span>
       <input
         name='chapter'
         type='number'

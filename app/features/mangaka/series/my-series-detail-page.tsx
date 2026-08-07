@@ -6,14 +6,12 @@ import {
   ImageIcon,
   Loader2,
   Pencil,
-  PenLine,
   Send,
   Trash2,
   Undo2,
   RefreshCw,
   RotateCcw,
-  MessageSquareWarning,
-  Flag
+  MessageSquareWarning
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
@@ -44,12 +42,11 @@ import { CreateChapterDialog } from '~/features/mangaka/chapters/create-chapter-
 import { PublicationSection } from '~/features/mangaka/chapters/publication-section'
 import { EditChapterDialog } from '~/features/mangaka/chapters/edit-chapter-dialog'
 import { DeleteChapterDialog } from '~/features/mangaka/chapters/delete-chapter-dialog'
-import { CompletionProposalDialog } from './components/completion-proposal-dialog'
 import { FranchiseConsentDialog } from './components/franchise-consent-dialog'
-import { SeriesMetadataDialog } from './components/series-metadata-dialog'
 import { translateNameStatus, translateSeriesStatus } from './lib/translate-series-state'
 import { translateDemographic, translateGenre, translatePublicationType } from './lib/translate-series-metadata'
-import { canEditSeriesMetadata, getProposalActionEligibility } from './lib/proposal-action-eligibility'
+import { getProposalActionEligibility } from './lib/proposal-action-eligibility'
+import { shouldShowSeriesStatusReason } from './lib/series-status-reason-visibility'
 
 /** Status values that mark the series as being in the publication phase.
  *  Per FE-API-Guide-v3.md §1.2, SERIALIZED begins serialization and the
@@ -148,12 +145,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const { session } = useAuth()
   const { submit, isSubmitting } = useSubmitSeries()
   const { activeAction, deleteDraft, withdraw, resubmitProposal, reopen } = useProposalActions()
-  const {
-    activeAction: activeLifecycleAction,
-    updateMetadata,
-    giveFranchiseConsent,
-    proposeCompletion
-  } = useSeriesLifecycle()
+  const { activeAction: activeLifecycleAction, giveFranchiseConsent } = useSeriesLifecycle()
   const {
     chapters,
     isLoading: isChaptersLoading,
@@ -169,8 +161,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
   const [chapterToDelete, setChapterToDelete] = useState<ChapterListResDtoOutputItemsItem | null>(null)
   const [actionDialog, setActionDialog] = useState<ProposalActionDialogMode | null>(null)
   const [revisionDrawerOpen, setRevisionDrawerOpen] = useState(false)
-  const [metadataDialogOpen, setMetadataDialogOpen] = useState(false)
-  const [completionDialogOpen, setCompletionDialogOpen] = useState(false)
+  const [revisionAcknowledgedThisRound, setRevisionAcknowledgedThisRound] = useState(false)
   const [franchiseDecision, setFranchiseDecision] = useState<boolean | null>(null)
 
   const seriesStatus = series?.status
@@ -190,7 +181,8 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     isOwner: !!session?.user?.id && session.user.id === series?.mangakaId,
     seriesStatus,
     proposalStatus: proposal?.status,
-    hasOpenRevisions: revisions.length > 0
+    hasOpenRevisions: revisions.length > 0,
+    revisionAcknowledged: revisionAcknowledgedThisRound
   })
   const canPrepareSubmit = proposalActions.canSubmit
 
@@ -203,15 +195,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
     series?.parentSeriesId,
     session?.user?.id
   )
-  const canEditMetadata = canEditSeriesMetadata({
-    isOwner,
-    seriesStatus,
-    canEditProposal: canEdit
-  })
-  const canProposeCompletion =
-    isOwner &&
-    (seriesStatus === SeriesStatusEnum.SERIALIZED || seriesStatus === SeriesStatusEnum.HIATUS) &&
-    !series?.completionProposal
   // Consent is decided by the documented `parentSeries.mangakaId`, never by
   // the derivative series owner. Detail exposes only parentSeriesId, so the
   // eligibility hook resolves the parent record before showing this action.
@@ -345,34 +328,13 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                     <span>{t('seriesDetail.editProposal.button')}</span>
                   </button>
                 )}
-                {canEditMetadata && (
-                  <button
-                    type='button'
-                    disabled={activeLifecycleAction !== null}
-                    onClick={() => setMetadataDialogOpen(true)}
-                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
-                  >
-                    <PenLine className='h-3.5 w-3.5' />
-                    <span>{t('seriesDetail.lifecycle.metadata.button')}</span>
-                  </button>
-                )}
-                {canProposeCompletion && (
-                  <button
-                    type='button'
-                    disabled={activeLifecycleAction !== null}
-                    onClick={() => setCompletionDialogOpen(true)}
-                    className='flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
-                  >
-                    <Flag className='h-3.5 w-3.5' />
-                    <span>{t('seriesDetail.lifecycle.completion.button')}</span>
-                  </button>
-                )}
                 {canResubmitProposal && revisions.length === 0 && (
                   <button
                     type='button'
                     disabled={activeAction !== null}
                     onClick={async () => {
                       if (await resubmitProposal(series.id)) {
+                        setRevisionAcknowledgedThisRound(false)
                         refresh()
                         refreshRevisions()
                       }
@@ -480,7 +442,7 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
                   value={formatDateTime(series.reviewStartedAt, currentLocale)}
                 />
               )}
-              {series.statusReason && series.status === 'REJECTED' && (
+              {shouldShowSeriesStatusReason(series.status, series.statusReason) && (
                 <MetaItem label={t('seriesDetail.statusReason')} value={series.statusReason} />
               )}
               {series.relationshipType && (
@@ -497,51 +459,32 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         </div>
       </div>
 
-      {(canGiveFranchiseConsent || series.completionProposal) && (
+      {canGiveFranchiseConsent && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-          {canGiveFranchiseConsent && (
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-              <div>
-                <h2 className='text-sm font-bold'>{t('seriesDetail.lifecycle.franchise.title')}</h2>
-                <p className='mt-1 text-sm text-muted-foreground'>
-                  {t('seriesDetail.lifecycle.franchise.description')}
-                </p>
-              </div>
-              <div className='flex shrink-0 flex-wrap gap-2'>
-                <button
-                  type='button'
-                  disabled={activeLifecycleAction !== null}
-                  onClick={() => setFranchiseDecision(false)}
-                  className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-60'
-                >
-                  {t('seriesDetail.lifecycle.franchise.reject')}
-                </button>
-                <button
-                  type='button'
-                  disabled={activeLifecycleAction !== null}
-                  onClick={() => setFranchiseDecision(true)}
-                  className='rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
-                >
-                  {t('seriesDetail.lifecycle.franchise.approve')}
-                </button>
-              </div>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+            <div>
+              <h2 className='text-sm font-bold'>{t('seriesDetail.lifecycle.franchise.title')}</h2>
+              <p className='mt-1 text-sm text-muted-foreground'>{t('seriesDetail.lifecycle.franchise.description')}</p>
             </div>
-          )}
-          {series.completionProposal && (
-            <div className={cn(canGiveFranchiseConsent && 'mt-5 border-t border-border pt-5')}>
-              <h2 className='text-sm font-bold'>{t('seriesDetail.lifecycle.completion.proposedTitle')}</h2>
-              <p className='mt-1 text-sm text-muted-foreground'>{series.completionProposal.reason}</p>
-              <p className='mt-2 text-xs text-muted-foreground'>
-                {series.completionProposal.proposedEndingChapters === null
-                  ? t('seriesDetail.lifecycle.completion.noEndingChapter')
-                  : t('seriesDetail.lifecycle.completion.endingChaptersValue', {
-                      count: series.completionProposal.proposedEndingChapters
-                    })}
-                {' · '}
-                {formatDateTime(series.completionProposal.proposedAt, currentLocale)}
-              </p>
+            <div className='flex shrink-0 flex-wrap gap-2'>
+              <button
+                type='button'
+                disabled={activeLifecycleAction !== null}
+                onClick={() => setFranchiseDecision(false)}
+                className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-60'
+              >
+                {t('seriesDetail.lifecycle.franchise.reject')}
+              </button>
+              <button
+                type='button'
+                disabled={activeLifecycleAction !== null}
+                onClick={() => setFranchiseDecision(true)}
+                className='rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
+              >
+                {t('seriesDetail.lifecycle.franchise.approve')}
+              </button>
             </div>
-          )}
+          </div>
         </section>
       )}
 
@@ -606,37 +549,6 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
             setSubmitDialogOpen(false)
             // Refetch the detail page so the status badge + downstream UI
             // (proposal/name status, status reason, etc.) reflect the new state.
-            refresh()
-          }
-        }}
-      />
-
-      <SeriesMetadataDialog
-        open={metadataDialogOpen}
-        series={series}
-        isSubmitting={activeLifecycleAction === 'metadata'}
-        onClose={() => {
-          if (!activeLifecycleAction) setMetadataDialogOpen(false)
-        }}
-        onSubmit={async (input) => {
-          const updated = await updateMetadata(series.id, input)
-          if (!updated) return false
-          refresh()
-          return true
-        }}
-      />
-
-      <CompletionProposalDialog
-        open={completionDialogOpen}
-        seriesTitle={series.title}
-        isSubmitting={activeLifecycleAction === 'completion'}
-        onClose={() => {
-          if (!activeLifecycleAction) setCompletionDialogOpen(false)
-        }}
-        onSubmit={async (input) => {
-          const updated = await proposeCompletion(series.id, input)
-          if (updated) {
-            setCompletionDialogOpen(false)
             refresh()
           }
         }}
@@ -755,7 +667,10 @@ export function MySeriesDetailPage({ seriesId }: MySeriesDetailPageProps) {
         open={revisionDrawerOpen}
         onClose={() => setRevisionDrawerOpen(false)}
         seriesId={series.id}
-        onRevisionResolved={refreshRevisions}
+        onRevisionResolved={() => {
+          setRevisionAcknowledgedThisRound(true)
+          refreshRevisions()
+        }}
       />
     </div>
   )

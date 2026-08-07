@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { BookCopy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { ReprintRequestResDtoOutput } from '~/api/model/reprint-requests'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import { Pagination } from '~/shared/components'
 import {
   OperationAction,
   OperationDialogPanel,
@@ -13,6 +15,8 @@ import {
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
+
+const EDITOR_LIST_PAGE_SIZE = 8
 
 export function EditorReprintsPage({
   series,
@@ -39,6 +43,12 @@ export function EditorReprintsPage({
   const orderedReprints = [...reprints].sort(
     (left, right) => Number(right.id === focusRequestId) - Number(left.id === focusRequestId)
   )
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(orderedReprints.length / EDITOR_LIST_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const from = orderedReprints.length === 0 ? 0 : (currentPage - 1) * EDITOR_LIST_PAGE_SIZE + 1
+  const to = Math.min(currentPage * EDITOR_LIST_PAGE_SIZE, orderedReprints.length)
+  const paginatedReprints = orderedReprints.slice(from > 0 ? from - 1 : 0, to)
   return (
     <OperationsLayout
       titleKey='operations.reprints'
@@ -83,7 +93,7 @@ export function EditorReprintsPage({
       >
         <div className='grid gap-4'>
           <div className='grid gap-3'>
-            {orderedReprints.map((item) => (
+            {paginatedReprints.map((item) => (
               <article
                 key={item.id}
                 className={`rounded-lg border p-4 ${item.id === focusRequestId ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
@@ -121,6 +131,18 @@ export function EditorReprintsPage({
                 </ul>
               </article>
             ))}
+            {orderedReprints.length > 0 && (
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                setPage={setPage}
+                from={from}
+                to={to}
+                total={orderedReprints.length}
+                tKeyPrefix='pagination'
+                t={t}
+              />
+            )}
             {!reprints.length && <p className='text-xs text-muted-foreground'>{t('operations.noReprints')}</p>}
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import type { PaymentConditionListResDtoOutputDataItem } from '~/api/model/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 
 export function PaymentConditionsSummary({
   conditions,
@@ -51,6 +52,8 @@ export function PaymentConditionsSummary({
               <Fact
                 label={t('contractShared.paymentConditions.facts.amount')}
                 value={formatAmount(condition.payoutAmount, i18n.language, t('contractShared.notApplicable'))}
+                amount={condition.payoutAmount}
+                locale={i18n.language}
               />
               <Fact
                 label={t('contractShared.paymentConditions.facts.percent')}
@@ -68,6 +71,8 @@ export function PaymentConditionsSummary({
                 <Fact
                   label={t('contractShared.paymentConditions.facts.lastTriggered')}
                   value={formatAmount(condition.lastTriggeredValue, i18n.language, t('contractShared.notApplicable'))}
+                  amount={condition.lastTriggeredValue}
+                  locale={i18n.language}
                 />
               )}
               {condition.achievedAt && (
@@ -89,11 +94,12 @@ export function PaymentConditionsSummary({
   )
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value, amount, locale }: { label: string; value: string; amount?: number | null; locale?: string }) {
   return (
     <div>
       <dt className='text-muted-foreground'>{label}</dt>
       <dd className='mt-1 font-semibold text-foreground'>{value}</dd>
+      {locale && <MoneyInWords amount={amount} locale={locale} />}
     </div>
   )
 }

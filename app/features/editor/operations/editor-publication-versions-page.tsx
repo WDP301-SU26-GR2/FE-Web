@@ -9,6 +9,7 @@ import {
   OperationFeedback,
   OperationsLayout,
   SeriesSelect,
+  operationDialogButton,
   operationInput,
   useOperationFetcher
 } from './components/operations-shared'
@@ -39,9 +40,9 @@ export function EditorPublicationVersionsPage({
       backPath={backPath}
     >
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
-        <form method='get' className='grid gap-3 sm:grid-cols-[1fr_auto_auto]'>
+        <form method='get' className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]'>
           <SeriesSelect series={series} defaultValue={focusSeriesId} required={false} />
-          <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+          <button className={`${operationDialogButton} bg-primary text-primary-foreground`}>
             {t('actions.load')}
           </button>
           <button
@@ -50,7 +51,7 @@ export function EditorPublicationVersionsPage({
               setEditingVersionId(null)
               setShowCreateDialog(true)
             }}
-            className='inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 text-xs font-bold text-foreground'
+            className={`${operationDialogButton} border border-border bg-background text-foreground`}
           >
             <Plus className='size-4' />
             {t('actions.createVersion')}
@@ -59,7 +60,6 @@ export function EditorPublicationVersionsPage({
 
         <div className='mt-4 space-y-2'>
           {versions.map((item) => {
-            const isEditing = editingVersionId === item.id
             return (
               <article key={item.id} className='rounded-lg border border-border p-3'>
                 <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
@@ -150,7 +150,7 @@ export function EditorPublicationVersionsPage({
                   setEditingVersionId(null)
                   setShowCreateDialog(false)
                 }}
-                className='inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-bold text-foreground'
+                className={`${operationDialogButton} border border-border bg-background text-foreground`}
               >
                 {t('actions.cancel')}
               </button>
@@ -177,7 +177,7 @@ export function EditorPublicationVersionsPage({
               ))}
             </select>
             <input name='notes' className={operationInput} placeholder={t('operations.notes')} />
-            <div className='flex justify-end gap-2'>
+            <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
               <OperationAction intent='createPublicationVersion' label={t('actions.createVersion')} />
             </div>
           </fetcher.Form>

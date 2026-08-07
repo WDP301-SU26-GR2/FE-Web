@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { authControllerForgotPassword, authControllerSendOtp } from '~/api/operations/auth/auth'
 import { BrandLogo } from '~/shared/components/brand-logo'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
+import { useOtpCooldown } from '~/shared/hooks'
 import { Button } from '~/shared/ui'
 
 export function meta() {
@@ -25,8 +26,10 @@ export default function ForgotPasswordRoute() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [otpSent, setOtpSent] = useState(false)
+  const otpCooldown = useOtpCooldown()
 
   const sendOtp = async () => {
+    if (otpCooldown.isCoolingDown) return
     const normalizedEmail = email.trim()
     if (!normalizedEmail) {
       setError(t('forgotPassword.errors.emailRequired'))
@@ -37,6 +40,7 @@ export default function ForgotPasswordRoute() {
     try {
       await authControllerSendOtp({ email: normalizedEmail, purpose: 'FORGOT_PASSWORD' })
       setOtpSent(true)
+      otpCooldown.start()
       toast.success(t('forgotPassword.otpSent'))
     } catch (cause) {
       setError(extractApiErrorMessage(cause, t('forgotPassword.errors.otpFailed')))
@@ -117,11 +121,15 @@ export default function ForgotPasswordRoute() {
               <Button
                 type='button'
                 variant='outline'
-                disabled={isSendingOtp || isSubmitting}
+                disabled={isSendingOtp || isSubmitting || otpCooldown.isCoolingDown}
                 onClick={() => void sendOtp()}
               >
                 {isSendingOtp && <Loader2 className='size-4 animate-spin' />}
-                {otpSent ? t('forgotPassword.resendOtp') : t('forgotPassword.sendOtp')}
+                {otpCooldown.isCoolingDown
+                  ? `${t('forgotPassword.resendOtp')} (${otpCooldown.remainingSeconds}s)`
+                  : otpSent
+                    ? t('forgotPassword.resendOtp')
+                    : t('forgotPassword.sendOtp')}
               </Button>
             </div>
           </div>

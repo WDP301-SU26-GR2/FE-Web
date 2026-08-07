@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { ContractResDtoOutput, ContractStatusProgressResDtoOutput } from '~/api/model/contracts'
 import type { PaymentRecordResDtoOutput } from '~/api/model/payments'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { ContractPageLayout, contractInput } from './components/contract-shared'
 
 export function EditorContractPaymentsPage({
@@ -58,7 +59,7 @@ export function EditorContractPaymentsPage({
         {filtered.map((payment) => (
           <article key={payment.id} className='rounded-xl border border-border bg-card p-5 shadow-sm'>
             <div className='flex flex-wrap items-start justify-between gap-3'>
-              <div>
+              <div className='min-w-0'>
                 <h3 className='font-bold text-foreground'>
                   {payment.series?.title ??
                     t(`contractDetail.payments.types.${payment.paymentType}`, {
@@ -81,6 +82,7 @@ export function EditorContractPaymentsPage({
                   {t(`contractDetail.payments.statuses.${payment.status}`)}
                 </span>
                 <p className='mt-2 font-bold text-foreground'>{formatAmount(payment.amount, i18n.language)}</p>
+                <MoneyInWords amount={payment.amount} locale={i18n.language} className='max-w-56 text-right' />
               </div>
             </div>
             {payment.description && <p className='mt-3 text-xs text-muted-foreground'>{payment.description}</p>}

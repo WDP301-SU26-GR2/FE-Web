@@ -1,5 +1,5 @@
-export { getAuthMock } from './auth/auth.msw'
 export { getNotificationsMock } from './notifications/notifications.msw'
+export { getAuthMock } from './auth/auth.msw'
 export { getContractsMock } from './contracts/contracts.msw'
 export { getPaymentsMock } from './payments/payments.msw'
 export { getReviewsMock } from './reviews/reviews.msw'

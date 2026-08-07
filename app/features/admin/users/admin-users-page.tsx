@@ -79,7 +79,7 @@ export function AdminUsersPage({ data, deletedUserIds, hasError }: AdminUsersPag
               name='search'
               defaultValue={searchParams.get('search') ?? ''}
               placeholder={t('users.filters.searchPlaceholder')}
-              className='w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
+              className='min-w-0 w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20'
             />
           </label>
           <FilterSelect
@@ -189,7 +189,7 @@ function FilterSelect({ name, label, defaultValue, options }: FilterSelectProps)
       <select
         name={name}
         defaultValue={defaultValue}
-        className='w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
+        className='min-w-0 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20'
       >
         <option value=''>{label}</option>
         {options.map(([value, optionLabel]) => (

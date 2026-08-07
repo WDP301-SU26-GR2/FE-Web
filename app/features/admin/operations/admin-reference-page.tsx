@@ -37,11 +37,9 @@ type SelectItem = { id: string; title?: string; issueNumber?: string | number | 
 
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus:border-primary'
-export function AdminReferencePage({
-  selected
-}: {
-  selected: Record<string, string>
-}) {
+const modalButtonClass =
+  'inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-xs font-bold sm:w-auto'
+export function AdminReferencePage({ selected }: { selected: Record<string, string> }) {
   const { t } = useTranslation('admin')
   const returnTo = selected.returnTo || '/dashboard/admin/operations'
   return (
@@ -82,8 +80,16 @@ export function AdminReferenceSeriesPage({
   const { detail, defense } = seriesData
 
   return (
-    <ReferenceShell title={t('operations.reference.series')} description={t('operations.reference.seriesHelp')} returnTo={selected.returnTo}>
-      <Panel icon={BookOpen} title={t('operations.reference.series')} description={t('operations.reference.seriesHelp')}>
+    <ReferenceShell
+      title={t('operations.reference.series')}
+      description={t('operations.reference.seriesHelp')}
+      returnTo={selected.returnTo}
+    >
+      <Panel
+        icon={BookOpen}
+        title={t('operations.reference.series')}
+        description={t('operations.reference.seriesHelp')}
+      >
         <Form method='get' className='grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'>
           <input type='hidden' name='returnTo' value={selected.returnTo} />
           <select className={inputClass} name='seriesId' defaultValue={selected.seriesId} required>
@@ -133,9 +139,7 @@ export function AdminReferenceSeriesPage({
                   </div>
                   <div>
                     <p className='text-xs font-bold text-muted-foreground'>Số chương đã phát hành</p>
-                    <p className='mt-0.5 font-bold text-foreground'>
-                      {defense.serialization.chaptersPublished} chương
-                    </p>
+                    <p className='mt-0.5 font-bold text-foreground'>{defense.serialization.chaptersPublished} chương</p>
                   </div>
                 </div>
               </div>
@@ -147,7 +151,9 @@ export function AdminReferenceSeriesPage({
                   <div>
                     <p className='text-xs font-bold text-muted-foreground'>Thời gian phát hành</p>
                     <p className='mt-0.5 font-bold text-foreground'>
-                      {defense.serialization.serializedSince ? new Date(defense.serialization.serializedSince).toLocaleDateString('vi-VN') : 'Chưa có'}
+                      {defense.serialization.serializedSince
+                        ? new Date(defense.serialization.serializedSince).toLocaleDateString('vi-VN')
+                        : 'Chưa có'}
                     </p>
                   </div>
                 </div>
@@ -165,7 +171,10 @@ export function AdminReferenceSeriesPage({
                 {defense.rankingTrend.length > 0 ? (
                   <div className='grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
                     {defense.rankingTrend.map((trend, idx) => (
-                      <div key={trend.surveyPeriodId || idx} className='relative rounded-xl border border-border p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md'>
+                      <div
+                        key={trend.surveyPeriodId || idx}
+                        className='relative rounded-xl border border-border p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md'
+                      >
                         {trend.isAtRisk && (
                           <div className='absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm'>
                             <AlertTriangle className='size-3.5' />
@@ -176,32 +185,40 @@ export function AdminReferenceSeriesPage({
                         </p>
                         <div className='flex items-end justify-between'>
                           <div>
-                            <div className='text-3xl font-black text-foreground'>
-                              #{trend.rankPosition ?? '-'}
-                            </div>
+                            <div className='text-3xl font-black text-foreground'>#{trend.rankPosition ?? '-'}</div>
                             <div className='mt-1 text-[11px] font-medium text-muted-foreground'>
                               {new Intl.NumberFormat('vi-VN').format(trend.voteCount)} phiếu
                             </div>
                           </div>
                           {trend.rankChange !== null && trend.rankChange !== 0 ? (
-                            <div className={`flex items-center gap-1 text-xs font-bold ${trend.rankChange > 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                              {trend.rankChange > 0 ? <TrendingUp className='size-4' /> : <TrendingDown className='size-4' />}
+                            <div
+                              className={`flex items-center gap-1 text-xs font-bold ${trend.rankChange > 0 ? 'text-emerald-500' : 'text-destructive'}`}
+                            >
+                              {trend.rankChange > 0 ? (
+                                <TrendingUp className='size-4' />
+                              ) : (
+                                <TrendingDown className='size-4' />
+                              )}
                               {Math.abs(trend.rankChange)}
                             </div>
                           ) : (
                             <div className='flex items-center gap-1 text-xs font-bold text-muted-foreground'>
-                              <Minus className='size-4' />
-                              0
+                              <Minus className='size-4' />0
                             </div>
                           )}
                         </div>
                         {trend.riskLevel !== 'NONE' && (
-                          <div className={`mt-3 inline-flex rounded-md px-2 py-1 text-[10px] font-bold ${
-                            trend.riskLevel === 'SEVERE' ? 'bg-destructive/10 text-destructive' :
-                            trend.riskLevel === 'MEDIUM' ? 'bg-orange-500/10 text-orange-600' :
-                            'bg-amber-500/10 text-amber-600'
-                          }`}>
-                            Rủi ro: {t(`common:businessData.values.${trend.riskLevel}`, { defaultValue: trend.riskLevel })}
+                          <div
+                            className={`mt-3 inline-flex rounded-md px-2 py-1 text-[10px] font-bold ${
+                              trend.riskLevel === 'SEVERE'
+                                ? 'bg-destructive/10 text-destructive'
+                                : trend.riskLevel === 'MEDIUM'
+                                  ? 'bg-orange-500/10 text-orange-600'
+                                  : 'bg-amber-500/10 text-amber-600'
+                            }`}
+                          >
+                            Rủi ro:{' '}
+                            {t(`common:businessData.values.${trend.riskLevel}`, { defaultValue: trend.riskLevel })}
                           </div>
                         )}
                       </div>
@@ -237,15 +254,11 @@ export function AdminReferenceSeriesPage({
                           {new Date(report.createdAt).toLocaleDateString('vi-VN')}
                         </span>
                       </div>
-                      <p className='text-sm leading-relaxed text-foreground whitespace-pre-wrap'>
-                        {report.content}
-                      </p>
+                      <p className='text-sm leading-relaxed text-foreground whitespace-pre-wrap'>{report.content}</p>
                     </article>
                   ))
                 ) : (
-                  <div className='p-6 text-center text-sm text-muted-foreground'>
-                    Chưa có báo cáo nào
-                  </div>
+                  <div className='p-6 text-center text-sm text-muted-foreground'>Chưa có báo cáo nào</div>
                 )}
               </div>
             </section>
@@ -278,12 +291,17 @@ export function AdminReferenceDirectoriesPage({
 
   const totalMangakas = pagination.totalMangakas
   const totalAssistants = pagination.totalAssistants
-  const totalPages = activeTab === 'mangakas'
-    ? Math.ceil(totalMangakas / pagination.limit)
-    : Math.ceil(totalAssistants / pagination.limit)
+  const totalPages =
+    activeTab === 'mangakas'
+      ? Math.ceil(totalMangakas / pagination.limit)
+      : Math.ceil(totalAssistants / pagination.limit)
 
   return (
-    <ReferenceShell title={t('operations.reference.directories')} description={t('operations.reference.directoriesHelp')} returnTo={selected.returnTo}>
+    <ReferenceShell
+      title={t('operations.reference.directories')}
+      description={t('operations.reference.directoriesHelp')}
+      returnTo={selected.returnTo}
+    >
       <fetcher.Form method='post' className='mb-4'>
         <input type='hidden' name='intent' value='search' />
         <input type='hidden' name='tab' value={activeTab} />
@@ -324,12 +342,8 @@ export function AdminReferenceDirectoriesPage({
         </button>
       </div>
 
-      {activeTab === 'mangakas' && (
-        <MangakaDirectoryList items={directories.mangakas.items} />
-      )}
-      {activeTab === 'assistants' && (
-        <AssistantDirectoryList items={directories.assistants.items} />
-      )}
+      {activeTab === 'mangakas' && <MangakaDirectoryList items={directories.mangakas.items} />}
+      {activeTab === 'assistants' && <AssistantDirectoryList items={directories.assistants.items} />}
 
       {totalPages > 1 && (
         <Pagination currentPage={pagination.page} totalPages={totalPages} tab={activeTab} search={search} />
@@ -368,7 +382,14 @@ function MangakaDirectoryList({ items }: { items: MangakaDirectoryItem[] }) {
   return (
     <div className='space-y-3'>
       {items.map((item) => (
-        <button type='button' key={item.userId} onClick={() => setSelectedPerson({ userId: item.userId, kind: 'mangaka', name: item.displayName ?? item.penName })} className='block w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'>
+        <button
+          type='button'
+          key={item.userId}
+          onClick={() =>
+            setSelectedPerson({ userId: item.userId, kind: 'mangaka', name: item.displayName ?? item.penName })
+          }
+          className='block w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+        >
           <div className='flex items-start gap-4'>
             <div className='size-12 shrink-0 overflow-hidden rounded-full bg-primary/10'>
               {item.avatar ? (
@@ -391,7 +412,10 @@ function MangakaDirectoryList({ items }: { items: MangakaDirectoryItem[] }) {
               <p className='mt-1 text-xs text-muted-foreground'>{item.penName}</p>
               <div className='mt-2 flex flex-wrap gap-1'>
                 {item.genres.slice(0, 5).map((genre) => (
-                  <span key={genre} className='rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary'>
+                  <span
+                    key={genre}
+                    className='rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary'
+                  >
                     {t(`operations.reference.genres.${genre}`, { defaultValue: genre })}
                   </span>
                 ))}
@@ -408,11 +432,22 @@ function MangakaDirectoryList({ items }: { items: MangakaDirectoryItem[] }) {
             </div>
           </div>
           <div className='mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted-foreground'>
-            <span><span className='font-medium'>{t('operations.reference.email')}:</span> {item.email}</span>
-            {item.phoneNumber && <span><span className='font-medium'>{t('operations.reference.phone')}:</span> {item.phoneNumber}</span>}
-            <span><span className='font-medium'>{t('operations.reference.rating')}:</span> {item.ratingAvg.toFixed(1)} ({item.ratingCount})</span>
+            <span>
+              <span className='font-medium'>{t('operations.reference.email')}:</span> {item.email}
+            </span>
+            {item.phoneNumber && (
+              <span>
+                <span className='font-medium'>{t('operations.reference.phone')}:</span> {item.phoneNumber}
+              </span>
+            )}
+            <span>
+              <span className='font-medium'>{t('operations.reference.rating')}:</span> {item.ratingAvg.toFixed(1)} (
+              {item.ratingCount})
+            </span>
           </div>
-          <div className='mt-3 flex items-center justify-end border-t border-border pt-3 text-xs font-bold text-primary'>{t('operations.reference.profile.view')}</div>
+          <div className='mt-3 flex items-center justify-end border-t border-border pt-3 text-xs font-bold text-primary'>
+            {t('operations.reference.profile.view')}
+          </div>
         </button>
       ))}
       {selectedPerson && <DirectoryProfileDialog person={selectedPerson} onClose={() => setSelectedPerson(null)} />}
@@ -449,7 +484,18 @@ function AssistantDirectoryList({ items }: { items: AssistantDirectoryItem[] }) 
   return (
     <div className='space-y-3'>
       {items.map((item) => (
-        <button type='button' key={item.userId} onClick={() => setSelectedPerson({ userId: item.userId, kind: 'assistant', name: item.displayName ?? t('operations.reference.assistants') })} className='block w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'>
+        <button
+          type='button'
+          key={item.userId}
+          onClick={() =>
+            setSelectedPerson({
+              userId: item.userId,
+              kind: 'assistant',
+              name: item.displayName ?? t('operations.reference.assistants')
+            })
+          }
+          className='block w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+        >
           <div className='flex items-start gap-4'>
             <div className='size-12 shrink-0 overflow-hidden rounded-full bg-primary/10'>
               {item.avatar ? (
@@ -469,11 +515,15 @@ function AssistantDirectoryList({ items }: { items: AssistantDirectoryItem[] }) 
                   </span>
                 )}
                 {item.availabilityStatus && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    item.availabilityStatus === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' :
-                    item.availabilityStatus === 'BUSY' ? 'bg-amber-100 text-amber-700' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      item.availabilityStatus === 'AVAILABLE'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : item.availabilityStatus === 'BUSY'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
                     {t(`operations.reference.availability.${item.availabilityStatus}`)}
                   </span>
                 )}
@@ -498,11 +548,22 @@ function AssistantDirectoryList({ items }: { items: AssistantDirectoryItem[] }) 
             </div>
           </div>
           <div className='mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted-foreground'>
-            <span><span className='font-medium'>{t('operations.reference.email')}:</span> {item.email}</span>
-            {item.phoneNumber && <span><span className='font-medium'>{t('operations.reference.phone')}:</span> {item.phoneNumber}</span>}
-            <span><span className='font-medium'>{t('operations.reference.rating')}:</span> {item.ratingAvg.toFixed(1)} ({item.ratingCount})</span>
+            <span>
+              <span className='font-medium'>{t('operations.reference.email')}:</span> {item.email}
+            </span>
+            {item.phoneNumber && (
+              <span>
+                <span className='font-medium'>{t('operations.reference.phone')}:</span> {item.phoneNumber}
+              </span>
+            )}
+            <span>
+              <span className='font-medium'>{t('operations.reference.rating')}:</span> {item.ratingAvg.toFixed(1)} (
+              {item.ratingCount})
+            </span>
           </div>
-          <div className='mt-3 flex items-center justify-end border-t border-border pt-3 text-xs font-bold text-primary'>{t('operations.reference.profile.view')}</div>
+          <div className='mt-3 flex items-center justify-end border-t border-border pt-3 text-xs font-bold text-primary'>
+            {t('operations.reference.profile.view')}
+          </div>
         </button>
       ))}
       {selectedPerson && <DirectoryProfileDialog person={selectedPerson} onClose={() => setSelectedPerson(null)} />}
@@ -511,7 +572,7 @@ function AssistantDirectoryList({ items }: { items: AssistantDirectoryItem[] }) 
 }
 
 type DirectoryPerson = { userId: string; kind: 'mangaka' | 'assistant'; name: string }
-type DirectoryProfile = (MangakaProfileResDtoOutput | AssistantProfileResDtoOutput)
+type DirectoryProfile = MangakaProfileResDtoOutput | AssistantProfileResDtoOutput
 
 function DirectoryProfileDialog({ person, onClose }: { person: DirectoryPerson; onClose: () => void }) {
   const { t } = useTranslation('admin')
@@ -521,9 +582,10 @@ function DirectoryProfileDialog({ person, onClose }: { person: DirectoryPerson; 
 
   useEffect(() => {
     let cancelled = false
-    const request = person.kind === 'mangaka'
-      ? usersControllerGetMangakaProfile({ userId: person.userId })
-      : usersControllerGetAssistantProfile({ userId: person.userId })
+    const request =
+      person.kind === 'mangaka'
+        ? usersControllerGetMangakaProfile({ userId: person.userId })
+        : usersControllerGetAssistantProfile({ userId: person.userId })
     request
       .then((response) => {
         if (!cancelled) setProfile(response.data)
@@ -534,42 +596,96 @@ function DirectoryProfileDialog({ person, onClose }: { person: DirectoryPerson; 
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [person.kind, person.userId])
 
   return (
-    <Dialog open onClose={onClose} titleId='directory-profile' title={person.kind === 'mangaka' ? t('operations.reference.profile.mangakaTitle') : t('operations.reference.profile.assistantTitle')} description={person.name} size='md'>
+    <Dialog
+      open
+      onClose={onClose}
+      titleId='directory-profile'
+      title={
+        person.kind === 'mangaka'
+          ? t('operations.reference.profile.mangakaTitle')
+          : t('operations.reference.profile.assistantTitle')
+      }
+      description={person.name}
+      size='md'
+    >
       <div className='relative'>
-        <button type='button' onClick={onClose} aria-label={t('operations.reference.profile.close')} className='absolute right-0 top-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground'>
+        <button
+          type='button'
+          onClick={onClose}
+          aria-label={t('operations.reference.profile.close')}
+          className='absolute right-0 top-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground'
+        >
           <X className='size-4' />
         </button>
         {loading && <p className='py-8 text-center text-sm text-muted-foreground'>{t('common.loading')}</p>}
-        {!loading && hasError && <p className='py-8 text-center text-sm text-destructive'>{t('operations.reference.profile.loadError')}</p>}
+        {!loading && hasError && (
+          <p className='py-8 text-center text-sm text-destructive'>{t('operations.reference.profile.loadError')}</p>
+        )}
         {!loading && !hasError && profile && (
           <div className='space-y-5'>
             <div className='flex items-center gap-4 border-b border-border pb-4'>
               <div className='grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-primary'>
-                {profile.avatar ? <img src={profile.avatar} alt={person.name} className='size-full object-cover' /> : <Users className='size-6' />}
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt={person.name} className='size-full object-cover' />
+                ) : (
+                  <Users className='size-6' />
+                )}
               </div>
               <div className='min-w-0'>
                 <h2 className='truncate text-lg font-bold text-foreground'>{profile.displayName || person.name}</h2>
-                {'penName' in profile && <p className='text-xs text-muted-foreground'>{profile.penName || t('common.notAvailable')}</p>}
-                <p className='mt-1 text-xs font-semibold text-primary'>{t(`operations.reference.levels.${profile.experienceLevel}`, { defaultValue: profile.experienceLevel || t('common.notAvailable') })}</p>
+                {'penName' in profile && (
+                  <p className='text-xs text-muted-foreground'>{profile.penName || t('common.notAvailable')}</p>
+                )}
+                <p className='mt-1 text-xs font-semibold text-primary'>
+                  {t(`operations.reference.levels.${profile.experienceLevel}`, {
+                    defaultValue: profile.experienceLevel || t('common.notAvailable')
+                  })}
+                </p>
               </div>
             </div>
             <dl className='grid gap-3 sm:grid-cols-2'>
               <ProfileField icon={Mail} label={t('operations.reference.email')} value={profile.email} />
               <ProfileField icon={Phone} label={t('operations.reference.phone')} value={profile.phoneNumber} />
-              <ProfileField icon={Star} label={t('operations.reference.reputation')} value={`${profile.reputationScore.toFixed(1)} · ${profile.ratingAvg.toFixed(1)} (${profile.ratingCount})`} />
-              {'availabilityStatus' in profile && <ProfileField icon={Briefcase} label={t('operations.reference.profile.availability')} value={t(`operations.reference.availability.${profile.availabilityStatus}`, { defaultValue: profile.availabilityStatus || t('common.notAvailable') })} />}
+              <ProfileField
+                icon={Star}
+                label={t('operations.reference.reputation')}
+                value={`${profile.reputationScore.toFixed(1)} · ${profile.ratingAvg.toFixed(1)} (${profile.ratingCount})`}
+              />
+              {'availabilityStatus' in profile && (
+                <ProfileField
+                  icon={Briefcase}
+                  label={t('operations.reference.profile.availability')}
+                  value={t(`operations.reference.availability.${profile.availabilityStatus}`, {
+                    defaultValue: profile.availabilityStatus || t('common.notAvailable')
+                  })}
+                />
+              )}
             </dl>
             <section>
               <h3 className='text-xs font-bold text-foreground'>{t('operations.reference.profile.bio')}</h3>
-              <p className='mt-1 whitespace-pre-wrap text-sm leading-6 text-muted-foreground'>{'bio' in profile && profile.bio ? profile.bio : t('operations.reference.profile.noBio')}</p>
+              <p className='mt-1 whitespace-pre-wrap text-sm leading-6 text-muted-foreground'>
+                {'bio' in profile && profile.bio ? profile.bio : t('operations.reference.profile.noBio')}
+              </p>
             </section>
             <section>
               <h3 className='text-xs font-bold text-foreground'>{t('operations.reference.profile.portfolio')}</h3>
-              {profile.portfolioFiles.length ? <ul className='mt-2 space-y-1 text-xs text-primary'>{profile.portfolioFiles.map((file) => <li key={file} className='truncate'>{file}</li>)}</ul> : <p className='mt-1 text-sm text-muted-foreground'>{t('operations.reference.profile.noPortfolio')}</p>}
+              {profile.portfolioFiles.length ? (
+                <ul className='mt-2 space-y-1 text-xs text-primary'>
+                  {profile.portfolioFiles.map((file) => (
+                    <li key={file} className='truncate'>
+                      {file}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className='mt-1 text-sm text-muted-foreground'>{t('operations.reference.profile.noPortfolio')}</p>
+              )}
             </section>
           </div>
         )}
@@ -579,10 +695,28 @@ function DirectoryProfileDialog({ person, onClose }: { person: DirectoryPerson; 
 }
 
 function ProfileField({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return <div className='rounded-lg bg-muted/30 p-3'><dt className='flex items-center gap-2 text-[11px] font-semibold text-muted-foreground'><Icon className='size-3.5' />{label}</dt><dd className='mt-1 break-words text-xs font-bold text-foreground'>{value || '—'}</dd></div>
+  return (
+    <div className='rounded-lg bg-muted/30 p-3'>
+      <dt className='flex items-center gap-2 text-[11px] font-semibold text-muted-foreground'>
+        <Icon className='size-3.5' />
+        {label}
+      </dt>
+      <dd className='mt-1 break-words text-xs font-bold text-foreground'>{value || '—'}</dd>
+    </div>
+  )
 }
 
-function Pagination({ currentPage, totalPages, tab, search }: { currentPage: number; totalPages: number; tab: string; search: string }) {
+function Pagination({
+  currentPage,
+  totalPages,
+  tab,
+  search
+}: {
+  currentPage: number
+  totalPages: number
+  tab: string
+  search: string
+}) {
   const { t } = useTranslation('admin')
   const pageUrl = (page: number) => {
     const url = new URL(window.location.href)
@@ -594,7 +728,10 @@ function Pagination({ currentPage, totalPages, tab, search }: { currentPage: num
   return (
     <div className='mt-6 flex items-center justify-center gap-2'>
       {currentPage > 1 && (
-        <a href={pageUrl(currentPage - 1)} className='flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted'>
+        <a
+          href={pageUrl(currentPage - 1)}
+          className='flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted'
+        >
           <ArrowLeft className='size-3' />
           {t('operations.reference.prev')}
         </a>
@@ -603,7 +740,10 @@ function Pagination({ currentPage, totalPages, tab, search }: { currentPage: num
         {t('operations.reference.pageOf', { current: currentPage, total: totalPages })}
       </span>
       {currentPage < totalPages && (
-        <a href={pageUrl(currentPage + 1)} className='flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted'>
+        <a
+          href={pageUrl(currentPage + 1)}
+          className='flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted'
+        >
           {t('operations.reference.next')}
           <ArrowLeft className='size-3 rotate-180' />
         </a>
@@ -652,7 +792,11 @@ function LookupPageDirectory({ returnTo }: { returnTo: string }) {
   ] as const
 
   return (
-    <Panel icon={Search} title={t('operations.reference.lookupPages')} description={t('operations.reference.lookupPagesDescription')}>
+    <Panel
+      icon={Search}
+      title={t('operations.reference.lookupPages')}
+      description={t('operations.reference.lookupPagesDescription')}
+    >
       <div className='grid gap-3 md:grid-cols-2'>
         {pages.map(([path, Icon, title, description]) => (
           <Link
@@ -707,5 +851,5 @@ function Panel({
 }
 
 function LoadButton({ label }: { label: string }) {
-  return <button className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>{label}</button>
+  return <button className={`${modalButtonClass} bg-primary text-primary-foreground`}>{label}</button>
 }

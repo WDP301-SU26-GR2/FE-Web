@@ -10,6 +10,9 @@
   "splashLoading": "Đang khởi động...",
   "login": "Đăng nhập",
   "register": "Đăng ký",
+  "money": {
+    "amountInWords": "Số tiền bằng chữ"
+  },
   "businessData": {
     "empty": "Không có dữ liệu",
     "yes": "Có",

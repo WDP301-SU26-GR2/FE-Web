@@ -23373,14 +23373,24 @@
         "type": "object",
         "properties": {
           "boardTotalMembers": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 9007199254740991,
+            "description": "Sĩ số tổng Hội đồng — số nguyên lẻ, tối thiểu 3"
           },
           "quorumMin": {
-            "type": "number",
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 9007199254740991,
             "description": "Sĩ số roster mặc định khi auto-assign; KHÔNG phải quorum đếm phiếu"
           },
           "approveMajorityRatio": {
-            "type": "number"
+            "type": "number",
+            "exclusiveMinimum": true,
+            "exclusiveMaximum": true,
+            "description": "Tỷ lệ phiếu thuận để duyệt — trong khoảng (0, 1)",
+            "minimum": 0,
+            "maximum": 1
           },
           "updatedBy": {
             "type": "string"

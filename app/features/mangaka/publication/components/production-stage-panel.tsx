@@ -19,6 +19,7 @@ import { cn } from '~/shared/lib/cn'
 
 import { ProductionStageManagementDialog } from './production-stage-management-dialog'
 import { translateProductionStageName } from '../lib/translate-publication-status'
+import { isPageSetLocked } from '../lib/page-set-lock'
 import { useProductionStageManagement } from '../hooks/use-production-stage-management'
 
 export interface ProductionStagePanelProps {
@@ -64,7 +65,6 @@ export function ProductionStagePanel({
       const nextStages = response.data.stages ?? []
       setStages(nextStages)
       const current = nextStages.find((stage) => stage.status === 'ACTIVE')
-      const pageSetLocked = nextStages.length > 0 && nextStages[0]?.status !== 'ACTIVE'
       let areOutputsLocked = current?.isFinalCheck === true
       if (current && !current.isFinalCheck) {
         const stagePages = await productionStageControllerListPages({ id: chapterId, stageId: current.id })
@@ -72,7 +72,7 @@ export function ProductionStagePanel({
         areOutputsLocked = pages.length > 0 && pages.every((page) => page.outputReady)
       }
       setOutputsLocked(areOutputsLocked)
-      onPageSetLockChange(pageSetLocked)
+      onPageSetLockChange(isPageSetLocked(current?.status, areOutputsLocked))
       onReadinessChange(nextStages.length === 0 || current?.isFinalCheck === true)
     } catch (cause) {
       setError(extractApiErrorMessage(cause, t('seriesDetail.production.error')))

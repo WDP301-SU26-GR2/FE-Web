@@ -7,7 +7,7 @@ import {
   type InternalRankingAggregateResDtoOutput,
   type SurveyPeriodResDtoOutput
 } from '~/api/model/survey'
-import { boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
+import { boardDialogButton, boardInput, BoardHeader, EmptyState, StatusBadge } from '../components/board-ui'
 
 export function BoardRankingsPage({
   rankings,
@@ -42,7 +42,7 @@ export function BoardRankingsPage({
         description={t('rankings.description')}
         backHref='/dashboard/board/operations'
       />
-      <Form method='get' replace preventScrollReset className='flex gap-2'>
+      <Form method='get' replace preventScrollReset className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'>
         <select className={boardInput} name='surveyPeriodId' defaultValue={surveyPeriodId} required>
           <option value='' disabled>
             {t('rankings.selectPeriod')}
@@ -53,7 +53,7 @@ export function BoardRankingsPage({
             </option>
           ))}
         </select>
-        <button className='rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+        <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
           {t('common.load')}
         </button>
       </Form>
@@ -91,7 +91,7 @@ export function BoardRankingsPage({
           method='get'
           replace
           preventScrollReset
-          className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-5'
+          className='grid gap-2 rounded-xl border border-border bg-card p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
         >
           <input type='hidden' name='surveyPeriodId' value={surveyPeriodId} />
           <select className={boardInput} name='magazine' defaultValue={aggregateQuery.magazine} required>
@@ -125,7 +125,7 @@ export function BoardRankingsPage({
             defaultValue={aggregateQuery.year}
             required
           />
-          <div className='flex gap-2'>
+          <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_auto]'>
             <input
               className={boardInput}
               name='month'
@@ -136,7 +136,7 @@ export function BoardRankingsPage({
               disabled={aggregateQuery.level === SurveyControllerGetInternalRankingAggregateLevel.YEAR}
               aria-label={t('rankings.month')}
             />
-            <button className='shrink-0 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground'>
+            <button className={`${boardDialogButton} bg-primary text-primary-foreground`}>
               {t('common.load')}
             </button>
           </div>

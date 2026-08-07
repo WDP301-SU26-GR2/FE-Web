@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { MangakaEarningsResDtoOutput } from '~/api/model/dashboard'
 import type { PaymentRecordListResDtoOutputDataItem } from '~/api/model/payments'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { formatPaymentAmount, formatPaymentDate } from './payment-formatters'
 import { getPaymentExplanationKey } from './payment-explanation'
 import { paymentStatusClass } from './payment-status'
@@ -49,14 +50,23 @@ export function MangakaFinancePage({
       ) : earnings ? (
         <>
           <section className='grid gap-4 sm:grid-cols-3' aria-label={t('finance.summary.label')}>
-            <SummaryCard label={t('finance.summary.paid')} value={formatPaymentAmount(earnings.totalPaid, language)} />
+            <SummaryCard
+              label={t('finance.summary.paid')}
+              value={formatPaymentAmount(earnings.totalPaid, language)}
+              amount={earnings.totalPaid}
+              locale={language}
+            />
             <SummaryCard
               label={t('finance.summary.pending')}
               value={formatPaymentAmount(earnings.totalPending, language)}
+              amount={earnings.totalPending}
+              locale={language}
             />
             <SummaryCard
               label={t('finance.summary.missed')}
               value={formatPaymentAmount(earnings.totalMissed, language)}
+              amount={earnings.totalMissed}
+              locale={language}
             />
           </section>
 
@@ -178,11 +188,22 @@ export function MangakaFinancePage({
   )
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function SummaryCard({
+  label,
+  value,
+  amount,
+  locale
+}: {
+  label: string
+  value: string
+  amount: number
+  locale: string
+}) {
   return (
     <article className='rounded-xl border border-border bg-card p-5 shadow-sm'>
       <p className='text-sm text-muted-foreground'>{label}</p>
       <p className='mt-2 text-2xl font-bold tracking-tight text-foreground'>{value}</p>
+      <MoneyInWords amount={amount} locale={locale} />
     </article>
   )
 }

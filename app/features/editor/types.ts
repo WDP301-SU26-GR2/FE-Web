@@ -5,7 +5,7 @@ import type {
   BoardSessionResDtoOutput,
   SuggestBoardMembersResDtoOutputItemsItem
 } from '~/api/model/board'
-import type { ContractCommentListResDtoOutputDataItem } from '~/api/model/contracts'
+import type { ContractCommentListResDtoOutputDataItem, ContractListItemDtoOutput } from '~/api/model/contracts'
 import type {
   ContractResDtoOutput,
   ContractStatusProgressResDtoOutput,
@@ -79,6 +79,7 @@ export type EditorContractsData = {
 
 export type EditorContractDetailData = {
   contract: ContractResDtoOutput
+  contracts: ContractListItemDtoOutput[]
   progress: ContractStatusProgressResDtoOutput | null
   conditions: PaymentConditionListResDtoOutputDataItem[]
   versions: ContractVersionResDtoOutput[]

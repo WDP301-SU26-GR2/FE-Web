@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
 import type { ContractVersionResDtoOutput } from '~/api/model/contracts'
+import { MoneyInWords } from '~/shared/components/money-in-words'
 import { getContractVersionDisplay } from './lib/contract-version-display'
 
 interface MangakaContractVersionDetailPageProps {
@@ -58,6 +59,8 @@ export function MangakaContractVersionDetailPage({
           <Fact
             label={t('contracts.versionDetail.valuationAmount')}
             value={formatMoney(version.valuationAmount, language)}
+            amount={version.valuationAmount}
+            locale={language}
           />
           <Fact
             label={t('contracts.versionDetail.publisherOwnershipPct')}
@@ -84,7 +87,19 @@ function BackLink({ to, label }: { to: string; label: string }) {
   )
 }
 
-function Fact({ label, value, fullWidth = false }: { label: string; value: string | null; fullWidth?: boolean }) {
+function Fact({
+  label,
+  value,
+  amount,
+  locale,
+  fullWidth = false
+}: {
+  label: string
+  value: string | null
+  amount?: number | null
+  locale?: string
+  fullWidth?: boolean
+}) {
   const { t } = useTranslation('mangaka')
   return (
     <div className={fullWidth ? 'sm:col-span-2' : undefined}>
@@ -92,6 +107,7 @@ function Fact({ label, value, fullWidth = false }: { label: string; value: strin
       <dd className='mt-1 whitespace-pre-wrap break-words text-sm font-semibold text-foreground'>
         {value || t('contracts.versionDetail.notAvailable')}
       </dd>
+      <MoneyInWords amount={amount} locale={locale ?? 'vi'} />
     </div>
   )
 }
