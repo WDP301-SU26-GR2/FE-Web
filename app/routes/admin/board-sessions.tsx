@@ -12,6 +12,7 @@ export default function RouteComponent({ loaderData }: Route.ComponentProps) {
     <EditorBoardSessionsPage
       {...loaderData}
       manageAll
+      hideCreateButton
       backPath='/dashboard/admin/board'
       detailBasePath='/dashboard/admin/board/sessions'
     />

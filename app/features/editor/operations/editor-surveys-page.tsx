@@ -60,7 +60,8 @@ export function EditorSurveysPage({
   hasError,
   backPath = '/dashboard/editor/operations',
   configPath,
-  adminMode = false
+  adminMode = false,
+  embedded = false
 }: {
   series: SurveySeriesCandidate[]
   eligibleSeriesCandidates: SurveySeriesCandidate[]
@@ -74,6 +75,7 @@ export function EditorSurveysPage({
   backPath?: string
   configPath?: string
   adminMode?: boolean
+  embedded?: boolean
 }) {
   const { t, i18n } = useTranslation('editor')
   const { t: tAdmin } = useTranslation('admin')
@@ -94,13 +96,8 @@ export function EditorSurveysPage({
     [flaggedVotes, rankings, selectedSurvey?.status, surveyData, votes]
   )
 
-  return (
-    <OperationsLayout
-      titleKey='operations.surveys'
-      descriptionKey='operations.descriptions.surveys'
-      hasError={hasError}
-      backPath={backPath}
-    >
+  const content = (
+    <>
       {adminMode && (
         <section className='overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 shadow-sm'>
           <div className='grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
@@ -358,6 +355,19 @@ export function EditorSurveysPage({
           </aside>
         )}
       </div>
+    </>
+  )
+
+  return embedded ? (
+    <div className='space-y-5'>{content}</div>
+  ) : (
+    <OperationsLayout
+      titleKey='operations.surveys'
+      descriptionKey='operations.descriptions.surveys'
+      hasError={hasError}
+      backPath={backPath}
+    >
+      {content}
     </OperationsLayout>
   )
 }
@@ -531,19 +541,6 @@ function CreateSurveyForm({
           />
           <span className='font-normal leading-5 text-muted-foreground'>{t('operations.issueHelp')}</span>
         </label>
-        <label className='grid min-w-0 gap-1 text-xs font-bold text-foreground'>
-          {t('operations.reflectedIssue')}
-          <input
-            name='reflectedIssueNumber'
-            type='number'
-            value={issueNumber}
-            readOnly
-            tabIndex={-1}
-            className={`${operationInput} cursor-not-allowed bg-muted text-muted-foreground`}
-          />
-          <span className='font-normal leading-5 text-muted-foreground'>{t('operations.reflectedIssueHelp')}</span>
-        </label>
-
         {nonSequentialIssue && !duplicateScope && (
           <p className='rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground sm:col-span-2'>
             {t('operations.nonSequentialIssueWarning', { issue: suggestedIssueNumber })}
