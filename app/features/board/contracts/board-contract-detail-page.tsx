@@ -44,6 +44,7 @@ export function BoardContractDetailPage({
   const { session: authSession } = useAuth()
   const fetcher = useFetcher<BoardActionResult>()
   const [signOpen, setSignOpen] = useState(false)
+  const [representativeAction, setRepresentativeAction] = useState<'claim' | 'release' | null>(null)
   const currentUserId = authSession?.user.id ?? ''
   const isRepresentative = Boolean(currentUserId && contract.representativeId === currentUserId)
   const validConditionCount = conditions.filter(
@@ -195,11 +196,11 @@ export function BoardContractDetailPage({
                 : ''}
             </p>
           </div>
-          <fetcher.Form method='post' className='flex flex-wrap gap-2'>
+          <div className='flex flex-wrap gap-2'>
             {canClaim && (
               <button
-                name='intent'
-                value='claim'
+                type='button'
+                onClick={() => setRepresentativeAction('claim')}
                 disabled={fetcher.state !== 'idle'}
                 className='h-9 rounded-md border border-border px-3 text-xs font-bold disabled:opacity-50'
               >
@@ -208,8 +209,8 @@ export function BoardContractDetailPage({
             )}
             {canRelease && (
               <button
-                name='intent'
-                value='release'
+                type='button'
+                onClick={() => setRepresentativeAction('release')}
                 disabled={fetcher.state !== 'idle'}
                 className='h-9 rounded-md border border-border px-3 text-xs font-bold disabled:opacity-50'
               >
@@ -226,7 +227,7 @@ export function BoardContractDetailPage({
                 {t('contracts.signRepresentative')}
               </button>
             )}
-          </fetcher.Form>
+          </div>
         </div>
         <BoardFeedback data={fetcher.data} />
         {progress?.representative.claimed && (
@@ -275,6 +276,9 @@ export function BoardContractDetailPage({
         </div>
       </BoardPanel>
       {signOpen && <ContractSignDialog onClose={() => setSignOpen(false)} />}
+      {representativeAction && (
+        <RepresentativeConfirmDialog action={representativeAction} onClose={() => setRepresentativeAction(null)} />
+      )}
       <BoardPanel title={t('contracts.amendments')}>
         <div className='space-y-3'>
           {amendments.map((item) => (
@@ -293,6 +297,50 @@ export function BoardContractDetailPage({
         </div>
       </BoardPanel>
     </div>
+  )
+}
+
+function RepresentativeConfirmDialog({ action, onClose }: { action: 'claim' | 'release'; onClose: () => void }) {
+  const { t } = useTranslation('board')
+  const fetcher = useFetcher<BoardActionResult>()
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === action) onClose()
+  }, [action, fetcher.data, fetcher.state, onClose])
+
+  return (
+    <Dialog
+      compact
+      open
+      onClose={onClose}
+      titleId={`board-contract-${action}-representative-title`}
+      title={t(action === 'claim' ? 'contracts.claimRepresentative' : 'contracts.releaseRepresentative')}
+      description={t(
+        action === 'claim' ? 'contracts.claimRepresentativeConfirm' : 'contracts.releaseRepresentativeConfirm'
+      )}
+      size='sm'
+    >
+      <fetcher.Form method='post' className='grid gap-4'>
+        <div className='flex justify-end gap-2'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-10 rounded-md border border-border px-4 text-xs font-bold'
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            name='intent'
+            value={action}
+            disabled={fetcher.state !== 'idle'}
+            className='h-10 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60'
+          >
+            {t(action === 'claim' ? 'contracts.confirmClaimRepresentative' : 'contracts.confirmReleaseRepresentative')}
+          </button>
+        </div>
+      </fetcher.Form>
+      <BoardFeedback data={fetcher.data?.intent === action ? fetcher.data : undefined} />
+    </Dialog>
   )
 }
 
