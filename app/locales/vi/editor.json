@@ -700,7 +700,6 @@
     "revenue": "Doanh thu ghi nhận",
     "changedClauses": "Các điều khoản thay đổi, cách nhau bằng dấu phẩy",
     "reason": "Lý do",
-    "editNote": "Ghi chú phiên bản (không bắt buộc)",
     "voidReason": "Lý do hủy phụ lục này",
     "amendmentCreateUnavailable": "Chỉ có thể tạo phụ lục cho hợp đồng đã ký đầy đủ và không có phụ lục nào đang mở.",
     "emptyAmendments": "Chưa có phụ lục hợp đồng.",

@@ -52,7 +52,7 @@ export function EditorContractAmendmentsPage({
               {t('actions.createAmendment')}
             </button>
           </fetcher.Form>
-          <ContractActionMessage data={fetcher.data} />
+          <ContractActionMessage data={fetcher.data} revalidateOnSuccess={false} />
         </ContractDialogPanel>
       ) : (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>

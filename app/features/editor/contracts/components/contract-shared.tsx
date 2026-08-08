@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useRevalidator } from 'react-router'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -90,10 +90,19 @@ export function ContractHeader({
   )
 }
 
-export function ContractActionMessage({ data }: { data?: EditorActionResult }) {
+export function ContractActionMessage({
+  data,
+  revalidateOnSuccess = true
+}: {
+  data?: EditorActionResult
+  /** Set to `false` for duplicate instances that only close the dialog — the
+   *  page-level instance owns the single `revalidate()` call. */
+  revalidateOnSuccess?: boolean
+}) {
   const { t } = useTranslation('editor')
   const closeDialog = useDialogClose()
   const lastData = useRef<EditorActionResult | undefined>(data)
+  const revalidator = useRevalidator()
 
   useEffect(() => {
     if (!data || lastData.current === data) return
@@ -105,8 +114,10 @@ export function ContractActionMessage({ data }: { data?: EditorActionResult }) {
     if (data.ok) {
       toast.success(message, { id })
       closeDialog?.()
+      // Refresh route loader data exactly once after a successful action.
+      if (revalidateOnSuccess && revalidator.state === 'idle') revalidator.revalidate()
     } else toast.error(message, { id })
-  }, [closeDialog, data, t])
+  }, [closeDialog, data, revalidateOnSuccess, revalidator, t])
 
   return null
 }

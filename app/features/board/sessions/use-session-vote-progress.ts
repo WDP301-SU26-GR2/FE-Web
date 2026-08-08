@@ -6,7 +6,6 @@ import type { BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting
 import { joinBoardSession, sendBoardMessage } from '~/api/manual/board-meeting-socket'
 import {
   boardControllerGetDecisions,
-  boardControllerGetDecisionDetails,
   boardControllerGetSessionById,
   boardControllerGetSessionMessages
 } from '~/api/operations/board/board'
@@ -75,21 +74,18 @@ export function useSessionVoteProgress({
         if (session?.status === 200) setPhase(readBoardSessionPhase(session.data))
         if (messageResponse?.status === 200) setMessages(messageResponse.data.items)
         if (decisionResponse?.status === 200) {
-          const details = await Promise.all(
-            decisionResponse.data.map((decision) =>
-              boardControllerGetDecisionDetails({ id: decision.id })
-                .then((response) => response.data)
-                .catch(() => null)
-            )
-          )
-          setBaseDecisions(details.filter((decision): decision is BoardDecisionResDtoOutput => decision !== null))
+          setBaseDecisions(decisionResponse.data as BoardDecisionResDtoOutput[])
         }
       } finally {
         resyncInFlightRef.current = false
       }
     }
+    let lastResyncTime = 0
     const requestResync = () => {
-      if (resyncTimerRef.current != null) return
+      const now = Date.now()
+      if (now - lastResyncTime < 5000) return // Cooldown 5s
+      if (resyncTimerRef.current != null) return // Đã có timer đang chờ
+      lastResyncTime = now
       resyncTimerRef.current = window.setTimeout(() => {
         resyncTimerRef.current = null
         void resync()
@@ -116,9 +112,6 @@ export function useSessionVoteProgress({
     const scheduleRealtimeFlush = () => {
       if (flushTimerRef.current != null) return
       flushTimerRef.current = window.setTimeout(flushRealtimeUpdates, 300)
-    }
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') void resync()
     }
     socket.on('connect', () => {
       setConnectionState('connected')
@@ -155,8 +148,6 @@ export function useSessionVoteProgress({
       }
       scheduleRealtimeFlush()
     })
-    window.addEventListener('focus', resync)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
       if (resyncTimerRef.current != null) window.clearTimeout(resyncTimerRef.current)
       if (flushTimerRef.current != null) window.clearTimeout(flushTimerRef.current)
@@ -165,8 +156,6 @@ export function useSessionVoteProgress({
       pendingMessagesRef.current = []
       pendingPhaseRef.current = null
       pendingVoteUpdatesRef.current = {}
-      window.removeEventListener('focus', resync)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
       socketRef.current = null
       socket.disconnect()
     }

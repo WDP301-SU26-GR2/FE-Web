@@ -73,7 +73,7 @@ export function ContractConditionsManager({
             {t('actions.addCondition')}
           </button>
         </fetcher.Form>
-        <ContractActionMessage data={fetcher.data} />
+        <ContractActionMessage data={fetcher.data} revalidateOnSuccess={false} />
       </ContractDialogPanel>
       <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
         <div className='grid gap-3'>

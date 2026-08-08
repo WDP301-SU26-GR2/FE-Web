@@ -392,24 +392,24 @@ export function EditorContractsPage({ data, hasError }: { data: EditorContractsD
               </Link>
             )
           })}
-          {filteredContracts.length > 0 && (
-            <Pagination
-              page={currentPage}
-              totalPages={totalPages}
-              setPage={setPage}
-              from={from}
-              to={to}
-              total={filteredContracts.length}
-              tKeyPrefix='pagination'
-              t={t}
-            />
-          )}
           {!filteredContracts.length && (
             <div className='rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground'>
               {t('contracts.empty')}
             </div>
           )}
         </div>
+        {filteredContracts.length > 0 && (
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            setPage={setPage}
+            from={from}
+            to={to}
+            total={filteredContracts.length}
+            tKeyPrefix='pagination'
+            t={t}
+          />
+        )}
       </section>
     </div>
   )

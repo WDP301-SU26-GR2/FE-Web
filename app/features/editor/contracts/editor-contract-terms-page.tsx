@@ -144,15 +144,6 @@ export function ContractTermsForm({ contract, action }: { contract: ContractResD
               className='min-h-28 min-w-0 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70'
             />
           </label>
-          <label className={contractTermWideFieldClass}>
-            <span className={contractTermFieldLabelClass}>{t('contractDetail.editNote')}</span>
-            <textarea
-              name='note'
-              maxLength={CONTRACT_FIELD_LIMITS.versionNoteMaxLength}
-              disabled={!editable}
-              className='min-h-20 min-w-0 rounded-md border border-input bg-background p-3 text-xs text-foreground disabled:opacity-70'
-            />
-          </label>
           {editable && (
             <div className='flex justify-end md:col-span-2'>
               <button
