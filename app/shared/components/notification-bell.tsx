@@ -48,7 +48,6 @@ function notificationHref(item: NotificationListResDtoOutputItemsItem, role: str
     if (prefix === 'DEADLINE') return `/dashboard/mangaka/deadlines?requestId=${id}`
     if (['REVIEW', 'INVITE', 'ASSIGNMENT'].includes(prefix)) return '/dashboard/mangaka/assistants'
     if (prefix === 'REVISION') return '/dashboard/mangaka/studio'
-    if (['SURVEY', 'RANKING'].includes(prefix)) return '/dashboard/mangaka/rankings'
   }
 
   if (role === 'ASSISTANT' && prefix === 'TASK') return `/dashboard/assistant/tasks?taskId=${id}`

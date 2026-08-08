@@ -46,10 +46,6 @@
       "title": "Propose a new series",
       "description": "Create and submit a new series proposal."
     },
-    "rankings": {
-      "title": "Rankings",
-      "description": "Review public audience rankings and board rankings for your series."
-    },
     "seriesDetail": {
       "title": "Series detail",
       "description": "Manage this series, its chapters, and publication lifecycle."
@@ -77,13 +73,10 @@
     "dueInDays": "Due in {{days}} days",
     "openStudio": "Open Studio",
     "openReview": "Open Review",
-    "weeklyRankings": "Weekly Rankings",
-    "viewAnalyticsReport": "View Analytics Report",
     "activeSeries": "Active Series",
     "actionInbox": "Action Inbox",
     "noCriticalDeadlines": "No critical deadlines",
     "noActiveSeries": "No series in production",
-    "noRankings": "No ranking data yet",
     "noDeadline": "No deadline",
     "deadline": "Deadline: {{date}}",
     "refresh": "Refresh",
@@ -1967,7 +1960,6 @@
       "openContract": "Open contract",
       "openPayment": "Open payment",
       "openTransfer": "Open transfer",
-      "openRanking": "Open rankings",
       "openDeadline": "Open deadline",
       "openAssistant": "Open assistant",
       "openRevision": "Open revision",
@@ -2212,101 +2204,6 @@
       "TRANSFER": "Transfer",
       "TERMINATION": "Termination",
       "MANUAL": "Manual"
-    }
-  },
-  "rankings": {
-    "title": "Rankings",
-    "subtitle": "See how your series is performing in the latest and historical readership rankings.",
-    "back": "Back to dashboard",
-    "refresh": "Refresh",
-    "latest": {
-      "title": "Latest reflected period",
-      "description": "The newest board from the guest voting + postcard results. Use the chips to focus on weekly, monthly, or irregular cadence.",
-      "loading": "Loading the latest ranking…",
-      "empty": "No results yet for this period.",
-      "periodLabel": "Issue {{issue}} · Reflected issue {{reflected}}"
-    },
-    "history": {
-      "title": "Historical periods",
-      "description": "Pick a previously reflected period to inspect its board.",
-      "label": "Period",
-      "selectPlaceholder": "Choose a period…",
-      "noPeriods": "No reflected periods available yet.",
-      "loading": "Loading this period…",
-      "empty": "No results for this period.",
-      "prompt": "Pick a period above to see its ranking."
-    },
-    "board": {
-      "title": "Magazine-wide comparison",
-      "description": "Compare your series with every series in a reflected magazine period. This view is read-only.",
-      "periodLabel": "Reflected period",
-      "periodOption": "Issue {{issue}} · {{magazine}} · {{publicationType}}",
-      "unknownMagazine": "Magazine not specified",
-      "loadingPeriods": "Loading available reflected periods…",
-      "noPeriods": "No reflected periods are available for comparison yet.",
-      "loading": "Loading the magazine-wide ranking…",
-      "empty": "No rankings were recorded for this period.",
-      "otherSeries": "Another series",
-      "yourSeries": "Your series",
-      "unreliable": "Insufficient data",
-      "table": {
-        "rank": "Rank",
-        "series": "Series",
-        "votes": "Votes",
-        "score": "Score",
-        "change": "Change",
-        "risk": "Risk"
-      },
-      "error": {
-        "loadFailed": "Could not load the magazine-wide ranking. Please try again.",
-        "periodNotFound": "This ranking period is no longer available. Choose another period.",
-        "accessDenied": "You do not have permission to view this ranking."
-      }
-    },
-    "trend": {
-      "title": "My series trend",
-      "description": "Rank over the last 12 reflected periods, colour-coded by risk level. Only series you own are visible (BE-scoped).",
-      "label": "Series",
-      "selectPlaceholder": "Pick one of your series…",
-      "noSeries": "You have no published series yet — nothing to chart.",
-      "chartLabel": "Rank over time chart",
-      "tooltip": "#{{rank}} · {{date}} · {{votes}} votes",
-      "empty": "No reflected periods recorded for this series yet.",
-      "noRanks": "No rank data available for this series yet.",
-      "prompt": "Select a series to view its trend.",
-      "promptHint": "Trend data is BE-scoped — you can only chart series you own."
-    },
-    "publicationType": {
-      "label": "Publication type",
-      "ALL": "Overall",
-      "WEEKLY": "Weekly",
-      "MONTHLY": "Monthly",
-      "IRREGULAR": "Irregular"
-    },
-    "magazine": {
-      "label": "Magazine",
-      "placeholder": "Enter magazine code"
-    },
-    "riskLevel": {
-      "NONE": "No risk",
-      "LOW": "At risk",
-      "MEDIUM": "At risk (3+)",
-      "SEVERE": "Critical (5+)"
-    },
-    "table": {
-      "columns": {
-        "rank": "Rank",
-        "series": "Series",
-        "publicationType": "Cadence",
-        "votes": "Votes",
-        "change": "Change"
-      },
-      "changeStable": "Stable",
-      "deletedSeries": "(deleted series)"
-    },
-    "error": {
-      "loadFailed": "Could not load rankings. Please try again.",
-      "retry": "Retry"
     }
   },
   "transfers": {

@@ -28,42 +28,6 @@
       }
     }
   },
-  "chapterPages": {
-    "title": "Chapter overview",
-    "description": "Review the order, status, and composite state of every page in a chapter you collaborate on — not only pages assigned through a task.",
-    "chapterIdLabel": "Chapter ID",
-    "chapterIdPlaceholder": "Enter the chapter ID from a brief or work link",
-    "open": "Open chapter",
-    "accessHint": "You can only access chapters owned by a Mangaka with whom you have an active collaboration. Images are shown only for pages linked to your tasks.",
-    "loading": "Loading chapter context...",
-    "gridTitle": "Pages in this chapter",
-    "pageCount": "{{count}} pages",
-    "previewPolicy": "Pages without your task still expose metadata for narrative context; their files are not downloaded without task-based permission.",
-    "pageNumber": "Page {{number}}",
-    "pageAlt": "Preview of page {{number}}",
-    "revision": "Composite r{{revision}}",
-    "previewLoading": "Loading preview",
-    "previewUnavailable": "The preview could not be loaded through this task.",
-    "noTaskPreview": "You do not have a task on this page; metadata only.",
-    "noFile": "This page has no display file yet.",
-    "taskAccess": "Assigned task found — file access is available through the task workspace.",
-    "metadataOnly": "No task on this page — metadata view only.",
-    "status": {
-      "DRAFT": "In production",
-      "COMPLETED": "Completed",
-      "REVISING": "Revising"
-    },
-    "errors": {
-      "title": "Could not open chapter",
-      "loadFailed": "Could not load pages for this chapter. Check the chapter ID and your collaboration access."
-    },
-    "empty": {
-      "initialTitle": "Enter a chapter ID to begin",
-      "initialDescription": "You can obtain the chapter ID from a brief, work link, or the responsible Mangaka.",
-      "noPagesTitle": "No pages yet",
-      "noPagesDescription": "This chapter is accessible but does not contain any production pages."
-    }
-  },
   "tasks": {
     "title": "My Tasks",
     "subtitle": "Production tasks assigned to you by collaborating Mangakas.",

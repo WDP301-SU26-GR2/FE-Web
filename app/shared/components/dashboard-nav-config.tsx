@@ -5,7 +5,6 @@ import {
   BookOpen,
   Pencil,
   Users,
-  TrendingUp,
   FileText,
   Bell,
   BarChart3,
@@ -82,7 +81,6 @@ function buildMangakaConfig(t: ReturnType<typeof useTranslation>['t']): Dashboar
       { label: t('nav.studio'), href: '/dashboard/mangaka/studio', icon: Pencil },
       { label: t('nav.assistantDirectory'), href: '/dashboard/mangaka/assistants', icon: Users },
       { label: t('nav.mangakaDirectory'), href: '/dashboard/mangaka/mangakas', icon: Users },
-      { label: t('nav.ranking'), href: '/dashboard/mangaka/rankings', icon: TrendingUp },
       { label: t('nav.contracts'), href: '/dashboard/mangaka/contracts', icon: FileText },
       { label: t('nav.payments'), href: '/dashboard/mangaka/payments', icon: Briefcase },
       { label: t('nav.deadlines'), href: '/dashboard/mangaka/deadlines', icon: CalendarClock },
@@ -112,7 +110,6 @@ function buildAssistantConfig(t: ReturnType<typeof useTranslation>['t']): Dashbo
     navItems: annotateAncestorsEndHere([
       { label: t('nav.home'), href: '/dashboard/assistant', icon: Home },
       { label: t('nav.myTasks'), href: '/dashboard/assistant/tasks', icon: ClipboardList },
-      { label: t('nav.chapterPages'), href: '/dashboard/assistant/chapter-pages', icon: BookOpen },
       { label: t('nav.studio'), href: '/dashboard/assistant/studio', icon: Briefcase },
       { label: t('nav.invites'), href: '/dashboard/assistant/invites', icon: Mail },
       { label: t('nav.notifications'), href: '/dashboard/assistant/notifications', icon: Bell, badge: true }

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { DeadlineRequestListResDtoOutputItemsItem } from '~/api/model/deadline-requests'
 import { Button, Dialog } from '~/shared/ui'
+import { formatDeadlineDate } from './lib/format-deadline-date'
 import { useMangakaDeadlines, type DeadlineDraft } from './use-mangaka-deadlines'
 
 function isNegotiable(status: DeadlineRequestListResDtoOutputItemsItem['status']): boolean {
@@ -19,12 +20,6 @@ function isOpenDeadlineRequest(status: DeadlineRequestListResDtoOutputItemsItem[
     status === 'ESCALATED' ||
     status === 'BOARD_REVIEW'
   )
-}
-
-function displayDate(iso: string | null | undefined): string {
-  if (!iso) return '—'
-  const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
 }
 
 export function MangakaDeadlinesPage() {
@@ -145,7 +140,7 @@ export function MangakaDeadlinesPage() {
                 {deadlines.isChapterLoading
                   ? t('deadlines.loading.chapter')
                   : t('deadlines.request.currentDeadline', {
-                      date: displayDate(deadlines.selectedChapter?.schedule?.currentDeadline)
+                      date: formatDeadlineDate(deadlines.selectedChapter?.schedule?.currentDeadline)
                     })}
               </p>
             </div>
@@ -198,7 +193,7 @@ export function MangakaDeadlinesPage() {
                     <span>
                       <span className='block text-sm font-semibold'>{t(`deadlines.status.${request.status}`)}</span>
                       <span className='mt-1 block text-xs text-muted-foreground'>
-                        {displayDate(request.currentDeadline)} → {displayDate(request.requestedDeadline)}
+                        {formatDeadlineDate(request.currentDeadline)} → {formatDeadlineDate(request.requestedDeadline)}
                       </span>
                     </span>
                     <ChevronRight className='h-4 w-4 shrink-0 text-muted-foreground' aria-hidden='true' />
@@ -221,8 +216,14 @@ export function MangakaDeadlinesPage() {
             <div className='mt-4 space-y-4'>
               <dl className='grid gap-3 text-sm'>
                 <Detail label={t('deadlines.detail.status')} value={t(`deadlines.status.${selectedRequest.status}`)} />
-                <Detail label={t('deadlines.detail.current')} value={displayDate(selectedRequest.currentDeadline)} />
-                <Detail label={t('deadlines.detail.proposed')} value={displayDate(selectedRequest.requestedDeadline)} />
+                <Detail
+                  label={t('deadlines.detail.current')}
+                  value={formatDeadlineDate(selectedRequest.currentDeadline)}
+                />
+                <Detail
+                  label={t('deadlines.detail.proposed')}
+                  value={formatDeadlineDate(selectedRequest.requestedDeadline)}
+                />
                 <Detail label={t('deadlines.detail.reason')} value={selectedRequest.reason || '—'} />
               </dl>
               {openSelectedRequest && !canRespond && !canWithdraw && (

@@ -28,42 +28,6 @@
       }
     }
   },
-  "chapterPages": {
-    "title": "Xem tổng thể chương",
-    "description": "Xem thứ tự, trạng thái và bản ghép của toàn bộ trang trong chương mà bạn đang cộng tác — không chỉ riêng trang đã được giao nhiệm vụ.",
-    "chapterIdLabel": "Mã chương",
-    "chapterIdPlaceholder": "Nhập mã chương từ mô tả công việc hoặc liên kết công việc",
-    "open": "Mở chương",
-    "accessHint": "Bạn chỉ truy cập được chương thuộc tác giả đang có quan hệ cộng tác hiệu lực. Ảnh chỉ hiển thị trên trang bạn có nhiệm vụ để đảm bảo đúng quyền tải tệp.",
-    "loading": "Đang tải ngữ cảnh chương...",
-    "gridTitle": "Các trang trong chương",
-    "pageCount": "{{count}} trang",
-    "previewPolicy": "Trang chưa có nhiệm vụ vẫn hiển thị siêu dữ liệu để bạn hiểu mạch chương; hệ thống không tải tệp khi chưa có quyền qua nhiệm vụ.",
-    "pageNumber": "Trang {{number}}",
-    "pageAlt": "Bản xem trước trang {{number}}",
-    "revision": "Bản ghép r{{revision}}",
-    "previewLoading": "Đang tải bản xem trước",
-    "previewUnavailable": "Không thể tải bản xem trước qua nhiệm vụ này.",
-    "noTaskPreview": "Chưa có nhiệm vụ của bạn trên trang này; chỉ hiển thị siêu dữ liệu.",
-    "noFile": "Trang chưa có tệp hiển thị.",
-    "taskAccess": "Có nhiệm vụ được giao — bạn có quyền xem tệp qua không gian làm việc của nhiệm vụ.",
-    "metadataOnly": "Chưa có nhiệm vụ trên trang này — chế độ xem siêu dữ liệu.",
-    "status": {
-      "DRAFT": "Đang sản xuất",
-      "COMPLETED": "Đã hoàn tất",
-      "REVISING": "Đang chỉnh sửa"
-    },
-    "errors": {
-      "title": "Không thể mở chương",
-      "loadFailed": "Không thể tải các trang của chương này. Hãy kiểm tra mã chương và quyền cộng tác."
-    },
-    "empty": {
-      "initialTitle": "Nhập mã chương để bắt đầu",
-      "initialDescription": "Bạn có thể lấy mã chương từ mô tả công việc, đường dẫn công việc hoặc trao đổi với tác giả phụ trách.",
-      "noPagesTitle": "Chương chưa có trang",
-      "noPagesDescription": "Chương hợp lệ nhưng chưa có trang sản xuất nào để hiển thị."
-    }
-  },
   "tasks": {
     "title": "Nhiệm vụ của tôi",
     "subtitle": "Các nhiệm vụ sản xuất được tác giả giao cho bạn.",

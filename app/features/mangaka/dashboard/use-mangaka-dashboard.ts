@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  MangakaDashboardResDtoOutputRankingsItem,
-  MangakaDashboardResDtoOutputStudioItem
-} from '~/api/model/dashboard'
+import type { MangakaDashboardResDtoOutputStudioItem } from '~/api/model/dashboard'
 import { mangakaDashboardControllerMangaka } from '~/api/operations/dashboard/dashboard'
 import { extractApiErrorMessage } from '~/shared/lib/api/extract-api-error'
 
 export interface MangakaDashboardData {
   studio: MangakaDashboardResDtoOutputStudioItem[]
-  rankings: MangakaDashboardResDtoOutputRankingsItem[]
   unreadNotifications: number
   openRevisionRequests: number
 }
@@ -35,7 +31,6 @@ export function useMangakaDashboard(): UseMangakaDashboardReturn {
       // res.data contains MangakaDashboardResDtoOutput
       setData({
         studio: res.data?.studio ?? [],
-        rankings: res.data?.rankings ?? [],
         unreadNotifications: res.data?.unreadNotifications ?? 0,
         openRevisionRequests: res.data?.openRevisionRequests ?? 0
       })
