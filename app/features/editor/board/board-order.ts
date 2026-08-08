@@ -1,11 +1,5 @@
 import type { BoardDecisionResDtoOutput, BoardSessionResDtoOutput } from '~/api/model/board'
 
-const sessionStatusOrder: Record<BoardSessionResDtoOutput['status'], number> = {
-  ACTIVE: 0,
-  UPCOMING: 1,
-  CONCLUDED: 2
-}
-
 const decisionResultOrder: Record<NonNullable<BoardDecisionResDtoOutput['result']>, number> = {
   PENDING: 0,
   PENDING_QUORUM: 1,
@@ -16,11 +10,12 @@ const decisionResultOrder: Record<NonNullable<BoardDecisionResDtoOutput['result'
 
 export function orderBoardSessions(sessions: BoardSessionResDtoOutput[]) {
   return [...sessions].sort((left, right) => {
-    const statusDifference = sessionStatusOrder[left.status] - sessionStatusOrder[right.status]
-    if (statusDifference !== 0) return statusDifference
+    // Phiên đang họp (ACTIVE) luôn ưu tiên lên đầu.
+    if (left.status === 'ACTIVE' && right.status !== 'ACTIVE') return -1
+    if (right.status === 'ACTIVE' && left.status !== 'ACTIVE') return 1
 
-    const timeDifference = new Date(left.startTime).getTime() - new Date(right.startTime).getTime()
-    return left.status === 'CONCLUDED' ? -timeDifference : timeDifference
+    // Còn lại (UPCOMING, CONCLUDED) — xếp trình tự mới → cũ theo createdAt.
+    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
   })
 }
 
