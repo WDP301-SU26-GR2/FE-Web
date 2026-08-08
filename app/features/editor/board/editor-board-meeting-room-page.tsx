@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { BoardSessionResDtoOutputStatus, type BoardDecisionResDtoOutput } from '~/api/model/board'
 import type { BoardMeetingSession, BoardMessage, BoardSessionPhase } from '~/api/manual/board-meeting'
 import type { MagazineListResDtoOutputItemsItem } from '~/api/model/magazines'
+import type { SurveyPeriodListResDtoOutputItemsItem } from '~/api/model/survey'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
 import type { TransferRequestListResDtoOutputDataItem } from '~/api/model/transfer'
 import { useAuth } from '~/features/auth/context/auth-context'
@@ -39,6 +40,7 @@ export function EditorBoardMeetingRoomPage({
   decisions: initialDecisions,
   series,
   magazines = [],
+  surveyPeriods = [],
   contractResources = [],
   transferRequests = [],
   manageAll = false,
@@ -53,6 +55,7 @@ export function EditorBoardMeetingRoomPage({
   decisions: BoardDecisionResDtoOutput[]
   series: SeriesListResDtoOutputItemsItem[]
   magazines?: MagazineListResDtoOutputItemsItem[]
+  surveyPeriods?: SurveyPeriodListResDtoOutputItemsItem[]
   contractResources?: BoardDecisionResourceOption[]
   transferRequests?: TransferRequestListResDtoOutputDataItem[]
   manageAll?: boolean
@@ -330,11 +333,11 @@ export function EditorBoardMeetingRoomPage({
         <AddSessionDecisionDialog
           series={series}
           magazines={magazines}
+          surveyPeriods={surveyPeriods}
           decisions={meeting.decisions}
           contractResources={contractResources}
           transferRequests={transferRequests}
           onDecisionCreated={meeting.addDecision}
-          onAdded={meeting.refreshDecisions}
           onClose={() => setAddDecisionOpen(false)}
         />
       )}
@@ -345,20 +348,20 @@ export function EditorBoardMeetingRoomPage({
 function AddSessionDecisionDialog({
   series,
   magazines,
+  surveyPeriods,
   decisions,
   contractResources,
   transferRequests,
   onDecisionCreated,
-  onAdded,
   onClose
 }: {
   series: SeriesListResDtoOutputItemsItem[]
   magazines: MagazineListResDtoOutputItemsItem[]
+  surveyPeriods: SurveyPeriodListResDtoOutputItemsItem[]
   decisions: BoardDecisionResDtoOutput[]
   contractResources: BoardDecisionResourceOption[]
   transferRequests: TransferRequestListResDtoOutputDataItem[]
   onDecisionCreated: (decision: BoardDecisionResDtoOutput) => void
-  onAdded: () => Promise<void>
   onClose: () => void
 }) {
   const { t } = useTranslation('editor')
@@ -405,14 +408,32 @@ function AddSessionDecisionDialog({
       : decisionType === 'TRANSFER'
         ? availableTransferRequests.length > 0
         : eligibleSeries.length > 0
+  const minStartIssue = Math.max(
+    1,
+    ...surveyPeriods
+      .filter((period) => period.magazine === magazine && period.publicationType === publicationType)
+      .map((period) => period.issueNumber)
+      .filter((issue): issue is number => typeof issue === 'number' && Number.isFinite(issue))
+  )
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.ok && fetcher.data.intent === 'addSessionDecision') {
       if (fetcher.data.decision) onDecisionCreated(fetcher.data.decision)
-      void onAdded()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDecisionType('SERIALIZATION')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSeriesId('')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResourceId('')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTransferRequestId('')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMagazine('')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPublicationType('')
       onClose()
     }
-  }, [fetcher.data, fetcher.state, onAdded, onClose, onDecisionCreated])
+  }, [fetcher.data, fetcher.state, onClose, onDecisionCreated])
 
   return (
     <Dialog
@@ -588,7 +609,7 @@ function AddSessionDecisionDialog({
                   className={boardInput}
                   name='startIssueNumber'
                   type='number'
-                  min={1}
+                  min={minStartIssue}
                   max={BOARD_DECISION_LIMITS.startIssueMaximum}
                   step={1}
                   required

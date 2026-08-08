@@ -75,7 +75,7 @@ export function BoardContractDetailPage({
       <div className='flex justify-end'>
         <ContractPdfButton contract={contract} />
       </div>
-      <ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />
+      {<ContractDecisionBasis contract={contract} decisionPath='/dashboard/board/decisions' />}
       {hasSupplementaryDataError && (
         <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
           {t('contracts.partialLoadError')}
@@ -251,7 +251,7 @@ export function BoardContractDetailPage({
         )}
       </BoardPanel>
       <BoardPanel title={t('contracts.comments')}>
-        {contract.status === 'BOARD_REVIEW' && isContractRosterMember && (
+        {contract.status === 'BOARD_REVIEW' && isRepresentative &&  isContractRosterMember && (
           <fetcher.Form method='post' className='mb-4 grid gap-2'>
             <textarea
               name='content'

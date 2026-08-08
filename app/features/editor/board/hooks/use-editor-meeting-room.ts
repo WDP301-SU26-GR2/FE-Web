@@ -55,6 +55,33 @@ export function useEditorMeetingRoom({
     })
     return map
   })
+
+  // Sync loader data when revalidator refreshes the route.
+  useEffect(() => {
+    const detailsMap: Record<string, BoardDecisionResDtoOutput> = {}
+    initialDecisions.forEach((decision) => {
+      if (decision.id) {
+        detailsMap[decision.id] = decision
+      }
+    })
+    // Merge instead of replacing: keep optimistic decisions that the API has
+    // not yet reflected (eventual consistency) and update existing ones.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBaseDecisions((prev) => {
+      const existingIds = new Set(prev.map((item) => item.id))
+      const merged = [...prev]
+      initialDecisions.forEach((decision) => {
+        if (decision.id && !existingIds.has(decision.id)) {
+          merged.push(decision)
+        }
+      })
+      return merged.map((item) => {
+        const updated = detailsMap[item.id]
+        return updated ? { ...item, ...updated } : item
+      })
+    })
+    setDecisionDetailsMap((prev) => ({ ...prev, ...detailsMap }))
+  }, [initialDecisions])
   const [updates, setUpdates] = useState<Record<string, VoteProgress>>({})
   const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected'>(() =>
     readStorage(STORAGE_KEYS.accessToken) ? 'connecting' : 'disconnected'
@@ -214,7 +241,21 @@ export function useEditorMeetingRoom({
           detailsMap[decision.id] = decision as BoardDecisionResDtoOutput
         }
       })
-      setBaseDecisions(decisionsList as BoardDecisionResDtoOutput[])
+      // Merge instead of replacing: keep optimistic decisions that the API has
+      // not yet reflected (eventual consistency) and update existing ones.
+      setBaseDecisions((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id))
+        const merged = [...prev]
+        decisionsList.forEach((decision) => {
+          if (decision.id && !existingIds.has(decision.id)) {
+            merged.push(decision as BoardDecisionResDtoOutput)
+          }
+        })
+        return merged.map((item) => {
+          const updated = detailsMap[item.id]
+          return updated ? { ...item, ...updated } : item
+        })
+      })
       setDecisionDetailsMap((prev) => ({ ...prev, ...detailsMap }))
     }
   }, [sessionId])

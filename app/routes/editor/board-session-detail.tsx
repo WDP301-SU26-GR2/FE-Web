@@ -15,6 +15,7 @@ import {
   contractControllerGetContracts
 } from '~/api/operations/contracts/contracts'
 import { magazineControllerGetMagazines } from '~/api/operations/magazines/magazines'
+import { surveyControllerGetSurveyPeriods } from '~/api/operations/survey/survey'
 import {
   transferControllerGetAssignedEditorRequests,
   transferControllerGetTransferContractById
@@ -34,15 +35,17 @@ import { hydrateBoardDecisions, loadBoardSessionSeries, required } from './board
 import type { Route } from './+types/board-session-detail'
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [session, decisions, messages, series, contracts, transferRequests, magazines] = await Promise.all([
-    boardControllerGetSessionById({ id: params.id }),
-    boardControllerGetDecisions({ boardSessionId: params.id }),
-    boardControllerGetSessionMessages({ id: params.id }, { limit: 200, offset: 0 }).catch(() => null),
-    loadBoardSessionSeries(),
-    contractControllerGetContracts().catch(() => null),
-    transferControllerGetAssignedEditorRequests().catch(() => null),
-    magazineControllerGetMagazines().catch(() => null)
-  ])
+  const [session, decisions, messages, series, contracts, transferRequests, magazines, surveyPeriods] =
+    await Promise.all([
+      boardControllerGetSessionById({ id: params.id }),
+      boardControllerGetDecisions({ boardSessionId: params.id }),
+      boardControllerGetSessionMessages({ id: params.id }, { limit: 200, offset: 0 }).catch(() => null),
+      loadBoardSessionSeries(),
+      contractControllerGetContracts().catch(() => null),
+      transferControllerGetAssignedEditorRequests().catch(() => null),
+      magazineControllerGetMagazines().catch(() => null),
+      surveyControllerGetSurveyPeriods({ limit: 100 }).catch(() => null)
+    ])
   if (session.status !== 200) throw new Response('Not found', { status: 404 })
   const assignedTransferRequests = transferRequests?.data.data ?? []
   const contractResources = await loadContractDecisionResources(contracts?.data ?? [], assignedTransferRequests)
@@ -53,6 +56,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     messages: messages?.status === 200 ? messages.data.items : [],
     series,
     magazines: magazines?.status === 200 ? magazines.data.items : [],
+    surveyPeriods: surveyPeriods?.status === 200 ? surveyPeriods.data.items : [],
     contractResources,
     transferRequests: assignedTransferRequests
   }
@@ -142,6 +146,18 @@ export async function runBoardSessionAction({ request, params }: Route.ClientAct
           !selectedMagazine.publicationTypes.some((supportedType) => supportedType === publicationType)
         )
           return { ok: false, intent, errorKey: 'publicationTypeNotSupportedByMagazine' }
+        const surveyPeriods = await surveyControllerGetSurveyPeriods({
+          magazine,
+          publicationType: publicationType as 'WEEKLY' | 'MONTHLY' | 'IRREGULAR',
+          limit: 100
+        }).catch(() => null)
+        const minStartIssue = Math.max(
+          1,
+          ...(surveyPeriods?.status === 200 ? surveyPeriods.data.items : [])
+            .map((period) => period.issueNumber)
+            .filter((issue): issue is number => typeof issue === 'number' && Number.isFinite(issue))
+        )
+        if (startIssueNumber < minStartIssue) return { ok: false, intent, errorKey: 'invalidState' }
         Object.assign(details, {
           magazine,
           startIssueNumber,
