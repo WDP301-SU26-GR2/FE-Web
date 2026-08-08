@@ -398,7 +398,7 @@
     },
     "detailFields": {
       "magazine": "Tạp chí",
-      "startIssueNumber": "Số kỳ tạp chí bắt đầu đăng dài kỳ",
+      "startIssueNumber": "Số kỳ tạp chí bắt đầu xuất bản",
       "publicationType": "Nhịp phát hành",
       "endingChapterAllowance": "Số chương kết thúc được phép",
       "note": "Ghi chú"

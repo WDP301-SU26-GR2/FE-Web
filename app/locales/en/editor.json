@@ -291,6 +291,7 @@
     "holdReason": "Reason for production hold",
     "expectedReturnDate": "Expected resume time",
     "openDeadlineNegotiation": "Open deadline negotiation",
+    "deadlineNegotiationRequired": "A deadline already exists. To extend it, use the deadline negotiation flow.",
     "page": "Page",
     "width": "Width",
     "height": "Height"
@@ -893,6 +894,7 @@
     "deadlineChapterUnavailable": "This chapter has no valid schedule or has already been published, so negotiation cannot be opened.",
     "deadlineOpenExists": "This chapter already has an unresolved deadline request.",
     "deadlineCreateReady": "This chapter is eligible for a new deadline request.",
+    "loading": "Loading...",
     "deadlineList": "Negotiation requests",
     "deadlineDetail": "Negotiation details",
     "deadlineEmpty": "This chapter has no deadline requests.",

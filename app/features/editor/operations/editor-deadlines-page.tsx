@@ -4,6 +4,12 @@ import { useTranslation } from 'react-i18next'
 import type { DeadlineRequestResDtoOutput } from '~/api/model/deadline-requests'
 import type { ChapterListResDtoOutputItemsItem } from '~/api/model/chapters'
 import type { SeriesListResDtoOutputItemsItem } from '~/api/model/series'
+import { chapterControllerListBySeries } from '~/api/operations/chapters/chapters'
+import {
+  deadlineControllerGetOne,
+  deadlineControllerList
+} from '~/api/operations/deadline-requests/deadline-requests'
+import { mapWithConcurrency } from '~/shared/lib/api/map-with-concurrency'
 import { SemanticStatusBadge } from '~/shared/components/status-badge'
 import { Pagination } from '~/shared/components'
 import { Dialog } from '~/shared/ui/dialog'
@@ -26,13 +32,14 @@ type DeadlineAction =
 const EDITOR_LIST_PAGE_SIZE = 8
 const CLOSED_STATUSES = new Set(['APPROVED', 'REJECTED'])
 const NEGOTIABLE_STATUSES = new Set(['PROPOSED', 'COUNTER_PROPOSED'])
+const DETAIL_REQUEST_CONCURRENCY = 6
 const deadlineDialogFieldClass = 'grid min-w-0 grid-rows-[2.5rem_auto] gap-1.5 text-xs font-bold'
 const deadlineDialogFieldLabelClass = 'flex min-h-10 items-end leading-5 text-foreground'
 
 export function EditorDeadlinesPage({
-  items,
+  items: initialItems,
   series,
-  chapters,
+  chapters: initialChapters,
   focusSeriesId,
   focusChapterId,
   focusRequestId,
@@ -50,15 +57,103 @@ export function EditorDeadlinesPage({
   const fetcher = useOperationFetcher()
   const [activeSeriesId, setActiveSeriesId] = useState(focusSeriesId)
   const [activeChapterId, setActiveChapterId] = useState(focusChapterId)
-  const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId || items[0]?.id || '')
+  const [selectedRequestId, setSelectedRequestId] = useState(focusRequestId || initialItems[0]?.id || '')
   const [action, setAction] = useState<DeadlineAction | null>(null)
+  const [chapters, setChapters] = useState<ChapterListResDtoOutputItemsItem[]>(initialChapters)
+  const [items, setItems] = useState<DeadlineRequestResDtoOutput[]>(initialItems)
+  const [isLoadingChapters, setIsLoadingChapters] = useState(false)
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   useEffect(() => {
     // Sync URL-driven focus after loader data changes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSeriesId(focusSeriesId)
     setActiveChapterId(focusChapterId)
-    setSelectedRequestId(focusRequestId || items[0]?.id || '')
-  }, [focusSeriesId, focusChapterId, focusRequestId, items])
+    setSelectedRequestId(focusRequestId || initialItems[0]?.id || '')
+    setChapters(initialChapters)
+    setItems(initialItems)
+  }, [focusSeriesId, focusChapterId, focusRequestId, initialItems, initialChapters])
+
+  // Load chapters whenever the selected series changes (client-side navigation).
+  useEffect(() => {
+    if (!activeSeriesId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setChapters([])
+      setItems([])
+      setSelectedRequestId('')
+      return
+    }
+    if (activeSeriesId === focusSeriesId) {
+      setChapters(initialChapters)
+      return
+    }
+    const controller = new AbortController()
+    setIsLoadingChapters(true)
+    setLoadError(null)
+    void chapterControllerListBySeries({ seriesId: activeSeriesId }, { signal: controller.signal })
+      .then((response) => {
+        if (!controller.signal.aborted) {
+          setChapters([...response.data.items].sort((a, b) => a.chapterNumber - b.chapterNumber))
+          setItems([])
+          setSelectedRequestId('')
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setChapters([])
+          setItems([])
+          setSelectedRequestId('')
+          setLoadError(t('errors.loadDescription'))
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingChapters(false)
+      })
+    return () => controller.abort()
+  }, [activeSeriesId, focusSeriesId, initialChapters, t])
+
+  // Load deadline requests whenever the selected chapter changes.
+  useEffect(() => {
+    if (!activeChapterId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setItems([])
+      setSelectedRequestId('')
+      return
+    }
+    if (activeChapterId === focusChapterId) {
+      setItems(initialItems)
+      return
+    }
+    const controller = new AbortController()
+    setIsLoadingRequests(true)
+    setLoadError(null)
+    void deadlineControllerList({ chapterId: activeChapterId }, { signal: controller.signal })
+      .then(async (response) => {
+        if (controller.signal.aborted) return
+        const listItems = response.data.items ?? []
+        const details = await mapWithConcurrency(listItems, DETAIL_REQUEST_CONCURRENCY, async (item) => {
+          const detail = await deadlineControllerGetOne({ id: item.id }).catch(() => null)
+          return detail?.status === 200 ? detail.data : null
+        })
+        if (controller.signal.aborted) return
+        const resolved = details.filter((item) => item != null)
+        setItems(resolved)
+        setSelectedRequestId((current) => current || resolved[0]?.id || '')
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setItems([])
+          setSelectedRequestId('')
+          setLoadError(t('errors.loadDescription'))
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingRequests(false)
+      })
+    return () => controller.abort()
+  }, [activeChapterId, focusChapterId, initialItems, t])
+
   const selectedRequest = items.find((item) => item.id === selectedRequestId) ?? null
   const selectedChapter = chapters.find((item) => item.id === activeChapterId)
   const hasOpenRequest = items.some((item) => !CLOSED_STATUSES.has(item.status))
@@ -111,7 +206,7 @@ export function EditorDeadlinesPage({
               setPage(1)
             }}
             className={operationInput}
-            disabled={!activeSeriesId}
+            disabled={!activeSeriesId || isLoadingChapters}
           >
             <option value=''>{t('operations.selectChapter')}</option>
             {chapters
@@ -151,12 +246,23 @@ export function EditorDeadlinesPage({
         )}
       </section>
 
+      {loadError && (
+        <p className='rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive'>
+          {loadError}
+        </p>
+      )}
+
       <section className='grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(22rem,1.1fr)]'>
         <div className='rounded-xl border border-border bg-card shadow-sm'>
           <div className='border-b border-border px-5 py-4'>
             <h2 className='text-sm font-bold text-foreground'>{t('operations.deadlineList')}</h2>
           </div>
-          {items.length ? (
+          {isLoadingRequests ? (
+            <p className='flex items-center gap-2 px-5 py-8 text-center text-xs text-muted-foreground'>
+              <Loader2 className='size-4 animate-spin' aria-hidden='true' />
+              {t('operations.loading')}
+            </p>
+          ) : items.length ? (
             <div className='divide-y divide-border'>
               {paginatedItems.map((item) => (
                 <button

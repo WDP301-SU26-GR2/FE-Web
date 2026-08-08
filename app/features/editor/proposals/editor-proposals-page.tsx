@@ -150,12 +150,12 @@ function ProposalCard({ item }: { item: SeriesListResDtoOutputItemsItem }) {
               date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(item.createdAt))
             })}
           </p>
+          <span className='mt-2 inline-block rounded-lg bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
+            {item.demographic
+              ? t(`common:businessData.values.${item.demographic}`, { defaultValue: t('common.notAvailable') })
+              : t('common.notAvailable')}
+          </span>
         </div>
-        <span className='rounded-lg bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground'>
-          {item.demographic
-            ? t(`common:businessData.values.${item.demographic}`, { defaultValue: t('common.notAvailable') })
-            : t('common.notAvailable')}
-        </span>
       </div>
       <div className='mt-4 flex flex-wrap gap-2'>
         {item.genres.map((genre) => (

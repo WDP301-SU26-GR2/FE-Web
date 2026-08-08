@@ -362,14 +362,19 @@ export function EditorChapterReviewPage({
                   type='datetime-local'
                   required
                   defaultValue={toDateTimeLocal(chapter.schedule?.currentDeadline)}
-                  disabled={!scheduleEditable || busy}
+                  disabled={!scheduleEditable || busy || Boolean(chapter.schedule?.currentDeadline)}
                   className={dialogInput}
                 />
               </label>
               <button
                 name='intent'
                 value={chapter.schedule?.currentDeadline ? 'extendSchedule' : 'setSchedule'}
-                disabled={!scheduleEditable || busy}
+                disabled={!scheduleEditable || busy || Boolean(chapter.schedule?.currentDeadline)}
+                title={
+                  chapter.schedule?.currentDeadline
+                    ? t('chapterReview.deadlineNegotiationRequired')
+                    : undefined
+                }
                 className={`${dialogButton} self-end bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 <CalendarClock className='size-4' />
