@@ -774,7 +774,7 @@
       "HOLD": "Đã tạm giữ",
       "RESUME": "Đã tiếp tục",
       "CLAIM": "Đã nhận xử lý",
-      "RELEASE": "Đã nhả quyền xử lý",
+      "RELEASE": "Đã từ bỏ quyền xử lý",
       "SESSION_TRANSITION": "Đã chuyển trạng thái phiên họp",
       "PHASE_ADVANCED": "Đã chuyển giai đoạn họp",
       "DECISION_FINALIZED": "Đã chốt quyết định",

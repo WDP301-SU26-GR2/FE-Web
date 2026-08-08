@@ -66,16 +66,6 @@ export function EditorContractPaymentsPage({
                       defaultValue: t('common.notAvailable')
                     })}
                 </h3>
-                <p className='mt-1 text-xs text-muted-foreground'>
-                  {t(`contractDetail.payments.types.${payment.paymentType}`, {
-                    defaultValue: t('common.notAvailable')
-                  })}{' '}
-                  ·{' '}
-                  {t(`contractDetail.payments.sources.${payment.paymentSource}`, {
-                    defaultValue: t('common.notAvailable')
-                  })}
-                  {payment.period ? ` · ${payment.period}` : ''}
-                </p>
               </div>
               <div className='text-right'>
                 <span className='rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-secondary-foreground'>
@@ -85,7 +75,13 @@ export function EditorContractPaymentsPage({
                 <MoneyInWords amount={payment.amount} locale={i18n.language} className='max-w-56 text-right' />
               </div>
             </div>
-            {payment.description && <p className='mt-3 text-xs text-muted-foreground'>{payment.description}</p>}
+            {payment.paymentType && (
+              <p className='mt-3 text-xs text-muted-foreground'>
+                {t(`contractDetail.payments.typeMessages.${payment.paymentType}`, {
+                  defaultValue: payment.paymentType
+                })}
+              </p>
+            )}
             <dl className='mt-4 grid gap-3 border-t border-border pt-4 text-xs sm:grid-cols-2 lg:grid-cols-3'>
               <PaymentFact
                 label={t('contractDetail.payments.contract')}

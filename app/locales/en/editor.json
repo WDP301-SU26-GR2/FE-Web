@@ -747,6 +747,17 @@
         "TIME_BOUND": "Time-bound milestone",
         "TRANSFER": "Transfer payment"
       },
+      "typeMessages": {
+        "CONDITION_PAYOUT": "Condition met — eligible for contract payout.",
+        "REVENUE_SHARE": "Revenue share settlement available.",
+        "COMPENSATION": "Compensation payment recorded.",
+        "CHAPTER_MILESTONE": "Condition met — eligible for chapter payout.",
+        "RECURRING_CHAPTER": "Recurring chapter payout scheduled.",
+        "RANKING_MILESTONE": "Ranking milestone reached — eligible for payout.",
+        "TIME_BOUND": "Time-bound milestone reached — eligible for payout.",
+        "TRANSFER": "Transfer payment recorded.",
+        "default": "Eligible for payment"
+      },
       "sources": {
         "CONTRACT": "Contract",
         "REPRINT": "Reprint",
