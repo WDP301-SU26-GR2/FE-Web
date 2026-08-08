@@ -190,7 +190,6 @@ function buildReportContent(
         `- ${labels.currentStatus}: ${t(`common:businessData.values.${series.status}`, {
           defaultValue: series.status
         })}`,
-        `- ${labels.latestReason}: ${series.statusReason || labels.none}`,
         `- ${labels.cadence}: ${
           series.publicationType
             ? t(`common:businessData.values.${series.publicationType}`, { defaultValue: series.publicationType })

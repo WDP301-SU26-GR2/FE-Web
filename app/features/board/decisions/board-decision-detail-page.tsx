@@ -127,9 +127,7 @@ export function BoardDecisionDetailPage({
           {t('common.back')}
         </Link>
       )}
-      <BoardHeader
-        title={displayTitle}
-      />
+      <BoardHeader title={displayTitle} />
       {seriesBrief && (
         <BoardPanel title={t('sessions.seriesBrief.title')}>
           <SeriesMeetingBrief brief={seriesBrief} />
@@ -163,10 +161,7 @@ export function BoardDecisionDetailPage({
             <p className='max-w-3xl text-xs leading-5 text-muted-foreground'>
               {t(`decisions.lifecycleFollowUp.${lifecycleFollowUpKey}`)}
             </p>
-            <Link
-              to={lifecycleHref}
-              className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
-            >
+            <Link to={lifecycleHref} className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}>
               {t('decisions.lifecycleFollowUp.action')}
               <ArrowRight className='size-4' />
             </Link>
@@ -179,10 +174,7 @@ export function BoardDecisionDetailPage({
             <p className='text-xs leading-5 text-muted-foreground'>
               {t(`decisions.contractFollowUp.${liveDecision.result ?? 'PENDING'}`)}
             </p>
-            <Link
-              to={resourceHref}
-              className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
-            >
+            <Link to={resourceHref} className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}>
               {t(
                 ['APPROVED', 'REJECTED'].includes(liveDecision.result ?? '')
                   ? 'decisions.contractFollowUp.apply'
@@ -218,16 +210,19 @@ export function BoardDecisionDetailPage({
         <BoardPanel title={t('reports.title')}>
           <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
             <p className='text-xs text-muted-foreground'>{t('reports.description')}</p>
-            {canCreateReport && sessionStatus !== 'CONCLUDED' && decision.targetSeriesId && (
-              <button
-                type='button'
-                onClick={() => setReportOpen(true)}
-                className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
-              >
-                <FilePlus2 className='size-4' />
-                {t('reports.add')}
-              </button>
-            )}
+            {canCreateReport &&
+              sessionStatus !== 'CONCLUDED' &&
+              sessionPhase === 'PRESENTING' &&
+              decision.targetSeriesId && (
+                <button
+                  type='button'
+                  onClick={() => setReportOpen(true)}
+                  className={`${boardDialogButton} gap-2 bg-primary text-primary-foreground`}
+                >
+                  <FilePlus2 className='size-4' />
+                  {t('reports.add')}
+                </button>
+              )}
           </div>
           <div className='space-y-3'>
             {reports.map((report) => (
@@ -345,9 +340,7 @@ function ReportSectionBlock({ title, lines }: { title: string; lines: string[] }
                 </dd>
               </>
             ) : (
-              <p className='whitespace-pre-wrap px-1 py-1 text-xs leading-5 text-foreground'>
-                {field.label}
-              </p>
+              <p className='whitespace-pre-wrap px-1 py-1 text-xs leading-5 text-foreground'>{field.label}</p>
             )}
           </div>
         ))}
@@ -589,11 +582,7 @@ function CreateReportDialog({
           <input type='hidden' name='attachments' value={attachments.join('\n')} />
         </div>
         <div className='flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end'>
-          <button
-            type='button'
-            onClick={onClose}
-            className={`${boardDialogButton} border border-border`}
-          >
+          <button type='button' onClick={onClose} className={`${boardDialogButton} border border-border`}>
             {t('common.cancel')}
           </button>
           <button
@@ -794,11 +783,7 @@ function VoteDialog({ onClose }: { onClose: () => void }) {
         <input type='hidden' name='intent' value='vote' />
         <textarea name='note' className={`${boardInput} min-h-24 py-2`} placeholder={t('decisions.note')} />
         <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
-          <button
-            type='button'
-            onClick={onClose}
-            className={`${boardDialogButton} border border-border`}
-          >
+          <button type='button' onClick={onClose} className={`${boardDialogButton} border border-border`}>
             {t('common.cancel')}
           </button>
           {(['APPROVE', 'REJECT', 'ABSTAIN'] as const).map((voteValue) => (
