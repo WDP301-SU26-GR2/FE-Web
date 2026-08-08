@@ -746,6 +746,17 @@
         "TIME_BOUND": "Mốc thời hạn",
         "TRANSFER": "Thanh toán chuyển nhượng"
       },
+      "typeMessages": {
+        "CONDITION_PAYOUT": "Đã đáp ứng điều kiện hợp đồng — đủ điều kiện chi trả.",
+        "REVENUE_SHARE": "Đã đủ điều kiện chia sẻ doanh thu.",
+        "COMPENSATION": "Khoản bồi thường đã được ghi nhận.",
+        "CHAPTER_MILESTONE": "Đã đủ điều kiện thanh toán theo chương.",
+        "RECURRING_CHAPTER": "Đã lên lịch thanh toán định kỳ theo chương.",
+        "RANKING_MILESTONE": "Đạt mốc xếp hạng — đủ điều kiện thanh toán.",
+        "TIME_BOUND": "Đã đến mốc thời hạn — đủ điều kiện thanh toán.",
+        "TRANSFER": "Thanh toán chuyển nhượng đã được ghi nhận.",
+        "default": "Đủ điều kiện thanh toán"
+      },
       "sources": {
         "CONTRACT": "Hợp đồng",
         "REPRINT": "Tái bản",
