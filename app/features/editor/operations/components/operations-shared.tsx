@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { Link, useFetcher, useRevalidator } from 'react-router'
 import {
   ArrowLeft,
   ArrowRight,
@@ -259,6 +259,7 @@ export function OperationFeedback({ data }: { data?: EditorActionResult }) {
   const { t } = useTranslation('editor')
   const closeDialog = useDialogClose()
   const lastData = useRef<EditorActionResult | undefined>(data)
+  const revalidator = useRevalidator()
 
   useEffect(() => {
     if (!data || lastData.current === data) return
@@ -270,8 +271,10 @@ export function OperationFeedback({ data }: { data?: EditorActionResult }) {
     if (data.ok) {
       toast.success(message, { id })
       closeDialog?.()
+      // Refresh route loader data exactly once after a successful action.
+      if (revalidator.state === 'idle') revalidator.revalidate()
     } else toast.error(message, { id })
-  }, [closeDialog, data, t])
+  }, [closeDialog, data, revalidator, t])
 
   return null
 }

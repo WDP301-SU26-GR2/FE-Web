@@ -66,6 +66,7 @@ export function BoardFeedback({ data }: { data?: EditorActionResult }) {
   const { t } = useTranslation('editor')
   const lastData = useRef<EditorActionResult | undefined>(data)
   const closeDialog = useDialogClose()
+  const revalidator = useRevalidator()
 
   useEffect(() => {
     if (!data || lastData.current === data) return
@@ -77,8 +78,11 @@ export function BoardFeedback({ data }: { data?: EditorActionResult }) {
     if (data.ok) {
       toast.success(message, { id })
       closeDialog?.()
+      // Refresh route loader data exactly once after a successful action —
+      // replaces the old focus/visibility polling pattern.
+      if (revalidator.state === 'idle') revalidator.revalidate()
     } else toast.error(message, { id })
-  }, [closeDialog, data, t])
+  }, [closeDialog, data, revalidator, t])
 
   return null
 }
@@ -105,23 +109,12 @@ export function useBoardFetcher() {
   return useFetcher<EditorActionResult>()
 }
 
+/**
+ * @deprecated No-op retained for call-site compatibility. Data is now refreshed
+ * once per successful action via `BoardFeedback` instead of polling on
+ * `window focus` / `visibilitychange` (which fired API calls on every tab
+ * switch even without any action).
+ */
 export function useBoardAutoRefresh() {
-  const revalidator = useRevalidator()
-
-  useEffect(() => {
-    const revalidateWhenIdle = () => {
-      if (revalidator.state === 'idle') revalidator.revalidate()
-    }
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') revalidateWhenIdle()
-    }
-
-    window.addEventListener('focus', revalidateWhenIdle)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener('focus', revalidateWhenIdle)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [revalidator])
+  // Intentionally empty — see BoardFeedback for the revalidate-on-success logic.
 }

@@ -110,7 +110,6 @@ export function useEditorMeetingRoom({
         void resync()
       }, 1000)
     }
-    const handleFocus = () => requestResync()
     const flushRealtimeUpdates = () => {
       flushTimerRef.current = null
       const nextMessages = pendingMessagesRef.current
@@ -132,9 +131,6 @@ export function useEditorMeetingRoom({
     const scheduleRealtimeFlush = () => {
       if (flushTimerRef.current != null) return
       flushTimerRef.current = window.setTimeout(flushRealtimeUpdates, 300)
-    }
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') requestResync()
     }
     socket.on('connect', () => {
       setConnectionState('connected')
@@ -170,8 +166,6 @@ export function useEditorMeetingRoom({
       }
       scheduleRealtimeFlush()
     })
-    window.addEventListener('focus', handleFocus)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
       if (resyncTimerRef.current != null) window.clearTimeout(resyncTimerRef.current)
       if (flushTimerRef.current != null) window.clearTimeout(flushTimerRef.current)
@@ -180,8 +174,6 @@ export function useEditorMeetingRoom({
       pendingMessagesRef.current = []
       pendingPhaseRef.current = null
       pendingVoteUpdatesRef.current = {}
-      window.removeEventListener('focus', handleFocus)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
       socketRef.current = null
       socket.disconnect()
     }

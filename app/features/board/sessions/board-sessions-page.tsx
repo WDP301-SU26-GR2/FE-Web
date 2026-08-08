@@ -14,12 +14,20 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
   const [status, setStatus] = useState('')
   const [phase, setPhase] = useState('')
   const [page, setPage] = useState(1)
-  const filteredSessions = sessions.filter(
-    (session) =>
-      (!search || `${session.title} ${session.description ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
-      (!status || session.status === status) &&
-      (!phase || session.phase === phase)
-  )
+  const filteredSessions = sessions
+    .filter(
+      (session) =>
+        (!search || `${session.title} ${session.description ?? ''}`.toLowerCase().includes(search.toLowerCase())) &&
+        (!status || session.status === status) &&
+        (!phase || session.phase === phase)
+    )
+    .sort((left, right) => {
+      // Phiên đang họp (ACTIVE) luôn ưu tiên lên đầu.
+      if (left.status === 'ACTIVE' && right.status !== 'ACTIVE') return -1
+      if (right.status === 'ACTIVE' && left.status !== 'ACTIVE') return 1
+      // Còn lại — xếp trình tự mới → cũ theo createdAt.
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+    })
   const totalPages = Math.max(1, Math.ceil(filteredSessions.length / BOARD_LIST_PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const from = filteredSessions.length === 0 ? 0 : (currentPage - 1) * BOARD_LIST_PAGE_SIZE + 1
@@ -80,10 +88,7 @@ export function BoardSessionsPage({ sessions, hasError }: { sessions: BoardMeeti
           >
             <div className='flex items-start justify-between gap-3'>
               <h2 className='font-bold text-foreground'>{session.title}</h2>
-              <div className='flex flex-wrap justify-end gap-2'>
-                <StatusBadge value={session.status} />
-                {session.status !== 'CONCLUDED' && <StatusBadge value={session.phase} />}
-              </div>
+              <StatusBadge value={session.status} />
             </div>
             <p className='mt-2 text-xs text-muted-foreground'>{session.description || t('common.noDescription')}</p>
             <p className='mt-4 text-xs text-muted-foreground'>

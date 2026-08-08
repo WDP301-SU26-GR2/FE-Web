@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useRevalidator } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -17,6 +18,7 @@ export function EditorActionToast({
   const { t } = useTranslation('editor')
   const lastData = useRef<EditorActionResult | undefined>(undefined)
   const closeDialog = useDialogClose()
+  const revalidator = useRevalidator()
 
   useEffect(() => {
     if (!data || lastData.current === data) return
@@ -30,8 +32,11 @@ export function EditorActionToast({
     if (data.ok) {
       toast.success(message, { id })
       if (closeOnSuccess) closeDialog?.()
+      // Refresh route loader data exactly once after a successful action —
+      // replaces the old focus/visibility polling pattern.
+      if (revalidator.state === 'idle') revalidator.revalidate()
     } else toast.error(message, { id })
-  }, [closeDialog, closeOnSuccess, data, scope, t])
+  }, [closeDialog, closeOnSuccess, data, revalidator, scope, t])
 
   return null
 }

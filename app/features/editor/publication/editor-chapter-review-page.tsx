@@ -46,24 +46,16 @@ export function EditorChapterReviewPage({
   const [holdOpen, setHoldOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<'manuscript' | 'storyboard' | 'production'>('manuscript')
 
+  const lastActionData = useRef<EditorActionResult | undefined>(undefined)
+
   useEffect(() => {
-    const revalidateWhenIdle = () => {
-      if (document.visibilityState === 'visible' && fetcher.state === 'idle' && revalidator.state === 'idle') {
-        void revalidator.revalidate()
-      }
+    // Re-fetch route loader data exactly once after a successful action —
+    // replaces the old focus/visibility polling pattern.
+    if (fetcher.state === 'idle' && fetcher.data?.ok && lastActionData.current !== fetcher.data) {
+      lastActionData.current = fetcher.data
+      if (revalidator.state === 'idle') revalidator.revalidate()
     }
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') revalidateWhenIdle()
-    }
-
-    window.addEventListener('focus', revalidateWhenIdle)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener('focus', revalidateWhenIdle)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [fetcher.state, revalidator])
+  }, [fetcher.data, fetcher.state, revalidator])
 
   if (hasError || !data) {
     return (
