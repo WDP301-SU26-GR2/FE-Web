@@ -46,10 +46,6 @@
       "title": "Đề xuất bộ truyện mới",
       "description": "Tạo và gửi đề xuất bộ truyện mới."
     },
-    "rankings": {
-      "title": "Bảng xếp hạng",
-      "description": "Xem xếp hạng độc giả công khai và xếp hạng hội đồng cho bộ truyện của bạn."
-    },
     "seriesDetail": {
       "title": "Chi tiết bộ truyện",
       "description": "Quản lý bộ truyện, chương truyện và vòng đời xuất bản."
@@ -77,13 +73,10 @@
     "dueInDays": "Hạn còn {{days}} ngày",
     "openStudio": "Mở Xưởng vẽ",
     "openReview": "Xem phản hồi",
-    "weeklyRankings": "Bảng xếp hạng tuần",
-    "viewAnalyticsReport": "Xem báo cáo chi tiết",
     "activeSeries": "Bộ truyện đang hoạt động",
     "actionInbox": "Hộp thư hành động",
     "noCriticalDeadlines": "Không có deadline nguy cơ nào",
     "noActiveSeries": "Chưa có bộ truyện đang sản xuất",
-    "noRankings": "Chưa có dữ liệu xếp hạng",
     "noDeadline": "Không có hạn",
     "deadline": "Hạn: {{date}}",
     "refresh": "Làm mới",
@@ -1967,7 +1960,6 @@
       "openContract": "Mở hợp đồng",
       "openPayment": "Mở thanh toán",
       "openTransfer": "Mở chuyển nhượng",
-      "openRanking": "Mở bảng xếp hạng",
       "openDeadline": "Mở deadline",
       "openAssistant": "Mở trợ lý",
       "openRevision": "Mở vòng sửa",
@@ -2211,101 +2203,6 @@
       "TRANSFER": "Chuyển nhượng",
       "TERMINATION": "Chấm dứt",
       "MANUAL": "Thủ công"
-    }
-  },
-  "rankings": {
-    "title": "Xếp hạng",
-    "subtitle": "Theo dõi thứ hạng bộ truyện của bạn trong các kỳ xếp hạng mới nhất và trước đó.",
-    "back": "Quay lại dashboard",
-    "refresh": "Làm mới",
-    "latest": {
-      "title": "Kỳ REFLECTED mới nhất",
-      "description": "Bảng xếp hạng mới nhất tổng hợp vote online và phiếu giấy. Dùng chip để lọc theo nhịp xuất bản tuần/tháng/irregular.",
-      "loading": "Đang tải bảng xếp hạng mới nhất…",
-      "empty": "Chưa có kết quả cho kỳ này.",
-      "periodLabel": "Kỳ phát hành {{issue}} · Kỳ phản ánh {{reflected}}"
-    },
-    "history": {
-      "title": "Lịch sử các kỳ",
-      "description": "Chọn một kỳ đã REFLECTED để xem lại bảng xếp hạng tương ứng.",
-      "label": "Kỳ",
-      "selectPlaceholder": "Chọn một kỳ…",
-      "noPeriods": "Chưa có kỳ nào được REFLECTED.",
-      "loading": "Đang tải kỳ này…",
-      "empty": "Chưa có kết quả cho kỳ này.",
-      "prompt": "Chọn một kỳ ở trên để xem bảng xếp hạng."
-    },
-    "board": {
-      "title": "So sánh toàn tạp chí",
-      "description": "So sánh bộ truyện của bạn với mọi bộ truyện trong một kỳ tạp chí đã REFLECTED. Chế độ này chỉ để xem.",
-      "periodLabel": "Kỳ đã phản ánh",
-      "periodOption": "Kỳ {{issue}} · {{magazine}} · {{publicationType}}",
-      "unknownMagazine": "Chưa xác định tạp chí",
-      "loadingPeriods": "Đang tải các kỳ đã REFLECTED…",
-      "noPeriods": "Chưa có kỳ REFLECTED nào để so sánh.",
-      "loading": "Đang tải bảng xếp hạng toàn tạp chí…",
-      "empty": "Chưa có bảng xếp hạng được ghi nhận cho kỳ này.",
-      "otherSeries": "Bộ truyện khác",
-      "yourSeries": "Bộ truyện của bạn",
-      "unreliable": "Dữ liệu chưa đủ tin cậy",
-      "table": {
-        "rank": "Hạng",
-        "series": "Bộ truyện",
-        "votes": "Phiếu",
-        "score": "Điểm",
-        "change": "Biến động",
-        "risk": "Nguy cơ"
-      },
-      "error": {
-        "loadFailed": "Không thể tải bảng xếp hạng toàn tạp chí. Vui lòng thử lại.",
-        "periodNotFound": "Kỳ xếp hạng này không còn khả dụng. Hãy chọn kỳ khác.",
-        "accessDenied": "Bạn không có quyền xem bảng xếp hạng này."
-      }
-    },
-    "trend": {
-      "title": "Xu hướng bộ truyện của tôi",
-      "description": "Hạng qua 12 kỳ gần nhất, tô màu theo mức nguy cơ. Chỉ bộ truyện bạn sở hữu hiển thị (giới hạn ở BE).",
-      "label": "Bộ truyện",
-      "selectPlaceholder": "Chọn một bộ truyện của bạn…",
-      "noSeries": "Bạn chưa có bộ truyện đã xuất bản — chưa có gì để vẽ biểu đồ.",
-      "chartLabel": "Biểu đồ hạng theo thời gian",
-      "tooltip": "#{{rank}} · {{date}} · {{votes}} phiếu",
-      "empty": "Bộ truyện này chưa có kỳ nào được REFLECTED.",
-      "noRanks": "Bộ truyện này chưa có dữ liệu hạng.",
-      "prompt": "Chọn một bộ truyện để xem xu hướng.",
-      "promptHint": "Dữ liệu xu hướng được giới hạn ở BE — bạn chỉ xem được bộ truyện mình sở hữu."
-    },
-    "publicationType": {
-      "label": "Nhịp xuất bản",
-      "ALL": "Tổng",
-      "WEEKLY": "Tuần",
-      "MONTHLY": "Tháng",
-      "IRREGULAR": "Không định kỳ"
-    },
-    "magazine": {
-      "label": "Tạp chí",
-      "placeholder": "Nhập mã tạp chí"
-    },
-    "riskLevel": {
-      "NONE": "An toàn",
-      "LOW": "Có nguy cơ",
-      "MEDIUM": "Có nguy cơ (3+ kỳ)",
-      "SEVERE": "Nguy cấp (5+ kỳ)"
-    },
-    "table": {
-      "columns": {
-        "rank": "Hạng",
-        "series": "Bộ truyện",
-        "publicationType": "Nhịp",
-        "votes": "Phiếu",
-        "change": "Biến động"
-      },
-      "changeStable": "Ổn định",
-      "deletedSeries": "(bộ truyện đã xoá)"
-    },
-    "error": {
-      "loadFailed": "Không tải được bảng xếp hạng. Vui lòng thử lại.",
-      "retry": "Thử lại"
     }
   },
   "transfers": {

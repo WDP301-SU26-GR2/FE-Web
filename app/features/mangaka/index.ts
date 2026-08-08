@@ -45,10 +45,6 @@ export { MangakaNotificationsPage, useMangakaNotifications, NOTIFICATION_PAGE_SI
 // Deadlines (Mangaka party negotiation only)
 export { MangakaDeadlinesPage } from './deadlines'
 
-// Rankings (§9: latest reflected period + history picker + my-series trend)
-export { MangakaRankingsPage, useMangakaRankings, PUBLICATION_TYPE_OPTIONS } from './rankings'
-export type { RankingPublicationType } from './rankings'
-
 // Finance (read-only earnings and payment records)
 export { MangakaFinancePage, MangakaPaymentDetailPage, resolveSelectedPaymentSeriesId } from './finance'
 

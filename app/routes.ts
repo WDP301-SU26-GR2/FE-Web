@@ -44,7 +44,6 @@ export default [
       route('studio/tasks/:id', 'routes/mangaka/task-detail.tsx'),
       route('assistants', 'routes/mangaka/assistant-directory.tsx'),
       route('mangakas', 'routes/mangaka/mangaka-directory.tsx'),
-      route('rankings', 'routes/mangaka/rankings.tsx'),
       route('notifications', 'routes/mangaka/notifications.tsx'),
       route('profile', 'routes/mangaka/profile.tsx')
     ])
@@ -55,7 +54,6 @@ export default [
     layout('routes/assistant/_layout.tsx', [
       index('routes/assistant/index.tsx'),
       route('tasks', 'routes/assistant/tasks.tsx'),
-      route('chapter-pages', 'routes/assistant/chapter-pages.tsx'),
       route('studio', 'routes/assistant/studio.tsx'),
       route('invites', 'routes/assistant/invites.tsx'),
       route('notifications', 'routes/assistant/notifications.tsx'),

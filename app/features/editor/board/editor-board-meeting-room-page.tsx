@@ -45,6 +45,7 @@ export function EditorBoardMeetingRoomPage({
   transferRequests = [],
   manageAll = false,
   allowChat = true,
+  hideControls = false,
   backPath = '/dashboard/editor/board/sessions',
   decisionBasePath = '/dashboard/editor/board/decisions'
 }: {
@@ -59,6 +60,7 @@ export function EditorBoardMeetingRoomPage({
   transferRequests?: TransferRequestListResDtoOutputDataItem[]
   manageAll?: boolean
   allowChat?: boolean
+  hideControls?: boolean
   backPath?: string
   decisionBasePath?: string
 }) {
@@ -80,6 +82,7 @@ export function EditorBoardMeetingRoomPage({
   const canChat = allowChat && session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'QA'
   const canPrepareSession =
     isCreator &&
+    !hideControls &&
     (session.status === BoardSessionResDtoOutputStatus.UPCOMING ||
       (session.status === BoardSessionResDtoOutputStatus.ACTIVE && meeting.phase === 'PRESENTING'))
 
@@ -144,7 +147,7 @@ export function EditorBoardMeetingRoomPage({
         </div>
       </header>
 
-      {isCreator && session.status !== BoardSessionResDtoOutputStatus.CONCLUDED && (
+      {isCreator && !hideControls && session.status !== BoardSessionResDtoOutputStatus.CONCLUDED && (
         <section className='rounded-xl border border-border bg-card p-5 shadow-sm'>
           <h2 className='font-bold text-foreground'>{t('board.meeting.phaseControls')}</h2>
           <div className='mt-3 grid gap-2 sm:flex sm:flex-wrap'>

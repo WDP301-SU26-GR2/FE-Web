@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Form, Link } from 'react-router'
 import {
   BarChart3,
@@ -100,6 +100,40 @@ export function EditorSurveysPage({
     [flaggedVotes, rankings, selectedSurvey?.status, surveyData, votes]
   )
 
+  const [filterMagazine, setFilterMagazine] = useState<string>('')
+  const [filterPublicationType, setFilterPublicationType] = useState<string>('')
+
+  useEffect(() => {
+    if (selectedSurvey) {
+      if (selectedSurvey.magazine) setFilterMagazine(selectedSurvey.magazine)
+      if (selectedSurvey.publicationType) setFilterPublicationType(selectedSurvey.publicationType)
+    }
+  }, [selectedSurvey])
+
+  const availableMagazines = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of surveys) if (s.magazine) set.add(s.magazine)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [surveys])
+
+  const availablePublicationTypes = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of surveys) {
+      if ((!filterMagazine || s.magazine === filterMagazine) && s.publicationType) {
+        set.add(s.publicationType)
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [surveys, filterMagazine])
+
+  const filteredSurveys = useMemo(() => {
+    return surveys.filter((s) => {
+      if (filterMagazine && s.magazine !== filterMagazine) return false
+      if (filterPublicationType && s.publicationType !== filterPublicationType) return false
+      return true
+    })
+  }, [surveys, filterMagazine, filterPublicationType])
+
   const content = (
     <>
       {adminMode && (
@@ -148,15 +182,53 @@ export function EditorSurveysPage({
             method='get'
             replace
             preventScrollReset
-            className='grid min-w-0 flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'
+            className='grid min-w-0 flex-1 gap-2 sm:grid-cols-[1fr_1fr_2fr_auto]'
           >
+            <label className='grid gap-1 text-xs font-bold text-foreground'>
+              {t('operations.magazine')}
+              <select
+                value={filterMagazine}
+                onChange={(e) => {
+                  setFilterMagazine(e.target.value)
+                  setFilterPublicationType('')
+                }}
+                className={operationInput}
+              >
+                <option value=''>Tất cả tạp chí</option>
+                {availableMagazines.map((mag) => (
+                  <option key={mag} value={mag}>
+                    {mag}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className='grid gap-1 text-xs font-bold text-foreground'>
+              {t('operations.publicationType')}
+              <select
+                value={filterPublicationType}
+                onChange={(e) => setFilterPublicationType(e.target.value)}
+                className={operationInput}
+              >
+                <option value=''>Tất cả nhịp</option>
+                {availablePublicationTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {t(`operations.publicationTypes.${type}`, { defaultValue: type })}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className='grid gap-1 text-xs font-bold text-foreground'>
               {t('operations.selectSurvey')}
               <select name='surveyId' defaultValue={selectedSurveyId} className={operationInput}>
                 <option value=''>{t('operations.selectSurvey')}</option>
-                {surveys.map((item) => (
+                {filteredSurveys.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {surveyOptionLabel(item, i18n.language, t(`operations.surveyStatuses.${item.status}`))}
+                    {surveyOptionLabel(
+                      item,
+                      i18n.language,
+                      t(`operations.surveyStatuses.${item.status}`),
+                      item.publicationType ? t(`operations.publicationTypes.${item.publicationType}`, { defaultValue: item.publicationType }) : undefined
+                    )}
                   </option>
                 ))}
               </select>
@@ -967,9 +1039,14 @@ function SurveyWorkflow({ status }: { status: SurveyPeriodResDtoOutput['status']
   )
 }
 
-function surveyOptionLabel(survey: SurveyPeriodResDtoOutput, locale: string, statusLabel: string) {
+function surveyOptionLabel(
+  survey: SurveyPeriodResDtoOutput,
+  locale: string,
+  statusLabel: string,
+  pubTypeLabel?: string
+) {
   const issue = `#${survey.issueNumber ?? '—'}`
-  const scope = [survey.magazine, survey.publicationType].filter(Boolean).join(' · ')
+  const scope = [survey.magazine, pubTypeLabel || survey.publicationType].filter(Boolean).join(' · ')
   const start = formatShortDate(survey.startDate, locale)
   const end = formatShortDate(survey.endDate, locale)
   const range = start && end ? `${start} → ${end}` : start || end

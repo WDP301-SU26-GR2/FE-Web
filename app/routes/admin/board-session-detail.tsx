@@ -12,6 +12,7 @@ export default function RouteComponent({ loaderData }: Route.ComponentProps) {
       series={loaderData.series.filter((item) => item.status !== 'READY_TO_PITCH')}
       manageAll
       allowChat={false}
+      hideControls={true}
       backPath='/dashboard/admin/board/sessions'
       decisionBasePath='/dashboard/admin/board/decisions'
     />

@@ -2,8 +2,6 @@ import { useTranslation } from 'react-i18next'
 import {
   AlertTriangle,
   ArrowUpRight,
-  TrendingUp,
-  ChevronRight,
   AlertCircle,
   FileText,
   Sparkles,
@@ -42,20 +40,6 @@ function getSeriesStatusColor(status: string | null | undefined): string {
     default:
       return 'text-muted-foreground bg-muted/10 border-muted/20'
   }
-}
-
-/** Map rankChange → display text + color */
-function getRankChangeDisplay(change: number | null): {
-  text: string
-  color: string
-} {
-  if (change === null || change === 0) {
-    return { text: 'Steady', color: 'text-muted-foreground' }
-  }
-  if (change > 0) {
-    return { text: `+${change} pos`, color: 'text-success' }
-  }
-  return { text: `${change} pos`, color: 'text-destructive' }
 }
 
 export function MangakaDashboard() {
@@ -254,54 +238,8 @@ export function MangakaDashboard() {
           </div>
         </div>
 
-        {/* Right Side: Weekly Rankings and Action Inbox */}
+        {/* Right Side: Action Inbox */}
         <div className='space-y-6'>
-          {/* WEEKLY RANKINGS */}
-          <div className='rounded-xl border border-border bg-card p-6 shadow-md flex flex-col justify-between'>
-            <div>
-              <div className='flex items-center justify-between'>
-                <h2 className='flex items-center gap-2 text-base font-bold tracking-wide'>
-                  <TrendingUp className='h-5 w-5 text-primary' />
-                  <span>{t('dashboard.weeklyRankings')}</span>
-                </h2>
-              </div>
-
-              {data?.rankings && data.rankings.length > 0 ? (
-                <div className='mt-4 space-y-3'>
-                  {data.rankings.slice(0, 5).map((item) => {
-                    const rankDisplay = getRankChangeDisplay(item.rankChange)
-                    return (
-                      <div
-                        key={item.seriesId}
-                        className='flex items-center justify-between rounded-lg border border-border bg-background/30 p-3 text-sm'
-                      >
-                        <div className='flex items-center gap-3'>
-                          <span className='flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-extrabold text-primary'>
-                            {item.rankPosition ?? '-'}
-                          </span>
-                          <span className='font-semibold truncate max-w-[130px]' title={item.seriesTitle}>
-                            {item.seriesTitle}
-                          </span>
-                        </div>
-                        <span className={cn('text-xs font-bold', rankDisplay.color)}>{rankDisplay.text}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <p className='mt-4 text-sm text-muted-foreground'>{t('dashboard.noRankings')}</p>
-              )}
-            </div>
-
-            <a
-              href='/dashboard/mangaka/rankings'
-              className='mt-6 flex w-full items-center justify-center gap-1 text-center text-xs font-bold text-primary hover:underline'
-            >
-              <span>{t('dashboard.viewAnalyticsReport')}</span>
-              <ChevronRight className='h-3.5 w-3.5' />
-            </a>
-          </div>
-
           {/* ACTION INBOX */}
           <div className='rounded-xl border border-border bg-card p-6 shadow-md'>
             <div className='flex items-center justify-between'>

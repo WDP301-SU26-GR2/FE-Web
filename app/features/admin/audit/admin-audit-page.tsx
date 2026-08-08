@@ -165,7 +165,7 @@ export function AdminAuditPage({
                         reference={references.entities[`${item.entityType}:${item.entityId}`]}
                         id={item.entityId}
                         fallback={t(`audit.entityTypes.${item.entityType}`, {
-                          defaultValue: t('common.notAvailable')
+                          defaultValue: item.entityType
                         })}
                         openLabel={t('audit.openRecord')}
                       />
@@ -189,13 +189,13 @@ export function AdminAuditPage({
                   <div className='mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-bold text-foreground'>
                     <span>
                       {item.fromState
-                        ? t(`audit.states.${item.fromState}`, { defaultValue: t('common.notAvailable') })
+                        ? t(`audit.states.${item.fromState}`, { defaultValue: item.fromState })
                         : ''}
                     </span>
                     <ArrowRight className='size-3.5 text-primary' />
                     <span>
                       {item.toState
-                        ? t(`audit.states.${item.toState}`, { defaultValue: t('common.notAvailable') })
+                        ? t(`audit.states.${item.toState}`, { defaultValue: item.toState })
                         : ''}
                     </span>
                   </div>
@@ -259,13 +259,13 @@ function ReferenceCard({
         {reference?.subtitle && (
           <p className='mt-0.5 truncate text-[11px] text-muted-foreground'>
             {t(`audit.states.${reference.subtitle}`, {
-              defaultValue: t('common.notAvailable')
+              defaultValue: reference.subtitle
             })}
           </p>
         )}
         {id && (
-          <code className='mt-1 block text-[10px] text-muted-foreground' title={id}>
-            {shortId(id)}
+          <code className='mt-1 inline-block rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground' title={id}>
+            ID: {shortId(id)}
           </code>
         )}
       </div>

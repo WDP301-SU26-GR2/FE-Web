@@ -90,9 +90,6 @@ function mangakaNotificationHref(
   if (prefix === 'REVISION') {
     return { href: '/dashboard/mangaka/studio', translationKey: 'notifications.item.openRevision' }
   }
-  if (['SURVEY', 'RANKING'].includes(prefix)) {
-    return { href: '/dashboard/mangaka/rankings', translationKey: 'notifications.item.openRanking' }
-  }
   return null
 }
 
